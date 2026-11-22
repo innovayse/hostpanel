@@ -33,15 +33,15 @@ public sealed class ProvisioningProviderFactoryPluginTests(IntegrationTestFactor
     }
 
     /// <summary>
-    /// A server saved as <c>DirectAdmin</c> before the panel moved to a plugin that declares <c>directadmin</c> is served by the plugin, not by the
-    /// host's own DirectAdmin provider: nothing stored is rewritten.
+    /// A server saved as <c>HestiaCP</c> is served by a plugin that declares <c>hestiacp</c>, whatever case the row holds:
+    /// nothing stored is rewritten.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task CreateFor_LegacyMixedCaseRow_IsServedByThePluginAsync()
     {
-        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin), serverModule: "directadmin");
-        var legacy = new ServerConnectionDto(1, "legacy", ServerModules.DirectAdmin, "panel.example.test", null, "key");
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin), serverModule: "hestiacp");
+        var legacy = new ServerConnectionDto(1, "legacy", "HestiaCP", "panel.example.test", null, "key");
 
         var provider = harness.Factory().CreateFor(legacy);
 

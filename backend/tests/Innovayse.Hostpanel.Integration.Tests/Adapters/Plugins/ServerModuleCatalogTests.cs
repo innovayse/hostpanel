@@ -6,7 +6,7 @@ using Innovayse.Hostpanel.Infrastructure.Plugins;
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
 /// <summary>
-/// <see cref="ServerModuleCatalog"/>: the host's modules plus the ones installed provisioning plugins declare, each id once, and the
+/// <see cref="ServerModuleCatalog"/>: the host's module (cPanel) plus the ones installed provisioning plugins declare, each id once, and the
 /// spelling to store for an id typed in any case.
 /// </summary>
 public sealed class ServerModuleCatalogTests
@@ -14,7 +14,7 @@ public sealed class ServerModuleCatalogTests
     /// <summary>The panel plugin class the manifests name; the catalog reads only manifests.</summary>
     private static readonly Type Implementation = typeof(FakePanelPlugin);
 
-    /// <summary>With no plugin installed the catalog lists exactly the host's modules, all built in, in the order the form offered them.</summary>
+    /// <summary>With no plugin installed the catalog lists exactly the host's modules, all built in.</summary>
     [Fact]
     public void List_WithNoPlugin_IsTheHostsModules()
     {
@@ -30,7 +30,7 @@ public sealed class ServerModuleCatalogTests
     [Fact]
     public void List_AddsPluginModules_AndMergesOnesTheHostKnows()
     {
-        var plugin = PanelPluginHarness.Plugin("hestia", Implementation, ["hestiacp", "directadmin"], [PluginCapabilities.ProvisioningPanel]);
+        var plugin = PanelPluginHarness.Plugin("hestia", Implementation, ["hestiacp", "cpanel"], [PluginCapabilities.ProvisioningPanel]);
         var catalog = new ServerModuleCatalog(PluginActivationTestSeeds.Registry(plugin));
 
         var options = catalog.List();
@@ -39,9 +39,9 @@ public sealed class ServerModuleCatalogTests
         var hestia = options.Single(o => o.Id == "hestiacp");
         hestia.Name.Should().Be("Panel plugin");
         hestia.Source.Should().Be(ServerModuleSource.Plugin);
-        var directadmin = options.Single(o => o.Id == ServerModules.DirectAdmin);
-        directadmin.Name.Should().Be("Panel plugin");
-        directadmin.Source.Should().Be(ServerModuleSource.Plugin);
+        var cpanel = options.Single(o => o.Id == ServerModules.CPanel);
+        cpanel.Name.Should().Be("Panel plugin");
+        cpanel.Source.Should().Be(ServerModuleSource.Plugin);
     }
 
     /// <summary>The spelling to store is the host's for a module it knows, the plugin's for one only a plugin declares, and nothing for an unknown id.</summary>

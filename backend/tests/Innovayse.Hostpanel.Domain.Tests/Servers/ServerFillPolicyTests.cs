@@ -191,7 +191,7 @@ public sealed class ServerFillPolicyTests
             Hostname: $"{name}.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModules.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials(null, null, null),
             UseSSL: true,

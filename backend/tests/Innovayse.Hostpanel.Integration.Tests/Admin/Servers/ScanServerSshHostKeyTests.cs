@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,11 +67,7 @@ public sealed class ScanServerSshHostKeyTests(IntegrationTestFactory factory) : 
     public async Task NoAgentHostSaved_IsIncompleteAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var created = await admin.PostAsJsonAsync(
-            "/api/admin/servers",
-            ServersTestSeeds.ServerBody($"bare-{Guid.NewGuid():N}", "bare.example.test", ServerModules.Cwp7));
-        created.EnsureSuccessStatusCode();
-        var serverId = await created.Content.ReadFromJsonAsync<int>();
+        var serverId = await SshTestSeeds.SeedBareServerAsync(factory, "bare.example.test");
 
         var response = await admin.PostAsync($"/api/admin/servers/{serverId}/ssh-settings/scan-host-key", null);
 

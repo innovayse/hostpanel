@@ -70,7 +70,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     {
         var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions());
 
-        var act = () => factory.CreateFor(ServerRow("hash", ServerModules.DirectAdmin));
+        var act = () => factory.CreateFor(ServerRow("hash", TestPanelModules.Second));
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
     }

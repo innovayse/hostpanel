@@ -2,7 +2,6 @@ using System.Net;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Commands.UpdateDiskUsage;
 using Innovayse.Hostpanel.Application.Reports.Common;
-using Innovayse.Hostpanel.Application.Reports.Common.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,12 +28,12 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    /// <summary>An enabled server whose panel cannot report usage is listed as a failure, not left out silently.</summary>
+    /// <summary>An enabled server of a module the host does not provision and no plugin serves is no part of the report, so it is no failure either.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_UnsupportedPanelServer_ListsItAsAFailureAsync()
+    public async Task HandleAsync_ServerOfAnUnservedModule_IsLeftOutOfTheReportAsync()
     {
-        var name = $"cwp-{Guid.NewGuid():N}";
+        var name = $"retired-{Guid.NewGuid():N}";
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.Servers.Add(Server.Create(new ServerDetails(
@@ -42,7 +41,7 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
             Hostname: "usage.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModules.Cwp7,
+            Module: "retired-panel",
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,
@@ -59,7 +58,8 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
         var result = await scope.ServiceProvider.GetRequiredService<IMessageBus>()
             .InvokeAsync<Result<DiskUsageDto>>(new UpdateDiskUsageCommand(), CancellationToken.None);
 
-        result.Value!.Failures.Should().Contain(new DiskUsageFailureDto(name, DiskUsageFailureReason.UnsupportedModule));
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Failures.Should().NotContain(failure => failure.ServerName == name);
     }
 
     /// <summary>The route is not for anonymous callers.</summary>

@@ -1,7 +1,5 @@
 using System.Net;
-using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -24,13 +22,7 @@ public sealed class ProvisionServiceWithoutServerGroupTests(IntegrationTestFacto
         var http = factory.CreateClient();
         var adminToken = await factory.GetAdminTokenAsync();
         var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, http, adminToken);
-        (await http.PostAsJsonAsync(
-            "/api/admin/servers",
-            ServersTestSeeds.ServerBody(
-                $"DirectAdmin-Server-{Guid.NewGuid():N}",
-                hostname: "directadmin.example.test",
-                module: ServerModules.DirectAdmin,
-                accessHash: "directadmin-key"))).EnsureSuccessStatusCode();
+        await ServersTestSeeds.SeedServerAsync(factory, $"Second-Panel-Server-{Guid.NewGuid():N}", TestPanelModules.Second);
 
         var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
 

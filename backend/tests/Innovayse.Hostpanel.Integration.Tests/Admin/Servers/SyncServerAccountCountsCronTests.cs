@@ -42,7 +42,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
             Hostname: "sync.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModules.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,

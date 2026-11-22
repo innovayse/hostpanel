@@ -53,7 +53,7 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 
 | Field | Notes |
 |-------|-------|
-| Module | Control panel type: cPanel and the types of the installed panel plugins, with the older entries (DirectAdmin, CentOS Web Panel, CWP7, Lukittu, Virtualmin, HyperVm) |
+| Module | Control panel type: cPanel and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
 | Username | API username |
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |

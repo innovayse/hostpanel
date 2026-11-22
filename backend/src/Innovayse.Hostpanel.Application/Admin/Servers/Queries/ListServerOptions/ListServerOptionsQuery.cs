@@ -2,7 +2,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServerOption
 
 /// <summary>
 /// Returns every provisioning server as a lean option, by name, for the screens that choose a server or summarise all of
-/// them (the group form, the add existing service dialog, the service detail, the CWP 7 integration and the dashboard).
+/// them (the group form, the add existing service dialog, the service detail and the dashboard).
 /// It is not paged on purpose: a picker needs the whole set at once. The server list screen reads
 /// <c>ListServersQuery</c> instead.
 /// </summary>

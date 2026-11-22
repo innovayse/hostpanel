@@ -16,14 +16,14 @@ import type { StubApi } from './support/stubApi'
 /** The list endpoint the screen reads. */
 const LIST_PATH = '/api/admin/servers'
 
-/** A Cwp7 server that has never been tested. */
-const cwp7Server: ServerDto = { ...hostServer, id: 1, name: 'cwp7-alpha', module: 'Cwp7', isOnline: null }
+/** A cPanel server that has never been tested. */
+const cpanelServer: ServerDto = { ...hostServer, id: 1, name: 'cpanel-alpha', module: 'CPanel', isOnline: null }
 
-/** A DirectAdmin server whose last test failed, the one the module and state filters must keep. */
-const directadminServer: ServerDto = { ...hostServer, id: 2, name: 'directadmin-beta', module: 'DirectAdmin', isOnline: false }
+/** A panel plugin server whose last test failed, the one the module and state filters must keep. */
+const pluginServer: ServerDto = { ...hostServer, id: 2, name: 'hestia-beta', module: 'hestiacp', isOnline: false }
 
 /** Every server the stubbed list holds. */
-const allServers: ServerDto[] = [cwp7Server, directadminServer]
+const allServers: ServerDto[] = [cpanelServer, pluginServer]
 
 /**
  * Stubs the server list so it narrows by the same query parameters the real API takes.
@@ -66,12 +66,12 @@ test('searching by name sends the search and shows only the matching server', as
   await expect(page.getByTestId('server-row-2')).toBeVisible()
 
   // The search box writes to the address after a pause and the list reloads from it.
-  await fieldOf(page, 'servers-search').fill('directadmin')
-  await expect(page).toHaveURL(/search=directadmin/)
+  await fieldOf(page, 'servers-search').fill('hestia')
+  await expect(page).toHaveURL(/search=hestia/)
 
   await expect(page.getByTestId('server-row-2')).toBeVisible()
   await expect(page.getByTestId('server-row-1')).toHaveCount(0)
-  expect(api.callsTo(HttpMethod.Get, LIST_PATH).at(-1)?.search).toContain('search=directadmin')
+  expect(api.callsTo(HttpMethod.Get, LIST_PATH).at(-1)?.search).toContain('search=hestia')
 })
 
 test('the module and state filters are sent to the API, shown as chips and removed from their chips', async ({ page }) => {
@@ -82,19 +82,19 @@ test('the module and state filters are sent to the API, shown as chips and remov
 
   await page.getByTestId('filter-trigger').click()
   await page.getByTestId('servers-filter-module').getByTestId('ui-select-trigger').click()
-  await page.getByTestId('ui-select-option').filter({ hasText: /^DirectAdmin$/ }).click()
+  await page.getByTestId('ui-select-option').filter({ hasText: /^Hestia Control Panel$/ }).click()
   await page.getByTestId('servers-filter-state').getByTestId('ui-select-trigger').click()
   await page.getByTestId('ui-select-option').filter({ hasText: /^Offline$/ }).click()
   await page.getByTestId('filter-apply').click()
 
-  await expect(page).toHaveURL(/module=DirectAdmin/)
+  await expect(page).toHaveURL(/module=hestiacp/)
   await expect(page).toHaveURL(/state=offline/)
-  await expect(page.getByTestId('filter-chip-module')).toContainText('DirectAdmin')
+  await expect(page.getByTestId('filter-chip-module')).toContainText('hestiacp')
   await expect(page.getByTestId('filter-chip-state')).toContainText('Offline')
   await expect(page.getByTestId('server-row-1')).toHaveCount(0)
   await expect(page.getByTestId('server-row-2')).toBeVisible()
   const sent = api.callsTo(HttpMethod.Get, LIST_PATH).at(-1)?.search
-  expect(sent).toContain('module=DirectAdmin')
+  expect(sent).toContain('module=hestiacp')
   expect(sent).toContain('state=offline')
 
   await page.getByTestId('filter-chip-remove-module').click()
@@ -119,7 +119,7 @@ test('a list link with a filter opens the filtered list', async ({ page }) => {
 test('a filter nothing matches says so and keeps the toolbar', async ({ page }) => {
   await stubServerList(page)
 
-  await page.goto('/servers?module=DirectAdmin&state=untested')
+  await page.goto('/servers?module=hestiacp&state=untested')
 
   await expect(page.getByTestId('servers-no-matches')).toBeVisible()
   await expect(page.getByTestId('servers-search')).toBeVisible()

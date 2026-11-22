@@ -68,7 +68,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         {
             name,
             endpoint = new { hostname = $"{name}.example.com", ipAddress = (string?)null, assignedIpAddresses = (string?)null, useSSL = true },
-            module = ServerModules.Cwp7,
+            module = ServerModules.CPanel,
             username = "root",
             credentials = new { },
             limits = new { isDefault = false, isDisabled = false },
@@ -88,8 +88,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("cpanel", ServerModules.CPanel)]
-    [InlineData("DIRECTADMIN", ServerModules.DirectAdmin)]
-    [InlineData(ServerModules.Cwp7, ServerModules.Cwp7)]
+    [InlineData("CPANEL", ServerModules.CPanel)]
     public async Task Module_BuiltInId_IsStoredInTheBuiltInSpellingAsync(string sent, string stored)
     {
         var client = await ServersTestSeeds.AdminClientAsync(factory);
@@ -186,7 +185,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         var response = await client.PostAsJsonAsync("/api/admin/servers", new
         {
             name = "Missing-groups",
-            module = ServerModules.Cwp7,
+            module = ServerModules.CPanel,
             username = "root",
         });
 

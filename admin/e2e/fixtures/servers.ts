@@ -11,8 +11,6 @@ import { SshAgentProfile } from '../../src/types/sshenums'
 /** The control panel modules the server form and the module filter offer: the host's own and one a plugin declares. */
 export const serverModules: ServerModuleOptionDto[] = [
   { id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn },
-  { id: 'DirectAdmin', name: 'DirectAdmin', source: ServerModuleSource.BuiltIn },
-  { id: 'Cwp7', name: 'Cwp7', source: ServerModuleSource.BuiltIn },
   { id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin },
 ]
 
@@ -27,7 +25,7 @@ export const hostServer: ServerDto = {
     useSSL: true,
     acceptsSelfSignedCertificate: false,
   },
-  module: 'Cwp7',
+  module: 'CPanel',
   username: 'root',
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   hosting: { datacenter: null, serverStatusAddress: null, monthlyCost: 20 },

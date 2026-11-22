@@ -46,7 +46,7 @@ describe('ServerFormModal', () => {
     await wrapper.get('[data-testid="server-form-username"]').setValue('root')
 
     expect(selectText(wrapper, 'server-form-module')).toBe('cPanel / WHM')
-    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'DirectAdmin', 'Cwp7', 'hestiacp'])
+    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'hestiacp'])
     await pickOption(wrapper, 'server-form-module', 'Hestia Control Panel')
     await wrapper.get('[data-testid="server-form-save"]').trigger('click')
 
@@ -66,7 +66,7 @@ describe('ServerFormModal', () => {
     const wrapper = mountModal({ server: serverDto({ module: 'RetiredPanel' }) })
     await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
 
-    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'DirectAdmin', 'Cwp7', 'hestiacp', 'RetiredPanel'])
+    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'hestiacp', 'RetiredPanel'])
     await wrapper.get('[data-testid="server-form-save"]').trigger('click')
 
     expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'RetiredPanel' })

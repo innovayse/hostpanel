@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -66,14 +65,14 @@ public sealed class ListServerOptionsTests(IntegrationTestFactory factory) : ICl
     {
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
         var token = PagedListReads.UniqueToken();
-        var directadmin = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-directadmin", ServerModules.DirectAdmin);
-        var cwp7 = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-cwp7");
+        var second = await ServersTestSeeds.SeedServerAsync(factory, $"{token}-second", TestPanelModules.Second);
+        var cpanel = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-cpanel");
 
-        var onlyDirectAdmin = await ReadAsync(admin, $"{Route}?module=DirectAdmin");
-        var onlyCwp7 = await ReadAsync(admin, $"{Route}?module=Cwp7");
+        var onlySecond = await ReadAsync(admin, $"{Route}?module={TestPanelModules.Second}");
+        var onlyCPanel = await ReadAsync(admin, $"{Route}?module=CPanel");
 
-        onlyDirectAdmin.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(directadmin).And.NotContain(cwp7);
-        onlyCwp7.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(cwp7).And.NotContain(directadmin);
+        onlySecond.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(second).And.NotContain(cpanel);
+        onlyCPanel.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(cpanel).And.NotContain(second);
     }
 
     /// <summary>A module that is not a well formed id (a space, a slash) is refused with 400 naming the field.</summary>

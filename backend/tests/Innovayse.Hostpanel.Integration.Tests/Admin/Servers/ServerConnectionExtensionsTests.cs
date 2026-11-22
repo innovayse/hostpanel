@@ -51,7 +51,7 @@ public sealed class ServerConnectionExtensionsTests
     {
         var server = Server.Create(
             new ServerDetails(
-                "srv", "panel.example.test", null, null, ServerModules.DirectAdmin, "admin",
+                "srv", "panel.example.test", null, null, ServerModules.CPanel, "admin",
                 new ServerCredentials("stored-password", "token-value", "hash-value"), true, null, false, false, 0m, null, null,
                 ServerNameServers.None,
                 false),
@@ -60,7 +60,7 @@ public sealed class ServerConnectionExtensionsTests
         var dto = server.ToConnection();
 
         dto.UseSsl.Should().BeTrue();
-        dto.Module.Should().Be(ServerModules.DirectAdmin);
+        dto.Module.Should().Be(ServerModules.CPanel);
         dto.ToString().Should().NotContain("stored-password");
         typeof(ServerConnectionDto).GetProperties().Select(p => p.Name).Should().NotContain("Password");
     }

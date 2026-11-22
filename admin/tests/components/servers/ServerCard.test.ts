@@ -19,7 +19,7 @@ describe('ServerCard', () => {
     const wrapper = mountWithApp(ServerCard, { props: { server: serverDto({ lastTestedAt: '2026-01-02T10:00:00Z' }), actions } })
 
     expect(wrapper.get('[data-testid="server-row-1"]').text()).toContain('host1')
-    expect(wrapper.find('[data-testid="servers-module-Cwp7"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="servers-module-CPanel"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('203.0.113.10')
     expect(wrapper.get('[data-testid="ui-progress-value"]').text()).toBe('12 / 100')
     expect(wrapper.get('[data-testid="server-state-1"]').text()).toBe('Online')
@@ -40,7 +40,7 @@ describe('ServerCard', () => {
     const wrapper = mountWithApp(ServerCard, { props: { server: serverDto() } })
 
     expect(wrapper.get('[data-testid="server-default-badge"]').text()).toBe('Default')
-    expect(wrapper.find('[role="tooltip"]').text()).toBe('The default server for CWP7.')
+    expect(wrapper.find('[role="tooltip"]').text()).toBe('The default server for cPanel / WHM.')
   })
 
   it('shows the last check as relative time with the full date in a tooltip', () => {

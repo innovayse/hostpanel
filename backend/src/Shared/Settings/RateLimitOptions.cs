@@ -116,6 +116,17 @@ public sealed class RateLimitOptions
     public RateLimitTierOptions HostingResources { get; set; } = new() { PermitLimit = 10, WindowSeconds = 60 };
 
     /// <summary>
+    /// Gets or sets the tier for <see cref="Constants.RateLimitPolicies.PluginOrderRead"/>: how often a payment plugin's
+    /// callback may ask the host to read one gateway order, counted per plugin and gateway order. 6 a minute.
+    /// </summary>
+    /// <remarks>
+    /// Every permit is a call to the gateway's status API. A gateway repeats a webhook a few times while it waits for an
+    /// answer, so a handful per order and minute covers an honest sender, and a plugin that asks in a loop is stopped
+    /// long before the gateway's own limits are reached.
+    /// </remarks>
+    public RateLimitTierOptions PluginOrderRead { get; set; } = new() { PermitLimit = 6, WindowSeconds = 60 };
+
+    /// <summary>
     /// How many expensive operations one caller may have in flight at once. Five.
     /// </summary>
     /// <remarks>

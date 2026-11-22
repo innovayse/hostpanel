@@ -526,7 +526,7 @@ public sealed class PluginHostingService
     private Task<bool> TryTakeBudgetAsync(PluginCallBinding binding, SshServiceContext context, CancellationToken ct)
     {
         return _limiter.TryAcquireAsync(
-            new PluginHostAccessKey(binding.PluginId, context.Service.ClientId, RateLimitPolicies.HostingResources), ct);
+            PluginHostAccessKey.ForClient(binding.PluginId, context.Service.ClientId, RateLimitPolicies.HostingResources), ct);
     }
 
     /// <summary>The service's website of that host name that is not removed, of any plugin.</summary>

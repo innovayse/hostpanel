@@ -288,7 +288,8 @@ public abstract class BaseApiController : ControllerBase
 
     /// <summary>
     /// The reply a use case forwarded from a plugin, or the mapped refusal: a success answers with the status the
-    /// plugin chose and its JSON body (or none), and a problem answers in the standard error body with that status.
+    /// plugin chose and its JSON body (or none), a redirect answers with its status, its checked address and no body, and a
+    /// problem answers in the standard error body with that status.
     /// </summary>
     /// <remarks>
     /// The one place a status that is not ours to choose reaches the wire, so no controller names one. A problem
@@ -318,6 +319,12 @@ public abstract class BaseApiController : ControllerBase
         if (reply.Stream is { } stream)
         {
             return HandleStream(Result<StreamedReply>.Success(stream));
+        }
+
+        // A redirect carries its address and nothing else; the use case has already checked the address against the host's rules.
+        if (reply.Location is { } location)
+        {
+            return new RedirectReplyResult(reply.Status, location);
         }
 
         // A raw reply is written as the sender chose: its bytes, media type and status, with no serialisation. An HTML page also

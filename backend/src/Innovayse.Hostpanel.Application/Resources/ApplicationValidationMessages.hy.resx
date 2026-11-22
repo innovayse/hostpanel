@@ -1792,4 +1792,7 @@
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
   </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Դարպասի պատվերի նույնացուցիչը 1-ից 255 նիշ է՝ առանց եզրային բացատների և կառավարող նիշերի։</value>
+  </data>
 </root>

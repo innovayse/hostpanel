@@ -102,6 +102,9 @@ public static class DependencyInjection
         // services (#1357).
         services.AddScoped<PluginServiceConnectionService>();
 
+        // The payment half of the plugin host API: a payment plugin's callback asks the host to read one gateway order (#1356).
+        services.AddScoped<PluginOrderReadService>();
+
         // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
         services.AddScoped<ServicePlanChangeQuoter>();
         services.AddScoped<ServicePlanChangeSettingsReader>();

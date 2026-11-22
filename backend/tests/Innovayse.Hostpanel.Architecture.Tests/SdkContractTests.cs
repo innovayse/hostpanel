@@ -454,6 +454,24 @@ public sealed class SdkContractTests
     }
 
     /// <summary>
+    /// The optional payment API (SDK 3.11.0) extends the host API without changing it: its one member names only a gateway
+    /// order of the calling plugin, never a client or a plugin, and answers nothing, because the host may ignore the request and
+    /// never reports what it did.
+    /// </summary>
+    [Fact]
+    public void IPluginHostPaymentApi_ExtendsTheHostApiAndNamesOnlyAGatewayOrder()
+    {
+        typeof(IPluginHostPaymentApi).GetInterfaces().Should().Equal(typeof(IPluginHostApi));
+        var methods = typeof(IPluginHostPaymentApi).GetMethods();
+
+        methods.Select(m => m.Name).Should().Equal("RequestOrderReadAsync");
+        var read = typeof(IPluginHostPaymentApi).GetMethod("RequestOrderReadAsync")!;
+        read.ReturnType.Should().Be(typeof(Task));
+        read.GetParameters().Select(p => p.ParameterType).Should().Equal(typeof(string), typeof(CancellationToken));
+        read.GetParameters()[0].Name.Should().Be("gatewayOrderId");
+    }
+
+    /// <summary>
     /// The optional hosting API (SDK 3.9.0) extends the host API without changing it: its five members name only a service
     /// of the caller's client, a website or a database id, and never a client or a plugin; a database password exists only
     /// in the answer to the call that created it and is masked when printed.
@@ -609,6 +627,7 @@ public sealed class SdkContractTests
     [InlineData(typeof(IPluginEndpoints), "Hostpanel.Sdk.Plugins.Endpoints")]
     [InlineData(typeof(IPluginHostApi), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(IPluginHostHostingApi), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(IPluginHostPaymentApi), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(PluginWebsite), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(PluginWebsiteSpec), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(PluginDatabase), "Hostpanel.Sdk.Plugins.Host")]

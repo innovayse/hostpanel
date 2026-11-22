@@ -496,6 +496,7 @@
       "domain-transferred": "Домен перенесён",
       "email-campaign": "Рассылка",
       "gateway-payment-credited-admin": "Платёж зачислен (персонал)",
+      "gateway-payment-reversed-admin": "Платёж возвращён (персонал)",
       "gateway-payment-stalled-admin": "Платёж завис (персонал)",
       "gateway-payment-without-reference-admin": "Платёж без референса (персонал)",
       "invoice-renewal-reminder": "Напоминание о продлении счёта",

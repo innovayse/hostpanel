@@ -436,8 +436,9 @@ public static class DependencyInjection
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
 
-        // The budgets of plugin host access, per plugin and client, over the plugin limiters: the ssh-keys tier for SSH keys
-        // (#758) and the hosting-resources tier for websites and databases (#1294).
+        // The budgets of plugin host access, per plugin and client or gateway order, over the plugin limiters: the ssh-keys tier
+        // for SSH keys (#758), the hosting-resources tier for websites and databases (#1294) and the plugin-order-read tier for
+        // a payment callback's order read (#1356).
         services.AddScoped<IPluginHostAccessLimiter, PluginHostAccessLimiter>();
         services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 

@@ -96,6 +96,7 @@ keywords: "նամակների ձևանմուշներ, փոփոխականներ, 
   { name: 'gateway-payment-stalled-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ վճարային համակարգի վճարումը չափից երկար է սպասման մեջ։ Փոփոխականներ՝ invoice.id, client.id, module, pending_hours' },
   { name: 'gateway-payment-credited-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ վճարային համակարգի վճարման միջոցով ստացվել է գումար, որը հաշիվ-ապրանքագիրը չի կարողացել գրանցել, և գումարը ավելացվել է հաճախորդի հաշվեկշռին կամ պահվել է ձեռքով լուծման համար։ Փոփոխականներ՝ invoice.id, client.id, module, reference, amount, currency, credited' },
   { name: 'gateway-payment-without-reference-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ վճարային համակարգը վճարումը նշում է որպես վճարված, բայց վճարման հղում չի ուղարկում։ Ոչինչ չի գրանցվում․ օպերատորը պետք է գտնի և գրանցի այն ձեռքով։ Փոփոխականներ՝ invoice.id, client.id, module, amount, currency' },
+  { name: 'gateway-payment-reversed-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ վճարային համակարգը հայտնում է, որ հաշիվը փակած վճարումն այլևս վճարված չէ (վերադարձ, չեղարկում կամ վիճարկում համակարգում)։ Հաշիվը և վճարումների հաշվառումը չեն փոխվում․ օպերատորը ստուգում է վճարումը համակարգում։ Փոփոխականներ՝ invoice.id, client.id, module' },
 ]" />
 
 ### Ծառայություններ {#services}

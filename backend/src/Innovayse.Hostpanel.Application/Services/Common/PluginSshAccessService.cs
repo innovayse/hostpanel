@@ -135,7 +135,7 @@ public sealed class PluginSshAccessService
         // Fail closed and before the expensive steps: a spent budget generates no key pair and calls no agent. Reported
         // as ServerUnavailable, the SDK's "try again later".
         if (!await _limiter.TryAcquireAsync(
-                new PluginHostAccessKey(binding.PluginId, context.Service.ClientId, RateLimitPolicies.SshKeys), ct))
+                PluginHostAccessKey.ForClient(binding.PluginId, context.Service.ClientId, RateLimitPolicies.SshKeys), ct))
         {
             return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.ServerUnavailable);
         }

@@ -158,6 +158,14 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     public DateTimeOffset? GatewayUnreferencedNotifiedAt { get; private set; }
 
     /// <summary>
+    /// Gets the UTC moment staff were told the gateway reported the latest session's payment as no longer paid after the
+    /// invoice was settled through it (refunded, reversed or charged back at the gateway); null when they were not, so
+    /// they are told once per session. Nothing on the invoice or the ledger changes with it: staff decide what the
+    /// reversal means.
+    /// </summary>
+    public DateTimeOffset? GatewayReversalNotifiedAt { get; private set; }
+
+    /// <summary>
     /// Gets when the latest refund began (UTC), or null when none has or an unanswered one was
     /// released. Every refund writes it, so two refunds racing on the same invoice always change the
     /// same row and the later save fails the invoice's concurrency check; a refund that is still
@@ -428,6 +436,19 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         RefundStartedAt is { } started
         && now - started < RefundClaimLease
         && !_transactions.Any(t => t.Type == InvoiceTransactionType.Refund && t.Date >= started);
+
+    /// <summary>
+    /// Gets whether the invoice already shows money going back through one gateway: it is refunded in full, a refund
+    /// through that gateway is recorded, or a refund is still waiting for its gateway (<see cref="IsRefundInFlight"/>). A
+    /// gateway that reports the payment as no longer paid is then no news, because the host's own refund explains it.
+    /// </summary>
+    /// <param name="gateway">The gateway or payment method name the payments were recorded under.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <returns><see langword="true"/> when a refund through that gateway is recorded or on its way.</returns>
+    public bool ShowsRefundThrough(string gateway, DateTimeOffset now) =>
+        Status == InvoiceStatus.Refunded
+        || IsRefundInFlight(now)
+        || _transactions.Any(t => t.Type == InvoiceTransactionType.Refund && t.Gateway == gateway);
 
     /// <summary>
     /// Gets whether the invoice was paid (<see cref="IsPaid"/>) and the money covers it. A partial
@@ -1149,6 +1170,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         GatewayConcludedAt = null;
         GatewayStalledNotifiedAt = null;
         GatewayUnreferencedNotifiedAt = null;
+        GatewayReversalNotifiedAt = null;
     }
 
     /// <summary>
@@ -1180,6 +1202,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     public void MarkGatewayUnreferencedNotified(DateTimeOffset notifiedAt)
     {
         GatewayUnreferencedNotifiedAt = notifiedAt;
+    }
+
+    /// <summary>Records that staff were told the latest session's payment was reported as no longer paid after the invoice was settled through it.</summary>
+    /// <param name="notifiedAt">When staff were told, UTC.</param>
+    public void MarkGatewayReversalNotified(DateTimeOffset notifiedAt)
+    {
+        GatewayReversalNotifiedAt = notifiedAt;
     }
 
     /// <summary>

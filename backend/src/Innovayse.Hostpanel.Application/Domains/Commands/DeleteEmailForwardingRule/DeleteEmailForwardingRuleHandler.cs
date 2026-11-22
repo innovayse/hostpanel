@@ -71,7 +71,7 @@ public sealed class DeleteEmailForwardingRuleHandler
 
         var registrar = await _registrars.ResolveAsync(domain, ct);
         var result = await registrar.DeleteEmailForwardingRuleAsync(
-            new EmailForwardingRuleRemoval(domain.Name, source), ct);
+            new EmailForwardingRuleRemoval(domain.ToRef(), source), ct);
         if (!result.Success)
         {
             _logger.LogWarning(

@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
+using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,13 +25,18 @@ public sealed class GetMyDomainHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>Tells which optional operations the registrar that holds the domain offers.</summary>
+    private readonly RegistrarProviderResolver _registrars;
+
     /// <summary>Initializes a new instance of <see cref="GetMyDomainHandler"/>.</summary>
     /// <param name="ownership">The rule that says a client may only touch their own domains.</param>
     /// <param name="context">The module's data context.</param>
-    public GetMyDomainHandler(IDomainOwnership ownership, IHostpanelDbContext context)
+    /// <param name="registrars">Tells which optional operations the registrar that holds the domain offers.</param>
+    public GetMyDomainHandler(IDomainOwnership ownership, IHostpanelDbContext context, RegistrarProviderResolver registrars)
     {
         _ownership = ownership;
         _context = context;
+        _registrars = registrars;
     }
 
     /// <summary>Handles <see cref="GetMyDomainQuery"/>.</summary>
@@ -59,6 +65,6 @@ public sealed class GetMyDomainHandler
             return Result<MyDomainDto>.FailureCode(HostpanelErrorCodes.DOMAIN_NOT_FOUND);
         }
 
-        return Result<MyDomainDto>.Success(domain.ToMyDto());
+        return Result<MyDomainDto>.Success(domain.ToMyDto(await _registrars.ResolveCapabilitiesAsync(domain, ct)));
     }
 }

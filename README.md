@@ -82,7 +82,7 @@ Taken from the local development stack with its seeded sample data.
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
 | Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
 | Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
-| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: cPanel built in, others as plugins. Notifications: Telegram |
+| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: install as plugins. Control panels: cPanel built in, others as plugins. Notifications: Telegram |
 | Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/en/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
@@ -100,7 +100,7 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 | Cost | No licence fee | Monthly plans, priced by the number of active clients |
 | Where it runs | Self-hosted, with Docker | Self-hosted, or WHMCS Cloud run by the vendor |
 | Control panels | cPanel built in, others as plugins | cPanel, Plesk, DirectAdmin and others |
-| Domain registrars | Namecheap, Name.am | Many, including Namecheap, OpenSRS and Nominet |
+| Domain registrars | Plugins, none built in | Many, including Namecheap, OpenSRS and Nominet |
 | Payment gateways | Bank transfer built in, gateways as plugins | Many, including Authorize.net, BitPay and bank transfer |
 | Extensions | A plugin SDK (MIT) and a [plugin marketplace](https://plugins-hostpanel.innovayse.com) with a small but growing catalogue | A large marketplace of third-party modules |
 | Moving over | An importer that pulls your data out of WHMCS | Not applicable |
@@ -109,7 +109,7 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 
 - cPanel and DirectAdmin provisioning.
 - Built-in payment gateways. Card and bank gateways come as plugins.
-- Registrars other than Namecheap and Name.am, such as ResellerClub or OpenSRS.
+- Built-in registrars. Registrars come as plugins.
 - Automatic tax calculation. Staff set a tax rate on each invoice by hand.
 - Automatic fraud checks on new orders. Staff can mark an order as fraud by hand.
 - A hosted option. You run HostPanel on your own server.

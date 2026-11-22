@@ -1,7 +1,7 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.SyncTldCostPrices;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,7 +41,7 @@ public sealed class SyncTldCostPricesTests(IntegrationTestFactory factory) : ICl
             ],
         };
         var registrars = new FakeRegistrarProviderFactory();
-        registrars.Register(RegistrarModule.NameAm, pricingProvider);
+        registrars.Register(TestRegistrarModules.First, pricingProvider);
 
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
@@ -52,7 +52,7 @@ public sealed class SyncTldCostPricesTests(IntegrationTestFactory factory) : ICl
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
         var tld = TldConfig.Create(
-            "synced", RegistrarModule.NameAm, "USD", "USD", isEnabled: true, sortOrder: 0, categories: []);
+            "synced", TestRegistrarModules.First, "USD", "USD", isEnabled: true, sortOrder: 0, categories: []);
         context.TldConfigs.Add(tld);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -61,5 +61,38 @@ public sealed class SyncTldCostPricesTests(IntegrationTestFactory factory) : ICl
         Assert.Equal(1, pricingProvider.PricingCallCount);
         var reloaded = await context.TldConfigs.AsNoTracking().FirstAsync(t => t.Id == tld.Id, CancellationToken.None);
         Assert.Equal(9m, reloaded.CostRegister[1]);
+    }
+
+    /// <summary>A registrar that refuses to list its prices leaves the TLD's cost prices as they were and does not fail the job.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SyncTldCostPrices_ARefusedPriceListLeavesTheCostPricesAsync()
+    {
+        var pricingProvider = new FakeTldPricingProvider { PricingFailure = HostpanelErrorCodes.REGISTRAR_ACCESS_DENIED };
+        var registrars = new FakeRegistrarProviderFactory();
+        registrars.Register(TestRegistrarModules.First, pricingProvider);
+
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<IRegistrarProviderFactory>(registrars)));
+
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var tld = TldConfig.Create(
+            "refused", TestRegistrarModules.First, "USD", "USD", isEnabled: true, sortOrder: 0, categories: []);
+        tld.UpdateCostPrices(
+            new Dictionary<int, decimal> { [1] = 4m },
+            new Dictionary<int, decimal> { [1] = 5m },
+            new Dictionary<int, decimal> { [1] = 6m });
+        context.TldConfigs.Add(tld);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        await bus.InvokeAsync(new SyncTldCostPricesCommand(), CancellationToken.None);
+
+        Assert.Equal(1, pricingProvider.PricingCallCount);
+        var reloaded = await context.TldConfigs.AsNoTracking().FirstAsync(t => t.Id == tld.Id, CancellationToken.None);
+        Assert.Equal(4m, reloaded.CostRegister[1]);
     }
 }

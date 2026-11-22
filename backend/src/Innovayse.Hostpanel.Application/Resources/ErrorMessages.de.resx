@@ -402,6 +402,12 @@
   <data name="REGISTRAR_DOMAIN_UNAVAILABLE" xml:space="preserve"><value>Die Registrierungsstelle meldet, dass dieser Domainname nicht verfügbar ist.</value></data>
   <data name="REGISTRAR_INSUFFICIENT_FUNDS" xml:space="preserve"><value>Das Guthaben des Registrar-Kontos reicht für diesen Kauf nicht aus.</value></data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve"><value>Die Kontaktdaten des Domaininhabers sind unvollständig, daher kann die Bestellung nicht an die Registrierungsstelle gesendet werden.</value></data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve"><value>Die Registrierungsstelle vergibt diese Domainendung nicht.</value></data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve"><value>Die Registrierungsstelle hat den Transfercode abgelehnt.</value></data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve"><value>Die Registrierungsstelle erlaubt den Transfer dieser Domain derzeit nicht.</value></data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve"><value>Die Registrierungsstelle hat die Nameserver abgelehnt.</value></data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve"><value>Die Registrierungsstelle hat den DNS-Eintrag abgelehnt.</value></data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve"><value>Die Registrierungsstelle hat die gespeicherten Zugangsdaten nicht akzeptiert. Wenden Sie sich an den Administrator.</value></data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve"><value>Eine Transaktion benötigt einen Eingangs- oder Ausgangsbetrag.</value></data>
   <data name="INVOICE_REFUND_EXCEEDS_PAID" xml:space="preserve"><value>Die Erstattung übersteigt den bezahlten und noch nicht erstatteten Betrag.</value></data>
   <data name="INVOICE_CREDIT_EXCEEDS_DUE" xml:space="preserve"><value>Die Gutschrift übersteigt den noch offenen Rechnungsbetrag.</value></data>

@@ -54,7 +54,7 @@ public sealed class ClockedHostTests(IntegrationTestFactory factory) : IClassFix
     [Fact]
     public async Task RegistrarStub_ReportsDatesFromTheClockOfItsHost()
     {
-        var order = new DomainRenewalOrder("clock.test", "REF", Years: 2);
+        var order = new DomainRenewalOrder("clock.test", "REF", Years: 2, CurrentExpiresAt: null);
         using var host = new ClockedHost(factory);
         using var clocked = host.Services.CreateScope();
         using var shared = factory.Services.CreateScope();

@@ -59,8 +59,10 @@ public sealed class DemoServiceRegistrationTests
         var (services, _) = Build(ValidSettings());
 
         ImplementationOf<IPaymentPluginResolver>(services).Should().Be<DemoPaymentPluginResolver>();
-        ImplementationOf<IRegistrarProvider>(services).Should().Be<DemoRegistrarProvider>();
+        // The registrar is reached through a factory and a catalogue of installed plugins; the fake itself is what the factory hands out.
+        ImplementationOf<DemoRegistrarProvider>(services).Should().Be<DemoRegistrarProvider>();
         ImplementationOf<IRegistrarProviderFactory>(services).Should().Be<DemoRegistrarProviderFactory>();
+        ImplementationOf<IRegistrarModuleCatalogue>(services).Should().Be<DemoRegistrarModuleCatalogue>();
         ImplementationOf<IProvisioningProvider>(services).Should().Be<DemoProvisioningProvider>();
         ImplementationOf<IProvisioningProviderFactory>(services).Should().Be<DemoProvisioningProviderFactory>();
         ImplementationOf<IServerConnectionTester>(services).Should().Be<DemoServerConnectionTester>();

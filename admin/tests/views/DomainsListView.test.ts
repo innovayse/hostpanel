@@ -14,7 +14,15 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { DomainStatus } from '@/types/domain'
-import { RegistrarModule } from '@/types/registrarmodule'
+
+/** The installed registrar plugins every list screen reads on mount, as the plugins endpoint answers them. */
+const REGISTRAR_ROUTES = {
+  'GET /api/admin/plugins': () =>
+    json([
+      { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded' },
+      { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded' },
+    ]),
+}
 
 /** One active domain as the list endpoint returns it. */
 const domain = {
@@ -23,7 +31,7 @@ const domain = {
   clientName: 'Grace Hopper',
   name: 'example.com',
   regPeriodYears: 1,
-  registrar: 'Name.am',
+  registrar: 'Example Registrar',
   recurringAmount: 12.99,
   priceCurrency: 'USD',
   nextDueDate: '2027-01-01T00:00:00Z',
@@ -66,7 +74,7 @@ describe('DomainsListView', () => {
   })
 
   it('renders a row with the domain, price, auto-renew and links under the client', async () => {
-    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const wrapper = await mountList()
 
     const row = wrapper.get('[data-testid="domains-row-4"]')
@@ -75,21 +83,21 @@ describe('DomainsListView', () => {
     expect(row.text()).toContain('$12.99 USD')
     expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
     expect(wrapper.findAll('th').find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-full')
-    expect(row.text()).toContain('Name.am')
+    expect(row.text()).toContain('Example Registrar')
     expect(wrapper.get('[data-testid="domains-name-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-view-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-client-4"]').attributes('href')).toBe('/clients/9')
   })
 
   it('draws the headers of the schema columns, in order', async () => {
-    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const wrapper = await mountList()
 
     expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/domains')
 
     await wrapper.get('[data-testid="domains-search"]').setValue('exam')
@@ -102,7 +110,7 @@ describe('DomainsListView', () => {
   })
 
   it('restores the search and the page from the address and sends them', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
     const { wrapper } = await mountListAt('/domains?search=exam&page=2')
 
     const urls = mock.mock.calls.map(([url]) => url as string)
@@ -111,7 +119,7 @@ describe('DomainsListView', () => {
   })
 
   it('keeps the chosen page in the address', async () => {
-    stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
     const { wrapper, router } = await mountListAt('/domains')
 
     await wrapper.get('[data-testid="domains-pagination-next"]').trigger('click')
@@ -121,7 +129,7 @@ describe('DomainsListView', () => {
   })
 
   it('sends the status picked in the filter dialog on Apply and shows it as a chip', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/domains')
 
     await applyListFilter(wrapper, { 'domains-filter-status': DomainStatus.Expired })
@@ -133,48 +141,48 @@ describe('DomainsListView', () => {
   })
 
   it('sends the registrar picked in the filter dialog on Apply', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const { wrapper, router } = await mountListAt('/domains')
 
-    await applyListFilter(wrapper, { 'domains-filter-registrar': RegistrarModule.Namecheap })
+    await applyListFilter(wrapper, { 'domains-filter-registrar': 'registrar-two' })
 
-    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'Namecheap' })
-    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=Namecheap')
-    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Namecheap')
+    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'registrar-two' })
+    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=registrar-two')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Registrar Two')
   })
 
   it('restores the filters, the search and the page from the address and sends them together', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
-    const { wrapper } = await mountListAt('/domains?search=exam&status=Active&registrarModule=NameAm&page=2')
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 45 }) })
+    const { wrapper } = await mountListAt('/domains?search=exam&status=Active&registrarModule=registrar-one&page=2')
 
-    expect(listUrls(mock)[0]).toBe('/api/domains?page=2&pageSize=20&search=exam&status=Active&registrarModule=NameAm')
+    expect(listUrls(mock)[0]).toBe('/api/domains?page=2&pageSize=20&search=exam&status=Active&registrarModule=registrar-one')
     expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Active')
-    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Name.am')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Registrar One')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
 
-  it('does not send a status or registrar the address holds that is not a known value', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+  it('does not send a status the address holds that is not a known value, and sends the registrar as written', async () => {
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     await mountListAt('/domains?status=Nonsense&registrarModule=99')
 
-    expect(listUrls(mock)[0]).toBe('/api/domains?page=1&pageSize=20')
+    expect(listUrls(mock)[0]).toBe('/api/domains?page=1&pageSize=20&registrarModule=99')
   })
 
   it('removes a filter from the address and reloads when its chip is removed', async () => {
-    const mock = stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
-    const { wrapper, router } = await mountListAt('/domains?status=Active&registrarModule=NameAm')
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
+    const { wrapper, router } = await mountListAt('/domains?status=Active&registrarModule=registrar-one')
     const before = listUrls(mock).length
 
     await wrapper.get('[data-testid="filter-chip-remove-status"]').trigger('click')
     await flushPromises()
 
-    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'NameAm' })
+    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'registrar-one' })
     expect(listUrls(mock).length).toBeGreaterThan(before)
-    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=NameAm')
+    expect(listUrls(mock).at(-1)).toBe('/api/domains?page=1&pageSize=20&registrarModule=registrar-one')
   })
 
   it('shows the empty state, and the filter hint when the list is narrowed', async () => {
-    stubRoutes({ 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="domains-empty"]').text()).toContain('No domains found')
@@ -186,7 +194,7 @@ describe('DomainsListView', () => {
   })
 
   it('clears the filters from the empty state and keeps the search', async () => {
-    stubRoutes({ 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => json({ items: [], totalCount: 0 }) })
     const { wrapper, router } = await mountListAt('/domains?status=Active&search=zzz')
 
     await wrapper.get('[data-testid="domains-clear-empty"]').trigger('click')
@@ -196,7 +204,7 @@ describe('DomainsListView', () => {
   })
 
   it('shows the API sentence when the load is refused', async () => {
-    stubRoutes({ 'GET /api/domains': () => problem('Not allowed.', 403) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/domains': () => problem('Not allowed.', 403) })
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="domains-error"]').text()).toContain('Not allowed.')

@@ -37,7 +37,7 @@ public sealed class TldConfigConfiguration : IEntityTypeConfiguration<TldConfig>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Tld).IsRequired().HasMaxLength(50);
-        builder.Property(x => x.RegistrarModule).HasConversion<string>().HasMaxLength(30).IsRequired();
+        builder.Property(x => x.RegistrarModule).HasMaxLength(64).IsRequired();
         builder.Property(x => x.Currency).IsRequired().HasMaxLength(3);
         builder.Property(x => x.SellCurrency).IsRequired().HasMaxLength(3);
         builder.Property(x => x.IsEnabled).IsRequired();

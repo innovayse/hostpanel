@@ -383,7 +383,7 @@
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled։</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Գրանցողը պետք է լինի հետևյալներից մեկը՝ NameAm, Namecheap։</value>
+    <value>Գրանցողը պետք է լինի տեղադրված գրանցողի պլագին։</value>
   </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Դրույքի տեսակը պետք է լինի հետևյալներից մեկը՝ Standard, Reduced։</value>

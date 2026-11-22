@@ -4,27 +4,6 @@
     "fieldAccountName": "Имя владельца счёта",
     "fieldInstructions": "Инструкции по оплате"
   },
-  "namecheap": {
-    "shortDescription": "Регистрируйте и управляйте доменами через реселлерский API Namecheap.",
-    "fieldApiKey": "Ключ API",
-    "fieldClientIp": "IP клиента из белого списка",
-    "fieldApiUsername": "Имя пользователя API"
-  },
-  "nameam": {
-    "shortDescription": "Регистрируйте и управляйте доменами .am через API регистратора Name.am.",
-    "fieldEmail": "Электронная почта аккаунта",
-    "fieldPassword": "Пароль аккаунта",
-    "fieldApiUrl": "URL API",
-    "fieldTest_mode": "Тестовый режим"
-  },
-  "resellerclub": {
-    "shortDescription": "Управляйте регистрацией доменов через реселлерскую платформу ResellerClub.",
-    "fieldResellerId": "ID реселлера"
-  },
-  "enom": {
-    "shortDescription": "Подключитесь к eNom для регистрации доменов и управления DNS.",
-    "fieldAccountId": "ID аккаунта"
-  },
   "cpanel": {
     "shortDescription": "Создавайте хостинг-аккаунты и управляйте ими через API сервера cPanel WHM.",
     "fieldHost": "Хост WHM",
@@ -33,7 +12,8 @@
   },
   "cwp": {
     "shortDescription": "Управляйте хостинг-аккаунтами на серверах CentOS Web Panel.",
-    "fieldHost": "Хост CWP"
+    "fieldHost": "Хост CWP",
+    "fieldApiKey": "Ключ API"
   },
   "smtp": {
     "shortDescription": "Настройте отправку исходящей почты через ваш SMTP-сервер.",
@@ -43,6 +23,7 @@
   },
   "maxmind": {
     "shortDescription": "Выявляйте мошеннические заказы с помощью оценки рисков GeoIP от MaxMind.",
-    "fieldLicenseKey": "Лицензионный ключ"
+    "fieldLicenseKey": "Лицензионный ключ",
+    "fieldAccountId": "ID аккаунта"
   }
 }

@@ -9,6 +9,8 @@ using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -36,6 +38,24 @@ internal static class DomainsTestSeeds
     public static async Task<HttpClient> AdminClientAsync(IntegrationTestFactory factory)
     {
         var client = factory.CreateClient();
+        var token = await factory.GetAdminTokenAsync();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    /// <summary>
+    /// An admin client against a host where only the given registrars count as installed (compared without regard to letter
+    /// case), so a test can tell an installed registrar from an unknown one.
+    /// </summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="installed">The ids of the registrars that count as installed.</param>
+    /// <returns>An authenticated client.</returns>
+    public static async Task<HttpClient> AdminClientWithRegistrarsAsync(IntegrationTestFactory factory, params string[] installed)
+    {
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<IRegistrarModuleCatalogue>(new FakeRegistrarModuleCatalogue(installed: installed))));
+        var client = host.CreateClient();
         var token = await factory.GetAdminTokenAsync();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
@@ -192,7 +212,7 @@ internal static class DomainsTestSeeds
     /// <param name="registrarModule">The registrar module the domain is managed through; null for a legacy row.</param>
     /// <returns>The saved domain's id.</returns>
     public static async Task<int> SeedDomainAsync(
-        IHostpanelDbContext context, int clientId, string name, DomainStatus status, RegistrarModule? registrarModule)
+        IHostpanelDbContext context, int clientId, string name, DomainStatus status, string? registrarModule)
     {
         var domain = RegisteredDomain.Import(
             clientId, name, status, TestMoments.Seeded, TestMoments.Seeded.AddYears(1),
@@ -210,7 +230,7 @@ internal static class DomainsTestSeeds
     /// <param name="sortOrder">The display order, ascending.</param>
     /// <returns>The saved configuration's id.</returns>
     public static async Task<int> SeedTldConfigAsync(
-        IHostpanelDbContext context, string tld, RegistrarModule registrarModule, bool isEnabled, int sortOrder)
+        IHostpanelDbContext context, string tld, string registrarModule, bool isEnabled, int sortOrder)
     {
         var config = TldConfig.Create(tld, registrarModule, TestCurrencies.Base, TestCurrencies.Base, isEnabled, sortOrder, []);
         context.TldConfigs.Add(config);
@@ -218,7 +238,7 @@ internal static class DomainsTestSeeds
         return config.Id;
     }
 
-    /// <summary>Seeds an enabled NameAm TLD configuration priced in two currencies, with a 1-year cost and sell price.</summary>
+    /// <summary>Seeds an enabled TLD configuration priced in two currencies, with a 1-year cost and sell price.</summary>
     /// <param name="context">The data context to seed through.</param>
     /// <param name="tld">The extension, without its dot.</param>
     /// <param name="costCurrency">The currency the registrar cost is stated in.</param>
@@ -229,7 +249,7 @@ internal static class DomainsTestSeeds
     public static async Task<int> SeedPricedTldConfigAsync(
         IHostpanelDbContext context, string tld, string costCurrency, string sellCurrency, decimal cost, decimal sell)
     {
-        var config = TldConfig.Create(tld, RegistrarModule.NameAm, costCurrency, sellCurrency, true, 1, []);
+        var config = TldConfig.Create(tld, TestRegistrarModules.First, costCurrency, sellCurrency, true, 1, []);
         config.UpdateCostPrices(new Dictionary<int, decimal> { [1] = cost }, [], []);
         config.UpdateSellPrices(new Dictionary<int, decimal> { [1] = sell }, [], []);
         context.TldConfigs.Add(config);
@@ -287,7 +307,7 @@ internal static class DomainsTestSeeds
         var body = new
         {
             tld,
-            registrarModule = "NameAm",
+            registrarModule = TestRegistrarModules.First,
             currency = "AMD",
             sellCurrency = "USD",
             isEnabled = true,

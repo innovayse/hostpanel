@@ -2,9 +2,13 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common.Enums;
 using Innovayse.Hostpanel.Application.Domains.Queries.CheckDomainAvailability;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -16,6 +20,30 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>
+    /// Builds a client whose host sources one TLD from a registrar that refuses every availability check with a code.
+    /// </summary>
+    /// <param name="failure">The <c>REGISTRAR_*</c> code the registrar refuses with.</param>
+    /// <returns>An admin client against that host and a name under the configured TLD.</returns>
+    private async Task<(HttpClient Client, string Name)> ClientWithRefusingRegistrarAsync(string failure)
+    {
+        var registrars = new FakeRegistrarProviderFactory();
+        registrars.Register(TestRegistrarModules.First, new FakeTldPricingProvider { AvailabilityFailure = failure });
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IRegistrarProviderFactory>(registrars);
+                services.AddSingleton<IRegistrarModuleCatalogue>(
+                    new FakeRegistrarModuleCatalogue(installed: [TestRegistrarModules.First]));
+            }));
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+        var (tld, body) = DomainsTestSeeds.NewTldBody();
+        (await client.PostAsJsonAsync("/api/admin/tld-configs", body)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        return (client, $"shop.{tld}");
+    }
+
     /// <summary>
     /// <c>POST /api/domains/check</c> with <c>{ "domain": "example.com" }</c>, the exact shape the
     /// client portal's own BFF route (<c>domain-check.post.ts</c>) sends. The action binds
@@ -115,6 +143,37 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
         body.GetProperty("domain").GetString().Should().Be("available.com");
         body.GetProperty("available").GetBoolean().Should().BeTrue();
         body.GetProperty("status").GetString().Should().Be(nameof(DomainAvailabilityStatus.Available));
+    }
+
+    /// <summary>
+    /// A registrar that does not sell the TLD answers 200 with the name not available and the status
+    /// <see cref="DomainAvailabilityStatus.TldNotSupported"/>, not an error.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CheckAvailability_TldNotSupported_AnswersNotAvailableWithTheReasonAsync()
+    {
+        var (client, name) = await ClientWithRefusingRegistrarAsync(HostpanelErrorCodes.REGISTRAR_TLD_NOT_SUPPORTED);
+
+        var response = await client.GetAsync($"/api/domains/check?name={name}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("available").GetBoolean().Should().BeFalse();
+        body.GetProperty("status").GetString().Should().Be(nameof(DomainAvailabilityStatus.TldNotSupported));
+    }
+
+    /// <summary>A registrar that turns the operator's credentials down is answered 503 with its code, never a server error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CheckAvailability_AccessDenied_Answers503WithTheCodeAsync()
+    {
+        var (client, name) = await ClientWithRefusingRegistrarAsync(HostpanelErrorCodes.REGISTRAR_ACCESS_DENIED);
+
+        var response = await client.GetAsync($"/api/domains/check?name={name}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        (await DomainsTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.REGISTRAR_ACCESS_DENIED);
     }
 
     /// <summary>The GET form is reachable without a token too: the storefront needs it before sign-in.</summary>

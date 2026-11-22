@@ -6,8 +6,8 @@ using Microsoft.Extensions.Localization;
 namespace Innovayse.Hostpanel.Application.Domains.Commands.CreateTldConfig;
 
 /// <summary>
-/// Validator for <see cref="CreateTldConfigCommand"/>. Whether the registrar module names a known
-/// provider, and whether the TLD is already configured, is the handler's answer.
+/// Validator for <see cref="CreateTldConfigCommand"/>. Whether the registrar module names an installed
+/// registrar plugin, and whether the TLD is already configured, is the handler's answer.
 /// </summary>
 public sealed class CreateTldConfigValidator : LocalizedValidator<CreateTldConfigCommand>
 {

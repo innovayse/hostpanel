@@ -38,10 +38,6 @@ export type IntegrationCategoryName = (typeof IntegrationCategoryName)[keyof typ
 /** Closed set of integration slugs. */
 export const IntegrationSlug = {
   BankTransfer: 'bank-transfer',
-  Namecheap: 'namecheap',
-  Nameam: 'nameam',
-  Resellerclub: 'resellerclub',
-  Enom: 'enom',
   Cpanel: 'cpanel',
   Cwp: 'cwp',
   Smtp: 'smtp',

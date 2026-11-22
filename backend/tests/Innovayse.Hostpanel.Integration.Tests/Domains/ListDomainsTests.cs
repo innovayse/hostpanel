@@ -122,12 +122,12 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     /// <summary>The domains one seeded mix holds, by the role each plays in the filter tests.</summary>
     /// <param name="Token">The text every seeded name carries, so a search scopes a request to this mix.</param>
     /// <param name="ClientId">The owning client's id.</param>
-    /// <param name="ActiveNameAm">An active domain at the NameAm module.</param>
-    /// <param name="ExpiredNamecheap">An expired domain at the Namecheap module.</param>
-    /// <param name="ActiveNamecheap">An active domain at the Namecheap module.</param>
+    /// <param name="ActiveFirst">An active domain at the first registrar.</param>
+    /// <param name="ExpiredSecond">An expired domain at the second registrar.</param>
+    /// <param name="ActiveSecond">An active domain at the second registrar.</param>
     /// <param name="ActiveLegacy">An active domain with no registrar module recorded.</param>
     private sealed record DomainMix(
-        string Token, int ClientId, int ActiveNameAm, int ExpiredNamecheap, int ActiveNamecheap, int ActiveLegacy);
+        string Token, int ClientId, int ActiveFirst, int ExpiredSecond, int ActiveSecond, int ActiveLegacy);
 
     /// <summary>Seeds one owner with four domains that differ in status and registrar module.</summary>
     /// <returns>The mix, with the names ordered a, b, c, d so the list order is known.</returns>
@@ -137,15 +137,15 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         var token = Guid.NewGuid().ToString("N")[..10];
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var activeNameAm = await DomainsTestSeeds.SeedDomainAsync(
-            context, ownerClientId, $"a-{token}.com", DomainStatus.Active, RegistrarModule.NameAm);
-        var expiredNamecheap = await DomainsTestSeeds.SeedDomainAsync(
-            context, ownerClientId, $"b-{token}.com", DomainStatus.Expired, RegistrarModule.Namecheap);
-        var activeNamecheap = await DomainsTestSeeds.SeedDomainAsync(
-            context, ownerClientId, $"c-{token}.com", DomainStatus.Active, RegistrarModule.Namecheap);
+        var activeFirst = await DomainsTestSeeds.SeedDomainAsync(
+            context, ownerClientId, $"a-{token}.com", DomainStatus.Active, TestRegistrarModules.First);
+        var expiredSecond = await DomainsTestSeeds.SeedDomainAsync(
+            context, ownerClientId, $"b-{token}.com", DomainStatus.Expired, TestRegistrarModules.Second);
+        var activeSecond = await DomainsTestSeeds.SeedDomainAsync(
+            context, ownerClientId, $"c-{token}.com", DomainStatus.Active, TestRegistrarModules.Second);
         var activeLegacy = await DomainsTestSeeds.SeedDomainAsync(
             context, ownerClientId, $"d-{token}.com", DomainStatus.Active, registrarModule: null);
-        return new DomainMix(token, ownerClientId, activeNameAm, expiredNamecheap, activeNamecheap, activeLegacy);
+        return new DomainMix(token, ownerClientId, activeFirst, expiredSecond, activeSecond, activeLegacy);
     }
 
     /// <summary>Lists the domains the admin list answers for a query string.</summary>
@@ -171,9 +171,9 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         var (expired, expiredCount) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&status=Expired");
         var (active, activeCount) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&status=Active");
 
-        expired.Should().Equal(mix.ExpiredNamecheap);
+        expired.Should().Equal(mix.ExpiredSecond);
         expiredCount.Should().Be(1);
-        active.Should().Equal(mix.ActiveNameAm, mix.ActiveNamecheap, mix.ActiveLegacy);
+        active.Should().Equal(mix.ActiveFirst, mix.ActiveSecond, mix.ActiveLegacy);
         activeCount.Should().Be(3);
     }
 
@@ -184,12 +184,24 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     {
         var mix = await SeedMixAsync();
 
-        var (nameAm, _) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule=NameAm");
-        var (namecheap, namecheapCount) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule=Namecheap");
+        var (firstRegistrarRows, _) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.First}");
+        var (secondRegistrarRows, secondRegistrarCount) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.Second}");
 
-        nameAm.Should().Equal(mix.ActiveNameAm);
-        namecheap.Should().Equal(mix.ExpiredNamecheap, mix.ActiveNamecheap);
-        namecheapCount.Should().Be(2);
+        firstRegistrarRows.Should().Equal(mix.ActiveFirst);
+        secondRegistrarRows.Should().Equal(mix.ExpiredSecond, mix.ActiveSecond);
+        secondRegistrarCount.Should().Be(2);
+    }
+
+    /// <summary>The registrar filter ignores letter case, because older rows keep the case the module was written in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListDomains_RegistrarFilterIgnoresLetterCaseAsync()
+    {
+        var mix = await SeedMixAsync();
+
+        var (rows, _) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.First.ToUpperInvariant()}");
+
+        rows.Should().Equal(mix.ActiveFirst);
     }
 
     /// <summary>The status, registrar, owner and search filters narrow together: a domain must pass every one.</summary>
@@ -200,14 +212,14 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         var mix = await SeedMixAsync();
 
         var (statusAndRegistrar, _) = await ListAsync(
-            $"page=1&pageSize=100&search={mix.Token}&status=Active&registrarModule=Namecheap");
+            $"page=1&pageSize=100&search={mix.Token}&status=Active&registrarModule={TestRegistrarModules.Second}");
         var (withOwner, _) = await ListAsync(
-            $"page=1&pageSize=100&search=c-{mix.Token}&status=Active&registrarModule=Namecheap&clientId={mix.ClientId}");
+            $"page=1&pageSize=100&search=c-{mix.Token}&status=Active&registrarModule={TestRegistrarModules.Second}&clientId={mix.ClientId}");
         var (otherOwner, otherOwnerCount) = await ListAsync(
             $"page=1&pageSize=100&search={mix.Token}&status=Active&clientId={mix.ClientId + 1_000_000}");
 
-        statusAndRegistrar.Should().Equal(mix.ActiveNamecheap);
-        withOwner.Should().Equal(mix.ActiveNamecheap);
+        statusAndRegistrar.Should().Equal(mix.ActiveSecond);
+        withOwner.Should().Equal(mix.ActiveSecond);
         otherOwner.Should().BeEmpty();
         otherOwnerCount.Should().Be(0);
     }
@@ -223,7 +235,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         var (second, secondCount) = await ListAsync($"page=2&pageSize=2&search={mix.Token}&status=Active");
         var (beyond, _) = await ListAsync($"page=3&pageSize=2&search={mix.Token}&status=Active");
 
-        first.Should().Equal(mix.ActiveNameAm, mix.ActiveNamecheap);
+        first.Should().Equal(mix.ActiveFirst, mix.ActiveSecond);
         second.Should().Equal(mix.ActiveLegacy);
         firstCount.Should().Be(3);
         secondCount.Should().Be(3);
@@ -243,7 +255,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
     }
 
-    /// <summary>A status or registrar that names nothing, by name or by number, is refused with 400.</summary>
+    /// <summary>A status that names nothing, or a registrar no installed plugin has, by name or by number, is refused with 400.</summary>
     /// <param name="filter">The filter's query string, key and value.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
@@ -253,7 +265,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     [InlineData("registrarModule=99")]
     public async Task ListDomains_UnknownFilterValue_Returns400Async(string filter)
     {
-        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var admin = await DomainsTestSeeds.AdminClientWithRegistrarsAsync(factory, TestRegistrarModules.First, TestRegistrarModules.Second);
 
         var response = await admin.GetAsync($"/api/domains?page=1&pageSize=20&{filter}");
 

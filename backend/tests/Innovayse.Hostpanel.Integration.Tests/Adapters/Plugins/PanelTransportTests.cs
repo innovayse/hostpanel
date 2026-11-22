@@ -3,7 +3,6 @@ using System.Security.Authentication;
 using Hostpanel.Sdk.Plugins.Provisioning;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
@@ -241,7 +240,7 @@ public sealed class PanelTransportTests(IntegrationTestFactory factory) : IClass
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(
             new ServerDetails(
-                $"transport-{Guid.NewGuid():N}", hostname, null, null, ServerModule.Cwp7, "root", ServerCredentials.None, true, null,
+                $"transport-{Guid.NewGuid():N}", hostname, null, null, ServerModules.Cwp7, "root", ServerCredentials.None, true, null,
                 false, false, 0m, null, null, ServerNameServers.None, acceptsSelfSigned),
             TestMoments.Seeded);
         context.Servers.Add(server);

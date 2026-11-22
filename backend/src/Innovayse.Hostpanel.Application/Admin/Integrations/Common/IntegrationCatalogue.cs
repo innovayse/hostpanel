@@ -86,14 +86,6 @@ public static class IntegrationCatalogue
                 new("api_token", "API Token", Password, Required: true),
             ],
             ["host", "username", "api_token"]),
-        [IntegrationSlugs.Plesk] = new("Plesk", HostingProvisioning,
-            [
-                new("host", "Plesk Host", Text, Required: true),
-                new("port", "Port", Text, Required: false),
-                new("username", "Username", Text, Required: true),
-                new("password", "Password", Password, Required: true),
-            ],
-            ["host", "username", "password"]),
         [IntegrationSlugs.Cwp] = new("CentOS Web Panel", HostingProvisioning,
             [
                 new("host", "CWP Host", Text, Required: true),
@@ -101,7 +93,6 @@ public static class IntegrationCatalogue
                 new("api_key", "API Key", Password, Required: true),
             ],
             ["host", "api_key"]),
-        [IntegrationSlugs.Cwp7] = new("CWP7", HostingProvisioning, [], []),
         [IntegrationSlugs.Smtp] = new("SMTP Server", "Email / SMTP",
             [
                 new("host", "SMTP Host", Text, Required: true),

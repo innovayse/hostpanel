@@ -16,15 +16,14 @@ public sealed class PluginNeutralSourceTests
     ];
 
     /// <summary>
-    /// The files that still name a built-in provider: the integrations slugs, the dependency registration and the
-    /// provisioning factory that links the panel provider. This list only shrinks; a new entry needs a reason, and an
+    /// The files that still name a built-in provider: the integrations slugs and the dependency registration, which still
+    /// name the legacy CWP provider. This list only shrinks; a new entry needs a reason, and an
     /// entry whose file no longer names a plugin fails <see cref="LegacyBuiltIn_ListHasNoStaleEntry"/>.
     /// </summary>
     private static readonly string[] LegacyBuiltIn =
     [
         "Innovayse.Hostpanel.Domain/Settings/IntegrationSlugs.cs",
         "Innovayse.Hostpanel.Infrastructure/DependencyInjection.cs",
-        "Innovayse.Hostpanel.Infrastructure/Provisioning/ProvisioningProviderFactory.cs",
     ];
 
     /// <summary>The solution directory.</summary>

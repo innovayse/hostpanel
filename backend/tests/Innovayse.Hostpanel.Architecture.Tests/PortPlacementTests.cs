@@ -43,9 +43,9 @@ public sealed class PortPlacementTests
 
     /// <summary>
     /// Every class implementing a port is an adapter in Infrastructure, or a request-scoped adapter
-    /// under the API listed in <see cref="RequestScopedAdapters"/>. The CWP7 provider project is not
-    /// scanned: Infrastructure links it directly and builds it per server, so it is an
-    /// Infrastructure adapter in its own assembly (rules/project.md).
+    /// under the API listed in <see cref="RequestScopedAdapters"/>. The legacy CWP provider project is not
+    /// scanned: Infrastructure links it directly, so it is an Infrastructure adapter in its own assembly
+    /// (rules/project.md).
     /// </summary>
     [Fact]
     public void PortImplementations_LiveInInfrastructure()

@@ -11,7 +11,7 @@ This page takes you from a bare Linux server to the first hosting account that H
 ## What you need
 
 - A Linux server with Docker and the Compose v2 plugin, and two DNS host names that point at it: one for the client portal and one for the admin panel. The full list is in [Before you start](/operators/install#before-you-start).
-- A control panel server to host the accounts, with its API credentials. The modules that create accounts automatically are cPanel, Plesk and CWP7, see [Servers and server groups](/servers/servers).
+- A control panel server to host the accounts, with its API credentials. The built in module that creates accounts automatically is cPanel, and the panel plugins you install add theirs, see [Servers and server groups](/servers/servers).
 - An email address for the administrator account.
 
 ## 1. Install Hostpanel
@@ -46,7 +46,7 @@ Go to **Servers** and click **Add New Server**.
 </li>
 <li>
 
-On the **General** tab enter the name, host name and IP address. On the **Details** tab choose the module and enter the credentials: for cPanel the WHM user and an API token, for CWP7 and Plesk the access hash.
+On the **General** tab enter the name, host name and IP address. On the **Details** tab choose the module and enter the credentials: for cPanel the WHM user and an API token, for a panel plugin the credentials its page describes.
 
 </li>
 <li>

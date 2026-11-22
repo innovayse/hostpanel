@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.RetireTerminatedService;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Ssh;
@@ -142,7 +141,7 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(new ServerDetails(
-            $"no-agent-{Guid.NewGuid():N}", "no-agent.example.test", null, null, ServerModule.Cwp7, "root", new ServerCredentials(null, null, "hash"), true, null,
+            $"no-agent-{Guid.NewGuid():N}", "no-agent.example.test", null, null, ServerModules.Cwp7, "root", new ServerCredentials(null, null, "hash"), true, null,
             false, false, 0m, null, null, ServerNameServers.None, false), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);

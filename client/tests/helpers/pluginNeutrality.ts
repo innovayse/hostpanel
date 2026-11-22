@@ -14,10 +14,8 @@ import { join, relative, sep } from 'node:path'
 /** The plugin ids and entry point type names of the in-tree plugin manifests, plus the former built-in provider names (a deny list). */
 export const PLUGIN_NAMES: readonly string[] = [
   'innovayse-cwp',
-  'innovayse-cwp7',
   'inecobank',
   'CwpProvisioningProvider',
-  'Cwp7ProvisioningProvider',
   'InecobankPaymentGateway',
   // Former built-in providers: no source may name them, the gateways come only from installed plugins.
   'stripe',

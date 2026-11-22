@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Servers.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
@@ -22,8 +21,8 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// <summary>Gets additional assigned IP addresses (one per line), or null.</summary>
     public string? AssignedIpAddresses { get; private set; }
 
-    /// <summary>Gets the control panel module managing this server.</summary>
-    public ServerModule Module { get; private set; }
+    /// <summary>Gets the control panel module id managing this server: a built in id (see <see cref="ServerModules"/>) or one a panel plugin declares.</summary>
+    public string Module { get; private set; } = string.Empty;
 
     /// <summary>Gets the API username for authenticating with the server.</summary>
     public string Username { get; private set; } = string.Empty;

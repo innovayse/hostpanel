@@ -45,9 +45,13 @@ public sealed class ProvisioningController : BaseApiController
     /// <c>SERVICE_HOSTING_DETAILS_MISSING</c>, <c>PRODUCT_PACKAGE_MISSING</c> or <c>PRODUCT_SERVER_GROUP_REQUIRED</c> when the service or its
     /// product is not ready to provision, <c>CPANEL_USERNAME_INVALID</c> or <c>CPANEL_DOMAIN_INVALID</c> when the panel would never accept
     /// the stored username or domain, or <c>PROVISIONING_ACCOUNT_CONFLICT</c> when the panel holds
-    /// another account under the service's username; 502 with <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider
-    /// rejects the request; 503 with <c>NO_ELIGIBLE_SERVER</c> when no server has room, or <c>PROVISIONING_OUTCOME_UNKNOWN</c> when the
-    /// provider could not tell whether the account was created and the call is to be retried;
+    /// another account under the service's username, or the panel's own refusal (<c>PANEL_PACKAGE_UNKNOWN</c>,
+    /// <c>PANEL_USERNAME_INVALID</c>, <c>PANEL_DOMAIN_INVALID</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>) from the
+    /// plugin that serves the server; 502 with <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider
+    /// rejects the request, or <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the plugin does; 503 with <c>NO_ELIGIBLE_SERVER</c> when no server has room,
+    /// <c>PROVISIONING_OUTCOME_UNKNOWN</c> when the provider could not tell whether the account was created and the call is to be retried,
+    /// <c>PROVISIONING_PENDING</c> when the panel accepted the account and is still creating it (retry later), or
+    /// <c>PANEL_PLUGIN_UNAVAILABLE</c> when the plugin that serves the server is switched off or not configured;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/provision")]
@@ -140,6 +144,7 @@ public sealed class ProvisioningController : BaseApiController
     /// 200 with the credentials; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>
     /// when the service has never been provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated or
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service;
+    /// 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
     /// 502 with <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c> when the provider cannot return them;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -149,7 +154,9 @@ public sealed class ProvisioningController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetCredentialsAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<ServiceCredentialsDto>>(new GetServiceCredentialsQuery(id), ct);
@@ -162,8 +169,8 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 502 with
-    /// <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
+    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// 502 with <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/change-password")]
@@ -172,7 +179,9 @@ public sealed class ProvisioningController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ChangePasswordAsync(int id, [FromBody] ChangePasswordCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);
@@ -185,8 +194,8 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 502 with
-    /// <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c> when the provider rejects the change;
+    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// 502 with <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c> when the provider rejects the change;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/change-package")]
@@ -195,7 +204,9 @@ public sealed class ProvisioningController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ChangePackageAsync(int id, [FromBody] ChangePackageCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);
@@ -208,7 +219,8 @@ public sealed class ProvisioningController : BaseApiController
     /// <returns>
     /// 200 with the control-panel sign-in link; 400 with <c>VALIDATION_ERROR</c>,
     /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id
-    /// names no service; 502 with <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot
+    /// names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// 502 with <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot
     /// issue one, or <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -218,7 +230,9 @@ public sealed class ProvisioningController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<ControlPanelSsoDto>>(new GetControlPanelSsoUrlQuery(id), ct);

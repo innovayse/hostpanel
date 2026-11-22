@@ -3,7 +3,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
@@ -31,9 +31,9 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
 
     /// <summary>The servers one seeded mix holds, by the role each plays in the tests.</summary>
     /// <param name="Token">The text every seeded name and host name carries, so a search scopes a request to this mix.</param>
-    /// <param name="Online">A Plesk server whose last test succeeded; first by name.</param>
-    /// <param name="Offline">A Cwp7 server whose last test failed; second by name.</param>
-    /// <param name="Untested">A Cwp7 server nobody has tested; last by name.</param>
+    /// <param name="Online">A DirectAdmin server whose last test succeeded; first by name.</param>
+    /// <param name="Offline">A second panel server whose last test failed; second by name.</param>
+    /// <param name="Untested">A second panel server nobody has tested; last by name.</param>
     private sealed record ServerMix(string Token, int Online, int Offline, int Untested);
 
     /// <summary>A page lists the servers by name and counts every match.</summary>
@@ -117,15 +117,33 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
         var mix = await SeedMixAsync();
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
 
-        var (plesk, pleskCount) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=Plesk");
+        var (directadmin, directadminCount) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=DirectAdmin");
         var (cwp7, cwp7Count) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=Cwp7");
         var (cpanel, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=CPanel");
 
-        plesk.Should().Equal(mix.Online);
-        pleskCount.Should().Be(1);
+        directadmin.Should().Equal(mix.Online);
+        directadminCount.Should().Be(1);
         cwp7.Should().Equal(mix.Offline, mix.Untested);
         cwp7Count.Should().Be(2);
         cpanel.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// The module filter matches ignoring case, so the id a plugin declares in lower case finds the servers stored in the older
+    /// spelling, and a well formed id no server runs lists nothing instead of being refused.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_ModuleFilterMatchesIgnoringCase_AndAnUnusedIdListsNothing()
+    {
+        var mix = await SeedMixAsync();
+        var admin = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var (directadmin, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=directadmin");
+        var (unused, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=nonsense");
+
+        directadmin.Should().Equal(mix.Online);
+        unused.Should().BeEmpty();
     }
 
     /// <summary>The state filter keeps only the servers in that last known state, an untested server being a state of its own.</summary>
@@ -236,15 +254,16 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>
-    /// A module or a state that names nothing, by name or by number, is refused with 400 on its field rather than listing every
-    /// server. The model binder refuses an unknown name before the validator runs and the validator refuses an unknown number.
+    /// A module that is not a well formed id (a space, a slash) or a state that names nothing, by name or by number, is refused
+    /// with 400 on its field rather than listing every server. The model binder refuses an unknown state name before the validator
+    /// runs and the validator refuses an unknown state number and a malformed module id.
     /// </summary>
     /// <param name="filter">The filter's key and value.</param>
     /// <param name="field">The field the refusal must name, in lower case.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
-    [InlineData("module=Nonsense", "module")]
-    [InlineData("module=99", "module")]
+    [InlineData("module=not%20valid", "module")]
+    [InlineData("module=a%2Fb", "module")]
     [InlineData("state=Nonsense", "state")]
     [InlineData("state=99", "state")]
     public async Task List_UnknownModuleOrState_IsRefused(string filter, string field)
@@ -279,13 +298,13 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    /// <summary>Seeds an online Plesk server, an offline Cwp7 server and an untested Cwp7 server, named so they sort in that order.</summary>
+    /// <summary>Seeds an online DirectAdmin server, an offline and an untested Cwp7 module server, named so they sort in that order.</summary>
     /// <returns>The mix.</returns>
     private async Task<ServerMix> SeedMixAsync()
     {
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
         var token = PagedListReads.UniqueToken();
-        var online = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-a", ServerModule.Plesk);
+        var online = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-a", ServerModules.DirectAdmin);
         var offline = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-b");
         var untested = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-c");
         await ServersTestSeeds.RecordConnectionTestAsync(factory, online, isOnline: true, accountsCount: 4);

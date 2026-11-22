@@ -1,4 +1,5 @@
 using FluentValidation;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
@@ -30,6 +31,8 @@ public sealed class CreateServerValidator : LocalizedValidator<CreateServerComma
 
         RuleFor(x => x.Endpoint.Hostname).NotEmpty().WithMessage(L["ServerHostnameRequired"])
             .MaximumLength(HostnameMaxLength).WithMessage(L["ServerHostnameTooLong", HostnameMaxLength]);
+
+        RuleFor(x => x.Module).Must(PluginServerModules.IsWellFormed).WithMessage(L["ServerModuleInvalid"]);
 
         RuleFor(x => x.Username).NotEmpty().WithMessage(L["ServerUsernameRequired"])
             .MaximumLength(UsernameMaxLength).WithMessage(L["ServerUsernameTooLong", UsernameMaxLength]);

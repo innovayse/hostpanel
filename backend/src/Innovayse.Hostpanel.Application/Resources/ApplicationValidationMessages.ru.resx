@@ -1768,8 +1768,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Модуль должен быть одним из: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Модуль должен быть идентификатором из букв, цифр, точек, дефисов или подчёркиваний длиной от 1 до 50 символов.</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>Состояние должно быть одним из: Online, Offline, Untested.</value>

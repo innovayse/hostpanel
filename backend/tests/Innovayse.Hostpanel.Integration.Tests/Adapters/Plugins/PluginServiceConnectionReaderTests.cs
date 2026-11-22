@@ -45,7 +45,7 @@ public sealed class PluginServiceConnectionReaderTests(IntegrationTestFactory fa
         read.Server.Connection.ApiToken.Should().Be("reader-token");
         read.Server.Connection.AccessHash.Should().Be("reader-hash");
         read.Server.Password.Should().Be(StoredPassword);
-        read.Server.UseSsl.Should().BeTrue();
+        read.Server.Connection.UseSsl.Should().BeTrue();
     }
 
     /// <summary>A service whose server row is gone answers with the service and no server.</summary>

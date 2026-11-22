@@ -32,7 +32,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     /// <param name="stored">The value planted under the key before the write.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
-    [InlineData("integration:plesk:password", "stored-panel-password")]
+    [InlineData("integration:example-panel:password", "stored-panel-password")]
     [InlineData("integration:gateway:publishable_key", "pk_test_stored")]
     [InlineData("integration:enom:is_enabled", "false")]
     [InlineData("integration:acme-plugin:endpoint", "https://stored.example.com")]

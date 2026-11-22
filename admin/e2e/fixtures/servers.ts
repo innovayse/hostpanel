@@ -3,9 +3,18 @@
  * with its SSH key management settings and agent installer setup.
  */
 import type { PaginatedList } from '../../src/types/paginatedlist'
-import type { ServerDto, TestConnectionResultDto } from '../../src/types/server'
+import type { ServerDto, ServerModuleOptionDto, TestConnectionResultDto } from '../../src/types/server'
+import { ServerModuleSource } from '../../src/types/serverenums'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../../src/types/serverssh'
 import { SshAgentProfile } from '../../src/types/sshenums'
+
+/** The control panel modules the server form and the module filter offer: the host's own and one a plugin declares. */
+export const serverModules: ServerModuleOptionDto[] = [
+  { id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn },
+  { id: 'DirectAdmin', name: 'DirectAdmin', source: ServerModuleSource.BuiltIn },
+  { id: 'Cwp7', name: 'Cwp7', source: ServerModuleSource.BuiltIn },
+  { id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin },
+]
 
 /** A reachable control-panel server that is the default for its module. */
 export const hostServer: ServerDto = {

@@ -552,9 +552,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>Для этого сервера не задан ключ API или хеш доступа.</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Проверка соединения не поддерживается для модуля этого сервера.</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>Такая группа серверов не найдена.</value>
   </data>
@@ -1587,5 +1584,50 @@
   </data>
   <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
     <value>Сервер без SSL не может принимать самоподписанный сертификат. Включите SSL или снимите отметку о самоподписанном сертификате.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Этот тип панели управления недоступен. Сначала установите для него плагин или выберите другой тип.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Плагин панели управления этого сервера не установлен, выключен, не настроен или не работает. Проверьте его на странице плагинов.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Тип панели этого сервера обслуживают несколько установленных плагинов. Оставьте только один.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Эта панель управления не поддерживает запрошенное действие.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>В панели управления нет аккаунта для этой услуги.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Панель управления не знает тарифный пакет этой услуги.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Панель управления не принимает это имя пользователя аккаунта.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Панель управления не принимает это доменное имя.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Панель управления отклонила пароль. Выберите более надёжный.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Панель управления достигла своего лимита и не может принять это изменение.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Панель управления отклонила данные доступа, сохранённые для этого сервера.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Панель управления отклонила запрос.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Хостинг-аккаунт создаётся. Проверьте снова через несколько минут.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Данные подключения сервера неполны для этой панели управления.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Панель управления отклонила сохранённые данные доступа.</value>
   </data>
 </root>

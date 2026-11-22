@@ -552,9 +552,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>No API key or access hash is configured for this server.</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Connection testing is not supported for this server module.</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>No such server group.</value>
   </data>
@@ -1587,5 +1584,50 @@
   </data>
   <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
     <value>A server without SSL cannot accept a self signed certificate. Turn SSL on or clear the self signed certificate option.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>This control panel type is not available. Install its plugin first, or pick another type.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>The plugin for this server's control panel is not installed, switched off, not configured or not working. Check it on the Plugins page.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>More than one installed plugin serves this server's control panel type. Keep only one of them.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>This control panel does not support the requested action.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>The control panel has no account for this service.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>The control panel does not know the hosting package of this service.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>The control panel does not accept this account username.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>The control panel does not accept this domain name.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>The control panel rejected the password. Choose a stronger one.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>The control panel has reached its limit and cannot take this change.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>The control panel refused the credentials saved for this server.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>The control panel refused the request.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>The hosting account is being created. Please check again in a few minutes.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>The server's connection details are incomplete for this control panel.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>The control panel refused the saved credentials.</value>
   </data>
 </root>

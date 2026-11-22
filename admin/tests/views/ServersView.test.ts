@@ -11,7 +11,7 @@ import { mountRouted } from '../helpers/mount'
 import { applyListFilter } from '../helpers/listFilter'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
-import { serverDto, serverGroupDto, serverOptionDto, serverSshSettingsDto, serverSshSetupDto } from '../helpers/serverFixtures'
+import { serverDto, serverGroupDto, serverModuleOptionDtos, serverOptionDto, serverSshSettingsDto, serverSshSetupDto } from '../helpers/serverFixtures'
 import { useToastStore } from '@/stores/toast'
 
 /** The address the screen is registered under. */
@@ -60,6 +60,7 @@ describe('ServersView', () => {
 
   it('lists servers under their module with state and usage', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([serverGroupDto()]),
     })
@@ -75,21 +76,23 @@ describe('ServersView', () => {
 
   it('restores the search, the module, the state and the page from the address and sends them together', async () => {
     const mock = stubRoutes({
-      'GET /api/admin/servers?': () => json(page([serverDto({ id: 2, name: 'host2', module: 'Plesk', isOnline: false })], 45)),
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
+      'GET /api/admin/servers?': () => json(page([serverDto({ id: 2, name: 'host2', module: 'DirectAdmin', isOnline: false })], 45)),
       'GET /api/admin/server-groups': () => json([]),
     })
-    const { wrapper } = await mountServers(`${PATH}?search=host&module=Plesk&state=offline&page=2`)
+    const { wrapper } = await mountServers(`${PATH}?search=host&module=DirectAdmin&state=offline&page=2`)
 
-    expect(listUrls(mock)[0]).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=Plesk&state=offline')
+    expect(listUrls(mock)[0]).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=DirectAdmin&state=offline')
     expect(wrapper.find('[data-testid="server-row-2"]').exists()).toBe(true)
     expect((wrapper.get('[data-testid="servers-search"]').element as HTMLInputElement).value).toBe('host')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Plesk')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('DirectAdmin')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Offline')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
 
   it('does not send a module or a state the address holds that is not a known value', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
     })
@@ -100,6 +103,7 @@ describe('ServersView', () => {
 
   it('puts the typed search in the address and sends it after the pause', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
     })
@@ -115,35 +119,54 @@ describe('ServersView', () => {
 
   it('sends the module and state picked in the filter dialog on Apply and shows them as chips', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
     })
     const { wrapper, router } = await mountServers()
 
-    await applyListFilter(wrapper, { 'servers-filter-module': 'Plesk', 'servers-filter-state': 'untested' })
+    await applyListFilter(wrapper, { 'servers-filter-module': 'DirectAdmin', 'servers-filter-state': 'untested' })
 
-    expect(router.currentRoute.value.query).toEqual({ module: 'Plesk', state: 'untested' })
-    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=Plesk&state=untested')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Plesk')
+    expect(router.currentRoute.value.query).toEqual({ module: 'DirectAdmin', state: 'untested' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=DirectAdmin&state=untested')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('DirectAdmin')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Not tested')
+  })
+
+  it('offers the modules plugins declare in the filter and sends the id as typed', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
+      'GET /api/admin/servers?': () => json(page([serverDto({ module: 'hestiacp' })])),
+      'GET /api/admin/server-groups': () => json([]),
+    })
+    const { wrapper, router } = await mountServers()
+
+    await applyListFilter(wrapper, { 'servers-filter-module': 'hestiacp' })
+
+    expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
+    expect(wrapper.get('[data-testid="servers-module-hestiacp"]').text()).toBe('hestiacp')
   })
 
   it('removes the state from the address and reloads when its chip is removed', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
     })
-    const { wrapper, router } = await mountServers(`${PATH}?state=offline&module=Plesk`)
+    const { wrapper, router } = await mountServers(`${PATH}?state=offline&module=DirectAdmin`)
 
     await wrapper.get('[data-testid="filter-chip-remove-state"]').trigger('click')
     await flushPromises()
 
-    expect(router.currentRoute.value.query).toEqual({ module: 'Plesk' })
-    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=Plesk')
+    expect(router.currentRoute.value.query).toEqual({ module: 'DirectAdmin' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=DirectAdmin')
   })
 
   it('keeps the chosen page in the address and reads it', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()], 45)),
       'GET /api/admin/server-groups': () => json([]),
     })
@@ -158,10 +181,11 @@ describe('ServersView', () => {
 
   it('says so when no server matches the filters, with the filters still in reach', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([])),
       'GET /api/admin/server-groups': () => json([]),
     })
-    const { wrapper } = await mountServers(`${PATH}?module=Plesk`)
+    const { wrapper } = await mountServers(`${PATH}?module=DirectAdmin`)
 
     expect(wrapper.find('[data-testid="servers-no-matches"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="servers-empty"]').exists()).toBe(false)
@@ -170,6 +194,7 @@ describe('ServersView', () => {
 
   it('lists the groups with their fill type and servers', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([serverGroupDto()]),
     })
@@ -182,6 +207,7 @@ describe('ServersView', () => {
 
   it('heads the groups table with the columns of its schema, inside the groups card', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([serverGroupDto()]),
     })
@@ -194,6 +220,7 @@ describe('ServersView', () => {
 
   it('shows the connection test result in the row and reads the page again for the new state', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
       'POST /api/admin/servers/1/test-connection': () =>
@@ -211,6 +238,7 @@ describe('ServersView', () => {
 
   it('shows the API sentence when the connection test is refused', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
       'POST /api/admin/servers/1/test-connection': () => problem('Credentials were rejected.', 400),
@@ -226,6 +254,7 @@ describe('ServersView', () => {
 
   it('asks for confirmation before deleting a server, then reads the page again', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
       'DELETE /api/admin/servers/1': () => new Response(null, { status: 204 }),
@@ -247,6 +276,7 @@ describe('ServersView', () => {
   it('steps back a page when the delete empties the last one', async () => {
     let deleted = false
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(deleted ? page([], 20) : page([serverDto()], 21)),
       'GET /api/admin/server-groups': () => json([]),
       'DELETE /api/admin/servers/1': () => {
@@ -267,6 +297,7 @@ describe('ServersView', () => {
 
   it('shows the API sentence when a server delete is refused', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
       'DELETE /api/admin/servers/1': () => problem('The server has services.', 409),
@@ -284,6 +315,7 @@ describe('ServersView', () => {
 
   it('does not delete when the confirmation is dismissed', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
     })
@@ -300,6 +332,7 @@ describe('ServersView', () => {
   it('loads again from the retry of a refused load', async () => {
     let calls = 0
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => {
         calls += 1
         return calls === 1 ? problem('Not allowed.', 403) : json(page([serverDto()]))
@@ -317,6 +350,7 @@ describe('ServersView', () => {
 
   it('shows the empty states when there are no servers or groups', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([])),
       'GET /api/admin/server-groups': () => json([]),
     })
@@ -329,6 +363,7 @@ describe('ServersView', () => {
 
   it('opens the server dialog from the add button', async () => {
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers?': () => json(page([])),
       'GET /api/admin/server-groups': () => json([]),
     })
@@ -341,6 +376,7 @@ describe('ServersView', () => {
 
   it('offers every server, not the page, in the group dialog', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers/options': () => json([serverOptionDto({ id: 1, name: 'host1' }), serverOptionDto({ id: 9, name: 'on-another-page' })]),
       'GET /api/admin/servers?': () => json(page([serverDto()], 21)),
       'GET /api/admin/server-groups': () => json([]),
@@ -357,6 +393,7 @@ describe('ServersView', () => {
 
   it('reads the groups and the page again after a group is saved', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers/options': () => json([serverOptionDto()]),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
@@ -379,6 +416,7 @@ describe('ServersView', () => {
     // The first key the request line starts with answers, so the SSH routes go before the list
     // route they extend; listed after it, the dialog would be filled from the server list.
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers/1/ssh-settings': () => json(serverSshSettingsDto()),
       'GET /api/admin/servers/1/ssh-setup': () => json(serverSshSetupDto()),
       'GET /api/admin/servers?': () => json(page([serverDto()])),
@@ -400,6 +438,7 @@ describe('ServersView', () => {
     const settings = serverSshSettingsDto()
     // The SSH routes go before the list route they extend: the first matching key answers.
     stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
       'GET /api/admin/servers/1/ssh-settings': () => json(settings),
       'PUT /api/admin/servers/1/ssh-settings': () => json(settings),
       'GET /api/admin/servers/1/ssh-setup': () => json(serverSshSetupDto()),

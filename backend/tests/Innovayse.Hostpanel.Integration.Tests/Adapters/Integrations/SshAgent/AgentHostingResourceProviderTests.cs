@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
@@ -246,10 +246,10 @@ public sealed class AgentHostingResourceProviderTests
             NullLogger<SshAgentTransport>.Instance);
         var factory = new HostingResourceProviderFactory(new SshKeyProviderFactory(transport), transport);
 
-        Assert.IsType<AgentHostingResourceProvider>(factory.CreateFor(Target(ServerModule.Cwp7, Agent(isComplete: true))));
-        Assert.Null(factory.CreateFor(Target(ServerModule.CPanel, Agent(isComplete: true))));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModule.Cwp7, null)));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModule.Cwp7, Agent(isComplete: false))));
+        Assert.IsType<AgentHostingResourceProvider>(factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: true))));
+        Assert.Null(factory.CreateFor(Target(ServerModules.CPanel, Agent(isComplete: true))));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, null)));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: false))));
     }
 
     /// <summary>
@@ -296,7 +296,7 @@ public sealed class AgentHostingResourceProviderTests
     /// <param name="module">The control panel module of the server.</param>
     /// <param name="agent">The stored agent settings, or null when none are stored.</param>
     /// <returns>The SSH target.</returns>
-    private static ServerSshTargetDto Target(ServerModule module, ServerSshAgentEndpoint? agent)
+    private static ServerSshTargetDto Target(string module, ServerSshAgentEndpoint? agent)
     {
         return new ServerSshTargetDto(7, module, false, agent);
     }

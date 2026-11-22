@@ -12,10 +12,10 @@ public sealed record ServerConnectionTestResult(
     string? ErrorCode)
 {
     /// <summary>A probe the server answered.</summary>
-    /// <param name="accountsCount">The account (or package) count the server reported.</param>
+    /// <param name="accountsCount">The account (or package) count the server reported, or <see langword="null"/> when the panel reports none.</param>
     /// <param name="version">The panel version the server reported, when it reports one.</param>
     /// <returns>A connected result.</returns>
-    public static ServerConnectionTestResult Succeeded(int accountsCount, string? version) =>
+    public static ServerConnectionTestResult Succeeded(int? accountsCount, string? version) =>
         new(true, accountsCount, version, null);
 
     /// <summary>A probe that could not reach the server or could not run at all.</summary>

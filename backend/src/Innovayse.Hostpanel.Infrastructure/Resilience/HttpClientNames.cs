@@ -7,12 +7,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience;
 /// </summary>
 public static class HttpClientNames
 {
-    /// <summary>The CWP7 control-panel client the provisioning factory resolves per server.</summary>
-    public const string Cwp7 = "Cwp7";
-
-    /// <summary>The Plesk XML API client the provisioning factory and the connection tester resolve per server.</summary>
-    public const string Plesk = "Plesk";
-
     /// <summary>The WHM API client the provisioning factory and the connection tester resolve per cPanel server.</summary>
     public const string CPanelWhm = "CPanelWhm";
 

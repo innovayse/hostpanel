@@ -4,7 +4,6 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -112,7 +111,7 @@ public sealed class GetServerRevenueForecastsTests(IntegrationTestFactory factor
                 Hostname: $"{name}.example.test",
                 IpAddress: null,
                 AssignedIpAddresses: null,
-                Module: ServerModule.Cwp7,
+                Module: ServerModules.Cwp7,
                 Username: "api",
                 Credentials: new ServerCredentials("secret", null, null),
                 UseSSL: true,

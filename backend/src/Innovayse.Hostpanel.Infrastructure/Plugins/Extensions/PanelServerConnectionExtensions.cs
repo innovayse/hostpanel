@@ -1,4 +1,5 @@
 using Hostpanel.Sdk.Plugins.Provisioning;
+using Innovayse.Hostpanel.Application.Admin.Servers.Extensions;
 using Innovayse.Hostpanel.Application.Services.Common;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
@@ -17,19 +18,7 @@ public static class PanelServerConnectionExtensions
     /// </returns>
     public static PanelServerConnection ToPanel(this PluginServerAccess server)
     {
-        var connection = server.Connection;
-        return new PanelServerConnection(
-            connection.Id,
-            connection.Name,
-            connection.Hostname,
-            connection.IpAddress,
-            null,
-            server.UseSsl,
-            connection.Username,
-            connection.AccessHash,
-            connection.ApiToken,
-            null,
-            server.Password);
+        return server.Connection.ToPanelConnection(server.Password);
     }
 
     /// <summary>Maps a granted service connection to the SDK's account context.</summary>

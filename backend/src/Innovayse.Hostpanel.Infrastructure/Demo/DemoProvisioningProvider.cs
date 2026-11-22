@@ -24,22 +24,22 @@ public sealed class DemoProvisioningProvider : IProvisioningProvider
     public Task SuspendAsync(SuspendAccountOrder req, CancellationToken ct) => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task UnsuspendAsync(string provisioningRef, CancellationToken ct) => Task.CompletedTask;
+    public Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct) => Task.CompletedTask;
 
     /// <inheritdoc/>
     public Task TerminateAsync(TerminateAccountOrder req, CancellationToken ct) => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct) =>
+    public Task<ServiceCredentials> GetCredentialsAsync(AccountCredentialsOrder req, CancellationToken ct) =>
         Task.FromResult(new ServiceCredentials("demo-user", "demo-password", "demo-site.example", ServerIp, PanelUrl));
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct) =>
-        Task.FromResult($"{PanelUrl}sso?account={Uri.EscapeDataString(provisioningRef)}");
+    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct) =>
+        Task.FromResult($"{PanelUrl}sso?account={Uri.EscapeDataString(req.ProvisioningRef)}");
 
     /// <inheritdoc/>
-    public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct) => Task.CompletedTask;
+    public Task ChangePasswordAsync(ChangeAccountPasswordOrder req, CancellationToken ct) => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct) => Task.CompletedTask;
+    public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct) => Task.CompletedTask;
 }

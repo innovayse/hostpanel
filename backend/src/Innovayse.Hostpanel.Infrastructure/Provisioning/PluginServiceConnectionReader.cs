@@ -41,7 +41,7 @@ public sealed class PluginServiceConnectionReader : IPluginServiceConnectionRead
 
         var access = row.Server is null
             ? null
-            : new PluginServerAccess(row.Server.ToConnection(), row.Server.UseSSL, row.Server.Password);
+            : new PluginServerAccess(row.Server.ToConnection(), row.Server.Password);
         return new PluginServiceConnection(
             row.Service.Id,
             row.Service.ClientId,

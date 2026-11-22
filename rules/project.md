@@ -125,7 +125,7 @@ repositories. What is specific to this project is short:
 
 ## Architecture: Clean Architecture, four layers plus a plugin SDK
 
-`backend/Innovayse.Hostpanel.sln`, 15 projects:
+`backend/Innovayse.Hostpanel.sln`, 14 projects:
 
 ```
 backend/src/
@@ -139,7 +139,7 @@ backend/src/
   Innovayse.Hostpanel.Infrastructure/ AppDbContext, migrations, <Capability>/ adapters, Integrations/
   Innovayse.Hostpanel.API/           controllers, Program.cs, composition root
   Hostpanel.Sdk/                     the plugin contract third parties compile against (git submodule, own repository)
-  Innovayse.Providers.CWP/ CWP7/   provisioning providers (payment gateways are external plugins, none ships here)
+  Innovayse.Providers.CWP/         the legacy CWP provisioning provider (payment gateways and hosting panels are external plugins)
 backend/tests/                       Domain, Integration, Architecture, CWP
 client/  admin/                    Nuxt 4 portal, Vite admin SPA, each owns its Dockerfile (backend/Dockerfile too)
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example, see docker/README.md
@@ -164,20 +164,15 @@ docker/                              compose set (shared·dev·prod·platform), 
   Two documented exceptions in `PortPlacementTests`. A request-scoped adapter lives under `API/` and
   sits in the test's allow-list with what it reads (today `API/Identity/HttpCallerAccessToken`, the `Authorization`
   header, behind `ICallerAccessToken`, and `API/Identity/HttpCallerClientMemo`, the request's `HttpContext.Items`, behind
-  `ICallerClientMemo`). `Innovayse.Providers.CWP7` implements
-  `IProvisioningProvider` and is not scanned: it is not a plugin, Infrastructure links it and
-  `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
-  own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations; since SDK 3.11.0 the
-  operations live in `IProvisioningPanelPlugin` (capability `provisioningPanel`), which the host accepts but does not call yet (#1353),
-  so these providers stay in the host until it does.
+  `ICallerClientMemo`). The SDK's `IProvisioningPlugin` is only a marker with no operations; the operations live in
+  `IProvisioningPanelPlugin` (capability `provisioningPanel`), which the host calls (#1353, "Panel plugins" below). The
+  providers the host still builds itself are cPanel and the legacy CWP provider, because no plugin serves them yet.
 - **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
   models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
-  by `ProvisioningProviderFactory`, like the CWP7 and Plesk providers, and not shipped as a plugin. The reason
-  is the same: the SDK has no provisioning contract a plugin could implement (`IProvisioningPlugin` is a marker, and the
-  hosting panel contract it replaces is obsolete), the server form, the connection test, the disk usage report and
-  the single sign-on and credentials screens all reach a panel through the host's own port, and a plugin cannot
-  yet supply those. Moving the provider out is wanted once the SDK carries that contract, and it is tracked in
-  #997; until then the provider stays in Infrastructure, takes its numbers from `ProvisioningOptions`
+  by `ProvisioningProviderFactory` and not shipped as a plugin. The reason is that no cPanel plugin exists yet: the SDK
+  carries the contract and the host calls it (#1353), so every screen that reaches a panel already works for a plugin. Moving the provider
+  out is wanted once a cPanel plugin ships, and it is tracked in #997; until then the provider stays in
+  Infrastructure, takes its numbers from `ProvisioningOptions`
   (`CPanelWhmPort` and `CPanelUserPort`, both checked to be 1 to 65535 at startup by
   `ProvisioningOptionsValidator`), and its HTTP client is registered only through
   `AddCPanelWhmHttpClient`, which the tests resolve too. It does not trust what WHM sends back: a
@@ -302,7 +297,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   and the capability it needs. The manifest validator (`Validate`: known, once, right type, companion declared), the loader (the
   `endpoints` promise, refused at load as `PLUGIN_ENDPOINTS_NOT_IMPLEMENTED`) and `PluginActivator` (`FirstUnimplemented`) all ask it, and
   `PluginCapabilityRulesTests` fails on a name the SDK adds that the table lacks. Accepting a name only means the plugin loads and is listed;
-  nothing calls the registrar, panel or virtual server contracts yet, which is what #1352, #1353 and #1354 add. A plugin that declares any
+  the panel contract is called (#1353, "Panel plugins" below), and the registrar and virtual server contracts are not called yet, which is what #1352 and #1354 add. A plugin that declares any
   capability whose interface derives from `IProvisioningPlugin` (`PluginCapabilityRules.DeclaresProvisioning`) must list valid `serverModules`
   (the SDK's `PluginServerModules.Validate`) and any other plugin must list none (`PLUGIN_MANIFEST_SERVER_MODULES_INVALID`,
   `PluginManifestRule.ServerModulesInvalid`); a registrar plugin's `connectionRole` settings are checked by the packaging package's
@@ -322,6 +317,31 @@ docker/                              compose set (shared·dev·prod·platform), 
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
+- **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain holds the built in
+  spellings `CPanel`, `DirectAdmin`, `Centos`, `Cwp7`, `Lukittu`, `Virtualmin` and `HyperVm`, and `ServerModules.Same` is the one
+  comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and a server stored as `DirectAdmin` is served by a plugin
+  that declares `directadmin`. `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
+  the module id and a capability name, `Served`, `NotServed` or `Conflict`) is the one reader of the plugins' `serverModules` for calls, and
+  `IServerModuleCatalog` (`ServerModuleCatalog`) the one for the admin side: `GET /api/admin/servers/modules` feeds the server form and the
+  module filter, and `CreateServer` and `UpdateServer` store the catalog's spelling or answer `SERVER_MODULE_UNKNOWN`. Two plugins declaring one
+  module are `PANEL_PLUGIN_CONFLICT` at call time; a plugin that owns a module and is off, unconfigured or migrating answers
+  `PANEL_PLUGIN_UNAVAILABLE`, with no fall back to a built in provider. `PanelPluginCaller` (scoped) is the only place that turns a
+  plugin into an `IProvisioningPanelPlugin` (or the login contract, only when the manifest declares `provisioningPanelLogin`) for a call
+  and logs a throwing plugin by plugin id, operation and exception type, never the message (`PanelPluginCallException`).
+  `PanelPluginProvisioningProvider` implements `IProvisioningProvider` over it and `ProvisioningProviderFactory.CreateFor` chooses it
+  ahead of any built in provider; `SupportedModulesAsync` adds the modules of panel plugins that activate now. One mapping of the answer
+  (`PanelOutcomeExtensions`): `Succeeded`, `AlreadyApplied` and `Pending` are done (`Pending` is logged), `NotFound` is
+  `PANEL_ACCOUNT_NOT_FOUND` (terminate counts it as done), `NotSupported` is `PANEL_OPERATION_NOT_SUPPORTED`, a refusal is the code of its
+  reason (`PANEL_*`, the set `PanelErrorCodes` reads from the `HostpanelErrorCodes` constants with that prefix; `PanelCall` is the one place that passes it through, for every handler and for `HostedAccountOperations`). A call is bounded by `PluginApi:CallTimeoutSeconds` (`PanelPluginCaller`) and fails closed. Create is the one operation with follow up
+  state: `Pending` keeps the service pending and answers `PROVISIONING_PENDING`, and the retry adopts the account the panel then reports as
+  `AlreadyApplied`. The five operations that took only a reference now take orders carrying the service id (`UnsuspendAccountOrder`,
+  `ChangeAccountPasswordOrder`, `ChangeAccountPackageOrder`, `AccountCredentialsOrder`, `ControlPanelSsoOrder`), and
+  `ProvisionAccountOrder` carries the client's id, e-mail and name (masked when printed). `ServerConnectionDto.ToPanelConnection(password)`
+  (Application) is the one mapper to `PanelServerConnection`: `UseSsl` is on the DTO, the stored password is read by
+  `PanelConnectionReader` for a plugin call only and no built in provider receives it, and `Port` is `null`. Test Connection
+  (`ServerConnectionTester`), the disk usage report (`DiskUsageService` with `PanelPluginAccountReader`, paged listing capped at 1000 pages)
+  and the account count cron use the same resolver and caller. No panel that has a plugin keeps a built in provider; cPanel and the legacy CWP provider remain built in until a plugin serves them, and their
+  `#pragma warning disable CS0618` blocks stay for that reason. `PanelPluginPortTests` keeps the panel contracts out of every other layer.
 - **The panel transport and the server's self signed certificate (SDK 3.7.0 `IPanelTransport`).** `PanelTransport`
   (`Infrastructure/Plugins`, scoped, registered by `AddPanelTransport`, which the tests call as well) is the one `IPanelTransport` a hosting
   panel, virtual server or registrar plugin takes in its constructor. `CreateClient()` is the named client `HttpClientNames.PanelTransport`:
@@ -1274,11 +1294,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     `Plugin {id} read the server connection of service #{n}` (the plugin and the service only, never a host name, user name or
     credential), so a refused read writes none and a read that cannot be recorded is not given.
     - **The server password is loaded on this call path only.** `ServerConnectionDto` (the connection every provisioning
-      consumer shares) is unchanged and has no password; `Infrastructure/Provisioning/PluginServiceConnectionReader`
+      consumer shares) has no password; `Infrastructure/Provisioning/PluginServiceConnectionReader`
       (port `IPluginServiceConnectionReader`) reads the service left joined to its server and returns a `PluginServiceConnection`
-      whose `Server` is a `PluginServerAccess` (the mapped `ServerConnectionDto`, the SSL flag and the password). Both records
+      whose `Server` is a `PluginServerAccess` (the mapped `ServerConnectionDto`, which carries the SSL flag, and the password). Both records
       print through `SecretMembers`.
-    - **One mapping to the SDK.** `Infrastructure/Plugins/Extensions/PanelServerConnectionExtensions` turns a `PluginServerAccess`
+    - **One mapping to the SDK.** `Infrastructure/Plugins/Extensions/PanelServerConnectionExtensions` turns a `PluginServerAccess` (through `ServerConnectionDto.ToPanelConnection`, the one server mapping)
       into `PanelServerConnection` and a granted connection into `PanelAccountContext` (`Port` and `AccountId` stay `null`: the
       host keeps neither yet). The panel calls of #1353 reuse it.
     - **Open point for #1353.** A server's `Module` is not matched against the manifest's `serverModules` here: a service tab

@@ -72,7 +72,6 @@
     "noMatches": "No servers match the filters",
     "createGroup": "Create Group",
     "addNewServer": "Add Server",
-    "serverName": "Server Name",
     "default": "Default",
     "defaultHint": "The default server for {module}.",
     "disabledHint": "Disabled: takes no new accounts.",

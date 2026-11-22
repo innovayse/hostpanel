@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,7 +42,7 @@ public static class SshTestSeeds
         IntegrationTestFactory factory,
         string hostname,
         int port,
-        ServerModule module = ServerModule.Cwp7,
+        string module = ServerModules.Cwp7,
         bool enabled = true,
         ServerCredentials? credentials = null)
     {

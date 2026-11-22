@@ -1768,8 +1768,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Draft, Scheduled, Sending, Sent։</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Մոդուլը պետք է լինի հետևյալներից մեկը՝ CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm։</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Մոդուլը պետք է լինի 1-ից 50 տառից, թվանշանից, կետից, գծիկից կամ ընդգծումից բաղկացած նույնացուցիչ։</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>Վիճակը պետք է լինի հետևյալներից մեկը՝ Online, Offline, Untested։</value>

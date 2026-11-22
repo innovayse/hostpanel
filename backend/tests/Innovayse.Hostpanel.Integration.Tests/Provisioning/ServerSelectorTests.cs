@@ -20,15 +20,15 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     public async Task SelectAsync_ChoosesAServerOnAnyOfTheModules()
     {
         using var scope = factory.Services.CreateScope();
-        await SeedServerAsync(scope, ServerModule.Virtualmin);
+        await SeedServerAsync(scope, ServerModules.Virtualmin);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var chosen = await selector.SelectAsync([ServerModule.HyperVm, ServerModule.Virtualmin], CancellationToken.None);
+        var chosen = await selector.SelectAsync([ServerModules.HyperVm, ServerModules.Virtualmin], CancellationToken.None);
 
         // Not this test's own server by id: the other test seeds a Virtualmin server too, and two
         // empty servers tie, so either may be chosen. The module is what the selection decides.
         chosen.Should().NotBeNull();
-        chosen!.Module.Should().Be(ServerModule.Virtualmin);
+        chosen!.Module.Should().Be(ServerModules.Virtualmin);
     }
 
     /// <summary>A server on a module that was not asked for is never chosen, however much room it has.</summary>
@@ -37,10 +37,10 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     public async Task SelectAsync_NeverChoosesAServerOnAnotherModule()
     {
         using var scope = factory.Services.CreateScope();
-        await SeedServerAsync(scope, ServerModule.Virtualmin);
+        await SeedServerAsync(scope, ServerModules.Virtualmin);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var chosen = await selector.SelectAsync([ServerModule.HyperVm], CancellationToken.None);
+        var chosen = await selector.SelectAsync([ServerModules.HyperVm], CancellationToken.None);
 
         chosen.Should().BeNull();
     }
@@ -51,12 +51,40 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     public async Task ModulesInUseAsync_ListsOnlyModulesWithAnEnabledServer()
     {
         using var scope = factory.Services.CreateScope();
-        await SeedServerAsync(scope, ServerModule.Virtualmin);
+        await SeedServerAsync(scope, ServerModules.Virtualmin);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var inUse = await selector.ModulesInUseAsync([ServerModule.HyperVm, ServerModule.Virtualmin], CancellationToken.None);
+        var inUse = await selector.ModulesInUseAsync([ServerModules.HyperVm, ServerModules.Virtualmin], CancellationToken.None);
 
-        inUse.Should().Equal(ServerModule.Virtualmin);
+        inUse.Should().Equal(ServerModules.Virtualmin);
+    }
+
+    /// <summary>
+    /// A server stored in the older mixed case spelling is chosen for the lower case id a plugin declares, in the list, in a group
+    /// and in the in use check, which answers in the spelling it was asked in so one panel is never counted as two.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Selection_MatchesTheModuleIgnoringCaseAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var unique = $"Panel{Guid.NewGuid():N}";
+        var lower = unique.ToLowerInvariant();
+        var stored = await SeedServerAsync(scope, unique);
+        var again = await SeedServerAsync(scope, lower);
+        var group = await SeedGroupAsync(context, ServerFillType.LeastFull);
+        stored.AssignToGroup(group.Id);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
+
+        var chosen = await selector.SelectAsync([lower], CancellationToken.None);
+        var inGroup = await selector.SelectFromGroupAsync(group.Id, [lower], CancellationToken.None);
+        var inUse = await selector.ModulesInUseAsync([lower], CancellationToken.None);
+
+        new[] { stored.Id, again.Id }.Should().Contain(chosen!.Id);
+        inGroup!.Id.Should().Be(stored.Id);
+        inUse.Should().Equal(lower);
     }
 
     /// <summary>A group member on a module that was not asked for is skipped, even when it is the emptier one.</summary>
@@ -69,14 +97,14 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
         var group = ServerGroup.Create($"grp-{Guid.NewGuid():N}", ServerFillType.LeastFull);
         context.ServerGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var supported = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 10, accounts: 9);
-        var unsupported = await SeedServerAsync(scope, ServerModule.Lukittu);
+        var supported = await SeedServerAsync(scope, ServerModules.Virtualmin, maxAccounts: 10, accounts: 9);
+        var unsupported = await SeedServerAsync(scope, ServerModules.Lukittu);
         supported.AssignToGroup(group.Id);
         unsupported.AssignToGroup(group.Id);
         await context.SaveChangesAsync(CancellationToken.None);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var chosen = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
+        var chosen = await selector.SelectFromGroupAsync(group.Id, [ServerModules.Virtualmin], CancellationToken.None);
 
         chosen.Should().NotBeNull();
         chosen!.Id.Should().Be(supported.Id);
@@ -90,17 +118,17 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var group = await SeedGroupAsync(context, ServerFillType.FillUntilFull);
-        var first = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 10, accounts: 8, name: $"a-{Guid.NewGuid():N}");
-        var second = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 10, accounts: 0, name: $"b-{Guid.NewGuid():N}");
+        var first = await SeedServerAsync(scope, ServerModules.Virtualmin, maxAccounts: 10, accounts: 8, name: $"a-{Guid.NewGuid():N}");
+        var second = await SeedServerAsync(scope, ServerModules.Virtualmin, maxAccounts: 10, accounts: 0, name: $"b-{Guid.NewGuid():N}");
         first.AssignToGroup(group.Id);
         second.AssignToGroup(group.Id);
         await context.SaveChangesAsync(CancellationToken.None);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var before = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
+        var before = await selector.SelectFromGroupAsync(group.Id, [ServerModules.Virtualmin], CancellationToken.None);
         first.RecordConnectionTest(true, 10, TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
-        var after = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
+        var after = await selector.SelectFromGroupAsync(group.Id, [ServerModules.Virtualmin], CancellationToken.None);
 
         before!.Id.Should().Be(first.Id);
         after!.Id.Should().Be(second.Id);
@@ -114,14 +142,14 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var group = await SeedGroupAsync(context, ServerFillType.LeastFull);
-        var busy = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 10, accounts: 8, name: $"a-{Guid.NewGuid():N}");
-        var quiet = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 10, accounts: 1, name: $"b-{Guid.NewGuid():N}");
+        var busy = await SeedServerAsync(scope, ServerModules.Virtualmin, maxAccounts: 10, accounts: 8, name: $"a-{Guid.NewGuid():N}");
+        var quiet = await SeedServerAsync(scope, ServerModules.Virtualmin, maxAccounts: 10, accounts: 1, name: $"b-{Guid.NewGuid():N}");
         busy.AssignToGroup(group.Id);
         quiet.AssignToGroup(group.Id);
         await context.SaveChangesAsync(CancellationToken.None);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var chosen = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
+        var chosen = await selector.SelectFromGroupAsync(group.Id, [ServerModules.Virtualmin], CancellationToken.None);
 
         chosen!.Id.Should().Be(quiet.Id);
     }
@@ -134,13 +162,13 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var group = await SeedGroupAsync(context, ServerFillType.FillUntilFull);
-        var full = await SeedServerAsync(scope, ServerModule.Virtualmin, maxAccounts: 3, accounts: 3);
+        var full = await SeedServerAsync(scope, ServerModules.Virtualmin, maxAccounts: 3, accounts: 3);
         full.AssignToGroup(group.Id);
         await context.SaveChangesAsync(CancellationToken.None);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var unknown = await selector.SelectFromGroupAsync(int.MaxValue, [ServerModule.Virtualmin], CancellationToken.None);
-        var allFull = await selector.SelectFromGroupAsync(group.Id, [ServerModule.Virtualmin], CancellationToken.None);
+        var unknown = await selector.SelectFromGroupAsync(int.MaxValue, [ServerModules.Virtualmin], CancellationToken.None);
+        var allFull = await selector.SelectFromGroupAsync(group.Id, [ServerModules.Virtualmin], CancellationToken.None);
 
         unknown.Should().BeNull();
         allFull.Should().BeNull();
@@ -153,11 +181,11 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     {
         using var scope = factory.Services.CreateScope();
         // Centos is a module no other test seeds, so the only candidates are these two.
-        await SeedServerAsync(scope, ServerModule.Centos, maxAccounts: 10, accounts: 1, name: $"a-{Guid.NewGuid():N}");
-        var preferred = await SeedServerAsync(scope, ServerModule.Centos, maxAccounts: 10, accounts: 1, name: $"b-{Guid.NewGuid():N}", isDefault: true);
+        await SeedServerAsync(scope, ServerModules.Centos, maxAccounts: 10, accounts: 1, name: $"a-{Guid.NewGuid():N}");
+        var preferred = await SeedServerAsync(scope, ServerModules.Centos, maxAccounts: 10, accounts: 1, name: $"b-{Guid.NewGuid():N}", isDefault: true);
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
 
-        var chosen = await selector.SelectAsync([ServerModule.Centos], CancellationToken.None);
+        var chosen = await selector.SelectAsync([ServerModules.Centos], CancellationToken.None);
 
         chosen!.Id.Should().Be(preferred.Id);
     }
@@ -182,7 +210,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     /// <param name="name">Its name, or null for a random one.</param>
     /// <param name="isDefault">Whether it is the default server.</param>
     /// <returns>The saved server.</returns>
-    private static async Task<Server> SeedServerAsync(IServiceScope scope, ServerModule module, int? maxAccounts = null, int? accounts = null, string? name = null, bool isDefault = false)
+    private static async Task<Server> SeedServerAsync(IServiceScope scope, string module, int? maxAccounts = null, int? accounts = null, string? name = null, bool isDefault = false)
     {
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(new ServerDetails(

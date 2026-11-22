@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Hostpanel.Sdk.Plugins.HostingPanel;
+using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Servers;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,7 +20,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A successful probe answers 200 with the provider's reported account count, and persists the
     /// server as online.
@@ -27,9 +28,9 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     [Fact]
     public async Task WhenProviderSucceeds_ReportsConnectedAsync()
     {
-        var cwp7 = new FakeHostingPanelV7ApiClient { PackagesCount = 11 };
+        var tester = new FakeServerConnectionTester { AccountsCount = 11 };
         var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<IHostingPanelV7ApiClient>(cwp7)));
+            builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));
 
         var token = await factory.GetAdminTokenAsync();
         var client = host.CreateClient();
@@ -45,9 +46,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         body.GetProperty("connected").GetBoolean().Should().BeTrue();
         body.GetProperty("accountsCount").GetInt32().Should().Be(11);
     }
-#pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A failed probe still answers 200 (the diagnostic result is the answer the caller asked
     /// for) and never puts the provider's own exception text on the wire.
@@ -56,9 +55,9 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     [Fact]
     public async Task WhenProviderFails_ReportsDisconnectedWithoutLeakingDetailAsync()
     {
-        var cwp7 = new FakeHostingPanelV7ApiClient { ShouldThrow = true };
+        var tester = new FakeServerConnectionTester { ShouldFail = true };
         var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<IHostingPanelV7ApiClient>(cwp7)));
+            builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));
 
         var token = await factory.GetAdminTokenAsync();
         var client = host.CreateClient();
@@ -78,17 +77,15 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         doc.RootElement.GetProperty("errorMessage").GetString()
             .Should().Be("Could not reach the server. See the server log for detail.");
     }
-#pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>A failed probe words its reason in the language the request asked for, not in English only.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenProviderFails_WordsTheReasonInTheRequestLanguageAsync()
     {
-        var cwp7 = new FakeHostingPanelV7ApiClient { ShouldThrow = true };
+        var tester = new FakeServerConnectionTester { ShouldFail = true };
         var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<IHostingPanelV7ApiClient>(cwp7)));
+            builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));
 
         var token = await factory.GetAdminTokenAsync();
         var client = host.CreateClient();
@@ -104,7 +101,6 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         body.GetProperty("errorMessage").GetString()
             .Should().Be("Не удалось связаться с сервером. Подробности в журнале сервера.");
     }
-#pragma warning restore CS0618
 
     /// <summary>
     /// A server whose host is the cloud metadata address is never dialled: the outbound guard
@@ -118,7 +114,19 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
         var name = $"Server-{Guid.NewGuid():N}";
         var id = await ServersTestSeeds.CreateServerAsync(client, name);
         var update = await client.PutAsJsonAsync(
-            $"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, hostname: "169.254.169.254"));
+            $"/api/admin/servers/{id}",
+            new
+            {
+                name,
+                endpoint = new ServerEndpointDto("169.254.169.254", null, null, true, false),
+                module = ServerModules.CPanel,
+                username = "root",
+                credentials = new ServerCredentials(null, "whm-token", null),
+                limits = new ServerLimitsDto(null, false, false),
+                hosting = new ServerHostingDto(null, null, 0m),
+                nameServers = ServerNameServers.None,
+                clears = new ServerCredentialClears(false, false, false),
+            });
         update.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var response = await client.PostAsync($"/api/admin/servers/{id}/test-connection", null);

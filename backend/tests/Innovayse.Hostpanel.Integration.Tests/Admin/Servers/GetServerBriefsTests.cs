@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerBriefs;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -31,7 +30,7 @@ public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClas
                 Hostname: "brief.example.test",
                 IpAddress: "192.0.2.10",
                 AssignedIpAddresses: null,
-                Module: ServerModule.Cwp7,
+                Module: ServerModules.Cwp7,
                 Username: "api",
                 Credentials: new ServerCredentials("secret", null, null),
                 UseSSL: true,

@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Servers.Events;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Servers;
@@ -18,7 +17,7 @@ public sealed class ServerTests
 
         server.Name.Should().Be("web-1");
         server.Hostname.Should().Be("web-1.example.test");
-        server.Module.Should().Be(ServerModule.CPanel);
+        server.Module.Should().Be(ServerModules.CPanel);
         server.Username.Should().Be("root");
         server.Password.Should().Be("secret");
         server.MaxAccounts.Should().Be(100);
@@ -163,7 +162,7 @@ public sealed class ServerTests
             $"{name}.example.test",
             "192.0.2.10",
             null,
-            ServerModule.CPanel,
+            ServerModules.CPanel,
             "root",
             new ServerCredentials("secret", "token", "hash"),
             UseSSL: true,

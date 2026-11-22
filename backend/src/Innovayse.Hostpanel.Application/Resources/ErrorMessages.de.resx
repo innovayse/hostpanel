@@ -224,7 +224,6 @@
   <data name="SERVER_CONNECTION_UNREACHABLE" xml:space="preserve"><value>Der Server ist nicht erreichbar. Details finden Sie im Serverprotokoll.</value></data>
   <data name="SERVER_CONNECTION_NO_ACCESS_HASH" xml:space="preserve"><value>Für diesen Server ist kein Access-Hash hinterlegt.</value></data>
   <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve"><value>Für diesen Server ist weder ein API-Schlüssel noch ein Access-Hash hinterlegt.</value></data>
-  <data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve"><value>Der Verbindungstest wird für dieses Servermodul nicht unterstützt.</value></data>
   <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve"><value>Servergruppe nicht gefunden.</value></data>
   <data name="PLUGIN_MANIFEST_INVALID" xml:space="preserve"><value>Dieses Archiv ist kein gültiges Plugin. Prüfen Sie, ob plugin.json im Stammverzeichnis vorhanden und korrekt aufgebaut ist.</value></data>
   <data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve"><value>Dieses Plugin wurde für eine andere SDK-Version erstellt und kann hier nicht installiert werden.</value></data>
@@ -592,5 +591,50 @@
   </data>
   <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
     <value>Ein Server ohne SSL kann kein selbstsigniertes Zertifikat akzeptieren. Aktivieren Sie SSL oder deaktivieren Sie die Option für selbstsignierte Zertifikate.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Dieser Bedienfeldtyp ist nicht verfügbar. Installieren Sie zuerst das Plugin dafür oder wählen Sie einen anderen Typ.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Das Plugin für das Bedienfeld dieses Servers ist nicht installiert, ausgeschaltet, nicht konfiguriert oder funktioniert nicht. Prüfen Sie es auf der Plugin-Seite.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Mehrere installierte Plugins bedienen den Bedienfeldtyp dieses Servers. Behalten Sie nur eines.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Dieses Bedienfeld unterstützt die angeforderte Aktion nicht.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>Das Bedienfeld hat kein Konto für diesen Dienst.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Das Bedienfeld kennt das Hosting-Paket dieses Dienstes nicht.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Das Bedienfeld akzeptiert diesen Kontobenutzernamen nicht.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Das Bedienfeld akzeptiert diesen Domainnamen nicht.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Das Bedienfeld hat das Passwort abgelehnt. Wählen Sie ein stärkeres.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Das Bedienfeld hat sein Limit erreicht und kann diese Änderung nicht annehmen.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Das Bedienfeld hat die für diesen Server gespeicherten Zugangsdaten abgelehnt.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Das Bedienfeld hat die Anfrage abgelehnt.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Das Hosting-Konto wird erstellt. Bitte prüfen Sie in einigen Minuten erneut.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Die Verbindungsdaten des Servers sind für dieses Bedienfeld unvollständig.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Das Bedienfeld hat die gespeicherten Zugangsdaten abgelehnt.</value>
   </data>
 </root>

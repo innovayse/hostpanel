@@ -122,6 +122,6 @@ Deleting a group that products still provision into is refused (`SERVER_GROUP_IN
 
 ## Private network routes
 
-When a server's control panel API is reachable only over a VPN or private network, set `PANEL_HOST_ADDRESSES` in the deployment environment as `hostname=address` pairs (comma-separated, e.g. `srv4.example.com=10.77.0.1`). Hostpanel dials the private address but keeps the hostname for the request and TLS certificate check, so customer-facing links and certificate checks are unchanged.
+When a server's control panel API is reachable only over a VPN or private network, set `PANEL_HOST_ADDRESSES` in the deployment environment as `hostname=address` pairs (comma-separated, e.g. `panel1.example.com=10.77.0.1`). Hostpanel dials the private address but keeps the hostname for the request and TLS certificate check, so customer-facing links and certificate checks are unchanged.
 
 See [Configuration reference](/operators/configuration) for the full list of environment settings.

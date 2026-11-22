@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Plugins;
 
@@ -51,6 +52,14 @@ public sealed class PluginApiOptionsTests
     public void IsValid_AcceptsOnlyABoundedStoreKeyCap(int keys, bool valid)
     {
         new PluginApiOptions { MaxStoreKeysPerScope = keys }.IsValid.Should().Be(valid);
+    }
+
+    /// <summary>The default store key cap and its ceiling are the SDK's documented limit, which a host must not exceed.</summary>
+    [Fact]
+    public void StoreKeyDefaultAndCeiling_AreTheSdkLimit()
+    {
+        PluginApiOptions.DefaultMaxStoreKeysPerScope.Should().Be(PluginStoreLimits.MaxKeys);
+        PluginApiOptions.MaxStoreKeysPerScopeCeiling.Should().Be(PluginStoreLimits.MaxKeys);
     }
 
     /// <summary>The default store character cap is the documented constant, valid, and the store quota carries both caps.</summary>

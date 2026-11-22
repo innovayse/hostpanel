@@ -3,12 +3,14 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.SweepExpiredPluginD
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Time;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
@@ -38,6 +40,9 @@ public sealed class SweepExpiredPluginDataCronTests : IClassFixture<IntegrationT
     /// <summary>The host whose clock is <see cref="_time"/>.</summary>
     private readonly WebApplicationFactory<Program> _host;
 
+    /// <summary>The plugin whose expired entries the data context refuses to delete, or <see langword="null"/> while no save is refused.</summary>
+    private string? _failingPlugin;
+
     /// <summary>Initializes the tests.</summary>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     public SweepExpiredPluginDataCronTests(IntegrationTestFactory factory)
@@ -47,7 +52,28 @@ public sealed class SweepExpiredPluginDataCronTests : IClassFixture<IntegrationT
             {
                 services.RemoveAll<IClock>();
                 services.AddSingleton<IClock>(new SystemClock(_time));
+                services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(new FailingSaveInterceptor(RefusesFailingPlugin)));
             }));
+    }
+
+    /// <summary>Tells whether a pending change set deletes an entry of <see cref="_failingPlugin"/>, the save the test makes fail.</summary>
+    /// <param name="tracker">The change tracker of the save.</param>
+    /// <returns><see langword="true"/> when the save must be refused.</returns>
+    private bool RefusesFailingPlugin(ChangeTracker tracker)
+    {
+        var failing = _failingPlugin;
+        return failing is not null
+            && tracker.Entries<PluginDataEntry>().Any(entry => entry.State == EntityState.Deleted && entry.Entity.PluginId == failing);
+    }
+
+    /// <summary>Counts the entries of a plugin straight from the table.</summary>
+    /// <param name="pluginId">The plugin.</param>
+    /// <returns>How many rows the plugin has.</returns>
+    private async Task<int> CountEntriesAsync(string pluginId)
+    {
+        using var scope = _host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return await db.PluginDataEntries.AsNoTracking().CountAsync(row => row.PluginId == pluginId);
     }
 
     /// <summary>Disposes the host.</summary>
@@ -140,5 +166,36 @@ public sealed class SweepExpiredPluginDataCronTests : IClassFixture<IntegrationT
 
         (await store.GetAsync("lasting", CancellationToken.None)).Should().Be("value");
         (await store.ListKeysAsync(string.Empty, PluginStoreLimits.MaxListLimit, CancellationToken.None)).Should().Equal("lasting");
+    }
+
+    /// <summary>
+    /// A scope whose delete fails does not stop the pass: the other scopes are still swept, the failed one keeps its rows,
+    /// and the next pass, once the failure is gone, sweeps it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APass_WhenOneScopeFails_StillSweepsTheOthersAndRetriesItNextTimeAsync()
+    {
+        var (failing, healthy) = ($"sweep-{Guid.NewGuid():N}", $"sweep-{Guid.NewGuid():N}");
+        await StoreOf(failing).SetAsync("expiring", "value", Short, CancellationToken.None);
+        await StoreOf(healthy).SetAsync("expiring", "value", Short, CancellationToken.None);
+        _time.Advance(Wait);
+        _failingPlugin = failing;
+
+        try
+        {
+            await RunPassAsync();
+
+            (await CountEntriesAsync(healthy)).Should().Be(0);
+            (await CountEntriesAsync(failing)).Should().Be(1);
+        }
+        finally
+        {
+            _failingPlugin = null;
+        }
+
+        await RunPassAsync();
+
+        (await CountEntriesAsync(failing)).Should().Be(0);
     }
 }

@@ -50,6 +50,7 @@ Security model, in order of what it defends against:
 import base64
 import configparser
 import fcntl
+import fnmatch
 import grp
 import hashlib
 import json
@@ -127,6 +128,9 @@ JAIL_RUN = subprocess.run
 JAIL_ENV = {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"}
 JAIL_TIMEOUT_SECONDS = 30
 WITHDRAWN_SHELL = "/sbin/nologin"
+PRIVATE_KEY_FILE_PATTERNS = ("*.key", "ssh_host_*_key", "privkey*.pem", "*.p12", "*.pfx", "*.jks")
+# The only `jail_extras` paths meant for TLS trust (git, curl in a jail); install.sh --check prints them.
+SAFE_TRUST_PATHS = ("/etc/pki/tls/certs", "/etc/pki/ca-trust/extracted", "/etc/ssl/certs")
 
 
 class AgentError(Exception):
@@ -545,6 +549,52 @@ def _host_files(path):
     return found
 
 
+def _is_private_key_path(path):
+    """
+    True for a path that is private key material: a `private` directory component, or a file named
+    `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks`. The public halves
+    (`*.pub`, `*.crt`, `fullchain.pem`) are not private.
+    """
+    if "private" in path.split(os.sep):
+        return True
+    name = os.path.basename(path).lower()
+    return any(fnmatch.fnmatchcase(name, pattern) for pattern in PRIVATE_KEY_FILE_PATTERNS)
+
+
+def _entries_with_targets(extra):
+    """
+    The extra and everything below it, each as its own path and as the path it resolves to, so a
+    symlink named innocently but pointing into a `private` directory, or a symlinked directory
+    holding keys, is seen. A directory already visited by its resolved path is not entered again.
+    """
+    found = []
+    visited = set()
+    pending = [extra]
+    while pending:
+        path = pending.pop()
+        real = os.path.realpath(path)
+        found.extend([path, real])
+        if os.path.isdir(real) and real not in visited:
+            visited.add(real)
+            pending.extend(os.path.join(path, name) for name in os.listdir(path))
+    return found
+
+
+def unsafe_jail_extras(config):
+    """
+    The `jail_extras` entries that are, or contain (following symlinks), private key material (see
+    `_is_private_key_path`). Entries missing on the host are skipped, as they are when copying. A
+    jail only ever needs public trust material (`SAFE_TRUST_PATHS`).
+    """
+    unsafe = []
+    for extra in config.get("jail_extras", []):
+        if not os.path.isabs(extra) or not os.path.exists(extra):
+            continue
+        if any(_is_private_key_path(path) for path in _entries_with_targets(extra)):
+            unsafe.append(extra)
+    return unsafe
+
+
 def _jail_copy_is_stale(jail, extra):
     """
     Whether jk_cp has to copy the extra again: some file of it is missing in the jail, or the
@@ -578,6 +628,9 @@ def enrol_jail(account, config):
     jail = os.path.join(jail_root, name)
     if os.path.dirname(jail) != jail_root:
         raise AgentError("internal_error")
+    unsafe = unsafe_jail_extras(config)
+    if unsafe:
+        raise AgentError("internal_error", "jail_extras holds private keys: " + ", ".join(unsafe))
     _root_dir(jail_root)
     if not os.path.isdir(os.path.join(jail, "etc")):
         _root_dir(jail)
@@ -970,7 +1023,27 @@ def _on_timeout(signum, frame):
     raise AgentError("timeout")
 
 
+def check_config():
+    """
+    install.sh --check: prints a line per unsafe `jail_extras` entry plus the safe trust paths and returns 1
+    when there is one; returns 0 when every entry is safe, and 2 (message on stderr) when the configuration
+    cannot be read, so the caller tells a failure from an unsafe entry.
+    """
+    try:
+        unsafe = unsafe_jail_extras(load_config())
+    except (AgentError, OSError, ValueError) as exc:
+        sys.stderr.write("cannot check the configuration: %s\n" % exc)
+        return 2
+    for extra in unsafe:
+        sys.stdout.write("jail_extras entry %s is or contains private keys\n" % extra)
+    if unsafe:
+        sys.stdout.write("customer jails must only get public trust material (%s)\n" % ", ".join(SAFE_TRUST_PATHS))
+    return 1 if unsafe else 0
+
+
 def main():
+    if sys.argv[1:] == ["--check-config"]:
+        return check_config()
     signal.signal(signal.SIGALRM, _on_timeout)
     signal.alarm(STDIN_TIMEOUT_SECONDS)
     try:

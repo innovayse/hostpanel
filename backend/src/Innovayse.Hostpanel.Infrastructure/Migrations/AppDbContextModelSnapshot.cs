@@ -3915,6 +3915,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int?>("AccountsCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ApiHost")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("ApiToken")
                         .HasMaxLength(5383)
                         .HasColumnType("character varying(5383)");

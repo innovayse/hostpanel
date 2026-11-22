@@ -15,7 +15,7 @@ public static class ServerMapper
     /// <param name="s">The server entity.</param>
     /// <returns>The connection details.</returns>
     public static ServerConnectionDto ToConnection(this Server s) =>
-        new(s.Id, s.Name, s.Module, s.Hostname, s.IpAddress, s.AccessHash, s.Username, s.ApiToken, s.UseSSL);
+        new(s.Id, s.Name, s.Module, s.Hostname, s.IpAddress, s.AccessHash, s.Username, s.ApiToken, s.UseSSL, s.ApiHost);
 
     /// <summary>
     /// Maps a <see cref="Server"/> to a <see cref="ServerDto"/>.
@@ -27,7 +27,7 @@ public static class ServerMapper
     public static ServerDto ToDto(Server s, IReadOnlyDictionary<int, string> groupMap, ServerUsageDto? usage = null) =>
         new(
             s.Id, s.Name,
-            new ServerEndpointDto(s.Hostname, s.IpAddress, s.AssignedIpAddresses, s.UseSSL, s.AcceptsSelfSignedCertificate),
+            new ServerEndpointDto(s.Hostname, s.IpAddress, s.AssignedIpAddresses, s.UseSSL, s.AcceptsSelfSignedCertificate, s.ApiHost),
             s.Module, s.Username,
             new ServerLimitsDto(s.MaxAccounts, s.IsDefault, s.IsDisabled),
             new ServerHostingDto(s.Datacenter, s.ServerStatusAddress, s.MonthlyCost),

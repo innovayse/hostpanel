@@ -16,7 +16,7 @@ import { SshAgentProfile } from '@/types/sshenums'
 export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
   id: 1,
   name: 'host1',
-  endpoint: { hostname: 'host1.example.com', ipAddress: '203.0.113.10', assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: false },
+  endpoint: { hostname: 'host1.example.com', apiHost: null, ipAddress: '203.0.113.10', assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: false },
   module: 'CPanel',
   username: 'root',
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },

@@ -8,7 +8,9 @@ public static class ServerConnectionExtensions
 {
     /// <summary>
     /// Maps a server's connection details to the <see cref="PanelServerConnection"/> a panel plugin receives. The host keeps no
-    /// panel port, so <see cref="PanelServerConnection.Port"/> is <see langword="null"/> and the plugin uses its own default.
+    /// panel port, so <see cref="PanelServerConnection.Port"/> is <see langword="null"/> and the plugin uses its own default. The plugin is handed
+    /// <see cref="ServerConnectionDto.ApiEndpointHost"/> as the host name, the address the panel's API is dialled at, which is the server's
+    /// host name unless an API address is set.
     /// </summary>
     /// <param name="server">The server's connection details.</param>
     /// <param name="password">
@@ -23,7 +25,7 @@ public static class ServerConnectionExtensions
         return new PanelServerConnection(
             server.Id,
             server.Name,
-            server.Hostname,
+            server.ApiEndpointHost,
             server.IpAddress,
             Port: null,
             server.UseSsl,

@@ -132,8 +132,13 @@ const FilterKey = {
 const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, textOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
-/** The module id in the address, undefined when none is set; the API refuses one that is not a well formed id. */
-const moduleOfAddress = textOf(FilterKey.Module)
+/** The module text in the address, undefined when none is set; it may name a module that is not installed. */
+const moduleTextOfAddress = textOf(FilterKey.Module)
+
+/** The module in the address, undefined when none is set or the loaded module list does not know it. */
+const moduleOfAddress = computed<string | undefined>(() =>
+  store.moduleOptions.some(option => option.id === moduleTextOfAddress.value) ? moduleTextOfAddress.value : undefined,
+)
 
 /** The state in the address as a state, undefined when none is set or the value is not one. */
 const stateOfAddress = enumOf(FilterKey.State, ServerState)
@@ -146,11 +151,17 @@ const filters = computed<ServerListFilters>(() => ({
 }))
 
 /**
- * Loads the page the address names with the filters and search it holds.
+ * Loads the page the address names with the filters and search it holds. The module list is read first when it is
+ * not yet, since the module in the address is only sent when that list knows it.
  *
  * @returns True when loaded; false when refused (see the store's `error`).
  */
-const loadServers = (): Promise<boolean> => store.fetchServers(page.value, filters.value)
+const loadServers = async (): Promise<boolean> => {
+  if (store.moduleOptions.length === 0) {
+    await store.fetchModuleOptions()
+  }
+  return store.fetchServers(page.value, filters.value)
+}
 
 /**
  * Loads the page the address names and the groups, which show the names of their servers.
@@ -417,10 +428,9 @@ const serverGroupActions = (group: ServerGroupDto): UiMenuAction[] => {
   ]
 }
 
-// The page of servers loads with the address (loadOnChange); the groups and the module choices are read once.
+// The page of servers, with the module choices it needs, loads with the address (loadOnChange); the groups are read once.
 onMounted(() => {
   void store.fetchGroups()
-  void store.fetchModuleOptions()
 })
 </script>
 

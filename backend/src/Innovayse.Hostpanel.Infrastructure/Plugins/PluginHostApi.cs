@@ -1,4 +1,5 @@
 using Hostpanel.Sdk.Plugins.Host;
+using Hostpanel.Sdk.Plugins.Provisioning;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
@@ -11,9 +12,9 @@ using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
  * makes the invoices query run, and one without the master profile right never has the sign-in address placed in the
  * profile. The rows of other modules come through IPluginHostFactsReader, so this adapter holds no data context.
  *
- * The two SSH methods (#758) and the hosting methods (#1294) only delegate to the Application's PluginSshAccessService and
- * PluginHostingService with this call's binding, and turn its refusal into the SDK's PluginHostAccessException at the
- * plugin boundary. No use case is dispatched from here: an adapter never calls a handler.
+ * The two SSH methods (#758), the hosting methods (#1294) and the service connection method (#1357) only delegate to the
+ * Application's PluginSshAccessService, PluginHostingService and PluginServiceConnectionService with this call's
+ * binding, and turn its refusal into the SDK's PluginHostAccessException at the plugin boundary. No use case is dispatched from here: an adapter never calls a handler.
  */
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -22,7 +23,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// The SDK's <see cref="IPluginHostApi"/> for one call, bound when it is built to the call's
 /// <see cref="PluginCallBinding"/>: no method takes a client id, so a plugin reads only the facts of that client, and
 /// only what the caller could see in the portal. It also implements the optional <see cref="IPluginHostHostingApi"/>
-/// (websites and databases on the client's hosting, #1294).
+/// (websites and databases on the client's hosting, #1294) and <see cref="IPluginHostServiceConnectionApi"/> (the
+/// server connection of one of the client's services, #1357).
 /// </summary>
 /// <remarks>
 /// <list type="bullet">
@@ -37,7 +39,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// Each list is the newest <see cref="PluginHostLimits.MaxListed"/> rows, and a call without a client, or whose client row
 /// is gone, gets no profile and empty lists.
 /// </remarks>
-internal sealed class PluginHostApi : IPluginHostHostingApi
+internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceConnectionApi
 {
     /// <summary>The call's client and the permissions its caller holds there.</summary>
     private readonly PluginCallBinding _binding;
@@ -57,6 +59,9 @@ internal sealed class PluginHostApi : IPluginHostHostingApi
     /// <summary>Reads what the hosting can do, and sets up and removes the plugin's websites and databases for the bound client.</summary>
     private readonly PluginHostingService _hosting;
 
+    /// <summary>Hands the plugin the server connection of one of the bound client's services.</summary>
+    private readonly PluginServiceConnectionService _connections;
+
     /// <summary>Initializes the facts of one call.</summary>
     /// <param name="binding">The call's client and the permissions its caller holds there.</param>
     /// <param name="facts">Reads the client, service and invoice rows of the bound client.</param>
@@ -64,13 +69,15 @@ internal sealed class PluginHostApi : IPluginHostHostingApi
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
     /// <param name="ssh">Issues and revokes the plugin's SSH identities for the bound client.</param>
     /// <param name="hosting">Reads what the hosting can do, and sets up and removes the plugin's websites and databases.</param>
+    /// <param name="connections">Hands the plugin the server connection of one of the bound client's services.</param>
     public PluginHostApi(
         PluginCallBinding binding,
         IPluginHostFactsReader facts,
         IIdentityProvider identity,
         IPayerCurrencyResolver payerCurrency,
         PluginSshAccessService ssh,
-        PluginHostingService hosting)
+        PluginHostingService hosting,
+        PluginServiceConnectionService connections)
     {
         _binding = binding;
         _facts = facts;
@@ -78,6 +85,7 @@ internal sealed class PluginHostApi : IPluginHostHostingApi
         _payerCurrency = payerCurrency;
         _ssh = ssh;
         _hosting = hosting;
+        _connections = connections;
     }
 
     /// <inheritdoc/>
@@ -180,5 +188,11 @@ internal sealed class PluginHostApi : IPluginHostHostingApi
     public async Task RemoveDatabaseAsync(int serviceId, Guid databaseId, CancellationToken ct)
     {
         (await _hosting.RemoveDatabaseAsync(_binding, serviceId, databaseId, ct)).ThrowIfRefused();
+    }
+
+    /// <inheritdoc/>
+    public async Task<PanelAccountContext> ResolveServiceConnectionAsync(int serviceId, CancellationToken ct)
+    {
+        return (await _connections.ResolveAsync(_binding, serviceId, ct)).GrantedOrThrow().ToPanel();
     }
 }

@@ -47,6 +47,9 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <summary>The clock the store counts a time to live from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Hands the host API's service connection method the server connection of the client's own service.</summary>
+    private readonly PluginServiceConnectionService _connections;
+
     /// <summary>Initializes the factory.</summary>
     /// <param name="context">The request's data context, written by the store.</param>
     /// <param name="facts">Reads the client, service and invoice rows the host API shares.</param>
@@ -56,6 +59,7 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <param name="ssh">Issues and revokes SSH identities for the host API's two SSH methods.</param>
     /// <param name="hosting">Reads what the hosting can do, and sets up and removes websites and databases for the host API's hosting methods.</param>
     /// <param name="clock">The clock the store counts a time to live from.</param>
+    /// <param name="connections">Hands the host API's service connection method the server connection of the client's own service.</param>
     public HostPluginCallServices(
         AppDbContext context,
         IPluginHostFactsReader facts,
@@ -64,10 +68,12 @@ public sealed class HostPluginCallServices : IPluginCallServices
         IOptions<PluginApiOptions> options,
         PluginSshAccessService ssh,
         PluginHostingService hosting,
-        IClock clock)
+        IClock clock,
+        PluginServiceConnectionService connections)
     {
         _ssh = ssh;
         _hosting = hosting;
+        _connections = connections;
         _context = context;
         _facts = facts;
         _identity = identity;
@@ -82,7 +88,7 @@ public sealed class HostPluginCallServices : IPluginCallServices
         // One signal per call: a refusal in one call never colours another call's answer.
         var quota = new PluginStoreQuotaSignal();
         return new PluginCallServices(
-            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh, _hosting),
+            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh, _hosting, _connections),
             new PluginStore(binding.PluginId, binding.ClientRef, _context, _options.Value.StoreQuota, quota, _clock),
             quota);
     }

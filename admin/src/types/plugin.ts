@@ -107,6 +107,8 @@ export const PluginHostAccess = {
   Websites: 'websites',
   /** Manages the databases of the client's hosting service. */
   Databases: 'databases',
+  /** Reads the server connection of the client's own service, including the stored panel credentials. */
+  ServiceConnection: 'serviceConnection',
 } as const
 
 /** One of the {@link PluginHostAccess} values. */

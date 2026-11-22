@@ -46,7 +46,7 @@ public sealed class PluginHostingGateTests
     [Fact]
     public void EveryHostAccessService_TakesTheGate()
     {
-        var services = new[] { typeof(PluginSshAccessService), typeof(PluginHostingService) };
+        var services = new[] { typeof(PluginSshAccessService), typeof(PluginHostingService), typeof(PluginServiceConnectionService) };
 
         services.All(service => TakesAny(service, [typeof(PluginHostingGate)])).Should().BeTrue();
     }
@@ -59,7 +59,7 @@ public sealed class PluginHostingGateTests
             .Where(type => type.Namespace == ServicesNamespace + ".Common" && type.Name.StartsWith("Plugin", StringComparison.Ordinal) && type.Name.EndsWith("Service", StringComparison.Ordinal))
             .Select(type => type.Name);
 
-        found.Should().BeEquivalentTo(nameof(PluginSshAccessService), nameof(PluginHostingService));
+        found.Should().BeEquivalentTo(nameof(PluginSshAccessService), nameof(PluginHostingService), nameof(PluginServiceConnectionService));
     }
 
     /// <summary>The types a host access is built from: the Application services and the host API adapters.</summary>

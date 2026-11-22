@@ -258,8 +258,8 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
 <SettingTable :settings="[
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Set to 2 to use the members below.' },
   { name: 'settings', type: 'array', default: '[]', description: 'Typed settings an administrator fills in. Supersedes fields; when settings is empty the host converts fields into settings.' },
-  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later), endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it), tax, and the hosting panel, virtual server and registrar names listed under Capabilities. It must agree with the interfaces the class really implements.' },
-  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. Known kinds: ssh, websites and databases (the last two need SDK 3.9.0 or later, see Websites and databases on a client hosting). The admin Plugins page shows each one a plugin declares.' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later), endpoints (the plugin class implements IPluginEndpoints; a plugin of any type that declares it gets the same client and admin routes, pages, menus and slots as an App plugin, and its public callbacks, see Callbacks from outside; an App plugin is served without declaring it), tax, and the hosting panel, virtual server and registrar names listed under Capabilities. It must agree with the interfaces the class really implements.' },
+  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. Known kinds: ssh, websites, databases and serviceConnection (websites and databases need SDK 3.9.0 or later, see Websites and databases on a client hosting; serviceConnection needs SDK 3.11.0 or later, see The server connection of a client service). The admin Plugins page shows each one a plugin declares.' },
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
@@ -516,6 +516,48 @@ When the service is terminated the host marks its websites and databases as remo
 hosting account is gone. The database user can connect from the server itself only (`127.0.0.1`, port `3306`), so a plugin
 that deploys over SSH uses it from the deploy. Store the password where you keep your own secrets and never log it: the host
 prints it as `***`, keeps no copy, and a lost password means removing the database and creating it again.
+
+## The server connection of a client's service {#service-connection}
+
+A plugin that talks to the panel behind a client's service (a backup tab, a usage page, a one click tool on the service
+page) needs to know which server the service runs on and which account the panel holds for it. This needs SDK 3.11.0 or later.
+Declare the access in the manifest, and read it at run time through `IPluginHostServiceConnectionApi`, which extends
+`IPluginHostApi` without changing it:
+
+```json
+"hostAccess": ["serviceConnection"]
+```
+
+```csharp
+if (host is IPluginHostServiceConnectionApi connections)
+{
+    PanelAccountContext account = await connections.ResolveServiceConnectionAsync(serviceId, ct);
+    // account.Server is the server and its stored credentials, account.Service.ProvisioningRef is the account name.
+}
+```
+
+The rules the host applies, in this order. A refusal at any step is a `PluginHostAccessException` whose `Failure` says why:
+
+1. The call is a client-area call, the caller holds the right to see passwords on the account (the same right the client portal asks), and the manifest declares `serviceConnection`. Otherwise `NotAllowed`. An administrator call has no client and gets nothing.
+2. The service is the call's client's. A missing service and another client's answer the same `NotFound`.
+3. An administrator bound the service's product to one of your slot widgets. Otherwise `NotAllowed`. The `productIds` in your own manifest never count.
+4. The service is active, has a provisioning reference and is assigned to a server that still exists. Otherwise `Unavailable`.
+5. The plugin is still switched on. Otherwise `NotAllowed`.
+
+Every grant is written to the client's activity log as "Plugin {id} read the server connection of service #{n}", with the
+plugin and the service only, and the line is saved before the answer is handed over. A refusal writes no line.
+
+The answer carries the credentials the host stores for the server (the password, the API token and the access hash, each only when saved).
+They are for your own panel and nothing else: send them only there, never log them, put them in a route reply or keep them past the call.
+The host prints them as `***` in every message it writes. Because the host keeps no panel port, `Port` is `null` and your plugin uses its own
+default, and `AccountId` is `null` until the server form stores one.
+
+A service tab is declared like any other slot widget. The tab asks the route, and the route resolves the connection with the service id from its path:
+
+```json
+"ui": { "slots": [ { "slot": "client.service.tabs", "id": "backups", "title": "Backups", "contextKeys": ["serviceId"], "view": "views/backups.json" } ] },
+"api": { "client": [ { "method": "get", "path": "/backups/{serviceId}", "permission": "ViewProductsServices" } ] }
+```
 
 ## Layout of blocks
 

@@ -467,6 +467,7 @@ public static class DependencyInjection
         services.AddScoped<ISshKeyProviderFactory, SshKeyProviderFactory>();
         services.AddScoped<IHostingResourceProviderFactory, HostingResourceProviderFactory>();
         services.AddScoped<ISshServiceContextResolver, SshServiceContextResolver>();
+        services.AddScoped<IPluginServiceConnectionReader, PluginServiceConnectionReader>();
         services.AddScoped<IHostedAccountOperations, HostedAccountOperations>();
         services.AddScoped<ISshKeyRevoker, SshKeyRevoker>();
 

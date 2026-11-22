@@ -724,9 +724,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     `LocalisedViewKey`), always: the language is first normalised by `PluginUiTexts` to a supported one (`en`, `ru`,
     `hy`, anything else becomes `en`), so the cache holds at most documents times three and a caller cannot grow it.
 - **Plugin rules added with SDK 3.0.0.** Short notes; the code and its tests are the detail.
-  - **`endpoints` capability on a non-App plugin serves callbacks only.** Only the public callback routes
-    (`api.callbacks`) are opened; client and admin routes, pages and slots stay App-only for now. A plugin that declares the
-    capability but whose class does not implement `IPluginEndpoints` is refused (`PluginManifestRule.EndpointsNotImplemented`).
+  - **`endpoints` capability on a non-App plugin serves like an App plugin.** A plugin of any type that declares it gets
+    client and admin routes, pages, menus and slots and its public callbacks (`api.callbacks`), exactly as an App plugin does,
+    through the one lookup `IPluginEndpointResolver.Find` (there is no separate callback lookup). A plugin that declares the
+    capability but whose class does not implement `IPluginEndpoints` is refused (`PluginManifestRule.EndpointsNotImplemented`),
+    and a plugin without it has no route, page, menu or slot: the door answers it as an id that was never loaded.
   - **Plugin-wide `IPluginStore` by constructor.** A plugin may take `IPluginStore` in its constructor for data it needs
     outside a routed call. It is scoped to the plugin id and no client, and each operation runs in its own unit of work.
   - **`RefundInstruction.AlreadyRefundedMinor`.** What the host already recorded as refunded through the gateway order before
@@ -1243,6 +1245,27 @@ docker/                              compose set (shared·dev·prod·platform), 
       SSH key ...`). **The private key is never stored, logged or put in an exception**: it exists only in the returned
       `PluginSshAccess`; the tests assert no column of the database and no log line contains it. `HostKeyFingerprint` is
       the agent's pinned fingerprint only when the customer-facing SSH address is the agent's own.
+  - **The server connection of a client's service (#1357).** `PluginHostApi` also implements the SDK 3.11.0 optional
+    `IPluginHostServiceConnectionApi.ResolveServiceConnectionAsync(serviceId)` and only hands the `PluginCallBinding` to the
+    Application's `Services/Common/PluginServiceConnectionService`, which asks the one `PluginHostingGate` in its fixed order:
+    the manifest declares `hostAccess: ["serviceConnection"]` and the call is a client-area call whose caller holds
+    `ViewModifyPasswords` (`NotAllowed`, an administrator call has no client and gets nothing), the service is the binding's
+    client's (`NotFound` for a foreign and a missing one alike, `IsBoundAsync` is never asked for them), the operator bound the
+    service's product to one of the plugin's slot widgets (`NotAllowed`; a manifest's own `productIds` never count), the
+    service is `Active` with a provisioning reference and an assigned server that still exists (`Unavailable`), and
+    `IsStillAvailableAsync` right before the credentials leave (`NotAllowed`). Only then is one activity line staged and saved,
+    `Plugin {id} read the server connection of service #{n}` (the plugin and the service only, never a host name, user name or
+    credential), so a refused read writes none and a read that cannot be recorded is not given.
+    - **The server password is loaded on this call path only.** `ServerConnectionDto` (the connection every provisioning
+      consumer shares) is unchanged and has no password; `Infrastructure/Provisioning/PluginServiceConnectionReader`
+      (port `IPluginServiceConnectionReader`) reads the service left joined to its server and returns a `PluginServiceConnection`
+      whose `Server` is a `PluginServerAccess` (the mapped `ServerConnectionDto`, the SSL flag and the password). Both records
+      print through `SecretMembers`.
+    - **One mapping to the SDK.** `Infrastructure/Plugins/Extensions/PanelServerConnectionExtensions` turns a `PluginServerAccess`
+      into `PanelServerConnection` and a granted connection into `PanelAccountContext` (`Port` and `AccountId` stay `null`: the
+      host keeps neither yet). The panel calls of #1353 reuse it.
+    - **Open point for #1353.** A server's `Module` is not matched against the manifest's `serverModules` here: a service tab
+      plugin on a built-in panel lists none and would be locked out, so the operator's product binding is the decision.
   - **Websites and databases on a client's hosting (#1294).** `PluginHostApi` also implements the SDK 3.9.0 optional
     `IPluginHostHostingApi` (`GetHostingCapabilitiesAsync`, `EnsureWebsiteAsync`, `RemoveWebsiteAsync`,
     `EnsureDatabaseAsync`, `RemoveDatabaseAsync`) and only hands the `PluginCallBinding` to the Application's
@@ -1374,7 +1397,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   503 `IDENTITY_PLUGIN_UNAVAILABLE` stays, because an outage says nothing about the page. **Every other refusal is the
   same 404 `PLUGIN_PAGE_NOT_FOUND` with an identical body**: a malformed `pluginId` or `pageId` (no 400, which would
   say which ids are well formed), an unknown plugin, a disabled or unconfigured one, a plugin
-  that is not an app plugin, an undeclared page, a missing view, a client caller who acts for no account and one who
+  that does not serve (neither an app plugin nor one declaring `endpoints`), an undeclared page, a missing view, a client caller who acts for no account and one who
   does not hold the page's permission. A page never answers 403 or `CLIENT_PROFILE_NOT_FOUND`, so the endpoint is no
   oracle for which plugins and pages exist. The route door (#639) differs on purpose: it still answers 403
   `CLIENT_PERMISSION_DENIED` after the 404, a signal accepted and explained under "Signals that remain".

@@ -13,6 +13,33 @@ public sealed class PluginCapabilityManifestRulesTests
     /// <summary>An admin route, the smallest <c>api</c> block.</summary>
     private const string AdminRoute = ""","api":{"admin":[{"method":"get","path":"/stats"}]}""";
 
+    /// <summary>A client route, which needs a permission in the client area.</summary>
+    private const string ClientRoute = ""","api":{"client":[{"method":"get","path":"/ping","permission":"Any"}]}""";
+
+    /// <summary>A menu entry in the client area.</summary>
+    private const string ClientMenu = ""","ui":{"client":{"menus":[{"id":"m","label":"M","page":"p"}]}}""";
+
+    /// <summary>A page in the client area.</summary>
+    private const string ClientPage = ""","ui":{"client":{"pages":[{"id":"p","path":"/p","title":"P","view":"v.json","permission":"Any"}]}}""";
+
+    /// <summary>A menu entry in the admin area.</summary>
+    private const string AdminMenu = ""","ui":{"admin":{"menus":[{"id":"m","label":"M","page":"p"}]}}""";
+
+    /// <summary>A page in the admin area, which takes no permission.</summary>
+    private const string AdminPage = ""","ui":{"admin":{"pages":[{"id":"p","path":"/p","title":"P","view":"v.json"}]}}""";
+
+    /// <summary>A widget in a client slot.</summary>
+    private const string ClientSlot = ""","ui":{"slots":[{"id":"s","slot":"client.service.tabs","view":"v.json","permission":"Any"}]}""";
+
+    /// <summary>A widget in an admin slot, which takes no permission.</summary>
+    private const string AdminSlot = ""","ui":{"slots":[{"id":"s","slot":"admin.service.panels","view":"v.json"}]}""";
+
+    /// <summary>The plugin types that serve only when their manifest declares the capability.</summary>
+    private static readonly string[] NonAppTypes = ["Provisioning", "Payment", "Registrar", "Identity", "Fulfilment", "Hosted"];
+
+    /// <summary>One block of each kind the capability opens.</summary>
+    private static readonly string[] Blocks = [ClientRoute, AdminRoute, ClientMenu, ClientPage, AdminMenu, AdminPage, ClientSlot, AdminSlot];
+
     /// <summary>Reads a version 2 manifest of a type with the given extra members.</summary>
     /// <param name="type">The plugin type, as the manifest spells it.</param>
     /// <param name="extra">Extra JSON members, each starting with a comma.</param>
@@ -40,18 +67,43 @@ public sealed class PluginCapabilityManifestRulesTests
             + ""","ui":{"slots":[{"id":"credits","slot":"client.dashboard.cards","view":"v.json","permission":"Any"}]}""")).Should().BeNull();
     }
 
+    /// <summary>
+    /// One row for every non-app plugin type crossed with every kind of block the capability opens: a client route, an admin
+    /// route, a client menu and page, an admin menu and page, and a slot widget of each area.
+    /// </summary>
+    /// <returns>The plugin type and the api or ui block it declares, one row per pair.</returns>
+    public static TheoryData<string, string> EveryTypeAndBlock()
+    {
+        var rows = new TheoryData<string, string>();
+        foreach (var type in NonAppTypes)
+        {
+            foreach (var block in Blocks)
+            {
+                rows.Add(type, block);
+            }
+        }
+
+        return rows;
+    }
+
     /// <summary>Every non-app type that declares an api route, a page, a menu or a slot without the capability is refused.</summary>
     /// <param name="type">The plugin type.</param>
     /// <param name="block">The api or ui block it declares.</param>
     [Theory]
-    [InlineData("Fulfilment", AdminRoute)]
-    [InlineData("Payment", AdminRoute)]
-    [InlineData("Hosted", ""","ui":{"client":{"pages":[{"id":"p","path":"/p","title":"P","view":"v.json","permission":"Any"}]}}""")]
-    [InlineData("Identity", ""","ui":{"admin":{"menus":[{"id":"m","label":"M","page":"p"}]}}""")]
-    [InlineData("Fulfilment", ""","ui":{"slots":[{"id":"s","slot":"client.dashboard.cards","view":"v.json","permission":"Any"}]}""")]
+    [MemberData(nameof(EveryTypeAndBlock))]
     public void Validate_NonAppBlocksWithoutCapability_BreaksEndpointsNotDeclared(string type, string block)
     {
         RuleOf(Manifest(type, block)).Should().Be(PluginManifestRule.EndpointsNotDeclared);
+    }
+
+    /// <summary>Every non-app type that declares the endpoints capability may declare any of those blocks.</summary>
+    /// <param name="type">The plugin type.</param>
+    /// <param name="block">The api or ui block it declares.</param>
+    [Theory]
+    [MemberData(nameof(EveryTypeAndBlock))]
+    public void Validate_NonAppBlocksWithCapability_Passes(string type, string block)
+    {
+        RuleOf(Manifest(type, ""","capabilities":["endpoints"]""" + block)).Should().BeNull();
     }
 
     /// <summary>An app plugin needs no declaration, and a non-app plugin with no api or ui block needs none either.</summary>

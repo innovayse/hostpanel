@@ -16,12 +16,13 @@ import { Permission } from '~/types/permission'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { makeClientService as service } from '~/tests/helpers/clientServiceFixture'
 import {
-  SERVICE_NOT_FOUND, slotEntry, slotIndex, slotPath, slotWidgetPath, STATUS_ROUTE_PREFIX, throwingView, workingView, readingView,
+  SERVICE_NOT_FOUND, slotEntry, slotIndex, slotPath, slotView, slotWidgetPath, STATUS_ROUTE_PREFIX, throwingView, workingView, readingView,
 } from '~/tests/helpers/pluginSlotFixture'
 import { pathOf, queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { PluginBlockKind } from '~/types/pluginblockkind'
 import { PluginSlotId } from '~/types/pluginslotid'
 import { ServiceStatus } from '~/types/servicestatus'
 import { SuspensionSource } from '~/types/suspensionsource'
@@ -306,6 +307,27 @@ describe('service page plugin tabs', () => {
 
     expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'slow')).map(queryOf)).toEqual([{ serviceId: '4' }])
     expect(wrapper.find('[data-testid="service-overview"]').exists()).toBe(false)
+  })
+
+  it('lists the tabs of two plugins and reads each view from its own plugin, whatever the plugin does', async () => {
+    // The index entry carries no plugin type: a payment, registrar or provisioning plugin is one more plugin id to the page.
+    const other = 'acme-registrar'
+    const otherView = `${slotPath(PluginSlotId.ServiceTabs)}/widgets/${other}/backups`
+    table[`GET ${slotPath(PluginSlotId.ServiceTabs)}`] = {
+      body: { slotId: PluginSlotId.ServiceTabs, widgets: [slotEntry('ok'), { ...slotEntry('backups'), pluginId: other, order: 1 }] },
+    }
+    table[`GET ${slotWidgetPath(PluginSlotId.ServiceTabs, 'ok')}`] = { body: workingView() }
+    table[`GET ${otherView}`] = { body: { ...slotView('backups', [{ kind: PluginBlockKind.Text, text: 'Backups are on' }]), pluginId: other } }
+
+    const wrapper = await mountService()
+    await waitUntil(() => expect(wrapper.find(`[data-testid="service-tab-plugin.${other}.backups"]`).exists()).toBe(true))
+    expect(wrapper.find(pluginTab('ok')).exists()).toBe(true)
+
+    await wrapper.get(`[data-testid="service-tab-plugin.${other}.backups"]`).trigger('click')
+    await waitUntil(() => expect(wrapper.find(`[data-testid="plugin-slot-widget-${other}-backups"]`).text()).toContain('Backups are on'))
+
+    expect(requestsTo(stub.requests, otherView).map(queryOf)).toEqual([{ serviceId: '4' }])
+    expect(reads(slotWidgetPath(PluginSlotId.ServiceTabs, 'ok'))).toBe(0)
   })
 
   it('reads no widget view until its tab is opened', async () => {

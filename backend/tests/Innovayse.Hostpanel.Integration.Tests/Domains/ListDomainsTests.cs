@@ -255,7 +255,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
     }
 
-    /// <summary>A status or registrar that names nothing, by name or by number, is refused with 400.</summary>
+    /// <summary>A status that names nothing, or a registrar no installed plugin has, by name or by number, is refused with 400.</summary>
     /// <param name="filter">The filter's query string, key and value.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
@@ -265,7 +265,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     [InlineData("registrarModule=99")]
     public async Task ListDomains_UnknownFilterValue_Returns400Async(string filter)
     {
-        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var admin = await DomainsTestSeeds.AdminClientWithRegistrarsAsync(factory, TestRegistrarModules.First, TestRegistrarModules.Second);
 
         var response = await admin.GetAsync($"/api/domains?page=1&pageSize=20&{filter}");
 

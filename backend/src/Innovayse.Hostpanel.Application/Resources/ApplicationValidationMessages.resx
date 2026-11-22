@@ -382,6 +382,9 @@
   <data name="DomainStatusInvalid" xml:space="preserve">
     <value>Status must be one of: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
+  <data name="DomainListRegistrarInvalid" xml:space="preserve">
+    <value>Registrar must be an installed registrar plugin.</value>
+  </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Kind must be one of: Standard, Reduced.</value>
   </data>

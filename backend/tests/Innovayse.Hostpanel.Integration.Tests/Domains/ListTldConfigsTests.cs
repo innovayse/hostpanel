@@ -258,7 +258,7 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         await ProductsTestSeeds.AssertFieldRefusedAsync(response, "search");
     }
 
-    /// <summary>A registrar or enabled value that names nothing, by name or by number, is refused with 400 rather than listing everything.</summary>
+    /// <summary>A registrar no installed plugin has or an enabled value that names nothing, by name or by number, is refused with 400 rather than listing everything.</summary>
     /// <param name="filter">The filter's key and value.</param>
     /// <param name="field">The field the refusal must name.</param>
     /// <returns>A task that completes when the test has run.</returns>
@@ -268,7 +268,7 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
     [InlineData("enabled=maybe", "enabled")]
     public async Task List_UnknownFilterValue_IsRefusedAsync(string filter, string field)
     {
-        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var admin = await DomainsTestSeeds.AdminClientWithRegistrarsAsync(factory, TestRegistrarModules.First, TestRegistrarModules.Second);
 
         var response = await admin.GetAsync($"{Route}?page=1&pageSize=20&{filter}");
 

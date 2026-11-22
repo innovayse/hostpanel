@@ -221,10 +221,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "maxmind", new() { ["Account_ID"] = "x" });
+        var response = await SaveAsync(client, "plesk", new() { ["Host"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("maxmind", "Account_ID", "account_id");
+        await AssertNothingStoredAsync("plesk", "Host", "host");
     }
 
     /// <summary>An undeclared field in ClearFields is refused the same way.</summary>
@@ -234,10 +234,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "maxmind", new() { ["account_id"] = "42" }, ["Account_ID"]);
+        var response = await SaveAsync(client, "plesk", new() { ["host"] = "42" }, ["Host"]);
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("maxmind", "account_id");
+        await AssertNothingStoredAsync("plesk", "host");
     }
 
     /// <summary>A valid field next to an undeclared one writes nothing at all.</summary>
@@ -247,10 +247,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "maxmind", new() { ["account_id"] = "7", ["bogus"] = "x" });
+        var response = await SaveAsync(client, "plesk", new() { ["host"] = "7", ["bogus"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("maxmind", "account_id", "bogus");
+        await AssertNothingStoredAsync("plesk", "host", "bogus");
     }
 
     /// <summary>A valid field next to an invalid value writes nothing at all.</summary>

@@ -3,6 +3,7 @@ using FluentValidation;
 using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -106,6 +107,24 @@ public static class ValidationRuleExtensions
         validator.When(
             savesMethod,
             () => validator.RuleFor(consentTextVersion).MustBeConsentTextVersion(message));
+    }
+
+    /// <summary>
+    /// Requires a registrar filter, when one is given, to name an installed registrar plugin (compared without regard to letter
+    /// case), so a typo is a refusal and not a list that silently comes back empty. An absent filter passes.
+    /// </summary>
+    /// <typeparam name="T">The query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the optional registrar module property.</param>
+    /// <param name="modules">Tells which registrar plugins are installed.</param>
+    /// <param name="message">The localized sentence reported when no installed registrar plugin has the id.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> MustBeInstalledRegistrar<T>(
+        this IRuleBuilder<T, string?> rule, IRegistrarModuleCatalogue modules, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(modules);
+
+        return rule.Must(module => module is null || modules.FindId(module) is not null).WithMessage(message);
     }
 
     /// <summary>Requires a 1-based page number.</summary>

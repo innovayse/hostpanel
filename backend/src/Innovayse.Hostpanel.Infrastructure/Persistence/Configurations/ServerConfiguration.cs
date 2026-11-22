@@ -16,7 +16,7 @@ public sealed class ServerConfiguration : IEntityTypeConfiguration<Server>
         builder.Property(x => x.Hostname).IsRequired().HasMaxLength(500);
         builder.Property(x => x.IpAddress).HasMaxLength(45);
         builder.Property(x => x.AssignedIpAddresses).HasMaxLength(2000);
-        builder.Property(x => x.Module).IsRequired().HasConversion<string>().HasMaxLength(100);
+        builder.Property(x => x.Module).IsRequired().HasMaxLength(100);
         builder.Property(x => x.Username).IsRequired().HasMaxLength(200);
 
         // Password, ApiToken and AccessHash are encrypted and sized by ProtectedColumns.

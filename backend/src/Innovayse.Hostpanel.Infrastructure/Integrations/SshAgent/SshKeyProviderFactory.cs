@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
@@ -34,14 +34,10 @@ public sealed class SshKeyProviderFactory : ISshKeyProviderFactory
     }
 
     /// <inheritdoc/>
-    public bool Supports(ServerModule module) => AgentProfileFor(module) is not null;
+    public bool Supports(string module) => AgentProfileFor(module) is not null;
 
     /// <inheritdoc/>
-    public string? AgentProfileFor(ServerModule module) => module switch
-    {
-        ServerModule.Cwp7 => HostingPanelV7Profile,
-        _ => null,
-    };
+    public string? AgentProfileFor(string module) => ServerModules.Same(module, ServerModules.Cwp7) ? HostingPanelV7Profile : null;
 
     /// <inheritdoc/>
     /// <exception cref="InvalidOperationException">Thrown when the settings are missing or incomplete.</exception>

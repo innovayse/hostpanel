@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -27,6 +30,33 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
         update.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await ServersTestSeeds.SearchServersAsync(client, newName)).Should().Contain(r => r.GetProperty("name").GetString() == newName);
+    }
+
+    /// <summary>
+    /// A server stored with a module no installed plugin serves any more (its panel plugin was removed) can still be edited while the
+    /// module stays the same, and is refused <c>SERVER_MODULE_UNKNOWN</c> once the module is changed to one nobody knows.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StoredModuleNoPluginServes_StaysEditableUnchangedAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var name = $"Server-{Guid.NewGuid():N}";
+        var id = await ServersTestSeeds.CreateServerAsync(client, name);
+        using (var scope = factory.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Servers
+                .Where(s => s.Id == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.Module, "RetiredPanel"));
+        }
+
+        var unchanged = await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody($"{name}-renamed", module: "retiredpanel"));
+        var changed = await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, module: "no-such-panel"));
+
+        unchanged.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ServersTestSeeds.SearchServersAsync(client, $"{name}-renamed")).Single().GetProperty("module").GetString().Should().Be("RetiredPanel");
+        changed.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(changed, HostpanelErrorCodes.SERVER_MODULE_UNKNOWN);
     }
 
     /// <summary>An update switches the self signed certificate choice on and off, and the list reads it back.</summary>

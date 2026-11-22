@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -66,22 +66,22 @@ public sealed class ListServerOptionsTests(IntegrationTestFactory factory) : ICl
     {
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
         var token = PagedListReads.UniqueToken();
-        var plesk = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-plesk", ServerModule.Plesk);
+        var directadmin = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-directadmin", ServerModules.DirectAdmin);
         var cwp7 = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-cwp7");
 
-        var onlyPlesk = await ReadAsync(admin, $"{Route}?module=Plesk");
+        var onlyDirectAdmin = await ReadAsync(admin, $"{Route}?module=DirectAdmin");
         var onlyCwp7 = await ReadAsync(admin, $"{Route}?module=Cwp7");
 
-        onlyPlesk.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(plesk).And.NotContain(cwp7);
-        onlyCwp7.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(cwp7).And.NotContain(plesk);
+        onlyDirectAdmin.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(directadmin).And.NotContain(cwp7);
+        onlyCwp7.Select(r => r.GetProperty("id").GetInt32()).Should().Contain(cwp7).And.NotContain(directadmin);
     }
 
-    /// <summary>A module that names nothing, by name or by number, is refused with 400 naming the field.</summary>
+    /// <summary>A module that is not a well formed id (a space, a slash) is refused with 400 naming the field.</summary>
     /// <param name="filter">The filter sent.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
-    [InlineData("module=Nonsense")]
-    [InlineData("module=99")]
+    [InlineData("module=not%20valid")]
+    [InlineData("module=a%2Fb")]
     public async Task List_UnknownModule_IsRefused(string filter)
     {
         var admin = await ServersTestSeeds.AdminClientAsync(factory);

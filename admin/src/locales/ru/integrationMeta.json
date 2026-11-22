@@ -31,26 +31,9 @@
     "fieldPort": "Порт",
     "fieldApiToken": "API-токен"
   },
-  "plesk": {
-    "shortDescription": "Автоматизируйте управление серверами и хостингом через XML API Plesk.",
-    "fieldHost": "Хост Plesk"
-  },
   "cwp": {
     "shortDescription": "Управляйте хостинг-аккаунтами на серверах CentOS Web Panel.",
     "fieldHost": "Хост CWP"
-  },
-  "cwp7": {
-    "shortDescription": "Создавайте хостинг-аккаунты и управляйте ими через API Control Web Panel 7.",
-    "fieldMonthly_cost": "Ежемесячная стоимость",
-    "fieldDatacenter": "Дата-центр/NOC",
-    "fieldAccess_hash": "Хеш доступа",
-    "fieldPort": "Порт API",
-    "fieldMax_accounts": "Максимальное число аккаунтов",
-    "fieldNs1": "Основной сервер имён",
-    "fieldNs1_ip": "IP основного сервера имён",
-    "fieldNs2": "Вторичный сервер имён",
-    "fieldNs2_ip": "IP вторичного сервера имён",
-    "fieldSecure": "Использовать SSL для подключений"
   },
   "smtp": {
     "shortDescription": "Настройте отправку исходящей почты через ваш SMTP-сервер.",

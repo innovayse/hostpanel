@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Commands.CreateServer;
 
@@ -15,7 +14,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Commands.CreateServer;
 /// </remarks>
 /// <param name="Name">Display name for the server.</param>
 /// <param name="Endpoint">Where and how the server's API is reached.</param>
-/// <param name="Module">Control panel module type.</param>
+/// <param name="Module">Control panel module id: a built in one or one a panel plugin declares; stored in the spelling the module catalog knows.</param>
 /// <param name="Username">API username.</param>
 /// <param name="Credentials">API secrets; members are null when the module does not use them.</param>
 /// <param name="Limits">Account capacity and whether the server takes new accounts.</param>
@@ -24,7 +23,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Commands.CreateServer;
 public sealed record CreateServerCommand(
     string Name,
     [property: JsonRequired] ServerEndpointDto Endpoint,
-    ServerModule Module,
+    string Module,
     string Username,
     [property: JsonRequired] ServerCredentials Credentials,
     [property: JsonRequired] ServerLimitsDto Limits,

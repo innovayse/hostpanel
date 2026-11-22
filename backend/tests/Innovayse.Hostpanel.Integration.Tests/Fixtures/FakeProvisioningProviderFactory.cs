@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
-using Innovayse.Hostpanel.Infrastructure.Provisioning;
+using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -14,8 +13,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// <param name="provider">The provider every server resolves to.</param>
 public sealed class FakeProvisioningProviderFactory(FakeProvisioningProvider provider) : IProvisioningProviderFactory
 {
-    /// <summary>The production factory's modules, so a test provisions onto the same servers production would.</summary>
-    public IReadOnlyCollection<ServerModule> SupportedModules => ProvisioningProviderFactory.BuiltModules;
+    /// <summary>Every module the host knows: the double stands in for whichever panel a test seeds a server on.</summary>
+    public Task<IReadOnlyCollection<string>> SupportedModulesAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyCollection<string>>(ServerModules.Known);
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => provider;

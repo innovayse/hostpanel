@@ -226,7 +226,7 @@ public class MyGatewayTests
 
 ## A provisioning plugin
 
-Inherit `ProvisioningProviderBase` and implement `IProvisioningPlugin` from `Hostpanel.Sdk.Plugins.Provisioning`. Read `backend/src/Innovayse.Providers.CWP7` as the reference implementation, it shows the full hosting panel client contract and how to handle each provisioning command (create, suspend, unsuspend, terminate, change package, change password, login).
+Implement `IProvisioningPanelPlugin` from `Hostpanel.Sdk.Plugins.Provisioning` for a hosting panel (add `IProvisioningPanelLoginPlugin` to give the account's login details), declare the `provisioningPanel` capability and list the panel's `serverModules` in the manifest. What the host calls and how it reads each answer is described under [Hosting panel plugins](#hosting-panel-plugins); the SDK's `ProvisioningContract` checks belong in your tests.
 
 ## The manifest (`plugin.json`)
 
@@ -431,7 +431,8 @@ A version 2 manifest may list `capabilities`, each a name from the SDK's `Plugin
 | `registrarEmailForwarding`, `registrarDnsManagement`, `registrarWhois`, `registrarChildNameservers`, `registrarDnssec`, `registrarRestore`, `registrarDomainList`, `registrarSuggestions`, `registrarBalance` | `Registrar` only | | the matching interface, for example `IRegistrarWhoisPlugin` for `registrarWhois` |
 
 Declaring a hosting panel, virtual server, registrar or `tax` capability makes the plugin load and shows the capability on the
-plugins page. The host does not call those contracts yet: a feature starts to use one when it ships, and a plugin that declares
+plugins page. The host calls the hosting panel contracts (see [Hosting panel plugins](#hosting-panel-plugins)); it does not call
+the virtual server, registrar and `tax` contracts yet: a feature starts to use one when it ships, and a plugin that declares
 one before then is loaded but never asked.
 
 An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
@@ -455,6 +456,52 @@ server's control panel type, and the host sends the servers of those modules to 
 digits, dashes, dots or underscores, ids repeat nothing (case is ignored) and the list holds at least one. A plugin that
 declares none of those capabilities lists no module. A list that breaks this is refused at install and at startup with
 `PLUGIN_MANIFEST_SERVER_MODULES_INVALID`.
+
+### Hosting panel plugins {#hosting-panel-plugins}
+
+A `Provisioning` plugin that declares `provisioningPanel` and implements `IProvisioningPanelPlugin` is called for every server whose
+module it serves. The host reaches it through the same code that drives its own panels, so an order, a service and the server
+screens behave the same whoever drives the panel.
+
+| Operation | When the host calls it |
+| --- | --- |
+| `CreateAccountAsync` | an order or a setup is provisioned |
+| `SuspendAccountAsync`, `UnsuspendAccountAsync` | a service is suspended, and when it is active again |
+| `TerminateAccountAsync` | a service is terminated |
+| `ChangePackageAsync`, `ChangePasswordAsync` | a package or a password is changed, by the client or by staff |
+| `CreateSsoLinkAsync` | the control panel sign in link |
+| `ListAccountsAsync`, `GetUsageAsync` | the disk usage report: the accounts page by page, then each account's usage |
+| `TestConnectionAsync` | Test Connection on a server and the periodic account count sync |
+| `GetLoginDetailsAsync` | the account's login details, only when `provisioningPanelLogin` is declared; without it the host answers that the action is not supported |
+
+`provisioningPanelPackages` is accepted, and the host does not call `ListPackagesAsync` yet.
+
+**Which plugin serves a server.** The server's module id is compared with each plugin's `serverModules` ignoring case, so a server
+saved as `DirectAdmin` is served by a plugin that declares `directadmin`. Nothing stored is rewritten: the service keeps its server and its
+`ProvisioningRef`, and the credentials the server already holds reach the plugin in the `PanelServerConnection`. One plugin serves
+one module: when two installed plugins declare it, every call is refused with `PANEL_PLUGIN_CONFLICT`. A plugin that is installed
+but switched off, not configured, waiting for its data migration or missing a capability it declares answers
+`PANEL_PLUGIN_UNAVAILABLE`, and the host never falls back to another provider. Install and switch on the plugin before you upgrade a
+deployment whose servers were driven by a panel that has become a plugin.
+
+**What an answer does.** Each operation answers a `PanelOperationOutcome`:
+
+| Outcome | In the host |
+| --- | --- |
+| `Succeeded`, `AlreadyApplied` | The operation is done. A repeat of a done operation is success, so a retry is safe. |
+| `Pending` | The panel accepted the work and finishes it itself. For every operation except create the host counts it as done and notes it in the log. For create the service stays pending and the caller is told `PROVISIONING_PENDING` to try again; answer `AlreadyApplied` for that user name once the account is ready, and the next attempt adopts it. |
+| `NotFound` | The panel has no such account: `PANEL_ACCOUNT_NOT_FOUND`. Terminating an account that is already gone counts as done. |
+| `NotSupported` | `PANEL_OPERATION_NOT_SUPPORTED`. |
+| `Refused` | The code of the `PanelRefusalReason`: `PackageUnknown` is `PANEL_PACKAGE_UNKNOWN`, `UsernameInvalid` is `PANEL_USERNAME_INVALID`, `DomainInvalid` is `PANEL_DOMAIN_INVALID`, `PasswordRejected` is `PANEL_PASSWORD_REJECTED`, `LimitReached` is `PANEL_LIMIT_REACHED`, `AccessDenied` is `PANEL_ACCESS_DENIED` and every other reason is `PANEL_REFUSED`. The reader sees the sentence of that code in their own language, never the plugin's text. |
+
+A plugin that throws is logged by plugin id, operation and exception type only, never the message, and answers a generic upstream
+failure. A create that throws leaves the outcome unknown (`PROVISIONING_OUTCOME_UNKNOWN`), and the retry adopts the account if it
+exists, so create must be idempotent by user name and answer `AlreadyApplied` for an account that already exists;
+`ProvisioningContract.AssertCreateIsIdempotentAsync` checks it.
+
+**The connection.** The plugin receives the server as the host stores it: host name, address, `UseSsl`, user name, access hash, API
+token and `Password`, with `Port` null because the host keeps no panel port. The secrets print as `***` in a log line or an exception, and
+the plugin logs none of them. The stored password is read for a plugin call only; no provider built into the host receives it.
 
 ### Registrar connection roles
 

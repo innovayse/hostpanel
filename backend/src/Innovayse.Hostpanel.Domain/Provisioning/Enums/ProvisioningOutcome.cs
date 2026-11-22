@@ -14,4 +14,10 @@ public enum ProvisioningOutcome
 
     /// <summary>The panel refused to create the account.</summary>
     Refused = 2,
+
+    /// <summary>
+    /// The panel accepted the request and finishes creating the account on its own; the account reference is
+    /// known but the account is not ready yet, so the service stays pending and a later attempt completes it.
+    /// </summary>
+    Pending = 3,
 }

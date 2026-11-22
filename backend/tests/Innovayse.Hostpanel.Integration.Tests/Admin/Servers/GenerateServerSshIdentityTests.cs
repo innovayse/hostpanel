@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Renci.SshNet;
@@ -71,7 +71,7 @@ public sealed class GenerateServerSshIdentityTests(IntegrationTestFactory factor
     public async Task UnsupportedModule_IsRefusedAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, "panel.example.test", 22, ServerModule.CPanel, enabled: false);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, "panel.example.test", 22, ServerModules.CPanel, enabled: false);
 
         var response = await admin.PostAsync($"/api/admin/servers/{serverId}/ssh-identity", null);
 
@@ -86,7 +86,7 @@ public sealed class GenerateServerSshIdentityTests(IntegrationTestFactory factor
     {
         var created = await admin.PostAsJsonAsync(
             "/api/admin/servers",
-            ServersTestSeeds.ServerBody($"ident-{Guid.NewGuid():N}", "ident.example.test", ServerModule.Cwp7));
+            ServersTestSeeds.ServerBody($"ident-{Guid.NewGuid():N}", "ident.example.test", ServerModules.Cwp7));
         created.EnsureSuccessStatusCode();
         return await created.Content.ReadFromJsonAsync<int>();
     }

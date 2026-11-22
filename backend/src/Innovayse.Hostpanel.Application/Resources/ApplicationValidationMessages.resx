@@ -1768,8 +1768,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Status must be one of: Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Module must be one of: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>The module must be an id of 1 to 50 letters, digits, dots, dashes or underscores.</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>State must be one of: Online, Offline, Untested.</value>

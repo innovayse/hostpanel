@@ -116,7 +116,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
 
     /// <summary>
     /// The handler asks the provider for a link bound to the caller's resolved address: a panel that
-    /// binds its session to the browser (Plesk) depends on it.
+    /// binds its session to the browser (DirectAdmin) depends on it.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

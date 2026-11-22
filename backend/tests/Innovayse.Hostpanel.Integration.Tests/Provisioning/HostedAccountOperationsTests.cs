@@ -1,9 +1,12 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Common.Enums;
+using Innovayse.Hostpanel.Domain;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -139,5 +142,42 @@ public sealed class HostedAccountOperationsTests(IntegrationTestFactory factory)
             CancellationToken.None);
 
         outcome.Should().Be(HostedAccountOutcome.Failed);
+    }
+
+    /// <summary>
+    /// A panel that refuses with its own code is still reported as failed, and the code is logged, so whoever chases the account that
+    /// is out of step sees why the panel refused.
+    /// </summary>
+    /// <param name="operation">Which operation is run.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(HostedAccountOperation.Suspend)]
+    [InlineData(HostedAccountOperation.Unsuspend)]
+    [InlineData(HostedAccountOperation.Terminate)]
+    public async Task PanelRefusal_IsReportedFailedAndItsCodeIsLoggedAsync(HostedAccountOperation operation)
+    {
+        var logs = new RecordingLoggerProvider();
+        var provider = new FakeProvisioningProvider { FailWith = new DomainRuleException(HostpanelErrorCodes.PANEL_ACCESS_DENIED, "the panel refused") };
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IProvisioningProviderFactory>(new FakeProvisioningProviderFactory(provider));
+                services.AddLogging(logging => logging.AddProvider(logs));
+            }));
+        using var scope = host.Services.CreateScope();
+        var (_, serverId, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
+        var operations = scope.ServiceProvider.GetRequiredService<IHostedAccountOperations>();
+        var target = new HostedAccountTarget(serviceId, serverId, "provisioning-ref-1");
+
+        var outcome = operation switch
+        {
+            HostedAccountOperation.Suspend => await operations.SuspendAsync(new HostedAccountSuspension(target, "non-payment"), CancellationToken.None),
+            HostedAccountOperation.Unsuspend => await operations.UnsuspendAsync(new HostedAccountUnsuspension(target), CancellationToken.None),
+            _ => await operations.TerminateAsync(new HostedAccountTermination(target, "cancelled"), CancellationToken.None),
+        };
+
+        outcome.Should().Be(HostedAccountOutcome.Failed);
+        logs.Entries.Should().Contain(entry => entry.Message.Contains(HostpanelErrorCodes.PANEL_ACCESS_DENIED, StringComparison.Ordinal));
     }
 }

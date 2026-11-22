@@ -31,26 +31,9 @@
     "fieldPort": "Port",
     "fieldApiToken": "API Token"
   },
-  "plesk": {
-    "shortDescription": "Automate server and hosting management through Plesk's XML API.",
-    "fieldHost": "Plesk Host"
-  },
   "cwp": {
     "shortDescription": "Manage hosting accounts on CentOS Web Panel servers.",
     "fieldHost": "CWP Host"
-  },
-  "cwp7": {
-    "shortDescription": "Provision and manage hosting accounts via Control Web Panel 7 API.",
-    "fieldMonthly_cost": "Monthly Cost",
-    "fieldDatacenter": "Datacenter/NOC",
-    "fieldAccess_hash": "Access Hash",
-    "fieldPort": "API Port",
-    "fieldMax_accounts": "Maximum No. of Accounts",
-    "fieldNs1": "Primary Nameserver",
-    "fieldNs1_ip": "Primary Nameserver IP",
-    "fieldNs2": "Secondary Nameserver",
-    "fieldNs2_ip": "Secondary Nameserver IP",
-    "fieldSecure": "Use SSL for Connections"
   },
   "smtp": {
     "shortDescription": "Configure outgoing email delivery via your SMTP mail server.",

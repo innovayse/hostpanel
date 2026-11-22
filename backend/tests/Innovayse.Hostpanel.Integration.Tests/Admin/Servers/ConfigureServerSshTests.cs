@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -142,7 +142,7 @@ public sealed class ConfigureServerSshTests(IntegrationTestFactory factory) : IC
     public async Task EnablingAnUnsupportedModule_IsRefusedAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, "cp.example.test", 22, ServerModule.CPanel, enabled: false);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, "cp.example.test", 22, ServerModules.CPanel, enabled: false);
 
         var response = await admin.PutAsJsonAsync($"/api/admin/servers/{serverId}/ssh-settings", SshAdminTestSupport.Body(true));
 

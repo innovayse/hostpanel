@@ -1,7 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Application.Admin.Servers.Commands.CreateServer;
+using Innovayse.Hostpanel.Application.Admin.Servers.Common;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Servers;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -9,7 +17,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <c>POST /api/admin/servers</c>: a created server appears in the list without its stored
 /// secret, an empty name is refused <c>VALIDATION_ERROR</c> by the validator before the handler,
 /// a caller with only the Client role is refused, and the route is closed to a caller with no
-/// credential. This use case always succeeds once validation has passed.
+/// credential. The control panel module is an open id: a built in one is stored in the host's spelling whatever case was sent, one
+/// an installed plugin declares is stored in the plugin's spelling, and one nobody knows is refused <c>SERVER_MODULE_UNKNOWN</c>.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -59,7 +68,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         {
             name,
             endpoint = new { hostname = $"{name}.example.com", ipAddress = (string?)null, assignedIpAddresses = (string?)null, useSSL = true },
-            module = ServerModule.Cwp7,
+            module = ServerModules.Cwp7,
             username = "root",
             credentials = new { },
             limits = new { isDefault = false, isDisabled = false },
@@ -71,6 +80,86 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
 
         (await ServersTestSeeds.SearchServersAsync(client, name)).Single().GetProperty("endpoint")
             .GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>A built in module id is stored in the host's own spelling whatever case the body used.</summary>
+    /// <param name="sent">The module id as sent.</param>
+    /// <param name="stored">The spelling the server is stored and listed with.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("cpanel", ServerModules.CPanel)]
+    [InlineData("DIRECTADMIN", ServerModules.DirectAdmin)]
+    [InlineData(ServerModules.Cwp7, ServerModules.Cwp7)]
+    public async Task Module_BuiltInId_IsStoredInTheBuiltInSpellingAsync(string sent, string stored)
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var name = $"Server-{Guid.NewGuid():N}";
+
+        (await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody(name, module: sent))).StatusCode
+            .Should().Be(HttpStatusCode.Created);
+
+        (await ServersTestSeeds.SearchServersAsync(client, name)).Single().GetProperty("module").GetString().Should().Be(stored);
+    }
+
+    /// <summary>A module neither the host nor an installed plugin knows is refused with <c>SERVER_MODULE_UNKNOWN</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Module_NobodyKnows_IsRefusedAsUnknownAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody($"Server-{Guid.NewGuid():N}", module: "no-such-panel"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.SERVER_MODULE_UNKNOWN);
+    }
+
+    /// <summary>A module that is not a well formed id never reaches the handler.</summary>
+    /// <param name="module">The module sent.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("")]
+    [InlineData("not valid")]
+    [InlineData("a/b")]
+    public async Task Module_Malformed_IsRefusedByTheValidatorAsync(string module)
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody($"Server-{Guid.NewGuid():N}", module: module));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+    }
+
+    /// <summary>
+    /// A module an installed plugin declares is accepted and stored in the plugin's spelling, whatever case it was sent in, and the
+    /// stored row carries the text id with no conversion.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Module_DeclaredByAnInstalledPlugin_IsStoredInThePluginsSpellingAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin), serverModule: $"Hestia-{Guid.NewGuid():N}");
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var catalog = new ServerModuleCatalog(harness.Registry);
+        var handler = new CreateServerHandler(db, scope.ServiceProvider.GetRequiredService<IClock>(), catalog);
+        var name = $"Server-{Guid.NewGuid():N}";
+
+        var created = await handler.HandleAsync(
+            new CreateServerCommand(
+                name,
+                new ServerEndpointDto($"{name}.example.com", null, null, true, false),
+                harness.Module.ToUpperInvariant(),
+                "root",
+                new ServerCredentials(null, null, null),
+                new ServerLimitsDto(null, false, false),
+                new ServerHostingDto(null, null, 0m),
+                ServerNameServers.None),
+            CancellationToken.None);
+
+        created.IsSuccess.Should().BeTrue();
+        (await db.Servers.AsNoTracking().SingleAsync(s => s.Id == created.Value)).Module.Should().Be(harness.Module);
     }
 
     /// <summary>A server with an empty name is refused by the validator before it reaches the handler.</summary>
@@ -97,7 +186,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         var response = await client.PostAsJsonAsync("/api/admin/servers", new
         {
             name = "Missing-groups",
-            module = ServerModule.Cwp7,
+            module = ServerModules.Cwp7,
             username = "root",
         });
 

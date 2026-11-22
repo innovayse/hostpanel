@@ -7,7 +7,6 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -219,7 +218,7 @@ public static class ProvisioningTestSeeds
         return new SeededActiveService(client.Id, server.Id, service.Id);
     }
 
-    /// <summary>Seeds a CWP7 server a provisioned service can be assigned to.</summary>
+    /// <summary>Seeds a server a provisioned service can be assigned to.</summary>
     /// <param name="context">The data context to seed through.</param>
     /// <returns>The saved server.</returns>
     public static async Task<Server> SeedServerAsync(IHostpanelDbContext context)
@@ -229,7 +228,7 @@ public static class ProvisioningTestSeeds
             Hostname: "srv.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModule.Cwp7,
+            Module: ServerModules.Cwp7,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,

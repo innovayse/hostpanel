@@ -552,9 +552,6 @@
   <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>No hay ninguna clave de API ni hash de acceso configurados para este servidor.</value>
   </data>
-  <data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>La prueba de conexión no es compatible con este módulo de servidor.</value>
-  </data>
   <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>No existe ese grupo de servidores.</value>
   </data>
@@ -1574,5 +1571,50 @@
   </data>
   <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
     <value>Un servidor sin SSL no puede aceptar un certificado autofirmado. Active SSL o desactive la opción de certificado autofirmado.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Este tipo de panel de control no está disponible. Instale primero su plugin o elija otro tipo.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>El plugin del panel de control de este servidor no está instalado, está desactivado, sin configurar o no funciona. Compruébelo en la página de plugins.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Varios plugins instalados atienden el tipo de panel de este servidor. Conserve solo uno.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Este panel de control no admite la acción solicitada.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>El panel de control no tiene ninguna cuenta para este servicio.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>El panel de control no conoce el paquete de alojamiento de este servicio.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>El panel de control no acepta este nombre de usuario de la cuenta.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>El panel de control no acepta este nombre de dominio.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>El panel de control rechazó la contraseña. Elija una más segura.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>El panel de control alcanzó su límite y no puede aceptar este cambio.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>El panel de control rechazó las credenciales guardadas para este servidor.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>El panel de control rechazó la solicitud.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>La cuenta de alojamiento se está creando. Vuelva a comprobarlo en unos minutos.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Los datos de conexión del servidor están incompletos para este panel de control.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>El panel de control rechazó las credenciales guardadas.</value>
   </data>
 </root>

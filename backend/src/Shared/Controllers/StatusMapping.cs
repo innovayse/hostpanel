@@ -46,6 +46,20 @@ public static class StatusMapping
             // Exact row: the panel could not be asked or its answer was lost, so the outcome is unknown and a retry
             // settles it; the name carries no token for a generic arm.
             "PROVISIONING_OUTCOME_UNKNOWN" => new(503, "Service Unavailable"),
+            // Exact row: the panel accepted the account and is still creating it, a retry signal like the unknown outcome above;
+            // the name carries no token for a generic arm.
+            "PROVISIONING_PENDING" => new(503, "Service Unavailable"),
+            // Exact row: the plugin that serves the server's panel is switched off, unconfigured or broken, a dependency that
+            // cannot answer now (503 with Retry-After), and the name carries no token for a generic arm.
+            "PANEL_PLUGIN_UNAVAILABLE" => new(503, "Service Unavailable"),
+            // Exact rows: the panel refused the action because of the service's own state or data (a conflict), and
+            // PANEL_ACCOUNT_NOT_FOUND must not answer 404, which would read as a missing route; the names carry no CONFLICT /
+            // ALREADY token and one carries NOT_FOUND.
+            "PANEL_OPERATION_NOT_SUPPORTED" or "PANEL_ACCOUNT_NOT_FOUND" or "PANEL_PACKAGE_UNKNOWN" or "PANEL_USERNAME_INVALID"
+                or "PANEL_DOMAIN_INVALID" or "PANEL_PASSWORD_REJECTED" or "PANEL_LIMIT_REACHED" => new(409, "Conflict"),
+            // Exact rows: the panel refused the host's own credentials or the request outright, an upstream failure (502); the
+            // access denied code must not answer 403, which would read as the caller lacking a permission.
+            "PANEL_ACCESS_DENIED" or "PANEL_REFUSED" => new(502, "Bad Gateway"),
             // Exact row: the order number sequence outgrew the configured number length, a state of
             // the deployment rather than of the request, and the name carries no token for it.
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),

@@ -31,7 +31,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
 /// <para>
 /// <b>The HTTP method is not a usable idempotency signal in this codebase</b>, which is why
 /// there is no shared method-based predicate. WHM and Namecheap perform every operation,
-/// including account creation and domain registration, over GET; CWP and CWP7 perform every
+/// including account creation and domain registration, over GET; CWP performs every
 /// operation, including the read ones, over POST with the verb in a form field; and the
 /// payment gateways post a status lookup, a payment registration and a refund to the
 /// same host over the same verb. A predicate copied from a service whose API is RESTful would

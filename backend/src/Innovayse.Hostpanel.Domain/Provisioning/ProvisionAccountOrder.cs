@@ -11,7 +11,18 @@ namespace Innovayse.Hostpanel.Domain.Provisioning;
 /// <param name="Username">control-panel username for the new account.</param>
 /// <param name="Password">Initial password for the new account.</param>
 /// <param name="Package">Hosting package name as configured on the provider server.</param>
-public record ProvisionAccountOrder(int ServiceId, string DomainName, string Username, string Password, string Package)
+/// <param name="ClientId">The platform client the account belongs to; a panel plugin sees it only as a per plugin reference.</param>
+/// <param name="ClientEmail">The client's contact e-mail, or <see langword="null"/> when none is known; for panels that keep an owner contact.</param>
+/// <param name="ClientName">The client's display name, for panels that keep an owner contact.</param>
+public record ProvisionAccountOrder(
+    int ServiceId,
+    string DomainName,
+    string Username,
+    string Password,
+    string Package,
+    int ClientId,
+    [property: SecretMember] string? ClientEmail,
+    [property: SecretMember] string ClientName)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

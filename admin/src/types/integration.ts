@@ -43,9 +43,7 @@ export const IntegrationSlug = {
   Resellerclub: 'resellerclub',
   Enom: 'enom',
   Cpanel: 'cpanel',
-  Plesk: 'plesk',
   Cwp: 'cwp',
-  Cwp7: 'cwp7',
   Smtp: 'smtp',
   Maxmind: 'maxmind',
 } as const

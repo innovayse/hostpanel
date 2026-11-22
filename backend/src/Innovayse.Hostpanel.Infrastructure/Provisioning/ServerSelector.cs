@@ -35,13 +35,13 @@ public sealed class ServerSelector : IServerSelector
     /// <param name="modules">The server modules a server may be on.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>How to reach the selected server, or null if none are eligible.</returns>
-    public async Task<ServerConnectionDto?> SelectAsync(IReadOnlyCollection<ServerModule> modules, CancellationToken ct)
+    public async Task<ServerConnectionDto?> SelectAsync(IReadOnlyCollection<string> modules, CancellationToken ct)
     {
         // Ordered by name because the policy keeps the given order when two servers tie on every key.
         // With no group there is no fill type, so the least full server is chosen.
         var servers = await _context.Servers
             .AsNoTracking()
-            .Where(s => modules.Contains(s.Module))
+            .OfModules(modules)
             .OrderBy(s => s.Name)
             .ToListAsync(ct);
         return Choose(servers, ServerFillType.LeastFull);
@@ -51,13 +51,19 @@ public sealed class ServerSelector : IServerSelector
     /// <param name="modules">The modules to look for.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The modules, among <paramref name="modules"/>, that some enabled server is on.</returns>
-    public async Task<IReadOnlyCollection<ServerModule>> ModulesInUseAsync(IReadOnlyCollection<ServerModule> modules, CancellationToken ct) =>
-        await _context.Servers
+    public async Task<IReadOnlyCollection<string>> ModulesInUseAsync(IReadOnlyCollection<string> modules, CancellationToken ct)
+    {
+        var inUse = await _context.Servers
             .AsNoTracking()
-            .Where(s => !s.IsDisabled && modules.Contains(s.Module))
-            .Select(s => s.Module)
+            .Where(s => !s.IsDisabled)
+            .OfModules(modules)
+            .Select(s => s.Module.ToLower())
             .Distinct()
             .ToListAsync(ct);
+
+        // Answered in the spelling the caller asked in: a server stored as DirectAdmin and one stored as directadmin are one module.
+        return modules.Where(module => inUse.Contains(module.ToLowerInvariant())).ToList();
+    }
 
     /// <summary>
     /// Selects the best available server from a specific server group, among its servers on any of
@@ -67,7 +73,7 @@ public sealed class ServerSelector : IServerSelector
     /// <param name="modules">The server modules a server may be on; a group member on any other is skipped.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>How to reach the selected server, or null if none are eligible.</returns>
-    public async Task<ServerConnectionDto?> SelectFromGroupAsync(int groupId, IReadOnlyCollection<ServerModule> modules, CancellationToken ct)
+    public async Task<ServerConnectionDto?> SelectFromGroupAsync(int groupId, IReadOnlyCollection<string> modules, CancellationToken ct)
     {
         var group = await _context.ServerGroups
             .AsNoTracking()
@@ -81,7 +87,7 @@ public sealed class ServerSelector : IServerSelector
         }
 
         // Ordered by name so the group's fill type sees a stable order when servers tie on every key.
-        return Choose(group.Servers.Where(s => modules.Contains(s.Module)).OrderBy(s => s.Name), group.FillType);
+        return Choose(group.Servers.Where(s => modules.Any(module => ServerModules.Same(module, s.Module))).OrderBy(s => s.Name), group.FillType);
     }
 
     /// <summary>

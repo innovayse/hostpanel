@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
@@ -14,7 +13,7 @@ public interface ISshKeyProviderFactory
     /// <summary>Whether the server's module has an SSH key implementation at all.</summary>
     /// <param name="module">The server module.</param>
     /// <returns><see langword="true"/> when supported.</returns>
-    public bool Supports(ServerModule module);
+    public bool Supports(string module);
 
     /// <summary>
     /// The agent profile a supported module installs (<c>cwp</c> for the v7 hosting panel), used to
@@ -22,7 +21,7 @@ public interface ISshKeyProviderFactory
     /// </summary>
     /// <param name="module">The server module.</param>
     /// <returns>The profile name, or null.</returns>
-    public string? AgentProfileFor(ServerModule module);
+    public string? AgentProfileFor(string module);
 
     /// <summary>Creates a provider bound to one server.</summary>
     /// <param name="target">The server and its SSH settings; the settings must be present and complete.</param>

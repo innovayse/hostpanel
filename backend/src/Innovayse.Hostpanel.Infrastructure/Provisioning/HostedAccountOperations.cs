@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Common.Enums;
@@ -52,7 +53,8 @@ public sealed class HostedAccountOperations : IHostedAccountOperations
         ArgumentNullException.ThrowIfNull(input);
         return RunAsync(
             input.Account,
-            (provider, provisioningRef) => provider.UnsuspendAsync(provisioningRef, ct),
+            (provider, provisioningRef) => provider.UnsuspendAsync(
+                new UnsuspendAccountOrder(input.Account.ServiceId, provisioningRef), ct),
             HostedAccountOperation.Unsuspend,
             ct);
     }
@@ -72,7 +74,7 @@ public sealed class HostedAccountOperations : IHostedAccountOperations
     /// <summary>Finds the account's server, sends one call to its panel and logs a failure.</summary>
     /// <param name="account">The account acted on.</param>
     /// <param name="call">The provider call, given the provider and the account's provisioning reference.</param>
-    /// <param name="operation">Which operation this is, for the failure log line.</param>
+    /// <param name="operation">Which operation this is, for the log line.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The outcome of the call.</returns>
     private async Task<HostedAccountOutcome> RunAsync(
@@ -92,24 +94,30 @@ public sealed class HostedAccountOperations : IHostedAccountOperations
             return HostedAccountOutcome.NoAccount;
         }
 
-        try
+        // A provider counts an account already in the wanted state as success, so a failure here is a real one: access denied, an
+        // unreachable host or a module with no provider. PanelCall logs it (the panel's own code when it refused with one) rather
+        // than swallowing it, and the provider's own message stays in the log and never reaches a caller; the outcome is only
+        // Failed, because the account may now be out of step with the platform.
+        var outcome = await PanelCall.RunAsync(
+            () => call(_providerFactory.CreateFor(server), provisioningRef),
+            _logger,
+            $"{operation} of the hosting account",
+            account.ServiceId,
+            server.Id,
+            UpstreamFailedCode(operation));
+        return outcome.IsSuccess ? HostedAccountOutcome.Updated : HostedAccountOutcome.Failed;
+    }
+
+    /// <summary>Names the generic failure code of an operation, which only the log carries here.</summary>
+    /// <param name="operation">Which operation failed.</param>
+    /// <returns>The code the staff command of that operation answers for a failed call.</returns>
+    private static string UpstreamFailedCode(HostedAccountOperation operation)
+    {
+        return operation switch
         {
-            await call(_providerFactory.CreateFor(server), provisioningRef);
-            return HostedAccountOutcome.Updated;
-        }
-        catch (Exception ex)
-        {
-            // A provider counts an account already in the wanted state as success, so what lands
-            // here is a real failure: access denied, an unreachable host or a module with no
-            // provider. It is logged rather than swallowed, and the provider's own message stays
-            // in the log and never reaches a caller.
-            _logger.LogWarning(
-                ex,
-                "{Operation} of service {ServiceId} on server {ServerId} failed; the hosting account may be out of step with the platform.",
-                operation,
-                account.ServiceId,
-                server.Id);
-            return HostedAccountOutcome.Failed;
-        }
+            HostedAccountOperation.Suspend => HostpanelErrorCodes.SERVICE_SUSPEND_UPSTREAM_FAILED,
+            HostedAccountOperation.Unsuspend => HostpanelErrorCodes.SERVICE_UNSUSPEND_UPSTREAM_FAILED,
+            _ => HostpanelErrorCodes.SERVICE_TERMINATE_UPSTREAM_FAILED,
+        };
     }
 }

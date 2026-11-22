@@ -31,26 +31,9 @@
     "fieldPort": "Պորտ",
     "fieldApiToken": "API թոքեն"
   },
-  "plesk": {
-    "shortDescription": "Ավտոմատացրեք սերվերների և հոսթինգի կառավարումը Plesk-ի XML API-ի միջոցով։",
-    "fieldHost": "Plesk հոսթ"
-  },
   "cwp": {
     "shortDescription": "Կառավարեք հոսթինգ հաշիվները CentOS Web Panel սերվերների վրա։",
     "fieldHost": "CWP հոսթ"
-  },
-  "cwp7": {
-    "shortDescription": "Ստեղծեք հոսթինգ հաշիվներ և կառավարեք դրանք Control Web Panel 7 API-ի միջոցով։",
-    "fieldMonthly_cost": "Ամսական արժեք",
-    "fieldDatacenter": "Տվյալների կենտրոն/NOC",
-    "fieldAccess_hash": "Մուտքի հեշ",
-    "fieldPort": "API պորտ",
-    "fieldMax_accounts": "Հաշիվների առավելագույն քանակ",
-    "fieldNs1": "Հիմնական անվանային սերվեր",
-    "fieldNs1_ip": "Հիմնական անվանային սերվերի IP",
-    "fieldNs2": "Երկրորդական անվանային սերվեր",
-    "fieldNs2_ip": "Երկրորդական անվանային սերվերի IP",
-    "fieldSecure": "Օգտագործել SSL միացումների համար"
   },
   "smtp": {
     "shortDescription": "Կարգավորեք ելքային նամակների առաքումը ձեր SMTP սերվերի միջոցով։",

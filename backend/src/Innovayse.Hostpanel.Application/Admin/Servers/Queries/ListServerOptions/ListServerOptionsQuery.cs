@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServerOptions;
 
@@ -9,4 +8,4 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServerOption
 /// <c>ListServersQuery</c> instead.
 /// </summary>
 /// <param name="Module">Optional control panel module filter. Null returns every module.</param>
-public sealed record ListServerOptionsQuery(ServerModule? Module = null);
+public sealed record ListServerOptionsQuery(string? Module = null);

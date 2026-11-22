@@ -220,12 +220,12 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var calls = new Func<Task>[]
         {
             () => provider.SuspendAsync(new SuspendAccountOrder(7, reference, "Overdue"), CancellationToken.None),
-            () => provider.UnsuspendAsync(reference, CancellationToken.None),
+            () => provider.UnsuspendAsync(new UnsuspendAccountOrder(7, reference), CancellationToken.None),
             () => provider.TerminateAsync(new TerminateAccountOrder(7, reference, "Cancelled"), CancellationToken.None),
-            () => provider.GetCredentialsAsync(reference, CancellationToken.None),
-            () => provider.GetCPanelSsoUrlAsync(reference, null, CancellationToken.None),
-            () => provider.ChangePasswordAsync(reference, "N3w-pass", CancellationToken.None),
-            () => provider.ChangePackageAsync(reference, "Pro", CancellationToken.None),
+            () => provider.GetCredentialsAsync(new AccountCredentialsOrder(7, reference), CancellationToken.None),
+            () => provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, reference, null), CancellationToken.None),
+            () => provider.ChangePasswordAsync(new ChangeAccountPasswordOrder(7, reference, "N3w-pass"), CancellationToken.None),
+            () => provider.ChangePackageAsync(new ChangeAccountPackageOrder(7, reference, "Pro"), CancellationToken.None),
         };
 
         foreach (var call in calls)
@@ -243,8 +243,8 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Ok);
 
-        var blankPassword = () => provider.ChangePasswordAsync("testuser", " ", CancellationToken.None);
-        var blankPackage = () => provider.ChangePackageAsync("testuser", string.Empty, CancellationToken.None);
+        var blankPassword = () => provider.ChangePasswordAsync(new ChangeAccountPasswordOrder(7, "testuser", " "), CancellationToken.None);
+        var blankPackage = () => provider.ChangePackageAsync(new ChangeAccountPackageOrder(7, "testuser", string.Empty), CancellationToken.None);
 
         await blankPassword.Should().ThrowAsync<ArgumentException>();
         await blankPackage.Should().ThrowAsync<ArgumentException>();
@@ -322,7 +322,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused, WhmReplies.ActiveAccount);
 
-        await provider.UnsuspendAsync("testuser", CancellationToken.None);
+        await provider.UnsuspendAsync(new UnsuspendAccountOrder(7, "testuser"), CancellationToken.None);
 
         AssertCall(whm.Requests[0], "unsuspendacct", "user=testuser");
     }
@@ -334,7 +334,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused, WhmReplies.ErrorPage);
 
-        var act = () => provider.UnsuspendAsync("testuser", CancellationToken.None);
+        var act = () => provider.UnsuspendAsync(new UnsuspendAccountOrder(7, "testuser"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -382,7 +382,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Ok);
 
-        await provider.ChangePackageAsync("testuser", "Pro Plan", CancellationToken.None);
+        await provider.ChangePackageAsync(new ChangeAccountPackageOrder(7, "testuser", "Pro Plan"), CancellationToken.None);
 
         AssertCall(whm.Requests.Should().ContainSingle().Subject, "changepackage", "user=testuser&pkg=Pro+Plan");
     }
@@ -398,7 +398,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused, lookup);
 
-        var act = () => provider.ChangePackageAsync("testuser", "Pro", CancellationToken.None);
+        var act = () => provider.ChangePackageAsync(new ChangeAccountPackageOrder(7, "testuser", "Pro"), CancellationToken.None);
 
         if (succeeds)
         {
@@ -417,7 +417,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused);
 
-        var act = () => provider.ChangePasswordAsync("testuser", "N3w", CancellationToken.None);
+        var act = () => provider.ChangePasswordAsync(new ChangeAccountPasswordOrder(7, "testuser", "N3w"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         AssertCall(whm.Requests.Should().ContainSingle().Subject, "passwd", "user=testuser&password=N3w");
@@ -430,7 +430,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Session);
 
-        var url = await provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
+        var url = await provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         url.Should().Be("https://192.0.2.10:2083/cpsess123/login/?session=testuser:abc");
         AssertCall(whm.Requests.Should().ContainSingle().Subject, "create_user_session", "user=testuser&service=cpaneld");
@@ -445,7 +445,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var address = $"https://{host}:2083/cpsess123/login/";
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.SessionAt(address.ToUpperInvariant()));
 
-        var url = await provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
+        var url = await provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         // The scheme and host come back in their parsed, lower case form; the path keeps its case.
         url.Should().Be($"https://{host}:2083/CPSESS123/LOGIN/");
@@ -472,7 +472,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var logger = new CapturingLogger<WhmProvisioningProvider>();
         var provider = BuildProvider(logger, WhmReplies.SessionAt(url));
 
-        var act = () => provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
+        var act = () => provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         var thrown = await act.Should().ThrowAsync<DomainRuleException>();
         thrown.Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
@@ -487,7 +487,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused);
 
-        var act = () => provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
+        var act = () => provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -499,7 +499,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.ActiveAccount);
 
-        var credentials = await provider.GetCredentialsAsync("testuser", CancellationToken.None);
+        var credentials = await provider.GetCredentialsAsync(new AccountCredentialsOrder(7, "testuser"), CancellationToken.None);
 
         credentials.Domain.Should().Be("example.com");
         credentials.Password.Should().BeNull();
@@ -513,7 +513,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.NoAccount);
 
-        var act = () => provider.GetCredentialsAsync("testuser", CancellationToken.None);
+        var act = () => provider.GetCredentialsAsync(new AccountCredentialsOrder(7, "testuser"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

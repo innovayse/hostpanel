@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Domain.Servers.Enums;
-
 namespace Innovayse.Hostpanel.Domain.Servers;
 
 /// <summary>
@@ -10,7 +8,7 @@ namespace Innovayse.Hostpanel.Domain.Servers;
 /// <param name="Hostname">Hostname or IP for API access.</param>
 /// <param name="IpAddress">Primary public IP address.</param>
 /// <param name="AssignedIpAddresses">Additional IPs (one per line).</param>
-/// <param name="Module">Control panel module type.</param>
+/// <param name="Module">Control panel module id; see <see cref="ServerModules"/>.</param>
 /// <param name="Username">API username.</param>
 /// <param name="Credentials">API secrets (null, empty or whitespace members = leave unchanged on update).</param>
 /// <param name="UseSSL">Whether to use SSL when connecting to the API.</param>
@@ -27,7 +25,7 @@ public record ServerDetails(
     string Hostname,
     string? IpAddress,
     string? AssignedIpAddresses,
-    ServerModule Module,
+    string Module,
     string Username,
     ServerCredentials Credentials,
     bool UseSSL,

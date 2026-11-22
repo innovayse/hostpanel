@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Reports.Commands.UpdateDiskUsage;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Common.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -43,7 +42,7 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
             Hostname: "usage.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModule.Cwp7,
+            Module: ServerModules.Cwp7,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,

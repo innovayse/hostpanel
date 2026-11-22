@@ -2,7 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Extensions;
-using Innovayse.Hostpanel.Domain;
+using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
@@ -62,7 +62,8 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server,
     /// <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not an
-    /// https address on its own server, or <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one.
+    /// https address on its own server, or the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses with a reason, or
+    /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one.
     /// </returns>
     public async Task<Result<ControlPanelSsoDto>> HandleAsync(GetControlPanelSsoUrlQuery query, CancellationToken ct)
     {
@@ -86,31 +87,17 @@ public sealed class GetControlPanelSsoUrlHandler
             return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NO_SERVER_ASSIGNED);
         }
 
-        try
-        {
-            var provider = _providerFactory.CreateFor(server);
-            // The browser that asked is the one that opens the link. Some panels (Plesk) open a
-            // session only from the address it was issued for; behind the portal's BFF this is the
-            // visitor's address, forwarded in X-Forwarded-For and resolved by the trusted-proxy step.
-            var url = await provider.GetCPanelSsoUrlAsync(account.Value!, _caller.IpAddress, ct);
-            return Result<ControlPanelSsoDto>.Success(new ControlPanelSsoDto(url));
-        }
-        catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED)
-        {
-            // The panel named an address that is not on its own server. Nothing of it is logged or
-            // returned: the caller only learns that the session was not accepted.
-            _logger.LogWarning(
-                "A control panel SSO URL for service {ServiceId} on server {ServerId} was rejected.", service.Id, server.Id);
-            return Result<ControlPanelSsoDto>.FailureCode(ex.Code);
-        }
-        catch (Exception ex)
-        {
-            // The provider's own message and the server it named never reach the caller (rules
-            // on upstream detail); they are logged here for whoever has to chase the failure up.
-            _logger.LogWarning(
-                ex, "Issuing a control panel SSO URL for service {ServiceId} on server {ServerId} failed.",
-                service.Id, server.Id);
-            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED);
-        }
+        // The browser that asked is the one that opens the link. Some panels open a
+        // session only from the address it was issued for; behind the portal's BFF this is the
+        // visitor's address, forwarded in X-Forwarded-For and resolved by the trusted-proxy step.
+        // SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED is the provider saying the panel named an address that is not on its own
+        // server: the caller only learns that the session was not accepted.
+        var url = await PanelCall.RunAsync(
+            () => _providerFactory.CreateFor(server).GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(service.Id, account.Value!, _caller.IpAddress), ct),
+            _logger, "Issuing a control panel SSO URL", service.Id, server.Id, HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED,
+            HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
+        return url.IsSuccess
+            ? Result<ControlPanelSsoDto>.Success(new ControlPanelSsoDto(url.Value!))
+            : Result<ControlPanelSsoDto>.FailureCode(url.ErrorCode!);
     }
 }

@@ -552,9 +552,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>Այս սերվերի համար API բանալի կամ մուտքի հեշ սահմանված չէ։</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Այս սերվերի մոդուլի համար կապի ստուգումը չի աջակցվում։</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի սերվերների խումբ չի գտնվել։</value>
   </data>
@@ -1575,5 +1572,50 @@
   </data>
   <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
     <value>Առանց SSL սերվերը չի կարող ընդունել ինքնաստորագրված վկայական։ Միացրեք SSL-ը կամ հանեք ինքնաստորագրված վկայականի նշումը։</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Կառավարման վահանակի այս տեսակը հասանելի չէ։ Նախ տեղադրեք դրա պլագինը կամ ընտրեք այլ տեսակ։</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Այս սերվերի կառավարման վահանակի պլագինը տեղադրված չէ, անջատված է, կարգավորված չէ կամ չի աշխատում։ Ստուգեք այն պլագինների էջում։</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Այս սերվերի վահանակի տեսակը սպասարկում են մի քանի տեղադրված պլագիններ։ Թողեք միայն մեկը։</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Կառավարման այս վահանակը չի աջակցում պահանջված գործողությունը։</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>Կառավարման վահանակում այս ծառայության համար հաշիվ չկա։</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Կառավարման վահանակը չի ճանաչում այս ծառայության հոսթինգի փաթեթը։</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Կառավարման վահանակը չի ընդունում հաշվի այս օգտանունը։</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Կառավարման վահանակը չի ընդունում այս դոմենի անունը։</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց գաղտնաբառը։ Ընտրեք ավելի ամուր գաղտնաբառ։</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Կառավարման վահանակը հասել է իր սահմանաչափին և չի կարող ընդունել այս փոփոխությունը։</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց այս սերվերի համար պահված մուտքի տվյալները։</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց հարցումը։</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Հոսթինգի հաշիվը ստեղծվում է։ Ստուգեք կրկին մի քանի րոպեից։</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Սերվերի միացման տվյալները թերի են այս կառավարման վահանակի համար։</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց պահված մուտքի տվյալները։</value>
   </data>
 </root>

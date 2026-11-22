@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 
@@ -10,4 +9,4 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 /// <param name="Module">Its control panel module.</param>
 /// <param name="IsDisabled">Whether the server is disabled.</param>
 /// <param name="Agent">Its SSH key agent settings, or <see langword="null"/> when none are stored.</param>
-public sealed record ServerSshTargetDto(int ServerId, ServerModule Module, bool IsDisabled, ServerSshAgentEndpoint? Agent);
+public sealed record ServerSshTargetDto(int ServerId, string Module, bool IsDisabled, ServerSshAgentEndpoint? Agent);

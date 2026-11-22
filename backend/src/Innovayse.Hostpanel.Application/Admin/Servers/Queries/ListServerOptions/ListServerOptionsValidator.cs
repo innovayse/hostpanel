@@ -1,4 +1,5 @@
 using FluentValidation;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -13,7 +14,7 @@ public sealed class ListServerOptionsValidator : LocalizedValidator<ListServerOp
     public ListServerOptionsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
-        RuleFor(x => x.Module).IsInEnum().WithMessage(L["ServerListModuleInvalid"]);
+        RuleFor(x => x.Module).Must(PluginServerModules.IsWellFormed).When(x => x.Module is not null)
+            .WithMessage(L["ServerModuleInvalid"]);
     }
 }

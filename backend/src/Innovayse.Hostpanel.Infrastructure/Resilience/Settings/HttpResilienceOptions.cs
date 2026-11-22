@@ -180,58 +180,11 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
-    /// CWP7 control panels, typed client and the "Cwp7" named client the provisioning factory
-    /// resolves per server. Registered with no retry stage and no breaker.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>No retries and no breaker, for the same two reasons as <see cref="Cwp"/>:</b> the
-    /// operation lives in the POST body rather than in the method or path, and the server is a
-    /// per-call argument so a breaker would be shared across every CWP7 node.
-    /// </para>
-    /// <para>
-    /// <b>100 seconds an attempt, 115 in total</b>, inside the registration's existing two-minute
-    /// <see cref="HttpClient.Timeout"/>. This is the longest budget in the file and it is not an
-    /// oversight: CWP7 account creation on a busy node routinely runs past a minute, and cutting
-    /// it short leaves a half-built account nobody knows about. The gain here is not a shorter
-    /// wait, it is that a connection that has stalled entirely is now abandoned at all.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions Cwp7 { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(100),
-        TotalTimeout = TimeSpan.FromSeconds(115),
-        MaxRetryAttempts = 0,
-        RetryDelay = TimeSpan.Zero,
-        CircuitBreakerEnabled = false,
-    };
-
-    /// <summary>
-    /// Plesk control panels, the "Plesk" named client the provisioning factory and the connection
-    /// tester resolve per server. Registered with no retry stage and no breaker.
-    /// </summary>
-    /// <remarks>
-    /// The same reasons as <see cref="Cwp7"/>: every XML API call is a POST to one path, so the
-    /// pipeline cannot tell a read from a create and a retry could create an account twice, and
-    /// the server is a per-call argument, so a breaker would be shared across every Plesk node.
-    /// Creating a subscription sets up its web space and system user and can take a minute on a
-    /// busy node, hence the same long budget.
-    /// </remarks>
-    public ResilienceProfileOptions Plesk { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(100),
-        TotalTimeout = TimeSpan.FromSeconds(115),
-        MaxRetryAttempts = 0,
-        RetryDelay = TimeSpan.Zero,
-        CircuitBreakerEnabled = false,
-    };
-
-    /// <summary>
     /// cPanel servers, the "CPanelWhm" named client the provisioning factory, the connection
     /// tester and the disk usage report resolve per server. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
-    /// The same reasons as <see cref="Plesk"/>: a retried <c>createacct</c> could race the first
+    /// The same reasons as <see cref="Cwp"/>: a retried <c>createacct</c> could race the first
     /// attempt, and the server is a per-call argument, so a breaker would be shared across every
     /// WHM node. Account creation builds a home directory, a mail store and a DNS zone and can be
     /// slow on a busy node, hence the same long budget.
@@ -473,8 +426,6 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Telegram), Telegram);
         yield return new NamedResilienceProfile(nameof(StatusProbe), StatusProbe);
         yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
-        yield return new NamedResilienceProfile(nameof(Cwp7), Cwp7);
-        yield return new NamedResilienceProfile(nameof(Plesk), Plesk);
         yield return new NamedResilienceProfile(nameof(CPanelWhm), CPanelWhm);
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
         yield return new NamedResilienceProfile(nameof(NameAm), NameAm);

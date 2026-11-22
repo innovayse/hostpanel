@@ -722,6 +722,12 @@ public static class HostpanelErrorCodes
     public const string PROVISIONING_OUTCOME_UNKNOWN = "PROVISIONING_OUTCOME_UNKNOWN";
 
     /// <summary>
+    /// The panel accepted the request and is still creating the account (503). Like <c>PROVISIONING_OUTCOME_UNKNOWN</c> it is a
+    /// retry signal: the service stays Pending and a later attempt adopts the account once it exists.
+    /// </summary>
+    public const string PROVISIONING_PENDING = "PROVISIONING_PENDING";
+
+    /// <summary>
     /// The service's first invoice is not paid in full, so the client may not set it up yet (402).
     /// Staff provisioning is not bound by it.
     /// </summary>
@@ -806,6 +812,9 @@ public static class HostpanelErrorCodes
     /// <summary>Products still provision into the server group, so it cannot be deleted (409).</summary>
     public const string SERVER_GROUP_IN_USE = "SERVER_GROUP_IN_USE";
 
+    /// <summary>The module is neither one the host knows nor one an installed plugin declares (400).</summary>
+    public const string SERVER_MODULE_UNKNOWN = "SERVER_MODULE_UNKNOWN";
+
     /// <summary>The connection probe could not reach the server or the panel did not answer (answered inside the test result, not as a refusal).</summary>
     public const string SERVER_CONNECTION_UNREACHABLE = "SERVER_CONNECTION_UNREACHABLE";
 
@@ -815,8 +824,46 @@ public static class HostpanelErrorCodes
     /// <summary>The server stores no API key or access hash to probe a legacy hosting panel with (answered inside the test result).</summary>
     public const string SERVER_CONNECTION_NO_API_KEY = "SERVER_CONNECTION_NO_API_KEY";
 
-    /// <summary>The server's module has no connection probe (answered inside the test result).</summary>
-    public const string SERVER_CONNECTION_MODULE_UNSUPPORTED = "SERVER_CONNECTION_MODULE_UNSUPPORTED";
+    /// <summary>The panel plugin reports the server's connection details incomplete for it (answered inside the test result).</summary>
+    public const string SERVER_CONNECTION_NOT_CONFIGURED = "SERVER_CONNECTION_NOT_CONFIGURED";
+
+    /// <summary>The panel refused the credentials the server stores (answered inside the test result).</summary>
+    public const string SERVER_CONNECTION_AUTH_FAILED = "SERVER_CONNECTION_AUTH_FAILED";
+
+    // Hosting panels served by plugins
+
+    /// <summary>The plugin that serves the server's module is installed but switched off, not configured, migrating or broken (503).</summary>
+    public const string PANEL_PLUGIN_UNAVAILABLE = "PANEL_PLUGIN_UNAVAILABLE";
+
+    /// <summary>Two installed plugins declare the server's module, so none is chosen (409).</summary>
+    public const string PANEL_PLUGIN_CONFLICT = "PANEL_PLUGIN_CONFLICT";
+
+    /// <summary>The panel answered that it does not support the action; also login details asked of a plugin without the login capability (409).</summary>
+    public const string PANEL_OPERATION_NOT_SUPPORTED = "PANEL_OPERATION_NOT_SUPPORTED";
+
+    /// <summary>The panel has no account for the service (409).</summary>
+    public const string PANEL_ACCOUNT_NOT_FOUND = "PANEL_ACCOUNT_NOT_FOUND";
+
+    /// <summary>The panel does not know the hosting package (409).</summary>
+    public const string PANEL_PACKAGE_UNKNOWN = "PANEL_PACKAGE_UNKNOWN";
+
+    /// <summary>The panel does not accept the account username (409).</summary>
+    public const string PANEL_USERNAME_INVALID = "PANEL_USERNAME_INVALID";
+
+    /// <summary>The panel does not accept the domain name (409).</summary>
+    public const string PANEL_DOMAIN_INVALID = "PANEL_DOMAIN_INVALID";
+
+    /// <summary>The panel rejected the password (409).</summary>
+    public const string PANEL_PASSWORD_REJECTED = "PANEL_PASSWORD_REJECTED";
+
+    /// <summary>The panel reached a limit and cannot take the change (409).</summary>
+    public const string PANEL_LIMIT_REACHED = "PANEL_LIMIT_REACHED";
+
+    /// <summary>The panel refused the credentials the operator saved on the server (502).</summary>
+    public const string PANEL_ACCESS_DENIED = "PANEL_ACCESS_DENIED";
+
+    /// <summary>The panel refused the request for a reason no other panel code names (502).</summary>
+    public const string PANEL_REFUSED = "PANEL_REFUSED";
 
     // Admin: plugins
 

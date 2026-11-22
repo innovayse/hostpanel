@@ -6,7 +6,7 @@ namespace Innovayse.Hostpanel.Domain.Provisioning;
 /// Result of a provisioning operation returned by the <c>IProvisioningProvider</c> port
 /// (<c>Innovayse.Hostpanel.Application.Common.Interfaces</c>: Domain cannot reference it, so
 /// this cannot be a resolvable <c>cref</c>). Built through <see cref="Created"/>,
-/// <see cref="AlreadyExists"/> and <see cref="Refused"/>.
+/// <see cref="AlreadyExists"/>, <see cref="Pending"/> and <see cref="Refused"/>.
 /// </summary>
 /// <param name="Outcome">How the provider answered.</param>
 /// <param name="ProvisioningRef">
@@ -35,6 +35,12 @@ public sealed record ProvisioningResult(
     /// <returns>An <see cref="ProvisioningOutcome.AlreadyExists"/> result.</returns>
     public static ProvisioningResult AlreadyExists(string provisioningRef, string? existingAccountDomain) =>
         new(ProvisioningOutcome.AlreadyExists, provisioningRef, existingAccountDomain, null);
+
+    /// <summary>Builds the answer for an account the panel accepted and is still creating.</summary>
+    /// <param name="provisioningRef">Provider-assigned reference of the account being created.</param>
+    /// <returns>A <see cref="ProvisioningOutcome.Pending"/> result.</returns>
+    public static ProvisioningResult Pending(string provisioningRef) =>
+        new(ProvisioningOutcome.Pending, provisioningRef, null, null);
 
     /// <summary>Builds the answer for a request the panel refused.</summary>
     /// <param name="errorMessage">Why, for the log only; never put on the wire.</param>

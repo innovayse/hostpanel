@@ -85,7 +85,7 @@ internal static class ServersTestSeeds
     public static object ServerBody(
         string name,
         string? hostname = null,
-        ServerModule module = ServerModule.Cwp7,
+        string module = ServerModules.Cwp7,
         string? accessHash = null,
         bool isDefault = false,
         decimal monthlyCost = 0m,
@@ -114,7 +114,7 @@ internal static class ServersTestSeeds
     public static async Task<int> CreateServerAsync(
         HttpClient client,
         string name,
-        ServerModule module = ServerModule.Cwp7,
+        string module = ServerModules.Cwp7,
         string? hostname = null,
         string? ipAddress = null)
     {

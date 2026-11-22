@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
@@ -27,10 +27,10 @@ public sealed class ProvisionServiceWithoutServerGroupTests(IntegrationTestFacto
         (await http.PostAsJsonAsync(
             "/api/admin/servers",
             ServersTestSeeds.ServerBody(
-                $"Plesk-Server-{Guid.NewGuid():N}",
-                hostname: "plesk.example.test",
-                module: ServerModule.Plesk,
-                accessHash: "plesk-key"))).EnsureSuccessStatusCode();
+                $"DirectAdmin-Server-{Guid.NewGuid():N}",
+                hostname: "directadmin.example.test",
+                module: ServerModules.DirectAdmin,
+                accessHash: "directadmin-key"))).EnsureSuccessStatusCode();
 
         var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
 

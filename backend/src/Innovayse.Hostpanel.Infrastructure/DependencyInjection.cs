@@ -55,7 +55,6 @@ using Innovayse.Hostpanel.Infrastructure.Vat;
 using Innovayse.Hostpanel.Infrastructure.Vat.Settings;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
-using Innovayse.Providers.CWP7;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -453,11 +452,11 @@ public static class DependencyInjection
 
         // Provisioning behaviour switches. Left unset everywhere but development, where
         // appsettings.Development.json turns UseFakeProvider on so the setup flow can complete
-        // without a live CWP7 panel to call.
+        // without a live cPanel server to call.
         // The cPanel ports are checked on start, with the rest of the section.
         services.AddProvisioningOptions(configuration);
 
-        // Provisioning provider factory: creates per-server providers (CWP7, cPanel, etc.)
+        // Provisioning provider factory: creates per-server providers (cPanel, or the panel plugin that serves the module)
         services.AddScoped<IProvisioningProviderFactory, ProvisioningProviderFactory>();
         // The username rules staff-facing handlers ask, so a name a panel would refuse fails when it is saved.
         services.AddSingleton<IPanelAccountRules, PanelAccountRules>();
@@ -679,7 +678,7 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp);
 #pragma warning restore CS0618
-        // Named twin of the typed registration above, for the same reason the CWP7 pair exists:
+        // Named twin of the typed registration above:
         // CwpProvisioningProvider builds its own CwpApiClient (the interface exposes only the
         // server-info call) and resolves this client by name. That keeps the
         // provisioning path, the one that matters most, inside the timeout and the no-retry pipeline.
@@ -690,35 +689,7 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp);
 
-        // CWP7 API client (named + typed so the factory can also resolve it by name).
-        // Both registrations carry the same profile for the same two reasons as CWP above; the
-        // named one is what ProvisioningProviderFactory resolves per server, so it is what
-        // covers the provisioning path, the one that matters most.
-        services.AddHttpClient(HttpClientNames.Cwp7, client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Cwp7;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Cwp7);
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
-        services.AddHttpClient<IHostingPanelV7ApiClient, Cwp7ApiClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Cwp7;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Cwp7);
-#pragma warning restore CS0618
-
-        // Plesk XML API client, named only: the provider factory and the connection tester both
-        // build a PleskApiClient over it per server, so one registration covers both paths.
-        services.AddHttpClient(HttpClientNames.Plesk, client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Plesk;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Plesk);
-
-        // WHM API client for cPanel servers, named only, like Plesk. The chain (no request logging, no
+        // WHM API client for cPanel servers, named only: the factory and the tester build a client over it per server. The chain (no request logging, no
         // redirects, the WHM resilience profile) is one extension, which the tests resolve as well.
         services.AddCPanelWhmHttpClient();
 
@@ -920,6 +891,16 @@ public static class DependencyInjection
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
         // whichever resolver or runner asks for it. Scoped: it reads the settings through the request's context.
         services.AddScoped<PluginActivator>();
+
+        // A hosting panel plugin is reached through the host's own provisioning port: the resolver maps a server's module id to
+        // the plugin that serves it, the caller activates and runs it, the reader gives it the server's stored password, and the
+        // catalog lists the modules an administrator can pick. The adapters built on them are the provisioning factory, the
+        // connection tester and the disk usage service.
+        services.AddScoped<IServerModulePluginResolver, ServerModulePluginResolver>();
+        services.AddScoped<IServerModuleCatalog, ServerModuleCatalog>();
+        services.AddScoped<PanelPluginCaller>();
+        services.AddScoped<PanelConnectionReader>();
+        services.AddScoped<PanelPluginAccountReader>();
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 

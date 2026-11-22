@@ -11,7 +11,7 @@ import type {
   ServerGroupDto,
   ServerGroupPayload,
   ServerListQuery,
-  ServerModule,
+  ServerModuleOptionDto,
   ServerOptionDto,
   ServerPayload,
   TestConnectionResultDto,
@@ -51,8 +51,16 @@ export const useServersApi = () => {
    * @param module - Keep only the servers that run this module; every server when omitted.
    * @returns Every matching server, by name.
    */
-  const listServerOptions = (module?: ServerModule): Promise<ServerOptionDto[]> =>
+  const listServerOptions = (module?: string): Promise<ServerOptionDto[]> =>
     request<ServerOptionDto[]>(`${ApiPath.AdminServerOptions}${buildQuery({ module })}`)
+
+  /**
+   * Lists the control panel modules a server can be given: the host's own and the ones installed panel plugins declare.
+   *
+   * @returns The modules, built in ones first.
+   */
+  const listServerModules = (): Promise<ServerModuleOptionDto[]> =>
+    request<ServerModuleOptionDto[]>(ApiPath.AdminServerModules)
 
   /**
    * Creates a server.
@@ -185,6 +193,7 @@ export const useServersApi = () => {
   return {
     listServers,
     listServerOptions,
+    listServerModules,
     createServer,
     updateServer,
     deleteServer,

@@ -171,7 +171,9 @@ public sealed class InvoicesController : BaseApiController
   methods for later charges implements `IStoredCredentialPlugin`, reached through `IStoredCredentialPluginResolver`;
   there is no on-site card gateway port and no third, direct-charge gateway
 - Registrar providers implement `IRegistrarProvider`
-- Provisioning providers implement `IProvisioningProvider`
+- Provisioning providers implement `IProvisioningProvider`; a hosting panel plugin is reached through the same port
+  (`PanelPluginProvisioningProvider`), and only `Infrastructure/Plugins` and `Infrastructure/Provisioning` name the SDK's panel
+  contracts (`PanelPluginPortTests`)
 - Ports live in **Application/Common/Interfaces**, implementations in **Infrastructure**
 - Never `new` a gateway directly: always inject the interface
 
@@ -252,7 +254,7 @@ public static class MigrationJobDtoExtensions
 | Event | `NounVerbedEvent` | `InvoiceCreatedEvent` |
 | DTO | `NounDto` in `<Module>/Common/` | `InvoiceDto` |
 | Port | `INoun` in `Application/Common/Interfaces/` | `IPaymentPluginResolver` |
-| Adapter | implementation under a capability folder in Infrastructure | `Integrations/Plesk/PleskApiClient` |
+| Adapter | implementation under a capability folder in Infrastructure | `Integrations/CPanel/Whm/WhmApiClient` |
 | Extension class | `NounExtensions` | `MigrationJobDtoExtensions` |
 
 - Every database identifier we own is PascalCase: tables (plural), columns, primary/foreign keys, indexes (`IX_<Table>_<Cols>`), unique/check constraints (`CK_<Table>_<Rule>`), schemas we create. No snake_case or lower case; see "Database identifiers" in `project.md`.

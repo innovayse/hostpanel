@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useServersApi } from '@/composables/apis/useServersApi'
-import { ServerModule, ServerState } from '@/types/server'
+import { ServerModule, ServerModuleSource, ServerState } from '@/types/server'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -16,10 +16,10 @@ describe('useServersApi servers', () => {
   it('listServers reads one page of /admin/servers with the page, its size and the filters', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
 
-    const page = await useServersApi().listServers({ page: 2, pageSize: 20, search: 'host', module: ServerModule.Plesk, state: ServerState.Online })
+    const page = await useServersApi().listServers({ page: 2, pageSize: 20, search: 'host', module: ServerModule.DirectAdmin, state: ServerState.Online })
 
     expect(page.items).toEqual([{ id: 1 }])
-    expect(callOf(mock)).toMatchObject({ url: '/api/admin/servers?page=2&pageSize=20&search=host&module=Plesk&state=online', method: 'GET' })
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/servers?page=2&pageSize=20&search=host&module=DirectAdmin&state=online', method: 'GET' })
   })
 
   it('listServers leaves the filters out of the address when none is set', async () => {
@@ -37,6 +37,17 @@ describe('useServersApi servers', () => {
     await api.listServerOptions(ServerModule.Cwp7)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/servers/options', method: 'GET' })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/servers/options?module=Cwp7', method: 'GET' })
+  })
+
+  it('listServerModules reads the control panel modules a server can be given', async () => {
+    const modules = [
+      { id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn },
+      { id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin },
+    ]
+    const mock = stubFetch(json(modules))
+
+    expect(await useServersApi().listServerModules()).toEqual(modules)
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/servers/modules', method: 'GET' })
   })
 
   it('createServer, updateServer and deleteServer use POST, PUT and DELETE', async () => {

@@ -16,7 +16,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServersStore } from '@/stores/servers'
-import { FILL_TYPE_LABELS, MODULE_LABELS, ServerModule, ServerState } from '@/types/server'
+import { FILL_TYPE_LABELS, ServerModuleSource, ServerState, moduleLabel } from '@/types/server'
 import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerListFilters, ServerPayload, ServerTestOutcome } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 import ServerCard from '@/components/servers/ServerCard.vue'
@@ -129,11 +129,11 @@ const FilterKey = {
 } as const
 
 /** The module and state filters, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
+const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, textOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
-/** The module in the address as a module, undefined when none is set or the value is not one. */
-const moduleOfAddress = enumOf(FilterKey.Module, ServerModule)
+/** The module id in the address, undefined when none is set; the API refuses one that is not a well formed id. */
+const moduleOfAddress = textOf(FilterKey.Module)
 
 /** The state in the address as a state, undefined when none is set or the value is not one. */
 const stateOfAddress = enumOf(FilterKey.State, ServerState)
@@ -173,10 +173,13 @@ const deleteGroupTarget = ref<ServerGroupDto | null>(null)
 /** True while the staged group is being deleted. */
 const deletingGroup = ref(false)
 
-/** The module choices of the filter, "any" first. */
+/** The module choices of the filter, "any" first: the host's own modules and the ones installed plugins declare. */
 const moduleOptions = computed<UiSelectOption<string>[]>(() => [
   { value: '', label: t('shared.any') },
-  ...Object.values(ServerModule).map(module => ({ value: module, label: MODULE_LABELS[module] })),
+  ...store.moduleOptions.map(option => ({
+    value: option.id,
+    label: option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id),
+  })),
 ])
 
 /** The state choices of the filter, "any" first. */
@@ -190,7 +193,7 @@ const chips = chipsOf(() => [
   {
     key: FilterKey.Module,
     label: t('servers.servers.filterModule'),
-    value: moduleOfAddress.value === undefined ? undefined : MODULE_LABELS[moduleOfAddress.value],
+    value: moduleOfAddress.value === undefined ? undefined : moduleLabel(moduleOfAddress.value),
   },
   {
     key: FilterKey.State,
@@ -414,9 +417,10 @@ const serverGroupActions = (group: ServerGroupDto): UiMenuAction[] => {
   ]
 }
 
-// The page of servers loads with the address (loadOnChange); the groups are read once.
+// The page of servers loads with the address (loadOnChange); the groups and the module choices are read once.
 onMounted(() => {
   void store.fetchGroups()
+  void store.fetchModuleOptions()
 })
 </script>
 
@@ -564,6 +568,7 @@ onMounted(() => {
     <ServerFormModal
       v-if="showServerModal"
       :server="editingServer"
+      :module-options="store.moduleOptions"
       :saving="savingServer"
       :error="store.actionError"
       :field-errors="store.fieldErrors"

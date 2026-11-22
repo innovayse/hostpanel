@@ -878,40 +878,37 @@ public sealed class DevDataSeeder
         var serverDefs = new[]
         {
             new ServerDetails("Shared US-01", "shared01.example.test", "192.168.1.10", null,
-                ServerModule.CPanel, "root", new ServerCredentials("changeme", null, null),
+                ServerModules.CPanel, "root", new ServerCredentials("changeme", null, null),
                 true, 500, true, false, 150m, "US-East DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("Shared EU-01", "shared01-eu.example.test", "10.0.0.10", null,
-                ServerModule.CPanel, "root", new ServerCredentials("changeme", null, null),
+                ServerModules.CPanel, "root", new ServerCredentials("changeme", null, null),
                 true, 500, false, false, 150m, "EU-West DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("VPS US-01", "vps01.example.test", "172.16.0.10", null,
-                ServerModule.Plesk, "admin", new ServerCredentials("changeme", null, null),
+                ServerModules.Virtualmin, "admin", new ServerCredentials("changeme", null, null),
                 true, 100, true, false, 350m, "US-East DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("Dedicated US-01", "dedicated01.example.test", "203.0.113.10", null,
-                ServerModule.DirectAdmin, "admin", new ServerCredentials("changeme", null, null),
+                ServerModules.DirectAdmin, "admin", new ServerCredentials("changeme", null, null),
                 true, 50, false, false, 800m, "US-West DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
                 AcceptsSelfSignedCertificate: false),
 
-            // The only Cwp7-module server, and the only one the setup flow can actually pick: every
-            // hosting product maps to the Cwp7 module (SetupServiceHandler.MapProductTypeToModule),
-            // so without a Cwp7 server the server selector returns nothing and "Build My Server"
-            // fails before it starts. The access hash is a dev placeholder: the real panel call is
-            // short-circuited by the fake provider (Provisioning:UseFakeProvider), so it is never used.
-            new ServerDetails("CWP7 US-01", "cwp01.example.test", "203.0.113.20", null,
-                ServerModule.Cwp7, "root", new ServerCredentials("changeme", null, "dev-access-hash"),
+            // A second cPanel server, so the server selector has a choice in the dev stack. The credentials are dev
+            // placeholders: the real panel call is short-circuited by the fake provider (Provisioning:UseFakeProvider).
+            new ServerDetails("cPanel US-02", "cpanel02.example.test", "203.0.113.20", null,
+                ServerModules.CPanel, "root", new ServerCredentials("changeme", "dev-api-token", null),
                 true, 200, true, false, 300m, "US-East DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),

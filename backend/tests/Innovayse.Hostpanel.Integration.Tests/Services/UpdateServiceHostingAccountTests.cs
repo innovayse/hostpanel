@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.UpdateServiceHostingAccount;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -129,7 +129,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     public async Task UpdateHostingAccount_PendingServiceOnCPanel_WithABadUsername_Returns409Async(string username)
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Pending);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModule.CPanel);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.CPanel);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
 
         var response = await client.PutAsJsonAsync(
@@ -150,7 +150,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     public async Task UpdateHostingAccount_PendingServiceOnCPanel_WithAGoodUsername_StoresItAsync()
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Pending);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModule.CPanel);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.CPanel);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
 
         var response = await client.PutAsJsonAsync(
@@ -169,7 +169,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     public async Task UpdateHostingAccount_ActiveServiceOnCPanel_UsesTheLooserRuleForExistingAccountsAsync()
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Active);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModule.CPanel);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.CPanel);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
 
         var older = await client.PutAsJsonAsync(
@@ -188,7 +188,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     public async Task UpdateHostingAccount_PendingServiceOnAnotherPanel_AcceptsAnyUsernameAsync()
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Pending);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModule.Cwp7);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.Cwp7);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
 
         var response = await client.PutAsJsonAsync(

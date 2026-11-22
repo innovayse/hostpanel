@@ -221,10 +221,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "plesk", new() { ["Host"] = "x" });
+        var response = await SaveAsync(client, "cwp", new() { ["Host"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("plesk", "Host", "host");
+        await AssertNothingStoredAsync("cwp", "Host", "host");
     }
 
     /// <summary>An undeclared field in ClearFields is refused the same way.</summary>
@@ -234,10 +234,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "plesk", new() { ["host"] = "42" }, ["Host"]);
+        var response = await SaveAsync(client, "cwp", new() { ["host"] = "42" }, ["Host"]);
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("plesk", "host");
+        await AssertNothingStoredAsync("cwp", "host");
     }
 
     /// <summary>A valid field next to an undeclared one writes nothing at all.</summary>
@@ -247,10 +247,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "plesk", new() { ["host"] = "7", ["bogus"] = "x" });
+        var response = await SaveAsync(client, "cwp", new() { ["host"] = "7", ["bogus"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("plesk", "host", "bogus");
+        await AssertNothingStoredAsync("cwp", "host", "bogus");
     }
 
     /// <summary>A valid field next to an invalid value writes nothing at all.</summary>

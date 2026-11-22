@@ -3,7 +3,6 @@ using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Registrar;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
@@ -16,14 +15,12 @@ public sealed class RegistrarConnectionBuilderTests
     /// <summary>The id of the plugin every test builds the connection for.</summary>
     private const string Id = "role-registrar";
 
-    /// <summary>Builds the configuration the activator would compose from the given values.</summary>
+    /// <summary>Builds the settings the activator would compose from the given values.</summary>
     /// <param name="values">Setting key to value.</param>
-    /// <returns>A configuration keyed by the full setting paths.</returns>
-    private static IConfiguration Config(Dictionary<string, string?> values)
+    /// <returns>The settings keyed by the full setting paths.</returns>
+    private static Dictionary<string, string?> Config(Dictionary<string, string?> values)
     {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(values.ToDictionary(v => IntegrationSettingKeys.FieldKey(Id, v.Key), v => v.Value))
-            .Build();
+        return values.ToDictionary(v => IntegrationSettingKeys.FieldKey(Id, v.Key), v => v.Value);
     }
 
     /// <summary>The manifest of a registrar whose settings carry the roles.</summary>

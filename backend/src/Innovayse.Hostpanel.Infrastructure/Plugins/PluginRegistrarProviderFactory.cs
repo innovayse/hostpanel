@@ -60,7 +60,7 @@ public sealed class PluginRegistrarProviderFactory : IRegistrarProviderFactory
         }
 
         var prepared = await _activator.PrepareAsync<IRegistrarOperationsPlugin>(plugin, ct);
-        if (prepared.Outcome != PluginActivationOutcome.Activated || prepared.Create is null || prepared.Configuration is null)
+        if (prepared.Outcome != PluginActivationOutcome.Activated || prepared.Create is null || prepared.Settings is null)
         {
             _logger.LogInformation(
                 "Registrar plugin '{PluginId}' is not usable: {Outcome}.", prepared.PluginId, prepared.Outcome);
@@ -70,7 +70,7 @@ public sealed class PluginRegistrarProviderFactory : IRegistrarProviderFactory
         return new PluginRegistrarProvider(
             plugin.Manifest,
             prepared.Create(),
-            RegistrarConnectionBuilder.Build(plugin.Manifest, prepared.Configuration),
+            RegistrarConnectionBuilder.Build(plugin.Manifest, prepared.Settings),
             _providerLogger);
     }
 }

@@ -157,7 +157,7 @@ describe('DomainsListView', () => {
 
     expect(listUrls(mock)[0]).toBe('/api/domains?page=2&pageSize=20&search=exam&status=Active&registrarModule=registrar-one')
     expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Active')
-    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Example Registrar')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Registrar One')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
 

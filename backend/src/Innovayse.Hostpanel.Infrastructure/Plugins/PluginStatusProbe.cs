@@ -9,7 +9,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -79,8 +78,8 @@ public sealed class PluginStatusProbe : IPluginStatusProbe
             ? await RunAsync<IPluginStatus>(
                 plugin, async (status, _, token) => Read(pluginId, await status.GetStatusAsync(token)), ct)
             : await RunAsync<IRegistrarOperationsPlugin>(
-                plugin, async (registrar, configuration, token) => ReadConnection(await registrar.TestConnectionAsync(
-                    new RegistrarTestConnectionContext(RegistrarConnectionBuilder.Build(plugin.Manifest, configuration)),
+                plugin, async (registrar, settings, token) => ReadConnection(await registrar.TestConnectionAsync(
+                    new RegistrarTestConnectionContext(RegistrarConnectionBuilder.Build(plugin.Manifest, settings)),
                     token)), ct);
     }
 
@@ -90,18 +89,18 @@ public sealed class PluginStatusProbe : IPluginStatusProbe
     /// </summary>
     /// <typeparam name="TContract">The SDK contract the check calls the plugin through.</typeparam>
     /// <param name="plugin">The loaded plugin.</param>
-    /// <param name="check">The call to the plugin, given the plugin, the configuration it was built with and the limit token.</param>
+    /// <param name="check">The call to the plugin, given the plugin, the settings it was built with and the limit token.</param>
     /// <param name="ct">Cancellation token of the admin's request.</param>
     /// <returns>The check's result, or the outcome that says why it could not give one.</returns>
     private async Task<PluginStatusProbeResult> RunAsync<TContract>(
         LoadedPlugin plugin,
-        Func<TContract, IConfiguration, CancellationToken, Task<PluginStatusProbeResult>> check,
+        Func<TContract, IReadOnlyDictionary<string, string?>, CancellationToken, Task<PluginStatusProbeResult>> check,
         CancellationToken ct)
         where TContract : class
     {
         var pluginId = plugin.Manifest.Id;
         var prepared = await _activator.PrepareAsync<TContract>(plugin, ct);
-        if (prepared.Outcome != PluginActivationOutcome.Activated || prepared.Create is null || prepared.Configuration is null)
+        if (prepared.Outcome != PluginActivationOutcome.Activated || prepared.Create is null || prepared.Settings is null)
         {
             return new PluginStatusProbeResult(PluginStatusProbeOutcome.Inactive);
         }
@@ -113,7 +112,7 @@ public sealed class PluginStatusProbe : IPluginStatusProbe
             var instance = prepared.Create();
 
             // WaitAsync on the limit token: the host stops waiting at the limit even when the plugin ignores its token.
-            return await check(instance, prepared.Configuration, limit.Token).WaitAsync(limit.Token);
+            return await check(instance, prepared.Settings, limit.Token).WaitAsync(limit.Token);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

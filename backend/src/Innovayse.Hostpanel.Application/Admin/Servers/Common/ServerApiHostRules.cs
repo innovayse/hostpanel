@@ -19,7 +19,8 @@ public static partial class ServerApiHostRules
     /// <summary>
     /// Tells whether an address is a host name or an IP address: dot separated labels of letters, digits and hyphens (a label
     /// neither starts nor ends with a hyphen), or an IPv4 or IPv6 literal. A scheme, a path, a port, credentials, a query, a
-    /// fragment, brackets, a zone id and any space make it something else and are refused.
+    /// fragment, brackets, a zone id and any space inside make it something else and are refused. Spaces around the address are
+    /// ignored, as the server entity trims what it stores.
     /// </summary>
     /// <param name="value">The address as typed, or <see langword="null"/> or blank for none.</param>
     /// <returns><see langword="true"/> when the address is blank or a host name or an IP address.</returns>
@@ -30,13 +31,15 @@ public static partial class ServerApiHostRules
             return true;
         }
 
+        var address = value.Trim();
+
         // Something shaped like an IP literal must be one: 256.1.1.1 is not a host name either.
-        if (Ipv4Pattern().IsMatch(value) || value.Contains(':', StringComparison.Ordinal))
+        if (Ipv4Pattern().IsMatch(address) || address.Contains(':', StringComparison.Ordinal))
         {
-            return TryParseLiteral(value, out _);
+            return TryParseLiteral(address, out _);
         }
 
-        return value.Length <= MaxLength && HostNamePattern().IsMatch(value);
+        return address.Length <= MaxLength && HostNamePattern().IsMatch(address);
     }
 
     /// <summary>
@@ -48,7 +51,7 @@ public static partial class ServerApiHostRules
     /// <returns><see langword="false"/> only for an IP address that is never dialled.</returns>
     public static bool IsDialable(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value) || !TryParseLiteral(value, out var address))
+        if (string.IsNullOrWhiteSpace(value) || !TryParseLiteral(value.Trim(), out var address))
         {
             return true;
         }

@@ -18,6 +18,7 @@ public sealed class ServerApiHostRulesTests
     [InlineData("panel.example.com")]
     [InlineData("panel-1")]
     [InlineData("10.77.0.1")]
+    [InlineData(" 10.77.0.1 ")]
     [InlineData("2001:db8::1")]
     public void IsWellFormed_AcceptsBlankAHostNameAndAnIpAddress(string? value)
     {
@@ -59,6 +60,7 @@ public sealed class ServerApiHostRulesTests
     /// <param name="dialable">Whether the host may dial it.</param>
     [Theory]
     [InlineData("169.254.169.254", false)]
+    [InlineData(" 169.254.169.254 ", false)]
     [InlineData("169.254.1.1", false)]
     [InlineData("100.100.100.200", false)]
     [InlineData("fd00:ec2::254", false)]

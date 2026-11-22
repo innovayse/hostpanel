@@ -49,7 +49,7 @@ public sealed class PanelRefusalCodesTests(IntegrationTestFactory factory) : ICl
             .Select(field => (string)field.GetRawConstantValue()!)
             .ToList();
 
-        declared.Should().BeEquivalentTo(Family.Select(row => (string)row[0]));
+        declared.Should().BeEquivalentTo(Family.Cast<object[]>().Select(row => (string)row[0]));
         declared.Should().OnlyContain(code => PanelErrorCodes.Contains(code));
         PanelErrorCodes.Contains(HostpanelErrorCodes.SERVICE_PACKAGE_UPSTREAM_FAILED).Should().BeFalse();
         PanelErrorCodes.Contains(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN).Should().BeFalse();

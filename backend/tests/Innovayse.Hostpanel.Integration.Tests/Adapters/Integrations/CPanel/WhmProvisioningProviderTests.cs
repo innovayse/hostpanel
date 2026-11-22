@@ -20,7 +20,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     private const string Token = "WHMTOKEN0123456789";
 
     /// <summary>The order every provision test sends.</summary>
-    private static readonly ProvisionAccountOrder Order = new(7, "example.com", "testuser", "p&ss=1 2", "Basic");
+    private static readonly ProvisionAccountOrder Order = new(7, "example.com", "testuser", "p&ss=1 2", "Basic", 3, "owner@example.test", "Olga Owner");
 
     /// <summary>The loopback server standing in for WHM.</summary>
     private StubHttpServer whm = null!;

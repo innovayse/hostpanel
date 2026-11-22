@@ -3,7 +3,7 @@
  * (label, logo and settings fields) the admin renders.
  */
 
-import { IntegrationCategory, IntegrationEncryption, IntegrationFieldType, IntegrationYesNo } from '@/types/integration'
+import { IntegrationCategory, IntegrationEncryption, IntegrationFieldType } from '@/types/integration'
 import type { IntegrationMeta, IntegrationSlug } from '@/types/integration'
 import { PluginCategory } from '@/types/plugin'
 import { Icon } from '@/lib/icons'

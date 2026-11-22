@@ -14,6 +14,8 @@ public sealed class RecordingProvisioningProviderFactory(RecordingProvisioningPr
     : IProvisioningProviderFactory
 {
     /// <summary>Every module the host knows: the double stands in for whichever panel a test seeds a server on.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Every module the host knows.</returns>
     public Task<IReadOnlyCollection<string>> SupportedModulesAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyCollection<string>>(ServerModules.Known);
 

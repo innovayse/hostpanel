@@ -72,7 +72,6 @@
     "noMatches": "Keine Server entsprechen den Filtern",
     "createGroup": "Gruppe erstellen",
     "addNewServer": "Neuen Server hinzufügen",
-    "serverName": "Servername",
     "default": "STANDARD",
     "online": "Online",
     "offline": "Offline",

@@ -14,6 +14,7 @@ public sealed class ServerConfiguration : IEntityTypeConfiguration<Server>
 
         builder.Property(x => x.Name).IsRequired().HasMaxLength(200);
         builder.Property(x => x.Hostname).IsRequired().HasMaxLength(500);
+        builder.Property(x => x.ApiHost).HasMaxLength(500);
         builder.Property(x => x.IpAddress).HasMaxLength(45);
         builder.Property(x => x.AssignedIpAddresses).HasMaxLength(2000);
         builder.Property(x => x.Module).IsRequired().HasMaxLength(100);

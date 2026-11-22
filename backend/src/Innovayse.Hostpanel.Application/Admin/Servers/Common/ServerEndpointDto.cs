@@ -7,11 +7,17 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 /// <param name="UseSSL">Whether SSL is used for API connections.</param>
 /// <param name="AcceptsSelfSignedCertificate">
 /// Whether the operator trusts the self signed certificate of the server's API; a plugin reaches the server through a client
-/// that accepts it for this server's host name only. Off when omitted.
+/// that accepts it for the host the server's API is dialled at only. Off when omitted.
+/// </param>
+/// <param name="ApiHost">
+/// Address the panel's API is dialled at when it does not answer at <paramref name="Hostname"/>,
+/// a panel whose API port is reachable only on a private or VPN address, for example. Null or
+/// blank keeps the hostname; the hostname still builds the client-facing panel and webmail URLs.
 /// </param>
 public sealed record ServerEndpointDto(
     string Hostname,
     string? IpAddress,
     string? AssignedIpAddresses,
     bool UseSSL,
-    bool AcceptsSelfSignedCertificate = false);
+    bool AcceptsSelfSignedCertificate = false,
+    string? ApiHost = null);

@@ -81,6 +81,7 @@ internal static class ServersTestSeeds
     /// <param name="clearAccessHash">Whether to ask for the stored access hash to be removed.</param>
     /// <param name="ipAddress">The server's IP address, or null to record none.</param>
     /// <param name="acceptsSelfSignedCertificate">Whether the operator trusts the server's self signed certificate.</param>
+    /// <param name="apiHost">The address the panel's API is dialled at, or null to send none.</param>
     /// <returns>The body.</returns>
     public static object ServerBody(
         string name,
@@ -91,10 +92,11 @@ internal static class ServersTestSeeds
         decimal monthlyCost = 0m,
         bool clearAccessHash = false,
         string? ipAddress = null,
-        bool acceptsSelfSignedCertificate = false) => new
+        bool acceptsSelfSignedCertificate = false,
+        string? apiHost = null) => new
     {
         name,
-        endpoint = new ServerEndpointDto(hostname ?? $"{name}.example.com", ipAddress, null, true, acceptsSelfSignedCertificate),
+        endpoint = new ServerEndpointDto(hostname ?? $"{name}.example.com", ipAddress, null, true, acceptsSelfSignedCertificate, apiHost),
         module,
         username = "root",
         credentials = new ServerCredentials(null, null, accessHash),

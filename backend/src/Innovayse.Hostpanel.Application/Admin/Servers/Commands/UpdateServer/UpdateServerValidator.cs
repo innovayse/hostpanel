@@ -36,6 +36,10 @@ public sealed class UpdateServerValidator : LocalizedValidator<UpdateServerComma
 
         RuleFor(x => x.Module).Must(PluginServerModules.IsWellFormed).WithMessage(L["ServerModuleInvalid"]);
 
+        // Optional: blank means the API is dialled at the hostname.
+        RuleFor(x => x.Endpoint.ApiHost)
+            .MaximumLength(HostnameMaxLength).WithMessage(L["ServerHostnameTooLong", HostnameMaxLength]);
+
         RuleFor(x => x.Username).NotEmpty().WithMessage(L["ServerUsernameRequired"])
             .MaximumLength(UsernameMaxLength).WithMessage(L["ServerUsernameTooLong", UsernameMaxLength]);
 

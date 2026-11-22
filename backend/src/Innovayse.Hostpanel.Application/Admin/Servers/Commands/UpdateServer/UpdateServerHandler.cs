@@ -51,7 +51,7 @@ public sealed class UpdateServerHandler
             module, cmd.Username, cmd.Credentials, cmd.Endpoint.UseSSL,
             cmd.Limits.MaxAccounts, cmd.Limits.IsDefault, cmd.Limits.IsDisabled,
             cmd.Hosting.MonthlyCost, cmd.Hosting.Datacenter, cmd.Hosting.ServerStatusAddress,
-            cmd.NameServers, cmd.Endpoint.AcceptsSelfSignedCertificate);
+            cmd.NameServers, cmd.Endpoint.AcceptsSelfSignedCertificate, cmd.Endpoint.ApiHost);
 
         server.Reconfigure(details, cmd.Clears ?? ServerCredentialClears.None);
         await _context.SaveChangesAsync(ct);

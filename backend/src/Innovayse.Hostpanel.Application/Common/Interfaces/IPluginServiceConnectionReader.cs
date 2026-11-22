@@ -13,5 +13,5 @@ public interface IPluginServiceConnectionReader
     /// <param name="serviceId">The service the plugin asked about.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The service, or <see langword="null"/> when it does not exist.</returns>
-    Task<PluginServiceConnection?> ResolveAsync(int serviceId, CancellationToken ct);
+    public Task<PluginServiceConnection?> ResolveAsync(int serviceId, CancellationToken ct);
 }

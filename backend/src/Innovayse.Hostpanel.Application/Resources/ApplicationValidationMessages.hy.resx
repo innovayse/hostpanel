@@ -1033,6 +1033,12 @@
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Հոսթի անունը չպետք է գերազանցի {0} նիշը։</value>
   </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Նշեք հոսթի անուն կամ IP հասցե՝ առանց սխեմայի, ուղու, պորտի և բացատների։</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>Այս հասցեին երբեք չի միացվում․ loopback, link-local և ամպային մետատվյալների հասցեները մերժվում են։</value>
+  </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Օգտանունը պարտադիր է։</value>
   </data>

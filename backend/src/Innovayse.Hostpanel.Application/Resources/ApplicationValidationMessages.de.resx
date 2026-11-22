@@ -1090,6 +1090,12 @@
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Der Hostname darf höchstens {0} Zeichen lang sein.</value>
   </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Geben Sie einen Hostnamen oder eine IP-Adresse ein, ohne Schema, Pfad, Port oder Leerzeichen.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>Diese Adresse wird nie angesprochen: Loopback-, Link-Local- und Cloud-Metadaten-Adressen werden abgelehnt.</value>
+  </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Ein Benutzername ist erforderlich.</value>
   </data>

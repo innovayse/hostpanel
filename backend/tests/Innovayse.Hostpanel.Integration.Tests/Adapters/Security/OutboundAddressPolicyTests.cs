@@ -1,6 +1,6 @@
 using System.Net;
-using Innovayse.Hostpanel.Infrastructure.Security;
-using Innovayse.Hostpanel.Infrastructure.Security.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure;
+using Innovayse.Hostpanel.Shared.Infrastructure.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Security;
 

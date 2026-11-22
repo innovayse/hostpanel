@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Infrastructure.Security.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure;
+using Innovayse.Hostpanel.Shared.Infrastructure.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Security;
 

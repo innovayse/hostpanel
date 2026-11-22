@@ -1087,6 +1087,12 @@
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Limitez le nom d'hôte à {0} caractères.</value>
   </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Saisissez un nom d'hôte ou une adresse IP, sans schéma, chemin, port ni espaces.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>Cette adresse n'est jamais jointe : les adresses de bouclage, de lien local et de métadonnées du cloud sont refusées.</value>
+  </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Un nom d'utilisateur est requis.</value>
   </data>

@@ -49,7 +49,7 @@ public sealed class CreateServerHandler
             module, cmd.Username, cmd.Credentials, cmd.Endpoint.UseSSL,
             cmd.Limits.MaxAccounts, cmd.Limits.IsDefault, cmd.Limits.IsDisabled,
             cmd.Hosting.MonthlyCost, cmd.Hosting.Datacenter, cmd.Hosting.ServerStatusAddress,
-            cmd.NameServers, cmd.Endpoint.AcceptsSelfSignedCertificate);
+            cmd.NameServers, cmd.Endpoint.AcceptsSelfSignedCertificate, cmd.Endpoint.ApiHost);
 
         var server = Server.Create(details, _clock.UtcNow);
         _context.Servers.Add(server);

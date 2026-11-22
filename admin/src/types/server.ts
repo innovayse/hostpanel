@@ -62,6 +62,12 @@ export interface ServerEndpoint {
   useSSL: boolean
   /** Whether the self signed certificate of the server's API is trusted, for this server's host name only. */
   acceptsSelfSignedCertificate: boolean
+  /**
+   * Address the panel's API is dialled at when it does not answer at the hostname, a panel whose
+   * API port is reachable only on a private or VPN address, for example. Null or blank keeps the
+   * hostname; the hostname still builds the client-facing panel and webmail URLs.
+   */
+  apiHost: string | null
 }
 
 /** Account capacity of a server and whether it takes new accounts. */

@@ -59,7 +59,10 @@
     "accessHashPlaceholder": "tHcFDLX8pGkv…",
     "nsHostPlaceholder": "ns{n}.example.com",
     "nsIpPlaceholder": "0.0.0.0",
-    "acceptSelfSignedCertificate": "Confiar en el certificado autofirmado de este servidor"
+    "acceptSelfSignedCertificate": "Confiar en el certificado autofirmado de este servidor",
+    "apiHost": "Dirección de la API (opcional)",
+    "apiHostHint": "Indícala solo cuando el puerto de la API del panel no responde en el nombre de host, por ejemplo un panel accesible únicamente por VPN o red privada. Los enlaces al panel de control y al correo web que ve el cliente se siguen formando con el nombre de host.",
+    "apiHostPlaceholder": "10.77.0.1"
   },
   "servers": {
     "servers": "Servidores",

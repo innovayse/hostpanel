@@ -1096,6 +1096,12 @@
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Имя хоста не должно превышать {0} символов.</value>
   </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Укажите имя хоста или IP-адрес без схемы, пути, порта и пробелов.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>К этому адресу подключение невозможно: адреса loopback, link-local и облачных метаданных не допускаются.</value>
+  </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Требуется указать имя пользователя.</value>
   </data>

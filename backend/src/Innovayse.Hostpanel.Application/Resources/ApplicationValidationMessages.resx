@@ -1096,6 +1096,12 @@
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Keep the hostname within {0} characters.</value>
   </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Enter a host name or an IP address, without a scheme, path, port or spaces.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>This address is never dialled: loopback, link-local and cloud metadata addresses are refused.</value>
+  </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>A username is required.</value>
   </data>

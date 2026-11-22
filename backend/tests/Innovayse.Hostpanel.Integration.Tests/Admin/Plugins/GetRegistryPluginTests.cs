@@ -36,7 +36,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
         registry.Publish(pluginId, "1.0.0", [1], category: PluginRegistryCategory.Payment);
         var summary = new RegistryPluginDto(
             pluginId, "Sample gateway", "Example Publisher", "Takes card payments.", "https://registry.example.com/icons/a.svg",
-            PluginRegistryCategory.Payment, "1.2.0", "1.0", true, PluginRegistryPricing.Paid);
+            PluginRegistryCategory.Payment, "1.2.0", "1.0.0", true, PluginRegistryPricing.Paid);
         registry.Details[pluginId] = new RegistryPluginDetails(
             summary,
             "MIT",
@@ -49,10 +49,10 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
         registry.Versions[pluginId] =
         [
             new RegistryPluginVersion(
-                "1.0.0", "1.0", 10, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), PluginRegistryVersionStatus.Yanked,
+                "1.0.0", "0.9.0", 10, new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), PluginRegistryVersionStatus.Yanked,
                 "A defect.", "1.1.0", null, null, "First release.", [], null, []),
             new RegistryPluginVersion(
-                "1.2.0", "1.0", 20, new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero), PluginRegistryVersionStatus.Published,
+                "1.2.0", "1.0.0", 20, new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero), PluginRegistryVersionStatus.Published,
                 null, null, "0.5.0", "9.0.0", "Second release.\nMore.", [PluginRegistryCapability.Process, PluginRegistryCapability.FileSystem],
                 null, [new RegistryPluginImage("https://registry.example.com/s/1.png", "image/png", 800, 600)]),
         ];
@@ -93,6 +93,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
         newest.GetProperty("changelog").GetString().Should().Be("Second release.\nMore.");
         newest.GetProperty("minHostVersion").GetString().Should().Be("0.5.0");
         newest.GetProperty("maxHostVersion").GetString().Should().Be("9.0.0");
+        newest.GetProperty("sdkPackageVersion").GetString().Should().Be("1.0.0");
         newest.GetProperty("compatible").GetBoolean().Should().BeTrue();
         newest.GetProperty("permissions").EnumerateArray().Select(p => p.GetString()).Should().Equal("Process", "FileSystem");
         var shot = newest.GetProperty("screenshots").EnumerateArray().Single();
@@ -104,6 +105,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
         old.GetProperty("status").GetString().Should().Be("Yanked");
         old.GetProperty("statusReason").GetString().Should().Be("A defect.");
         old.GetProperty("replacementVersion").GetString().Should().Be("1.1.0");
+        old.GetProperty("sdkPackageVersion").GetString().Should().Be("0.9.0");
         old.GetProperty("permissions").GetArrayLength().Should().Be(0);
         old.GetProperty("screenshots").GetArrayLength().Should().Be(0);
     }

@@ -43,6 +43,9 @@ public sealed class InstallRegistryPluginHandler
     /// <summary>The version of the running Hostpanel build.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
+    /// <summary>The <c>Hostpanel.Sdk</c> package version this host ships.</summary>
+    private readonly IHostSdkVersionProvider _hostSdkVersion;
+
     /// <summary>Reads what this host is shown of the plugin: its page, its licence key and its versions.</summary>
     private readonly RegistryPluginReader _reader;
 
@@ -56,6 +59,7 @@ public sealed class InstallRegistryPluginHandler
     /// <param name="activityLogger">Stages the audit line.</param>
     /// <param name="db">Reads the trust setting and saves the audit line.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
+    /// <param name="hostSdkVersion">The <c>Hostpanel.Sdk</c> package version this host ships.</param>
     /// <param name="reader">Reads what this host is shown of the plugin: its page, its licence key and its versions.</param>
     /// <param name="recorder">Stages the install record of the accepted package.</param>
     public InstallRegistryPluginHandler(
@@ -65,6 +69,7 @@ public sealed class InstallRegistryPluginHandler
         IActivityLogger activityLogger,
         IHostpanelDbContext db,
         IInstalledVersionProvider hostVersion,
+        IHostSdkVersionProvider hostSdkVersion,
         RegistryPluginReader reader,
         InstalledPluginRecorder recorder)
     {
@@ -74,6 +79,7 @@ public sealed class InstallRegistryPluginHandler
         _activityLogger = activityLogger;
         _db = db;
         _hostVersion = hostVersion;
+        _hostSdkVersion = hostSdkVersion;
         _reader = reader;
         _recorder = recorder;
     }
@@ -89,7 +95,8 @@ public sealed class InstallRegistryPluginHandler
     /// for a host only plugin <c>PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED</c>, <c>PLUGIN_REGISTRY_INSTANCE_REVOKED</c> or another
     /// <c>PLUGIN_REGISTRY_INSTANCE_*</c> or <c>PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED</c> failure of the registration or of a signed call;
     /// <c>PLUGIN_REGISTRY_VERSION_YANKED</c> for a withdrawn version, <c>PLUGIN_REGISTRY_VERSION_COMPROMISED</c> for one the
-    /// registry rejected as unsafe, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c> when it does not run on this Hostpanel version and
+    /// registry rejected as unsafe, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c> when it does not run on this Hostpanel
+    /// version and
     /// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> when the registry states it was built on a newer SDK than this host ships;
     /// <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines the plugin or its signing key;
     /// <c>PLUGIN_REGISTRY_PACKAGE_REFUSED</c> when the package cannot be fetched safely or is another plugin or version;
@@ -158,9 +165,11 @@ public sealed class InstallRegistryPluginHandler
             return await RefuseAsync(command, "host version is outside the supported range", HostpanelErrorCodes.PLUGIN_REGISTRY_HOST_INCOMPATIBLE, null, ct);
         }
 
-        // Refused before the download: the registry states the SDK the version was built on, and a plugin built on a newer
-        // SDK than this host ships would install and then fail to load. The package's own manifest is checked again on install.
-        if (!PluginSdkCompatibility.IsSupported(described.SdkVersion))
+        // Refused before the download: the registry states the SDK the version was built on, and a plugin built on a
+        // newer
+        // SDK than this host ships would install and then fail to load. The package's own manifest is checked again on
+        // install.
+        if (!PluginSdkCompatibility.IsSupported(_hostSdkVersion.Version, described.SdkPackageVersion))
         {
             return await RefuseAsync(command, "built on a newer SDK than this host ships", HostpanelErrorCodes.PLUGIN_SDK_NEWER_THAN_HOST, null, ct);
         }

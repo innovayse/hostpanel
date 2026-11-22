@@ -72,7 +72,7 @@ const listing = {
   iconUrl: null,
   category: 'Payment',
   latestVersion: '2.0.0',
-  sdkVersion: '3.0.0',
+  sdkPackageVersion: '3.0.0',
   verified: true,
   pricing: 'Free',
   installed: true,

@@ -231,7 +231,7 @@ Hostpanel checks every entry, and one entry that is not a plugin (bad id, no nam
 | `category` | Optional. An unknown or missing value is shown as `Other`. |
 | `description` | Optional, kept to 2000 characters. |
 | `publisherName` | Optional (`author` is read too), kept to 200 characters. |
-| `sdkPackageVersion` | Optional, kept to 32 characters. The `Hostpanel.Sdk` package version the plugin version was built against, the same value as `sdkPackageVersion` in its `plugin.json`. The host refuses to install a version whose value is newer than the SDK it ships (`PLUGIN_SDK_NEWER_THAN_HOST`) and does not offer it as an update, so a registry may serve it in the listing, the release and every version row. A version without it is not checked. |
+| `sdkPackageVersion` | Optional, kept to 32 characters. The `Hostpanel.Sdk` package version the plugin version was built against, the same value as `sdkPackageVersion` in its `plugin.json`. The host refuses to install a version whose value is newer than the SDK it ships (`PLUGIN_SDK_NEWER_THAN_HOST`) and does not offer it as an update, so a registry may serve it in the listing, the release and every version row. A version without it, or with a value that is not a strict `major.minor.patch`, is not checked. |
 | `iconUrl` | Optional. Absolute or relative to `BaseUrl`. It is kept only when it is on the registry's own origin; any other icon address is dropped. |
 | `verified` | Optional, `false` when absent. Shown as a badge. The trust decision at install time reads `verified` from the release, so serve it in both places. |
 

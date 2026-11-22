@@ -238,7 +238,7 @@ public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : 
 
         var result = await Client(handler).GetLatestAsync(["acme-pay", "other"], CancellationToken.None);
 
-        result.Value!.Select(p => (p.Id, p.LatestVersion, p.SdkVersion, p.Verified, p.Pricing)).Should().Equal(
+        result.Value!.Select(p => (p.Id, p.LatestVersion, p.SdkPackageVersion, p.Verified, p.Pricing)).Should().Equal(
             ("acme-pay", "1.2.3", "3.1.0", true, PluginRegistryPricing.Paid),
             ("free-one", "0.9.0", "3.0.0", false, PluginRegistryPricing.Free));
         handler.Requests.Single().AbsoluteUri.Should().Be("https://registry.example.com/api/plugins/latest");

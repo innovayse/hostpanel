@@ -1,21 +1,26 @@
 using System.Net;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 
 /// <summary>
-/// <c>POST /api/admin/plugins/install</c> against the package's <c>sdkPackageVersion</c>: a plugin built on the SDK the host
+/// <c>POST /api/admin/plugins/install</c> against the package's <c>sdkPackageVersion</c>: a plugin built on the SDK the
+/// host
 /// ships (or an older one, or one that states none) installs; one built on a newer SDK is refused with
-/// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> (409) in the caller's language and nothing is installed; a value that is not a version
+/// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> (409) in the caller's language and nothing is installed; a value that is not a
+/// version
 /// and a <c>minHostVersion</c> below the first host that ships the SDK are refused as manifest rules (400).
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class InstallPluginSdkVersionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IDisposable
 {
-    /// <summary>This class's own upload folder, so a staged upgrade of another test class never meets these tests.</summary>
+    /// <summary>
+    /// This class's own upload folder, so a staged upgrade of another test class never meets these tests.
+    /// </summary>
     private readonly string _installRoot = Path.Combine(Path.GetTempPath(), $"hostpanel-sdkversion-{Guid.NewGuid():N}");
 
     /// <summary>The host that uses <see cref="_installRoot"/>, created on first use.</summary>
@@ -35,26 +40,30 @@ public sealed class InstallPluginSdkVersionTests(IntegrationTestFactory factory)
         }
     }
 
-    /// <summary>A plugin built on the SDK the host ships installs, and so does one that states no SDK version.</summary>
+    /// <summary>
+    /// A plugin built on the SDK the host ships installs, and so does one that states no SDK version.
+    /// </summary>
     /// <param name="members">The manifest members to add; empty for none.</param>
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("")]
-    [InlineData(",\"sdkPackageVersion\":\"HOST\"")]
+    [InlineData(",\"sdkPackageVersion\":\"HOST\",\"minHostVersion\":\"1.0.0\"")]
     public async Task APluginTheHostCanLoad_InstallsAsync(string members)
     {
-        var (response, pluginId) = await InstallAsync(members.Replace("HOST", PluginSdkCompatibility.HostSdkVersion, StringComparison.Ordinal));
+        var (response, pluginId) = await InstallAsync(members.Replace("HOST", HostSdkVersion(), StringComparison.Ordinal));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         Directory.Exists(Path.Combine(_installRoot, pluginId)).Should().BeTrue();
     }
 
-    /// <summary>A plugin built on a newer SDK is refused with the localised sentence and nothing is installed.</summary>
+    /// <summary>
+    /// A plugin built on a newer SDK is refused with the localised sentence and nothing is installed.
+    /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APluginBuiltOnANewerSdk_IsRefusedAsync()
     {
-        var (response, pluginId) = await InstallAsync(",\"sdkPackageVersion\":\"999.0.0\"", language: "ru");
+        var (response, pluginId) = await InstallAsync(",\"sdkPackageVersion\":\"999.0.0\",\"minHostVersion\":\"1.0.0\"", language: "ru");
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -83,6 +92,13 @@ public sealed class InstallPluginSdkVersionTests(IntegrationTestFactory factory)
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK);
+    }
+
+    /// <summary>Reads the SDK version the host under test ships, from the container it runs in.</summary>
+    /// <returns>The version as <c>major.minor.patch</c>.</returns>
+    private string HostSdkVersion()
+    {
+        return Host.Services.GetRequiredService<IHostSdkVersionProvider>().Version;
     }
 
     /// <summary>Installs a fresh plugin whose manifest carries the given members.</summary>

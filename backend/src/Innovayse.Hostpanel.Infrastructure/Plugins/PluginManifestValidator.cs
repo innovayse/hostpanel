@@ -64,18 +64,19 @@ internal static class PluginManifestValidator
     }
 
     /// <summary>
-    /// Checks that the SDK the plugin was built against is not newer than the one this host ships: the plugin's assembly
+    /// Checks that the SDK the plugin was built against is not newer than the one this host ships: the plugin's
+    /// assembly
     /// would fail to load at the next start. A manifest that states no SDK package version is not checked.
     /// </summary>
     /// <param name="manifest">The manifest.</param>
     /// <returns>The <see cref="PluginManifestRule.SdkNewerThanHost"/> violation, or <see langword="null"/>.</returns>
     private static PluginManifestViolation? CheckSdkNotNewerThanHost(PluginManifest manifest)
     {
-        return PluginSdkCompatibility.IsSupported(manifest.SdkPackageVersion)
+        return PluginSdkCompatibility.IsSupported(HostSdkVersion.Current, manifest.SdkPackageVersion)
             ? null
             : new PluginManifestViolation(
                 PluginManifestRule.SdkNewerThanHost,
-                $"sdkPackageVersion {manifest.SdkPackageVersion} is newer than SDK {PluginSdkCompatibility.HostSdkVersion}, which this host ships");
+                $"sdkPackageVersion {manifest.SdkPackageVersion} is newer than SDK {HostSdkVersion.Current}, which this host ships");
     }
 
     /// <summary>

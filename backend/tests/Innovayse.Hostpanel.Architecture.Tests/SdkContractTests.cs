@@ -320,12 +320,17 @@ public sealed class SdkContractTests
             .Should().BeEquivalentTo("Account", "CanPurchase", "CanManagePaymentMethods");
     }
 
-    /// <summary>A fulfilment plugin has exactly the four hooks the host calls, in the host's vocabulary.</summary>
+    /// <summary>
+    /// A fulfilment plugin has the four hooks the host calls, in the host's vocabulary, and the plan change hook SDK 3.12.0
+    /// added as a default method that does nothing.
+    /// </summary>
     [Fact]
     public void IFulfilmentPlugin_HasTheFourHooks()
     {
         typeof(IFulfilmentPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo(
-            "OnInvoicePaidAsync", "AdviseRefundAsync", "OnInvoiceRefundedAsync", "OnSubscriptionLapsedAsync");
+            "OnInvoicePaidAsync", "AdviseRefundAsync", "OnInvoiceRefundedAsync", "OnSubscriptionLapsedAsync",
+            "OnServicePlanChangedAsync");
+        typeof(IFulfilmentPlugin).GetMethod("OnServicePlanChangedAsync")!.IsAbstract.Should().BeFalse();
         typeof(IFulfilmentPlugin).GetMethod("AdviseRefundAsync")!.ReturnType
             .Should().Be(typeof(Task<RefundAdvice>));
     }

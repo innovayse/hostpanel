@@ -199,10 +199,15 @@ public enum PluginManifestRule
     /// <summary>The <c>sdkPackageVersion</c> is not a valid semantic version.</summary>
     SdkPackageVersionInvalid = 49,
 
-    /// <summary>The <c>minHostVersion</c> is missing or below the first host release that ships the SDK the plugin was built against.</summary>
+    /// <summary>
+    /// The <c>minHostVersion</c> is missing or below the first host release that ships the SDK the plugin was built
+    /// against.
+    /// </summary>
     MinHostVersionBelowSdk = 50,
 
-    /// <summary>The <c>sdkPackageVersion</c> is newer than the SDK this host ships, so the plugin's assembly cannot load here.</summary>
+    /// <summary>
+    /// The <c>sdkPackageVersion</c> is newer than the SDK this host ships, so the plugin's assembly cannot load here.
+    /// </summary>
     SdkNewerThanHost = 51,
 
     /// <summary>

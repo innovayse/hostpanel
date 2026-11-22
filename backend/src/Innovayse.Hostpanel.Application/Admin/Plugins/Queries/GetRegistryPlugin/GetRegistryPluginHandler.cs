@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 
@@ -21,15 +22,24 @@ public sealed class GetRegistryPluginHandler
     /// <summary>The version of the running Hostpanel build.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
+    /// <summary>The <c>Hostpanel.Sdk</c> package version this host ships.</summary>
+    private readonly IHostSdkVersionProvider _hostSdkVersion;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="reader">Reads what this host is shown of a registry plugin.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
-    public GetRegistryPluginHandler(RegistryPluginReader reader, IPluginPackageStore store, IInstalledVersionProvider hostVersion)
+    /// <param name="hostSdkVersion">The <c>Hostpanel.Sdk</c> package version this host ships.</param>
+    public GetRegistryPluginHandler(
+        RegistryPluginReader reader,
+        IPluginPackageStore store,
+        IInstalledVersionProvider hostVersion,
+        IHostSdkVersionProvider hostSdkVersion)
     {
         _reader = reader;
         _store = store;
         _hostVersion = hostVersion;
+        _hostSdkVersion = hostSdkVersion;
     }
 
     /// <summary>Returns the details of one registry plugin.</summary>
@@ -67,7 +77,7 @@ public sealed class GetRegistryPluginHandler
         // the page then updates to it and names it as the latest.
         var offer = installed is null
             ? null
-            : PluginUpdateRule.NewestOffer(listed, host, installed.Manifest.Version, installed.StagedVersion);
+            : PluginUpdateRule.NewestOffer(listed, host, _hostSdkVersion.Version, installed.Manifest.Version, installed.StagedVersion);
         var update = offer is not null;
         if (offer is not null)
         {
@@ -85,7 +95,9 @@ public sealed class GetRegistryPluginHandler
                 v.Changelog,
                 v.MinHostVersion,
                 v.MaxHostVersion,
-                PluginHostCompatibility.IsCompatible(host, v.MinHostVersion, v.MaxHostVersion) && PluginSdkCompatibility.IsSupported(v.SdkVersion),
+                v.SdkPackageVersion.NullIfBlank(),
+                PluginHostCompatibility.IsCompatible(host, v.MinHostVersion, v.MaxHostVersion)
+                    && PluginSdkCompatibility.IsSupported(_hostSdkVersion.Version, v.SdkPackageVersion),
                 v.Permissions,
                 v.Screenshots))
             .ToList();

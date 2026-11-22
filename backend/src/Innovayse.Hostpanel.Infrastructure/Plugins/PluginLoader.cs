@@ -185,8 +185,7 @@ public static class PluginLoader
             }
 
             Type? pluginType = null;
-            TypeLoadException? notDefined = null;
-            Exception? loadFailure = null;
+            List<Exception> failures = [];
             foreach (var dll in dllFiles)
             {
                 try
@@ -203,31 +202,31 @@ public static class PluginLoader
                 {
                     // The usual case in a folder with helper assemblies: this one does not define the entry point. It is
                     // logged below, with the skip, only when no assembly of the plugin defines it.
-                    notDefined = ex;
+                    failures.Add(ex);
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to load assembly {Dll} for plugin {Id}", dll, manifest.Id);
-                    loadFailure ??= ex;
+                    failures.Add(ex);
                 }
             }
 
             if (pluginType is null)
             {
+                // Every assembly was tried, so each one that did not yield the entry point left its error. The one that
+                // was asked for the entry point and could not give it is the cause; a helper assembly that failed to
+                // load
+                // is only the fallback.
+                var cause = failures.OfType<TypeLoadException>().FirstOrDefault() ?? failures[0];
                 logger.LogError(
-                    notDefined,
+                    cause,
                     "Entry point type '{EntryPoint}' not found for plugin {Id}, skipping",
                     manifest.EntryPoint, manifest.Id);
 
-                // The plugin is installed and its manifest was accepted, so it must not look healthy in the admin list: the
-                // load error is kept beside it. A load that threw is the cause; otherwise no assembly defines the entry point.
-                RefuseLoad(
-                    registry,
-                    manifest.Id,
-                    origin,
-                    loadFailure is not null || notDefined is not null
-                        ? FirstLine((loadFailure ?? notDefined)!.Message)
-                        : $"no assembly defines the entry point '{manifest.EntryPoint}'");
+                // The plugin is installed and its manifest was accepted, so it must not look healthy in the admin list:
+                // the
+                // load error is kept beside it.
+                RefuseLoad(registry, manifest.Id, origin, FirstLine(cause.Message));
                 continue;
             }
 
@@ -287,7 +286,9 @@ public static class PluginLoader
         services.AddSingleton<IPluginIntegrationRegistry>(integrationRegistry);
     }
 
-    /// <summary>Keeps an installed plugin that could not be loaded in the registry, so the admin list shows it with the reason.</summary>
+    /// <summary>
+    /// Keeps an installed plugin that could not be loaded in the registry, so the admin list shows it with the reason.
+    /// </summary>
     /// <param name="registry">The registry the loader fills.</param>
     /// <param name="pluginId">The plugin id.</param>
     /// <param name="origin">Where the plugin folder is.</param>
@@ -297,7 +298,9 @@ public static class PluginLoader
         registry.RegisterRefused(new RefusedPlugin(pluginId, PluginManifestRule.AssemblyLoadFailed, detail, origin == PluginOrigin.BuiltIn));
     }
 
-    /// <summary>Cuts a load error to its first line and a fixed length: the admin list shows what failed, never a stack.</summary>
+    /// <summary>
+    /// Cuts a load error to its first line and a fixed length: the admin list shows what failed, never a stack.
+    /// </summary>
     /// <param name="message">The exception message.</param>
     /// <returns>The first line of the message, at most <see cref="MaxLoadErrorLength"/> characters.</returns>
     private static string FirstLine(string message)

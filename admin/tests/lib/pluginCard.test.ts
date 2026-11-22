@@ -35,7 +35,7 @@ const listed: PluginRegistryItemDto = {
   iconUrl: null,
   category: PluginCategory.Payment,
   latestVersion: '2.0.0',
-  sdkVersion: '3.0.0',
+  sdkPackageVersion: '3.0.0',
   verified: true,
   pricing: PluginPricing.Paid,
   installed: false,

@@ -406,7 +406,7 @@ export interface PluginRegistryItemDto {
   /** Newest version the registry offers. */
   latestVersion: string
   /** SDK version the newest version was built against. */
-  sdkVersion: string
+  sdkPackageVersion: string
   /** Whether the registry has verified the publisher. */
   verified: boolean
   /** Whether the plugin is free or paid. */

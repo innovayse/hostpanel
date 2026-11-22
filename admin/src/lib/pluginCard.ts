@@ -31,9 +31,10 @@ export const categoryLabel = (category: string): string => {
  * whose assembly failed to load wears only the LoadFailed badge and carries the load error as the rule's detail.
  */
 export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string | null): PluginCardModel => {
-  const refused = plugin.status === PluginStatus.Refused || isLoadFailed(plugin)
+  const loadFailed = isLoadFailed(plugin)
+  const refused = plugin.status === PluginStatus.Refused || loadFailed
   const badges: PluginCardBadge[] = []
-  if (isLoadFailed(plugin)) {
+  if (loadFailed) {
     badges.push(PluginCardBadge.LoadFailed)
   } else if (refused) {
     badges.push(PluginCardBadge.Refused)

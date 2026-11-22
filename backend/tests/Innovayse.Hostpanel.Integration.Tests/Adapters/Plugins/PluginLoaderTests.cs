@@ -138,7 +138,8 @@ public sealed class PluginLoaderTests
     }
 
     /// <summary>
-    /// A plugin whose assembly cannot be loaded is not silently dropped: the loader keeps it as a refused plugin with the
+    /// A plugin whose assembly cannot be loaded is not silently dropped: the loader keeps it as a refused plugin with
+    /// the
     /// rule <see cref="PluginManifestRule.AssemblyLoadFailed"/> and the load error, so the admin list shows it.
     /// </summary>
     [Fact]
@@ -167,6 +168,62 @@ public sealed class PluginLoaderTests
             var refused = registry.GetRefusedPlugins().Should().ContainSingle(r => r.PluginId == "broken-plugin").Subject;
             refused.Rule.Should().Be(PluginManifestRule.AssemblyLoadFailed);
             refused.Detail.Should().NotBeNullOrWhiteSpace().And.NotContain("\n");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// A plugin folder that holds a manifest and no assembly is kept refused, with the reason in words.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_FolderWithoutAnAssembly_IsKeptRefusedAsHoldingNone()
+    {
+        var root = PluginSigningTestSeeds.NewFolder("loader-no-dll");
+        try
+        {
+            var folder = Directory.CreateDirectory(Path.Combine(root, "empty-plugin")).FullName;
+            File.WriteAllText(Path.Combine(folder, "plugin.json"), PluginsTestSeeds.ManifestJson("empty-plugin", type: "App"));
+
+            var (registry, _) = Discover(
+                [new PluginRoot(root, PluginOrigin.Uploaded)], PluginSigningTestSeeds.Verifier(enforced: false), allowUnsigned: false);
+
+            registry.IsLoaded("empty-plugin").Should().BeFalse();
+            var refused = registry.GetRefusedPlugins().Should().ContainSingle(r => r.PluginId == "empty-plugin").Subject;
+            refused.Rule.Should().Be(PluginManifestRule.AssemblyLoadFailed);
+            refused.Detail.Should().Be("the plugin folder holds no assembly");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// A load error is cut to its first line and to 300 characters before it is kept beside the plugin: the entry point
+    /// is
+    /// named in the error, so a very long name would otherwise fill the admin list.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_LongLoadError_IsCutToThreeHundredCharacters()
+    {
+        var root = PluginSigningTestSeeds.NewFolder("loader-long-error");
+        try
+        {
+            var (folder, _) = WriteAppPlugin(root, "long-error-plugin");
+            var manifestPath = Path.Combine(folder, "plugin.json");
+            File.WriteAllText(
+                manifestPath,
+                File.ReadAllText(manifestPath).Replace("Fixture.AppPlugin", "Fixture.AppPlugin" + new string('X', 400), StringComparison.Ordinal));
+
+            var (registry, _) = Discover(
+                [new PluginRoot(root, PluginOrigin.Uploaded)], PluginSigningTestSeeds.Verifier(enforced: false), allowUnsigned: false);
+
+            var refused = registry.GetRefusedPlugins().Should().ContainSingle(r => r.PluginId == "long-error-plugin").Subject;
+            refused.Rule.Should().Be(PluginManifestRule.AssemblyLoadFailed);
+            refused.Detail.Should().HaveLength(300).And.NotContain("\n");
         }
         finally
         {

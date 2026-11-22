@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -24,6 +23,9 @@ public sealed class ImportTldPricingHandler
     /// <summary>Factory for resolving registrar provider implementations by module.</summary>
     private readonly IRegistrarProviderFactory _factory;
 
+    /// <summary>Tells which registrar plugins are installed.</summary>
+    private readonly IRegistrarModuleCatalogue _modules;
+
     /// <summary>Logger for recording import progress and diagnostics.</summary>
     private readonly ILogger<ImportTldPricingHandler> _logger;
 
@@ -36,18 +38,21 @@ public sealed class ImportTldPricingHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The data context TLD configurations are looked up in and persisted through.</param>
     /// <param name="factory">Factory for resolving registrar provider implementations by module.</param>
+    /// <param name="modules">Tells which registrar plugins are installed.</param>
     /// <param name="logger">Logger for recording import progress and diagnostics.</param>
     /// <param name="cache">Memory cache for invalidating pricing data.</param>
     /// <param name="clock">The source of the current moment.</param>
     public ImportTldPricingHandler(
         IHostpanelDbContext context,
         IRegistrarProviderFactory factory,
+        IRegistrarModuleCatalogue modules,
         ILogger<ImportTldPricingHandler> logger,
         IMemoryCache cache,
         IClock clock)
     {
         _context = context;
         _factory = factory;
+        _modules = modules;
         _logger = logger;
         _cache = cache;
         _clock = clock;
@@ -61,20 +66,26 @@ public sealed class ImportTldPricingHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success with an <see cref="ImportTldPricingResult"/> giving counts of imported and updated
-    /// TLDs, or <c>TLD_REGISTRAR_MODULE_UNKNOWN</c> (400) when the module names no known registrar.
+    /// TLDs, <c>TLD_REGISTRAR_MODULE_UNKNOWN</c> (400) when the module names no installed registrar plugin, or the
+    /// <c>REGISTRAR_*</c> code the registrar refused to list its prices with.
     /// </returns>
     public async Task<Result<ImportTldPricingResult>> HandleAsync(ImportTldPricingCommand cmd, CancellationToken ct)
     {
-        // TryParse, not Parse: Parse raises ArgumentException, which no handler in the pipeline
-        // classifies, so a misspelled module would come back as an unhandled 500 rather than a
-        // refusal the caller can act on.
-        if (!Enum.TryParse<RegistrarModule>(cmd.Module, ignoreCase: true, out var module))
+        var module = _modules.FindId(cmd.Module);
+        if (module is null)
         {
             return Result<ImportTldPricingResult>.FailureCode(HostpanelErrorCodes.TLD_REGISTRAR_MODULE_UNKNOWN);
         }
-        var provider = _factory.GetProvider(module);
 
-        var pricingList = await provider.GetTldPricingAsync(ct);
+        var provider = await _factory.GetProviderAsync(module, ct);
+
+        var priced = await provider.GetTldPricingAsync(ct);
+        if (priced.IsFailure)
+        {
+            return Result<ImportTldPricingResult>.FailureCode(priced.ErrorCode!);
+        }
+
+        var pricingList = priced.Value!;
 
         _logger.LogInformation(
             "ImportTldPricing: received {Count} TLD(s) from {Module}.", pricingList.Count, module);

@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -29,7 +28,7 @@ internal static class TldCostPriceSync
     {
         var allConfigs = await context.TldConfigs.OrderBy(x => x.SortOrder).ThenBy(x => x.Tld).ToListAsync(ct);
 
-        var grouped = allConfigs.GroupBy(c => c.RegistrarModule);
+        var grouped = allConfigs.GroupBy(c => c.RegistrarModule, StringComparer.OrdinalIgnoreCase);
 
         foreach (var group in grouped)
         {
@@ -60,7 +59,7 @@ internal static class TldCostPriceSync
     /// <param name="factory">Factory for resolving registrar provider implementations by module.</param>
     /// <param name="logger">Logger for recording sync progress and diagnostics.</param>
     /// <param name="clock">Stamps when each TLD configuration was synced.</param>
-    /// <param name="module">The registrar module whose provider to query.</param>
+    /// <param name="module">The registrar module (plugin id) whose provider to query.</param>
     /// <param name="configs">TLD configurations belonging to this registrar module.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -69,12 +68,20 @@ internal static class TldCostPriceSync
         IRegistrarProviderFactory factory,
         ILogger logger,
         IClock clock,
-        RegistrarModule module,
+        string module,
         List<TldConfig> configs,
         CancellationToken ct)
     {
-        var provider = factory.GetProvider(module);
-        var pricingList = await provider.GetTldPricingAsync(ct);
+        var provider = await factory.GetProviderAsync(module, ct);
+        var priced = await provider.GetTldPricingAsync(ct);
+        if (priced.IsFailure)
+        {
+            logger.LogWarning(
+                "SyncTldCostPrices: {Module} refused to list its prices: {ErrorCode}.", module, priced.ErrorCode);
+            return;
+        }
+
+        var pricingList = priced.Value!;
 
         var pricingLookup = pricingList.ToDictionary(p => p.Tld.ToLower().Trim(), p => p);
         var syncedAt = clock.UtcNow;

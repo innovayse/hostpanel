@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -96,7 +95,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
         // ".com" row, which would refuse the order as unpriced.
         if (!await context.TldConfigs.AnyAsync(t => t.Tld == "com", CancellationToken.None))
         {
-            var config = TldConfig.Create("com", RegistrarModule.NameAm, "USD", "USD", true, 0, []);
+            var config = TldConfig.Create("com", TestRegistrarModules.First, "USD", "USD", true, 0, []);
             config.UpdateSellPrices([], [], new() { [1] = 12m });
             context.TldConfigs.Add(config);
             await context.SaveChangesAsync(CancellationToken.None);

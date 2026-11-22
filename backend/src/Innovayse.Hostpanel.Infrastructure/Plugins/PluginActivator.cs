@@ -210,7 +210,8 @@ public sealed class PluginActivator
             id,
             PluginActivationOutcome.Activated,
             () => (TContract)ActivatorUtilities.CreateInstance(
-                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)));
+                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)),
+            composed);
     }
 
     /// <summary>

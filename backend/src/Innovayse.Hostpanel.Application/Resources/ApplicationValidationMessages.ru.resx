@@ -382,9 +382,6 @@
   <data name="DomainStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
-  <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Регистратор должен быть одним из: NameAm, Namecheap.</value>
-  </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Вид ставки должен быть одним из: Standard, Reduced.</value>
   </data>

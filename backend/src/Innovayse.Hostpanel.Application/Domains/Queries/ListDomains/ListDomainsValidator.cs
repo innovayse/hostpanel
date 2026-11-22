@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
 
 /// <summary>
 /// Validates <see cref="ListDomainsQuery"/>. The page, page size and search are the shared list rules
-/// (<see cref="ListQueryValidator{T}"/>); this adds the rules of the domain filters.
+/// (<see cref="ListQueryValidator{T}"/>); this adds the rule of the status filter. The registrar filter is a plugin id and needs none: an id no plugin has matches no domain.
 /// </summary>
 public sealed class ListDomainsValidator : ListQueryValidator<ListDomainsQuery>
 {
@@ -18,6 +18,5 @@ public sealed class ListDomainsValidator : ListQueryValidator<ListDomainsQuery>
     {
         // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
         RuleFor(x => x.Status).IsInEnum().WithMessage(L["DomainStatusInvalid"]);
-        RuleFor(x => x.RegistrarModule).IsInEnum().WithMessage(L["DomainListRegistrarInvalid"]);
     }
 }

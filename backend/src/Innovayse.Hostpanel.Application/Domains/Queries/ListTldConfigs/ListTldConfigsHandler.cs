@@ -47,9 +47,10 @@ public sealed class ListTldConfigsHandler
         // A TLD is stored without its dot, so ".com" typed into the search must find "com".
         var filtered = _context.TldConfigs.AsNoTracking().Search(query.Search?.Trim().TrimStart('.'), x => x.Tld);
 
-        if (query.RegistrarModule is { } registrarModule)
+        if (query.RegistrarModule?.Trim().ToLowerInvariant() is { Length: > 0 } registrarModule)
         {
-            filtered = filtered.Where(x => x.RegistrarModule == registrarModule);
+            // Stored values keep the case they were written in (older rows may differ in case from the plugin id).
+            filtered = filtered.Where(x => x.RegistrarModule.ToLower() == registrarModule);
         }
 
         if (query.Enabled is { } enabled)
@@ -131,7 +132,7 @@ public sealed class ListTldConfigsHandler
         return new TldConfigListItemDto(
             config.Id,
             config.Tld,
-            config.RegistrarModule.ToString(),
+            config.RegistrarModule,
             config.IsEnabled,
             cost1yr,
             sell1yr,

@@ -22,16 +22,15 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     public async Task SaveWithEmptySecret_KeepsTheStoredSecretAsync()
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-        var slug = "namecheap";
+        var slug = "maxmind";
 
         await client.PutAsJsonAsync($"/api/admin/integrations/{slug}", new
         {
             isEnabled = false,
             config = new Dictionary<string, string>
             {
-                ["api_key"] = "original-secret-value",
-                ["api_username"] = "someone",
-                ["client_ip"] = "1.2.3.4",
+                ["license_key"] = "original-secret-value",
+                ["account_id"] = "someone",
             },
         });
 
@@ -40,9 +39,8 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
             isEnabled = true,
             config = new Dictionary<string, string>
             {
-                ["api_key"] = string.Empty,
-                ["api_username"] = "someone-else",
-                ["client_ip"] = "1.2.3.4",
+                ["license_key"] = string.Empty,
+                ["account_id"] = "someone-else",
             },
         });
         resave.StatusCode.Should().Be(HttpStatusCode.NoContent);
@@ -50,8 +48,8 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
         var test = await client.PostAsync($"/api/admin/integrations/{slug}/test", null);
         var body = await test.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("success").GetBoolean().Should().BeTrue("the original key is still stored");
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:namecheap:api_key")).Should().Be("original-secret-value");
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:namecheap:api_username")).Should().Be("someone-else");
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:maxmind:license_key")).Should().Be("original-secret-value");
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:maxmind:account_id")).Should().Be("someone-else");
     }
 
     /// <summary>A secret field left out of the body keeps the stored value too.</summary>
@@ -78,16 +76,16 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     public async Task SaveWithNewSecret_ReplacesTheStoredSecretAsync()
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:namecheap:api_key", "old-gateway-key");
+        await SecretSettingTestSeeds.StoreAsync(factory, "integration:maxmind:license_key", "old-gateway-key");
 
-        var save = await client.PutAsJsonAsync("/api/admin/integrations/namecheap", new
+        var save = await client.PutAsJsonAsync("/api/admin/integrations/maxmind", new
         {
             isEnabled = false,
-            config = new Dictionary<string, string> { ["api_key"] = "new-gateway-key" },
+            config = new Dictionary<string, string> { ["license_key"] = "new-gateway-key" },
         });
 
         save.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:namecheap:api_key")).Should().Be("new-gateway-key");
+        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:maxmind:license_key")).Should().Be("new-gateway-key");
     }
 
     /// <summary>An explicit clear removes the stored secret, and the detail then reports it as not set.</summary>
@@ -223,10 +221,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "enom", new() { ["Account_ID"] = "x" });
+        var response = await SaveAsync(client, "maxmind", new() { ["Account_ID"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("enom", "Account_ID", "account_id");
+        await AssertNothingStoredAsync("maxmind", "Account_ID", "account_id");
     }
 
     /// <summary>An undeclared field in ClearFields is refused the same way.</summary>
@@ -236,10 +234,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "resellerclub", new() { ["reseller_id"] = "42" }, ["Reseller_ID"]);
+        var response = await SaveAsync(client, "maxmind", new() { ["account_id"] = "42" }, ["Account_ID"]);
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("resellerclub", "reseller_id");
+        await AssertNothingStoredAsync("maxmind", "account_id");
     }
 
     /// <summary>A valid field next to an undeclared one writes nothing at all.</summary>
@@ -249,10 +247,10 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
-        var response = await SaveAsync(client, "resellerclub", new() { ["reseller_id"] = "7", ["bogus"] = "x" });
+        var response = await SaveAsync(client, "maxmind", new() { ["account_id"] = "7", ["bogus"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("resellerclub", "reseller_id", "bogus");
+        await AssertNothingStoredAsync("maxmind", "account_id", "bogus");
     }
 
     /// <summary>A valid field next to an invalid value writes nothing at all.</summary>
@@ -269,20 +267,6 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID);
         (await SnapshotAsync("smtp", "host", "encryption")).Should().Equal(before, "a refused save writes nothing");
-    }
-
-    /// <summary>A toggle value that is not true or false is refused INTEGRATION_FIELD_INVALID, naming the field.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task InvalidToggle_IsRefusedWithTheExpectationAsync()
-    {
-        var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-
-        var response = await SaveAsync(client, "nameam", new() { ["test_mode"] = "maybe" });
-
-        await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_INVALID);
-        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        body.RootElement.GetProperty("errors").GetProperty("test_mode").ToString().Should().Contain("Expected: ");
     }
 
     /// <summary>A select value that is not an option is refused INTEGRATION_FIELD_INVALID.</summary>
@@ -311,19 +295,6 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await SecretSettingTestSeeds.ReadAsync(factory, "integration:smtp:encryption")).Should().Be("SSL");
-    }
-
-    /// <summary>A toggle is stored lowercased.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Toggle_IsStoredLowercaseAsync()
-    {
-        var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-
-        var response = await SaveAsync(client, "nameam", new() { ["test_mode"] = "TRUE" });
-
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await SecretSettingTestSeeds.ReadAsync(factory, "integration:nameam:test_mode")).Should().Be("true");
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

@@ -233,78 +233,6 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
-    /// The Name.am registrar API. Retries only the requests that cannot register or renew
-    /// anything: see the predicate in <c>HttpClientResilienceExtensions</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>This is the client that most needs a predicate rather than a policy.</b> It posts to
-    /// two very different things: <c>/client/domains/check</c>, a pure availability lookup a
-    /// visitor is waiting on, and <c>/client/carts/purchase</c>, which registers, transfers or
-    /// renews a domain and bills for it. Retrying the whole client because most of its traffic is
-    /// reads would buy a second registration on a dropped response. GET and PUT are repeated,
-    /// PUT here is a whole-resource update of nameservers, contacts or the registrar lock, which
-    /// ends in the state a single call would have, and POST only for the two paths named in the
-    /// predicate.
-    /// </para>
-    /// <para>
-    /// <b>10 seconds an attempt, 25 in total</b>, inside the registration's existing 30-second
-    /// <see cref="HttpClient.Timeout"/>. An availability check is on the ordering path with a
-    /// person watching a spinner, and ten seconds is already past the point where the answer
-    /// stops feeling like an answer.
-    /// </para>
-    /// <para>
-    /// The breaker is on: one registrar, one endpoint, so opening it sheds calls to exactly the
-    /// thing that is down. Twenty seconds is short enough that a registrar having a bad minute
-    /// does not become hostpanel having a bad ten.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions NameAm { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(10),
-        TotalTimeout = TimeSpan.FromSeconds(25),
-        MaxRetryAttempts = 2,
-        RetryDelay = TimeSpan.FromSeconds(1),
-        CircuitBreakerEnabled = true,
-        FailureRatio = 0.5,
-        MinimumThroughput = 10,
-        SamplingDuration = TimeSpan.FromSeconds(60),
-        BreakDuration = TimeSpan.FromSeconds(20),
-    };
-
-    /// <summary>
-    /// The Namecheap XML API. Retries only its read commands: see the predicate in
-    /// <c>HttpClientResilienceExtensions</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Every Namecheap call is a GET, so the method says nothing.</b> The operation is the
-    /// <c>Command</c> query parameter, and it ranges from <c>namecheap.domains.check</c> to
-    /// <c>namecheap.domains.create</c> and <c>namecheap.domains.renew</c> on the same URL and the
-    /// same verb. The predicate reads that parameter and repeats only the lookups; anything it
-    /// does not recognise is treated as a write and left alone.
-    /// </para>
-    /// <para>
-    /// <b>10 seconds an attempt, 25 in total</b>, matching <see cref="NameAm"/> and inside the
-    /// registration's existing 30-second <see cref="HttpClient.Timeout"/>: the same availability
-    /// check on the same ordering path, so the same budget. The breaker is on for the same reason
-    /// too: one registrar behind one endpoint.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions Namecheap { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(10),
-        TotalTimeout = TimeSpan.FromSeconds(25),
-        MaxRetryAttempts = 2,
-        RetryDelay = TimeSpan.FromSeconds(1),
-        CircuitBreakerEnabled = true,
-        FailureRatio = 0.5,
-        MinimumThroughput = 10,
-        SamplingDuration = TimeSpan.FromSeconds(60),
-        BreakDuration = TimeSpan.FromSeconds(20),
-    };
-
-    /// <summary>
     /// The VAT number registers, the EU service and the UK authority's lookup. Each check is one idempotent read, so it is
     /// registered read-only with a retry.
     /// </summary>
@@ -428,8 +356,6 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
         yield return new NamedResilienceProfile(nameof(CPanelWhm), CPanelWhm);
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
-        yield return new NamedResilienceProfile(nameof(NameAm), NameAm);
-        yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);
         yield return new NamedResilienceProfile(nameof(Vat), Vat);
         yield return new NamedResilienceProfile(nameof(Plugin), Plugin);
         yield return new NamedResilienceProfile(nameof(Cba), Cba);

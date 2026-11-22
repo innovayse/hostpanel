@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
@@ -87,7 +88,7 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
         Ok(change.Domain.RegistrarRef);
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct)
+    public Task<Result<IReadOnlyList<DnsRecord>>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct)
     {
         IReadOnlyList<DnsRecord> records =
         [
@@ -96,7 +97,7 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
             DnsRecord.CreateDetached(DnsRecordType.MX, "@", $"mail.{domain.Name}", 3600, 10),
         ];
 
-        return Task.FromResult(records);
+        return Task.FromResult(Result<IReadOnlyList<DnsRecord>>.Success(records));
     }
 
     /// <inheritdoc/>
@@ -113,35 +114,35 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<RegistrarResult> ModifyContactDetailsAsync(DomainContactChange change, CancellationToken ct) =>
-        Ok(RefFor(change.DomainName));
+        Ok(RefFor(change.Domain.Name));
 
     /// <inheritdoc/>
-    public Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct) =>
+    public Task<DomainContact?> GetContactDetailsAsync(DomainRef domain, CancellationToken ct) =>
         Task.FromResult<DomainContact?>(SampleContact);
 
     /// <inheritdoc/>
     public Task<RegistrarResult> SetEmailForwardingAsync(DomainFeatureToggle toggle, CancellationToken ct) =>
-        Ok(RefFor(toggle.DomainName));
+        Ok(RefFor(toggle.Domain.Name));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> AddEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct) =>
-        Ok(RefFor(change.DomainName));
+        Ok(RefFor(change.Domain.Name));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> UpdateEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct) =>
-        Ok(RefFor(change.DomainName));
+        Ok(RefFor(change.Domain.Name));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> DeleteEmailForwardingRuleAsync(EmailForwardingRuleRemoval removal, CancellationToken ct) =>
-        Ok(RefFor(removal.DomainName));
+        Ok(RefFor(removal.Domain.Name));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> SetDnsManagementAsync(DomainFeatureToggle toggle, CancellationToken ct) =>
-        Ok(RefFor(toggle.DomainName));
+        Ok(RefFor(toggle.Domain.Name));
 
     /// <inheritdoc/>
-    public Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct) =>
-        Task.FromResult(!domainName.Contains(TakenMarker, StringComparison.OrdinalIgnoreCase));
+    public Task<Result<bool>> CheckAvailabilityAsync(string domainName, CancellationToken ct) =>
+        Task.FromResult(Result<bool>.Success(!domainName.Contains(TakenMarker, StringComparison.OrdinalIgnoreCase)));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct) =>
@@ -155,7 +156,7 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
     }
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
+    public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct)
     {
         IReadOnlyList<TldPricing> pricing =
         [
@@ -166,6 +167,6 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
                 new Dictionary<int, decimal> { [1] = 12m }),
         ];
 
-        return Task.FromResult(pricing);
+        return Task.FromResult(Result<IReadOnlyList<TldPricing>>.Success(pricing));
     }
 }

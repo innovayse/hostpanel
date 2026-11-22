@@ -9,7 +9,6 @@ import { createPinia, setActivePinia } from 'pinia'
 import { translate } from '@/lib/translate'
 import { useDomainsStore } from '@/stores/domains'
 import { DomainStatus } from '@/types/domain'
-import { RegistrarModule } from '@/types/registrarmodule'
 import { json, problem, stubFetch, stubOffline, callOf, invalid } from '../helpers/fetch'
 
 describe('domainsStore loads', () => {
@@ -36,8 +35,8 @@ describe('domainsStore loads', () => {
     const mock = stubFetch(json({ items: [], totalCount: 0 }))
     const store = useDomainsStore()
 
-    await store.fetchAll(3, { status: DomainStatus.Active, registrarModule: RegistrarModule.NameAm })
-    expect(callOf(mock).url).toBe('/api/domains?page=3&pageSize=20&status=Active&registrarModule=NameAm')
+    await store.fetchAll(3, { status: DomainStatus.Active, registrarModule: 'registrar-one' })
+    expect(callOf(mock).url).toBe('/api/domains?page=3&pageSize=20&status=Active&registrarModule=registrar-one')
   })
 
   it('fetchAll without filters asks for the plain page', async () => {

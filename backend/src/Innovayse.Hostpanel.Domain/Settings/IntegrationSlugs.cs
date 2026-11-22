@@ -10,18 +10,6 @@ public static class IntegrationSlugs
     /// <summary>The manual bank-transfer method.</summary>
     public const string BankTransfer = "bank-transfer";
 
-    /// <summary>The Namecheap registrar.</summary>
-    public const string Namecheap = "namecheap";
-
-    /// <summary>The Name.am registrar.</summary>
-    public const string NameAm = "nameam";
-
-    /// <summary>The ResellerClub registrar.</summary>
-    public const string ResellerClub = "resellerclub";
-
-    /// <summary>The ENOM registrar.</summary>
-    public const string Enom = "enom";
-
     /// <summary>The cPanel WHM provisioning module.</summary>
     public const string Cpanel = "cpanel";
 

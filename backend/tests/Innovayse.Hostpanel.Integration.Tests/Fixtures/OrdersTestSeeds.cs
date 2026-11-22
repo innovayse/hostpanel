@@ -5,7 +5,6 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -408,7 +407,7 @@ public static class OrdersTestSeeds
         }
 
         var prices = new Dictionary<int, decimal> { [1] = usdSellPrice };
-        var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", "USD", true, 1, ["test"]);
+        var config = TldConfig.Create(tld, TestRegistrarModules.First, "USD", "USD", true, 1, ["test"]);
         config.UpdateSellPrices(prices, prices, prices);
         db.TldConfigs.Add(config);
         await db.SaveChangesAsync();

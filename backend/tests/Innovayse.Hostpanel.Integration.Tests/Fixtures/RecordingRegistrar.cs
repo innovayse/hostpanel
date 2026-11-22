@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -112,7 +113,7 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     }
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct)
+    public Task<Result<IReadOnlyList<DnsRecord>>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct)
     {
         Note(nameof(GetDnsRecordsAsync), domain.Name);
         return _inner.GetDnsRecordsAsync(domain, ct);
@@ -126,10 +127,10 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct)
+    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordUpdate update, CancellationToken ct)
     {
-        Note(nameof(UpdateDnsRecordAsync), change.Domain.Name);
-        return _inner.UpdateDnsRecordAsync(change, ct);
+        Note(nameof(UpdateDnsRecordAsync), update.Domain.Name);
+        return _inner.UpdateDnsRecordAsync(update, ct);
     }
 
     /// <inheritdoc/>
@@ -142,54 +143,54 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     /// <inheritdoc/>
     public Task<RegistrarResult> ModifyContactDetailsAsync(DomainContactChange change, CancellationToken ct)
     {
-        Note(nameof(ModifyContactDetailsAsync), change.DomainName);
+        Note(nameof(ModifyContactDetailsAsync), change.Domain.Name);
         return _inner.ModifyContactDetailsAsync(change, ct);
     }
 
     /// <inheritdoc/>
-    public Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct)
+    public Task<DomainContact?> GetContactDetailsAsync(DomainRef domain, CancellationToken ct)
     {
-        Note(nameof(GetContactDetailsAsync), domainName);
-        return _inner.GetContactDetailsAsync(domainName, ct);
+        Note(nameof(GetContactDetailsAsync), domain.Name);
+        return _inner.GetContactDetailsAsync(domain, ct);
     }
 
     /// <inheritdoc/>
     public Task<RegistrarResult> SetEmailForwardingAsync(DomainFeatureToggle toggle, CancellationToken ct)
     {
-        Note(nameof(SetEmailForwardingAsync), toggle.DomainName);
+        Note(nameof(SetEmailForwardingAsync), toggle.Domain.Name);
         return _inner.SetEmailForwardingAsync(toggle, ct);
     }
 
     /// <inheritdoc/>
     public Task<RegistrarResult> AddEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct)
     {
-        Note(nameof(AddEmailForwardingRuleAsync), change.DomainName);
+        Note(nameof(AddEmailForwardingRuleAsync), change.Domain.Name);
         return _inner.AddEmailForwardingRuleAsync(change, ct);
     }
 
     /// <inheritdoc/>
     public Task<RegistrarResult> UpdateEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct)
     {
-        Note(nameof(UpdateEmailForwardingRuleAsync), change.DomainName);
+        Note(nameof(UpdateEmailForwardingRuleAsync), change.Domain.Name);
         return _inner.UpdateEmailForwardingRuleAsync(change, ct);
     }
 
     /// <inheritdoc/>
     public Task<RegistrarResult> DeleteEmailForwardingRuleAsync(EmailForwardingRuleRemoval removal, CancellationToken ct)
     {
-        Note(nameof(DeleteEmailForwardingRuleAsync), removal.DomainName);
+        Note(nameof(DeleteEmailForwardingRuleAsync), removal.Domain.Name);
         return _inner.DeleteEmailForwardingRuleAsync(removal, ct);
     }
 
     /// <inheritdoc/>
     public Task<RegistrarResult> SetDnsManagementAsync(DomainFeatureToggle toggle, CancellationToken ct)
     {
-        Note(nameof(SetDnsManagementAsync), toggle.DomainName);
+        Note(nameof(SetDnsManagementAsync), toggle.Domain.Name);
         return _inner.SetDnsManagementAsync(toggle, ct);
     }
 
     /// <inheritdoc/>
-    public Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct)
+    public Task<Result<bool>> CheckAvailabilityAsync(string domainName, CancellationToken ct)
     {
         Note(nameof(CheckAvailabilityAsync), domainName);
         return _inner.CheckAvailabilityAsync(domainName, ct);
@@ -203,14 +204,14 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
+    public Task<RegistrarResult> CheckDomainActiveAsync(DomainRef domain, CancellationToken ct)
     {
-        Note(nameof(CheckDomainActiveAsync), domainName);
-        return _inner.CheckDomainActiveAsync(domainName, ct);
+        Note(nameof(CheckDomainActiveAsync), domain.Name);
+        return _inner.CheckDomainActiveAsync(domain, ct);
     }
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
+    public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct)
     {
         return _inner.GetTldPricingAsync(ct);
     }

@@ -26,7 +26,7 @@ The `PluginType` enum defines what a plugin can be:
 |------|-------|-----------------------|
 | `Provisioning` | 0 | Yes: see below |
 | `Payment` | 1 | Yes: see below |
-| `Registrar` | 2 | Listed only |
+| `Registrar` | 2 | Yes: see "Registrar plugins" |
 | `Identity` | 3 | Listed only |
 | `Fulfilment` | 4 | Listed only |
 | `Hosted` | 5 | Listed only |
@@ -432,9 +432,9 @@ A version 2 manifest may list `capabilities`, each a name from the SDK's `Plugin
 | `registrarEmailForwarding`, `registrarDnsManagement`, `registrarWhois`, `registrarChildNameservers`, `registrarDnssec`, `registrarRestore`, `registrarDomainList`, `registrarSuggestions`, `registrarBalance` | `Registrar` only | | the matching interface, for example `IRegistrarWhoisPlugin` for `registrarWhois` |
 
 Declaring a hosting panel, virtual server, registrar or `tax` capability makes the plugin load and shows the capability on the
-plugins page. The host calls the hosting panel contracts (see [Hosting panel plugins](#hosting-panel-plugins)); it does not call
-the virtual server, registrar and `tax` contracts yet: a feature starts to use one when it ships, and a plugin that declares
-one before then is loaded but never asked.
+plugins page. The host calls the hosting panel contracts (see [Hosting panel plugins](#hosting-panel-plugins)) and the registrar
+contracts (see "Registrar plugins" below); it does not call the virtual server and `tax` contracts yet: a feature starts to use
+one when it ships, and a plugin that declares one before then is loaded but never asked.
 
 An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
 `api` routes or `ui` menus, pages or slots must declare `endpoints`, or the package is refused at install and skipped at
@@ -448,6 +448,47 @@ interface a capability promises, the plugin is not activated for anything, its o
 plugin that declares `storedCredentials` without implementing `IStoredCredentialPlugin` takes no payments, and a
 fulfilment plugin that declares `endpoints` without implementing `IPluginEndpoints` receives no fulfilment calls. The
 admin log names the plugin and the capability.
+
+### Registrar plugins
+
+A registrar is the plugin whose id a TLD or a domain names: the admin picks it from the installed registrar plugins, and the
+host stores the id. A stored id is matched to a plugin id without regard to letter case. The host calls a registrar plugin
+only when it declares `registrarOperations`, and builds the connection it passes from the plugin's saved settings by their
+`connectionRole` (see below), so the host knows no setting key of yours. A plugin that is not switched on, lacks a required
+setting or is mid data migration is treated as not configured, and its domains answer `REGISTRAR_NOT_CONFIGURED`.
+
+What each capability turns on in the screens:
+
+| Capability | What the host does with it |
+|---|---|
+| `registrarOperations` | availability, register, transfer, renew, the active check, nameservers, contact, lock, privacy, auto renew, EPP code, outgoing transfer, DNS records, TLD prices and Test Connection |
+| `registrarDnsManagement` | the DNS management switch and the DNS records section of a domain |
+| `registrarEmailForwarding` | the email forwarding switch and its rules |
+| `registrarWhois` | the WHOIS lookup |
+
+The other registrar capabilities (balance, child nameservers, DNSSEC, restore, domain list, suggestions) are accepted and shown
+but nothing in the host calls them yet. An action whose capability a plugin does not declare is hidden in the admin panel and
+the portal, and answers `REGISTRAR_OPERATION_UNSUPPORTED` if it is asked for anyway.
+
+A refusal reason becomes one code and one sentence in the user's language, and your own text is never shown:
+
+| Reason | Code |
+|---|---|
+| `DomainUnavailable` | `REGISTRAR_DOMAIN_UNAVAILABLE` |
+| `TldNotSupported` | `REGISTRAR_TLD_NOT_SUPPORTED` |
+| `EppCodeInvalid` | `REGISTRAR_EPP_CODE_INVALID` |
+| `TransferNotAllowed` | `REGISTRAR_TRANSFER_NOT_ALLOWED` |
+| `ContactInvalid` | `REGISTRAR_CONTACT_VALIDATION_FAILED` |
+| `NameserverInvalid` | `REGISTRAR_NAMESERVER_INVALID` |
+| `DnsRecordInvalid` | `REGISTRAR_DNS_RECORD_INVALID` |
+| `InsufficientFunds` | `REGISTRAR_INSUFFICIENT_FUNDS` |
+| `AccessDenied` | `REGISTRAR_ACCESS_DENIED` |
+| `Other` | `REGISTRAR_ORDER_UPSTREAM_FAILED` |
+
+An order the plugin accepted but has not finished is returned with `Pending` or `RequiresPolling`, and the host asks again
+through `CheckDomainActiveAsync`. A renewal carries `CurrentExpiresAt`, the expiry the host held, so a renewal that already
+took effect is answered `AlreadyApplied` instead of charging twice. A throw means the outcome is unknown and is never read as
+a refusal. A name with a premium price is reported as not available, because the host sells at the TLD's price.
 
 ### Server modules
 

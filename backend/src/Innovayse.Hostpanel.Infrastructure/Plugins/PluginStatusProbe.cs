@@ -1,9 +1,15 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Lifecycle;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Provisioning;
+using Hostpanel.Sdk.Plugins.Registrar;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -18,7 +24,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
  * which a plugin may fill with a URL, a key or a server's answer.
  */
 
-/// <summary>Asks a loaded plugin's <see cref="IPluginStatus"/>, bounded by <see cref="PluginApiOptions.StatusTimeout"/>.</summary>
+/// <summary>
+/// Asks a loaded plugin whether it works, bounded by <see cref="PluginApiOptions.StatusTimeout"/>: through its
+/// <see cref="IPluginStatus"/> when it implements one, and for a registrar plugin through its own connection test
+/// (<see cref="IRegistrarOperationsPlugin.TestConnectionAsync"/>) with the connection built from its saved settings.
+/// </summary>
 public sealed class PluginStatusProbe : IPluginStatusProbe
 {
     /// <summary>Checks the activation gates and builds the plugin.</summary>
@@ -65,8 +75,33 @@ public sealed class PluginStatusProbe : IPluginStatusProbe
             return new PluginStatusProbeResult(PluginStatusProbeOutcome.NotSupported);
         }
 
-        var prepared = await _activator.PrepareAsync<IPluginStatus>(plugin, ct);
-        if (prepared.Outcome != PluginActivationOutcome.Activated || prepared.Create is null)
+        return typeof(IPluginStatus).IsAssignableFrom(plugin.ImplementationType)
+            ? await RunAsync<IPluginStatus>(
+                plugin, async (status, _, token) => Read(pluginId, await status.GetStatusAsync(token)), ct)
+            : await RunAsync<IRegistrarOperationsPlugin>(
+                plugin, async (registrar, configuration, token) => ReadConnection(await registrar.TestConnectionAsync(
+                    new RegistrarTestConnectionContext(RegistrarConnectionBuilder.Build(plugin.Manifest, configuration)),
+                    token)), ct);
+    }
+
+    /// <summary>
+    /// Runs one check the way every check is run: through the activation gates, with a limit the host stops waiting at, and
+    /// with every failure turned into a result.
+    /// </summary>
+    /// <typeparam name="TContract">The SDK contract the check calls the plugin through.</typeparam>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <param name="check">The call to the plugin, given the plugin, the configuration it was built with and the limit token.</param>
+    /// <param name="ct">Cancellation token of the admin's request.</param>
+    /// <returns>The check's result, or the outcome that says why it could not give one.</returns>
+    private async Task<PluginStatusProbeResult> RunAsync<TContract>(
+        LoadedPlugin plugin,
+        Func<TContract, IConfiguration, CancellationToken, Task<PluginStatusProbeResult>> check,
+        CancellationToken ct)
+        where TContract : class
+    {
+        var pluginId = plugin.Manifest.Id;
+        var prepared = await _activator.PrepareAsync<TContract>(plugin, ct);
+        if (prepared.Outcome != PluginActivationOutcome.Activated || prepared.Create is null || prepared.Configuration is null)
         {
             return new PluginStatusProbeResult(PluginStatusProbeOutcome.Inactive);
         }
@@ -75,11 +110,10 @@ public sealed class PluginStatusProbe : IPluginStatusProbe
         limit.CancelAfter(_options.Value.StatusTimeout);
         try
         {
-            var status = prepared.Create();
+            var instance = prepared.Create();
 
             // WaitAsync on the limit token: the host stops waiting at the limit even when the plugin ignores its token.
-            var report = await status.GetStatusAsync(limit.Token).WaitAsync(limit.Token);
-            return Read(pluginId, report);
+            return await check(instance, prepared.Configuration, limit.Token).WaitAsync(limit.Token);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -99,13 +133,35 @@ public sealed class PluginStatusProbe : IPluginStatusProbe
         }
     }
 
-    /// <summary>The loaded plugin when it implements <see cref="IPluginStatus"/>, read from its type so no plugin code runs.</summary>
+    /// <summary>
+    /// The loaded plugin when it implements <see cref="IPluginStatus"/>, or is a registrar plugin that offers operations,
+    /// read from its type and manifest so no plugin code runs.
+    /// </summary>
     /// <param name="pluginId">The plugin id.</param>
     /// <returns>The plugin, or <see langword="null"/>.</returns>
     private LoadedPlugin? Find(string pluginId)
     {
         var plugin = _registry.Find(pluginId);
-        return plugin is not null && typeof(IPluginStatus).IsAssignableFrom(plugin.ImplementationType) ? plugin : null;
+        if (plugin is null)
+        {
+            return null;
+        }
+
+        var isRegistrar = plugin.Manifest.Type == PluginType.Registrar
+            && plugin.Manifest.Declares(PluginCapabilities.RegistrarOperations)
+            && typeof(IRegistrarOperationsPlugin).IsAssignableFrom(plugin.ImplementationType);
+
+        return typeof(IPluginStatus).IsAssignableFrom(plugin.ImplementationType) || isRegistrar ? plugin : null;
+    }
+
+    /// <summary>Turns a registrar plugin's connection test into the report the status checks share.</summary>
+    /// <param name="test">What the plugin answered.</param>
+    /// <returns>A healthy report when it connected, otherwise an unavailable one; the host words why from the code.</returns>
+    private static PluginStatusProbeResult ReadConnection(PanelConnectionTestResult test)
+    {
+        return test.Outcome == PanelConnectionOutcome.Connected
+            ? new PluginStatusProbeResult(PluginStatusProbeOutcome.Reported, PluginHealth.Healthy)
+            : new PluginStatusProbeResult(PluginStatusProbeOutcome.Reported, PluginHealth.Unavailable);
     }
 
     /// <summary>Checks a report before the host believes it.</summary>

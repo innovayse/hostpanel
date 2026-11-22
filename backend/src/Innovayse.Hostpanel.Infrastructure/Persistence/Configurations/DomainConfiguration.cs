@@ -36,7 +36,7 @@ public sealed class DomainConfiguration : IEntityTypeConfiguration<RegisteredDom
         builder.Property(x => x.PriceCurrency).HasMaxLength(3);
         builder.Property(x => x.NextDueDate);
         builder.Property(x => x.Registrar).HasMaxLength(100);
-        builder.Property(x => x.RegistrarModule).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.RegistrarModule).HasMaxLength(64);
 
         builder.Property(x => x.FirstPaymentAmount).HasColumnType("numeric(18,4)");
         builder.Property(x => x.PaymentMethod).HasMaxLength(100);

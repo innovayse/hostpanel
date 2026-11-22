@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Queries.ListTldConfigs;
 
 /// <summary>
 ///     Validates <see cref="ListTldConfigsQuery"/>. The page, page size and search are the shared list rules
-///     (<see cref="ListQueryValidator{T}"/>); this adds the rule of the registrar filter.
+///     (<see cref="ListQueryValidator{T}"/>). The registrar filter is a plugin id and needs no rule of its own: an id no plugin has matches no TLD.
 /// </summary>
 public sealed class ListTldConfigsValidator : ListQueryValidator<ListTldConfigsQuery>
 {
@@ -18,7 +18,5 @@ public sealed class ListTldConfigsValidator : ListQueryValidator<ListTldConfigsQ
     public ListTldConfigsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
-        RuleFor(x => x.RegistrarModule).IsInEnum().WithMessage(L["DomainListRegistrarInvalid"]);
     }
 }

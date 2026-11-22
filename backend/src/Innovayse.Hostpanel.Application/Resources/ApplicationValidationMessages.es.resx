@@ -382,9 +382,6 @@
   <data name="DomainStatusInvalid" xml:space="preserve">
     <value>El estado debe ser uno de: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
-  <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>El registrador debe ser uno de: NameAm, Namecheap.</value>
-  </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>La página debe ser 1 o mayor.</value>
   </data>

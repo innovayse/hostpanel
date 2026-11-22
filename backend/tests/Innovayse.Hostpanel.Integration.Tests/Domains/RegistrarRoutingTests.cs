@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,10 +18,10 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The registrar the first TLD is configured for.</summary>
-    private readonly RecordingRegistrar _nameAm = new(new ManualTimeProvider(TestMoments.Seeded));
+    private readonly RecordingRegistrar _firstRegistrar = new(new ManualTimeProvider(TestMoments.Seeded));
 
     /// <summary>The registrar the second TLD is configured for.</summary>
-    private readonly RecordingRegistrar _namecheap = new(new ManualTimeProvider(TestMoments.Seeded));
+    private readonly RecordingRegistrar _secondRegistrar = new(new ManualTimeProvider(TestMoments.Seeded));
 
     /// <summary>
     /// Gets a TLD extension unique to this test instance, so configurations never collide in the shared
@@ -39,28 +38,28 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     /// recording registrars.
     /// </summary>
     /// <returns>An admin client against that host and the two TLD extensions (the first TLD belongs to the first registrar).</returns>
-    private async Task<(HttpClient Admin, string NameAmTld, string NamecheapTld)> ConfigureTwoRegistrarsAsync()
+    private async Task<(HttpClient Admin, string FirstTld, string SecondTld)> ConfigureTwoRegistrarsAsync()
     {
-        var nameAmTld = UniqueTld("a");
-        var namecheapTld = UniqueTld("c");
+        var firstTld = UniqueTld("a");
+        var secondTld = UniqueTld("c");
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            context.TldConfigs.Add(TldConfig.Create(nameAmTld, RegistrarModule.NameAm, "USD", "USD", true, 1, []));
-            context.TldConfigs.Add(TldConfig.Create(namecheapTld, RegistrarModule.Namecheap, "USD", "USD", true, 2, []));
+            context.TldConfigs.Add(TldConfig.Create(firstTld, TestRegistrarModules.First, "USD", "USD", true, 1, []));
+            context.TldConfigs.Add(TldConfig.Create(secondTld, TestRegistrarModules.Second, "USD", "USD", true, 2, []));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
         var registrars = new FakeRegistrarProviderFactory();
-        registrars.Register(RegistrarModule.NameAm, _nameAm);
-        registrars.Register(RegistrarModule.Namecheap, _namecheap);
+        registrars.Register(TestRegistrarModules.First, _firstRegistrar);
+        registrars.Register(TestRegistrarModules.Second, _secondRegistrar);
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
                 services.AddSingleton<IRegistrarProviderFactory>(registrars)));
 
         var admin = host.CreateClient();
         admin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
-        return (admin, nameAmTld, namecheapTld);
+        return (admin, firstTld, secondTld);
     }
 
     /// <summary>Seeds an active domain with a registrar reference under the given TLD.</summary>
@@ -84,17 +83,17 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task Renew_DomainsOfTwoTlds_EachGoesToItsOwnRegistrarAsync()
     {
-        var (admin, nameAmTld, namecheapTld) = await ConfigureTwoRegistrarsAsync();
-        var first = await SeedDomainAsync(nameAmTld);
-        var second = await SeedDomainAsync(namecheapTld);
+        var (admin, firstTld, secondTld) = await ConfigureTwoRegistrarsAsync();
+        var first = await SeedDomainAsync(firstTld);
+        var second = await SeedDomainAsync(secondTld);
 
         (await admin.PostAsJsonAsync($"/api/domains/{first.Id}/renew", new { years = 1 })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
         (await admin.PostAsJsonAsync($"/api/domains/{second.Id}/renew", new { years = 1 })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
-        _nameAm.Calls.Should().Contain($"RenewAsync {first.Name}").And.NotContain($"RenewAsync {second.Name}");
-        _namecheap.Calls.Should().Contain($"RenewAsync {second.Name}").And.NotContain($"RenewAsync {first.Name}");
+        _firstRegistrar.Calls.Should().Contain($"RenewAsync {first.Name}").And.NotContain($"RenewAsync {second.Name}");
+        _secondRegistrar.Calls.Should().Contain($"RenewAsync {second.Name}").And.NotContain($"RenewAsync {first.Name}");
     }
 
     /// <summary>A flag change on an existing domain goes to the registrar the domain's TLD is configured for, and only to it.</summary>
@@ -102,17 +101,17 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task SetAutoRenew_DomainsOfTwoTlds_EachGoesToItsOwnRegistrarAsync()
     {
-        var (admin, nameAmTld, namecheapTld) = await ConfigureTwoRegistrarsAsync();
-        var first = await SeedDomainAsync(nameAmTld);
-        var second = await SeedDomainAsync(namecheapTld);
+        var (admin, firstTld, secondTld) = await ConfigureTwoRegistrarsAsync();
+        var first = await SeedDomainAsync(firstTld);
+        var second = await SeedDomainAsync(secondTld);
 
         (await admin.PutAsJsonAsync($"/api/domains/{first.Id}/auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
         (await admin.PutAsJsonAsync($"/api/domains/{second.Id}/auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
-        _nameAm.Calls.Should().Contain($"SetAutoRenewAsync {first.Name}").And.NotContain($"SetAutoRenewAsync {second.Name}");
-        _namecheap.Calls.Should().Contain($"SetAutoRenewAsync {second.Name}").And.NotContain($"SetAutoRenewAsync {first.Name}");
+        _firstRegistrar.Calls.Should().Contain($"SetAutoRenewAsync {first.Name}").And.NotContain($"SetAutoRenewAsync {second.Name}");
+        _secondRegistrar.Calls.Should().Contain($"SetAutoRenewAsync {second.Name}").And.NotContain($"SetAutoRenewAsync {first.Name}");
     }
 
     /// <summary>
@@ -123,14 +122,14 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task Operations_TldRegistrarChangedAfterRegistration_StillGoToTheOriginalRegistrarAsync()
     {
-        var (admin, nameAmTld, _) = await ConfigureTwoRegistrarsAsync();
+        var (admin, firstTld, _) = await ConfigureTwoRegistrarsAsync();
         int clientId;
         using (var scope = factory.Services.CreateScope())
         {
             clientId = await DomainsTestSeeds.SeedClientAsync(scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
         }
 
-        var name = $"{Guid.NewGuid():N}"[..12] + $".{nameAmTld}";
+        var name = $"{Guid.NewGuid():N}"[..12] + $".{firstTld}";
         var registered = await admin.PostAsJsonAsync("/api/domains/register", new
         {
             domainName = name,
@@ -145,8 +144,8 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var config = await context.TldConfigs.FirstAsync(x => x.Tld == nameAmTld, CancellationToken.None);
-            config.Update(RegistrarModule.Namecheap, config.Currency, config.SellCurrency, config.IsEnabled, config.SortOrder, []);
+            var config = await context.TldConfigs.FirstAsync(x => x.Tld == firstTld, CancellationToken.None);
+            config.Update(TestRegistrarModules.Second, config.Currency, config.SellCurrency, config.IsEnabled, config.SortOrder, []);
             domainId = (await context.Domains.FirstAsync(x => x.Name == name, CancellationToken.None)).Id;
             await context.SaveChangesAsync(CancellationToken.None);
         }
@@ -156,8 +155,8 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
         (await admin.PutAsJsonAsync($"/api/domains/{domainId}/auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
-        _nameAm.Calls.Should().Contain($"RenewAsync {name}").And.Contain($"SetAutoRenewAsync {name}");
-        _namecheap.Calls.Should().NotContain(call => call.Contains(name));
+        _firstRegistrar.Calls.Should().Contain($"RenewAsync {name}").And.Contain($"SetAutoRenewAsync {name}");
+        _secondRegistrar.Calls.Should().NotContain(call => call.Contains(name));
     }
 
     /// <summary>A new registration is placed at the registrar the name's TLD is configured for, and only there.</summary>
@@ -165,14 +164,14 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task Register_NewDomain_IsPlacedAtTheRegistrarOfItsTldAsync()
     {
-        var (admin, _, namecheapTld) = await ConfigureTwoRegistrarsAsync();
+        var (admin, _, secondTld) = await ConfigureTwoRegistrarsAsync();
         int clientId;
         using (var scope = factory.Services.CreateScope())
         {
             clientId = await DomainsTestSeeds.SeedClientAsync(scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
         }
 
-        var name = $"{Guid.NewGuid():N}"[..12] + $".{namecheapTld}";
+        var name = $"{Guid.NewGuid():N}"[..12] + $".{secondTld}";
         var response = await admin.PostAsJsonAsync("/api/domains/register", new
         {
             domainName = name,
@@ -183,7 +182,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        _namecheap.Calls.Should().Contain($"RegisterAsync {name}");
-        _nameAm.Calls.Should().NotContain(call => call.Contains(name));
+        _secondRegistrar.Calls.Should().Contain($"RegisterAsync {name}");
+        _firstRegistrar.Calls.Should().NotContain(call => call.Contains(name));
     }
 }

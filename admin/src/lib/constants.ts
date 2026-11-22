@@ -24,7 +24,6 @@ import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/ty
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { PublishedFilter } from '@/types/publishedfilter'
 import { QuoteStage, QuoteValidity } from '@/types/quote'
-import { RegistrarModule } from '@/types/registrarmodule'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import { PaymentMethod, TransactionDirection } from '@/types/transaction'
@@ -76,12 +75,6 @@ export const DOMAIN_STATUS_OPTIONS: SelectOption[] = [
   { value: DomainStatus.Redemption, get label() { return translate('constants.domainStatusOptions.redemption') } },
   { value: DomainStatus.Transferred, get label() { return translate('constants.domainStatusOptions.transferred') } },
   { value: DomainStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
-]
-
-/** Registrar module options for dropdowns: the registrar a TLD is sourced from and the registrar a domain list is filtered by. */
-export const REGISTRAR_MODULE_OPTIONS: SelectOption[] = [
-  { value: RegistrarModule.NameAm, get label() { return translate('settings.tldConfigs.nameAm') } },
-  { value: RegistrarModule.Namecheap, get label() { return translate('settings.tldConfigs.namecheap') } },
 ]
 
 /** Enabled-state filter options of a list whose rows are switched on or off (TLD configurations, tax rules). */

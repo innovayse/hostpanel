@@ -58,7 +58,7 @@ public sealed class SetDnsManagementHandler
 
         var registrar = await _registrars.ResolveAsync(domain, ct);
         var result = await registrar.SetDnsManagementAsync(
-            new DomainFeatureToggle(domain.Name, cmd.Enabled), ct);
+            new DomainFeatureToggle(domain.ToRef(), cmd.Enabled), ct);
         if (!result.Success)
         {
             _logger.LogWarning(

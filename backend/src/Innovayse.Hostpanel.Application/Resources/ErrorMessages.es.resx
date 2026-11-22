@@ -1086,6 +1086,24 @@
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>Los datos de contacto del titular están incompletos, por lo que no se puede enviar el pedido al registrador.</value>
   </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>El registrador no vende esta extensión de dominio.</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>El registrador rechazó el código de autorización de la transferencia.</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>El registrador no permite transferir este dominio por ahora.</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>El registrador rechazó los servidores de nombres.</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>El registrador rechazó el registro DNS.</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>El registrador no aceptó las credenciales guardadas de la cuenta. Contacte con el administrador.</value>
+  </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>Una transacción debe tener un importe de entrada o de salida.</value>
   </data>

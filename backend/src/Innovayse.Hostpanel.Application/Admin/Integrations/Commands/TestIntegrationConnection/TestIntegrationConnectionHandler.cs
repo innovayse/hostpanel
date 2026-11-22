@@ -27,9 +27,6 @@ public sealed class TestIntegrationConnectionHandler
     /// <summary>Invalidates the cached hosting-panel server-info results a test call would make stale.</summary>
     private readonly IMemoryCache _cache;
 
-    /// <summary>Live credential checks for built-in integrations, matched by slug.</summary>
-    private readonly IEnumerable<IIntegrationConnectionProbe> _probes;
-
     /// <summary>Logs a provider failure without putting its detail on the wire.</summary>
     private readonly ILogger<TestIntegrationConnectionHandler> _logger;
 
@@ -46,7 +43,6 @@ public sealed class TestIntegrationConnectionHandler
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
     /// <param name="cache">Invalidates the cached hosting-panel server-info results a test call would make stale.</param>
-    /// <param name="probes">Live credential checks for built-in integrations, matched by slug.</param>
     /// <param name="logger">Logs a provider failure without putting its detail on the wire.</param>
     /// <param name="clock">The source of the current moment.</param>
     /// <param name="plugins">The loaded plugins, for a slug that names no built-in integration.</param>
@@ -55,7 +51,6 @@ public sealed class TestIntegrationConnectionHandler
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
         IMemoryCache cache,
-        IEnumerable<IIntegrationConnectionProbe> probes,
         ILogger<TestIntegrationConnectionHandler> logger,
         IClock clock,
         IPluginRegistry plugins,
@@ -66,7 +61,6 @@ public sealed class TestIntegrationConnectionHandler
         _context = context;
         _pluginResolver = pluginResolver;
         _cache = cache;
-        _probes = probes;
         _logger = logger;
         _clock = clock;
     }
@@ -185,52 +179,10 @@ public sealed class TestIntegrationConnectionHandler
                 TestedAt: testedAt);
         }
 
-        // Built-in integrations with a live probe: without it a "Connection OK" only meant
-        // that the fields were not empty.
-        var probe = _probes.FirstOrDefault(p =>
-            string.Equals(p.Slug, slug, StringComparison.OrdinalIgnoreCase));
-        if (probe is not null)
-        {
-            return await RunProbeAsync(probe, testedAt, ct);
-        }
-
         return new IntegrationTestResultDto(
             Success: true,
             Message: "Connection validated -- all required fields are configured.",
             TestedAt: testedAt);
-    }
-
-    /// <summary>Runs a built-in integration's live credential check.</summary>
-    /// <param name="probe">The probe registered for the integration's slug.</param>
-    /// <param name="testedAt">The moment the test was run.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The probe's outcome, with no provider detail on the wire.</returns>
-    private async Task<IntegrationTestResultDto> RunProbeAsync(
-        IIntegrationConnectionProbe probe, DateTimeOffset testedAt, CancellationToken ct)
-    {
-        try
-        {
-            await probe.ProbeAsync(ct);
-            return new IntegrationTestResultDto(
-                Success: true,
-                Message: "Provider reachable and credentials accepted.",
-                TestedAt: testedAt);
-        }
-        catch (OperationCanceledException)
-        {
-            // An admin-cancelled request is not a provider failure: let it propagate.
-            throw;
-        }
-        catch (Exception ex)
-        {
-            // The provider's own message never reaches the caller (rules on upstream detail); it is
-            // logged here for whoever has to chase the failure up.
-            _logger.LogWarning(ex, "Connection test probe for {Slug} failed.", probe.Slug);
-            return new IntegrationTestResultDto(
-                Success: false,
-                Message: "Connection test failed. See the server log for detail.",
-                TestedAt: testedAt);
-        }
     }
 
     /// <summary>

@@ -15,7 +15,7 @@ import { requestsOf, stubRouteTable } from '../helpers/routes'
 const stored: TldConfig = {
   id: 5,
   tld: 'net',
-  registrarModule: 'Namecheap',
+  registrarModule: 'registrar-two',
   currency: 'USD',
   sellCurrency: 'EUR',
   isEnabled: false,
@@ -122,7 +122,7 @@ describe('TldConfigFormView', () => {
     const body = JSON.parse((post?.[1] as RequestInit | undefined)?.body as string) as Record<string, unknown>
     expect(body).toMatchObject({
       tld: 'com',
-      registrarModule: 'NameAm',
+      registrarModule: 'registrar-one',
       currency: 'AMD',
       sellCurrency: 'USD',
       categories: ['popular', 'business'],

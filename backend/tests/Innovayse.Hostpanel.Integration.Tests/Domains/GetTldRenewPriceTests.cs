@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetTldRenewPrice;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -60,7 +59,7 @@ public sealed class GetTldRenewPriceTests(IntegrationTestFactory factory) : ICla
         var tld = $"r{Guid.NewGuid():N}"[..10];
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", "EUR", true, 0, []);
+        var config = TldConfig.Create(tld, TestRegistrarModules.First, "USD", "EUR", true, 0, []);
         config.UpdateSellPrices([], [], sellRenew);
         context.TldConfigs.Add(config);
         await context.SaveChangesAsync(CancellationToken.None);

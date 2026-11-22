@@ -10,7 +10,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
 /// <param name="ClientId">Optional client ID to filter domains by owner; null returns all.</param>
 /// <param name="Status">Optional lifecycle status; null returns every status.</param>
 /// <param name="RegistrarModule">
-/// Optional registrar module the domain was registered, transferred or imported with; null returns every registrar. A
+/// Optional registrar plugin id (any letter case) the domain was registered, transferred or imported with; null returns every registrar. A
 /// domain recorded without a module (it predates the column) is left out when a registrar is chosen.
 /// </param>
 public sealed record ListDomainsQuery(
@@ -19,4 +19,4 @@ public sealed record ListDomainsQuery(
     string? Search = null,
     int? ClientId = null,
     DomainStatus? Status = null,
-    RegistrarModule? RegistrarModule = null) : IListQuery;
+    string? RegistrarModule = null) : IListQuery;

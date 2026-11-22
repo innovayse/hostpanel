@@ -55,8 +55,9 @@ internal static class DemoServiceRegistration
         services.AddScoped<IDemoDataManager, DemoDataManager>();
 
         services.Replace(ServiceDescriptor.Scoped<IPaymentPluginResolver, DemoPaymentPluginResolver>());
-        services.Replace(ServiceDescriptor.Scoped<IRegistrarProvider, DemoRegistrarProvider>());
+        services.AddScoped<DemoRegistrarProvider>();
         services.Replace(ServiceDescriptor.Scoped<IRegistrarProviderFactory, DemoRegistrarProviderFactory>());
+        services.Replace(ServiceDescriptor.Scoped<IRegistrarModuleCatalogue, DemoRegistrarModuleCatalogue>());
         services.Replace(ServiceDescriptor.Scoped<IProvisioningProvider, DemoProvisioningProvider>());
         services.Replace(ServiceDescriptor.Scoped<IProvisioningProviderFactory, DemoProvisioningProviderFactory>());
         services.Replace(ServiceDescriptor.Scoped<IServerConnectionTester, DemoServerConnectionTester>());

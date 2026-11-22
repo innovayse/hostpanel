@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
@@ -146,6 +145,18 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         anyTextCount.Should().Be(0);
     }
 
+    /// <summary>The registrar filter ignores letter case, because older rows keep the case the module was written in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ListTldConfigs_RegistrarFilterIgnoresLetterCaseAsync()
+    {
+        var mix = await SeedMixAsync();
+
+        var (rows, _) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.First.ToUpperInvariant()}");
+
+        rows.Should().Equal(mix.First);
+    }
+
     /// <summary>The registrar filter keeps only the TLDs sourced from that module.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -153,12 +164,12 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
     {
         var mix = await SeedMixAsync();
 
-        var (nameAm, _) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule=NameAm");
-        var (namecheap, namecheapCount) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule=Namecheap");
+        var (firstRegistrarRows, _) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.First}");
+        var (secondRegistrarRows, secondRegistrarCount) = await ListAsync($"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.Second}");
 
-        nameAm.Should().Equal(mix.First);
-        namecheap.Should().Equal(mix.Underscored, mix.Second);
-        namecheapCount.Should().Be(2);
+        firstRegistrarRows.Should().Equal(mix.First);
+        secondRegistrarRows.Should().Equal(mix.Underscored, mix.Second);
+        secondRegistrarCount.Should().Be(2);
     }
 
     /// <summary>The enabled filter keeps the TLDs on sale or the ones switched off, and no filter keeps both.</summary>
@@ -188,7 +199,7 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         var mix = await SeedMixAsync();
 
         var (ids, totalCount) = await ListAsync(
-            $"page=1&pageSize=100&search={mix.Token}&registrarModule=Namecheap&enabled=true");
+            $"page=1&pageSize=100&search={mix.Token}&registrarModule={TestRegistrarModules.Second}&enabled=true");
 
         ids.Should().Equal(mix.Underscored);
         totalCount.Should().Be(1);
@@ -267,9 +278,9 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
 
     /// <summary>The TLD configurations one seeded mix holds, by the role each plays in the tests.</summary>
     /// <param name="Token">The text every seeded TLD carries, so a search scopes a request to this mix.</param>
-    /// <param name="Underscored">An enabled Namecheap TLD with an underscore after the token, sort order 1.</param>
-    /// <param name="First">An enabled NameAm TLD, sort order 2.</param>
-    /// <param name="Second">A disabled Namecheap TLD, sort order 2, sorted after <paramref name="First"/> by its TLD.</param>
+    /// <param name="Underscored">An enabled TLD of the second registrar with an underscore after the token, sort order 1.</param>
+    /// <param name="First">An enabled TLD of the first registrar, sort order 2.</param>
+    /// <param name="Second">A disabled TLD of the second registrar, sort order 2, sorted after <paramref name="First"/> by its TLD.</param>
     private sealed record TldMix(string Token, int Underscored, int First, int Second);
 
     /// <summary>Seeds three TLD configurations that differ in registrar module, enabled state and sort order.</summary>
@@ -279,9 +290,9 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
         var token = $"q{Guid.NewGuid():N}"[..10];
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var underscored = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}_u", RegistrarModule.Namecheap, true, 1);
-        var first = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}a", RegistrarModule.NameAm, true, 2);
-        var second = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}b", RegistrarModule.Namecheap, false, 2);
+        var underscored = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}_u", TestRegistrarModules.Second, true, 1);
+        var first = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}a", TestRegistrarModules.First, true, 2);
+        var second = await DomainsTestSeeds.SeedTldConfigAsync(context, $"{token}b", TestRegistrarModules.Second, false, 2);
         return new TldMix(token, underscored, first, second);
     }
 

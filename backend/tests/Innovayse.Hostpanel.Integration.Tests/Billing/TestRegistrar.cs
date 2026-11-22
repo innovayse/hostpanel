@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -82,7 +83,7 @@ public abstract class TestRegistrar : IRegistrarProvider
         _inner.SetNameserversAsync(change, ct);
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct) =>
+    public Task<Result<IReadOnlyList<DnsRecord>>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct) =>
         _inner.GetDnsRecordsAsync(domain, ct);
 
     /// <inheritdoc/>
@@ -90,8 +91,8 @@ public abstract class TestRegistrar : IRegistrarProvider
         _inner.AddDnsRecordAsync(change, ct);
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct) =>
-        _inner.UpdateDnsRecordAsync(change, ct);
+    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordUpdate update, CancellationToken ct) =>
+        _inner.UpdateDnsRecordAsync(update, ct);
 
     /// <inheritdoc/>
     public Task<RegistrarResult> DeleteDnsRecordAsync(DnsRecordRemoval removal, CancellationToken ct) =>
@@ -102,8 +103,8 @@ public abstract class TestRegistrar : IRegistrarProvider
         _inner.ModifyContactDetailsAsync(change, ct);
 
     /// <inheritdoc/>
-    public Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct) =>
-        _inner.GetContactDetailsAsync(domainName, ct);
+    public Task<DomainContact?> GetContactDetailsAsync(DomainRef domain, CancellationToken ct) =>
+        _inner.GetContactDetailsAsync(domain, ct);
 
     /// <inheritdoc/>
     public Task<RegistrarResult> SetEmailForwardingAsync(DomainFeatureToggle toggle, CancellationToken ct) =>
@@ -126,15 +127,15 @@ public abstract class TestRegistrar : IRegistrarProvider
         _inner.SetDnsManagementAsync(toggle, ct);
 
     /// <inheritdoc/>
-    public Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct) => _inner.CheckAvailabilityAsync(domainName, ct);
+    public Task<Result<bool>> CheckAvailabilityAsync(string domainName, CancellationToken ct) => _inner.CheckAvailabilityAsync(domainName, ct);
 
     /// <inheritdoc/>
     public Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct) => _inner.GetWhoisAsync(domainName, ct);
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct) =>
-        _inner.CheckDomainActiveAsync(domainName, ct);
+    public Task<RegistrarResult> CheckDomainActiveAsync(DomainRef domain, CancellationToken ct) =>
+        _inner.CheckDomainActiveAsync(domain, ct);
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct) => _inner.GetTldPricingAsync(ct);
+    public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct) => _inner.GetTldPricingAsync(ct);
 }

@@ -18,6 +18,8 @@ public sealed class DemoProvisioningProviderFactory : IProvisioningProviderFacto
     }
 
     /// <summary>The demo's fake provider stands in for every panel, so a server on any module will do.</summary>
+    /// <param name="ct">Unused; the list is known without a call.</param>
+    /// <returns>Every known panel module.</returns>
     public Task<IReadOnlyCollection<string>> SupportedModulesAsync(CancellationToken ct) =>
         Task.FromResult<IReadOnlyCollection<string>>(ServerModules.Known);
 

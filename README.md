@@ -107,7 +107,7 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 
 ### What HostPanel does not have yet
 
-- cPanel and DirectAdmin provisioning.
+- Built-in control panels other than cPanel. Other panels come as plugins.
 - Built-in payment gateways. Card and bank gateways come as plugins.
 - Built-in registrars. Registrars come as plugins.
 - Automatic tax calculation. Staff set a tax rate on each invoice by hand.

@@ -1955,8 +1955,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("RegistrarModule")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("RegistrarRef")
                         .HasMaxLength(100)
@@ -2044,8 +2044,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<string>("RegistrarModule")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("SellCurrency")
                         .IsRequired()

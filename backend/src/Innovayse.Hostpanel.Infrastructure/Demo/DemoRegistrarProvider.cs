@@ -105,8 +105,8 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
         Ok(change.Domain.RegistrarRef);
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct) =>
-        Ok(change.Domain.RegistrarRef);
+    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordUpdate update, CancellationToken ct) =>
+        Ok(update.Domain.RegistrarRef);
 
     /// <inheritdoc/>
     public Task<RegistrarResult> DeleteDnsRecordAsync(DnsRecordRemoval removal, CancellationToken ct) =>
@@ -145,8 +145,8 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
         Task.FromResult(Result<bool>.Success(!domainName.Contains(TakenMarker, StringComparison.OrdinalIgnoreCase)));
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct) =>
-        Ok(RefFor(domainName), true);
+    public Task<RegistrarResult> CheckDomainActiveAsync(DomainRef domain, CancellationToken ct) =>
+        Ok(RefFor(domain.Name), true);
 
     /// <inheritdoc/>
     public Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct)

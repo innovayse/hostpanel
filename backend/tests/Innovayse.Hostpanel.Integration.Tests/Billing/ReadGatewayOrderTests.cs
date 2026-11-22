@@ -315,7 +315,9 @@ public sealed class ReadGatewayOrderTests(IntegrationTestFactory factory) : ICla
         return (
             result!,
             session.Executed.MessagesOf<GatewayPaymentReversedEvent>().ToList(),
-            session.Executed.MessagesOf<PaymentReceivedEvent>().ToList());
+            // Several handlers listen to a payment event and each runs as its own execution (separated handlers), so the
+            // session lists one event once per handler. The event is a record, so Distinct folds them back to what was published.
+            session.Executed.MessagesOf<PaymentReceivedEvent>().Distinct().ToList());
     }
 
     /// <summary>Starts a new session on an invoice, as a second payment attempt does, replacing the old one.</summary>

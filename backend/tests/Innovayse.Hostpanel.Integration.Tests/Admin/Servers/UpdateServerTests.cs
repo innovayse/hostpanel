@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +31,24 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
         update.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await ServersTestSeeds.SearchServersAsync(client, newName)).Should().Contain(r => r.GetProperty("name").GetString() == newName);
+    }
+
+    /// <summary>The update route holds the API address to the same rule as the create route and keeps a valid one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ApiHost_IsHeldToTheCreateRule_AndAValidOneIsStoredAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var name = $"Server-{Guid.NewGuid():N}";
+        var id = await ServersTestSeeds.CreateServerAsync(client, name);
+
+        var refused = await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, apiHost: "169.254.169.254"));
+        var accepted = await client.PutAsJsonAsync($"/api/admin/servers/{id}", ServersTestSeeds.ServerBody(name, apiHost: "10.77.0.1"));
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(refused, SharedErrorCodes.ValidationError);
+        accepted.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ServersTestSeeds.SearchServersAsync(client, name)).Single().GetProperty("endpoint").GetProperty("apiHost").GetString().Should().Be("10.77.0.1");
     }
 
     /// <summary>

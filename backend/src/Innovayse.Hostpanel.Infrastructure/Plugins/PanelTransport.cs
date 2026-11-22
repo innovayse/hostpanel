@@ -100,11 +100,12 @@ public sealed class PanelTransport : IPanelTransport
     {
         using var scope = _scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        return db.Servers.AsNoTracking()
+        // Only the two address columns leave the database: the row also holds the encrypted credentials, which this read never needs.
+        var addresses = db.Servers.AsNoTracking()
             .Where(s => s.Id == serverId && s.AcceptsSelfSignedCertificate)
-            .AsEnumerable()
-            .Select(s => s.ApiEndpointHost)
+            .Select(s => new { s.Hostname, s.ApiHost })
             .FirstOrDefault();
+        return addresses is null ? null : Server.ResolveApiEndpointHost(addresses.Hostname, addresses.ApiHost);
     }
 
     /// <summary>

@@ -56,6 +56,19 @@ public sealed class ServerConnectionTesterLegacyCentosTests
 #pragma warning restore CS0618
     }
 
+    /// <summary>A server with an API address is asked at that address, not at its host name.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TestAsync_WithAnApiHost_AsksThePanelAtThatAddressAsync()
+    {
+        var panel = new FakeHostingPanelApiClient();
+        await using var host = BuildHost(panel);
+
+        await host.Tester.TestAsync(CentosServer(new ServerCredentials(null, null, AccessHash), apiHost: "10.77.0.1"), CancellationToken.None);
+
+        panel.Connections.Should().ContainSingle().Which.Host.Should().Be("10.77.0.1");
+    }
+
     /// <summary>A server without an access hash falls back to its API token.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -104,14 +117,16 @@ public sealed class ServerConnectionTesterLegacyCentosTests
 
     /// <summary>Builds a stored server on the legacy CentOS module.</summary>
     /// <param name="credentials">The credentials the server stores.</param>
+    /// <param name="apiHost">The address the server's API is dialled at, or <see langword="null"/> for its host name.</param>
     /// <returns>The server.</returns>
-    private static Server CentosServer(ServerCredentials credentials) =>
+    private static Server CentosServer(ServerCredentials credentials, string? apiHost = null) =>
         Server.Create(
             new ServerDetails(
                 "centos", "centos.example.test", null, null, ServerModules.Centos, "root",
                 credentials, true, null, false, false, 0m, null, null,
                 ServerNameServers.None,
-                false),
+                false,
+                apiHost),
             TestMoments.Seeded);
 
     /// <summary>Builds a tester that asks the given panel client and has no plugin serving any module.</summary>

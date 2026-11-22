@@ -65,6 +65,19 @@ public sealed class ServerTests
         padded.Hostname.Should().Be("web-1.example.test", "the host name still builds the links shown to clients");
     }
 
+    /// <summary>The one rule for the host an API is dialled at: the API address when it holds text, the host name otherwise.</summary>
+    /// <param name="apiHost">The API address given.</param>
+    /// <param name="expected">The host that is dialled.</param>
+    [Theory]
+    [InlineData(null, "web-1.example.test")]
+    [InlineData("", "web-1.example.test")]
+    [InlineData("  ", "web-1.example.test")]
+    [InlineData("10.77.0.1", "10.77.0.1")]
+    public void ResolveApiEndpointHost_PrefersTheApiHostOnlyWhenItHoldsText(string? apiHost, string expected)
+    {
+        Server.ResolveApiEndpointHost("web-1.example.test", apiHost).Should().Be(expected);
+    }
+
     /// <summary>A reconfiguration sets the API address from its details, so the operator can fill it in and clear it again.</summary>
     [Fact]
     public void Reconfigure_SetsAndClearsTheApiHost()

@@ -17,8 +17,8 @@ public sealed class Server : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Gets the address the control panel's API is dialled at when it does not answer at
-    /// <see cref="Hostname"/> — a panel whose API port is only reachable on a private or VPN
-    /// address, for example. Null or blank keeps the hostname. This never affects the
+    /// <see cref="Hostname"/>, such as a panel whose API port is only reachable on a private or VPN
+    /// address. Null or blank keeps the hostname. This never affects the
     /// client-facing panel and webmail URLs, which are always built from <see cref="Hostname"/>.
     /// </summary>
     public string? ApiHost { get; private set; }
@@ -122,7 +122,7 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// Gets the host the control panel's API is dialled at: <see cref="ApiHost"/> when one is set,
     /// otherwise <see cref="Hostname"/>. Use this for API calls, never for a URL shown to a client.
     /// </summary>
-    public string ApiEndpointHost => string.IsNullOrWhiteSpace(ApiHost) ? Hostname : ApiHost;
+    public string ApiEndpointHost => ResolveApiEndpointHost(Hostname, ApiHost);
 
     /// <summary>Gets whether an API password is stored.</summary>
     public bool HasPassword => !string.IsNullOrEmpty(Password);
@@ -141,6 +141,18 @@ public sealed class Server : BaseEntity, IAggregateRoot
     private Server(int id)
     {
         Id = id;
+    }
+
+    /// <summary>
+    /// The one rule for the host a control panel's API is dialled at: the API address when one is set, otherwise the host name.
+    /// A server entity and the connection details built from it both answer through it.
+    /// </summary>
+    /// <param name="hostname">The server's host name.</param>
+    /// <param name="apiHost">The server's API address, or <see langword="null"/> or blank when it has none.</param>
+    /// <returns>The host to dial for API calls, never a URL shown to a client.</returns>
+    public static string ResolveApiEndpointHost(string hostname, string? apiHost)
+    {
+        return string.IsNullOrWhiteSpace(apiHost) ? hostname : apiHost;
     }
 
     /// <summary>

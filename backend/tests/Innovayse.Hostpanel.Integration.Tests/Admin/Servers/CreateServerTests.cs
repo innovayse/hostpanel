@@ -90,6 +90,25 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         await ServersTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
     }
 
+    /// <summary>An API address that is not a host name or an IP address, or that is never dialled, is refused by the validator.</summary>
+    /// <param name="apiHost">The API address sent.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("https://10.77.0.1/")]
+    [InlineData("10.77.0.1:2087")]
+    [InlineData("user@panel.example.com")]
+    [InlineData("169.254.169.254")]
+    [InlineData("fe80::1")]
+    public async Task ApiHost_NotAHostOrNeverDialled_IsRefusedByTheValidatorAsync(string apiHost)
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody($"Server-{Guid.NewGuid():N}", apiHost: apiHost));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+    }
+
     /// <summary>A body that does not mention the choice (an older script) creates a server that trusts nothing extra.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

@@ -1,4 +1,4 @@
-namespace Innovayse.Hostpanel.Infrastructure.Security.Enums;
+namespace Innovayse.Hostpanel.Shared.Infrastructure.Enums;
 
 /// <summary>How <see cref="OutboundAddressPolicy"/> classifies an address this server is asked to dial.</summary>
 public enum OutboundAddressClass

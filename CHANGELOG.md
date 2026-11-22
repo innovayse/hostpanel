@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A server can carry an **API address** of its own (Servers, the server form; `endpoint.apiHost` on the server create and update bodies and in the server answers). Fill it in when the control panel's API port does not answer at the server's host name, such as a panel reachable only over a VPN or a private network, and HostPanel dials that address for its API calls to cPanel/WHM and hands it to a hosting panel plugin as the host name of its connection (a self signed certificate the operator allowed is accepted for that address). The host name still builds the control panel and webmail links shown to clients, so a private address never reaches a client. Left empty the API is dialled at the host name, so existing servers keep working unchanged. Until now the same routing could only be pinned per deployment in `PANEL_HOST_ADDRESSES`, which still works; an administrator can now put a server behind a VPN without reconfiguring the deployment.
 
+### Changed
+
+- The connection test and the disk usage report now dial a server's API address too, as the API calls already did, and a panel plugin gets the same address. An API address must be a host name or an IP address (no scheme, path, port or spaces, at most 253 characters), and an IP address that is never dialled, such as a link-local or cloud metadata address, is refused with a message in every language. The self signed certificate check of a plugin client reads only the two address columns of the server.
+
 ## [0.9.0] - 2026-11-23
 
 ### Added

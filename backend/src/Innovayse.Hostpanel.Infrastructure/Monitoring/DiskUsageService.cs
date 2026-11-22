@@ -160,11 +160,11 @@ public sealed class DiskUsageService : IDiskUsageService
         CpanelWhmApi api;
         if (!string.IsNullOrEmpty(server.ApiToken))
         {
-            api = CpanelWhmApi.Create(server.Hostname, server.Username, server.ApiToken, _httpFactory);
+            api = CpanelWhmApi.Create(server.ApiEndpointHost, server.Username, server.ApiToken, _httpFactory);
         }
         else if (!string.IsNullOrEmpty(server.AccessHash))
         {
-            api = CpanelWhmApi.CreateWithHash(server.Hostname, server.Username, server.AccessHash, _httpFactory);
+            api = CpanelWhmApi.CreateWithHash(server.ApiEndpointHost, server.Username, server.AccessHash, _httpFactory);
         }
         else
         {

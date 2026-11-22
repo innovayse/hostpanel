@@ -1,12 +1,13 @@
 using System.Net;
 using System.Net.Sockets;
-using Innovayse.Hostpanel.Infrastructure.Security.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure.Enums;
 
-namespace Innovayse.Hostpanel.Infrastructure.Security;
+namespace Innovayse.Hostpanel.Shared.Infrastructure;
 
 /// <summary>
 /// Classifies an address an outbound client is about to dial: public, private network, or never
-/// allowed. The one table of ranges every guarded outbound connection is checked against.
+/// allowed. The one table of ranges every guarded outbound connection is checked against, and the one an address an operator
+/// types in is checked against before it is stored.
 /// </summary>
 public static class OutboundAddressPolicy
 {

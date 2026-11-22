@@ -1,4 +1,3 @@
-
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 
 /// <summary>

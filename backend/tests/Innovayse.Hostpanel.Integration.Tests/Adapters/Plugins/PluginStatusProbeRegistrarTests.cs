@@ -54,9 +54,8 @@ public sealed class PluginStatusProbeRegistrarTests(IntegrationTestFactory facto
     }
 
     /// <summary>A registrar plugin that offers operations can be tested, one that does not cannot.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task Supports_OnlyARegistrarThatOffersOperationsAsync()
+    public void Supports_OnlyARegistrarThatOffersOperations()
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

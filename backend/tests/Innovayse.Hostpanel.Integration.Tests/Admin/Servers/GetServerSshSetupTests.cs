@@ -36,7 +36,7 @@ public sealed class GetServerSshSetupTests(IntegrationTestFactory factory) : ICl
     public async Task UnsupportedModule_HasNoProfileAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, "da.example.test", 22, ServerModules.DirectAdmin, enabled: false);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, "da.example.test", 22, ServerModules.CPanel, enabled: false);
 
         var setup = await admin.GetFromJsonAsync<JsonElement>($"/api/admin/servers/{serverId}/ssh-setup");
 

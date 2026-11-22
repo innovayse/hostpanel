@@ -6,17 +6,11 @@ import { translate } from '@/lib/translate'
 import type { ServerModuleSource } from '@/types/serverenums'
 
 /**
- * The control panel module ids the host itself knows, spelled as a server stores them. A server's module is an open id:
- * it can also be one an installed panel plugin declares, which the module list the API answers names.
+ * The control panel module ids the host provisions itself (cPanel only), spelled as a server stores them. A server's module
+ * is an open id: it can also be one an installed panel plugin declares, which the module list the API answers names.
  */
 export const ServerModule = {
   CPanel: 'CPanel',
-  DirectAdmin: 'DirectAdmin',
-  Centos: 'Centos',
-  Cwp7: 'Cwp7',
-  Lukittu: 'Lukittu',
-  Virtualmin: 'Virtualmin',
-  HyperVm: 'HyperVm',
 } as const
 
 /** An id the host itself knows. */
@@ -294,12 +288,6 @@ export interface ServerGroupPayload {
 /** Human-readable labels for each module the host itself knows. */
 export const MODULE_LABELS: Record<ServerModule, string> = {
   CPanel: 'cPanel / WHM',
-  DirectAdmin: 'DirectAdmin',
-  Centos: 'CentOS Web Panel',
-  Cwp7: 'CWP7',
-  Lukittu: 'Lukittu',
-  Virtualmin: 'Virtualmin',
-  HyperVm: 'HyperVM',
 }
 
 /**

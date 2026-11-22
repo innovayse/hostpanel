@@ -48,11 +48,7 @@ public static class SshTestSeeds
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var server = Server.Create(new ServerDetails(
-            $"ssh-srv-{Guid.NewGuid():N}", hostname, null, null, module, "root", credentials ?? new ServerCredentials(null, null, "hash"), true, null,
-            false, false, 0m, null, null, ServerNameServers.None, false), TestMoments.Seeded);
-        context.Servers.Add(server);
-        await context.SaveChangesAsync(CancellationToken.None);
+        var server = await ServersTestSeeds.AddServerAsync(context, $"ssh-srv-{Guid.NewGuid():N}", hostname, module, credentials);
 
         var settings = ServerSshSettings.CreateFor(server.Id);
         settings.Configure(enabled, hostname, port, hostname, 22, "hpsshkeys", "PRIVATE-KEY-PLACEHOLDER",
@@ -60,6 +56,18 @@ public static class SshTestSeeds
         context.ServerSshSettings.Add(settings);
         await context.SaveChangesAsync(CancellationToken.None);
         return server.Id;
+    }
+
+    /// <summary>Seeds a server with no SSH settings yet.</summary>
+    /// <param name="factory">The shared host.</param>
+    /// <param name="hostname">Customer-facing hostname.</param>
+    /// <param name="module">Control panel module.</param>
+    /// <returns>The server id.</returns>
+    public static async Task<int> SeedBareServerAsync(IntegrationTestFactory factory, string hostname, string module = ServerModules.Cwp7)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return (await ServersTestSeeds.AddServerAsync(context, $"ssh-srv-{Guid.NewGuid():N}", hostname, module)).Id;
     }
 
     /// <summary>Seeds an active hosting service for a client on a server.</summary>

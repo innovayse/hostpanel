@@ -334,10 +334,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
-- **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain holds the built in
-  spellings `CPanel`, `DirectAdmin`, `Centos`, `Cwp7`, `Lukittu`, `Virtualmin` and `HyperVm`, and `ServerModules.Same` is the one
-  comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and a server stored as `DirectAdmin` is served by a plugin
-  that declares `directadmin`. `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
+- **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain: `Known` is the one module the host provisions itself, `CPanel`, so it is the only
+  one offered without a panel plugin, `Centos` and `Cwp7` stay as legacy ids the host still names (the connection test of a stored `Centos` server, the SSH agent profile of
+  `Cwp7`) and are not offered, and `ServerModules.Same` is the one comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and
+  a server stored under an older id is served by a plugin that declares it, whatever the case, and stays valid when edited (`IServerModuleCatalog.Canonical` takes the stored id). `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
   the module id and a capability name, `Served`, `NotServed` or `Conflict`) is the one reader of the plugins' `serverModules` for calls, and
   `IServerModuleCatalog` (`ServerModuleCatalog`) the one for the admin side: `GET /api/admin/servers/modules` feeds the server form and the
   module filter, and `CreateServer` and `UpdateServer` store the catalog's spelling or answer `SERVER_MODULE_UNKNOWN`. Two plugins declaring one
@@ -2117,7 +2117,7 @@ feature does not exist is not kept. The decisions:
   template per kind of mail, edited in place. Integrations are the catalogue of providers the panel ships or has installed, grouped by category and bounded by that catalogue.
   The Installed plugins tab is the one documented above.
   The server option lookup (`ListServerOptionsQuery`, `GET /api/admin/servers/options`) is a documented picker: the group form, the add existing service dialog, the service
-  detail, the CWP 7 integration (which asks for its own module) and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
+  detail and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
   rows (name, host name, address, state, account count and capacity, no credential or hosting detail), ordered by name; `ServerOptionDto` extends `ServerBriefDto` (the id, name, host name and address other modules show next to a service), so those four facts are declared once, and it keeps the host name and address flat like the brief, where `ServerDto` nests them in `endpoint` with the SSL flag and assigned addresses a picker has no use for, while the Servers screen reads the paged `ListServersQuery`.
   The unpaged product read (`GetProductsQuery`, `GET /api/products`) is the same kind of picker for the screens that choose a product, and the Products screen reads the paged
   `ListProductsQuery`. Knowledge base categories (`ListKbCategories`) are a short

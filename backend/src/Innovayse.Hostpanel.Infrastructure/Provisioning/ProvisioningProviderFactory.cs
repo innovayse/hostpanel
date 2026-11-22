@@ -33,7 +33,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
     /// Read-only, so no caller can change the process-wide list; test doubles reference it rather
     /// than copy it.
     /// </summary>
-    public static IReadOnlyList<string> BuiltModules { get; } = Array.AsReadOnly<string>([ServerModules.CPanel]);
+    public static IReadOnlyList<string> BuiltModules { get; } = ServerModules.Known;
 
     /// <summary>Factory for creating HTTP clients for provider API calls.</summary>
     private readonly IHttpClientFactory _httpClientFactory;

@@ -3,35 +3,32 @@ using Innovayse.Hostpanel.Domain.Servers;
 namespace Innovayse.Hostpanel.Domain.Tests.Servers;
 
 /// <summary>
-/// <see cref="ServerModules"/>: the ids the host itself knows are spelled exactly as rows saved before modules became text hold them,
+/// <see cref="ServerModules"/>: the host offers cPanel only, the ids it still names are spelled exactly as stored rows hold them,
 /// and two ids are the same module when they match ignoring case, the one comparison every caller uses.
 /// </summary>
 public sealed class ServerModulesTests
 {
-    /// <summary>The known ids are the names the closed list used to store, in the order the server form offered them.</summary>
+    /// <summary>The only module offered without a panel plugin is cPanel, in its stored spelling.</summary>
     [Fact]
-    public void Known_IsTheStoredSpellingsInTheFormsOrder()
+    public void Known_IsCPanelOnly()
     {
-        ServerModules.Known.Should().Equal("CPanel", "DirectAdmin", "Centos", "Cwp7", "Lukittu", "Virtualmin", "HyperVm");
+        ServerModules.Known.Should().Equal("CPanel");
     }
 
-    /// <summary>Each constant is the stored spelling of its module and is among the known ids.</summary>
+    /// <summary>The legacy ids are spelled as stored rows hold them and are not offered.</summary>
     [Fact]
-    public void Constants_AreTheStoredSpellings()
+    public void LegacyConstants_AreTheStoredSpellings_AndAreNotKnown()
     {
-        new[]
-            {
-                ServerModules.CPanel, ServerModules.DirectAdmin, ServerModules.Centos,
-                ServerModules.Cwp7, ServerModules.Lukittu, ServerModules.Virtualmin, ServerModules.HyperVm,
-            }
-            .Should().BeEquivalentTo(ServerModules.Known);
+        ServerModules.Centos.Should().Be("Centos");
+        ServerModules.Cwp7.Should().Be("Cwp7");
+        ServerModules.Known.Should().NotContain([ServerModules.Centos, ServerModules.Cwp7]);
     }
 
-    /// <summary>Ids match ignoring case, so a row stored as <c>DirectAdmin</c> and a plugin that declares <c>directadmin</c> are one module.</summary>
+    /// <summary>Ids match ignoring case, so a row stored as <c>HestiaCP</c> and a plugin that declares <c>hestiacp</c> are one module.</summary>
     /// <param name="a">The first id.</param>
     /// <param name="b">The second id.</param>
     [Theory]
-    [InlineData("DirectAdmin", "directadmin")]
+    [InlineData("HestiaCP", "hestiacp")]
     [InlineData("CPANEL", "cpanel")]
     [InlineData("hestiacp", "hestiacp")]
     public void Same_IgnoresCase(string a, string b)
@@ -43,10 +40,10 @@ public sealed class ServerModulesTests
     /// <param name="a">The first id, or null.</param>
     /// <param name="b">The second id, or null.</param>
     [Theory]
-    [InlineData("DirectAdmin", "cpanel")]
-    [InlineData("DirectAdmin", "DirectAdmin ")]
-    [InlineData(null, "directadmin")]
-    [InlineData("directadmin", null)]
+    [InlineData("HestiaCP", "cpanel")]
+    [InlineData("HestiaCP", "HestiaCP ")]
+    [InlineData(null, "hestiacp")]
+    [InlineData("hestiacp", null)]
     [InlineData(null, null)]
     public void Same_DifferentOrMissingIds_AreNotTheSame(string? a, string? b)
     {

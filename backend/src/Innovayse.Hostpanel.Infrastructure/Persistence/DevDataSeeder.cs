@@ -892,14 +892,14 @@ public sealed class DevDataSeeder
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("VPS US-01", "vps01.example.test", "172.16.0.10", null,
-                ServerModules.Virtualmin, "admin", new ServerCredentials("changeme", null, null),
+                ServerModules.CPanel, "admin", new ServerCredentials("changeme", null, null),
                 true, 100, true, false, 350m, "US-East DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("Dedicated US-01", "dedicated01.example.test", "203.0.113.10", null,
-                ServerModules.DirectAdmin, "admin", new ServerCredentials("changeme", null, null),
+                ServerModules.CPanel, "admin", new ServerCredentials("changeme", null, null),
                 true, 50, false, false, 800m, "US-West DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),

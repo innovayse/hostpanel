@@ -240,7 +240,7 @@ public sealed class PanelTransportTests(IntegrationTestFactory factory) : IClass
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(
             new ServerDetails(
-                $"transport-{Guid.NewGuid():N}", hostname, null, null, ServerModules.Cwp7, "root", ServerCredentials.None, true, null,
+                $"transport-{Guid.NewGuid():N}", hostname, null, null, ServerModules.CPanel, "root", ServerCredentials.None, true, null,
                 false, false, 0m, null, null, ServerNameServers.None, acceptsSelfSigned),
             TestMoments.Seeded);
         context.Servers.Add(server);

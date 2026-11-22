@@ -38,7 +38,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
             Hostname: "srv.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModules.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, "hash"),
             UseSSL: true,
@@ -73,7 +73,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
 
         server.Should().NotBeNull();
         server!.Id.Should().Be(serverId);
-        server.Module.Should().Be(ServerModules.Cwp7);
+        server.Module.Should().Be(ServerModules.CPanel);
         server.AccessHash.Should().Be("hash");
     }
 

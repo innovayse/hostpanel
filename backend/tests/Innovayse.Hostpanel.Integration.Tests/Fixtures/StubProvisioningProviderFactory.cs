@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -21,11 +20,11 @@ public sealed class StubProvisioningProviderFactory : IProvisioningProviderFacto
     /// <summary>The single stub handed out for every server.</summary>
     private readonly StubProvisioningProvider _provider = new();
 
-    /// <summary>Every module the host knows: the double stands in for whichever panel a test seeds a server on.</summary>
+    /// <summary>Every module the tests seed servers on: the double stands in for whichever panel that is.</summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Every module the host knows.</returns>
+    /// <returns>The host's modules and the second test panel.</returns>
     public Task<IReadOnlyCollection<string>> SupportedModulesAsync(CancellationToken ct) =>
-        Task.FromResult<IReadOnlyCollection<string>>(ServerModules.Known);
+        Task.FromResult(TestPanelModules.Supported);
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => _provider;

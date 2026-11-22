@@ -1,0 +1,29 @@
+{
+  "bankTransfer": {
+    "shortDescription": "Ermöglichen Sie Kunden die Zahlung per Banküberweisung mit Ihren Bankdaten.",
+    "fieldAccountName": "Kontoinhaber",
+    "fieldInstructions": "Zahlungshinweise"
+  },
+  "cpanel": {
+    "shortDescription": "Hosting-Konten über die cPanel-WHM-Server-API bereitstellen und verwalten.",
+    "fieldHost": "WHM-Host",
+    "fieldPort": "Port",
+    "fieldApiToken": "API-Token"
+  },
+  "cwp": {
+    "shortDescription": "Hosting-Konten auf CentOS-Web-Panel-Servern verwalten.",
+    "fieldHost": "CWP-Host",
+    "fieldApiKey": "API-Schlüssel"
+  },
+  "smtp": {
+    "shortDescription": "Den E-Mail-Versand über Ihren SMTP-Mailserver konfigurieren.",
+    "fieldHost": "SMTP-Host",
+    "fieldFromAddress": "Absenderadresse",
+    "fieldEncryption": "Verschlüsselung"
+  },
+  "maxmind": {
+    "shortDescription": "Betrügerische Bestellungen mit dem GeoIP-Risiko-Scoring von MaxMind erkennen.",
+    "fieldLicenseKey": "Lizenzschlüssel",
+    "fieldAccountId": "Konto-ID"
+  }
+}

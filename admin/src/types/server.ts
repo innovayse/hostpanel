@@ -3,21 +3,28 @@
  */
 
 import { translate } from '@/lib/translate'
+import type { ServerModuleSource } from '@/types/serverenums'
 
-/** Closed set of the supported control panel module identifiers. */
+/**
+ * The control panel module ids the host provisions itself (cPanel only), spelled as a server stores them. A server's module
+ * is an open id: it can also be one an installed panel plugin declares, which the module list the API answers names.
+ */
 export const ServerModule = {
   CPanel: 'CPanel',
-  Plesk: 'Plesk',
-  DirectAdmin: 'DirectAdmin',
-  Centos: 'Centos',
-  Cwp7: 'Cwp7',
-  Lukittu: 'Lukittu',
-  Virtualmin: 'Virtualmin',
-  HyperVm: 'HyperVm',
 } as const
 
-/** All supported control panel module identifiers. */
+/** An id the host itself knows. */
 export type ServerModule = (typeof ServerModule)[keyof typeof ServerModule]
+
+/** One control panel module an administrator can give a server (`GET /admin/servers/modules`). */
+export interface ServerModuleOptionDto {
+  /** The id a server stores, in the spelling the host keeps for it. */
+  id: string
+  /** The host's name for a built in module, the plugin's name for a plugin one. */
+  name: string
+  /** Where the module comes from. */
+  source: ServerModuleSource
+}
 
 /** Closed set of account distribution strategies of a server group. */
 export const ServerFillType = {
@@ -53,6 +60,8 @@ export interface ServerEndpoint {
   assignedIpAddresses: string | null
   /** Whether SSL is used for API connections. */
   useSSL: boolean
+  /** Whether the self signed certificate of the server's API is trusted, for this server's host name only. */
+  acceptsSelfSignedCertificate: boolean
 }
 
 /** Account capacity of a server and whether it takes new accounts. */
@@ -147,8 +156,8 @@ export interface ServerDto {
   name: string
   /** Where and how the server's API is reached. */
   endpoint: ServerEndpoint
-  /** Control panel module type string. */
-  module: ServerModule
+  /** Control panel module id: a built in one or one an installed plugin declares. */
+  module: string
   /** API username. */
   username: string
   /** Account capacity and whether the server takes new accounts. */
@@ -202,8 +211,8 @@ export interface ServerOptionDto {
 export interface ServerListFilters {
   /** Text the name, hostname or IP address must contain; empty for none. */
   search?: string
-  /** Keep only the servers that run this control panel module. */
-  module?: ServerModule
+  /** Keep only the servers that run this control panel module (an id, matched ignoring case). */
+  module?: string
   /** Keep only the servers in this last known connection state. */
   state?: ServerState
 }
@@ -250,8 +259,8 @@ export interface ServerPayload {
   name: string
   /** Where and how the server's API is reached. */
   endpoint: ServerEndpoint
-  /** Control panel module type. */
-  module: ServerModule
+  /** Control panel module id: a built in one or one an installed plugin declares. */
+  module: string
   /** API username. */
   username: string
   /** API secrets; null members keep the stored ones. */
@@ -276,17 +285,19 @@ export interface ServerGroupPayload {
   serverIds: number[]
 }
 
-/** Human-readable labels for each module. */
+/** Human-readable labels for each module the host itself knows. */
 export const MODULE_LABELS: Record<ServerModule, string> = {
   CPanel: 'cPanel / WHM',
-  Plesk: 'Plesk',
-  DirectAdmin: 'DirectAdmin',
-  Centos: 'CentOS Web Panel',
-  Cwp7: 'CWP7',
-  Lukittu: 'Lukittu',
-  Virtualmin: 'Virtualmin',
-  HyperVm: 'HyperVM',
 }
+
+/**
+ * The label of a control panel module.
+ *
+ * @param module - The module id of a server.
+ * @returns The host's label for a module it knows, the id itself for one a plugin declares.
+ */
+export const moduleLabel = (module: string): string =>
+  (Object.values(ServerModule) as string[]).includes(module) ? MODULE_LABELS[module as ServerModule] : module
 
 /** Human-readable labels for fill types, resolved in the operator's language on each read. */
 export const FILL_TYPE_LABELS: Record<ServerFillType, string> = {

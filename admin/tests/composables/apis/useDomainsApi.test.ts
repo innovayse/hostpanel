@@ -6,7 +6,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useDomainsApi } from '@/composables/apis/useDomainsApi'
 import { DomainStatus } from '@/types/domain'
-import { RegistrarModule } from '@/types/registrarmodule'
 import { json, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -38,9 +37,9 @@ describe('useDomainsApi', () => {
       pageSize: 20,
       search: 'exa',
       status: DomainStatus.Expired,
-      registrarModule: RegistrarModule.Namecheap,
+      registrarModule: 'registrar-two',
     })
-    expect(callOf(mock, 0).url).toBe('/api/domains?page=1&pageSize=20&search=exa&status=Expired&registrarModule=Namecheap')
+    expect(callOf(mock, 0).url).toBe('/api/domains?page=1&pageSize=20&search=exa&status=Expired&registrarModule=registrar-two')
   })
 
   it('getDomain reads the detail and updateDomain PUTs the fields', async () => {

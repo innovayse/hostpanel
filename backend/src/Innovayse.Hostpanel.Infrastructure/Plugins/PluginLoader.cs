@@ -30,6 +30,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </summary>
 public static class PluginLoader
 {
+    /// <summary>The longest load error kept for the admin list, in characters.</summary>
+    private const int MaxLoadErrorLength = 300;
+
     /// <summary>
     /// Discovers all valid plugins under each of <paramref name="pluginRoots"/>, in order, loads their
     /// assemblies, and registers them as keyed scoped services in <paramref name="services"/>. A
@@ -177,11 +180,12 @@ public static class PluginLoader
             if (dllFiles.Length == 0)
             {
                 logger.LogError("No DLL found for plugin {Id} in {Dir}, skipping", manifest.Id, pluginDir);
+                RefuseLoad(registry, manifest.Id, origin, "the plugin folder holds no assembly");
                 continue;
             }
 
             Type? pluginType = null;
-            TypeLoadException? notDefined = null;
+            List<Exception> failures = [];
             foreach (var dll in dllFiles)
             {
                 try
@@ -198,27 +202,36 @@ public static class PluginLoader
                 {
                     // The usual case in a folder with helper assemblies: this one does not define the entry point. It is
                     // logged below, with the skip, only when no assembly of the plugin defines it.
-                    notDefined = ex;
+                    failures.Add(ex);
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to load assembly {Dll} for plugin {Id}", dll, manifest.Id);
+                    failures.Add(ex);
                 }
             }
 
             if (pluginType is null)
             {
+                // Every assembly was tried, so each one that did not yield the entry point left its error. The one that
+                // was asked for the entry point and could not give it is the cause; a helper assembly that failed to
+                // load is only the fallback.
+                var cause = failures.OfType<TypeLoadException>().FirstOrDefault() ?? failures[0];
                 logger.LogError(
-                    notDefined,
+                    cause,
                     "Entry point type '{EntryPoint}' not found for plugin {Id}, skipping",
                     manifest.EntryPoint, manifest.Id);
+
+                // The plugin is installed and its manifest was accepted, so it must not look healthy in the admin list:
+                // the load error is kept beside it.
+                RefuseLoad(registry, manifest.Id, origin, FirstLine(cause.Message));
                 continue;
             }
 
             // A plugin that declares the endpoints capability promises the host it can answer routes. Declaring it without
             // implementing the contract is a broken manifest, refused here like any other, and kept in the registry so the
             // admin list shows why. The id is already claimed above, so an upload cannot stand in for it.
-            if (manifest.Declares(PluginCapabilities.Endpoints) && !typeof(IPluginEndpoints).IsAssignableFrom(pluginType))
+            if (manifest.Declares(PluginCapabilities.Endpoints) && !PluginCapabilityRules.IsImplementedBy(PluginCapabilities.Endpoints, pluginType))
             {
                 var detail = $"capabilities declares '{PluginCapabilities.Endpoints}' but '{manifest.EntryPoint}' does not implement IPluginEndpoints";
                 logger.LogWarning(
@@ -269,6 +282,29 @@ public static class PluginLoader
         services.AddSingleton(registry);
         services.AddSingleton<IPluginRegistry>(registry);
         services.AddSingleton<IPluginIntegrationRegistry>(integrationRegistry);
+    }
+
+    /// <summary>
+    /// Keeps an installed plugin that could not be loaded in the registry, so the admin list shows it with the reason.
+    /// </summary>
+    /// <param name="registry">The registry the loader fills.</param>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <param name="origin">Where the plugin folder is.</param>
+    /// <param name="detail">Why the plugin did not load.</param>
+    private static void RefuseLoad(PluginRegistry registry, string pluginId, PluginOrigin origin, string detail)
+    {
+        registry.RegisterRefused(new RefusedPlugin(pluginId, PluginManifestRule.AssemblyLoadFailed, detail, origin == PluginOrigin.BuiltIn));
+    }
+
+    /// <summary>
+    /// Cuts a load error to its first line and a fixed length: the admin list shows what failed, never a stack.
+    /// </summary>
+    /// <param name="message">The exception message.</param>
+    /// <returns>The first line of the message, at most <see cref="MaxLoadErrorLength"/> characters.</returns>
+    private static string FirstLine(string message)
+    {
+        var line = message.Split('\n', 2)[0].Trim();
+        return line.Length <= MaxLoadErrorLength ? line : line[..MaxLoadErrorLength];
     }
 
     /// <summary>

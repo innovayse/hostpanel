@@ -32,13 +32,13 @@
     "refundClosed": "Línea cerrada como reembolsada."
   },
   "ordersList": {
-    "manageCustomerOrders": "Gestionar órdenes de clientes",
+    "manageCustomerOrders": "Gestionar pedidos de clientes",
     "searchOrders": "Buscar pedidos por número o ID",
     "order": "Orden #",
     "items": "Elementos",
     "accept": "Aceptar",
-    "totalcountOrderValue": "Órdenes: {totalCount}",
-    "noOrdersFound": "No se encontraron órdenes",
+    "totalcountOrderValue": "Pedidos: {totalCount}",
+    "noOrdersFound": "No se encontraron pedidos",
     "noOrdersMatchYourFilters": "Ningún pedido coincide con tu filtro",
     "clearFilters": "Borrar filtro",
     "orderAccepted": "Orden aceptada.",

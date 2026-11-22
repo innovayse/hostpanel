@@ -75,7 +75,8 @@
     "changelog": "Notas de la versión",
     "noChangelog": "Sin notas de la versión.",
     "permissions": "Permisos",
-    "noPermissions": "No solicita ningún permiso."
+    "noPermissions": "No solicita ningún permiso.",
+    "sdk": "Creado con el SDK {version}"
   },
   "overview": {
     "details": "Detalles",
@@ -103,7 +104,8 @@
       "label": "Estado",
       "running": "Cargado y en ejecución",
       "afterRestart": "Se carga tras el próximo reinicio",
-      "refused": "Rechazado al iniciar"
+      "refused": "Rechazado al iniciar",
+      "loadFailed": "No se pudo cargar al iniciar"
     },
     "sourceLabel": "Origen",
     "source": {
@@ -125,7 +127,8 @@
     "sha256": "SHA-256 del paquete",
     "installedVersion": "Versión instalada",
     "stagedVersion": "Versión preparada",
-    "hostVersions": "Versiones del servidor"
+    "hostVersions": "Versiones del servidor",
+    "sdkVersion": "SDK de plugins"
   },
   "confirm": {
     "installTitle": "¿Instalar esta versión?",

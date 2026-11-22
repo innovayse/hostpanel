@@ -25,7 +25,6 @@ COPY src/Hostpanel.Sdk/Hostpanel.Sdk.csproj ./src/Hostpanel.Sdk/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/Hostpanel.Sdk.Generators.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/Hostpanel.Sdk.Packaging.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/
 COPY src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
-COPY src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
 COPY tests/Innovayse.Hostpanel.Domain.Tests/Innovayse.Hostpanel.Domain.Tests.csproj ./tests/Innovayse.Hostpanel.Domain.Tests/
 COPY tests/Innovayse.Hostpanel.Architecture.Tests/Innovayse.Hostpanel.Architecture.Tests.csproj ./tests/Innovayse.Hostpanel.Architecture.Tests/
 COPY tests/Innovayse.Hostpanel.Integration.Tests/Innovayse.Hostpanel.Integration.Tests.csproj ./tests/Innovayse.Hostpanel.Integration.Tests/
@@ -69,7 +68,6 @@ COPY src/Hostpanel.Sdk/Hostpanel.Sdk.csproj ./src/Hostpanel.Sdk/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/Hostpanel.Sdk.Generators.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/Hostpanel.Sdk.Packaging.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/
 COPY src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
-COPY src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
 COPY tests/Innovayse.Hostpanel.Domain.Tests/Innovayse.Hostpanel.Domain.Tests.csproj ./tests/Innovayse.Hostpanel.Domain.Tests/
 COPY tests/Innovayse.Hostpanel.Architecture.Tests/Innovayse.Hostpanel.Architecture.Tests.csproj ./tests/Innovayse.Hostpanel.Architecture.Tests/
 COPY tests/Innovayse.Hostpanel.Integration.Tests/Innovayse.Hostpanel.Integration.Tests.csproj ./tests/Innovayse.Hostpanel.Integration.Tests/

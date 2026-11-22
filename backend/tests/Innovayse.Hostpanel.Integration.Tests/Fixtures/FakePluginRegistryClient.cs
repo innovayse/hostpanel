@@ -82,10 +82,10 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     {
         _entries.RemoveAll(e => e.Id == pluginId);
         _entries.Add(new RegistryPluginDto(
-            pluginId, $"Plugin {pluginId}", "Test", "A test plugin.", null, category, version, "1.0", verified, pricing));
+            pluginId, $"Plugin {pluginId}", "Test", "A test plugin.", null, category, version, "1.0.0", verified, pricing));
         var listed = Versions.GetValueOrDefault(pluginId)?.Where(v => v.Version != version).ToList() ?? [];
         listed.Add(new RegistryPluginVersion(
-            version, "1.0", package.Length, TestMoments.Seeded, status, null, null, minHostVersion, maxHostVersion, null, [], null, []));
+            version, "1.0.0", package.Length, TestMoments.Seeded, status, null, null, minHostVersion, maxHostVersion, null, [], null, []));
         Versions[pluginId] = listed;
         Details[pluginId] = new RegistryPluginDetails(_entries.Single(e => e.Id == pluginId), null, null, null, null, null, null, null);
         _releases[(pluginId, version)] = new RegistryPluginRelease(

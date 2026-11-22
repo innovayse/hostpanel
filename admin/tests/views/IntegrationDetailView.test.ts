@@ -1,6 +1,6 @@
 /**
  * Mount tests for IntegrationDetailView: the config form and status sidebar of a built-in
- * integration, the API's refusal sentence, saving, testing, and the CWP and CWP7 special pages.
+ * integration, the API's refusal sentence, saving, testing, and the CWP special page.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -132,12 +132,5 @@ describe('IntegrationDetailView', () => {
 
     // The page is an async component, so it arrives after the dynamic import settles.
     await vi.waitFor(() => expect(wrapper.find('[data-testid="cwp-brand-header"]').exists()).toBe(true), { timeout: LAZY_PAGE_TIMEOUT })
-  })
-
-  it('renders the CWP7 page for the cwp7 slug', { timeout: LAZY_PAGE_TIMEOUT + 5000 }, async () => {
-    stubRoutes({ 'GET /api/admin/servers/options': () => json([]) })
-    const wrapper = await mountDetail('cwp7')
-
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="cwp7-header"]').exists()).toBe(true), { timeout: LAZY_PAGE_TIMEOUT })
   })
 })

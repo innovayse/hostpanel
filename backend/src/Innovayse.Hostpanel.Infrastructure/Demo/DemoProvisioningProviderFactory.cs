@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
@@ -18,7 +18,10 @@ public sealed class DemoProvisioningProviderFactory : IProvisioningProviderFacto
     }
 
     /// <summary>The demo's fake provider stands in for every panel, so a server on any module will do.</summary>
-    public IReadOnlyCollection<ServerModule> SupportedModules { get; } = Enum.GetValues<ServerModule>();
+    /// <param name="ct">Unused; the list is known without a call.</param>
+    /// <returns>Every known panel module.</returns>
+    public Task<IReadOnlyCollection<string>> SupportedModulesAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyCollection<string>>(ServerModules.Known);
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => _provider;

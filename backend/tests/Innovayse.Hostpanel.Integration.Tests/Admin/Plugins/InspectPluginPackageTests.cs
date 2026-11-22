@@ -25,7 +25,7 @@ public sealed class InspectPluginPackageTests(IntegrationTestFactory factory) : 
         var manifest = PluginsTestSeeds.ManifestJson(
             pluginId,
             ",\"manifestVersion\":2,\"hostAccess\":[\"ssh\"],\"capabilities\":[\"endpoints\"],"
-            + "\"changelog\":\"Fixed the renewal date.\",\"minHostVersion\":\"1.0.0\",\"maxHostVersion\":\"3.0.0\"",
+            + "\"changelog\":\"Fixed the renewal date.\",\"sdkPackageVersion\":\"3.1.0\",\"minHostVersion\":\"1.0.0\",\"maxHostVersion\":\"3.0.0\"",
             "App");
 
         var body = await InspectOkAsync(manifest);
@@ -37,6 +37,7 @@ public sealed class InspectPluginPackageTests(IntegrationTestFactory factory) : 
         body.GetProperty("changelog").GetString().Should().Be("Fixed the renewal date.");
         body.GetProperty("minHostVersion").GetString().Should().Be("1.0.0");
         body.GetProperty("maxHostVersion").GetString().Should().Be("3.0.0");
+        body.GetProperty("sdkPackageVersion").GetString().Should().Be("3.1.0");
         body.GetProperty("hostVersion").GetString().Should().Be(HostVersion);
         body.GetProperty("compatible").GetBoolean().Should().BeTrue();
         Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
@@ -74,6 +75,7 @@ public sealed class InspectPluginPackageTests(IntegrationTestFactory factory) : 
         body.GetProperty("changelog").ValueKind.Should().Be(JsonValueKind.Null);
         body.GetProperty("minHostVersion").ValueKind.Should().Be(JsonValueKind.Null);
         body.GetProperty("maxHostVersion").ValueKind.Should().Be(JsonValueKind.Null);
+        body.GetProperty("sdkPackageVersion").ValueKind.Should().Be(JsonValueKind.Null);
         body.GetProperty("compatible").GetBoolean().Should().BeTrue();
     }
 

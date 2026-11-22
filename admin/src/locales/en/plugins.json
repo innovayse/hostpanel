@@ -4,6 +4,7 @@
     "pendingRestart": "Pending restart",
     "remove": "Remove",
     "refused": "Refused",
+    "loadFailed": "Failed to load",
     "staged": "Version {version} staged, applies after restart",
     "brokenRule": "{id} · broken rule: {rule}",
     "updateAvailable": "Update available: {version}"
@@ -22,12 +23,14 @@
     "rangeBetween": "Runs on server versions {min} to {max}.",
     "rangeFrom": "Runs on server version {min} and later.",
     "rangeUpTo": "Runs on server versions up to {max}.",
+    "sdk": "Built on plugin SDK {version}",
     "incompatible": "This plugin does not run on this server's version {host}. {range}",
     "install": "Install",
     "hostAccess": {
       "ssh": "Run commands on a client's hosting account over SSH",
       "websites": "Manage the websites of a client's hosting service",
-      "databases": "Manage the databases of a client's hosting service"
+      "databases": "Manage the databases of a client's hosting service",
+      "serviceConnection": "Read the server connection details of a client's own service, including the stored panel credentials"
     },
     "capabilities": {
       "endpoints": "Add its own pages, menus and widgets to the panels",
@@ -174,7 +177,11 @@
     "SlotWidgetDuplicate": "The same widget id is declared twice for one slot.",
     "PluginIdInvalid": "The plugin id is not valid: use lowercase words joined by single hyphens.",
     "EndpointsNotDeclared": "The plugin declares routes, pages or slots, but it is not an app plugin and does not declare the endpoints capability.",
-    "CapabilityNotAllowed": "The plugin declares a capability this server does not know or its plugin type cannot carry."
+    "CapabilityNotAllowed": "The plugin declares a capability this server does not know or its plugin type cannot carry.",
+    "SdkPackageVersionInvalid": "The sdkPackageVersion in the manifest is not a valid version.",
+    "MinHostVersionBelowSdk": "The minHostVersion in the manifest is missing or lower than the first server release that ships the SDK the plugin was built on.",
+    "SdkNewerThanHost": "The plugin was built on a newer SDK than this server ships, so it cannot load here. Update the server or use an older version of the plugin.",
+    "AssemblyLoadFailed": "The plugin is installed, but its assembly failed to load. The load error is shown below."
   },
   "pluginSlot": {
     "hide": "Hide widget",

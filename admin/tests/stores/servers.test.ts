@@ -8,6 +8,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useServersStore } from '@/stores/servers'
 import { translate } from '@/lib/translate'
 import { ServerModule, ServerState } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
 import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { installStoreHooks } from '../helpers/storeHooks'
 
@@ -32,8 +33,8 @@ describe('serversStore', () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
     const store = useServersStore()
 
-    expect(await store.fetchServers(2, { search: ' host ', module: ServerModule.Plesk, state: ServerState.Offline })).toBe(true)
-    expect(urlOf(mock)).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=Plesk&state=offline')
+    expect(await store.fetchServers(2, { search: ' host ', module: 'hestiacp', state: ServerState.Offline })).toBe(true)
+    expect(urlOf(mock)).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=hestiacp&state=offline')
     expect(store.servers).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(21)
     expect(store.loading).toBe(false)
@@ -55,18 +56,41 @@ describe('serversStore', () => {
     const mock = stubFetch(json([{ id: 1, name: 'host1' }]))
     const store = useServersStore()
 
-    const pending = store.fetchServerOptions(ServerModule.Cwp7)
+    const pending = store.fetchServerOptions(ServerModule.CPanel)
     expect(store.optionsLoading).toBe(true)
     expect(store.loading).toBe(false)
     await pending
     expect(store.optionsLoading).toBe(false)
-    expect(urlOf(mock)).toBe('/api/admin/servers/options?module=Cwp7')
+    expect(urlOf(mock)).toBe('/api/admin/servers/options?module=CPanel')
     expect(store.serverOptions).toEqual([{ id: 1, name: 'host1' }])
 
     const every = stubFetch(json([]))
     await store.fetchServerOptions()
     expect(urlOf(every)).toBe('/api/admin/servers/options')
     expect(store.serverOptions).toEqual([])
+  })
+
+  it('fetchModuleOptions fills the control panel modules a server can be given', async () => {
+    const modules = [{ id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin }]
+    const mock = stubFetch(json(modules))
+    const store = useServersStore()
+
+    await store.fetchModuleOptions()
+
+    expect(urlOf(mock)).toBe('/api/admin/servers/modules')
+    expect(store.moduleOptions).toEqual(modules)
+  })
+
+  it('fetchModuleOptions keeps the API sentence on refusal and leaves the modules as they were', async () => {
+    const store = useServersStore()
+    stubFetch(json([{ id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn }]))
+    await store.fetchModuleOptions()
+
+    stubFetch(problem('Not allowed.', 403))
+    await store.fetchModuleOptions()
+
+    expect(store.error).toBe('Not allowed.')
+    expect(store.moduleOptions).toHaveLength(1)
   })
 
   it('fetchServerOptions keeps the API sentence on refusal and leaves the lookup as it was', async () => {

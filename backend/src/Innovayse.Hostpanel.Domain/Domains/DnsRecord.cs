@@ -78,6 +78,13 @@ public sealed class DnsRecord : BaseEntity
         return new DnsRecord(0, type, host, value, ttl, priority);
     }
 
+    /// <summary>Copies this record into one that belongs to no domain, so a caller can keep how the record stood before it is changed or removed.</summary>
+    /// <returns>A detached record holding the same type, host, value, TTL and priority.</returns>
+    public DnsRecord ToDetached()
+    {
+        return CreateDetached(Type, Host, Value, Ttl, Priority);
+    }
+
     /// <summary>
     /// Updates the mutable fields of this DNS record.
     /// </summary>

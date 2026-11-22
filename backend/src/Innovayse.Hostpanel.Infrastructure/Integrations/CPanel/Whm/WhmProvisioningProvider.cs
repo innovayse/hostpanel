@@ -138,15 +138,16 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     }
 
     /// <summary>Unsuspends the service's account.</summary>
-    /// <param name="provisioningRef">The account's username.</param>
+    /// <param name="req">The service's provisioning reference, the account's username.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already active.</exception>
     /// <returns>A task that completes when the account is active again.</returns>
-    public async Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
+    public async Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct)
     {
-        RequireReference(provisioningRef);
-        var reply = await _client.UnsuspendAccountAsync(_connection, provisioningRef, ct);
-        await EnsureSuspendedAsync(provisioningRef, reply, false, ct);
+        ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
+        var reply = await _client.UnsuspendAccountAsync(_connection, req.ProvisioningRef, ct);
+        await EnsureSuspendedAsync(req.ProvisioningRef, reply, false, ct);
     }
 
     /// <summary>Removes the service's account.</summary>
@@ -174,30 +175,31 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     }
 
     /// <summary>Returns the sign-in details of the service's account.</summary>
-    /// <param name="provisioningRef">The account's username.</param>
+    /// <param name="req">The service's provisioning reference, the account's username.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The username, the account's domain, the server and the cPanel address; WHM never reveals a password.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the account cannot be found.</exception>
-    public async Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct)
+    public async Task<ServiceCredentials> GetCredentialsAsync(AccountCredentialsOrder req, CancellationToken ct)
     {
-        RequireReference(provisioningRef);
-        var account = (await _client.FindAccountAsync(_connection, provisioningRef, ct)).Value
+        ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
+        var account = (await _client.FindAccountAsync(_connection, req.ProvisioningRef, ct)).Value
             ?? throw new InvalidOperationException("The hosting account was not found on the server.");
 
-        return new ServiceCredentials(provisioningRef, null, account.Domain, _serverIp, _panelUrl);
+        return new ServiceCredentials(req.ProvisioningRef, null, account.Domain, _serverIp, _panelUrl);
     }
 
     /// <summary>Opens a cPanel session for the service's account and returns its one-time login URL.</summary>
-    /// <param name="provisioningRef">The account's username.</param>
-    /// <param name="callerIp">Not used: WHM's <c>create_user_session</c> does not bind the session to an address.</param>
+    /// <param name="req">The service's provisioning reference, the account's username. Its caller address is not used: WHM's <c>create_user_session</c> does not bind the session to an address.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The absolute URL WHM returned, in its parsed form, once it is shown to be an https address on this server and on its cPanel port.</returns>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the session.</exception>
     /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED"/> when the URL WHM returned is not an https address on this server and its cPanel port.</exception>
-    public async Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
+    public async Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
     {
-        RequireReference(provisioningRef);
-        var url = await _client.CreateUserSessionAsync(_connection, provisioningRef, ct);
+        ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
+        var url = await _client.CreateUserSessionAsync(_connection, req.ProvisioningRef, ct);
         if (string.IsNullOrWhiteSpace(url))
         {
             throw new InvalidOperationException("WHM refused to open a cPanel session.");
@@ -209,55 +211,55 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
         var session = WhmInputRules.ParseSessionUrl(url, _panelUrl, _connection.BaseUrl, _serverIp);
         if (session is null)
         {
-            _logger.LogWarning("WHM returned a cPanel session URL that is not on the server for {User}.", provisioningRef);
+            _logger.LogWarning("WHM returned a cPanel session URL that is not on the server for {User}.", req.ProvisioningRef);
             throw new DomainRuleException(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED, "The cPanel session URL is not on the server.");
         }
 
-        _logger.LogInformation("cPanel session opened for {User}.", provisioningRef);
+        _logger.LogInformation("cPanel session opened for {User}.", req.ProvisioningRef);
         return session.AbsoluteUri;
     }
 
     /// <summary>Changes the service's account password.</summary>
-    /// <param name="provisioningRef">The account's username.</param>
-    /// <param name="newPassword">The new password.</param>
+    /// <param name="req">The service's provisioning reference, the account's username, and the new password.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the change.</exception>
     /// <returns>A task that completes when the password is changed.</returns>
-    public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
+    public async Task ChangePasswordAsync(ChangeAccountPasswordOrder req, CancellationToken ct)
     {
-        RequireReference(provisioningRef);
-        ArgumentException.ThrowIfNullOrWhiteSpace(newPassword);
-        if (!(await _client.ChangePasswordAsync(_connection, provisioningRef, newPassword, ct)).IsSuccess)
+        ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
+        ArgumentException.ThrowIfNullOrWhiteSpace(req.NewPassword);
+        if (!(await _client.ChangePasswordAsync(_connection, req.ProvisioningRef, req.NewPassword, ct)).IsSuccess)
         {
             throw new InvalidOperationException("WHM password change failed.");
         }
 
-        _logger.LogInformation("cPanel password changed for {User}.", provisioningRef);
+        _logger.LogInformation("cPanel password changed for {User}.", req.ProvisioningRef);
     }
 
     /// <summary>Moves the service's account onto another WHM package.</summary>
-    /// <param name="provisioningRef">The account's username.</param>
-    /// <param name="newPackage">The name of the package to switch to.</param>
+    /// <param name="req">The service's provisioning reference, the account's username, and the name of the package to switch to.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already on the package.</exception>
     /// <returns>A task that completes when the package is changed.</returns>
-    public async Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
+    public async Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct)
     {
-        RequireReference(provisioningRef);
-        ArgumentException.ThrowIfNullOrWhiteSpace(newPackage);
-        if ((await _client.ChangePackageAsync(_connection, provisioningRef, newPackage, ct)).IsSuccess)
+        ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
+        ArgumentException.ThrowIfNullOrWhiteSpace(req.NewPackage);
+        if ((await _client.ChangePackageAsync(_connection, req.ProvisioningRef, req.NewPackage, ct)).IsSuccess)
         {
-            _logger.LogInformation("cPanel package changed for {User}.", provisioningRef);
+            _logger.LogInformation("cPanel package changed for {User}.", req.ProvisioningRef);
             return;
         }
 
-        var lookup = await _client.FindAccountAsync(_connection, provisioningRef, ct);
-        if (!string.Equals(lookup.Value?.Plan, newPackage, StringComparison.Ordinal))
+        var lookup = await _client.FindAccountAsync(_connection, req.ProvisioningRef, ct);
+        if (!string.Equals(lookup.Value?.Plan, req.NewPackage, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("WHM package change failed.");
         }
 
-        _logger.LogInformation("cPanel account {User} was already on the package.", provisioningRef);
+        _logger.LogInformation("cPanel account {User} was already on the package.", req.ProvisioningRef);
     }
 
     /// <summary>Stops a call that names an account WHM could never hold, before WHM is asked.</summary>

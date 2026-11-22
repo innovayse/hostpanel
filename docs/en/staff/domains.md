@@ -20,6 +20,14 @@ keywords: "domains, domain registration, domain transfer, domain renewal, regist
 
 Customers see Pending Registration, Active, Expired and Cancelled in their client portal. See [Client portal guide](/customers/portal) for the customer view.
 
+## Which registrar answers
+
+Every domain operation goes to the registrar plugin its TLD names in TLD pricing, and a domain keeps going to the registrar it was
+placed at even after its TLD is pointed at another one. A registrar is a plugin: install it and switch it on in Integrations, and its
+connection settings are saved there. When the plugin is missing, switched off or lacks a required setting, or the TLD names no
+registrar, the operation answers that no registrar is configured and nothing is changed. A registrar that does not offer DNS
+management, email forwarding or a WHOIS lookup simply does not show those actions on the domain.
+
 ## Domain registration
 
 When a client orders and pays for a domain:

@@ -1,7 +1,7 @@
 <template>
   <LegalDocument
     :title="t('cookiePolicy.title')"
-    :meta="lastUpdatedLine"
+    :meta="isCustom ? undefined : lastUpdatedLine"
     :sections="sections"
   />
 </template>
@@ -15,6 +15,8 @@
  */
 import { LEGAL_LAST_UPDATED } from '~/constants/legalUpdated'
 import type { LegalCard } from '~/types/legalcard'
+import { LegalPage } from '~/constants/legalPage'
+import { useLegalSections } from '~/composables/useLegalSections'
 import type { LegalSection } from '~/types/legalsection'
 
 /** Translates a key in the active language; `tm` reads a raw message tree. */
@@ -32,8 +34,8 @@ const cookieTypes = computed(() => tm('cookiePolicy.sections.typesOfCookies.type
 /** What the cookies are used for, one line each. */
 const cookieUses = computed(() => tm('cookiePolicy.sections.howWeUseCookies.uses') as string[])
 
-/** The sections with their copy resolved in the active language. */
-const sections = computed<LegalSection[]>(() => [
+/** The built-in sections with their copy resolved in the active language. */
+const builtInSections = computed<LegalSection[]>(() => [
   {
     id: 'introduction',
     title: t('cookiePolicy.sections.introduction.title'),
@@ -74,7 +76,10 @@ const sections = computed<LegalSection[]>(() => [
   }
 ])
 
-/** The "last updated" line shown under the title. */
+/** The sections to draw: the operator's own text when it has stated one, otherwise the built-in sections. */
+const { sections, isCustom } = await useLegalSections(LegalPage.Cookies, builtInSections)
+
+/** The "last updated" line shown under the title; it dates the built-in text only. */
 const lastUpdatedLine = computed(() => `${t('cookiePolicy.lastUpdated')}: ${LEGAL_LAST_UPDATED}`)
 
 useSeoMeta({

@@ -149,9 +149,10 @@ internal sealed class DemoServiceSeeder
                 var host = i == 0 ? DemoSites.HostOf(client) : $"{SitePrefixes[(c + i) % SitePrefixes.Length]}.{DemoSites.HostOf(client)}";
                 var reference = status == ServiceStatus.Pending ? null : $"demo-account-{client.Id}-{i}";
 
-                // Ordered a few days after the customer signed up, one service after another, not at the moment of seeding.
+                // Ordered a few days after the customer signed up, one service after another, not at the moment of seeding,
+                // and never after the anchor for a customer who joined only a few days ago.
                 var service = ClientService.Create(client.Id, product.Id, cycle, _today);
-                service.Backdate(client.CreatedAt.AddDays(2 + (3 * i)));
+                service.Backdate(DemoAnchor.Clamp(client.CreatedAt.AddDays(2 + (3 * i)), client.CreatedAt, _today));
                 if (status != ServiceStatus.Pending)
                 {
                     service.Activate(reference!, service.CreatedAt, _today);
@@ -206,7 +207,7 @@ internal sealed class DemoServiceSeeder
                 service.UpdateAdminNotes(status == ServiceStatus.Suspended ? "Suspended by the billing run until the invoice is paid." : null);
                 if (status == ServiceStatus.Terminated)
                 {
-                    service.CorrectTerminationDate(_today.AddDays(-(10 + ((c + i) % 40))));
+                    service.CorrectTerminationDate(DemoAnchor.Clamp(_today.AddDays(-(10 + ((c + i) % 40))), service.CreatedAt, _today));
                 }
 
                 _db.ClientServices.Add(service);
@@ -298,7 +299,8 @@ internal sealed class DemoServiceSeeder
             var reason = CancellationReasons[n % CancellationReasons.Length];
 
             // A request for a terminated service was made the day before it ended; the others were made in the last few weeks.
-            var madeAt = service.TerminatedAt?.AddDays(-1) ?? _today.AddDays(-(1 + ((n * 7) % 35))).AddHours(9 + (n % 8));
+            var madeAt = DemoAnchor.Clamp(
+                service.TerminatedAt?.AddDays(-1) ?? _today.AddDays(-(1 + ((n * 7) % 35))).AddHours(9 + (n % 8)), service.CreatedAt, _today);
 
             if (service.Status == ServiceStatus.Terminated)
             {

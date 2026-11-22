@@ -5,7 +5,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useTldConfigsStore } from '@/stores/tldConfigs'
-import { RegistrarModule } from '@/types/registrarmodule'
 import { callOf, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { installStoreHooks } from '../helpers/storeHooks'
 
@@ -40,10 +39,10 @@ describe('tldConfigsStore mutations', () => {
   it('importFromProvider returns the counts, null offline', async () => {
     const store = useTldConfigsStore()
     stubFetch(json({ imported: 2, updated: 1 }))
-    expect(await store.importFromProvider('NameAm')).toEqual({ imported: 2, updated: 1 })
+    expect(await store.importFromProvider('registrar-one')).toEqual({ imported: 2, updated: 1 })
 
     stubOffline()
-    expect(await store.importFromProvider('NameAm')).toBeNull()
+    expect(await store.importFromProvider('registrar-one')).toBeNull()
     expect(store.actionError).toBe('Could not reach the server. Check your connection and try again.')
   })
 })
@@ -55,10 +54,10 @@ describe('tldConfigsStore loads', () => {
     const store = useTldConfigsStore()
 
     const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
-    expect(await store.fetchAll(2, { search: ' com ', registrarModule: RegistrarModule.Namecheap, enabled: false })).toBe(true)
+    expect(await store.fetchAll(2, { search: ' com ', registrarModule: 'registrar-two', enabled: false })).toBe(true)
     expect(store.configs).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(21)
-    expect(callOf(mock).url).toBe('/api/admin/tld-configs?page=2&pageSize=20&search=com&registrarModule=Namecheap&enabled=false')
+    expect(callOf(mock).url).toBe('/api/admin/tld-configs?page=2&pageSize=20&search=com&registrarModule=registrar-two&enabled=false')
 
   })
 
@@ -92,10 +91,10 @@ describe('tldConfigsStore loads', () => {
     const store = useTldConfigsStore()
 
     stubFetch(json({ imported: 3 }))
-    expect(await store.importFromProvider('Namecheap')).toEqual({ imported: 3 })
+    expect(await store.importFromProvider('registrar-two')).toEqual({ imported: 3 })
 
     stubFetch(problem('Provider down.', 502))
-    expect(await store.importFromProvider('Namecheap')).toBeNull()
+    expect(await store.importFromProvider('registrar-two')).toBeNull()
     expect(store.actionError).toBe('Provider down.')
   })
 })

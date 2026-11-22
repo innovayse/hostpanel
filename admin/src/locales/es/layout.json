@@ -23,10 +23,11 @@
   "viewLoadFailed": "Esta página no se pudo cargar. Revisa tu conexión e inténtalo de nuevo.",
   "reload": "Recargar",
   "localeLabels": {
-    "en": "EN",
-    "hy": "Հայ",
-    "ru": "Рус",
-    "es": "ES"
+    "en": "English",
+    "hy": "Հայերեն",
+    "ru": "Русский",
+    "de": "Deutsch",
+    "es": "Español"
   },
   "theme": {
     "label": "Tema",

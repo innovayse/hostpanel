@@ -18,7 +18,7 @@ public sealed class StubProvisioningProvider : IProvisioningProvider
         => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
+    public Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct)
         => Task.CompletedTask;
 
     /// <inheritdoc/>
@@ -26,7 +26,7 @@ public sealed class StubProvisioningProvider : IProvisioningProvider
         => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct)
+    public Task<ServiceCredentials> GetCredentialsAsync(AccountCredentialsOrder req, CancellationToken ct)
         => Task.FromResult(new ServiceCredentials(
             "stub-user",
             "stub-pass",
@@ -35,14 +35,14 @@ public sealed class StubProvisioningProvider : IProvisioningProvider
             "http://panel.stub.com"));
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
         => Task.FromResult("https://stub-panel.example.com/sso");
 
     /// <inheritdoc/>
-    public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
+    public Task ChangePasswordAsync(ChangeAccountPasswordOrder req, CancellationToken ct)
         => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
+    public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct)
         => Task.CompletedTask;
 }

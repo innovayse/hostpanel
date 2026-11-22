@@ -4,53 +4,16 @@
     "fieldAccountName": "Account Name",
     "fieldInstructions": "Payment Instructions"
   },
-  "namecheap": {
-    "shortDescription": "Register and manage domains through Namecheap's reseller API.",
-    "fieldApiKey": "API Key",
-    "fieldClientIp": "Whitelisted Client IP",
-    "fieldApiUsername": "API Username"
-  },
-  "nameam": {
-    "shortDescription": "Register and manage .am domains through the Name.am registrar API.",
-    "fieldEmail": "Account Email",
-    "fieldPassword": "Account Password",
-    "fieldApiUrl": "API URL",
-    "fieldTest_mode": "Test Mode"
-  },
-  "resellerclub": {
-    "shortDescription": "Manage domain registrations via ResellerClub's reseller platform.",
-    "fieldResellerId": "Reseller ID"
-  },
-  "enom": {
-    "shortDescription": "Connect to eNom for domain registration and DNS management.",
-    "fieldAccountId": "Account ID"
-  },
   "cpanel": {
     "shortDescription": "Provision and manage hosting accounts via cPanel WHM server API.",
     "fieldHost": "WHM Host",
     "fieldPort": "Port",
     "fieldApiToken": "API Token"
   },
-  "plesk": {
-    "shortDescription": "Automate server and hosting management through Plesk's XML API.",
-    "fieldHost": "Plesk Host"
-  },
   "cwp": {
     "shortDescription": "Manage hosting accounts on CentOS Web Panel servers.",
-    "fieldHost": "CWP Host"
-  },
-  "cwp7": {
-    "shortDescription": "Provision and manage hosting accounts via Control Web Panel 7 API.",
-    "fieldMonthly_cost": "Monthly Cost",
-    "fieldDatacenter": "Datacenter/NOC",
-    "fieldAccess_hash": "Access Hash",
-    "fieldPort": "API Port",
-    "fieldMax_accounts": "Maximum No. of Accounts",
-    "fieldNs1": "Primary Nameserver",
-    "fieldNs1_ip": "Primary Nameserver IP",
-    "fieldNs2": "Secondary Nameserver",
-    "fieldNs2_ip": "Secondary Nameserver IP",
-    "fieldSecure": "Use SSL for Connections"
+    "fieldHost": "CWP Host",
+    "fieldApiKey": "API Key"
   },
   "smtp": {
     "shortDescription": "Configure outgoing email delivery via your SMTP mail server.",
@@ -60,6 +23,7 @@
   },
   "maxmind": {
     "shortDescription": "Detect fraudulent orders with MaxMind's GeoIP risk scoring.",
-    "fieldLicenseKey": "License Key"
+    "fieldLicenseKey": "License Key",
+    "fieldAccountId": "Account ID"
   }
 }

@@ -6,7 +6,6 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import type { PaginatedList } from '../src/types/paginatedlist'
-import { RegistrarModule } from '../src/types/registrarmodule'
 import type { TldConfigListItem } from '../src/types/tldconfig'
 import { fieldOf } from './support/locators'
 import { stubApi } from './support/stubApi'
@@ -24,7 +23,7 @@ const LIST_PATH = '/api/admin/tld-configs'
  * @param isEnabled - Whether the TLD is on sale.
  * @returns The row.
  */
-const tldRow = (id: number, tld: string, registrarModule: RegistrarModule, isEnabled: boolean): TldConfigListItem => ({
+const tldRow = (id: number, tld: string, registrarModule: string, isEnabled: boolean): TldConfigListItem => ({
   id,
   tld,
   registrarModule,
@@ -40,10 +39,10 @@ const tldRow = (id: number, tld: string, registrarModule: RegistrarModule, isEna
 })
 
 /** An enabled TLD at the first registrar. */
-const comRow = tldRow(1, 'com', RegistrarModule.NameAm, true)
+const comRow = tldRow(1, 'com', 'registrar-one', true)
 
 /** A switched-off TLD at the second registrar, the one the filters must keep. */
-const netRow = tldRow(2, 'net', RegistrarModule.Namecheap, false)
+const netRow = tldRow(2, 'net', 'registrar-two', false)
 
 /** Every TLD the stubbed list holds. */
 const allRows: TldConfigListItem[] = [comRow, netRow]
@@ -58,6 +57,16 @@ const stubTldList = (page: Page): Promise<StubApi> =>
   stubApi(page, {
     signedIn: true,
     routes: [
+      {
+        method: HttpMethod.Get,
+        path: '/api/admin/plugins',
+        respond: () => ({
+          body: [
+            { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded' },
+            { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded' },
+          ],
+        }),
+      },
       {
         method: HttpMethod.Get,
         path: LIST_PATH,
@@ -121,18 +130,18 @@ test('the registrar and enabled filters are sent to the API, shown as chips and 
   await expect(page.getByTestId('tld-row-com')).toBeVisible()
 
   await page.getByTestId('filter-trigger').click()
-  await chooseOption(page, 'tld-configs-filter-registrar', 'Namecheap')
+  await chooseOption(page, 'tld-configs-filter-registrar', 'Registrar Two')
   await chooseOption(page, 'tld-configs-filter-enabled', 'Disabled')
   await page.getByTestId('filter-apply').click()
 
-  await expect(page).toHaveURL(/registrarModule=Namecheap/)
+  await expect(page).toHaveURL(/registrarModule=registrar-two/)
   await expect(page).toHaveURL(/enabled=disabled/)
-  await expect(page.getByTestId('filter-chip-registrarModule')).toContainText('Namecheap')
+  await expect(page.getByTestId('filter-chip-registrarModule')).toContainText('Registrar Two')
   await expect(page.getByTestId('filter-chip-enabled')).toContainText('Disabled')
   await expect(page.getByTestId('tld-row-com')).toHaveCount(0)
   await expect(page.getByTestId('tld-row-net')).toBeVisible()
   const sent = api.callsTo(HttpMethod.Get, LIST_PATH).at(-1)?.search ?? ''
-  expect(sent).toContain('registrarModule=Namecheap')
+  expect(sent).toContain('registrarModule=registrar-two')
   expect(sent).toContain('enabled=false')
 
   await page.getByTestId('filter-chip-remove-registrarModule').click()

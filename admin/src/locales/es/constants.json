@@ -4,13 +4,13 @@
     "terminated": "Terminado"
   },
   "domainStatusOptions": {
-    "pendingRegistration": "Registro Pendiente",
-    "pendingTransfer": "Transferencia Pendiente",
+    "pendingRegistration": "Registro pendiente",
+    "pendingTransfer": "Transferencia pendiente",
     "redemption": "Redención",
     "transferred": "Transferido"
   },
   "paymentMethodOptions": {
-    "bankTransfer": "Transferencia Bancaria"
+    "bankTransfer": "Transferencia bancaria"
   },
   "orderStatusOptions": {
     "fraud": "Fraude",

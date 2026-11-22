@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -44,6 +45,15 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <summary>Reads what the hosting can do, and sets up and removes websites and databases for the host API's hosting methods.</summary>
     private readonly PluginHostingService _hosting;
 
+    /// <summary>The clock the store counts a time to live from.</summary>
+    private readonly IClock _clock;
+
+    /// <summary>Hands the host API's service connection method the server connection of the client's own service.</summary>
+    private readonly PluginServiceConnectionService _connections;
+
+    /// <summary>Reads the gateway order a payment plugin's callback names, for the host API's order read.</summary>
+    private readonly PluginOrderReadService _orders;
+
     /// <summary>Initializes the factory.</summary>
     /// <param name="context">The request's data context, written by the store.</param>
     /// <param name="facts">Reads the client, service and invoice rows the host API shares.</param>
@@ -52,6 +62,9 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <param name="options">The plugin API limits; the store's quota per scope is read from it.</param>
     /// <param name="ssh">Issues and revokes SSH identities for the host API's two SSH methods.</param>
     /// <param name="hosting">Reads what the hosting can do, and sets up and removes websites and databases for the host API's hosting methods.</param>
+    /// <param name="clock">The clock the store counts a time to live from.</param>
+    /// <param name="connections">Hands the host API's service connection method the server connection of the client's own service.</param>
+    /// <param name="orders">Reads the gateway order a payment plugin's callback names, for the host API's order read.</param>
     public HostPluginCallServices(
         AppDbContext context,
         IPluginHostFactsReader facts,
@@ -59,15 +72,21 @@ public sealed class HostPluginCallServices : IPluginCallServices
         IPayerCurrencyResolver payerCurrency,
         IOptions<PluginApiOptions> options,
         PluginSshAccessService ssh,
-        PluginHostingService hosting)
+        PluginHostingService hosting,
+        IClock clock,
+        PluginServiceConnectionService connections,
+        PluginOrderReadService orders)
     {
         _ssh = ssh;
         _hosting = hosting;
+        _connections = connections;
+        _orders = orders;
         _context = context;
         _facts = facts;
         _identity = identity;
         _payerCurrency = payerCurrency;
         _options = options;
+        _clock = clock;
     }
 
     /// <inheritdoc/>
@@ -76,8 +95,8 @@ public sealed class HostPluginCallServices : IPluginCallServices
         // One signal per call: a refusal in one call never colours another call's answer.
         var quota = new PluginStoreQuotaSignal();
         return new PluginCallServices(
-            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh, _hosting),
-            new PluginStore(binding.PluginId, binding.ClientRef, _context, _options.Value.StoreQuota, quota),
+            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh, _hosting, _connections, _orders),
+            new PluginStore(binding.PluginId, binding.ClientRef, _context, _options.Value.StoreQuota, quota, _clock),
             quota);
     }
 }

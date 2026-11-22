@@ -6,11 +6,12 @@
     "refused": "Rechazado",
     "staged": "Versión {version} preparada, se aplica tras el reinicio",
     "brokenRule": "{id} · regla violada: {rule}",
-    "updateAvailable": "Actualización disponible: {version}"
+    "updateAvailable": "Actualización disponible: {version}",
+    "loadFailed": "No se pudo cargar"
   },
   "pluginUploader": {
     "valueKbReadyToInstall": "{value} KB · Listo para instalar",
-    "installPlugin": "Instalar Complemento"
+    "installPlugin": "Instalar complemento"
   },
   "pluginInstallDialog": {
     "title": "¿Instalar {name} {version}?",
@@ -27,18 +28,20 @@
     "hostAccess": {
       "ssh": "Ejecutar comandos en la cuenta de alojamiento de un cliente por SSH",
       "websites": "Gestionar los sitios web del servicio de alojamiento de un cliente",
-      "databases": "Gestionar las bases de datos del servicio de alojamiento de un cliente"
+      "databases": "Gestionar las bases de datos del servicio de alojamiento de un cliente",
+      "serviceConnection": "Leer los datos de conexión al servidor del servicio de un cliente, incluidas las credenciales guardadas del panel"
     },
     "capabilities": {
       "endpoints": "Añade sus propias páginas, menús y widgets a los paneles",
       "paymentReturn": "Completar un pago cuando el pagador vuelve de la pasarela",
       "storedCredentials": "Cobrar en tarjetas guardadas y cuentas de pago"
-    }
+    },
+    "sdk": "Creado con el SDK de plugins {version}"
   },
   "restartBanner": {
     "restartRequired": "Reinicio requerido",
     "pluginChangesWillTakeEffect": "Los cambios del complemento entrarán en vigor tras un reinicio del servidor.",
-    "restartServer": "Reiniciar Servidor"
+    "restartServer": "Reiniciar servidor"
   },
   "pluginSigning": {
     "title": "Firmas de complementos",
@@ -50,7 +53,7 @@
     "hint": "Desactivado por defecto. Un cambio se aplica a la siguiente carga de inmediato, y a los complementos ya instalados después del próximo reinicio del servidor. Cada cambio se registra en el registro de actividad. Un servidor en modo de desarrollo siempre acepta complementos sin firma."
   },
   "plugins": {
-    "pluginManager": "Gestor de Complementos",
+    "pluginManager": "Gestor de complementos",
     "installAndManageProviderPlugins": "Instalar y gestionar complementos de proveedores",
     "lengthInstalled": "· {length} instalados",
     "noPluginsInstalledYet": "No hay complementos instalados todavía",
@@ -174,7 +177,11 @@
     "SlotWidgetDuplicate": "El mismo id de widget se declara dos veces para una ranura.",
     "PluginIdInvalid": "El id del complemento no es válido: usa palabras en minúsculas unidas por guiones simples únicamente.",
     "EndpointsNotDeclared": "El complemento declara rutas, páginas o ranuras, pero no es un complemento de aplicación y no declara la capacidad de puntos finales.",
-    "CapabilityNotAllowed": "El complemento declara una capacidad que este servidor no conoce o que su tipo de complemento no puede llevar."
+    "CapabilityNotAllowed": "El complemento declara una capacidad que este servidor no conoce o que su tipo de complemento no puede llevar.",
+    "SdkPackageVersionInvalid": "El sdkPackageVersion del manifiesto no es una versión válida.",
+    "MinHostVersionBelowSdk": "El minHostVersion del manifiesto falta o es anterior a la primera versión del servidor que incluye el SDK con el que se creó el plugin.",
+    "SdkNewerThanHost": "El plugin se creó con un SDK más reciente que el que incluye este servidor, por lo que no se puede cargar aquí. Actualiza el servidor o usa una versión anterior del plugin.",
+    "AssemblyLoadFailed": "El plugin está instalado, pero no se pudo cargar su ensamblado. El error de carga se muestra abajo."
   },
   "pluginSlot": {
     "hide": "Ocultar widget",

@@ -52,9 +52,10 @@ public sealed class ListDomainsHandler
             domainsQuery = domainsQuery.Where(x => x.Status == status);
         }
 
-        if (query.RegistrarModule is { } registrarModule)
+        if (query.RegistrarModule?.Trim().ToLowerInvariant() is { Length: > 0 } registrarModule)
         {
-            domainsQuery = domainsQuery.Where(x => x.RegistrarModule == registrarModule);
+            // Stored values keep the case they were written in (older rows may differ in case from the plugin id).
+            domainsQuery = domainsQuery.Where(x => x.RegistrarModule != null && x.RegistrarModule.ToLower() == registrarModule);
         }
 
         // The id ends the order so a page never repeats or skips a row between requests.

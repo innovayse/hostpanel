@@ -1,8 +1,10 @@
 """Unit tests for hostpanel-ssh-key-agent. Run: python3 -m unittest discover -s ssh-key-agent/tests"""
 
 import base64
+import contextlib
 import importlib.machinery
 import importlib.util
+import io
 import json
 import os
 import pwd
@@ -389,7 +391,7 @@ class JailEnrolTests(AgentTestCase):
         return path
 
     def test_jail_gets_login_comforts(self):
-        # Missing in a bare jailkit tree on srv4: uname (a profile.d script calls it at login)
+        # Missing in a bare jailkit tree: uname (a profile.d script calls it at login)
         # and /etc/bashrc (where `ll` is defined). Only paths present on the host are copied.
         extra = self.host_file("bashrc")
         missing = os.path.join(self.tmp.name, "absent")
@@ -414,7 +416,7 @@ class JailEnrolTests(AgentTestCase):
 
     def test_extras_already_in_the_jail_are_not_copied_again(self):
         # jk_cp resolves and copies every binary's libraries: with git and its helpers in the list
-        # that took ~20 s of CPU per key on srv4, longer than HostPanel waits for one SSH call.
+        # that took ~20 s of CPU per key on a slow host, longer than HostPanel waits for one SSH call.
         tree = os.path.join(self.tmp.name, "host", "git-core")
         os.makedirs(os.path.join(tree, "mergetools"))
         for name in ("git-add", "mergetools/vimdiff"):
@@ -451,7 +453,7 @@ class JailEnrolTests(AgentTestCase):
         self.assertEqual(cp[0][4:], [updated, tree])
 
     def test_a_copy_whose_time_lost_its_fraction_is_not_stale(self):
-        # jk_cp keeps a file's time but drops the fraction of a second (seen on srv4), so a copy
+        # jk_cp keeps a file's time but drops the fraction of a second (seen on real hosts), so a copy
         # is up to date when its whole second is not older than the host's.
         extra = self.host_file("bashrc")
         os.utime(extra, (1792956992.5939536, 1792956992.5939536))
@@ -475,6 +477,101 @@ class JailEnrolTests(AgentTestCase):
         self.calls.clear()
         self.assertTrue(self.add(2, KEY_ID_B)["ok"])
         self.assertEqual([c[4:] for c in self.jk_cp_calls()], [[tree]])
+
+    def test_extra_holding_private_keys_is_refused(self):
+        # A host listing /etc/pki/tls would copy its private/ directory with the server's TLS keys.
+        tree = os.path.join(self.tmp.name, "host", "tls")
+        os.makedirs(os.path.join(tree, "private"))
+        with open(os.path.join(tree, "private", "site.pem"), "w") as handle:
+            handle.write("key")
+        self.config["jail_extras"] = [self.host_file("bashrc"), tree]
+        self.assertEqual(self.add()["error"], "internal_error")
+        self.assertEqual(self.jk_cp_calls(), [])
+        self.assertNotIn("/usr/sbin/jk_init", [c[0] for c in self.calls])
+        self.assertEqual(agent.unsafe_jail_extras(self.config), [tree])
+
+    def test_private_key_file_kinds_are_refused(self):
+        for name in ("ssh_host_ed25519_key", "privkey.pem", "privkey1.pem", "store.p12", "store.pfx", "store.jks", "A.KEY"):
+            self.config["jail_extras"] = [self.host_file(os.path.join("kinds", name))]
+            self.assertEqual(agent.unsafe_jail_extras(self.config), self.config["jail_extras"], name)
+
+    def test_public_material_is_accepted(self):
+        for name in ("ssh_host_ed25519_key.pub", "fullchain.pem", "ca-bundle.crt", "cert.pem"):
+            self.config["jail_extras"] = [self.host_file(os.path.join("public", name))]
+            self.assertEqual(agent.unsafe_jail_extras(self.config), [], name)
+
+    def test_symlinks_into_private_material_are_refused(self):
+        private = os.path.join(self.tmp.name, "host", "private")
+        os.makedirs(private)
+        with open(os.path.join(private, "site.pem"), "w") as handle:
+            handle.write("key")
+        file_link = os.path.join(self.tmp.name, "host", "link.pem")
+        os.symlink(os.path.join(private, "site.pem"), file_link)
+        certs = os.path.join(self.tmp.name, "host", "certs")
+        os.makedirs(certs)
+        os.symlink(private, os.path.join(certs, "inner"))
+        for extra in (file_link, certs):
+            self.config["jail_extras"] = [extra]
+            self.assertEqual(agent.unsafe_jail_extras(self.config), [extra])
+
+    def test_symlink_loop_terminates(self):
+        certs = os.path.join(self.tmp.name, "host", "loop")
+        os.makedirs(certs)
+        os.symlink(certs, os.path.join(certs, "self"))
+        self.config["jail_extras"] = [certs]
+        self.assertEqual(agent.unsafe_jail_extras(self.config), [])
+
+    def test_check_config_exit_codes_and_output(self):
+        tree = os.path.join(self.tmp.name, "host", "tls")
+        os.makedirs(os.path.join(tree, "private"))
+        original = agent.load_config
+        try:
+            for extras, code in (([self.host_file("bashrc")], 0), ([tree], 1)):
+                self.config["jail_extras"] = extras
+                agent.load_config = lambda: self.config
+                out, err = io.StringIO(), io.StringIO()
+                with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                    self.assertEqual(agent.check_config(), code)
+                self.assertEqual(err.getvalue(), "")
+                self.assertEqual(bool(out.getvalue()), code == 1)
+                if code == 1:
+                    self.assertIn(tree, out.getvalue())
+                    for path in agent.SAFE_TRUST_PATHS:
+                        self.assertIn(path, out.getvalue())
+
+            def unreadable():
+                raise agent.AgentError("internal_error", "bad config")
+
+            agent.load_config = unreadable
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                self.assertEqual(agent.check_config(), 2)
+            self.assertEqual(out.getvalue(), "")
+            self.assertIn("bad config", err.getvalue())
+        finally:
+            agent.load_config = original
+
+    def test_check_config_flag_returns_before_stdin_and_alarm(self):
+        original = (agent.sys.argv, agent.sys.stdin, agent.signal.signal, agent.check_config)
+        agent.sys.argv = ["agent", "--check-config"]
+        agent.sys.stdin = None  # reading it would fail
+        agent.signal.signal = lambda *args: self.fail("alarm handler installed")
+        agent.check_config = lambda: 7
+        try:
+            self.assertEqual(agent.main(), 7)
+        finally:
+            agent.sys.argv, agent.sys.stdin, agent.signal.signal, agent.check_config = original
+
+    def test_key_file_extra_is_refused_and_certs_are_accepted(self):
+        certs = os.path.join(self.tmp.name, "host", "certs")
+        os.makedirs(certs)
+        with open(os.path.join(certs, "ca-bundle.crt"), "w") as handle:
+            handle.write("pem")
+        self.config["jail_extras"] = [certs]
+        self.assertEqual(agent.unsafe_jail_extras(self.config), [])
+        key = self.host_file("server.key")
+        self.config["jail_extras"] = [certs, key]
+        self.assertEqual(agent.unsafe_jail_extras(self.config), [key])
 
     def test_enrolment_is_idempotent(self):
         self.assertTrue(self.add(1, KEY_ID_A)["ok"])

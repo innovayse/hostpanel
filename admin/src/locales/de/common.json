@@ -1,0 +1,16 @@
+{
+  "save": "Speichern",
+  "signOut": "Abmelden",
+  "admin": "Admin",
+  "notifications": "Benachrichtigungen",
+  "notificationsWithCount": "Benachrichtigungen, {count} neu",
+  "viewAllNotifications": "Alle Benachrichtigungen anzeigen",
+  "newCount": "{count} neu | {count} neu",
+  "noNotifications": "Keine Benachrichtigungen",
+  "help": "Hilfe",
+  "roles": {
+    "Admin": "Administrator",
+    "Reseller": "Reseller",
+    "Client": "Kunde"
+  }
+}

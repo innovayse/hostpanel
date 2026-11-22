@@ -552,6 +552,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTimeOffset?>("GatewayReversalNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("GatewayStalledNotifiedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1952,8 +1955,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("RegistrarModule")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("RegistrarRef")
                         .HasMaxLength(100)
@@ -2041,8 +2044,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<string>("RegistrarModule")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("SellCurrency")
                         .IsRequired()
@@ -3271,6 +3274,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -3289,6 +3295,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_PluginDataEntries_ExpiresAt")
+                        .HasFilter("\"ExpiresAt\" IS NOT NULL");
 
                     b.HasIndex("PluginId", "ClientRef", "Key")
                         .IsUnique()
@@ -3626,6 +3636,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AllowedPaymentMethods")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -3886,6 +3902,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AcceptsSelfSignedCertificate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("AccessHash")
                         .HasMaxLength(10719)
@@ -4437,8 +4458,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasMaxLength(10719)
-                        .HasColumnType("character varying(10719)");
+                        .HasMaxLength(64051)
+                        .HasColumnType("character varying(64051)");
 
                     b.HasKey("Id");
 

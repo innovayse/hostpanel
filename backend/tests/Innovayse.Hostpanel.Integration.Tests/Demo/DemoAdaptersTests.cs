@@ -52,9 +52,9 @@ public sealed class DemoAdaptersTests
         first.Success.Should().BeTrue();
         first.RegistrarRef.Should().Be("DEMO-example.com").And.Be(second.RegistrarRef);
         first.ExpiresAt.Should().BeAfter(TestMoments.Seeded);
-        (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Should().BeTrue();
-        (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Should().BeFalse();
-        (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Should().HaveCount(3);
+        (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Value.Should().BeTrue();
+        (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Value.Should().BeFalse();
+        (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Value.Should().HaveCount(3);
     }
 
     /// <summary>Provisioning succeeds, derives the reference from the account and returns usable credentials.</summary>
@@ -65,9 +65,9 @@ public sealed class DemoAdaptersTests
         var provider = new DemoProvisioningProvider();
 
         var result = await provider.ProvisionAsync(
-            new ProvisionAccountOrder(1, "example.com", "user1", "secret", "basic"), CancellationToken.None);
-        var credentials = await provider.GetCredentialsAsync(result.ProvisioningRef!, CancellationToken.None);
-        var sso = await provider.GetCPanelSsoUrlAsync(result.ProvisioningRef!, "203.0.113.50", CancellationToken.None);
+            new ProvisionAccountOrder(1, "example.com", "user1", "secret", "basic", 3, "owner@example.com", "Owner Name"), CancellationToken.None);
+        var credentials = await provider.GetCredentialsAsync(new AccountCredentialsOrder(7, result.ProvisioningRef!), CancellationToken.None);
+        var sso = await provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, result.ProvisioningRef!, "203.0.113.50"), CancellationToken.None);
 
         result.Outcome.Should().Be(ProvisioningOutcome.Created);
         result.ProvisioningRef.Should().Be("demo-user1@example.com");

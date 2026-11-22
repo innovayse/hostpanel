@@ -116,6 +116,12 @@ describe('useListQuery', () => {
     expect(unset.value).toBeUndefined()
   })
 
+  it('reads a filter as the text it holds, and nothing when it is not set', async () => {
+    expect((await setup('/list?status=hestiacp')).list().textOf('status').value).toBe('hestiacp')
+    expect((await setup('/list?status=')).list().textOf('status').value).toBeUndefined()
+    expect((await setup('/list')).list().textOf('status').value).toBeUndefined()
+  })
+
   it('reads a filter as an id and ignores anything that is not a positive whole number', async () => {
     expect((await setup('/list?groupId=12')).list().idOf('groupId').value).toBe(12)
     expect((await setup('/list?groupId=abc')).list().idOf('groupId').value).toBeUndefined()

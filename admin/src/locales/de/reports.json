@@ -1,0 +1,421 @@
+{
+  "reportTimestamp": {
+    "reportGeneratedOnTimestamp": "Bericht erstellt am {timestamp}"
+  },
+  "agingInvoices": {
+    "agingInvoices": "Überfällige Rechnungen nach Alter",
+    "aSummaryOfOutstandingInvoices": "Eine Übersicht der offenen Rechnungen, aufgeteilt nach dem Zeitraum, seit dem sie überfällig sind",
+    "period": "Zeitraum",
+    "curAmount": "Betrag in {cur}",
+    "buckets": {
+      "Days0To30": "0 - 30",
+      "Days30To60": "30 - 60",
+      "Days60To90": "60 - 90",
+      "Days90To120": "90 - 120",
+      "Over120": "120 +"
+    }
+  },
+  "annualIncome": {
+    "annualIncomeReport": "Jahreseinnahmenbericht",
+    "totalIncomePerMonthFor": "Eingegangene Einnahmen pro Monat des gewählten Jahres: Zahlungen abzüglich Erstattungen.",
+    "income": "Einnahmen",
+    "totalIncome": "Gesamteinnahmen",
+    "averageMonth": "Durchschnitt pro Monat",
+    "bestMonth": "Bester Monat",
+    "tooltips": {
+      "total": "Im Jahr eingegangene Zahlungen abzüglich Erstattungen, in der Basiswährung.",
+      "average": "Die Einnahmen des Jahres geteilt durch die aufgeführten Monate.",
+      "best": "Der Monat mit den höchsten Einnahmen des Jahres."
+    }
+  },
+  "clientsByCountry": {
+    "clientsByCountry": "Kunden nach Land",
+    "thisReportShowsTheTotal": "Dieser Bericht zeigt in der Tabelle unten die Gesamtzahl der aktiven Services pro Land sowie die Gesamtzahl der aktiven eindeutigen Kunden pro Land.",
+    "top10Countries": "Top 10 Länder",
+    "clearSelection": "Auswahl aufheben",
+    "activeClients": "Aktive Kunden",
+    "totalClients": "Kunden gesamt:",
+    "legendNoData": "Keine Daten",
+    "legendFewer": "Weniger",
+    "legendMore": "Mehr: bis zu {count}"
+  },
+  "clientsReport": {
+    "thisReportCanBeUsed": "Mit diesem Bericht können Sie einen benutzerdefinierten Export von Kunden mit bis zu 5 Filtern erstellen. Der CSV-Export ist über das Menü „Tools“ rechts verfügbar.",
+    "creationDateRange": "Erstellungszeitraum",
+    "totalcountClientSFound": "{totalCount} Kunde(n) gefunden",
+    "noClientsFoundClickFilter": "Keine Kunden gefunden. Klicken Sie auf „Filtern“, um Ergebnisse zu laden.",
+    "creditBalance": "Guthaben"
+  },
+  "clientStatement": {
+    "clientAccountRegisterBalance": "Kontoauszug des Kundenkontos",
+    "thisReportProvidesAStatement": "Dieser Bericht liefert einen Kontoauszug für einzelne Kundenkonten.",
+    "selectClient": "Kunde auswählen",
+    "previousBalance": "Vorheriger Saldo:",
+    "noEntriesForThisPeriod": "Keine Einträge für diesen Zeitraum.",
+    "endingBalance": "Endsaldo:",
+    "debit": "Soll",
+    "invoicePayment": "Rechnungszahlung #{id}",
+    "paidHistory": "Rechnung #{id}, vor dem Import bezahlt"
+  },
+  "creditsReviewer": {
+    "creditsReviewer": "Guthabenprüfung",
+    "thisReportAllowsYouTo": "Mit diesem Bericht können Sie alle Guthaben prüfen, die Kunden zwischen zwei von Ihnen angegebenen Daten gutgeschrieben wurden.",
+    "allClients": "Alle Kunden",
+    "minAmount": "Mindestbetrag",
+    "maxAmount": "Höchstbetrag",
+    "currencySummary": "{currency}: {count} Guthaben, insgesamt {amount}",
+    "creditId": "Guthaben-ID",
+    "clientId": "Kunden-ID",
+    "noCreditsFoundForThis": "Keine Guthaben für diesen Zeitraum gefunden."
+  },
+  "customerRetention": {
+    "averageCustomerRetentionTime": "Durchschnittliche Kundenbindungsdauer",
+    "thisReportCalculatesAndProvides": "Dieser Bericht zeigt die durchschnittliche Laufzeit von Produkten, Services, Addons und Domains: die Anzahl der Tage zwischen Registrierungsdatum und Beendigungsdatum. Die Durchschnittswerte sind nach Produkt und Abrechnungszyklus gruppiert und werden sowohl in Tagen als auch in aktiven Jahren und Monaten angezeigt.",
+    "includeActiveProductsServicesAssuming": "Aktive Produkte und Services in die Berechnung der durchschnittlichen Bindungsdauer einbeziehen (Annahme: aktive enden zum nächsten Fälligkeitsdatum)",
+    "productCount": "Anzahl Produkte",
+    "averageDaysActive": "Durchschnittliche aktive Tage",
+    "averageYearsMonthsActive": "Durchschnittliche aktive Jahre/Monate",
+    "noDataFound": "Keine Daten gefunden.",
+    "activeYears": "{count} Jahr | {count} Jahre",
+    "activeMonths": "{count} Monat | {count} Monate",
+    "activeDays": "{count} Tag | {count} Tage"
+  },
+  "dailyPerformance": {
+    "dailyPerformance": "Tagesleistung",
+    "overviewOfDailyActivityMetrics": "Übersicht der täglichen Aktivitätskennzahlen",
+    "noDataFound": "Keine Daten gefunden.",
+    "completedOrders": "Abgeschlossene Bestellungen",
+    "newInvoices": "Neue Rechnungen",
+    "paidInvoices": "Bezahlte Rechnungen",
+    "openedTickets": "Eröffnete Tickets",
+    "ticketReplies": "Ticket-Antworten",
+    "cancellationRequests": "Kündigungsanfragen",
+    "tooltips": {
+      "completedOrders": "Bestellungen, die an den gewählten Tagen als abgeschlossen markiert wurden.",
+      "paidInvoices": "Rechnungen, die an den gewählten Tagen bezahlt wurden.",
+      "openedTickets": "Support-Tickets, die an den gewählten Tagen eröffnet wurden.",
+      "cancellationRequests": "Kündigungsanfragen, die an den gewählten Tagen gesendet wurden."
+    }
+  },
+  "directDebit": {
+    "directDebitProcessing": "Lastschriftverarbeitung",
+    "thisReportDisplaysAllUnpaid": "Dieser Bericht zeigt alle unbezahlten Rechnungen, denen die Zahlungsart Lastschrift zugewiesen ist, sowie die zugehörigen, bei den Inhabern gespeicherten Bankverbindungsdaten zur Verarbeitung.",
+    "subtotal": "Zwischensumme",
+    "tax": "Steuer",
+    "credit": "Guthaben",
+    "bankName": "Name der Bank",
+    "bankAccountType": "Kontotyp",
+    "bankCode": "Bankleitzahl",
+    "bankAccountNumber": "Kontonummer"
+  },
+  "diskUsage": {
+    "diskSpaceBandwidthUsageSummary": "Zusammenfassung der Speicherplatz- und Bandbreitennutzung",
+    "thisReportShowsTheDisk": "Dieser Bericht zeigt die Statistiken zur Speicherplatz- und Bandbreitennutzung der Hosting-Konten.",
+    "diskSpaceUsageStatsLast": "Speicherplatzstatistik zuletzt aktualisiert am {value}",
+    "updateNow": "Jetzt aktualisieren",
+    "clientNameDomain": "Kundenname / Domain",
+    "diskUsage": "Speicherplatznutzung",
+    "diskLimit": "Speicherplatzlimit",
+    "used": "% genutzt",
+    "bwUsage": "Bandbreitennutzung",
+    "bwLimit": "Bandbreitenlimit",
+    "noAccountsOnThisServer": "Keine Konten auf diesem Server.",
+    "noData": "Keine Daten gefunden. Klicken Sie auf „Jetzt aktualisieren“, um die Statistiken von Ihren Hosting-Servern abzurufen.",
+    "failuresTitle": "Diese Server haben keine Werte geliefert:",
+    "failure": {
+      "unsupportedModule": "Das Control Panel kann die Speicherplatz- und Bandbreitennutzung noch nicht melden.",
+      "missingCredentials": "Es ist kein API-Token und kein Access Hash festgelegt.",
+      "unreachable": "Der Server hat nicht geantwortet oder die Anfrage abgelehnt."
+    },
+    "noDataHint": "Klicken Sie auf „Jetzt aktualisieren“, um die Statistiken von Ihren Hosting-Servern abzurufen."
+  },
+  "domainRenewalEmails": {
+    "domainRenewalReminderEmails": "Erinnerungs-E-Mails zur Domain-Verlängerung",
+    "thisReportCanBeUsed": "Mit diesem Bericht können Sie einen benutzerdefinierten Export der Erinnerungs-E-Mails zur Domain-Verlängerung erstellen.",
+    "dateSent": "Sendedatum",
+    "reminder": "Erinnerung",
+    "recipients": "Empfänger",
+    "sent": "Gesendet"
+  },
+  "domainsReport": {
+    "thisReportCanBeUsed": "Mit diesem Bericht können Sie einen benutzerdefinierten Export von Domains mit bis zu 5 Filtern erstellen. Der CSV-Export ist über das Menü „Tools“ rechts verfügbar.",
+    "registrationDateRange": "Registrierungszeitraum",
+    "nextDueDateRange": "Zeitraum des nächsten Fälligkeitsdatums",
+    "expiryDateRange": "Ablaufzeitraum",
+    "totalcountDomainSFound": "{totalCount} Domain(s) gefunden",
+    "noDomainsFound": "Keine Domains gefunden.",
+    "regType": "Registrierungsart",
+    "userId": "Benutzer-ID",
+    "orderId": "Bestell-ID"
+  },
+  "incomeByProduct": {
+    "thisReportGivesABreakdown": "Dieser Bericht zeigt eine Aufschlüsselung der in einem bestimmten Monat bezahlten Einnahmen pro Produkt/Service."
+  },
+  "incomeForecast": {
+    "incomeForecast": "Einnahmenprognose",
+    "cumulativeForecast": "Kumulierte Prognose",
+    "monthly": "Monatlich",
+    "quarterly": "Vierteljährlich",
+    "semiAnnual": "Halbjährlich",
+    "annual": "Jährlich",
+    "incomePerMonthWithTrailingWindows": "Eingegangene Einnahmen pro Monat, mit dem zurückliegenden Quartal, Halbjahr und dem Jahr bis heute.",
+    "hints": {
+      "monthly": "In diesem Monat eingegangene Einnahmen.",
+      "quarterly": "Einnahmen dieses Monats und der zwei Monate davor.",
+      "semiAnnual": "Einnahmen dieses Monats und der fünf Monate davor.",
+      "annual": "Einnahmen dieses Monats und der elf Monate davor.",
+      "total": "Laufende Summe von Januar bis zu diesem Monat."
+    }
+  },
+  "invoicesReport": {
+    "thisReportCanBeUsed": "Mit diesem Bericht können Sie einen benutzerdefinierten Export von Rechnungen mit bis zu 5 Filtern erstellen.",
+    "creationDate": "Erstellungsdatum",
+    "totalcountInvoiceSFound": "{totalCount} Rechnung(en) gefunden",
+    "userId": "Benutzer-ID"
+  },
+  "monthlyOrders": {
+    "thisReportGivesABreakdown": "Dieser Bericht zeigt die bestellten Einheiten jedes Produkts in einem Monat: eine pro Bestellposition, bei ausstehenden und angenommenen Bestellungen.",
+    "unitsSold": "Verkaufte Einheiten"
+  },
+  "monthlyTransactions": {
+    "thisReportProvidesASummary": "Dieser Bericht liefert eine Zusammenfassung der täglichen Zahlungstransaktionen eines Monats. Der Wert „Ausgang“ umfasst sowohl Ausgabentransaktionen als auch Erstattungen.",
+    "noTransactionsFoundForThis": "Keine Transaktionen für diesen Monat gefunden."
+  },
+  "newCustomers": {
+    "newCustomers": "Neukunden",
+    "monthlyNewSignupsAndOrder": "Monatliche Neuregistrierungen und Bestellaktivität",
+    "newSignups": "Neuregistrierungen",
+    "ordersPlaced": "Aufgegebene Bestellungen",
+    "ordersCompleted": "Abgeschlossene Bestellungen",
+    "conversionRate": "Konversionsrate",
+    "newSignupsHint": "Im Monat erstellte Kundenkonten.",
+    "ordersPlacedHint": "Im Monat aufgegebene Bestellungen.",
+    "ordersCompletedHint": "Im Monat aufgegebene Bestellungen, die abgeschlossen sind.",
+    "conversionRateHint": "Im Monat aufgegebene Bestellungen als Prozentsatz der Neuregistrierungen des Monats."
+  },
+  "productSuspensions": {
+    "productSuspensions": "Produktsperrungen",
+    "thisReportAllowsYouTo": "Mit diesem Bericht können Sie alle gesperrten Produkte und die für ihre Sperrung angegebenen Gründe prüfen.",
+    "serviceId": "Service-ID",
+    "suspendReason": "Sperrgrund",
+    "noSuspendedServices": "Keine gesperrten Services."
+  },
+  "promotions": {
+    "promotions": "Aktionen",
+    "thisReportShowsHowOften": "Wie oft jeder Aktionscode verwendet wird und zu welchem Betrag die aktiven Services damit verlängert werden.",
+    "code": "Code",
+    "services": "Services",
+    "activeServices": "Aktive Services",
+    "monthlyRevenue": "Monatlicher Umsatz",
+    "monthlyRevenueHint": "Der Betrag, zu dem die aktiven Services mit diesem Code jeden Monat verlängert werden; ein Jahresservice zählt als ein Zwölftel.",
+    "noPromotionCodesUsed": "Bei keinem Service wird ein Aktionscode verwendet."
+  },
+  "salesTax": {
+    "salesTaxLiability": "Umsatzsteuerschuld",
+    "thisReportShowsSalesTax": "Dieser Bericht zeigt die Umsatzsteuerschuld für den gewählten Zeitraum.",
+    "currencySummary": "{currency}: {count} Rechnungen, {invoiced} abgerechnet, {tax} Steuerschuld",
+    "tax": "Steuer",
+    "credit": "Guthaben",
+    "noInvoicesFoundForThis": "Keine Rechnungen für diesen Zeitraum gefunden.",
+    "thisReportExcludesInvoicesThat": "Dieser Bericht schließt Rechnungen aus, die das Guthaben eines Kunden verändern, da diese Einnahmen erfasst und gemeldet werden, wenn sie auf Rechnungen für Produkte/Services angewendet werden."
+  },
+  "serverRevenueForecasts": {
+    "serverRevenueForecasts": "Umsatzprognosen je Server",
+    "thisReportShowsWhatTheActive": "Der Betrag, zu dem die aktiven Services auf jedem Server verlängert werden, pro Monat und über ein Jahr.",
+    "server": "Server",
+    "hostname": "Hostname",
+    "activeServices": "Aktive Services",
+    "monthlyRevenue": "Monatlicher Umsatz",
+    "annualRevenue": "Jährlicher Umsatz",
+    "monthlyRevenueHint": "Der Betrag, zu dem die aktiven Services auf dem Server jeden Monat verlängert werden; ein Jahresservice zählt als ein Zwölftel.",
+    "annualRevenueHint": "Das Zwölffache des monatlichen Umsatzes.",
+    "noServers": "Keine Server."
+  },
+  "servicesReport": {
+    "services": "Services",
+    "thisReportCanBeUsed": "Mit diesem Bericht können Sie einen benutzerdefinierten Export von Services mit bis zu 5 Filtern erstellen. Der CSV-Export ist über das Menü „Tools“ rechts verfügbar.",
+    "terminationDate": "Beendigungsdatum",
+    "totalcountServiceSFound": "{totalCount} Service(s) gefunden",
+    "noServicesFound": "Keine Services gefunden.",
+    "userId": "Benutzer-ID",
+    "productId": "Produkt-ID",
+    "terminatedAt": "Beendet am"
+  },
+  "sslMonitoring": {
+    "sslCertificateMonitoring": "Überwachung von SSL-Zertifikaten",
+    "displaysAListOfDomains": "Zeigt eine Liste von Domains mit ihrem SSL-Status an, sofern verfügbar.",
+    "issuer": "Aussteller",
+    "expiry": "Ablauf",
+    "lastUpdate": "Letzte Aktualisierung",
+    "valid": "Gültig",
+    "noSsl": "Kein SSL",
+    "groups": {
+      "within30Days": "Läuft innerhalb von 30 Tagen ab",
+      "within90Days": "Läuft innerhalb von 90 Tagen ab",
+      "within180Days": "Läuft innerhalb von 180 Tagen ab",
+      "over180Days": "Läuft in über 180 Tagen ab",
+      "noSsl": "Kein SSL erkannt"
+    },
+    "showInactive": "Inaktive Domains anzeigen",
+    "showInactiveHint": "Auch Domains auflisten, die nicht aktiv sind.",
+    "recheck": "SSL-Status erneut prüfen",
+    "recheckHint": "Die Zertifikate jetzt erneut prüfen.",
+    "noDomains": "Keine Domains zu überwachen.",
+    "summary": "Domains pro Ablaufgruppe"
+  },
+  "supportTicketsReport": {
+    "thisReportShowsABreakdown": "Dieser Bericht zeigt eine Aufschlüsselung der pro Administrator bearbeiteten Support-Tickets in einem bestimmten Monat.",
+    "admin": "Administrator",
+    "averagePerDay": "Durchschnitt pro Tag",
+    "byDay": "Nach Tag",
+    "totalHint": "Ticket-Antworten, die der Administrator im Monat geschrieben hat.",
+    "averagePerDayHint": "Antworten im Monat geteilt durch die Tage des Monats.",
+    "dayReplies": "Tag {day}: {count} Antworten | Tag {day}: {count} Antwort | Tag {day}: {count} Antworten"
+  },
+  "ticketFeedbackComments": {
+    "ticketFeedbackComments": "Ticket-Feedback-Kommentare",
+    "thisReportAllowsYouTo": "Mit diesem Bericht können Sie die von Kunden abgegebenen Feedback-Kommentare prüfen.",
+    "staffName": "Name des Mitarbeiters",
+    "ticketId": "Ticket-ID",
+    "feedbackLeft": "Feedback abgegeben",
+    "rating": "Bewertung",
+    "comments": "Kommentare",
+    "ratingHint": "Bewertung auf der Skala von 1 (schlechteste) bis 10 (beste)."
+  },
+  "ticketFeedbackScores": {
+    "ticketFeedbackScores": "Ticket-Feedback-Bewertungen",
+    "thisReportProvidesASummary": "Dieser Bericht liefert eine Zusammenfassung der erhaltenen Bewertungen pro Mitarbeiter für einen bestimmten Zeitraum.",
+    "staffName": "Name des Mitarbeiters",
+    "totalRatings": "Bewertungen gesamt",
+    "averageRating": "Durchschnittliche Bewertung",
+    "distribution": "Bewertungen (1 bis 10)",
+    "distributionHint": "Wie sich die Bewertungen auf schlecht, mittel und gut verteilen. Bewegen Sie den Mauszeiger über einen Abschnitt, um dessen Anzahl zu sehen.",
+    "totalRatingsHint": "Bewertungen, die der Mitarbeiter im Zeitraum erhalten hat.",
+    "averageRatingHint": "Mittelwert aller Bewertungen auf der Skala von 1 bis 10.",
+    "bands": {
+      "poor": "Schlecht ({from} bis {to})",
+      "fair": "Mittel ({from} bis {to})",
+      "good": "Gut ({from} bis {to})"
+    }
+  },
+  "ticketRatingsReviewer": {
+    "supportTicketRatingsReviewer": "Prüfung der Support-Ticket-Bewertungen",
+    "thisReportIsShowingAll": "Dieser Bericht zeigt alle Ticket-Antworten mit 0 Antworten und Bewertung 1 im gewählten Zeitraum zur Prüfung.",
+    "rating": "Bewertung",
+    "ticket": "Ticket Nr.",
+    "admin": "Administrator",
+    "ratingAtLeast": "{rating}+",
+    "ratingHint": "Bewertung auf der Skala von 1 (schlechteste) bis 10 (beste)."
+  },
+  "ticketTags": {
+    "ticketTagsOverview": "Übersicht der Ticket-Tags",
+    "thisReportProvidesAnOverview": "Dieser Bericht liefert eine Übersicht der Tickets zugewiesenen Ticket-Tags für einen bestimmten Zeitraum.",
+    "tag": "Tag",
+    "count": "Anzahl",
+    "countHint": "Tickets, die im Zeitraum das Tag tragen."
+  },
+  "topClients": {
+    "top10ClientsByIncome": "Top 10 Kunden nach Einnahmen",
+    "thisReportShowsThe10": "Dieser Bericht zeigt die 10 Kunden mit den höchsten Netto-Rechnungseinnahmen: Zahlungen abzüglich Erstattungen und Gebühren. Guthabenaufladungen sind keine Einnahmen.",
+    "noData": "Keine Daten",
+    "leader": "Spitzenkunde",
+    "totalIncome": "Gesamteinnahmen",
+    "rankedClients": "Kunden im Ranking",
+    "leaderHint": "Der Kunde mit den höchsten Nettoeinnahmen in der Rangliste.",
+    "totalIncomeHint": "Nettoeinnahmen aller Kunden in der Rangliste zusammen, in der Basiswährung.",
+    "rankedClientsHint": "Wie viele Kunden die Rangliste enthält, bis zu zehn."
+  },
+  "transactionsReport": {
+    "thisReportCanBeUsed": "Mit diesem Bericht können Sie einen benutzerdefinierten Export von Transaktionen mit bis zu 5 Filtern erstellen.",
+    "totalcountTransactionSFound": "{totalCount} Transaktion(en) gefunden",
+    "noTransactionsFound": "Keine Transaktionen gefunden.",
+    "userId": "Benutzer-ID"
+  },
+  "oss": {
+    "ossReport": "OSS-Bericht (One-Stop-Shop)",
+    "thisReportProvidesTheInformation": "Dieser Bericht liefert die Angaben für die vierteljährliche Umsatzsteuererklärung im One-Stop-Shop-Verfahren (OSS): den abgerechneten Wert und die eingezogene Umsatzsteuer (USt.) pro EU-Mitgliedstaat und Steuersatz. Eine Erstattung und eine Gutschrift werden von dem Quartal abgezogen, in dem sie erfolgten. Klären Sie mit Ihrer Steuerbehörde, wie die Zahlen zu übermitteln sind.",
+    "selectQuarter": "Quartal auswählen",
+    "countryName": "Ländername",
+    "countryCode": "Ländercode",
+    "vatRate": "Umsatzsteuersatz",
+    "numberOfInvoices": "Anzahl der Rechnungen",
+    "totalValueInvoicedExclVat": "Gesamter abgerechneter Wert (ohne USt.)",
+    "totalVatCollected": "Gesamte eingezogene USt.",
+    "totals": "Summen",
+    "ifACountryDoesNot": "* Wenn ein Land nicht im Bericht erscheint, wurde im gewählten Zeitraum keine Umsatzsteuer von Kunden in diesem Land eingezogen.",
+    "period": "Für den Zeitraum {from} bis {to}"
+  },
+  "titles": {
+    "reports": {
+      "clientStatement": "Kundenkontoauszug",
+      "customerRetentionTime": "Kundenbindungsdauer",
+      "diskUsageSummary": "Zusammenfassung der Speicherplatznutzung",
+      "domainRenewalEmails": "E-Mails zur Domain-Verlängerung",
+      "incomeByProduct": "Einnahmen nach Produkt",
+      "monthlyOrders": "Monatliche Bestellungen",
+      "monthlyTransactions": "Monatliche Transaktionen",
+      "promotionsUsage": "Nutzung von Aktionen",
+      "supportTicketReplies": "Support-Ticket-Antworten",
+      "ticketRatingsReviewer": "Prüfung der Ticket-Bewertungen",
+      "ticketTags": "Ticket-Tags",
+      "oss": "OSS (One-Stop-Shop)"
+    },
+    "incomeByProductFor": "Einnahmen nach Produkt für {month} {year}",
+    "salesByProductFor": "Verkäufe nach Produkt für {month} {year}",
+    "monthlyTransactionsFor": "Monatlicher Transaktionsbericht für {month} {year}",
+    "supportTicketRepliesFor": "Support-Ticket-Antworten für {month} {year}"
+  },
+  "common": {
+    "years": "{count} J.",
+    "clientCount": "{count} Kunde | {count} Kunden",
+    "convertedToBaseCurrency": "Beträge in {currency}, umgerechnet aus der jeweiligen Rechnungswährung zu den konfigurierten Kursen.",
+    "recurringInBaseCurrency": "Wiederkehrende Beträge in {currency} umgerechnet, längere Zyklen auf ihre Monate verteilt."
+  },
+  "menu": {
+    "dailyPerformance": "Täglich",
+    "annualIncome": "Jahreseinnahmen",
+    "incomeForecast": "Prognose",
+    "incomeByProduct": "Nach Produkt",
+    "invoices": "Rechnungen",
+    "agingInvoices": "Überfällig",
+    "monthlyTransactions": "Transaktionen / Monat",
+    "transactions": "Transaktionen",
+    "salesTax": "Umsatzsteuer",
+    "oss": "OSS",
+    "directDebit": "Lastschrift",
+    "creditsReviewer": "Guthaben",
+    "clients": "Kunden",
+    "newCustomers": "Neukunden",
+    "topClients": "Top-Kunden",
+    "clientsByCountry": "Nach Land",
+    "customerRetention": "Kundenbindung",
+    "clientStatement": "Kontoauszug",
+    "monthlyOrders": "Bestellungen / Monat",
+    "services": "Services",
+    "productSuspensions": "Sperrungen",
+    "promotions": "Aktionen",
+    "domains": "Domains",
+    "domainRenewalEmails": "Verlängerungs-E-Mails",
+    "sslMonitoring": "SSL-Überwachung",
+    "supportTicketReplies": "Ticket-Antworten",
+    "ticketTags": "Tags",
+    "ticketFeedbackScores": "Feedback-Bewertungen",
+    "ticketFeedbackComments": "Feedback-Kommentare",
+    "ticketRatingsReviewer": "Bewertungsprüfung",
+    "diskUsage": "Speicherplatz",
+    "serverRevenueForecasts": "Server-Umsatz"
+  },
+  "groups": {
+    "overview": "Übersicht",
+    "finance": "Finanzen",
+    "clients": "Kunden",
+    "ordersServices": "Bestellungen und Services",
+    "domains": "Domains",
+    "support": "Support",
+    "servers": "Server"
+  },
+  "sidebar": {
+    "search": "Berichte durchsuchen",
+    "empty": "Keine Berichte gefunden"
+  }
+}

@@ -12,6 +12,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ProductFeaturesModal from '@/components/settings/ProductFeaturesModal.vue'
 import ProductFormModal from '@/components/settings/ProductFormModal.vue'
+import ProductGroupFormModal from '@/components/settings/ProductGroupFormModal.vue'
+import ProductGroupsDialog from '@/components/settings/ProductGroupsDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -39,7 +41,7 @@ import { formatAffixed } from '@/lib/money'
 import { Icon } from '@/lib/icons'
 import { useSettingsStore } from '@/stores/settings'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
-import type { CreateProductPayload, Product, ProductListFilters } from '@/types/product'
+import type { CreateProductPayload, Product, ProductGroup, ProductGroupPayload, ProductListFilters } from '@/types/product'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { useListQuery } from '@/composables/useListQuery'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -58,6 +60,7 @@ const { t } = useI18n()
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
   { label: t('settings.products.createProduct'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'products-create', onSelect: openCreate },
+  { label: t('settings.productGroups.manage'), icon: Icon.List, variant: UiButtonVariant.Secondary, testid: 'products-groups', onSelect: openGroups },
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `ProductListFilters` member. */
@@ -88,6 +91,18 @@ const featuresProduct = ref<Product | null>(null)
 
 /** True while saving a product. */
 const saving = ref(false)
+
+/** Whether the product groups dialog is visible. */
+const showGroups = ref(false)
+
+/** Whether the group form dialog is visible. */
+const showGroupForm = ref(false)
+
+/** Group being edited, or null for create mode. */
+const editingGroup = ref<ProductGroup | null>(null)
+
+/** True while saving a group. */
+const savingGroup = ref(false)
 
 /** The base currency, used to format the grid's Monthly/Annual columns. */
 const baseCurrency = computed(() => currenciesStore.currencies.find((c) => c.isBase))
@@ -241,6 +256,43 @@ const formatPrice = (amount: number | null): string => {
     return amount.toFixed(2)
   }
   return formatAffixed(amount, currency)
+}
+
+/** Opens the product groups dialog, reading the methods the checkout offers so a group can be restricted to them. */
+const openGroups = (): void => {
+  void store.fetchPaymentMethods()
+  showGroups.value = true
+}
+
+/**
+ * Opens the group form in create mode, or in edit mode for the given group.
+ *
+ * @param group - The group to edit, or null to create one.
+ */
+const openGroupForm = (group: ProductGroup | null): void => {
+  store.actionError = null
+  store.fieldErrors = {}
+  editingGroup.value = group
+  showGroupForm.value = true
+}
+
+/**
+ * Handles the save event of the group form: updates the edited group, or creates a new one, then reads the groups again.
+ *
+ * @param payload - The group data to save.
+ */
+const handleGroupSave = async (payload: ProductGroupPayload): Promise<void> => {
+  feedback.clear()
+  savingGroup.value = true
+  const saved = editingGroup.value
+    ? await store.updateProductGroup(editingGroup.value.id, payload)
+    : (await store.createProductGroup(payload)) !== null
+  savingGroup.value = false
+  if (saved) {
+    showGroupForm.value = false
+    feedback.show(t('shared.changesSavedSuccessfully'), false)
+    await store.fetchProductGroups()
+  }
 }
 
 /** Opens the dialog in create mode. */
@@ -475,6 +527,25 @@ const productActions = (product: Product): UiMenuAction[] => {
       @save="handleSave"
       @clear-field-error="store.clearFieldError"
       @close="showModal = false"
+    />
+
+    <!-- Product groups: the list, then the form of one group -->
+    <ProductGroupsDialog
+      v-if="showGroups"
+      :groups="store.productGroups"
+      :methods="store.paymentMethods"
+      @add="openGroupForm(null)"
+      @edit="openGroupForm"
+      @close="showGroups = false"
+    />
+    <ProductGroupFormModal
+      v-if="showGroupForm"
+      :group="editingGroup"
+      :methods="store.paymentMethods"
+      :saving="savingGroup"
+      :error="store.actionError"
+      @save="handleGroupSave"
+      @close="showGroupForm = false"
     />
 
     <!-- Specification editor -->

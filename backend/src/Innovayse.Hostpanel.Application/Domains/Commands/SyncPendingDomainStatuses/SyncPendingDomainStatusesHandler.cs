@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
@@ -126,7 +127,7 @@ public sealed class SyncPendingDomainStatusesHandler
     private async Task SyncDomainAsync(RegisteredDomain domain, CancellationToken ct)
     {
         var registrar = await _registrars.ResolveAsync(domain, ct);
-        var result = await registrar.CheckDomainActiveAsync(domain.Name, ct);
+        var result = await registrar.CheckDomainActiveAsync(domain.ToRef(), ct);
 
         if (!result.Success)
         {

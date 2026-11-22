@@ -50,23 +50,6 @@
     "notTestedYet": "Not tested yet",
     "setupNote": "Setup Note"
   },
-  "cwp7Integration": {
-    "cwp7": "CWP7",
-    "controlWebPanel7Provisioning": "Control Web Panel 7: provisioning provider for managing hosting accounts, packages, and server resources.",
-    "hostingProvisioning": "Hosting / Provisioning",
-    "moduleType": "Module Type",
-    "serverModule": "Server Module",
-    "developer": "Developer",
-    "createNewServer": "Create New Server",
-    "addACwp7ServerWith": "Add a CWP7 server with hostname, credentials, and nameservers",
-    "createNewProduct": "Create New Product",
-    "createAHostingPlanLinked": "Create a hosting plan linked to a CWP7 server",
-    "cwp7Servers": "CWP7 Servers",
-    "lengthServerValue": "Servers: {length}",
-    "noCwp7ServersConfiguredYet": "No CWP7 servers configured yet.",
-    "addYourFirstServer": "Add your first server →",
-    "accountsUsage": "{usage} accounts"
-  },
   "integrations": {
     "lengthIntegrationValue": "Integrations: {length}",
     "activecountActive": "· {activeCount} active",

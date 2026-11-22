@@ -34,7 +34,7 @@ public sealed class CreateProductValidatorTests
     [Fact]
     public void FulfilmentFields_WhenValid_Pass()
     {
-        _validator.TestValidate(Command(sku: " lic-pro.v2 ", metadata: "{\"tier\":\"pro\"}", gracePeriodDays: 30))
+        _validator.TestValidate(Command(sku: " lic-pro.v2:Eu ", metadata: "{\"tier\":\"pro\"}", gracePeriodDays: 30))
             .ShouldNotHaveAnyValidationErrors();
     }
 
@@ -56,6 +56,8 @@ public sealed class CreateProductValidatorTests
     [InlineData("LIC--PRO")]
     [InlineData("-LIC")]
     [InlineData("LIC/PRO")]
+    [InlineData("PLAN:PRO:1")]
+    [InlineData("PLAN:")]
     public void Sku_WhenMalformed_IsRefusedWithTheSkuCode(string sku)
     {
         _validator.TestValidate(Command(sku: sku))

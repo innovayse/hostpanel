@@ -29,9 +29,6 @@ internal static class Layers
     /// <summary>The CWP provider plugin.</summary>
     public static readonly Assembly ProviderCwp = typeof(Innovayse.Providers.CWP.CwpProvisioningProvider).Assembly;
 
-    /// <summary>The CWP7 provider plugin.</summary>
-    public static readonly Assembly ProviderCwp7 = typeof(Innovayse.Providers.CWP7.Cwp7ProvisioningProvider).Assembly;
-
     /// <summary>
     /// The types a developer wrote in an assembly: loadable types minus compiler-generated closures,
     /// state machines and display classes, which no layout rule is about.

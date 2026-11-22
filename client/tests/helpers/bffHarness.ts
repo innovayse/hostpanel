@@ -44,7 +44,7 @@ export interface FakeEventInit {
   /** The request path. */
   path?: string
   /** The parsed query string that `getQuery` returns. */
-  query?: Record<string, string>
+  query?: Record<string, string | string[]>
   /** The HTTP method. */
   method?: HttpMethod
   /** The address of the connection itself; empty (unknown) when a test sends none. */

@@ -21,10 +21,6 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.MaxMind;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
-using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
-using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm.Settings;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram.Settings;
@@ -35,11 +31,11 @@ using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
-using Innovayse.Hostpanel.Infrastructure.Registrar;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Settings;
@@ -54,7 +50,6 @@ using Innovayse.Hostpanel.Infrastructure.Vat;
 using Innovayse.Hostpanel.Infrastructure.Vat.Settings;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
-using Innovayse.Providers.CWP7;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -435,8 +430,9 @@ public static class DependencyInjection
         services.AddScoped<IServiceOwnership, ServiceOwnership>();
         services.AddScoped<IPluginSlotContextReader, PluginSlotContextReader>();
 
-        // The budgets of plugin host access, per plugin and client, over the plugin limiters: the ssh-keys tier for SSH keys
-        // (#758) and the hosting-resources tier for websites and databases (#1294).
+        // The budgets of plugin host access, per plugin and client or gateway order, over the plugin limiters: the ssh-keys tier
+        // for SSH keys (#758), the hosting-resources tier for websites and databases (#1294) and the plugin-order-read tier for
+        // a payment callback's order read (#1356).
         services.AddScoped<IPluginHostAccessLimiter, PluginHostAccessLimiter>();
         services.AddScoped<IPluginHostFactsReader, PluginHostFactsReader>();
 
@@ -451,11 +447,11 @@ public static class DependencyInjection
 
         // Provisioning behaviour switches. Left unset everywhere but development, where
         // appsettings.Development.json turns UseFakeProvider on so the setup flow can complete
-        // without a live CWP7 panel to call.
+        // without a live cPanel server to call.
         // The cPanel ports are checked on start, with the rest of the section.
         services.AddProvisioningOptions(configuration);
 
-        // Provisioning provider factory: creates per-server providers (CWP7, cPanel, etc.)
+        // Provisioning provider factory: creates per-server providers (cPanel, or the panel plugin that serves the module)
         services.AddScoped<IProvisioningProviderFactory, ProvisioningProviderFactory>();
         // The username rules staff-facing handlers ask, so a name a panel would refuse fails when it is saved.
         services.AddSingleton<IPanelAccountRules, PanelAccountRules>();
@@ -466,6 +462,7 @@ public static class DependencyInjection
         services.AddScoped<ISshKeyProviderFactory, SshKeyProviderFactory>();
         services.AddScoped<IHostingResourceProviderFactory, HostingResourceProviderFactory>();
         services.AddScoped<ISshServiceContextResolver, SshServiceContextResolver>();
+        services.AddScoped<IPluginServiceConnectionReader, PluginServiceConnectionReader>();
         services.AddScoped<IHostedAccountOperations, HostedAccountOperations>();
         services.AddScoped<ISshKeyRevoker, SshKeyRevoker>();
 
@@ -577,6 +574,7 @@ public static class DependencyInjection
         // profile because this is a GET with no side effects. The base address comes from
         // ReleaseOptions so a fork or an air-gapped deployment can point at its own feed.
         services.AddSingleton<IInstalledVersionProvider, InstalledVersionProvider>();
+        services.AddSingleton<IHostSdkVersionProvider, HostSdkVersionProvider>();
         services.AddHttpClient<IReleaseFeed, GitHubReleasesClient>((sp, client) =>
         {
             var releaseOptions = sp.GetRequiredService<IOptions<ReleaseOptions>>().Value;
@@ -676,7 +674,7 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp);
 #pragma warning restore CS0618
-        // Named twin of the typed registration above, for the same reason the CWP7 pair exists:
+        // Named twin of the typed registration above:
         // CwpProvisioningProvider builds its own CwpApiClient (the interface exposes only the
         // server-info call) and resolves this client by name. That keeps the
         // provisioning path, the one that matters most, inside the timeout and the no-retry pipeline.
@@ -687,37 +685,13 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp);
 
-        // CWP7 API client (named + typed so the factory can also resolve it by name).
-        // Both registrations carry the same profile for the same two reasons as CWP above; the
-        // named one is what ProvisioningProviderFactory resolves per server, so it is what
-        // covers the provisioning path, the one that matters most.
-        services.AddHttpClient(HttpClientNames.Cwp7, client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Cwp7;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Cwp7);
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
-        services.AddHttpClient<IHostingPanelV7ApiClient, Cwp7ApiClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Cwp7;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Cwp7);
-#pragma warning restore CS0618
-
-        // Plesk XML API client, named only: the provider factory and the connection tester both
-        // build a PleskApiClient over it per server, so one registration covers both paths.
-        services.AddHttpClient(HttpClientNames.Plesk, client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Plesk;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Plesk);
-
-        // WHM API client for cPanel servers, named only, like Plesk. The chain (no request logging, no
+        // WHM API client for cPanel servers, named only: the factory and the tester build a client over it per server. The chain (no request logging, no
         // redirects, the WHM resilience profile) is one extension, which the tests resolve as well.
         services.AddCPanelWhmHttpClient();
+
+        // The transport every panel, virtual server and registrar plugin reaches its servers through: the guarded named
+        // client with no redirect and no retry, and the per server choice to trust a self signed certificate.
+        services.AddPanelTransport();
 
         // Migration
         services.AddScoped<MigrationPullWorker>();
@@ -791,52 +765,9 @@ public static class DependencyInjection
             .AddReadOnlyResilience(o => o.Migration);
 
         // Domains
-        services.AddScoped<IRegistrarProvider, NameAmRegistrarProvider>();
-        services.AddScoped<IRegistrarProviderFactory, RegistrarProviderFactory>();
         services.AddScoped<RegistrarProviderResolver>();
         services.AddScoped<RegistrantContactReader>();
         services.AddScoped<RenewalSettingsReader>();
-        services.AddScoped<NameAmRegistrarProvider>();
-        services.AddScoped<IIntegrationConnectionProbe, NameAmConnectionProbe>();
-        services.AddScoped<NamecheapRegistrarProvider>();
-        // One access token per Name.am connection for the whole process: the client itself is
-        // created per request and could not keep it.
-        services.AddSingleton<NameAmTokenStore>();
-        // Reads and purchases on the same client, so the predicate has to tell them apart rather
-        // than the client being retried wholesale. GET and PUT are repeated, Name.am's PUT is a
-        // whole-resource update of nameservers, contacts or the lock, and POST only for the
-        // availability check and the login, never for /client/carts/purchase, which registers,
-        // transfers or renews a domain and bills for it.
-        services.AddHttpClient<NameAmClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Registrar;
-        })
-            .AddOutboundAddressGuard()
-            .AddNameAmResilience();
-        services.AddOptions<NameAmOptions>()
-            .Bind(configuration.GetSection(NameAmOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{NameAmOptions.SectionName} is partly configured: Email and Password must either "
-                    + "both be set or the whole section left unset.")
-            .ValidateOnStart();
-
-        // Every Namecheap call is a GET to the same URL, so the method says nothing and the
-        // operation is the Command query parameter, which ranges from namecheap.domains.check
-        // to namecheap.domains.create on the same verb. The predicate reads that parameter and
-        // repeats only the lookups; anything it does not recognise counts as a write.
-        services.AddHttpClient<NamecheapClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Registrar;
-        })
-            .AddNamecheapResilience();
-        services.AddOptions<NamecheapOptions>()
-            .Bind(configuration.GetSection(NamecheapOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{NamecheapOptions.SectionName} is partly configured: ApiUser, ApiKey and ApiUrl "
-                    + "must either all be set or the whole section left unset.")
-            .ValidateOnStart();
 
         // Plugins: the build's own folder first (its plugins cannot be removed or shadowed), then
         // the upload folder. The options are read here as well as bound, because the loader runs
@@ -913,6 +844,16 @@ public static class DependencyInjection
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
         // whichever resolver or runner asks for it. Scoped: it reads the settings through the request's context.
         services.AddScoped<PluginActivator>();
+
+        // A hosting panel plugin is reached through the host's own provisioning port: the resolver maps a server's module id to
+        // the plugin that serves it, the caller activates and runs it, the reader gives it the server's stored password, and the
+        // catalog lists the modules an administrator can pick. The adapters built on them are the provisioning factory, the
+        // connection tester and the disk usage service.
+        services.AddScoped<IServerModulePluginResolver, ServerModulePluginResolver>();
+        services.AddScoped<IServerModuleCatalog, ServerModuleCatalog>();
+        services.AddScoped<PanelPluginCaller>();
+        services.AddScoped<PanelConnectionReader>();
+        services.AddScoped<PanelPluginAccountReader>();
         services.AddScoped<IFulfilmentPluginResolver, FulfilmentPluginResolver>();
         services.AddScoped<IIdentityPluginResolver, IdentityPluginResolver>();
 
@@ -925,6 +866,11 @@ public static class DependencyInjection
 
         // A plugin's IPluginStatus, through the same activation gates, bounded by PluginApi:StatusTimeoutSeconds.
         services.AddScoped<IPluginStatusProbe, PluginStatusProbe>();
+
+        // Registrars are plugins: the factory turns a module (a plugin id) into the one adapter that calls the plugin, and the
+        // catalogue answers from the manifests which registrars are installed and what each offers.
+        services.AddScoped<IRegistrarProviderFactory, PluginRegistrarProviderFactory>();
+        services.AddScoped<IRegistrarModuleCatalogue, RegistrarModuleCatalogue>();
 
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one

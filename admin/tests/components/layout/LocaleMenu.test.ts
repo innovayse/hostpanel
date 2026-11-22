@@ -22,7 +22,7 @@ describe('LocaleMenu', () => {
     expect(trigger.text()).toBe('en')
     await trigger.trigger('click')
 
-    expect(wrapper.findAll('[role="menuitemradio"]').map(item => item.text())).toEqual(['English', 'Հայերեն', 'Русский', 'Spanish'])
+    expect(wrapper.findAll('[role="menuitemradio"]').map(item => item.text())).toEqual(['English', 'Հայերեն', 'Русский', 'Deutsch', 'Español'])
     expect(wrapper.get('[data-testid="locale-option-en"]').attributes('aria-checked')).toBe('true')
     expect(wrapper.get('[data-testid="locale-option-ru"]').attributes('aria-checked')).toBe('false')
   })

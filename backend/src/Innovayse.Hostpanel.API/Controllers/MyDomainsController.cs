@@ -232,6 +232,9 @@ public sealed class MyDomainsController : BaseApiController
     /// the update; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_NAMESERVER_INVALID</c> when the registrar rejects a nameserver; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPut("{id:int}/nameservers")]
     [Authorize(Policy = Policies.Client)]
@@ -243,6 +246,7 @@ public sealed class MyDomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateNameserversAsync(
         int id, [FromBody] UpdateMyDomainNameserversCommand command, CancellationToken ct)
@@ -307,6 +311,9 @@ public sealed class MyDomainsController : BaseApiController
     /// when the registrar rejects the update; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the contact; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPut("{id:int}/whois")]
     [Authorize(Policy = Policies.Client)]
@@ -318,6 +325,7 @@ public sealed class MyDomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ModifyWhoisContactAsync(
         int id, [FromBody] ModifyMyDomainContactCommand command, CancellationToken ct)
@@ -338,6 +346,9 @@ public sealed class MyDomainsController : BaseApiController
     /// rejects the request or returns no code; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 409 also with <c>REGISTRAR_TRANSFER_NOT_ALLOWED</c> when the registrar does not allow the transfer; 503 also
+    /// with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPost("{id:int}/epp")]
     [Authorize(Policy = Policies.Client)]
@@ -441,6 +452,9 @@ public sealed class MyDomainsController : BaseApiController
     /// addition; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects the record; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPost("{id:int}/dns")]
     [Authorize(Policy = Policies.Client)]
@@ -452,6 +466,7 @@ public sealed class MyDomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> AddDnsRecordAsync(
         int id, [FromBody] AddMyDomainDnsRecordCommand command, CancellationToken ct)
@@ -471,6 +486,9 @@ public sealed class MyDomainsController : BaseApiController
     /// registrar rejects the update; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects the record; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPut("{id:int}/dns/{recordId:int}")]
     [Authorize(Policy = Policies.Client)]
@@ -482,6 +500,7 @@ public sealed class MyDomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateDnsRecordAsync(
         int id, int recordId, [FromBody] UpdateMyDomainDnsRecordCommand command, CancellationToken ct)

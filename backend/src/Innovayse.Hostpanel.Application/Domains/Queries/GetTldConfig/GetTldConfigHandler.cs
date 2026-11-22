@@ -54,7 +54,7 @@ public sealed class GetTldConfigHandler
         return new TldConfigDto(
             config.Id,
             config.Tld,
-            config.RegistrarModule.ToString(),
+            config.RegistrarModule,
             config.Currency,
             config.SellCurrency,
             config.IsEnabled,

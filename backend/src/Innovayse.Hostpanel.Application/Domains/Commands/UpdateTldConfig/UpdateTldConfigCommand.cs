@@ -6,7 +6,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.UpdateTldConfig;
 /// the route (<c>command with { Id = id }</c>): a non-nullable member of a bound body is
 /// implicitly required, so the request would be refused before the overlay could run.
 /// </param>
-/// <param name="RegistrarModule">The registrar module name responsible for this TLD.</param>
+/// <param name="RegistrarModule">The id of the registrar plugin responsible for this TLD, in any letter case.</param>
 /// <param name="Currency">ISO 4217 currency code for cost prices (registrar currency).</param>
 /// <param name="SellCurrency">ISO 4217 currency code for sell prices (client-facing currency).</param>
 /// <param name="IsEnabled">Whether this TLD should be enabled for sale to clients.</param>

@@ -3,7 +3,6 @@
  * forwarding rules and renewal reminders.
  */
 
-import type { RegistrarModule } from '@/types/registrarmodule'
 
 /** Represents a domain registration. */
 export interface Domain {
@@ -67,6 +66,16 @@ export interface DomainRegistrar {
   reference: string | null
   /** EPP authorization code, or null when not available. */
   eppCode: string | null
+}
+
+/** The optional operations the registrar that holds a domain offers; the screen shows an action only when its flag is on. */
+export interface DomainCapabilities {
+  /** Whether the registrar can switch DNS management on and off. */
+  dnsManagement: boolean
+  /** Whether the registrar can forward the domain's mail. */
+  emailForwarding: boolean
+  /** Whether the registrar answers a WHOIS lookup. */
+  whois: boolean
 }
 
 /** The switches that can be turned on or off for a domain. */
@@ -141,6 +150,8 @@ export interface DomainDetail {
   emailForwardingRules: EmailForwardingRuleItem[]
   /** Domain reminder history. */
   reminders: DomainReminderItem[]
+  /** What the registrar that holds the domain offers. */
+  capabilities: DomainCapabilities
 }
 
 /** Nameserver DTO. */
@@ -197,8 +208,8 @@ export interface DomainListFilters {
   search?: string
   /** Keep only the domains in this lifecycle status. */
   status?: DomainStatus
-  /** Keep only the domains managed through this registrar module. */
-  registrarModule?: RegistrarModule
+  /** Keep only the domains managed through the registrar plugin with this id (any letter case). */
+  registrarModule?: string
 }
 
 /** Filter and paging of the domain list. */

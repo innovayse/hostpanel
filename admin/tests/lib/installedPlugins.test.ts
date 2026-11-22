@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { filterInstalledPlugins, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
-import { PluginStatus } from '@/types/plugin'
+import { PluginManifestRule, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
 
 /**
@@ -41,6 +41,19 @@ describe('installedPluginState', () => {
     expect(installedPluginState(makePlugin({ status: PluginStatus.Refused, isLoaded: false }))).toBe(InstalledPluginState.Refused)
     expect(installedPluginState(makePlugin({ isLoaded: false }))).toBe(InstalledPluginState.PendingRestart)
     expect(installedPluginState(makePlugin())).toBe(InstalledPluginState.Active)
+  })
+
+  it('tells an installed plugin whose assembly failed to load from a refused one, whatever its listing status', () => {
+    const failed = { isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load file or assembly' }
+
+    expect(installedPluginState(makePlugin(failed))).toBe(InstalledPluginState.LoadFailed)
+    expect(installedPluginState(makePlugin({ ...failed, status: PluginStatus.Refused }))).toBe(InstalledPluginState.LoadFailed)
+  })
+
+  it('treats any other broken rule as a refusal, not a load failure', () => {
+    const refused = { status: PluginStatus.Refused, isLoaded: false, refusedRule: PluginManifestRule.SdkNewerThanHost }
+
+    expect(installedPluginState(makePlugin(refused))).toBe(InstalledPluginState.Refused)
   })
 })
 

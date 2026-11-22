@@ -214,6 +214,13 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     public int EnrollRegistryInstanceIntervalSeconds { get; init; } = 60;
 
     /// <summary>
+    /// Minutes between the end of one sweep of expired plugin store values and the start of the next. An expired value is
+    /// already invisible to the plugin and ignored by its key count, so the sweep only frees the rows.
+    /// </summary>
+    [Range(1, 1440)]
+    public int SweepExpiredPluginDataIntervalMinutes { get; init; } = 15;
+
+    /// <summary>
     /// Seconds between the heartbeats a running migration pull writes. A pull saves its progress after
     /// every record, so this only bounds how often that save also refreshes the heartbeat.
     /// </summary>
@@ -326,6 +333,10 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets the schedule of the plugin registry enrolment.</summary>
     public JobSchedule EnrollRegistryInstance =>
         JobSchedule.Every(TimeSpan.FromSeconds(EnrollRegistryInstanceIntervalSeconds));
+
+    /// <summary>Gets the schedule of the sweep of expired plugin store values.</summary>
+    public JobSchedule SweepExpiredPluginData =>
+        JobSchedule.Every(TimeSpan.FromMinutes(SweepExpiredPluginDataIntervalMinutes));
 
     /// <summary>Gets the time between the heartbeats of a running migration pull, as a span.</summary>
     public TimeSpan MigrationHeartbeat => TimeSpan.FromSeconds(MigrationHeartbeatSeconds);

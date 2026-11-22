@@ -24,14 +24,6 @@ public static class OutboundHttpClientBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder);
 
         return builder.ConfigurePrimaryHttpMessageHandler(sp =>
-        {
-            var connector = sp.GetRequiredService<OutboundConnector>();
-            return new SocketsHttpHandler
-            {
-                AllowAutoRedirect = followRedirects,
-                ConnectTimeout = connector.ConnectTimeout,
-                ConnectCallback = connector.ConnectAsync,
-            };
-        });
+            sp.GetRequiredService<OutboundConnector>().CreateHandler(followRedirects));
     }
 }

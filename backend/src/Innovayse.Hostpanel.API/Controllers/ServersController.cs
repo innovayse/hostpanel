@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Commands.UpdateServer;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerSshSettings;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerSshSetup;
+using Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServerModules;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServerOptions;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServers;
 using Innovayse.Hostpanel.Application.Services.Commands.RevokeServerSshKeys;
@@ -58,8 +59,28 @@ public sealed class ServersController : BaseApiController
     }
 
     /// <summary>
+    /// The control panel modules a server can be given: the host's own plus the ones installed panel plugins declare. The server
+    /// form's module picker reads it, so a plugin's module is selectable the moment the plugin is installed.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the modules; 401 when the caller is not signed in;
+    /// 403 when the caller's role is not allowed;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("modules")]
+    [ProducesResponseType(typeof(IReadOnlyList<ServerModuleOptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListModulesAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ServerModuleOptionDto>>>(new ListServerModulesQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
     /// Every configured provisioning server as a lean option, by name, optionally filtered by module: the picker the group
-    /// form, the add existing service dialog, the service detail, the CWP 7 integration and the dashboard read whole.
+    /// form, the add existing service dialog, the service detail and the dashboard read whole.
     /// </summary>
     /// <param name="query">The optional module filter.</param>
     /// <param name="ct">Cancellation token.</param>

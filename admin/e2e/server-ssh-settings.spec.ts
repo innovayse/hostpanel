@@ -7,7 +7,7 @@
 import { HttpMethod } from '../src/types/http'
 import { SshAgentProfile, SshProviderFailure } from '../src/types/sshenums'
 import { expect, test } from '@playwright/test'
-import { hostServer, hostServerSsh, hostServerSshSetup, serverPage } from './fixtures/servers'
+import { hostServer, hostServerSsh, hostServerSshSetup, serverPage, serverModules } from './fixtures/servers'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../src/types/serverssh'
 import { json, stubApi } from './support/stubApi'
 
@@ -28,6 +28,7 @@ test('generating an identity shows an installer command that verifies the bundle
     routes: [
       json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       json(HttpMethod.Get, SSH_PATH, hostServerSsh),
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
       json(HttpMethod.Post, `/api/admin/servers/${hostServer.id}/ssh-identity`, generated),
@@ -54,6 +55,7 @@ test('enabling keeps the stored private key and stays in the dialog with a confi
     routes: [
       json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       { method: HttpMethod.Get, path: SSH_PATH, respond: () => ({ body: stored }) },
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
       {
@@ -92,6 +94,7 @@ test('a failed agent test says why in words', async ({ page }) => {
     routes: [
       json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       json(HttpMethod.Get, SSH_PATH, { ...hostServerSsh, isHealthy: false }),
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
       json(HttpMethod.Post, `${SSH_PATH}/test`, { isHealthy: false, agentVersion: null, error: SshProviderFailure.Unreachable, provider: null }),
@@ -113,6 +116,7 @@ test('a test against an agent installed for another server explains the mismatch
     routes: [
       json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       json(HttpMethod.Get, SSH_PATH, { ...hostServerSsh, isHealthy: false }),
       json(HttpMethod.Get, SETUP_PATH, hostServerSshSetup),
       json(HttpMethod.Post, `${SSH_PATH}/test`, {

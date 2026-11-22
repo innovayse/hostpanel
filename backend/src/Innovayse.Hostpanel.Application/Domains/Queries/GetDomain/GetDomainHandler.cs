@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
+using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,11 +14,16 @@ public sealed class GetDomainHandler
     /// <summary>The data context the aggregate is read from.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>Tells which optional operations the registrar that holds the domain offers.</summary>
+    private readonly RegistrarProviderResolver _registrars;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The data context the aggregate is read from.</param>
-    public GetDomainHandler(IHostpanelDbContext context)
+    /// <param name="registrars">Tells which optional operations the registrar that holds the domain offers.</param>
+    public GetDomainHandler(IHostpanelDbContext context, RegistrarProviderResolver registrars)
     {
         _context = context;
+        _registrars = registrars;
     }
 
     /// <summary>
@@ -40,7 +46,7 @@ public sealed class GetDomainHandler
                 $"Domain {query.DomainId} not found.", HostpanelErrorCodes.DOMAIN_NOT_FOUND);
         }
 
-        var dto = domain.ToDto();
+        var dto = domain.ToDto(await _registrars.ResolveCapabilitiesAsync(domain, ct));
 
         return Result.Success(dto);
     }

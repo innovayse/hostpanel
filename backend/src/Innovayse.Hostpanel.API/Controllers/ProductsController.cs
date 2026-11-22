@@ -85,7 +85,8 @@ public sealed class ProductsController : BaseApiController
 
     /// <summary>
     /// The storefront catalogue: active products the caller can buy, priced in their currency, with
-    /// no provisioning field. Anonymous: the storefront renders it before anyone has signed in.
+    /// each product's SKU and no provisioning field. Anonymous: the storefront renders it before anyone
+    /// has signed in.
     /// </summary>
     /// <param name="query">The group, several-group and single-product filters and the requested currency.</param>
     /// <param name="ct">Cancellation token.</param>

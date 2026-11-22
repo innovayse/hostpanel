@@ -297,6 +297,12 @@
 <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
     <value>That payment method is not available right now.</value>
   </data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>No payment method is available for every product in this order. Order them separately.</value>
+  </data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>This payment method is not allowed for the products being paid.</value>
+  </data>
 <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
     <value>That currency is not offered.</value>
   </data>
@@ -546,9 +552,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>No API key or access hash is configured for this server.</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Connection testing is not supported for this server module.</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>No such server group.</value>
   </data>
@@ -618,6 +621,33 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>The agentProfile in the manifest must be one of the SSH key agent profiles this SDK defines, written exactly.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>The serverModules list in the manifest is not valid: a plugin with the provisioningPanel or virtualServer capability must list at least one server module id (letters, digits, dashes, dots and underscores, up to 50 characters, no repeats), and any other plugin must list none.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>A connectionRole in the manifest settings is only allowed on a registrar plugin.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Two settings in the manifest have the same connectionRole; each role may be given to one setting only.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>A connectionRole in the manifest is on a setting of the wrong type: apiKey needs a secret setting, apiUrl a url setting and testMode a boolean setting.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>A registrar plugin that declares a connectionRole must declare both accountName and apiKey.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>The sdkPackageVersion in this plugin's manifest is not a valid version.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>The minHostVersion in this plugin's manifest is missing or lower than the first Hostpanel release that ships the SDK the plugin was built against.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>This plugin was built against a newer Hostpanel SDK than this server ships and would not load here. Update Hostpanel or use an older version of the plugin.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>This plugin is installed but could not be loaded. See the load error shown with it.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>
@@ -661,7 +691,7 @@
     <value>This plugin declares routes, pages or slots, but it is not an app plugin and does not declare the "endpoints" capability.</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>This plugin declares a capability that the host does not know or that its plugin type cannot have.</value>
+    <value>This plugin declares a capability that the host does not know, that its plugin type cannot have, or that needs another capability the plugin does not declare.</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
@@ -1086,6 +1116,24 @@
   </data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>The registrant contact details are incomplete, so the registrar cannot be sent the order.</value>
+  </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>The registrar does not sell this domain extension.</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>The registrar rejected the transfer authorization code.</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>The registrar does not allow this domain to be transferred right now.</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>The registrar rejected the nameservers.</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>The registrar rejected the DNS record.</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>The registrar did not accept the saved account credentials. Contact the administrator.</value>
   </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>A transaction must have an incoming or outgoing amount.</value>
@@ -1551,5 +1599,53 @@
   </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>A server without SSL cannot accept a self signed certificate. Turn SSL on or clear the self signed certificate option.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>This control panel type is not available. Install its plugin first, or pick another type.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>The plugin for this server's control panel is not installed, switched off, not configured or not working. Check it on the Plugins page.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>More than one installed plugin serves this server's control panel type. Keep only one of them.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>This control panel does not support the requested action.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>The control panel has no account for this service.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>The control panel does not know the hosting package of this service.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>The control panel does not accept this account username.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>The control panel does not accept this domain name.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>The control panel rejected the password. Choose a stronger one.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>The control panel has reached its limit and cannot take this change.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>The control panel refused the credentials saved for this server.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>The control panel refused the request.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>The hosting account is being created. Please check again in a few minutes.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>The server's connection details are incomplete for this control panel.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>The control panel refused the saved credentials.</value>
   </data>
 </root>

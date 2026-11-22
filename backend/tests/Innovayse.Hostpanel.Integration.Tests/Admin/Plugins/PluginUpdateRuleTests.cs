@@ -10,13 +10,16 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 /// </summary>
 public sealed class PluginUpdateRuleTests
 {
+    /// <summary>The <c>Hostpanel.Sdk</c> package version the host under test ships.</summary>
+    private const string HostSdk = "3.11.0";
+
     /// <summary>The newest version that fits is offered, not the registry's newest.</summary>
     [Fact]
     public void NewestOffer_SkipsAVersionTheHostCannotRun()
     {
         var versions = new[] { Version("1.1.0"), Version("1.5.0"), Version("2.0.0", min: "5.0.0") };
 
-        PluginUpdateRule.NewestOffer(versions, "1.4.0", "1.0.0", null)!.Version.Should().Be("1.5.0");
+        PluginUpdateRule.NewestOffer(versions, "1.4.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.5.0");
     }
 
     /// <summary>Versions are ordered as versions, not as text.</summary>
@@ -25,7 +28,7 @@ public sealed class PluginUpdateRuleTests
     {
         var versions = new[] { Version("1.9.0"), Version("1.10.0") };
 
-        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", null)!.Version.Should().Be("1.10.0");
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.10.0");
     }
 
     /// <summary>Nothing is offered when no newer version runs on the host.</summary>
@@ -34,7 +37,7 @@ public sealed class PluginUpdateRuleTests
     {
         var versions = new[] { Version("1.0.0"), Version("2.0.0", min: "5.0.0"), Version("3.0.0", max: "1.0.0") };
 
-        PluginUpdateRule.NewestOffer(versions, "1.4.0", "1.0.0", null).Should().BeNull();
+        PluginUpdateRule.NewestOffer(versions, "1.4.0", HostSdk, "1.0.0", null).Should().BeNull();
     }
 
     /// <summary>A version that is not published is never offered, and a version listed twice is judged by its strictest row.</summary>
@@ -51,7 +54,7 @@ public sealed class PluginUpdateRuleTests
             Version("1.5.0", PluginRegistryVersionStatus.Yanked),
         };
 
-        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0");
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.1.0");
     }
 
     /// <summary>A version already installed or staged is not offered again.</summary>
@@ -60,16 +63,16 @@ public sealed class PluginUpdateRuleTests
     {
         var versions = new[] { Version("1.0.0"), Version("1.5.0"), Version("1.6.0") };
 
-        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", "1.6.0").Should().BeNull();
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", "1.6.0").Should().BeNull();
     }
 
     /// <summary>A pre-release ranks below its release and above the earlier release.</summary>
     [Fact]
     public void NewestOffer_RanksAPreReleaseBelowItsRelease()
     {
-        PluginUpdateRule.NewestOffer([Version("1.1.0-rc.1"), Version("1.1.0")], "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0");
-        PluginUpdateRule.NewestOffer([Version("1.1.0"), Version("1.1.0-rc.1")], "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0");
-        PluginUpdateRule.NewestOffer([Version("1.1.0-rc.1"), Version("1.0.5")], "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0-rc.1");
+        PluginUpdateRule.NewestOffer([Version("1.1.0-rc.1"), Version("1.1.0")], "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.1.0");
+        PluginUpdateRule.NewestOffer([Version("1.1.0"), Version("1.1.0-rc.1")], "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.1.0");
+        PluginUpdateRule.NewestOffer([Version("1.1.0-rc.1"), Version("1.0.5")], "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.1.0-rc.1");
     }
 
     /// <summary>With a staged upload only a version newer than the staged one is offered.</summary>
@@ -78,8 +81,8 @@ public sealed class PluginUpdateRuleTests
     {
         var versions = new[] { Version("1.5.0"), Version("1.6.0") };
 
-        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", "1.5.0")!.Version.Should().Be("1.6.0");
-        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", "1.5.5")!.Version.Should().Be("1.6.0");
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", "1.5.0")!.Version.Should().Be("1.6.0");
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", "1.5.5")!.Version.Should().Be("1.6.0");
     }
 
     /// <summary>A host that is not a version (a local build) is not refused.</summary>
@@ -88,7 +91,30 @@ public sealed class PluginUpdateRuleTests
     {
         var versions = new[] { Version("2.0.0", min: "5.0.0") };
 
-        PluginUpdateRule.NewestOffer(versions, "dev", "1.0.0", null)!.Version.Should().Be("2.0.0");
+        PluginUpdateRule.NewestOffer(versions, "dev", HostSdk, "1.0.0", null)!.Version.Should().Be("2.0.0");
+    }
+
+    /// <summary>
+    /// A version built on a newer SDK than the host ships is never offered, even as the registry's newest; one that
+    /// states none is.
+    /// </summary>
+    [Fact]
+    public void NewestOffer_SkipsAVersionBuiltOnANewerSdkThanTheHostShips()
+    {
+        var versions = new[] { Version("1.1.0", sdk: ""), Version("2.0.0", sdk: "999.0.0"), Version("3.0.0", sdk: "3.12.0") };
+
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.1.0");
+    }
+
+    /// <summary>
+    /// A registry value that is not a version is not stated: it never makes a version look newer than the host's SDK.
+    /// </summary>
+    [Fact]
+    public void NewestOffer_OffersAVersionWhoseSdkValueIsNotAVersion()
+    {
+        var versions = new[] { Version("1.1.0"), Version("1.2.0", sdk: "1.0") };
+
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", HostSdk, "1.0.0", null)!.Version.Should().Be("1.2.0");
     }
 
     /// <summary>Builds one listed registry version.</summary>
@@ -96,10 +122,11 @@ public sealed class PluginUpdateRuleTests
     /// <param name="status">Where the version stands in the registry.</param>
     /// <param name="min">The oldest host version it runs on, or <see langword="null"/>.</param>
     /// <param name="max">The newest host version it runs on, or <see langword="null"/>.</param>
+    /// <param name="sdk">The SDK version the version targets; empty when not stated.</param>
     /// <returns>The version row.</returns>
     private static RegistryPluginVersion Version(
-        string version, PluginRegistryVersionStatus status = PluginRegistryVersionStatus.Published, string? min = null, string? max = null)
+        string version, PluginRegistryVersionStatus status = PluginRegistryVersionStatus.Published, string? min = null, string? max = null, string sdk = "1.0.0")
     {
-        return new RegistryPluginVersion(version, "1.0", 1, TestMoments.Seeded, status, null, null, min, max, null, [], null, []);
+        return new RegistryPluginVersion(version, sdk, 1, TestMoments.Seeded, status, null, null, min, max, null, [], null, []);
     }
 }

@@ -1,0 +1,125 @@
+{
+  "loading": "Wird geladen",
+  "uiAdvancedFilters": {
+    "filterValue": "Filter {value}",
+    "selectField": "Feld auswählen",
+    "enterValue": "Wert eingeben",
+    "addFilter": "Filter hinzufügen",
+    "exactMatch": "Exakte Übereinstimmung",
+    "containing": "Enthält"
+  },
+  "uiClientSelect": {
+    "noClientsFound": "Keine Kunden gefunden"
+  },
+  "uiCountrySelect": {
+    "selectCountry": "Land auswählen"
+  },
+  "uiDatePicker": {
+    "ddMmYyyy": "TT.MM.JJJJ",
+    "month": "Monat",
+    "year": "Jahr",
+    "yesterday": "Gestern",
+    "7DaysAgo": "Vor 7 Tagen",
+    "1MonthAgo": "Vor 1 Monat",
+    "1YearAgo": "Vor 1 Jahr"
+  },
+  "uiDatePickerFuture": {
+    "tomorrow": "Morgen",
+    "in7Days": "In 7 Tagen",
+    "1MonthFromNow": "In 1 Monat",
+    "1YearFromNow": "In 1 Jahr"
+  },
+  "uiDateRangePicker": {
+    "ddMmYyyyDdMm": "TT.MM.JJJJ - TT.MM.JJJJ",
+    "yesterday": "Gestern",
+    "last7Days": "Letzte 7 Tage",
+    "last30Days": "Letzte 30 Tage",
+    "thisMonth": "Dieser Monat",
+    "1MonthAgo": "Vor 1 Monat",
+    "thisYear": "Dieses Jahr",
+    "1YearAgo": "Vor 1 Jahr",
+    "selectDateRange": "Zeitraum auswählen"
+  },
+  "uiFieldSelector": {
+    "fields": "Felder",
+    "clearAll": "Alle zurücksetzen",
+    "selectedCount": "{count} von {total} Feldern"
+  },
+  "uiFilterTrigger": {
+    "filters": "Filter",
+    "title": "Filter",
+    "apply": "Anwenden",
+    "reset": "Zurücksetzen",
+    "cancel": "Abbrechen"
+  },
+  "uiFilterChips": {
+    "label": "Aktive Filter",
+    "remove": "Filter entfernen {label}: {value}",
+    "clearAll": "Alle entfernen"
+  },
+  "uiSelect": {
+    "noResults": "Keine Ergebnisse",
+    "choose": "Option auswählen"
+  },
+  "uiLimitField": {
+    "unlimited": "Unbegrenzt"
+  },
+  "phoneInput": {
+    "countryCode": "Landesvorwahl"
+  },
+  "selectCountry": "Land auswählen",
+  "dialog": {
+    "close": "Schließen",
+    "confirm": "Bestätigen"
+  },
+  "pagination": {
+    "navigation": "Seitennavigation",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page": "Seite",
+    "range": "{from} bis {to} von {total}",
+    "pageOf": "Seite {page} von {count}",
+    "rowsPerPage": "Zeilen pro Seite"
+  },
+  "table": {
+    "empty": "Keine Daten",
+    "sortBy": "Sortieren nach",
+    "sortDirection": "Sortierreihenfolge umkehren"
+  },
+  "bulkBar": {
+    "label": "Massenaktionen",
+    "clear": "Auswahl aufheben",
+    "selected": "{count} ausgewählt"
+  },
+  "chart": {
+    "empty": "Keine Daten für das Diagramm",
+    "target": "Ziel",
+    "aria": "Diagramm"
+  },
+  "uploadZone": {
+    "dropOr": "Datei hierher ziehen oder",
+    "browse": "durchsuchen"
+  },
+  "input": {
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort ausblenden",
+    "clearSearch": "Leeren"
+  },
+  "errorState": {
+    "retry": "Erneut versuchen"
+  },
+  "uiDateTimePicker": {
+    "title": "Datum und Uhrzeit auswählen"
+  },
+  "actionBar": {
+    "more": "Weitere Aktionen"
+  },
+  "uiLocalizedField": {
+    "emptyTab": "Nicht ausgefüllt",
+    "invalidTab": "Prüfung erforderlich"
+  },
+  "imagePreview": {
+    "showOnLight": "Auf hellem Hintergrund anzeigen",
+    "showOnDark": "Auf dunklem Hintergrund anzeigen"
+  }
+}

@@ -9,7 +9,6 @@ import TldConfigsView from '@/views/TldConfigsView.vue'
 import schema from '@/views/TldConfigsView.schema'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { EnabledFilter } from '@/types/enabledfilter'
-import { RegistrarModule } from '@/types/registrarmodule'
 import type { TldConfigListItem } from '@/types/tldconfig'
 import { json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
@@ -17,6 +16,15 @@ import { mountRouted } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+
+/** The installed registrar plugins every list screen reads on mount, as the plugins endpoint answers them. */
+const REGISTRAR_ROUTES = {
+  'GET /api/admin/plugins': () =>
+    json([
+      { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded' },
+      { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded' },
+    ]),
+}
 
 /** The address the screen is registered under. */
 const PATH = '/settings/tld-pricing'
@@ -31,7 +39,7 @@ const PATH = '/settings/tld-pricing'
 const item = (tld: string, extra: Partial<TldConfigListItem> = {}): TldConfigListItem => ({
   id: 1,
   tld,
-  registrarModule: 'NameAm',
+  registrarModule: 'registrar-one',
   isEnabled: true,
   costRegister1yr: 10,
   sellRegister1yr: 12.5,
@@ -95,14 +103,14 @@ afterEach(() => {
 
 describe('TldConfigsView', () => {
   it('draws the table head of its schema columns, in order', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     const { wrapper } = await mountListAt()
 
     expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
   it('shows a row per TLD with prices in their symbols, margin, categories and sync state', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com'), item('net', { id: 2, marginPercent: -5, isEnabled: false, categories: [] })])) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com'), item('net', { id: 2, marginPercent: -5, isEnabled: false, categories: [] })])) })
     const { wrapper } = await mountListAt()
     const com = wrapper.get('[data-testid="tld-row-com"]').text()
 
@@ -120,7 +128,7 @@ describe('TldConfigsView', () => {
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     const { wrapper, router } = await mountListAt()
 
     await wrapper.get('[data-testid="tld-configs-search"]').setValue('co')
@@ -132,18 +140,18 @@ describe('TldConfigsView', () => {
   })
 
   it('restores the search, the filters and the page from the address and sends them together', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')], 45)) })
-    const { wrapper } = await mountListAt(`${PATH}?search=co&registrarModule=Namecheap&enabled=disabled&page=2`)
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')], 45)) })
+    const { wrapper } = await mountListAt(`${PATH}?search=co&registrarModule=registrar-two&enabled=disabled&page=2`)
 
-    expect(listUrls(mock)[0]).toBe('/api/admin/tld-configs?page=2&pageSize=20&search=co&registrarModule=Namecheap&enabled=false')
+    expect(listUrls(mock)[0]).toBe('/api/admin/tld-configs?page=2&pageSize=20&search=co&registrarModule=registrar-two&enabled=false')
     expect((wrapper.get('[data-testid="tld-configs-search"]').element as HTMLInputElement).value).toBe('co')
-    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Namecheap')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Registrar Two')
     expect(wrapper.get('[data-testid="filter-chip-enabled"]').text()).toContain('Disabled')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
 
   it('keeps the chosen page in the address', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')], 45)) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')], 45)) })
     const { wrapper, router } = await mountListAt()
 
     await wrapper.get('[data-testid="tld-configs-pagination-next"]').trigger('click')
@@ -153,18 +161,18 @@ describe('TldConfigsView', () => {
   })
 
   it('sends the registrar picked in the filter dialog on Apply and shows it as a chip', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     const { wrapper, router } = await mountListAt()
 
-    await applyListFilter(wrapper, { 'tld-configs-filter-registrar': RegistrarModule.Namecheap })
+    await applyListFilter(wrapper, { 'tld-configs-filter-registrar': 'registrar-two' })
 
-    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'Namecheap' })
-    expect(listUrls(mock).at(-1)).toBe('/api/admin/tld-configs?page=1&pageSize=20&registrarModule=Namecheap')
-    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Namecheap')
+    expect(router.currentRoute.value.query).toEqual({ registrarModule: 'registrar-two' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/tld-configs?page=1&pageSize=20&registrarModule=registrar-two')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Registrar Two')
   })
 
   it('sends the enabled state picked in the filter dialog on Apply', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     const { wrapper, router } = await mountListAt()
 
     await applyListFilter(wrapper, { 'tld-configs-filter-enabled': EnabledFilter.Enabled })
@@ -174,16 +182,16 @@ describe('TldConfigsView', () => {
     expect(wrapper.get('[data-testid="filter-chip-enabled"]').text()).toContain('Enabled')
   })
 
-  it('does not send a registrar or enabled state the address holds that is not a known value', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+  it('does not send an enabled state the address holds that is not a known value, and sends the registrar as written', async () => {
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
     await mountListAt(`${PATH}?registrarModule=Nonsense&enabled=maybe`)
 
-    expect(listUrls(mock)[0]).toBe('/api/admin/tld-configs?page=1&pageSize=20')
+    expect(listUrls(mock)[0]).toBe('/api/admin/tld-configs?page=1&pageSize=20&registrarModule=Nonsense')
   })
 
   it('removes a filter from the address and reloads when its chip is removed', async () => {
-    const mock = stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
-    const { wrapper, router } = await mountListAt(`${PATH}?registrarModule=NameAm&enabled=enabled`)
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')])) })
+    const { wrapper, router } = await mountListAt(`${PATH}?registrarModule=registrar-one&enabled=enabled`)
 
     await wrapper.get('[data-testid="filter-chip-remove-registrarModule"]').trigger('click')
     await flushPromises()
@@ -193,34 +201,34 @@ describe('TldConfigsView', () => {
   })
 
   it('imports from a provider chosen in the menu, reports the counts and reloads the page', async () => {
-    const mock = stubRoutes({
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES,
       'GET /api/admin/tld-configs?': () => json(page([item('com')])),
-      'POST /api/admin/tld-configs/import/Namecheap': () => json({ imported: 2, updated: 1 }),
+      'POST /api/admin/tld-configs/import/registrar-two': () => json({ imported: 2, updated: 1 }),
     })
     const { wrapper } = await mountListAt(`${PATH}?search=co&page=1`)
     const before = listUrls(mock).length
 
-    await pickOption(wrapper, 'tld-configs-import', 'Namecheap')
+    await pickOption(wrapper, 'tld-configs-import', 'Registrar Two')
 
     await vi.waitFor(() => {
       expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Import complete: 2 imported, 1 updated.'])
     })
-    expect(requestsOf(mock)).toContain('POST /api/admin/tld-configs/import/Namecheap')
+    expect(requestsOf(mock)).toContain('POST /api/admin/tld-configs/import/registrar-two')
     expect(listUrls(mock).length).toBe(before + 1)
     expect(listUrls(mock).at(-1)).toBe('/api/admin/tld-configs?page=1&pageSize=20&search=co')
   })
 
-  it('names the provider as the registrar spells it, not as the API enum does', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([item('am')])) })
+  it('names the registrar by its plugin name, not by the stored id', async () => {
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs?': () => json(page([item('am')])) })
     const { wrapper } = await mountListAt()
 
     const row = wrapper.get('[data-testid="tld-row-am"]').text()
-    expect(row).toContain('Name.am')
-    expect(row).not.toContain('NameAm')
+    expect(row).toContain('Registrar One')
+    expect(row).not.toContain('registrar-one')
   })
 
   it('shows a dash with the reason on hover when the API worked out no margin', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([{ ...item('am'), marginPercent: null }])) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs?': () => json(page([{ ...item('am'), marginPercent: null }])) })
     const { wrapper } = await mountListAt()
 
     const cell = wrapper.get('[data-testid="tld-row-am"]')
@@ -229,7 +237,7 @@ describe('TldConfigsView', () => {
   })
 
   it('syncs prices and shows a refusal in the banner', async () => {
-    stubRoutes({
+    stubRoutes({ ...REGISTRAR_ROUTES,
       'GET /api/admin/tld-configs?': () => json(page([item('com')])),
       'POST /api/admin/tld-configs/sync': () => problem('The registrar did not answer.', 502),
     })
@@ -244,7 +252,7 @@ describe('TldConfigsView', () => {
 
   it('asks before deleting a TLD, deletes it and reloads the page', async () => {
     const id = item('com').id
-    const mock = stubRoutes({
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES,
       'GET /api/admin/tld-configs?': () => json(page([item('com')])),
       [`DELETE /api/admin/tld-configs/${id}`]: () => new Response(null, { status: 204 }),
     })
@@ -270,7 +278,7 @@ describe('TldConfigsView', () => {
   it('steps back a page when the delete empties the last one', async () => {
     const id = item('com').id
     let deleted = false
-    const mock = stubRoutes({
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES,
       'GET /api/admin/tld-configs?': () => json(page(deleted ? [] : [item('com')], deleted ? 20 : 21)),
       [`DELETE /api/admin/tld-configs/${id}`]: () => {
         deleted = true
@@ -291,7 +299,7 @@ describe('TldConfigsView', () => {
 
   it('shows the API sentence when a delete is refused, and sends nothing when dismissed', async () => {
     const id = item('com').id
-    const mock = stubRoutes({
+    const mock = stubRoutes({ ...REGISTRAR_ROUTES,
       'GET /api/admin/tld-configs?': () => json(page([item('com')])),
       [`DELETE /api/admin/tld-configs/${id}`]: () => problem('The TLD has domains.', 409),
     })
@@ -311,7 +319,7 @@ describe('TldConfigsView', () => {
   })
 
   it('navigates to the create and edit pages', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([item('com')])) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs?': () => json(page([item('com')])) })
     const { wrapper, router } = await mountListAt()
 
     await wrapper.get('[data-testid="tld-configs-add"]').trigger('click')
@@ -329,7 +337,7 @@ describe('TldConfigsView', () => {
   })
 
   it('shows the empty state, and the filter hint when the list is narrowed', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([])) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs?': () => json(page([])) })
     const { wrapper } = await mountListAt()
     expect(wrapper.get('[data-testid="tld-configs-empty"]').text()).toContain('No TLD configurations found')
     expect(wrapper.find('[data-testid="tld-configs-clear-empty"]').exists()).toBe(false)
@@ -340,7 +348,7 @@ describe('TldConfigsView', () => {
   })
 
   it('clears the filters from the empty state and keeps the search', async () => {
-    stubRoutes({ 'GET /api/admin/tld-configs?': () => json(page([])) })
+    stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs?': () => json(page([])) })
     const { wrapper, router } = await mountListAt(`${PATH}?enabled=enabled&search=zzz`)
 
     await wrapper.get('[data-testid="tld-configs-clear-empty"]').trigger('click')
@@ -351,7 +359,7 @@ describe('TldConfigsView', () => {
 
   it('shows a load refusal and loads again from its retry', async () => {
     let calls = 0
-    stubRoutes({
+    stubRoutes({ ...REGISTRAR_ROUTES,
       'GET /api/admin/tld-configs?': () => {
         calls += 1
         return calls === 1 ? problem('Pricing is unavailable.', 503) : json(page([item('com')]))

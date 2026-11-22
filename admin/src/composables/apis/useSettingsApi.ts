@@ -9,7 +9,9 @@
 import { buildQuery, useApi } from '@/composables/useApi'
 import type { CreateEmailTemplatePayload, EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import type { PaginatedList } from '@/types/paginatedlist'
-import type { CreateProductPayload, Product, ProductGroup, ProductListQuery, UpdateProductPayload } from '@/types/product'
+import type {
+  CreateProductPayload, PaymentMethodOption, Product, ProductGroup, ProductGroupPayload, ProductListQuery, UpdateProductPayload,
+} from '@/types/product'
 import type { Setting } from '@/types/setting'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
@@ -101,6 +103,33 @@ export const useSettingsApi = () => {
     request<ProductGroup[]>(`${ApiPath.Products}/groups${buildQuery({ activeOnly: false })}`)
 
   /**
+   * Lists the payment methods a checkout offers right now, for the group form's choices.
+   *
+   * @returns The methods on offer.
+   */
+  const listPaymentMethods = (): Promise<PaymentMethodOption[]> =>
+    request<PaymentMethodOption[]>(ApiPath.PaymentMethods)
+
+  /**
+   * Creates a product group.
+   *
+   * @param payload - Group data.
+   * @returns The new group id.
+   */
+  const createProductGroup = (payload: ProductGroupPayload): Promise<number> =>
+    request<number>(`${ApiPath.Products}/groups`, { method: HttpMethod.Post, body: JSON.stringify(payload) })
+
+  /**
+   * Updates a product group; its name, description and allowed payment methods are replaced.
+   *
+   * @param id - Group id.
+   * @param payload - Updated group data.
+   * @returns Nothing; the API answers 204.
+   */
+  const updateProductGroup = (id: number, payload: ProductGroupPayload): Promise<void> =>
+    request<void>(`${ApiPath.Products}/groups/${id}`, { method: HttpMethod.Put, body: JSON.stringify(payload) })
+
+  /**
    * Creates a product.
    *
    * @param payload - Product data.
@@ -128,6 +157,9 @@ export const useSettingsApi = () => {
     listProducts,
     listProductsPage,
     listProductGroups,
+    listPaymentMethods,
+    createProductGroup,
+    updateProductGroup,
     createProduct,
     updateProduct,
   }

@@ -16,7 +16,7 @@ export const registryGateway: PluginRegistryItemDto = {
   iconUrl: null,
   category: PluginCategory.Payment,
   latestVersion: '1.2.0',
-  sdkVersion: '3.1.0',
+  sdkPackageVersion: '3.1.0',
   verified: true,
   pricing: PluginPricing.Free,
   installed: false,

@@ -5,8 +5,9 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 
 /// <summary>
 /// The reply the host gives a caller for a plugin route: the plugin's JSON or empty success with the status the
-/// plugin chose, the plugin's problem in the standard error body, the events of a streamed reply, or a raw body with its
-/// own media type (a callback's acknowledgement, or the HTML page of a gateway's checkout).
+/// plugin chose, the plugin's problem in the standard error body, the events of a streamed reply, a raw body with its
+/// own media type (a callback's acknowledgement, or the HTML page of a gateway's checkout), or a redirect to an address
+/// the host checked (a callback only).
 /// </summary>
 /// <param name="Status">The HTTP status.</param>
 /// <param name="Body">The value written as JSON; <see langword="null"/> for no content and for a problem.</param>
@@ -19,6 +20,10 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// The origins the page may load from when the raw reply is an HTML page, so a gateway can serve its checkout page;
 /// <see langword="null"/> for a raw reply that is not a page and for every other reply.
 /// </param>
+/// <param name="Location">
+/// The address of a redirect, already checked and normalised by <see cref="PluginRedirectLocation"/>; <see langword="null"/>
+/// for every other reply. A redirect carries no body.
+/// </param>
 public sealed record PluginReplyDto(
     int Status,
     object? Body,
@@ -27,5 +32,6 @@ public sealed record PluginReplyDto(
     StreamedReply? Stream = null,
     ReadOnlyMemory<byte>? RawBody = null,
     string? ContentType = null,
-    IReadOnlyList<string>? PageOrigins = null)
+    IReadOnlyList<string>? PageOrigins = null,
+    string? Location = null)
     : IForwardedReply;

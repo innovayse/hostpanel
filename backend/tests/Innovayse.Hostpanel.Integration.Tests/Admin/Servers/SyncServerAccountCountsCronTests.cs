@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Commands.SyncServerAccountCountsCron;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,7 +42,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
             Hostname: "sync.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModule.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,
@@ -53,7 +52,8 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), TestMoments.Seeded);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
         return server;

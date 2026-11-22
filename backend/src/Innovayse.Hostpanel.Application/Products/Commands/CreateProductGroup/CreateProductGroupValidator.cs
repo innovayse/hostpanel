@@ -25,5 +25,8 @@ public sealed class CreateProductGroupValidator : LocalizedValidator<CreateProdu
             .MaximumLength(NameMaxLength).WithMessage(L["ProductGroupNameTooLong", NameMaxLength]);
         RuleFor(x => x.Description).MaximumLength(DescriptionMaxLength).When(x => x.Description is not null)
             .WithMessage(L["ProductGroupDescriptionTooLong", DescriptionMaxLength]);
+        RuleFor(x => x.AllowedPaymentMethods).MustBePaymentMethodList(
+            L["ProductGroupPaymentMethodsTooMany", ValidationRuleExtensions.PaymentMethodsMaxCount],
+            L["ProductGroupPaymentMethodTooLong", ValidationRuleExtensions.PaymentMethodMaxLength]);
     }
 }

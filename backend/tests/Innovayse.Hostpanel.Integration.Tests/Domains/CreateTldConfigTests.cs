@@ -40,7 +40,7 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
 
         var updateResponse = await admin.PutAsJsonAsync($"/api/admin/tld-configs/{id}", new
         {
-            registrarModule = "NameAm",
+            registrarModule = TestRegistrarModules.First,
             currency = "AMD",
             sellCurrency = "USD",
             isEnabled = false,
@@ -88,7 +88,7 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
     [Fact]
     public async Task CreateRefusesAnUnknownRegistrarModuleAsync()
     {
-        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var admin = await DomainsTestSeeds.AdminClientWithRegistrarsAsync(factory, TestRegistrarModules.First);
         var (tld, _) = DomainsTestSeeds.NewTldBody();
         var withBadModule = new
         {
@@ -111,6 +111,41 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DomainsTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.TLD_REGISTRAR_MODULE_UNKNOWN);
+    }
+
+    /// <summary>
+    /// A module typed in another letter case than the plugin id names the plugin, and the configuration stores the id as the
+    /// plugin declares it, so a TLD never keeps a spelling the plugin does not have.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateStoresTheRegistrarModuleAsThePluginDeclaresItAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientWithRegistrarsAsync(factory, TestRegistrarModules.First);
+        var (tld, _) = DomainsTestSeeds.NewTldBody();
+        var typedInUpperCase = new
+        {
+            tld,
+            registrarModule = TestRegistrarModules.First.ToUpperInvariant(),
+            currency = "AMD",
+            sellCurrency = "USD",
+            isEnabled = true,
+            sortOrder = 1,
+            categories = new[] { "test" },
+            costRegister = new Dictionary<string, decimal> { ["1"] = 5m },
+            costTransfer = new Dictionary<string, decimal> { ["1"] = 5m },
+            costRenew = new Dictionary<string, decimal> { ["1"] = 5m },
+            sellRegister = new Dictionary<string, decimal> { ["1"] = 10m },
+            sellTransfer = new Dictionary<string, decimal> { ["1"] = 10m },
+            sellRenew = new Dictionary<string, decimal> { ["1"] = 10m },
+        };
+
+        var created = await admin.PostAsJsonAsync("/api/admin/tld-configs", typedInUpperCase);
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var got = await (await admin.GetAsync($"/api/admin/tld-configs/{id}")).Content.ReadFromJsonAsync<JsonElement>();
+        got.GetProperty("registrarModule").GetString().Should().Be(TestRegistrarModules.First);
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>

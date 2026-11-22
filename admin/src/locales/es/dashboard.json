@@ -15,9 +15,9 @@
       "Days30": "Facturación, 30 días",
       "Days90": "Facturación, 90 días"
     },
-    "activeServices": "Servicios Activos",
-    "overdueInvoices": "Facturas Vencidas",
-    "openTickets": "Tickets Abiertos"
+    "activeServices": "Servicios activos",
+    "overdueInvoices": "Facturas vencidas",
+    "openTickets": "Tickets abiertos"
   },
   "recentInvoices": "Últimas facturas",
   "viewAll": "Ver todo",

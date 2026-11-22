@@ -3,7 +3,7 @@
     "editGroup": "Editar grupo",
     "createNewGroup": "Crear nuevo grupo",
     "groupName": "Nombre del grupo",
-    "eGCwpServers": "ej. Servidores CWP",
+    "eGCwpServers": "ej. servidores CWP",
     "fillType": "Tipo de llenado",
     "servers": "Servidores",
     "available": "Disponible",
@@ -58,7 +58,8 @@
     "secretPlaceholder": "••••••••",
     "accessHashPlaceholder": "tHcFDLX8pGkv…",
     "nsHostPlaceholder": "ns{n}.example.com",
-    "nsIpPlaceholder": "0.0.0.0"
+    "nsIpPlaceholder": "0.0.0.0",
+    "acceptSelfSignedCertificate": "Confiar en el certificado autofirmado de este servidor"
   },
   "servers": {
     "servers": "Servidores",
@@ -71,7 +72,6 @@
     "noMatches": "Ningún servidor coincide con los filtros",
     "createGroup": "Crear grupo",
     "addNewServer": "Agregar servidor nuevo",
-    "serverName": "Nombre del servidor",
     "default": "PREDETERMINADO",
     "defaultHint": "El servidor predeterminado para {module}.",
     "disabledHint": "Desactivado: no admite cuentas nuevas.",

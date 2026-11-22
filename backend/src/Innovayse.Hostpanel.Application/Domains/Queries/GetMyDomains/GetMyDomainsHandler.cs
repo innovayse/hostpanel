@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
+using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,13 +16,18 @@ public sealed class GetMyDomainsHandler
     /// <summary>Resolves the account the caller acts for, owner or linked user; the query does not say, and must not.</summary>
     private readonly IClientAccess _access;
 
+    /// <summary>Tells which optional operations the registrar that holds each domain offers.</summary>
+    private readonly RegistrarProviderResolver _registrars;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The data context the caller's domains are read from.</param>
     /// <param name="access">Resolves the account the caller acts for, owner or linked user; the query does not say, and must not.</param>
-    public GetMyDomainsHandler(IHostpanelDbContext context, IClientAccess access)
+    /// <param name="registrars">Tells which optional operations the registrar that holds each domain offers.</param>
+    public GetMyDomainsHandler(IHostpanelDbContext context, IClientAccess access, RegistrarProviderResolver registrars)
     {
         _context = context;
         _access = access;
+        _registrars = registrars;
     }
 
     /// <summary>
@@ -48,8 +54,12 @@ public sealed class GetMyDomainsHandler
             .OrderBy(x => x.Name)
             .ToListAsync(ct);
 
-        IReadOnlyList<MyDomainDto> dtos = domains.Select(d => d.ToMyDto()).ToList();
+        var dtos = new List<MyDomainDto>(domains.Count);
+        foreach (var domain in domains)
+        {
+            dtos.Add(domain.ToMyDto(await _registrars.ResolveCapabilitiesAsync(domain, ct)));
+        }
 
-        return Result.Success(dtos);
+        return Result<IReadOnlyList<MyDomainDto>>.Success(dtos);
     }
 }

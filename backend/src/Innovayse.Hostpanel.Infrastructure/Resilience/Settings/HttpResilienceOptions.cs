@@ -180,58 +180,11 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
-    /// CWP7 control panels, typed client and the "Cwp7" named client the provisioning factory
-    /// resolves per server. Registered with no retry stage and no breaker.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>No retries and no breaker, for the same two reasons as <see cref="Cwp"/>:</b> the
-    /// operation lives in the POST body rather than in the method or path, and the server is a
-    /// per-call argument so a breaker would be shared across every CWP7 node.
-    /// </para>
-    /// <para>
-    /// <b>100 seconds an attempt, 115 in total</b>, inside the registration's existing two-minute
-    /// <see cref="HttpClient.Timeout"/>. This is the longest budget in the file and it is not an
-    /// oversight: CWP7 account creation on a busy node routinely runs past a minute, and cutting
-    /// it short leaves a half-built account nobody knows about. The gain here is not a shorter
-    /// wait, it is that a connection that has stalled entirely is now abandoned at all.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions Cwp7 { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(100),
-        TotalTimeout = TimeSpan.FromSeconds(115),
-        MaxRetryAttempts = 0,
-        RetryDelay = TimeSpan.Zero,
-        CircuitBreakerEnabled = false,
-    };
-
-    /// <summary>
-    /// Plesk control panels, the "Plesk" named client the provisioning factory and the connection
-    /// tester resolve per server. Registered with no retry stage and no breaker.
-    /// </summary>
-    /// <remarks>
-    /// The same reasons as <see cref="Cwp7"/>: every XML API call is a POST to one path, so the
-    /// pipeline cannot tell a read from a create and a retry could create an account twice, and
-    /// the server is a per-call argument, so a breaker would be shared across every Plesk node.
-    /// Creating a subscription sets up its web space and system user and can take a minute on a
-    /// busy node, hence the same long budget.
-    /// </remarks>
-    public ResilienceProfileOptions Plesk { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(100),
-        TotalTimeout = TimeSpan.FromSeconds(115),
-        MaxRetryAttempts = 0,
-        RetryDelay = TimeSpan.Zero,
-        CircuitBreakerEnabled = false,
-    };
-
-    /// <summary>
     /// cPanel servers, the "CPanelWhm" named client the provisioning factory, the connection
     /// tester and the disk usage report resolve per server. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
-    /// The same reasons as <see cref="Plesk"/>: a retried <c>createacct</c> could race the first
+    /// The same reasons as <see cref="Cwp"/>: a retried <c>createacct</c> could race the first
     /// attempt, and the server is a per-call argument, so a breaker would be shared across every
     /// WHM node. Account creation builds a home directory, a mail store and a DNS zone and can be
     /// slow on a busy node, hence the same long budget.
@@ -277,78 +230,6 @@ public sealed class HttpResilienceOptions
         MaxRetryAttempts = 2,
         RetryDelay = TimeSpan.FromSeconds(5),
         CircuitBreakerEnabled = false,
-    };
-
-    /// <summary>
-    /// The Name.am registrar API. Retries only the requests that cannot register or renew
-    /// anything: see the predicate in <c>HttpClientResilienceExtensions</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>This is the client that most needs a predicate rather than a policy.</b> It posts to
-    /// two very different things: <c>/client/domains/check</c>, a pure availability lookup a
-    /// visitor is waiting on, and <c>/client/carts/purchase</c>, which registers, transfers or
-    /// renews a domain and bills for it. Retrying the whole client because most of its traffic is
-    /// reads would buy a second registration on a dropped response. GET and PUT are repeated,
-    /// PUT here is a whole-resource update of nameservers, contacts or the registrar lock, which
-    /// ends in the state a single call would have, and POST only for the two paths named in the
-    /// predicate.
-    /// </para>
-    /// <para>
-    /// <b>10 seconds an attempt, 25 in total</b>, inside the registration's existing 30-second
-    /// <see cref="HttpClient.Timeout"/>. An availability check is on the ordering path with a
-    /// person watching a spinner, and ten seconds is already past the point where the answer
-    /// stops feeling like an answer.
-    /// </para>
-    /// <para>
-    /// The breaker is on: one registrar, one endpoint, so opening it sheds calls to exactly the
-    /// thing that is down. Twenty seconds is short enough that a registrar having a bad minute
-    /// does not become hostpanel having a bad ten.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions NameAm { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(10),
-        TotalTimeout = TimeSpan.FromSeconds(25),
-        MaxRetryAttempts = 2,
-        RetryDelay = TimeSpan.FromSeconds(1),
-        CircuitBreakerEnabled = true,
-        FailureRatio = 0.5,
-        MinimumThroughput = 10,
-        SamplingDuration = TimeSpan.FromSeconds(60),
-        BreakDuration = TimeSpan.FromSeconds(20),
-    };
-
-    /// <summary>
-    /// The Namecheap XML API. Retries only its read commands: see the predicate in
-    /// <c>HttpClientResilienceExtensions</c>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Every Namecheap call is a GET, so the method says nothing.</b> The operation is the
-    /// <c>Command</c> query parameter, and it ranges from <c>namecheap.domains.check</c> to
-    /// <c>namecheap.domains.create</c> and <c>namecheap.domains.renew</c> on the same URL and the
-    /// same verb. The predicate reads that parameter and repeats only the lookups; anything it
-    /// does not recognise is treated as a write and left alone.
-    /// </para>
-    /// <para>
-    /// <b>10 seconds an attempt, 25 in total</b>, matching <see cref="NameAm"/> and inside the
-    /// registration's existing 30-second <see cref="HttpClient.Timeout"/>: the same availability
-    /// check on the same ordering path, so the same budget. The breaker is on for the same reason
-    /// too: one registrar behind one endpoint.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions Namecheap { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(10),
-        TotalTimeout = TimeSpan.FromSeconds(25),
-        MaxRetryAttempts = 2,
-        RetryDelay = TimeSpan.FromSeconds(1),
-        CircuitBreakerEnabled = true,
-        FailureRatio = 0.5,
-        MinimumThroughput = 10,
-        SamplingDuration = TimeSpan.FromSeconds(60),
-        BreakDuration = TimeSpan.FromSeconds(20),
     };
 
     /// <summary>
@@ -473,12 +354,8 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(Telegram), Telegram);
         yield return new NamedResilienceProfile(nameof(StatusProbe), StatusProbe);
         yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
-        yield return new NamedResilienceProfile(nameof(Cwp7), Cwp7);
-        yield return new NamedResilienceProfile(nameof(Plesk), Plesk);
         yield return new NamedResilienceProfile(nameof(CPanelWhm), CPanelWhm);
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
-        yield return new NamedResilienceProfile(nameof(NameAm), NameAm);
-        yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);
         yield return new NamedResilienceProfile(nameof(Vat), Vat);
         yield return new NamedResilienceProfile(nameof(Plugin), Plugin);
         yield return new NamedResilienceProfile(nameof(Cba), Cba);

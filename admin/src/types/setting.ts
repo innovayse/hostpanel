@@ -45,14 +45,40 @@ export const SettingKey = {
   ContactAddressRu: 'portal.contact.address.ru',
   /** Postal address for Armenian visitors. */
   ContactAddressHy: 'portal.contact.address.hy',
-  /** Postal address for Spanish visitors. */
-  ContactAddressEs: 'portal.contact.address.es',
   /** Support working hours for Russian visitors. */
   ContactHoursRu: 'portal.contact.hours.ru',
   /** Support working hours for Armenian visitors. */
   ContactHoursHy: 'portal.contact.hours.hy',
-  /** Support working hours for Spanish visitors. */
-  ContactHoursEs: 'portal.contact.hours.es',
+  /** The operator's own terms of service, default language. */
+  LegalTerms: 'portal.legal.terms',
+  /** The operator's own terms of service for Russian visitors. */
+  LegalTermsRu: 'portal.legal.terms.ru',
+  /** The operator's own terms of service for Armenian visitors. */
+  LegalTermsHy: 'portal.legal.terms.hy',
+  /** The operator's own privacy policy, default language. */
+  LegalPrivacy: 'portal.legal.privacy',
+  /** The operator's own privacy policy for Russian visitors. */
+  LegalPrivacyRu: 'portal.legal.privacy.ru',
+  /** The operator's own privacy policy for Armenian visitors. */
+  LegalPrivacyHy: 'portal.legal.privacy.hy',
+  /** The operator's own refund policy, default language. */
+  LegalRefund: 'portal.legal.refund',
+  /** The operator's own refund policy for Russian visitors. */
+  LegalRefundRu: 'portal.legal.refund.ru',
+  /** The operator's own refund policy for Armenian visitors. */
+  LegalRefundHy: 'portal.legal.refund.hy',
+  /** The operator's own acceptable use policy, default language. */
+  LegalAcceptableUse: 'portal.legal.acceptable_use',
+  /** The operator's own acceptable use policy for Russian visitors. */
+  LegalAcceptableUseRu: 'portal.legal.acceptable_use.ru',
+  /** The operator's own acceptable use policy for Armenian visitors. */
+  LegalAcceptableUseHy: 'portal.legal.acceptable_use.hy',
+  /** The operator's own cookie policy, default language. */
+  LegalCookies: 'portal.legal.cookies',
+  /** The operator's own cookie policy for Russian visitors. */
+  LegalCookiesRu: 'portal.legal.cookies.ru',
+  /** The operator's own cookie policy for Armenian visitors. */
+  LegalCookiesHy: 'portal.legal.cookies.hy',
   /** The storefront template. */
   Template: 'portal.template',
   /** Default colour mode of the storefront. */
@@ -87,8 +113,6 @@ export const SettingKey = {
   ChatWebsiteTokenRu: 'portal.chat.website_token.ru',
   /** Chat website token for Armenian. */
   ChatWebsiteTokenHy: 'portal.chat.website_token.hy',
-  /** Chat website token for Spanish. */
-  ChatWebsiteTokenEs: 'portal.chat.website_token.es',
   /** Whether the stats section shows on the home page. */
   SectionStats: 'portal.sections.stats',
   /** Whether the partners section shows on the home page. */
@@ -199,10 +223,23 @@ export const SettingEnv: Record<SettingKey, string> = {
   [SettingKey.ContactTimezone]: `${SETTING_ENV_PREFIX}CONTACT_TIMEZONE`,
   [SettingKey.ContactAddressRu]: `${SETTING_ENV_PREFIX}CONTACT_ADDRESS_RU`,
   [SettingKey.ContactAddressHy]: `${SETTING_ENV_PREFIX}CONTACT_ADDRESS_HY`,
-  [SettingKey.ContactAddressEs]: `${SETTING_ENV_PREFIX}CONTACT_ADDRESS_ES`,
   [SettingKey.ContactHoursRu]: `${SETTING_ENV_PREFIX}CONTACT_HOURS_RU`,
   [SettingKey.ContactHoursHy]: `${SETTING_ENV_PREFIX}CONTACT_HOURS_HY`,
-  [SettingKey.ContactHoursEs]: `${SETTING_ENV_PREFIX}CONTACT_HOURS_ES`,
+  [SettingKey.LegalTerms]: `${SETTING_ENV_PREFIX}LEGAL_TERMS`,
+  [SettingKey.LegalTermsRu]: `${SETTING_ENV_PREFIX}LEGAL_TERMS_RU`,
+  [SettingKey.LegalTermsHy]: `${SETTING_ENV_PREFIX}LEGAL_TERMS_HY`,
+  [SettingKey.LegalPrivacy]: `${SETTING_ENV_PREFIX}LEGAL_PRIVACY`,
+  [SettingKey.LegalPrivacyRu]: `${SETTING_ENV_PREFIX}LEGAL_PRIVACY_RU`,
+  [SettingKey.LegalPrivacyHy]: `${SETTING_ENV_PREFIX}LEGAL_PRIVACY_HY`,
+  [SettingKey.LegalRefund]: `${SETTING_ENV_PREFIX}LEGAL_REFUND`,
+  [SettingKey.LegalRefundRu]: `${SETTING_ENV_PREFIX}LEGAL_REFUND_RU`,
+  [SettingKey.LegalRefundHy]: `${SETTING_ENV_PREFIX}LEGAL_REFUND_HY`,
+  [SettingKey.LegalAcceptableUse]: `${SETTING_ENV_PREFIX}LEGAL_ACCEPTABLE_USE`,
+  [SettingKey.LegalAcceptableUseRu]: `${SETTING_ENV_PREFIX}LEGAL_ACCEPTABLE_USE_RU`,
+  [SettingKey.LegalAcceptableUseHy]: `${SETTING_ENV_PREFIX}LEGAL_ACCEPTABLE_USE_HY`,
+  [SettingKey.LegalCookies]: `${SETTING_ENV_PREFIX}LEGAL_COOKIES`,
+  [SettingKey.LegalCookiesRu]: `${SETTING_ENV_PREFIX}LEGAL_COOKIES_RU`,
+  [SettingKey.LegalCookiesHy]: `${SETTING_ENV_PREFIX}LEGAL_COOKIES_HY`,
   [SettingKey.Template]: `${SETTING_ENV_PREFIX}TEMPLATE`,
   [SettingKey.ThemeDefault]: `${SETTING_ENV_PREFIX}THEME_DEFAULT`,
   [SettingKey.ThemeUserToggle]: `${SETTING_ENV_PREFIX}THEME_USER_TOGGLE`,
@@ -220,7 +257,6 @@ export const SettingEnv: Record<SettingKey, string> = {
   [SettingKey.ChatWebsiteToken]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN`,
   [SettingKey.ChatWebsiteTokenRu]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN_RU`,
   [SettingKey.ChatWebsiteTokenHy]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN_HY`,
-  [SettingKey.ChatWebsiteTokenEs]: `${SETTING_ENV_PREFIX}CHAT_WEBSITE_TOKEN_ES`,
   [SettingKey.SectionStats]: `${SETTING_ENV_PREFIX}SECTIONS_STATS`,
   [SettingKey.SectionPartners]: `${SETTING_ENV_PREFIX}SECTIONS_PARTNERS`,
   [SettingKey.SectionServices]: `${SETTING_ENV_PREFIX}SECTIONS_SERVICES`,

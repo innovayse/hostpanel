@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
@@ -133,23 +133,23 @@ public sealed class AgentSshKeyProviderTests
 
     /// <summary>The factory builds an agent provider only for supported modules and refuses missing or incomplete settings.</summary>
     [Fact]
-    public void Factory_OnlyCwp7Supported_AndSettingsMustBeComplete()
+    public void Factory_OnlyTheAgentModuleSupported_AndSettingsMustBeComplete()
     {
         var factory = new SshKeyProviderFactory(new SshAgentTransport(
             new OutboundConnector(Options.Create(new OutboundNetworkOptions()), Options.Create(new PanelNetworkOptions())),
             NullLogger<SshAgentTransport>.Instance));
 
-        Assert.IsType<AgentSshKeyProvider>(factory.CreateFor(Target(ServerModule.Cwp7, Agent(isComplete: true))));
-        Assert.Null(factory.CreateFor(Target(ServerModule.CPanel, Agent(isComplete: true))));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModule.Cwp7, null)));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModule.Cwp7, Agent(isComplete: false))));
+        Assert.IsType<AgentSshKeyProvider>(factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: true))));
+        Assert.Null(factory.CreateFor(Target(ServerModules.CPanel, Agent(isComplete: true))));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, null)));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: false))));
     }
 
     /// <summary>Builds the SSH target of server 7 for the given module.</summary>
     /// <param name="module">The control panel module of the server.</param>
     /// <param name="agent">The stored agent settings, or null when none are stored.</param>
     /// <returns>The SSH target.</returns>
-    private static ServerSshTargetDto Target(ServerModule module, ServerSshAgentEndpoint? agent) =>
+    private static ServerSshTargetDto Target(string module, ServerSshAgentEndpoint? agent) =>
         new(7, module, false, agent);
 
     /// <summary>Builds agent settings for server 7.</summary>

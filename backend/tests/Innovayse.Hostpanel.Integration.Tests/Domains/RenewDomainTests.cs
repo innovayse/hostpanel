@@ -149,6 +149,35 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>
+    /// A renewal the registrar accepted but has not finished (it asks for polling) still marks the domain renewed, because
+    /// nothing follows a pending renewal up and an unchanged expiry would invite a second paid renewal of the same term.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task RenewDomain_RegistrarRequiresPolling_StillMarksTheDomainRenewedAsync()
+    {
+        var host = factory.WithWebHostBuilder(b =>
+            b.ConfigureTestServices(s => s.AddScoped<IRegistrarProvider, PollingRenewalRegistrar>()));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var clientId = await DomainsTestSeeds.SeedClientAsync(context);
+        var domain = RegisteredDomain.Register(
+            clientId, $"{Guid.NewGuid():N}.test", TestMoments.Seeded, TestMoments.Seeded.AddDays(200),
+            autoRenew: false, whoisPrivacy: false, priceCurrency: TestCurrencies.Base);
+        await DomainsTestSeeds.AddActivatedAsync(context, domain, "REF-STUB", domain.ExpiresAt, TestMoments.Seeded);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var originalExpiry = (await context.Domains.AsNoTracking()
+            .FirstAsync(d => d.Id == domain.Id, CancellationToken.None)).ExpiresAt;
+
+        var result = await scope.ServiceProvider.GetRequiredService<IMessageBus>()
+            .InvokeAsync<Result>(new RenewDomainCommand(domain.Id, 2), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var reloaded = await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domain.Id, CancellationToken.None);
+        reloaded.ExpiresAt.Should().Be(originalExpiry.AddYears(2));
+    }
+
+    /// <summary>
     /// A registrar that names its own reason (here: not configured) is answered with that reason,
     /// not with the generic renewal refusal.
     /// </summary>

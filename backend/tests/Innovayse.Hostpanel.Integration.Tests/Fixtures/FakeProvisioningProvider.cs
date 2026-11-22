@@ -17,9 +17,8 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public bool ShouldFail { get; set; }
 
     /// <summary>
-    /// When set, <see cref="ProvisionAsync"/> and <see cref="GetCPanelSsoUrlAsync"/> throw this
-    /// exception: the shape a real provider's own coded refusal takes, such as a username the panel
-    /// can never accept.
+    /// When set, every member throws this exception: the shape a real provider's own coded refusal
+    /// takes, such as a username the panel can never accept or a plugin that is switched off.
     /// </summary>
     public Exception? FailWith { get; set; }
 
@@ -54,11 +53,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct)
     {
         ProvisionCalls++;
-        if (FailWith is not null)
-        {
-            throw FailWith;
-        }
-
+        ThrowIfFailWith();
         return ShouldFail
             ? Task.FromResult(ProvisioningResult.Refused("fake provider refused to provision"))
             : Task.FromResult(ProvisionAnswer);
@@ -73,7 +68,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
+    public Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct)
     {
         ThrowIfShouldFail();
         return Task.CompletedTask;
@@ -87,7 +82,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct)
+    public Task<ServiceCredentials> GetCredentialsAsync(AccountCredentialsOrder req, CancellationToken ct)
     {
         CredentialsCalls++;
         ThrowIfShouldFail();
@@ -95,20 +90,15 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
     {
         SsoCalls++;
-        if (FailWith is not null)
-        {
-            throw FailWith;
-        }
-
         ThrowIfShouldFail();
         return Task.FromResult("https://fake-panel.example.com/sso");
     }
 
     /// <inheritdoc/>
-    public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
+    public Task ChangePasswordAsync(ChangeAccountPasswordOrder req, CancellationToken ct)
     {
         ChangePasswordCalls++;
         ThrowIfShouldFail();
@@ -116,16 +106,26 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
+    public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct)
     {
         ChangePackageCalls++;
         ThrowIfShouldFail();
         return Task.CompletedTask;
     }
 
-    /// <summary>Throws when <see cref="ShouldFail"/> is set, simulating an upstream refusal.</summary>
+    /// <summary>Throws <see cref="FailWith"/> when it is set, simulating a provider's coded refusal.</summary>
+    private void ThrowIfFailWith()
+    {
+        if (FailWith is not null)
+        {
+            throw FailWith;
+        }
+    }
+
+    /// <summary>Throws when <see cref="FailWith"/> or <see cref="ShouldFail"/> is set, simulating an upstream refusal.</summary>
     private void ThrowIfShouldFail()
     {
+        ThrowIfFailWith();
         if (ShouldFail)
         {
             throw new InvalidOperationException("fake provider refused the request");

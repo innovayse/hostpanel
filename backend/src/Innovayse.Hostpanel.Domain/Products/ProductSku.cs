@@ -5,15 +5,21 @@ namespace Innovayse.Hostpanel.Domain.Products;
 /// <summary>
 /// The rule a product SKU must meet. A SKU is the stable machine identifier a fulfilment plugin
 /// keys on, so it is normalised (trimmed, upper case) before it is checked or stored, and only
-/// upper-case letters and digits joined by single hyphens, underscores or dots are accepted.
+/// upper-case letters and digits joined by single hyphens, underscores or dots are accepted. A SKU
+/// may also name a family and a value, <c>family:value</c>: exactly one colon between two such words.
+/// Normalising to upper case keeps every stored SKU valid and makes every comparison and the unique
+/// index case-insensitive, so <c>Plan:Pro</c> and <c>PLAN:PRO</c> are the same SKU.
 /// </summary>
 public static partial class ProductSku
 {
     /// <summary>The longest SKU accepted, after normalisation.</summary>
     public const int MaxLength = 64;
 
-    /// <summary>The accepted shape: upper-case alphanumeric words joined by a single <c>-</c>, <c>_</c> or <c>.</c>.</summary>
-    public const string Pattern = "^[A-Z0-9]+(?:[-_.][A-Z0-9]+)*$";
+    /// <summary>One segment: upper-case alphanumeric words joined by a single <c>-</c>, <c>_</c> or <c>.</c>.</summary>
+    private const string Segment = "[A-Z0-9]+(?:[-_.][A-Z0-9]+)*";
+
+    /// <summary>The accepted shape: one <see cref="Segment"/>, or two of them joined by exactly one <c>:</c>.</summary>
+    public const string Pattern = "^" + Segment + "(?::" + Segment + ")?$";
 
     /// <summary>Brings a SKU to its stored form: surrounding white space removed, upper case.</summary>
     /// <param name="sku">The SKU as typed or imported, or <see langword="null"/>.</param>

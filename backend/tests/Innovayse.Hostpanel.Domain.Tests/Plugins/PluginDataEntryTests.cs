@@ -213,4 +213,90 @@ public sealed class PluginDataEntryTests
 
         size.Should().Be((long)PluginDataEntry.MaxKeyLength + PluginDataEntry.MaxValueLength);
     }
+
+    /// <summary>A row created without an expiry never expires, however much time passes.</summary>
+    [Fact]
+    public void Create_WithoutAnExpiry_NeverExpires()
+    {
+        var data = PluginDataEntry.Create("reports", "ref-1", "cursor", "42");
+
+        data.ExpiresAt.Should().BeNull();
+        data.IsExpiredAt(DateTimeOffset.MaxValue).Should().BeFalse();
+    }
+
+    /// <summary>A row created with an expiry is live before it and expired at it and after it.</summary>
+    [Fact]
+    public void Create_WithAnExpiry_ExpiresAtThatMoment()
+    {
+        var expiresAt = new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
+        var data = PluginDataEntry.Create("reports", "ref-1", "cursor", "42", expiresAt);
+
+        data.ExpiresAt.Should().Be(expiresAt);
+        data.IsExpiredAt(expiresAt.AddTicks(-1)).Should().BeFalse();
+        data.IsExpiredAt(expiresAt).Should().BeTrue();
+        data.IsExpiredAt(expiresAt.AddDays(1)).Should().BeTrue();
+    }
+
+    /// <summary>A plain ChangeValue clears the expiry and one with an expiry replaces it.</summary>
+    [Fact]
+    public void ChangeValue_ReplacesOrClearsTheExpiry()
+    {
+        var first = new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
+        var second = first.AddHours(1);
+        var data = PluginDataEntry.Create("reports", "ref-1", "cursor", "42", first);
+
+        data.ChangeValue("43", second);
+        data.ExpiresAt.Should().Be(second);
+
+        data.ChangeValue("44");
+        data.ExpiresAt.Should().BeNull();
+    }
+
+    /// <summary>A refused value leaves the expiry as it was.</summary>
+    [Fact]
+    public void ChangeValue_WithABadValue_KeepsTheExpiry()
+    {
+        var expiresAt = new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
+        var data = PluginDataEntry.Create("reports", "ref-1", "cursor", "42", expiresAt);
+
+        var act = () => data.ChangeValue(null!);
+
+        act.Should().Throw<DomainRuleException>();
+        data.ExpiresAt.Should().Be(expiresAt);
+    }
+
+    /// <summary>A prefix is a key's characters or nothing, and anything else is refused with PLUGIN_STORE_KEY_INVALID.</summary>
+    /// <param name="prefix">The prefix.</param>
+    /// <param name="valid">Whether the store accepts it.</param>
+    [Theory]
+    [InlineData("", true)]
+    [InlineData("a", true)]
+    [InlineData("a.b-c_d:", true)]
+    [InlineData("a b", false)]
+    [InlineData("a/", false)]
+    [InlineData("é", false)]
+    [InlineData(null, false)]
+    public void EnsurePrefix_AcceptsOnlyKeyCharacters(string? prefix, bool valid)
+    {
+        PluginDataEntry.IsValidPrefix(prefix).Should().Be(valid);
+
+        var act = () => PluginDataEntry.EnsurePrefix(prefix);
+
+        if (valid)
+        {
+            act.Should().NotThrow();
+        }
+        else
+        {
+            act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(PluginStoreErrors.KeyInvalid);
+        }
+    }
+
+    /// <summary>The longest prefix is accepted and one character more is not.</summary>
+    [Fact]
+    public void IsValidPrefix_StopsAtTheKeyLength()
+    {
+        PluginDataEntry.IsValidPrefix(new string('a', PluginDataEntry.MaxKeyLength)).Should().BeTrue();
+        PluginDataEntry.IsValidPrefix(new string('a', PluginDataEntry.MaxKeyLength + 1)).Should().BeFalse();
+    }
 }

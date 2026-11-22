@@ -62,7 +62,7 @@ public sealed partial class NoVendorNamesTests
     /// this repository, so its text names no class of the host, no layer of its architecture and no repository.
     /// </summary>
     /// <returns>The compiled expression.</returns>
-    [GeneratedRegex(@"ProvisioningProviderFactory|ServerConnectionTester|GetHostingPanelServerInfoHandler|CwpApiClient|Cwp7ApiClient|PluginActivator|PluginLoader|PluginRegistry|HostedPluginRunner|PluginManifestReader|Innovayse\.Hostpanel|(Application|Infrastructure|Domain|API) layer|this repository", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"ProvisioningProviderFactory|ServerConnectionTester|GetHostingPanelServerInfoHandler|CwpApiClient|PluginActivator|PluginLoader|PluginRegistry|HostedPluginRunner|PluginManifestReader|Innovayse\.Hostpanel|(Application|Infrastructure|Domain|API) layer|this repository", RegexOptions.IgnoreCase)]
     private static partial Regex HostInternalName();
 
     /// <summary>

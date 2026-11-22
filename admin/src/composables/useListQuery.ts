@@ -52,6 +52,13 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
    */
   enumOf: <E extends string>(key: K, members: Record<string, E>) => ComputedRef<E | undefined>
   /**
+   * Reads an applied filter as the text it holds, for a value the screen cannot list in advance, such as an id an installed plugin declares.
+   *
+   * @param key - The filter field in the address.
+   * @returns A computed holding the text, undefined when the filter is not set.
+   */
+  textOf: (key: K) => ComputedRef<string | undefined>
+  /**
    * Reads an applied filter as the id of a record.
    *
    * @param key - The filter field in the address.
@@ -80,7 +87,7 @@ export interface ListQuery<K extends string> extends FilterQuery<K> {
  * Must run in a component's setup, because it reads the router and registers hooks.
  *
  * @param keys - The filter fields, each stored in the query under its own name.
- * @returns Everything `useFilterQuery` returns, plus `narrowed`, `loadOnChange`, `stepBackWhenEmpty`, `enumOf`, `idOf`, `dateOf` and `chipsOf`.
+ * @returns Everything `useFilterQuery` returns, plus `narrowed`, `loadOnChange`, `stepBackWhenEmpty`, `enumOf`, `textOf`, `idOf`, `dateOf` and `chipsOf`.
  */
 export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K> => {
   /** The address-backed filters, search and page. */
@@ -128,6 +135,13 @@ export const useListQuery = <K extends string>(keys: readonly K[]): ListQuery<K>
      * @returns The member, undefined when the value is none of them.
      */
     enumOf: (key, members) => computed(() => Object.values(members).find(value => value === query.applied.value[key])),
+    /**
+     * The filter under the key as the text it holds.
+     *
+     * @param key - The filter key in the address.
+     * @returns The text, undefined when the filter is not set.
+     */
+    textOf: key => computed(() => query.applied.value[key] || undefined),
     /**
      * The filter under the key as a positive whole id.
      *

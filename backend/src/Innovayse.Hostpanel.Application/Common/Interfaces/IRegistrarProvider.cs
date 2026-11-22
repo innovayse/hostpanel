@@ -1,16 +1,18 @@
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
 /// <summary>
 /// Abstraction over a domain registrar provider (any registrar API supplier).
-/// Implementations live in Infrastructure/Integrations.
+/// The one implementation that talks to a registrar calls a registrar plugin (Infrastructure/Plugins).
 /// </summary>
 /// <remarks>
 /// A purchase or a change succeeds only when the registrar did it. An unconfigured registrar, or
 /// one that refuses, answers with a failed <see cref="RegistrarResult"/>, never a no-op success;
-/// an exception means the outcome is unknown (a timeout, a 5xx).
+/// an exception means the outcome is unknown (a timeout, a 5xx). A refused read (availability, prices, the DNS zone)
+/// is a failed <see cref="Result{T}"/> carrying the same <c>REGISTRAR_*</c> code.
 /// </remarks>
 public interface IRegistrarProvider
 {
@@ -108,8 +110,11 @@ public interface IRegistrarProvider
     /// </summary>
     /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>List of DNS records in the zone.</returns>
-    public Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct);
+    /// <returns>
+    /// The DNS records in the zone (empty when the registrar holds none), or a failure carrying the <c>REGISTRAR_*</c> code
+    /// that words why the registrar did not answer.
+    /// </returns>
+    public Task<Result<IReadOnlyList<DnsRecord>>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Adds a new DNS record to the domain's zone at the registrar.
@@ -122,10 +127,10 @@ public interface IRegistrarProvider
     /// <summary>
     /// Updates an existing DNS record in the domain's zone at the registrar.
     /// </summary>
-    /// <param name="change">The change to apply.</param>
+    /// <param name="update">The record as it stood and as it must be.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the record was updated.</returns>
-    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct);
+    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordUpdate update, CancellationToken ct);
 
     /// <summary>
     /// Deletes a DNS record from the domain's zone at the registrar.
@@ -146,13 +151,13 @@ public interface IRegistrarProvider
     /// <summary>
     /// Reads the current WHOIS registrant contact details of a domain from the registrar.
     /// </summary>
-    /// <param name="domainName">The fully-qualified domain name.</param>
+    /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The registrant contact the registrar holds, or <see langword="null"/> when the registrar
     /// has no contact record for the name or is not configured.
     /// </returns>
-    public Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct);
+    public Task<DomainContact?> GetContactDetailsAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Enables or disables email forwarding for a domain at the registrar.
@@ -199,21 +204,24 @@ public interface IRegistrarProvider
     /// </summary>
     /// <param name="domainName">The fully-qualified domain name to check.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> if the domain is available; otherwise <see langword="false"/>.</returns>
-    public Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct);
+    /// <returns>
+    /// Success with <see langword="true"/> if the domain is available, otherwise <see langword="false"/>; a failure carrying
+    /// the <c>REGISTRAR_*</c> code when the registrar refused to answer, which is unknown rather than "taken".
+    /// </returns>
+    public Task<Result<bool>> CheckAvailabilityAsync(string domainName, CancellationToken ct);
 
     /// <summary>
     /// Polls the registrar to check whether a pending domain registration or transfer has become active.
     /// Used by the sync job for registrars that require polling (see <see cref="RegistrarResult.RequiresPolling"/>).
     /// </summary>
-    /// <param name="domainName">The fully-qualified domain name to check.</param>
+    /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// A <see cref="RegistrarResult"/> with <see cref="RegistrarResult.Success"/> set to <see langword="true"/>
     /// and a valid <see cref="RegistrarResult.RegistrarRef"/> and <see cref="RegistrarResult.ExpiresAt"/> when the
     /// domain is now active at the registrar; otherwise <see cref="RegistrarResult.Success"/> is <see langword="false"/>.
     /// </returns>
-    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct);
+    public Task<RegistrarResult> CheckDomainActiveAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Performs a WHOIS lookup for the given domain name.
@@ -229,7 +237,7 @@ public interface IRegistrarProvider
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// A list of <see cref="TldPricing"/> entries, one per TLD, containing register/renew/transfer
-    /// prices keyed by period in years.
+    /// prices keyed by period in years, or a failure carrying the <c>REGISTRAR_*</c> code when the registrar refused.
     /// </returns>
-    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct);
+    public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct);
 }

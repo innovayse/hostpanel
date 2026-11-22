@@ -1,0 +1,48 @@
+{
+  "footer": {
+    "tagline": "Hosting web y dominios rápidos y fiables, con personas reales en soporte.",
+    "cta": {
+      "title": "¿Listo para poner su sitio en línea?",
+      "text": "Busque un dominio o elija un plan de hosting y esté en línea en minutos.",
+      "plans": "Empezar"
+    },
+    "columns": {
+      "hosting": "Hosting",
+      "domains": "Dominios",
+      "company": "Empresa",
+      "support": "Soporte",
+      "legal": "Legal"
+    },
+    "hosting": {
+      "all": "Todos los planes"
+    },
+    "domains": {
+      "register": "Registrar un dominio",
+      "transfer": "Transferir un dominio",
+      "pricing": "Precios de dominios"
+    },
+    "company": {
+      "about": "Sobre nosotros",
+      "contact": "Contacto",
+      "announcements": "Anuncios"
+    },
+    "support": {
+      "help": "Centro de ayuda",
+      "faq": "Preguntas frecuentes",
+      "ticket": "Contactar con soporte"
+    },
+    "trust": {
+      "secure": "Conexión segura",
+      "payments": "Pagos seguros",
+      "guarantee": "Garantía de devolución del dinero"
+    },
+    "bottom": {
+      "rights": "Todos los derechos reservados.",
+      "privacy": "Política de privacidad",
+      "cookies": "Política de cookies",
+      "terms": "Condiciones del servicio",
+      "refund": "Política de reembolso",
+      "acceptableUse": "Política de uso aceptable"
+    }
+  }
+}

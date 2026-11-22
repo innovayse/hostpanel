@@ -46,14 +46,17 @@ export default defineNuxtConfig({
     '/ru/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/de/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/es/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/ru/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/de/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/es/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/ru/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/de/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/es/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // The hosted-gateway returnUrl landing page. It belongs to this group for the same two
     // reasons: it has nothing to server-render (the payment outcome is only known after the
     // on-mount verification call), and a page whose URL carries an invoice/order id must
@@ -65,6 +68,7 @@ export default defineNuxtConfig({
     '/ru/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/de/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/es/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // The unsubscribe landing page opened from a campaign mail: its address carries a personal token and the
     // request is made on a click, so there is nothing to server-render and nothing to index. The token stays in the
     // address, so no page or request it leads to may be told where the reader came from: no-referrer.
@@ -72,6 +76,7 @@ export default defineNuxtConfig({
     '/ru/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     '/hy/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     '/de/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
+    '/es/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     // The live-chat SDK (plugins/live-chat.ts) draws its launcher bubble in *this* page and
     // points the inbox icon at a root-relative `/brand-assets/` path, which would 404 into the
     // Vue Router. When the operator names a chat server (NUXT_PUBLIC_PORTAL_CHAT_BASE_URL) the
@@ -305,7 +310,8 @@ export default defineNuxtConfig({
       { code: 'en', name: 'English', language: 'en-US' },
       { code: 'ru', name: 'Русский', language: 'ru-RU' },
       { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
-      { code: 'de', name: 'Deutsch', language: 'de-DE' }
+      { code: 'de', name: 'Deutsch', language: 'de-DE' },
+      { code: 'es', name: 'Español', language: 'es-ES' }
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',

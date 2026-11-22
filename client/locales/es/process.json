@@ -1,0 +1,25 @@
+{
+  "process": {
+    "badge": "Cómo funciona",
+    "title": "Del pedido al sitio en línea en cuatro pasos",
+    "description": "Elija un plan, añada un dominio y su sitio estará en línea el mismo día.",
+    "steps": {
+      "discovery": {
+        "title": "Elija un plan",
+        "description": "Compare planes compartidos, VPS y dedicados y elija los recursos que necesita su sitio."
+      },
+      "design": {
+        "title": "Elija un dominio",
+        "description": "Registre un dominio nuevo o apunte uno existente a su cuenta de hosting."
+      },
+      "development": {
+        "title": "Configure su sitio",
+        "description": "Instale un CMS con un clic, suba sus archivos o deje que migremos su sitio gratis."
+      },
+      "launch": {
+        "title": "Publique y reciba soporte",
+        "description": "Su sitio estará en línea con SSL y copias de seguridad, y nuestro equipo le atenderá las 24 horas."
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Resources;
+using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
@@ -57,6 +58,30 @@ public sealed class PluginHostAccessManifestTests
         PluginManifestValidator.Validate(Manifest("Fulfilment", ""","capabilities":["endpoints"],"hostAccess":["ssh"]""")).Should().BeNull();
         PluginManifestValidator.Validate(Manifest("App", ""","hostAccess":[]""")).Should().BeNull();
         PluginManifestValidator.Validate(Manifest("App", ""","hostAccess":null""")).Should().BeNull();
+    }
+
+    /// <summary>
+    /// Every kind the SDK defines is accepted in a version 2 manifest (#1357), so a kind the SDK adds is covered with no new case.
+    /// </summary>
+    /// <param name="kind">One of <see cref="PluginHostAccess.All"/>.</param>
+    [Theory]
+    [MemberData(nameof(DefinedKinds))]
+    public void Validate_EveryDefinedHostAccess_Passes(string kind)
+    {
+        PluginManifestValidator.Validate(Manifest("App", $""","hostAccess":["{kind}"]""")).Should().BeNull();
+    }
+
+    /// <summary>The kinds the SDK defines, as theory data.</summary>
+    /// <returns>One row per kind.</returns>
+    public static TheoryData<string> DefinedKinds()
+    {
+        var kinds = new TheoryData<string>();
+        foreach (var kind in PluginHostAccess.All)
+        {
+            kinds.Add(kind);
+        }
+
+        return kinds;
     }
 
     /// <summary>A kind of hosting access the SDK does not define is refused, whatever its spelling (#758).</summary>

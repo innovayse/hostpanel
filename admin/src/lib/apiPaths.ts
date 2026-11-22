@@ -57,6 +57,7 @@ export enum ApiPath {
   AdminServers = '/admin/servers',
   /** `/admin/servers/options` the unpaged lean server lookup the pickers and the dashboard read. */
   AdminServerOptions = '/admin/servers/options',
+  AdminServerModules = '/admin/servers/modules',
   /** `/admin/release-status`: installed version and latest GitHub release. */
   AdminReleaseStatus = '/admin/release-status',
   /** `/admin/version`: installed version, readable by every staff role. */
@@ -99,6 +100,8 @@ export enum ApiPath {
   NetworkIssues = '/network-issues',
   /** `/orders` collection and its members. */
   Orders = '/orders',
+  /** `/payment-methods` list of the methods a checkout can offer. */
+  PaymentMethods = '/payment-methods',
   /** `/predefined-replies` collection and its members. */
   PredefinedReplies = '/predefined-replies',
   /** `/predefined-replies/categories` collection and its members. */

@@ -11,5 +11,7 @@ export enum AppLocale {
   /** Armenian. */
   Hy = 'hy',
   /** German. */
-  De = 'de'
+  De = 'de',
+  /** Spanish. */
+  Es = 'es'
 }

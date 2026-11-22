@@ -15,7 +15,6 @@ const keys = {
   [MessageLanguage.En]: 'portal.contact.address',
   [MessageLanguage.Ru]: 'portal.contact.address.ru',
   [MessageLanguage.Hy]: 'portal.contact.address.hy',
-  [MessageLanguage.Es]: 'portal.contact.address.es',
 }
 
 /**
@@ -46,7 +45,7 @@ describe('useLocalizedSettingDrafts', () => {
     ])
 
     expect(drafts.en.value.value).toBe('1 Main St')
-    expect(filled.value).toEqual({ en: true, ru: false, hy: false, es: false })
+    expect(filled.value).toEqual({ en: true, ru: false, hy: false })
   })
 
   it('follows an edit in the marks', () => {

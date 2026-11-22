@@ -35,6 +35,11 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
         CultureInfo.InvariantCulture,
         $"A plugin store key is 1 to {MaxKeyLength} characters of letters, digits, '.', '-', '_' and ':'.");
 
+    /// <summary>The sentence of a refused prefix; it names the rule, never the prefix a plugin passed.</summary>
+    private static readonly string PrefixRule = string.Create(
+        CultureInfo.InvariantCulture,
+        $"A plugin store prefix is up to {MaxKeyLength} characters of letters, digits, '.', '-', '_' and ':'.");
+
     /// <summary>The sentence of a refused value; it names the rule, never the value a plugin passed.</summary>
     private static readonly string ValueRule = string.Create(
         CultureInfo.InvariantCulture, $"A plugin store value is text of at most {MaxValueLength} characters.");
@@ -58,6 +63,13 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
     public DateTimeOffset? UpdatedAt { get; private set; }
 
     /// <summary>
+    /// Gets the moment the value stops existing for the plugin, or <see langword="null"/> while it lives until it is removed.
+    /// Set by a write with a time to live and cleared by a plain write; an expired row is ignored by every read and count
+    /// and is removed by the periodic sweep.
+    /// </summary>
+    public DateTimeOffset? ExpiresAt { get; private set; }
+
+    /// <summary>
     /// Gets how much of its scope's <see cref="PluginStoreQuota.MaxChars"/> this row takes: the characters of its key
     /// plus the characters of its value.
     /// </summary>
@@ -73,6 +85,22 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
     public static long CharsOf(string key, string value)
     {
         return (long)key.Length + value.Length;
+    }
+
+    /// <summary>Whether the value has expired and so reads as absent.</summary>
+    /// <param name="now">The current moment.</param>
+    /// <returns><see langword="true"/> when the value has an expiry and <paramref name="now"/> is at or past it.</returns>
+    public bool IsExpiredAt(DateTimeOffset now)
+    {
+        return ExpiresAt is { } expiresAt && now >= expiresAt;
+    }
+
+    /// <summary>Whether <paramref name="prefix"/> is a prefix the store lists by: a key's characters, possibly none.</summary>
+    /// <param name="prefix">The prefix a plugin passed.</param>
+    /// <returns><see langword="true"/> when it is empty or a text <see cref="IsValidKey"/> accepts.</returns>
+    public static bool IsValidPrefix(string? prefix)
+    {
+        return prefix is not null && (prefix.Length == 0 || IsValidKey(prefix));
     }
 
     /// <summary>Whether <paramref name="key"/> is a key the store accepts.</summary>
@@ -101,13 +129,18 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
     /// <param name="clientRef">The plugin's opaque reference of the call's client, or <see langword="null"/> for a plugin-wide value.</param>
     /// <param name="key">The key, as <see cref="IsValidKey"/> accepts it.</param>
     /// <param name="value">The text to keep, as <see cref="IsValidValue"/> accepts it.</param>
+    /// <param name="expiresAt">When the value expires, or <see langword="null"/> to keep it until it is removed.</param>
     /// <returns>The new, unsaved value.</returns>
     /// <exception cref="DomainRuleException">Thrown when the key or the value breaks the SDK's contract.</exception>
-    public static PluginDataEntry Create(string pluginId, string? clientRef, string key, string value)
+    public static PluginDataEntry Create(
+        string pluginId, string? clientRef, string key, string value, DateTimeOffset? expiresAt = null)
     {
         EnsureKey(key);
         EnsureValue(value);
-        return new PluginDataEntry { PluginId = pluginId, ClientRef = clientRef, Key = key, Value = value };
+        return new PluginDataEntry
+        {
+            PluginId = pluginId, ClientRef = clientRef, Key = key, Value = value, ExpiresAt = expiresAt,
+        };
     }
 
     /// <summary>Refuses a key the SDK does not allow. Every store operation asks this before it reads or writes.</summary>
@@ -118,6 +151,17 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
         if (!IsValidKey(key))
         {
             throw new DomainRuleException(PluginStoreErrors.KeyInvalid, KeyRule);
+        }
+    }
+
+    /// <summary>Refuses a prefix the SDK does not allow. A listing asks this before it reads.</summary>
+    /// <param name="prefix">The prefix a plugin passed.</param>
+    /// <exception cref="DomainRuleException">Thrown when the prefix breaks the SDK's key rule.</exception>
+    public static void EnsurePrefix(string? prefix)
+    {
+        if (!IsValidPrefix(prefix))
+        {
+            throw new DomainRuleException(PluginStoreErrors.KeyInvalid, PrefixRule);
         }
     }
 
@@ -132,13 +176,15 @@ public sealed partial class PluginDataEntry : BaseEntity, IAggregateRoot
         }
     }
 
-    /// <summary>Replaces the stored text. The moment of the change is stamped on save.</summary>
+    /// <summary>Replaces the stored text and its expiry. The moment of the change is stamped on save.</summary>
     /// <param name="value">The new text, as <see cref="IsValidValue"/> accepts it.</param>
+    /// <param name="expiresAt">When the new value expires; <see langword="null"/> (a plain write) clears any earlier expiry.</param>
     /// <exception cref="DomainRuleException">Thrown when the value breaks the SDK's contract.</exception>
-    public void ChangeValue(string value)
+    public void ChangeValue(string value, DateTimeOffset? expiresAt = null)
     {
         EnsureValue(value);
         Value = value;
+        ExpiresAt = expiresAt;
     }
 
     /// <summary>The compiled <see cref="KeyPattern"/>.</summary>

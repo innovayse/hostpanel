@@ -23,14 +23,15 @@ public static class HttpBackstopTimeouts
     /// <summary>CWP control-panel clients, typed and named.</summary>
     public static readonly TimeSpan Cwp = TimeSpan.FromSeconds(15);
 
-    /// <summary>CWP7 control-panel clients, typed and named.</summary>
-    public static readonly TimeSpan Cwp7 = TimeSpan.FromSeconds(120);
-
-    /// <summary>Plesk XML API client, resolved by name per server.</summary>
-    public static readonly TimeSpan Plesk = TimeSpan.FromSeconds(120);
-
     /// <summary>WHM API client, resolved by name per cPanel server.</summary>
     public static readonly TimeSpan CPanelWhm = TimeSpan.FromSeconds(120);
+
+    /// <summary>
+    /// The client the host hands a panel, virtual server or registrar plugin through <c>IPanelTransport</c>. It has no
+    /// resilience pipeline, so this is its only timeout: as long as the slowest panel budget (account creation), so it never
+    /// cuts a call short that the panel's own profile would allow.
+    /// </summary>
+    public static readonly TimeSpan PanelTransport = TimeSpan.FromSeconds(120);
 
     /// <summary>The migration pull client.</summary>
     public static readonly TimeSpan Migration = TimeSpan.FromMinutes(5);
@@ -40,9 +41,6 @@ public static class HttpBackstopTimeouts
     /// body that stalls after its headers: the pipeline ends when the headers arrive, the client buffers the body after that.
     /// </summary>
     public static readonly TimeSpan ExchangeRate = TimeSpan.FromSeconds(20);
-
-    /// <summary>Domain registrar clients (Name.am and Namecheap).</summary>
-    public static readonly TimeSpan Registrar = TimeSpan.FromSeconds(30);
 
     /// <summary>The VAT number registers (the EU service and the UK authority); above the profile's 25 seconds in total.</summary>
     public static readonly TimeSpan VatRegister = TimeSpan.FromSeconds(30);

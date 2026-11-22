@@ -123,7 +123,10 @@ public sealed class SdkContractTests
         PluginHostAccess.Ssh.Should().Be("ssh");
         PluginHostAccess.Websites.Should().Be("websites");
         PluginHostAccess.Databases.Should().Be("databases");
-        PluginHostAccess.All.Should().Equal("ssh", "websites", "databases");
+
+        // SDK 3.11.0 added the kind that lets a plugin read the connection of one of the client's own services.
+        PluginHostAccess.ServiceConnection.Should().Be("serviceConnection");
+        PluginHostAccess.All.Should().Equal("ssh", "websites", "databases", "serviceConnection");
         Enum.GetNames<PluginHostAccessFailure>().Should().Equal(
             "NotAllowed", "NotFound", "Unavailable", "LimitReached", "ServerUnavailable", "InvalidRequest", "Conflict");
         typeof(IPluginHostApi).GetMethod("GetProfileAsync")!.ReturnType.Should().Be(typeof(Task<PluginClientProfile?>));
@@ -317,12 +320,17 @@ public sealed class SdkContractTests
             .Should().BeEquivalentTo("Account", "CanPurchase", "CanManagePaymentMethods");
     }
 
-    /// <summary>A fulfilment plugin has exactly the four hooks the host calls, in the host's vocabulary.</summary>
+    /// <summary>
+    /// A fulfilment plugin has the four hooks the host calls, in the host's vocabulary, and the plan change hook
+    /// SDK 3.12.0 added as a default method that does nothing.
+    /// </summary>
     [Fact]
     public void IFulfilmentPlugin_HasTheFourHooks()
     {
         typeof(IFulfilmentPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo(
-            "OnInvoicePaidAsync", "AdviseRefundAsync", "OnInvoiceRefundedAsync", "OnSubscriptionLapsedAsync");
+            "OnInvoicePaidAsync", "AdviseRefundAsync", "OnInvoiceRefundedAsync", "OnSubscriptionLapsedAsync",
+            "OnServicePlanChangedAsync");
+        typeof(IFulfilmentPlugin).GetMethod("OnServicePlanChangedAsync")!.IsAbstract.Should().BeFalse();
         typeof(IFulfilmentPlugin).GetMethod("AdviseRefundAsync")!.ReturnType
             .Should().Be(typeof(Task<RefundAdvice>));
     }
@@ -380,7 +388,9 @@ public sealed class SdkContractTests
         typeof(IPaymentPlugin).GetMethods().Where(m => m.Name == "RefundAsync")
             .Select(m => m.GetParameters().Select(p => p.ParameterType).ToArray())
             .Should().ContainEquivalentOf(new[] { typeof(RefundInstruction), typeof(CancellationToken) });
-        typeof(RefundInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("GatewayOrderId", "AmountMinor", "RefundId", "AlreadyRefundedMinor");
+        // SDK 3.11.0 added TransactionId, the id the plugin itself reported when the payment became paid.
+        typeof(RefundInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
+            "GatewayOrderId", "AmountMinor", "RefundId", "AlreadyRefundedMinor", "TransactionId");
         typeof(IPaymentPlugin).IsAssignableFrom(typeof(IPaymentCancelPlugin)).Should().BeTrue();
         typeof(IPaymentCancelPlugin).GetMethods().Select(m => m.Name).Should().BeEquivalentTo("CancelPaymentAsync");
         typeof(PaymentCancelResult).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Outcome", "GatewayReference");
@@ -411,8 +421,9 @@ public sealed class SdkContractTests
         typeof(SaveMethodContext).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("CustomerRef", "ReturnUrl");
         typeof(SaveMethodSession).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "SessionId", "Mode", "ClientToken", "RedirectUrl");
+        // SDK 3.11.0 added Kind and HasExpiry, for a stored method that is not a card.
         typeof(SavedMethod).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "MethodRef", "Brand", "Last4", "ExpiryMonth", "ExpiryYear", "IsDefault");
+            "MethodRef", "Brand", "Last4", "ExpiryMonth", "ExpiryYear", "IsDefault", "Kind", "HasExpiry");
         typeof(SavedMethodResult).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Saved", "Method");
         typeof(CredentialCustomerContext).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "ClientReference", "Email", "Name");
@@ -445,6 +456,24 @@ public sealed class SdkContractTests
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } });
         parsed!.Capabilities.Should().Equal(PluginCapabilities.StoredCredentials);
         parsed.HostAccess.Should().Equal(PluginHostAccess.Ssh);
+    }
+
+    /// <summary>
+    /// The optional payment API (SDK 3.11.0) extends the host API without changing it: its one member names only a gateway
+    /// order of the calling plugin, never a client or a plugin, and answers nothing, because the host may ignore the request and
+    /// never reports what it did.
+    /// </summary>
+    [Fact]
+    public void IPluginHostPaymentApi_ExtendsTheHostApiAndNamesOnlyAGatewayOrder()
+    {
+        typeof(IPluginHostPaymentApi).GetInterfaces().Should().Equal(typeof(IPluginHostApi));
+        var methods = typeof(IPluginHostPaymentApi).GetMethods();
+
+        methods.Select(m => m.Name).Should().Equal("RequestOrderReadAsync");
+        var read = typeof(IPluginHostPaymentApi).GetMethod("RequestOrderReadAsync")!;
+        read.ReturnType.Should().Be(typeof(Task));
+        read.GetParameters().Select(p => p.ParameterType).Should().Equal(typeof(string), typeof(CancellationToken));
+        read.GetParameters()[0].Name.Should().Be("gatewayOrderId");
     }
 
     /// <summary>
@@ -517,7 +546,7 @@ public sealed class SdkContractTests
         typeof(PluginManifest).GetMethod(nameof(PluginManifest.GetSettings))!.ReturnType
             .Should().Be(typeof(IReadOnlyList<PluginSetting>));
         typeof(PluginSetting).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "Key", "Label", "Type", "Required", "Options", "Description", "Default", "Placeholder", "Min", "Max");
+            "Key", "Label", "Type", "Required", "Options", "Description", "Default", "Placeholder", "Min", "Max", "ConnectionRole");
         typeof(PluginSettingOption).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Value", "Label");
         typeof(PluginApi).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Client", "Admin", "Callbacks");
         typeof(PluginRoute).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Method", "Path", "Permission", "RateLimit", "Streaming");
@@ -603,6 +632,7 @@ public sealed class SdkContractTests
     [InlineData(typeof(IPluginEndpoints), "Hostpanel.Sdk.Plugins.Endpoints")]
     [InlineData(typeof(IPluginHostApi), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(IPluginHostHostingApi), "Hostpanel.Sdk.Plugins.Host")]
+    [InlineData(typeof(IPluginHostPaymentApi), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(PluginWebsite), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(PluginWebsiteSpec), "Hostpanel.Sdk.Plugins.Host")]
     [InlineData(typeof(PluginDatabase), "Hostpanel.Sdk.Plugins.Host")]
@@ -638,8 +668,10 @@ public sealed class SdkContractTests
     public void PaymentSlotLifecycleAndPanelRecords_KeepTheirMembers()
     {
         // SDK 3.5.0 added PaymentInstruction.SavePaymentMethod and GatewayPaymentStatus.SavedMethod.
+        // SDK 3.11.0 added the payer and invoice details, all optional init members.
         typeof(PaymentInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "OrderNumber", "AmountMinor", "ReturnUrl", "Description", "Language", "SavePaymentMethod", "CustomerRef", "PayerEmail");
+            "OrderNumber", "AmountMinor", "ReturnUrl", "Description", "Language", "SavePaymentMethod", "CustomerRef", "PayerEmail",
+            "BillingCountry", "PayerName", "PayerPhone", "ClientTaxId", "DueAt", "Lines", "CallbackBaseUrl");
         // SDK 3.7.0 added PaymentSession.FormPost and PaymentSession.Kind.
         typeof(PaymentSession).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("GatewayOrderId", "RedirectUrl", "FormPost", "Kind");
         typeof(GatewayPaymentStatus).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(

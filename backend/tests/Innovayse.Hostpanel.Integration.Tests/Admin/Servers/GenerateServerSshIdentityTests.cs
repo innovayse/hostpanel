@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Renci.SshNet;
@@ -21,7 +21,7 @@ public sealed class GenerateServerSshIdentityTests(IntegrationTestFactory factor
     public async Task Generate_ReturnsThePublicHalfOnly_AndStoresAUsablePrivateKeyAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var serverId = await NewCwpServerAsync(admin);
+        var serverId = await SshTestSeeds.SeedBareServerAsync(factory, "ident.example.test");
 
         var response = await admin.PostAsync($"/api/admin/servers/{serverId}/ssh-identity", null);
 
@@ -50,8 +50,8 @@ public sealed class GenerateServerSshIdentityTests(IntegrationTestFactory factor
     public async Task EachServerGetsItsOwnIdentity_AndRotationKeepsTheBindingAndDisablesAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var a = await NewCwpServerAsync(admin);
-        var b = await NewCwpServerAsync(admin);
+        var a = await SshTestSeeds.SeedBareServerAsync(factory, "ident-a.example.test");
+        var b = await SshTestSeeds.SeedBareServerAsync(factory, "ident-b.example.test");
 
         var first = await (await admin.PostAsync($"/api/admin/servers/{a}/ssh-identity", null)).Content.ReadFromJsonAsync<JsonElement>();
         var other = await (await admin.PostAsync($"/api/admin/servers/{b}/ssh-identity", null)).Content.ReadFromJsonAsync<JsonElement>();
@@ -71,23 +71,11 @@ public sealed class GenerateServerSshIdentityTests(IntegrationTestFactory factor
     public async Task UnsupportedModule_IsRefusedAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, "panel.example.test", 22, ServerModule.CPanel, enabled: false);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, "panel.example.test", 22, ServerModules.CPanel, enabled: false);
 
         var response = await admin.PostAsync($"/api/admin/servers/{serverId}/ssh-identity", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(HostpanelErrorCodes.SSH_MODULE_NOT_SUPPORTED);
-    }
-
-    /// <summary>Creates a server on the v7 hosting panel module through the admin API, with no SSH settings yet.</summary>
-    /// <param name="admin">The administrator's client.</param>
-    /// <returns>The server id.</returns>
-    private static async Task<int> NewCwpServerAsync(HttpClient admin)
-    {
-        var created = await admin.PostAsJsonAsync(
-            "/api/admin/servers",
-            ServersTestSeeds.ServerBody($"ident-{Guid.NewGuid():N}", "ident.example.test", ServerModule.Cwp7));
-        created.EnsureSuccessStatusCode();
-        return await created.Content.ReadFromJsonAsync<int>();
     }
 }

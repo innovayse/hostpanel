@@ -1,10 +1,11 @@
 using System.Security.Cryptography;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
+using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
-using Innovayse.Hostpanel.Domain;
+using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -91,7 +92,9 @@ public sealed class ProvisionServiceHandler
     /// when the panel holds an account under the username that is not this service's, or
     /// <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider rejects the request or answers a
     /// success without an account reference, or <c>PROVISIONING_OUTCOME_UNKNOWN</c> when the
-    /// provider could not tell whether the account was created and the call is to be retried.
+    /// provider could not tell whether the account was created and the call is to be retried, <c>PROVISIONING_PENDING</c>
+    /// when the panel accepted the account and is still creating it, or the panel's own refusal code
+    /// (<see cref="PanelErrorCodes"/>) when a panel plugin refused with a reason.
     /// </returns>
     public async Task<Result> HandleAsync(ProvisionServiceCommand cmd, CancellationToken ct)
     {
@@ -123,7 +126,7 @@ public sealed class ProvisionServiceHandler
 
         // Only a server whose panel the factory can drive is ever chosen, in a group or not: any
         // other would only fail the order at the panel.
-        var supported = _providerFactory.SupportedModules;
+        var supported = await _providerFactory.SupportedModulesAsync(ct);
         ServerConnectionDto? server;
         if (product.ServerGroupId is { } groupId)
         {
@@ -156,43 +159,40 @@ public sealed class ProvisionServiceHandler
         // account, the retry must send the password the account was created with.
         await _context.SaveChangesAsync(ct);
 
-        var order = new ProvisionAccountOrder(service.Id, service.Domain, service.Username, password, product.PackageName);
+        // The owner contact a panel keeps comes from the Clients module, through its brief query.
+        var client = await _bus.GetRequiredClientBriefAsync(service.ClientId, withEmail: true, ct);
+        var order = new ProvisionAccountOrder(
+            service.Id, service.Domain, service.Username, password, product.PackageName,
+            client.Id, client.Email, $"{client.FirstName} {client.LastName}".Trim());
 
-        ProvisioningResult result;
-        try
+        // The username and domain codes are the provider stopping the call before the panel was asked (staff can fix the stored
+        // value); PROVISIONING_OUTCOME_UNKNOWN is a create that may or may not have happened, which is not a refusal: the service
+        // stays Pending with its saved password and the retry adopts the account if the first attempt made it.
+        var call = await PanelCall.RunAsync(
+            () => _providerFactory.CreateFor(server).ProvisionAsync(order, ct),
+            _logger, "Provisioning", service.Id, server.Id, HostpanelErrorCodes.PROVISIONING_UPSTREAM_FAILED,
+            HostpanelErrorCodes.CPANEL_USERNAME_INVALID, HostpanelErrorCodes.CPANEL_DOMAIN_INVALID, HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
+        if (call.IsFailure)
         {
-            var provider = _providerFactory.CreateFor(server);
-            result = await provider.ProvisionAsync(order, ct);
-        }
-        catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.CPANEL_USERNAME_INVALID or HostpanelErrorCodes.CPANEL_DOMAIN_INVALID)
-        {
-            // The provider stopped the call before the panel was asked: the stored username or domain
-            // is one the panel can never accept, which staff can fix, so the caller is told which.
-            _logger.LogWarning("Provisioning service {ServiceId} on server {ServerId} was stopped: {ErrorCode}.", service.Id, server.Id, ex.Code);
-            return Result.FailureCode(ex.Code);
-        }
-        catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN)
-        {
-            // The create may or may not have happened on the panel. This is not a refusal: the
-            // service stays Pending with its saved password, and the caller is told to retry,
-            // which adopts the account if the first attempt made it.
-            _logger.LogWarning("Provisioning service {ServiceId} on server {ServerId} has an unknown outcome.", service.Id, server.Id);
-            return Result.FailureCode(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
-        }
-        catch (Exception ex)
-        {
-            // The provider's own message and the server it named never reach the caller (rules
-            // on upstream detail); they are logged here for whoever has to chase the failure up.
-            _logger.LogWarning(ex, "Provisioning service {ServiceId} on server {ServerId} failed.", service.Id, server.Id);
-            return Result.FailureCode(HostpanelErrorCodes.PROVISIONING_UPSTREAM_FAILED);
+            return Result.FailureCode(call.ErrorCode!);
         }
 
+        var result = call.Value!;
         if (result.Outcome is ProvisioningOutcome.Refused)
         {
             _logger.LogWarning(
                 "Provisioning service {ServiceId} on server {ServerId} was refused: {ErrorMessage}",
                 service.Id, server.Id, result.ErrorMessage);
             return Result.FailureCode(HostpanelErrorCodes.PROVISIONING_UPSTREAM_FAILED);
+        }
+
+        if (result.Outcome is ProvisioningOutcome.Pending)
+        {
+            // The panel is still creating the account. Nothing is activated: the service keeps its saved details and stays
+            // Pending, and the retry finds the account (the panel answers AlreadyApplied once it is ready) and adopts it.
+            _logger.LogInformation(
+                "Provisioning service {ServiceId} on server {ServerId} is pending on the panel.", service.Id, server.Id);
+            return Result.FailureCode(HostpanelErrorCodes.PROVISIONING_PENDING);
         }
 
         if (result.Outcome is ProvisioningOutcome.AlreadyExists

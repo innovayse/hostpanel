@@ -22,6 +22,8 @@ export const MessageLanguage = {
   Ru: ContentLanguage.Ru,
   /** Armenian. */
   Hy: ContentLanguage.Hy,
+  /** German. */
+  De: ContentLanguage.De,
   /** Spanish. */
   Es: ContentLanguage.Es,
 } as const
@@ -46,6 +48,7 @@ export const buildMessages = (files: Record<string, MessageTree>): Record<Messag
     [MessageLanguage.En]: {},
     [MessageLanguage.Ru]: {},
     [MessageLanguage.Hy]: {},
+    [MessageLanguage.De]: {},
     [MessageLanguage.Es]: {},
   }
   for (const [path, tree] of Object.entries(files)) {

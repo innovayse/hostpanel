@@ -37,6 +37,16 @@ const stubDomainList = (page: Page): Promise<StubApi> =>
     routes: [
       {
         method: HttpMethod.Get,
+        path: '/api/admin/plugins',
+        respond: () => ({
+          body: [
+            { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded' },
+            { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded' },
+          ],
+        }),
+      },
+      {
+        method: HttpMethod.Get,
         path: '/api/domains',
         respond: (call) => {
           const query = new URLSearchParams(call.search)
@@ -95,18 +105,18 @@ test('the status and registrar filters are sent to the API, shown as chips and r
 
   await page.getByTestId('filter-trigger').click()
   await chooseOption(page, 'domains-filter-status', 'Expired')
-  await chooseOption(page, 'domains-filter-registrar', 'Namecheap')
+  await chooseOption(page, 'domains-filter-registrar', 'Registrar Two')
   await page.getByTestId('filter-apply').click()
 
   await expect(page).toHaveURL(/status=Expired/)
-  await expect(page).toHaveURL(/registrarModule=Namecheap/)
+  await expect(page).toHaveURL(/registrarModule=registrar-two/)
   await expect(page.getByTestId('filter-chip-status')).toContainText('Expired')
-  await expect(page.getByTestId('filter-chip-registrarModule')).toContainText('Namecheap')
+  await expect(page.getByTestId('filter-chip-registrarModule')).toContainText('Registrar Two')
   await expect(page.getByTestId(`domains-row-${registeredDomain.id}`)).toHaveCount(0)
   await expect(page.getByTestId(`domains-row-${expiredDomain.id}`)).toBeVisible()
   const sent = api.callsTo(HttpMethod.Get, '/api/domains').at(-1)?.search ?? ''
   expect(sent).toContain('status=Expired')
-  expect(sent).toContain('registrarModule=Namecheap')
+  expect(sent).toContain('registrarModule=registrar-two')
 
   await page.getByTestId('filter-chip-remove-status').click()
 

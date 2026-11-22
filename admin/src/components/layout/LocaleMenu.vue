@@ -32,6 +32,7 @@ const localeLabels = computed<Record<SupportedLocale, string>>(() => ({
   en: t('layout.localeLabels.en'),
   hy: t('layout.localeLabels.hy'),
   ru: t('layout.localeLabels.ru'),
+  de: t('layout.localeLabels.de'),
   es: t('layout.localeLabels.es'),
 }))
 

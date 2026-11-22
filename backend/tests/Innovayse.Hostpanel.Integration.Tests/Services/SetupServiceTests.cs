@@ -58,7 +58,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         await context.SaveChangesAsync(CancellationToken.None);
 
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
-        (await selector.SelectAsync([ServerModule.Cwp7], CancellationToken.None)).Should().BeNull(
+        (await selector.SelectAsync([ServerModules.CPanel], CancellationToken.None)).Should().BeNull(
             "the test host registers no server, so this refusal is genuine and not a stale fixture");
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -146,7 +146,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         }
         finally
         {
-            // This class shares one database, and the no-server test relies on no eligible CWP7
+            // This class shares one database, and the no-server test relies on no eligible
             // server in it, so the servers seeded here are taken out of selection afterwards.
             // Disabled rather than deleted: the provisioned service still points at one of them.
             await context.Servers
@@ -155,7 +155,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         }
     }
 
-    /// <summary>Builds an enabled CWP7 server that is never reached over the network.</summary>
+    /// <summary>Builds an enabled server that is never reached over the network.</summary>
     /// <param name="label">A label for the name and hostname.</param>
     /// <param name="isDefault">Whether it is the module's default server.</param>
     /// <param name="maxAccounts">The account limit, or <see langword="null"/> for none.</param>
@@ -167,7 +167,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
             Hostname: $"{label}.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModule.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, "hash"),
             UseSSL: true,
@@ -177,5 +177,6 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), now);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), now);
 }

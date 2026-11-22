@@ -3,6 +3,7 @@ using FluentValidation;
 using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -16,6 +17,12 @@ namespace Innovayse.Hostpanel.Application.Common.Validators;
 /// </summary>
 public static class ValidationRuleExtensions
 {
+    /// <summary>Most payment methods a group may restrict itself to; far above the plugins a deployment loads.</summary>
+    public const int PaymentMethodsMaxCount = 50;
+
+    /// <summary>Longest a payment method module id may be.</summary>
+    public const int PaymentMethodMaxLength = 100;
+
     /// <summary>Requires an identifier to be a positive integer.</summary>
     /// <typeparam name="T">The command or query being validated.</typeparam>
     /// <param name="rule">The rule builder for the id property.</param>
@@ -100,6 +107,24 @@ public static class ValidationRuleExtensions
         validator.When(
             savesMethod,
             () => validator.RuleFor(consentTextVersion).MustBeConsentTextVersion(message));
+    }
+
+    /// <summary>
+    /// Requires a registrar filter, when one is given, to name an installed registrar plugin (compared without regard to letter
+    /// case), so a typo is a refusal and not a list that silently comes back empty. An absent filter passes.
+    /// </summary>
+    /// <typeparam name="T">The query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the optional registrar module property.</param>
+    /// <param name="modules">Tells which registrar plugins are installed.</param>
+    /// <param name="message">The localized sentence reported when no installed registrar plugin has the id.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> MustBeInstalledRegistrar<T>(
+        this IRuleBuilder<T, string?> rule, IRegistrarModuleCatalogue modules, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(modules);
+
+        return rule.Must(module => module is null || modules.FindId(module) is not null).WithMessage(message);
     }
 
     /// <summary>Requires a 1-based page number.</summary>
@@ -362,6 +387,26 @@ public static class ValidationRuleExtensions
                 || list.Where(t => t is not null).Select(localeOf).Distinct(StringComparer.Ordinal).Count()
                     == list.Count(t => t is not null))
             .WithMessage(message);
+    }
+
+    /// <summary>
+    /// Requires the payment method module ids a product group restricts itself to to stay within the limits of the
+    /// column that stores them: no more than <see cref="PaymentMethodsMaxCount"/> ids, each no longer than
+    /// <see cref="PaymentMethodMaxLength"/>. An absent list passes: it leaves the restriction as it is.
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the allowed payment methods property.</param>
+    /// <param name="tooManyMessage">The localized sentence reported when the list is over its count limit.</param>
+    /// <param name="tooLongMessage">The localized sentence reported when an id is over its length limit.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, IReadOnlyList<string>?> MustBePaymentMethodList<T>(
+        this IRuleBuilder<T, IReadOnlyList<string>?> rule, string tooManyMessage, string tooLongMessage)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(methods => methods is null || methods.Count <= PaymentMethodsMaxCount).WithMessage(tooManyMessage)
+            .Must(methods => methods is null || methods.All(m => m is null || m.Length <= PaymentMethodMaxLength))
+            .WithMessage(tooLongMessage);
     }
 
     /// <summary>Whether a value is an absolute http(s) address.</summary>

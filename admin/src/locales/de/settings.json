@@ -1,0 +1,798 @@
+{
+  "systemSettings": "Systemeinstellungen",
+  "secret": {
+    "set": "••••••, gesetzt",
+    "notSet": "Nicht gesetzt",
+    "replace": "Ersetzen",
+    "clear": "Löschen",
+    "cancel": "Abbrechen",
+    "placeholder": "Neuen Wert eingeben",
+    "pendingClear": "Wird beim Speichern gelöscht"
+  },
+  "table": {
+    "key": "Schlüssel",
+    "value": "Wert",
+    "description": "Beschreibung",
+    "noSettings": "Keine Einstellungen gefunden."
+  },
+  "siteIdentity": {
+    "title": "Website-Identität",
+    "description": "Wie sich der Storefront selbst nennt. Der Name erscheint im Browsertitel, in Social-Media-Vorschauen, im Alt-Text des Logos und in strukturierten Daten; der Slogan ist die Standard-Meta-Beschreibung.",
+    "name": {
+      "label": "Website-Name",
+      "hint": "Leer lassen für den integrierten Namen"
+    },
+    "tagline": {
+      "label": "Slogan",
+      "hint": "Eine Zeile, wird als Standard-Seitenbeschreibung verwendet"
+    }
+  },
+  "storefrontContent": {
+    "title": "Storefront",
+    "description": "Die Kennzahlen, das Hero-Badge und die Kontaktdaten, die der Storefront anzeigt. Website-Name und Slogan befinden sich in der Karte „Website-Identität“ oben.",
+    "statsClients": {
+      "label": "Kennzahl Kunden",
+      "hint": "z. B. 5.000+"
+    },
+    "statsUptime": {
+      "label": "Kennzahl Verfügbarkeit",
+      "hint": "z. B. 99,9 %"
+    },
+    "statsRegions": {
+      "label": "Kennzahl Regionen",
+      "hint": "z. B. 12"
+    },
+    "heroBadge": {
+      "label": "Hero-Badge",
+      "hint": "Kurze Zeile über der Hero-Überschrift"
+    },
+    "contactEmail": {
+      "label": "Kontakt-E-Mail",
+      "hint": "support{'@'}example.com",
+      "invalid": "Geben Sie eine gültige E-Mail-Adresse ein."
+    },
+    "contactPhone": {
+      "label": "Kontakttelefon",
+      "hint": "+1 555 000 0000"
+    },
+    "contactWhatsapp": {
+      "label": "WhatsApp-Nummer",
+      "hint": "+1 555 000 0000"
+    },
+    "contactTelegram": {
+      "label": "Telegram-Name",
+      "hint": "{'@'}example"
+    },
+    "contactAddress": {
+      "label": "Adresse",
+      "hint": "Straße, Stadt, Land"
+    },
+    "contactMapUrl": {
+      "label": "Karten-URL",
+      "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
+      "invalid": "Geben Sie eine Adresse ein, die mit https:// beginnt."
+    },
+    "contactHours": {
+      "label": "Öffnungszeiten",
+      "hint": "Mo–Fr 09:00–18:00"
+    },
+    "contactTimezone": {
+      "label": "Zeitzone",
+      "hint": "UTC+4"
+    },
+    "groups": {
+      "figures": "Kennzahlen",
+      "contacts": "Kontakte",
+      "messengers": "Messenger",
+      "address": "Adresse und Öffnungszeiten"
+    },
+    "localeFallbackHint": "Für eine leer gelassene Sprache wird der englische Text angezeigt."
+  },
+  "legalTexts": {
+    "title": "Rechtstexte",
+    "description": "Ihre eigenen Nutzungsbedingungen, Datenschutzerklärung, Erstattungsrichtlinie, Richtlinie zur akzeptablen Nutzung und Cookie-Richtlinie, etwa mit Verkäufername und Zahlungsdienstleister. Eine leere Seite behält den eingebauten Text.",
+    "hint": "Eine leere Sprache zeigt den englischen Text; ohne englischen Text behält die Seite den eingebauten Text. Ein Abschnitt beginnt mit einer ##-Zeile, Absätze trennt eine Leerzeile, Listeneinträge stehen in Zeilen mit -. Listeneinträge folgen den Absätzen ihres Abschnitts.",
+    "placeholder": "z. B. ## Angaben zum Verkäufer, danach der Text des Abschnitts",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutzerklärung",
+    "refund": "Erstattungsrichtlinie",
+    "acceptableUse": "Richtlinie zur akzeptablen Nutzung",
+    "cookies": "Cookie-Richtlinie"
+  },
+  "portalAppearance": {
+    "title": "Erscheinungsbild des Portals",
+    "description": "Welche Vorlage der öffentliche Storefront darstellt und in welchem Farbmodus ein Besucher startet. Änderungen werden beim nächsten Laden der Seite wirksam.",
+    "template": "Vorlage",
+    "notSeeded": "Die Einstellung {key} wurde noch nicht angelegt und kann daher hier nicht geändert werden. Bis sie existiert, verwendet das Portal die Umgebungsvariable {env}.",
+    "templates": {
+      "aurora": {
+        "label": "Aurora",
+        "hint": "Design mit Leuchteffekt, dunkel/hell, armenische Typografie"
+      },
+      "nova": {
+        "label": "Nova",
+        "hint": "Redaktionelles Layout mit türkiser Palette, dunkel/hell"
+      },
+      "classic": {
+        "label": "Classic",
+        "hint": "Standard: das ursprüngliche Storefront-Design, dunkel/hell"
+      }
+    },
+    "themeDefault": "Standard-Farbmodus",
+    "themeDefaultHint": "Für Besucher, die noch keinen gewählt haben. Die eigene Wahl eines Besuchers wird in einem Cookie gespeichert.",
+    "themeModes": {
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "Dem Gerät des Besuchers folgen"
+    },
+    "userToggle": "Besuchern den Wechsel zwischen hell und dunkel erlauben",
+    "userToggleHint": "Aus blendet die Sonne/Mond-Schaltfläche in der Kopfzeile aus."
+  },
+  "homeSections": {
+    "title": "Startseiten-Bereiche",
+    "description": "Welche Bereiche die Startseite des Storefronts anzeigt. Der Hero-Bereich wird immer angezeigt. Jeder Schalter wird einzeln gespeichert.",
+    "sections": {
+      "stats": {
+        "label": "Kennzahlenleiste",
+        "hint": "Die Kennzahlen unter dem Hero-Bereich oder die Vertrauensleiste."
+      },
+      "partners": {
+        "label": "Partner",
+        "hint": "Partnerlogos."
+      },
+      "services": {
+        "label": "Warum wir",
+        "hint": "Die Blöcke zu Leistungen und Vorteilen."
+      },
+      "process": {
+        "label": "So funktioniert es",
+        "hint": "Die Schritte von der Bestellung bis zur laufenden Website."
+      },
+      "plans": {
+        "label": "Tarife und Preise",
+        "hint": "Tarifkarten, Produkte und Preise."
+      },
+      "comparison": {
+        "label": "Vergleichstabelle",
+        "hint": "Die Tarifvergleichstabelle (Nova)."
+      },
+      "dashboard": {
+        "label": "Dashboard-Vorschau",
+        "hint": "Die Vorschau des Control-Panels (Nova)."
+      },
+      "use_cases": {
+        "label": "Anwendungsfälle",
+        "hint": "Was Kunden auf der Plattform aufbauen (Nova)."
+      },
+      "migration": {
+        "label": "Migration",
+        "hint": "Der Block zur kostenlosen Migration."
+      },
+      "projects": {
+        "label": "Projekte",
+        "hint": "Portfolio-Projekte. Aus, bis Sie es aktivieren."
+      },
+      "testimonials": {
+        "label": "Kundenstimmen",
+        "hint": "Kundenzitate."
+      },
+      "faq": {
+        "label": "FAQ",
+        "hint": "Häufig gestellte Fragen."
+      },
+      "cta": {
+        "label": "Handlungsaufforderung",
+        "hint": "Das abschließende Banner."
+      },
+      "locations": {
+        "label": "Serverstandorte",
+        "hint": "Wo die Server stehen. Wird unter „Storefront-Inhalte“ bearbeitet."
+      },
+      "performance": {
+        "label": "Performance",
+        "hint": "Verfügbarkeit, Antwortzeit, gehostete Websites und Support-Antwortzeit."
+      },
+      "security": {
+        "label": "Sicherheit",
+        "hint": "SSL, Backups, DDoS-, Malware- und Firewall-Schutz."
+      },
+      "apps": {
+        "label": "Ein-Klick-Installer",
+        "hint": "Die Apps, die Sie mit einem Klick installieren können."
+      },
+      "guarantees": {
+        "label": "Garantien",
+        "hint": "Kostenlose Migration, Geld-zurück-Garantie und keine versteckten Gebühren."
+      },
+      "support": {
+        "label": "Support",
+        "hint": "Kanäle: Chat, Ticket, E-Mail und Telefon."
+      },
+      "trusted": {
+        "label": "Vertraut von",
+        "hint": "Die aus den Partnern übernommene Logoleiste."
+      }
+    }
+  },
+  "hostingDetails": {
+    "title": "Hosting-Details",
+    "description": "Die Kennzahlen und Fakten hinter den Bereichen Performance, Sicherheit, Installer, Garantie und Support. Lassen Sie eine Kennzahl leer, um sie auszublenden.",
+    "statsResponseTime": {
+      "label": "Antwortzeit",
+      "hint": "z. B. 180 ms"
+    },
+    "statsSitesHosted": {
+      "label": "Gehostete Websites",
+      "hint": "z. B. 12.000+"
+    },
+    "statsSupportResponse": {
+      "label": "Support-Antwortzeit",
+      "hint": "z. B. 15 Min."
+    },
+    "installerAppCount": {
+      "label": "Anzahl Installer-Apps",
+      "hint": "z. B. 150+"
+    },
+    "guaranteeMoneyBackDays": {
+      "label": "Tage Geld-zurück-Garantie",
+      "hint": "z. B. 30"
+    },
+    "supportResponseChat": {
+      "label": "Antwortzeit im Chat",
+      "hint": "z. B. 1 Min."
+    },
+    "supportResponseTicket": {
+      "label": "Antwortzeit bei Support-Tickets",
+      "hint": "z. B. 2 Stunden"
+    },
+    "supportResponseEmail": {
+      "label": "Antwortzeit per E-Mail",
+      "hint": "z. B. 4 Stunden"
+    },
+    "supportResponsePhone": {
+      "label": "Antwortzeit am Telefon",
+      "hint": "z. B. 5 Min."
+    },
+    "featuresSsl": {
+      "label": "Kostenloses SSL",
+      "hint": "Führt SSL im Bereich Sicherheit auf."
+    },
+    "featuresDdos": {
+      "label": "DDoS-Schutz",
+      "hint": "Führt DDoS-Schutz im Bereich Sicherheit auf."
+    },
+    "guaranteeNoHiddenFees": {
+      "label": "Keine versteckten Gebühren",
+      "hint": "Zeigt die Garantie „Keine versteckten Gebühren“ an."
+    },
+    "groups": {
+      "performance": "Leistungswerte",
+      "guarantees": "Garantien",
+      "support": "Support-Reaktionszeit",
+      "features": "Funktionen"
+    }
+  },
+  "branding": {
+    "title": "Branding",
+    "description": "Die Logos des Storefronts und das Symbol im Browser-Tab. Änderungen werden beim nächsten Laden der Seite wirksam.",
+    "pasteUrl": "Oder Bild-URL einfügen",
+    "logo": {
+      "label": "Logo (für helle Hintergründe)",
+      "hint": "JPEG, PNG, WebP, max. 5 MB"
+    },
+    "logoDark": {
+      "label": "Logo (für dunkle Hintergründe)",
+      "hint": "Leer verwendet das helle Logo"
+    },
+    "logoMark": {
+      "label": "Bildmarke (quadratisches Symbol)",
+      "hint": "Für kompakte Kopfzeilen und Anmeldeseiten; leer verwendet die integrierte Bildmarke"
+    },
+    "favicon": {
+      "label": "Favicon",
+      "hint": "PNG, SVG, ICO, max. 5 MB"
+    },
+    "remove": "Bild entfernen"
+  },
+  "brandColors": {
+    "title": "Markenfarben",
+    "description": "Zwei Farben, aus denen der Storefront seine gesamte Palette ableitet: Schaltflächen, Links, Hervorhebungen und die E-Mails. Leer behält die eigenen Farben der jeweiligen Vorlage.",
+    "primary": {
+      "label": "Primärfarbe",
+      "hint": "Schaltflächen, Links und Hervorhebungen. Die elf Farbtöne darunter werden daraus abgeleitet."
+    },
+    "accent": {
+      "label": "Akzentfarbe",
+      "hint": "Verläufe, Badges und sekundäre Hervorhebungen."
+    },
+    "reset": "Auf Standard zurücksetzen",
+    "previewButton": "Schaltfläche",
+    "previewLink": "Link",
+    "contrastOk": "Weißer Text auf dieser Farbe ergibt {ratio}:1 und erfüllt damit WCAG AA.",
+    "contrastDark": "Weißer Text auf dieser Farbe ergibt {ratio}:1. Das ist zu niedrig, daher verwenden Schaltflächen dunklen Text.",
+    "contrastLow": "Weißer Text auf dieser Farbe ergibt {ratio}:1. Das liegt unter WCAG AA für kleinen Text, ist für Schaltflächen aber in Ordnung."
+  },
+  "typography": {
+    "title": "Typografie",
+    "description": "Die Schriftarten, die der Storefront verwendet. Alle sind mitgeliefert; es wird nichts von einem Schriftdienst geladen.",
+    "heading": "Überschriften",
+    "body": "Fließtext",
+    "templateDefault": "Vorlagenstandard",
+    "sampleBody": "Domains, Hosting und E-Mail in einem Konto, mit einem Menschen am anderen Ende jedes Support-Tickets.",
+    "fonts": {
+      "inter": "Inter",
+      "notoSansArmenian": "Noto Sans Armenian",
+      "notoSerifArmenian": "Noto Serif Armenian",
+      "system": "System (Standardschrift des Geräts)"
+    },
+    "sampleHy": "Ձեր ամբողջ թվային ենթակառուցվածքը",
+    "sampleRu": "Вся ваша цифровая инфраструктура",
+    "sampleEn": "Your whole digital infrastructure"
+  },
+  "trackingChat": {
+    "title": "Tracking & Chat",
+    "description": "Dienste von Drittanbietern, mit denen der Storefront kommuniziert. Es wird nichts geladen, bis es hier konfiguriert ist.",
+    "gtm": {
+      "label": "Google-Tag-Manager-Container",
+      "hint": "Wird erst geladen, nachdem ein Besucher alle Cookies akzeptiert hat. Leer lädt gar kein Tag.",
+      "title": "Tag Manager"
+    },
+    "chat": {
+      "title": "Live-Chat",
+      "baseUrl": "Chat-Server",
+      "baseUrlHint": "https://chat.example.com",
+      "token": "Website-Token",
+      "tokenHint": "Aus den Einstellungen des Chat-Posteingangs",
+      "tokenLocaleHint": "Optional; leer verwendet das Standard-Token",
+      "hint": "Das Widget erscheint nur, wenn Anbieter, Server und Token alle gesetzt sind."
+    },
+    "provider": {
+      "label": "Anbieter",
+      "off": "Aus",
+      "chatwoot": "Chatwoot",
+      "innochat": "Innochat"
+    }
+  },
+  "productFeatures": {
+    "specification": "Spezifikation",
+    "shownInTheStorefrontS": "Wird in der Tarifvergleichstabelle des Storefronts angezeigt für",
+    "nothingSpecifiedYetTheComparison": "Noch nichts angegeben. Die Vergleichstabelle bleibt ausgeblendet, bis mindestens ein Tarif eine Zeile hat.",
+    "disk": "Speicherplatz",
+    "10Gb": "10 GB",
+    "removeLine": "Zeile entfernen",
+    "feature": "Merkmal",
+    "add": "Hinzufügen",
+    "plansLineUpByFeature": "Tarife werden nach Merkmalsnamen ausgerichtet, schreiben Sie ihn daher bei allen Produkten gleich: „Speicherplatz“ und „Festplattenspeicher“ werden zu zwei getrennten Zeilen. Innerhalb eines Produkts kann ein Name nur einmal verwendet werden; eine erneute Verwendung wird abgelehnt, statt an einer Stelle gespeichert zu werden, an der sie nie angezeigt würde.",
+    "confirmRemoveTitle": "Diese Zeile entfernen?",
+    "confirmRemoveMessage": "Die Zeile „{label}“ wird aus der Spezifikation entfernt."
+  },
+  "productGroups": {
+    "manage": "Produktgruppen",
+    "title": "Produktgruppen",
+    "add": "Gruppe hinzufügen",
+    "addTitle": "Produktgruppe hinzufügen",
+    "editTitle": "Produktgruppe bearbeiten",
+    "edit": "Gruppe bearbeiten",
+    "name": "Name",
+    "description": "Beschreibung",
+    "namePlaceholder": "z. B. Shared-Hosting",
+    "descriptionPlaceholder": "Wofür diese Gruppe gedacht ist",
+    "allowedMethods": "Zahlungsmethoden",
+    "allowedMethodsHint": "Wählen Sie die Methoden, mit denen diese Gruppe bezahlt werden darf. Ohne Auswahl sind alle Methoden erlaubt. Eine Bestellung mit mehreren Gruppen kann nur Methoden nutzen, die alle erlauben.",
+    "allMethods": "Alle Methoden",
+    "products": "{count} Produkte",
+    "empty": "Noch keine Produktgruppen.",
+    "create": "Gruppe erstellen",
+    "unavailableMethod": "{name} (derzeit nicht im Angebot)"
+  },
+  "productForm": {
+    "trial": "Kostenlose Testphase",
+    "trialHint": "Kunden können dieses Produkt für einen begrenzten Zeitraum kostenlos und ohne Zahlung starten.",
+    "trialDays": "Dauer der Testphase (Tage)",
+    "trialDaysPlaceholder": "z. B. 14",
+    "trialReminderDays": "Erinnerungstage",
+    "trialReminderDaysHint": "Tage vor Ende der Testphase, an denen eine Erinnerung per E-Mail verschickt wird, durch Kommas getrennt. Jeder Wert muss vor dem Ende liegen; höchstens fünf.",
+    "trialReminderDaysPlaceholder": "z. B. 3, 1",
+    "trialGracePeriod": "Karenzzeit nach der Testphase (Tage)",
+    "trialGracePeriodPlaceholder": "z. B. 3",
+    "trialGracePeriodHint": "Tage, die die Rechnung einer umgewandelten Testphase unbezahlt bleiben darf, bevor der Service beendet wird.",
+    "trialAutoConvert": "Am Ende in einen kostenpflichtigen Service umwandeln",
+    "trialAutoConvertHint": "Bei Ende der Testphase wird eine Rechnung erstellt. Ist die Option aus, wird der Service stattdessen beendet.",
+    "trialNotice": "Kunden können noch keine Testphase starten: Diese Einstellungen werden vorerst nur gespeichert.",
+    "trialInvalid": "Eine Testphase dauert {minDays} bis {maxDays} Tage, die Karenzzeit {minGrace} bis {maxGrace} Tage, und jeder Erinnerungstag ist eine ganze Zahl von 1 bis einen Tag vor dem Ende (höchstens {maxReminders}, keine Wiederholungen).",
+    "trialReminderDaysInvalid": "Erinnerungstage müssen ganze Zahlen sein, durch Kommas getrennt.",
+    "editProduct": "Produkt bearbeiten",
+    "createNewProduct": "Neues Produkt erstellen",
+    "productType": "Produkttyp",
+    "productGroup": "Produktgruppe",
+    "selectAGroup": "Gruppe auswählen",
+    "eGStarterHosting": "z. B. Starter-Hosting",
+    "slugUrl": "Slug (URL)",
+    "eGStarterHosting2": "z. B. starter-hosting",
+    "autoGeneratedFromNameEdit": "Automatisch aus dem Namen erzeugt. Zum Überschreiben bearbeiten.",
+    "packageName": "Paketname",
+    "eGStarterProBusiness": "z. B. starter, pro, business",
+    "hostingPackageNameUsedFor": "Name des Hosting-Pakets für die Server-Provisionierung. Optional.",
+    "serverGroup": "Servergruppe",
+    "noneAutoSelectByModule": "Keine (automatische Auswahl nach Modul)",
+    "assignToAServerGroup": "Einer Servergruppe für die lastverteilte Provisionierung zuweisen. Optional.",
+    "briefProductDescription": "Kurze Produktbeschreibung",
+    "pricing": "Preise",
+    "monthly": "Monatlich",
+    "annual": "Jährlich",
+    "quarterly": "Vierteljährlich",
+    "semiAnnual": "Halbjährlich",
+    "biennial": "Zweijährlich",
+    "base": "Basis",
+    "aBlankCycleLeavesThe": "Ein leerer Abrechnungszyklus macht das Produkt in diesem Zyklus und dieser Währung nicht verkäuflich.",
+    "hideThisProductFromThe": "Dieses Produkt im Bestellformular ausblenden",
+    "featured": "Empfohlener Tarif",
+    "featuredHint": "Dieses Produkt im Storefront mit dem Badge „Empfohlen“ anzeigen. Pro Gruppe kann nur ein Produkt empfohlen sein; durch das Speichern werden die anderen zurückgesetzt.",
+    "digitalService": "Digitale Dienstleistung",
+    "digitalServiceHint": "Das Produkt ist für die MwSt. eine elektronische Dienstleistung (Hosting, eine Lizenz, eine Domain, die als solche gilt). Ein Verbraucher in einem anderen EU-Mitgliedstaat erhält dafür eine Rechnung mit dem MwSt.-Satz seines eigenen Landes. Nicht zu verwechseln mit einem digitalen Produkt, das von einem Plugin geliefert wird.",
+    "sortOrder": "Reihenfolge",
+    "sortOrderHint": "Position innerhalb der Gruppe, die niedrigste zuerst. Produkte mit derselben Zahl werden nach Name sortiert.",
+    "sortOrderPlaceholder": "z. B. 1",
+    "sku": "SKU",
+    "skuHint": "Eindeutiger Code, der dieses Produkt bezeichnet, zum Beispiel in einem Fulfillment-Plugin. Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, optional als zwei solche Teile getrennt durch einen Doppelpunkt, zum Beispiel plan:pro, höchstens 64 Zeichen. Leer lassen für keinen.",
+    "skuPlaceholder": "z. B. CREDITS-100",
+    "metadata": "Metadaten",
+    "metadataHint": "Optionales JSON-Objekt, das ein Fulfillment-Plugin liest, höchstens 16 KB. Leer lassen für keines.",
+    "metadataPlaceholder": "{'{'}\"credits\": 100{'}'}",
+    "gracePeriod": "Karenzzeit (Tage)",
+    "gracePeriodHint": "Tage, die ein Service nach seinem Fälligkeitsdatum nutzbar bleibt, bevor er gesperrt wird.",
+    "gracePeriodPlaceholder": "z. B. 7",
+    "maxActiveServices": "Max. aktive Services",
+    "maxActiveServicesHint": "Wie viele Services dieses Produkts gleichzeitig aktiv sein dürfen, einschließlich noch nicht erfüllter Bestellungen. Ist das Limit erreicht, gilt das Produkt als ausverkauft und wird im Storefront ausgeblendet. Leer lassen oder 0 für unbegrenzt.",
+    "maxActiveServicesPlaceholder": "Unbegrenzt",
+    "onePerClient": "Eines pro Kunde",
+    "onePerClientHint": "Ein Kunde, der bereits einen aktiven Service dieses Produkts hat, kann es nicht erneut bestellen.",
+    "createProduct": "Produkt erstellen",
+    "sharedHosting": "Shared Hosting",
+    "dedicated": "Dedicated",
+    "email": "E-Mail",
+    "addon": "Add-on",
+    "backup": "Backup",
+    "digital": "Digital",
+    "other": "Sonstiges",
+    "vps": "VPS"
+  },
+  "emailTemplates": {
+    "emailTemplates": "E-Mail-Vorlagen",
+    "noTemplatesFound": "Keine Vorlagen gefunden.",
+    "languages": "Sprachen",
+    "body": "Inhalt (HTML)",
+    "missingVersion": "Diese Vorlage hat in dieser Sprache noch keine Version, daher werden E-Mails in dieser Sprache auf Englisch versendet. Durch das Speichern wird sie hinzugefügt.",
+    "subjectPlaceholder": "Betreffzeile, Variablen erlaubt",
+    "bodyPlaceholder": "HTML-Inhalt, Variablen erlaubt",
+    "descriptionPlaceholder": "Wann diese E-Mail gesendet wird",
+    "searchPlaceholder": "Nach Name oder Betreff suchen",
+    "groupFilter": "Gruppe",
+    "noMatches": "Keine Vorlagen entsprechen Ihrer Suche",
+    "groups": {
+      "bank": "Banküberweisung",
+      "card": "Karte",
+      "credit": "Guthaben",
+      "domain": "Domains",
+      "email": "Kampagnen",
+      "gateway": "Gateway-Zahlungen",
+      "invoice": "Rechnungen",
+      "order": "Bestellungen",
+      "service": "Services",
+      "user": "Konten"
+    },
+    "names": {
+      "bank-transfer-confirmed": "Banküberweisung bestätigt",
+      "bank-transfer-details": "Angaben zur Banküberweisung",
+      "bank-transfer-rejected": "Banküberweisung abgelehnt",
+      "bank-transfer-requested-admin": "Banküberweisung angefordert (Mitarbeiter)",
+      "card-charge-action-required": "Kartenbelastung erfordert eine Aktion",
+      "card-charge-declined": "Kartenbelastung abgelehnt",
+      "credit-balance-changed": "Guthaben geändert",
+      "credit-note-issued": "Gutschrift ausgestellt",
+      "domain-expired": "Domain abgelaufen",
+      "domain-expiring": "Domain läuft bald ab",
+      "domain-registered": "Domain registriert",
+      "domain-registration-failed": "Domain-Registrierung fehlgeschlagen",
+      "domain-registration-failed-admin": "Domain-Registrierung fehlgeschlagen (Mitarbeiter)",
+      "domain-renewal-failed-admin": "Domain-Verlängerung fehlgeschlagen (Mitarbeiter)",
+      "domain-renewed": "Domain verlängert",
+      "domain-transferred": "Domain transferiert",
+      "email-campaign": "E-Mail-Kampagne",
+      "gateway-payment-credited-admin": "Gateway-Zahlung gutgeschrieben (Mitarbeiter)",
+      "gateway-payment-reversed-admin": "Gateway-Zahlung zurückgebucht (Mitarbeiter)",
+      "gateway-payment-stalled-admin": "Gateway-Zahlung hängt fest (Mitarbeiter)",
+      "gateway-payment-without-reference-admin": "Gateway-Zahlung ohne Referenz (Mitarbeiter)",
+      "invoice-renewal-reminder": "Erinnerung an Verlängerungsrechnung",
+      "order-rejected": "Bestellung abgelehnt",
+      "service-termination-failed-admin": "Beendigung des Services fehlgeschlagen (Mitarbeiter)",
+      "user-email-change": "Bestätigung der E-Mail-Änderung",
+      "user-email-changed-notice": "Hinweis auf geänderte E-Mail-Adresse",
+      "user-email-verification": "E-Mail-Verifizierung",
+      "user-invite": "Benutzereinladung",
+      "user-password-reset": "Passwort zurücksetzen"
+    }
+  },
+  "products": {
+    "manageHostingPlansAndServices": "Hosting-Tarife und Services verwalten, die zum Kauf angeboten werden",
+    "createProduct": "Produkt erstellen",
+    "group": "Gruppe",
+    "editSpecification": "Spezifikation bearbeiten",
+    "editProduct": "Produkt bearbeiten",
+    "noProductsFoundCreateYour": "Keine Produkte gefunden. Erstellen Sie Ihr erstes Produkt, um zu beginnen.",
+    "searchPlaceholder": "Nach Name, SKU oder Slug suchen",
+    "noProductsMatchYourFilters": "Keine Produkte entsprechen Ihren Filtern",
+    "clearFilters": "Filter zurücksetzen",
+    "totalCount": "Produkte: {totalCount}",
+    "typeSharedHosting": "Shared Hosting",
+    "typeDedicated": "Dedicated",
+    "typeDomain": "Domain",
+    "typeEmail": "E-Mail",
+    "typeAddon": "Add-on",
+    "typeBackup": "Backup",
+    "typeDigital": "Digital",
+    "typeOther": "Sonstiges",
+    "typeVps": "VPS",
+    "typeSsl": "SSL"
+  },
+  "productBundles": {
+    "subtitle": "Mehrere Produkte als ein Angebot verkaufen, optional mit Domainregistrierung und Rabatt.",
+    "add": "Paket erstellen",
+    "empty": "Noch keine Produktpakete.",
+    "components": "Produkte",
+    "domain": "Domain",
+    "discount": "Rabatt",
+    "years": "{count} Jahr | {count} Jahre",
+    "discountPercentage": "{amount} %",
+    "discountFixed": "{amount} {currency}",
+    "deleteTitle": "Produktpaket löschen",
+    "deleteMessage": "Das Paket „{name}“ löschen? Bereits daraus aufgegebene Bestellungen bleiben erhalten und verlieren die Verknüpfung zum Paket.",
+    "createTitle": "Produktpaket erstellen",
+    "editTitle": "Produktpaket bearbeiten",
+    "namePlaceholder": "z. B. Hosting mit Domain",
+    "descriptionPlaceholder": "Wird dem Kunden neben dem Paket angezeigt",
+    "sortOrder": "Reihenfolge",
+    "sortOrderHint": "Position in der Liste, die niedrigste zuerst.",
+    "sortOrderPlaceholder": "0",
+    "componentsHint": "Wählen Sie die gemeinsam verkauften Produkte und markieren Sie eines als Hauptprodukt. Die Domain wird unten hinzugefügt, nicht hier.",
+    "productPlaceholder": "Produkt auswählen",
+    "makePrimary": "Hauptprodukt",
+    "addComponent": "Produkt hinzufügen",
+    "removeComponent": "Entfernen",
+    "includesDomain": "Enthält eine Domainregistrierung",
+    "includesDomainHint": "Der Kunde wählt die Domain bei der Bestellung; ihr Preis richtet sich nach der gewählten TLD.",
+    "domainYears": "Registrierungsdauer in Jahren",
+    "domainYearsPlaceholder": "1",
+    "discountType": "Rabatt",
+    "discountTypePlaceholder": "Rabattart auswählen",
+    "discountTypeNone": "Kein Rabatt",
+    "discountTypePercentage": "Prozentual",
+    "discountTypeFixed": "Fester Betrag",
+    "discountAmount": "Betrag",
+    "discountAmountPlaceholder": "0",
+    "discountCurrency": "Währung",
+    "discountCurrencyPlaceholder": "Währung auswählen",
+    "activeHint": "Ein inaktives Paket wird im Storefront ausgeblendet."
+  },
+  "slideForm": {
+    "generalSettings": "Allgemeine Einstellungen",
+    "icon": "Symbol",
+    "orTypeMdiIconName": "Oder MDI-Symbolnamen eingeben (z. B. cloud-check)",
+    "brandColor": "Markenfarbe",
+    "image": "Bild",
+    "slidePreview": "Slide-Vorschau",
+    "demoUrl": "Demo-URL",
+    "demoUrlPlaceholder": "https://demo.example.com",
+    "optionalTryDemoButtonLink": "Optionaler Link der Schaltfläche „Demo testen“ auf dem Slide",
+    "learnMoreUrl": "URL für „Mehr erfahren“",
+    "productsExampleOrHttpsExample": "/products/example oder https://example.com",
+    "optionalSecondaryLinkShownAs": "Optionaler zweiter Link, der auf dem Slide als „Mehr erfahren“ angezeigt wird",
+    "linkedProduct": "Verknüpftes Produkt",
+    "sortOrder": "Reihenfolge",
+    "showThisSlideToVisitors": "Diesen Slide Besuchern anzeigen",
+    "targetAudience": "Zielgruppe",
+    "visibleFrom": "Sichtbar ab",
+    "noStartDate": "Kein Startdatum",
+    "visibleUntil": "Sichtbar bis",
+    "noEndDate": "Kein Enddatum",
+    "translations": "Übersetzungen",
+    "slideTitle": "Slide-Titel",
+    "tagline": "Slogan",
+    "shortSubtitle": "Kurzer Untertitel",
+    "slideBodyText": "Slide-Text",
+    "features": "Merkmale",
+    "removeFeature": "Merkmal entfernen",
+    "addFeature": "Merkmal hinzufügen",
+    "ctaText": "CTA-Text",
+    "getStarted": "Jetzt starten",
+    "ctaUrl": "CTA-URL",
+    "createSlide": "Slide erstellen",
+    "unsavedChanges": "Ungespeicherte Änderungen",
+    "youHaveUnsavedChangesAre": "Sie haben ungespeicherte Änderungen. Möchten Sie die Seite wirklich verlassen?",
+    "leave": "Verlassen",
+    "all": "Alle",
+    "guest": "Gäste",
+    "authenticated": "Angemeldet",
+    "hosting": "Hosting",
+    "globe": "Globus",
+    "analytics": "Analytics",
+    "education": "Bildung",
+    "property": "Immobilien",
+    "eCommerce": "E-Commerce",
+    "restaurant": "Restaurant",
+    "launch": "Start",
+    "security": "Sicherheit",
+    "premium": "Premium",
+    "mobile": "Mobil",
+    "design": "Design",
+    "finance": "Finanzen",
+    "media": "Medien",
+    "health": "Gesundheit",
+    "featureNumber": "Merkmal {number}",
+    "notFound": "Slide #{id} nicht gefunden.",
+    "ai": "KI"
+  },
+  "slides": {
+    "manageHomepageHeroSlidesDrag": "Hero-Slides der Startseite verwalten. Zum Neuanordnen ziehen.",
+    "addSlide": "Slide hinzufügen",
+    "image": "Bild",
+    "audience": "Zielgruppe",
+    "visibility": "Sichtbarkeit",
+    "slide": "Slide",
+    "editSlide": "Slide bearbeiten",
+    "deleteSlide": "Slide löschen",
+    "noSlidesFoundAddYour": "Keine Slides gefunden. Fügen Sie Ihren ersten Slide hinzu, um zu beginnen.",
+    "deleteSlide2": "Slide löschen",
+    "always": "Immer",
+    "from": "Ab {date}",
+    "until": "Bis {date}",
+    "range": "Von {from} bis {until}",
+    "slideNumber": "Slide #{id}",
+    "deleteMessage": "„{title}“ löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+  "tldConfigForm": {
+    "generalSettings": "Allgemeine Einstellungen",
+    "tld": "TLD",
+    "domainExtensionWithoutTheDot": "Domain-Endung ohne den Punkt (z. B. „com“, „net“, „am“)",
+    "registrarProvider": "Registrar-Anbieter",
+    "costCurrency": "Einkaufswährung",
+    "currencyUsedByTheRegistrar": "Währung, in der der Registrar die Einkaufspreise angibt",
+    "sellCurrency": "Verkaufswährung",
+    "currencyShownToClientsFor": "Währung, in der die Verkaufspreise eingegeben werden; Kunden, die in einer anderen Währung abgerechnet werden, zahlen den mit den gespeicherten Wechselkursen umgerechneten Betrag",
+    "makeThisTldAvailableFor": "Diese TLD zum Kauf anbieten",
+    "sortOrder": "Reihenfolge",
+    "popularBusinessTech": "beliebt, business, tech",
+    "commaSeparatedCategoryTagsFor": "Durch Kommas getrennte Kategorie-Tags zum Filtern",
+    "registrationPricing": "Registrierungspreise",
+    "period": "Laufzeit",
+    "costCostsymbol": "Einkauf ({costSymbol})",
+    "sellSellsymbol": "Verkauf ({sellSymbol})",
+    "margin": "Marge",
+    "years": "Jahre",
+    "transferPricing": "Transferpreise",
+    "renewalPricing": "Verlängerungspreise",
+    "createTld": "TLD erstellen",
+    "unsavedChanges": "Ungespeicherte Änderungen",
+    "youHaveUnsavedChangesAre": "Sie haben ungespeicherte Änderungen. Möchten Sie die Seite wirklich verlassen?",
+    "leave": "Verlassen",
+    "tldIsRequired": "Die TLD ist erforderlich.",
+    "editTld": "TLD bearbeiten",
+    "notFound": "TLD-Konfiguration #{id} nicht gefunden.",
+    "marginDifferentCurrencies": "Einkaufs- und Verkaufspreis sind in unterschiedlichen Währungen, daher wird hier keine Marge berechnet. Die Preisliste zeigt sie zum aktuellen Wechselkurs"
+  },
+  "tldConfigs": {
+    "tldPricing": "TLD-Preise",
+    "configureDomainExtensionPricingAnd": "Preise und Anbieter für Domain-Endungen konfigurieren",
+    "import": "Importieren",
+    "syncPrices": "Preise synchronisieren",
+    "addTld": "TLD hinzufügen",
+    "searchTlds": "TLDs suchen",
+    "tld": "TLD",
+    "provider": "Anbieter",
+    "cost1yr": "Einkauf (1 J.)",
+    "sell1yr": "Verkauf (1 J.)",
+    "margin": "Marge",
+    "lastSynced": "Zuletzt synchronisiert",
+    "editTld": "TLD bearbeiten",
+    "deleteTld": "TLD löschen",
+    "noTldConfigurationsFoundAdd": "Keine TLD-Konfigurationen gefunden. Fügen Sie Ihre erste TLD hinzu oder importieren Sie von einem Anbieter.",
+    "noTldsMatchYourFilters": "Keine TLDs entsprechen Ihren Filtern",
+    "clearFilters": "Filter zurücksetzen",
+    "totalcountTldValue": "TLDs: {totalCount}",
+    "deleteTldConfiguration": "TLD-Konfiguration löschen",
+    "priceSyncComplete": "Preissynchronisierung abgeschlossen.",
+    "deleteMessage": "TLD-Konfiguration „.{tld}“ löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "importComplete": "Import abgeschlossen: {imported} importiert, {updated} aktualisiert.",
+    "never": "Nie",
+    "marginUnavailable": "Keine Marge: Ein Preis fehlt oder es gibt keinen Wechselkurs zwischen der Einkaufswährung und der Verkaufswährung"
+  },
+  "index": {
+    "subtitle": "Alles, was das Panel und den Storefront bestimmt, gruppiert nach dem, was es steuert.",
+    "groups": {
+      "storefront": "Storefront und Katalog",
+      "billing": "Abrechnung",
+      "communication": "Kommunikation",
+      "security": "Sicherheit"
+    },
+    "items": {
+      "general": {
+        "title": "Allgemein",
+        "description": "Website-Identität, Erscheinungsbild, Branding, Tracking und alle weiteren globalen Einstellungen."
+      },
+      "products": {
+        "title": "Produkte",
+        "description": "Tarife, Preise, Abrechnungszyklen und Merkmale."
+      },
+      "productBundles": {
+        "title": "Produktpakete",
+        "description": "Angebote, die mehrere Produkte gemeinsam verkaufen."
+      },
+      "tldPricing": {
+        "title": "TLD-Preise",
+        "description": "Registrierungs-, Verlängerungs- und Transferpreise pro Domain-Endung."
+      },
+      "slides": {
+        "title": "Slides",
+        "description": "Die Banner-Slides der Storefront-Startseite."
+      },
+      "gateways": {
+        "title": "Zahlungsarten",
+        "description": "Die Zahlungsmöglichkeiten für Kunden, konfiguriert unter Integrationen."
+      },
+      "currencies": {
+        "title": "Währungen",
+        "description": "Währungen, Wechselkurse und die Standardwährung."
+      },
+      "taxRules": {
+        "title": "Steuerregeln",
+        "description": "Steuersätze nach Land und Region."
+      },
+      "vatRates": {
+        "title": "MwSt.-Sätze",
+        "description": "Der MwSt.-Satz jedes EU-Mitgliedstaats, verwendet für digitale Dienstleistungen, die an Verbraucher verkauft werden."
+      },
+      "emailTemplates": {
+        "title": "E-Mail-Vorlagen",
+        "description": "Die Nachrichten, die das Panel an Kunden und Mitarbeiter sendet."
+      },
+      "fraud": {
+        "title": "Betrugsschutz",
+        "description": "Bestellprüfung, Sperrlisten und das Betrugsprotokoll."
+      }
+    }
+  },
+  "tabs": {
+    "label": "Einstellungsbereiche",
+    "general": "Allgemein",
+    "appearance": "Erscheinungsbild",
+    "integrations": "Integrationen",
+    "advanced": "Erweitert"
+  },
+  "advanced": {
+    "title": "Erweiterte Einstellungen",
+    "description": "Einstellungen ohne eigene Karte. Bearbeiten Sie hier die Schlüssel-Wert-Paare."
+  },
+  "saveBar": {
+    "unsaved": "{count} ungespeicherte Änderung | {count} ungespeicherte Änderungen",
+    "clean": "Keine ungespeicherten Änderungen",
+    "discard": "Änderungen verwerfen",
+    "save": "Speichern"
+  },
+  "timezone": {
+    "none": "Keine Zeitzone",
+    "placeholder": "Zeitzone auswählen",
+    "regions": {
+      "Africa": "Afrika",
+      "America": "Amerika",
+      "Antarctica": "Antarktis",
+      "Arctic": "Arktis",
+      "Asia": "Asien",
+      "Atlantic": "Atlantischer Ozean",
+      "Australia": "Australien",
+      "Europe": "Europa",
+      "Indian": "Indischer Ozean",
+      "Pacific": "Pazifischer Ozean",
+      "UTC": "UTC"
+    }
+  }
+}

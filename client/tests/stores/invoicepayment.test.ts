@@ -32,6 +32,9 @@ let table: StubRouteTable
 /** The read of the gateways an invoice may be paid through. */
 const METHODS_ROUTE = 'GET /api/portal/order/payment-methods'
 
+/** The invoice the gateways are read for. */
+const INVOICE_ID = '7'
+
 /** The start of a hosted-gateway payment for invoice 7. */
 const START_ROUTE = 'POST /api/portal/client/invoices/7/gateway-payment/start'
 
@@ -178,17 +181,25 @@ describe('useInvoicePaymentStore reads', () => {
     }
     const store = useInvoicePaymentStore()
 
-    await store.loadPaymentOptions()
+    await store.loadPaymentOptions(INVOICE_ID)
 
     expect(store.gatewayMethods).toHaveLength(3)
     expect(store.hostedGatewayModule).toBe('hosted_gateway')
+  })
+
+  it('asks for the gateways of the invoice being paid, so the product groups it charges can narrow them', async () => {
+    table[METHODS_ROUTE] = { body: [bankMethod] }
+
+    await useInvoicePaymentStore().loadPaymentOptions(INVOICE_ID)
+
+    expect(requestsTo(stub.requests, '/api/portal/order/payment-methods')[0]?.url).toBe('/api/portal/order/payment-methods?invoiceId=7')
   })
 
   it('has no hosted gateway when only the bank transfer is offered', async () => {
     table[METHODS_ROUTE] = { body: [bankMethod] }
     const store = useInvoicePaymentStore()
 
-    await store.loadPaymentOptions()
+    await store.loadPaymentOptions(INVOICE_ID)
 
     expect(store.hostedGatewayModule).toBeNull()
   })
@@ -197,14 +208,14 @@ describe('useInvoicePaymentStore reads', () => {
     table[METHODS_ROUTE] = refusal('down')
     const store = useInvoicePaymentStore()
 
-    await store.loadPaymentOptions()
+    await store.loadPaymentOptions(INVOICE_ID)
 
     expect(store.gatewayMethods).toEqual([])
     expect(store.hostedGatewayModule).toBeNull()
     expect(store.optionsError).toBe('down')
 
     table[METHODS_ROUTE] = { body: [] }
-    await store.loadPaymentOptions()
+    await store.loadPaymentOptions(INVOICE_ID)
 
     expect(store.optionsError).toBe('')
   })
@@ -296,11 +307,11 @@ describe('useInvoicePaymentStore bank transfer', () => {
     expect(store.bankTransferOffered).toBe(false)
 
     table[METHODS_ROUTE] = { body: [{ module: 'hosted', displayName: 'Card', supportsStoredCredentials: false }] }
-    await store.loadPaymentOptions()
+    await store.loadPaymentOptions(INVOICE_ID)
     expect(store.bankTransferOffered).toBe(false)
 
     table[METHODS_ROUTE] = { body: [{ module: 'hosted', displayName: 'Card', supportsStoredCredentials: false }, bankMethod] }
-    await store.loadPaymentOptions()
+    await store.loadPaymentOptions(INVOICE_ID)
     expect(store.bankTransferOffered).toBe(true)
   })
 

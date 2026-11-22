@@ -118,11 +118,11 @@ public sealed class ResilienceProfileOptionsValidatorTests
     public void SectionValidator_NamesTheProfileOfAnOutOfRangeBound()
     {
         var options = new HttpResilienceOptions();
-        options.Plesk.RetryDelay = TimeSpan.FromHours(2);
+        options.CPanelWhm.RetryDelay = TimeSpan.FromHours(2);
 
         var result = new HttpResilienceOptionsValidator().Validate(null, options);
 
-        result.Failures.Should().ContainSingle().Which.Should().Contain("HttpResilience:Plesk").And.Contain("RetryDelay");
+        result.Failures.Should().ContainSingle().Which.Should().Contain("HttpResilience:CPanelWhm").And.Contain("RetryDelay");
     }
 
     /// <summary>A total timeout below the attempt timeout is refused and the message names the profile.</summary>
@@ -130,12 +130,12 @@ public sealed class ResilienceProfileOptionsValidatorTests
     public void TotalTimeoutBelowAttemptTimeout_IsRefused()
     {
         var options = new HttpResilienceOptions();
-        options.Plesk.AttemptTimeout = TimeSpan.FromSeconds(20);
-        options.Plesk.TotalTimeout = TimeSpan.FromSeconds(10);
+        options.CPanelWhm.AttemptTimeout = TimeSpan.FromSeconds(20);
+        options.CPanelWhm.TotalTimeout = TimeSpan.FromSeconds(10);
 
         var result = new HttpResilienceOptionsValidator().Validate(null, options);
 
-        result.Failures.Should().ContainSingle().Which.Should().Contain("HttpResilience:Plesk").And.Contain("TotalTimeout");
+        result.Failures.Should().ContainSingle().Which.Should().Contain("HttpResilience:CPanelWhm").And.Contain("TotalTimeout");
     }
 
     /// <summary>The real registration fails fast: startup validation throws on a bad configured profile.</summary>
@@ -145,7 +145,7 @@ public sealed class ResilienceProfileOptionsValidatorTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [$"{HttpResilienceOptions.SectionName}:Plesk:AttemptTimeout"] = "00:00:00.001",
+                [$"{HttpResilienceOptions.SectionName}:CPanelWhm:AttemptTimeout"] = "00:00:00.001",
             })
             .Build();
         using var provider = new ServiceCollection()
@@ -154,7 +154,7 @@ public sealed class ResilienceProfileOptionsValidatorTests
 
         var act = () => provider.GetRequiredService<IStartupValidator>().Validate();
 
-        act.Should().Throw<OptionsValidationException>().Which.Message.Should().Contain("HttpResilience:Plesk").And.Contain("AttemptTimeout");
+        act.Should().Throw<OptionsValidationException>().Which.Message.Should().Contain("HttpResilience:CPanelWhm").And.Contain("AttemptTimeout");
     }
 
     /// <summary>The real registration accepts a configuration without the section.</summary>

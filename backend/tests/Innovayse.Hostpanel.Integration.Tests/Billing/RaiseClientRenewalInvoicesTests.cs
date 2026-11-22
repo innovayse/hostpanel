@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -118,7 +117,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         string sellCurrency = "USD", int registrationPeriod = 1)
     {
         var tld = $"r{Guid.NewGuid():N}"[..12];
-        var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", sellCurrency, true, 0, []);
+        var config = TldConfig.Create(tld, TestRegistrarModules.First, "USD", sellCurrency, true, 0, []);
         config.UpdateSellPrices([], [], sellRenew);
         context.TldConfigs.Add(config);
 

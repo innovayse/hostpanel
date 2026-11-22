@@ -34,11 +34,11 @@ public sealed class PluginEndpointResolverTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>
-    /// The callback door finds an app plugin and a plugin of any other type that declares the <c>endpoints</c> capability,
-    /// and nothing else; the client and admin doors (<see cref="PluginEndpointResolver.Find"/>) answer the same set.
+    /// Every door finds an app plugin and a plugin of any other type that declares the <c>endpoints</c> capability, and
+    /// nothing else.
     /// </summary>
     [Fact]
-    public void FindForCallback_FindsAnAppPluginAndAnyPluginDeclaringTheEndpointsCapability()
+    public void Find_FindsAnAppPluginAndAnyPluginDeclaringTheEndpointsCapability()
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -51,12 +51,10 @@ public sealed class PluginEndpointResolverTests(IntegrationTestFactory factory) 
             PluginActivationTestSeeds.Plugin(plain, PluginType.Payment, typeof(EchoAppPlugin)));
         var resolver = new PluginEndpointResolver(PluginActivationTestSeeds.Activator(factory, db), registry);
 
-        resolver.FindForCallback(app)!.Id.Should().Be(app);
-        resolver.FindForCallback(declaring)!.Id.Should().Be(declaring);
-        resolver.FindForCallback(plain).Should().BeNull();
-        resolver.FindForCallback("never-loaded").Should().BeNull();
+        resolver.Find(app)!.Id.Should().Be(app);
         resolver.Find(declaring)!.Id.Should().Be(declaring);
         resolver.Find(plain).Should().BeNull();
+        resolver.Find("never-loaded").Should().BeNull();
     }
 
     /// <summary>Copies a loaded plugin with a capability list.</summary>

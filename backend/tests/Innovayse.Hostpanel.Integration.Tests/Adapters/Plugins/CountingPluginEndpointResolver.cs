@@ -34,12 +34,6 @@ public sealed class CountingPluginEndpointResolver : IPluginEndpointResolver
     }
 
     /// <inheritdoc/>
-    public PluginManifest? FindForCallback(string pluginId)
-    {
-        return _inner.FindForCallback(pluginId);
-    }
-
-    /// <inheritdoc/>
     public Task<Func<IPluginEndpoints>?> PrepareAsync(string pluginId, CancellationToken ct)
     {
         _prepared.Increment();

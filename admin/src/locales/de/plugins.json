@@ -27,7 +27,8 @@
     "hostAccess": {
       "ssh": "Befehle im Hosting-Account eines Kunden per SSH ausführen",
       "websites": "Die Websites des Hosting-Services eines Kunden verwalten",
-      "databases": "Die Datenbanken des Hosting-Services eines Kunden verwalten"
+      "databases": "Die Datenbanken des Hosting-Services eines Kunden verwalten",
+      "serviceConnection": "Die Serververbindung eines eigenen Services des Kunden lesen, einschließlich der gespeicherten Panel-Zugangsdaten"
     },
     "capabilities": {
       "endpoints": "Eigene Seiten, Menüs und Widgets zu den Panels hinzufügen",

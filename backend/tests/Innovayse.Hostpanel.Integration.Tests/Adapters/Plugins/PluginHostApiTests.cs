@@ -330,7 +330,8 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
             sp.GetRequiredService<IIdentityProvider>(),
             sp.GetRequiredService<IPayerCurrencyResolver>(),
             sp.GetRequiredService<PluginSshAccessService>(),
-            sp.GetRequiredService<PluginHostingService>());
+            sp.GetRequiredService<PluginHostingService>(),
+            sp.GetRequiredService<PluginServiceConnectionService>());
     }
 
     /// <summary>Seeds a product so services can reference it.</summary>

@@ -11,25 +11,16 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// </summary>
 public interface IPluginEndpointResolver
 {
-    /// <summary>Finds the manifest of a loaded plugin that answers routes.</summary>
-    /// <param name="pluginId">The plugin id from the URL.</param>
-    /// <returns>
-    /// The manifest, or <see langword="null"/> when no plugin of that id is loaded or the plugin is not an app
-    /// plugin, which are the same answer on purpose.
-    /// </returns>
-    public PluginManifest? Find(string pluginId);
-
     /// <summary>
-    /// Finds the manifest of a loaded plugin that answers public callbacks: an app plugin, or a plugin of any other type
-    /// whose manifest declares the <c>endpoints</c> capability. Only the callback door asks; the client and admin doors
-    /// and the plugin UI stay with <see cref="Find"/>, which is app plugins only.
+    /// Finds the manifest of a loaded serving plugin: one that answers the client, admin and callback doors and shows
+    /// pages, menus and slots. Every door and the plugin UI ask this one lookup.
     /// </summary>
     /// <param name="pluginId">The plugin id from the URL.</param>
     /// <returns>
-    /// The manifest, or <see langword="null"/> when no such plugin is loaded or it does not answer callbacks, which are
-    /// the same answer on purpose.
+    /// The manifest, or <see langword="null"/> when no plugin of that id is loaded or the plugin does not serve (it is not
+    /// an app plugin and does not declare <c>endpoints</c>), which are the same answer on purpose.
     /// </returns>
-    public PluginManifest? FindForCallback(string pluginId);
+    public PluginManifest? Find(string pluginId);
 
     /// <summary>
     /// Checks that the plugin is switched on and configured, without building it, and returns the way to build it.

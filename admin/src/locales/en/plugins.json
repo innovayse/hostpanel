@@ -27,7 +27,8 @@
     "hostAccess": {
       "ssh": "Run commands on a client's hosting account over SSH",
       "websites": "Manage the websites of a client's hosting service",
-      "databases": "Manage the databases of a client's hosting service"
+      "databases": "Manage the databases of a client's hosting service",
+      "serviceConnection": "Read the server connection details of a client's own service, including the stored panel credentials"
     },
     "capabilities": {
       "endpoints": "Add its own pages, menus and widgets to the panels",

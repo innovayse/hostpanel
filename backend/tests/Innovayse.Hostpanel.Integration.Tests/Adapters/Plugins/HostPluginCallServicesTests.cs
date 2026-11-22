@@ -102,7 +102,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             oneKey,
             sp.GetRequiredService<PluginSshAccessService>(),
             sp.GetRequiredService<PluginHostingService>(),
-            sp.GetRequiredService<IClock>());
+            sp.GetRequiredService<IClock>(),
+            sp.GetRequiredService<PluginServiceConnectionService>());
 
         var over = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
         var other = callServices.Create(PluginCallBinding.WithoutClient(pluginId));

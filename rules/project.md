@@ -1293,11 +1293,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     `Plugin {id} read the server connection of service #{n}` (the plugin and the service only, never a host name, user name or
     credential), so a refused read writes none and a read that cannot be recorded is not given.
     - **The server password is loaded on this call path only.** `ServerConnectionDto` (the connection every provisioning
-      consumer shares) is unchanged and has no password; `Infrastructure/Provisioning/PluginServiceConnectionReader`
+      consumer shares) has no password; `Infrastructure/Provisioning/PluginServiceConnectionReader`
       (port `IPluginServiceConnectionReader`) reads the service left joined to its server and returns a `PluginServiceConnection`
-      whose `Server` is a `PluginServerAccess` (the mapped `ServerConnectionDto`, the SSL flag and the password). Both records
+      whose `Server` is a `PluginServerAccess` (the mapped `ServerConnectionDto`, which carries the SSL flag, and the password). Both records
       print through `SecretMembers`.
-    - **One mapping to the SDK.** `Infrastructure/Plugins/Extensions/PanelServerConnectionExtensions` turns a `PluginServerAccess`
+    - **One mapping to the SDK.** `Infrastructure/Plugins/Extensions/PanelServerConnectionExtensions` turns a `PluginServerAccess` (through `ServerConnectionDto.ToPanelConnection`, the one server mapping)
       into `PanelServerConnection` and a granted connection into `PanelAccountContext` (`Port` and `AccountId` stay `null`: the
       host keeps neither yet). The panel calls of #1353 reuse it.
     - **Open point for #1353.** A server's `Module` is not matched against the manifest's `serverModules` here: a service tab

@@ -1,6 +1,5 @@
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.Provisioning;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;

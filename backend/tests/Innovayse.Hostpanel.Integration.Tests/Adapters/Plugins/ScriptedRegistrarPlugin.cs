@@ -199,7 +199,7 @@ public class ScriptedRegistrarPlugin : IRegistrarOperationsPlugin
     /// <typeparam name="TAnswer">The type of the answer.</typeparam>
     /// <param name="context">The context the host passed.</param>
     /// <param name="answer">The scripted answer.</param>
-    /// <returns>The scripted answer.</returns>
+    /// <returns>A completed task carrying the scripted answer.</returns>
     protected Task<TAnswer> Answer<TAnswer>(object context, TAnswer answer)
     {
         Received.Add(context);

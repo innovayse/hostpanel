@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Architecture.Tests;
 public sealed class RegistrarProviderPortTests
 {
     /// <summary>Every authored type outside the SDK and the tests.</summary>
+    /// <returns>The authored types of every shipped layer.</returns>
     private static IEnumerable<Type> AuthoredTypes()
     {
         return new[] { Layers.Application, Layers.Shared, Layers.Api, Layers.Infrastructure }.SelectMany(Layers.AuthoredTypesOf);

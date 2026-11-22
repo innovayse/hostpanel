@@ -83,7 +83,7 @@ describe('DomainsListView', () => {
     expect(row.text()).toContain('$12.99 USD')
     expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
     expect(wrapper.findAll('th').find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-full')
-    expect(row.text()).toContain('Registrar One')
+    expect(row.text()).toContain('Example Registrar')
     expect(wrapper.get('[data-testid="domains-name-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-view-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-client-4"]').attributes('href')).toBe('/clients/9')
@@ -157,7 +157,7 @@ describe('DomainsListView', () => {
 
     expect(listUrls(mock)[0]).toBe('/api/domains?page=2&pageSize=20&search=exam&status=Active&registrarModule=registrar-one')
     expect(wrapper.get('[data-testid="filter-chip-status"]').text()).toContain('Active')
-    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Registrar One')
+    expect(wrapper.get('[data-testid="filter-chip-registrarModule"]').text()).toContain('Example Registrar')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
 

@@ -74,7 +74,8 @@ public sealed class InstallPluginHandler
     /// the package fails that check;
     /// <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with the build;
     /// <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c> when the running Hostpanel version is outside the package's
-    /// <c>minHostVersion</c> and <c>maxHostVersion</c>.
+    /// <c>minHostVersion</c> and <c>maxHostVersion</c>, or <c>PLUGIN_SDK_NEWER_THAN_HOST</c> when the plugin was built
+    /// on a newer SDK than the host ships.
     /// </returns>
     public async Task<Result<PluginActionResultDto>> HandleAsync(InstallPluginCommand command, CancellationToken ct)
     {

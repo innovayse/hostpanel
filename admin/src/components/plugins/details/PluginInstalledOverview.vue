@@ -18,6 +18,7 @@ import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDateTime, formatSizeBytes } from '@/lib/format'
+import { isLoadFailed } from '@/lib/installedPlugins'
 import { categoryLabel } from '@/lib/pluginCard'
 import { translateOrRaw } from '@/lib/translate'
 import { PluginStatus } from '@/types/plugin'
@@ -42,8 +43,11 @@ const props = defineProps<{
 /** The plugin's type in words; a type the panel has no words for is shown as the server wrote it. */
 const typeLabel = computed<string>(() => translateOrRaw(`pluginDetails.overview.types.${props.plugin.type}`, props.plugin.type))
 
-/** Whether the plugin runs now, waits for a restart to load, or was refused, in words. */
+/** Whether the plugin runs now, waits for a restart to load, failed to load or was refused, in words. */
 const stateLabel = computed<string>(() => {
+  if (isLoadFailed(props.plugin)) {
+    return t('pluginDetails.overview.state.loadFailed')
+  }
   if (props.plugin.status === PluginStatus.Refused) {
     return t('pluginDetails.overview.state.refused')
   }
@@ -128,6 +132,7 @@ const facts = computed<Readonly<Record<string, OverviewFact>>>(() => ({
   'pluginDetails.overview.installedVersion': { value: props.plugin.version, testid: 'plugin-details-overview-version' },
   ...(props.plugin.stagedVersion ? { 'pluginDetails.overview.stagedVersion': { value: t('pluginDetails.staged', { version: props.plugin.stagedVersion }), testid: 'plugin-details-overview-staged' } } : {}),
   'pluginDetails.overview.hostVersions': { value: hostRange.value, testid: 'plugin-details-overview-hosts' },
+  'pluginDetails.overview.sdkVersion': { value: props.plugin.sdkPackageVersion ?? null, empty: t('pluginDetails.overview.notGiven'), mono: true, testid: 'plugin-details-overview-sdk' },
 }))
 
 /**

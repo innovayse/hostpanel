@@ -94,6 +94,10 @@ public static class PluginPackageErrors
             PluginManifestRule.ConnectionRoleDuplicate => HostpanelErrorCodes.PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE,
             PluginManifestRule.ConnectionRoleTypeMismatch => HostpanelErrorCodes.PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH,
             PluginManifestRule.ConnectionRolesIncomplete => HostpanelErrorCodes.PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE,
+            PluginManifestRule.SdkPackageVersionInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID,
+            PluginManifestRule.MinHostVersionBelowSdk => HostpanelErrorCodes.PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK,
+            PluginManifestRule.SdkNewerThanHost => HostpanelErrorCodes.PLUGIN_SDK_NEWER_THAN_HOST,
+            PluginManifestRule.AssemblyLoadFailed => HostpanelErrorCodes.PLUGIN_ASSEMBLY_LOAD_FAILED,
             PluginManifestRule.ViewOpenUrlInvalid => HostpanelErrorCodes.PLUGIN_VIEW_OPEN_URL_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };

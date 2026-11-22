@@ -639,6 +639,18 @@
   <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
     <value>Плагин регистратора, который объявляет connectionRole, должен объявить и accountName, и apiKey.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>sdkPackageVersion в манифесте этого плагина не является допустимой версией.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>minHostVersion в манифесте этого плагина отсутствует или ниже первого выпуска Hostpanel, в котором есть SDK, на котором собран плагин.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Этот плагин собран на более новом SDK Hostpanel, чем есть на этом сервере, и здесь не загрузится. Обновите Hostpanel или возьмите более старую версию плагина.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Плагин установлен, но не загрузился. Ошибка загрузки показана рядом с ним.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>

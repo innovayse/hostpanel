@@ -103,6 +103,19 @@ describe('PluginInstalledOverview', () => {
     expect(fact(mountOverview({ isLoaded: true }), 'state')).toContain('Loaded and running')
     expect(fact(mountOverview({ isLoaded: false }), 'state')).toContain('Loads after the next restart')
     expect(fact(mountOverview({ status: PluginStatus.Refused, isLoaded: false }), 'state')).toContain('Refused at startup')
+    expect(fact(mountOverview({ isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load file or assembly' }), 'state'))
+      .toContain('Failed to load at startup')
+  })
+
+  it('shows the load error of a plugin whose assembly did not load', () => {
+    const wrapper = mountOverview({ isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load file or assembly' })
+
+    expect(wrapper.get('[data-testid="plugin-details-refusal"]').text()).toContain('Could not load file or assembly')
+  })
+
+  it('shows the plugin SDK version the package was built on next to the host versions, or says none was given', () => {
+    expect(fact(mountOverview({ minHostVersion: '1.4.0', sdkPackageVersion: '3.11.0' }), 'sdk')).toContain('3.11.0')
+    expect(fact(mountOverview({}), 'sdk')).toContain('Not given')
   })
 
   it('shows the installed version and the staged one only while an upgrade waits', () => {

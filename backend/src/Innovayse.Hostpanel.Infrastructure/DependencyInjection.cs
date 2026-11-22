@@ -580,6 +580,7 @@ public static class DependencyInjection
         // profile because this is a GET with no side effects. The base address comes from
         // ReleaseOptions so a fork or an air-gapped deployment can point at its own feed.
         services.AddSingleton<IInstalledVersionProvider, InstalledVersionProvider>();
+        services.AddSingleton<IHostSdkVersionProvider, HostSdkVersionProvider>();
         services.AddHttpClient<IReleaseFeed, GitHubReleasesClient>((sp, client) =>
         {
             var releaseOptions = sp.GetRequiredService<IOptions<ReleaseOptions>>().Value;

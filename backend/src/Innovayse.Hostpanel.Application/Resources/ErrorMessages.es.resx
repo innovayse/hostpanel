@@ -1569,6 +1569,18 @@
   <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
     <value>Un complemento de registrador que declara un connectionRole debe declarar accountName y apiKey.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>El sdkPackageVersion del manifiesto de este complemento no es una versión válida.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>El minHostVersion del manifiesto de este complemento falta o es inferior a la primera versión de Hostpanel que incluye el SDK con el que se compiló el complemento.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Este complemento se compiló con un SDK de Hostpanel más reciente que el de este servidor y no se cargaría aquí. Actualice Hostpanel o use una versión anterior del complemento.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Este complemento está instalado pero no se pudo cargar. El error de carga se muestra junto a él.</value>
+  </data>
   <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
     <value>Uno de los documentos de vista de este plugin abre una dirección de una respuesta con una forma o en un lugar que este servidor no acepta.</value>
   </data>

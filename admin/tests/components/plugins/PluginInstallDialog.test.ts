@@ -71,6 +71,11 @@ describe('PluginInstallDialog', () => {
     expect(wrapper.emitted('close')).toHaveLength(1)
   })
 
+  it('names the plugin SDK version the package was built on, only when the package states one', () => {
+    expect(mountDialog(previewOf({ sdkPackageVersion: '3.11.0' })).get('[data-testid="plugin-install-sdk"]').text()).toBe('Built on plugin SDK 3.11.0')
+    expect(mountDialog(previewOf()).find('[data-testid="plugin-install-sdk"]').exists()).toBe(false)
+  })
+
   it('explains an incompatible package and offers no install', () => {
     const wrapper = mountDialog(previewOf({ minHostVersion: '2.1.0', maxHostVersion: null, compatible: false }))
 

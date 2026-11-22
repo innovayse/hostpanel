@@ -90,6 +90,7 @@ const stateOptions = computed<{ value: string; label: string }[]>(() => [
   { value: InstalledPluginState.Active, label: t('shared.active') },
   { value: InstalledPluginState.PendingRestart, label: t('plugins.pluginCard.pendingRestart') },
   { value: InstalledPluginState.Refused, label: t('plugins.pluginCard.refused') },
+  { value: InstalledPluginState.LoadFailed, label: t('plugins.pluginCard.loadFailed') },
 ])
 
 /** Options of the category filter: any category, then each category the installed plugins have. */

@@ -639,6 +639,18 @@
   <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
     <value>connectionRole հայտարարող գրանցողի հավելագրիչը պետք է հայտարարի և accountName-ը, և apiKey-ը։</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի մանիֆեստի sdkPackageVersion-ը վավեր տարբերակ չէ։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>Այս հավելագրիչի մանիֆեստի minHostVersion-ը բացակայում է կամ ցածր է Hostpanel-ի այն առաջին թողարկումից, որի SDK-ի վրա հավելագրիչը կառուցված է։</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Այս հավելագրիչը կառուցված է Hostpanel SDK-ի ավելի նոր տարբերակով, քան այս սերվերինն է, և այստեղ չի բեռնվի։ Թարմացրեք Hostpanel-ը կամ վերցրեք հավելագրիչի ավելի հին տարբերակ։</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Հավելագրիչը տեղադրված է, բայց չի բեռնվել։ Բեռնման սխալը ցուցադրվում է նրա կողքին։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>

@@ -114,6 +114,9 @@ const rangeText = computed<string>(() => {
       <UiText v-if="rangeText !== '' && preview.compatible" tone="muted" size="sm" data-testid="plugin-install-range">
         {{ rangeText }}
       </UiText>
+      <UiText v-if="preview.sdkPackageVersion" tone="muted" size="sm" data-testid="plugin-install-sdk">
+        {{ t('plugins.pluginInstallDialog.sdk', { version: preview.sdkPackageVersion }) }}
+      </UiText>
     </UiStack>
 
     <template #footer>

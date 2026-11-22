@@ -247,6 +247,7 @@ public class MyGatewayTests
   { name: 'icon', type: 'string', default: '', description: 'Պլագինի ոչ պարտադիր պատկերը՝ փաթեթի ներսի ուղի դեպի SVG կամ PNG ֆայլ, օրինակ՝ icon.svg կամ assets/icon.png։ Փոքրատառ լատինական տառեր, թվեր, կետ, գծիկ և ընդգծման նշան, առաջ թեքվող շեղ գծեր, առանց սկզբի շեղ գծի, առանց .. հատվածի, ընդլայնումը .svg կամ .png, առավելագույնը 256 ԿիԲ։ Բաց թողեք, որ ցուցադրվի գունավոր բլոկը պլագինի սկզբնատառով։' },
   { name: 'entryPoint', type: 'string', default: '', description: 'Պլագինի ինտերֆեյսն իրականացնող դասի լրիվ անունը։' },
   { name: 'sdkVersion', type: 'string', default: '', description: 'Մանիֆեստի SDK տարբերակը։ Ընդունվող արժեքը 1.0 է։ Assembly-ի SDK մաժորը ստուգվում է առանձին, և ավելի հին մաժորները մերժվում են։' },
+  { name: 'sdkPackageVersion', type: 'string', default: '', description: 'Hostpanel.Sdk փաթեթի այն տարբերակը, որով կառուցված է հավելագրիչը։ Այն գրում է Hostpanel.Sdk-ի build քայլը, ձեռքով մի փոխեք։ Հոսթը մերժում է վերբեռնումը կամ ռեեստրից տեղադրումը, եթե արժեքը նոր է հոսթի SDK-ից (PLUGIN_SDK_NEWER_THAN_HOST)։ minHostVersion-ը չի կարող ցածր լինել այդ SDK-ով հոսթի առաջին թողարկումից։' },
   { name: 'showInIntegrations', type: 'boolean', default: 'false', description: 'Երբ true է, պլագինը երևում է որպես քարտ Ինտեգրացիաներ էկրանին։' },
   { name: 'integrationsCategory', type: 'string', default: '', description: 'Կատեգորիայի վերնագիրը, որի տակ քարտը երևում է Ինտեգրացիաներ էկրանին։' },
   { name: 'fields', type: 'array', default: '[]', description: 'Ինտեգրացիայի էջում ցուցադրվող կարգավորումները՝ ըստ հերթականության։' }

@@ -26,11 +26,14 @@ public static class PluginUpdateRule
     }
 
     /// <summary>
-    /// Picks the version to offer as an update: the newest published version that is an update and whose host range admits
-    /// the running host. An update the host cannot run is never offered, even when it is the registry's newest version.
+    /// Picks the version to offer as an update: the newest published version that is an update, whose host range admits
+    /// the running host and that was built on an SDK the host ships. An update the host cannot run or load is never
+    /// offered,
+    /// even when it is the registry's newest version.
     /// </summary>
     /// <param name="versions">Every version the registry lists for the plugin.</param>
     /// <param name="hostVersion">The running Hostpanel version text.</param>
+    /// <param name="hostSdkVersion">The <c>Hostpanel.Sdk</c> package version this host ships.</param>
     /// <param name="installed">The installed version text.</param>
     /// <param name="staged">The version of an upload already waiting for the restart; <see langword="null"/> when none.</param>
     /// <returns>
@@ -38,13 +41,14 @@ public static class PluginUpdateRule
     /// strictest row, and only a <see cref="PluginRegistryVersionStatus.Published"/> version qualifies.
     /// </returns>
     public static RegistryPluginVersion? NewestOffer(
-        IEnumerable<RegistryPluginVersion> versions, string hostVersion, string installed, string? staged)
+        IEnumerable<RegistryPluginVersion> versions, string hostVersion, string hostSdkVersion, string installed, string? staged)
     {
         return versions
             .GroupBy(v => v.Version, StringComparer.Ordinal)
             .Select(g => g.OrderByDescending(v => v.Status.Strictness()).First())
             .Where(v => v.Status == PluginRegistryVersionStatus.Published
                 && PluginHostCompatibility.IsCompatible(hostVersion, v.MinHostVersion, v.MaxHostVersion)
+                && PluginSdkCompatibility.IsSupported(hostSdkVersion, v.SdkPackageVersion)
                 && IsUpdate(installed, staged, v.Version))
             .OrderByDescending(v => v.Version, Comparer<string>.Create(CompareVersions))
             .FirstOrDefault();

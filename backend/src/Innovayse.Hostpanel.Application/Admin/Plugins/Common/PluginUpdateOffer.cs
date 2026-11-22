@@ -16,13 +16,18 @@ public sealed class PluginUpdateOffer
     /// <summary>The version of the running Hostpanel build.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
+    /// <summary>The <c>Hostpanel.Sdk</c> package version this host ships.</summary>
+    private readonly IHostSdkVersionProvider _hostSdkVersion;
+
     /// <summary>Initializes the service.</summary>
     /// <param name="reader">Reads what this host is shown of a plugin.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
-    public PluginUpdateOffer(RegistryPluginReader reader, IInstalledVersionProvider hostVersion)
+    /// <param name="hostSdkVersion">The <c>Hostpanel.Sdk</c> package version this host ships.</param>
+    public PluginUpdateOffer(RegistryPluginReader reader, IInstalledVersionProvider hostVersion, IHostSdkVersionProvider hostSdkVersion)
     {
         _reader = reader;
         _hostVersion = hostVersion;
+        _hostSdkVersion = hostSdkVersion;
     }
 
     /// <summary>Marks a registry row as installed and, when an update that runs on this host exists, offers it.</summary>
@@ -31,7 +36,8 @@ public sealed class PluginUpdateOffer
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The row with the installed state set. When an update is offered, <c>UpdateAvailable</c> is true and
-    /// <c>LatestVersion</c>, <c>SdkVersion</c> and <c>LatestChangelog</c> describe the offered version, which is the one an
+    /// <c>LatestVersion</c>, <c>SdkPackageVersion</c> and <c>LatestChangelog</c> describe the offered version, which is
+    /// the one an
     /// update installs. No offer is made when the versions cannot be read, because an update that runs here cannot be proven.
     /// </returns>
     public async Task<RegistryPluginDto> MarkAsync(RegistryPluginDto entry, InstalledPluginPackage package, CancellationToken ct)
@@ -45,7 +51,8 @@ public sealed class PluginUpdateOffer
         var read = await _reader.ReadAsync(entry.Id, ct);
         var offer = read.IsFailure
             ? null
-            : PluginUpdateRule.NewestOffer(read.Value!.Versions, _hostVersion.Version, package.Manifest.Version, package.StagedVersion);
+            : PluginUpdateRule.NewestOffer(
+                read.Value!.Versions, _hostVersion.Version, _hostSdkVersion.Version, package.Manifest.Version, package.StagedVersion);
         if (offer is null)
         {
             return marked;
@@ -53,6 +60,6 @@ public sealed class PluginUpdateOffer
 
         return string.Equals(offer.Version, entry.LatestVersion, StringComparison.Ordinal)
             ? marked with { UpdateAvailable = true }
-            : marked with { LatestVersion = offer.Version, SdkVersion = offer.SdkVersion, LatestChangelog = offer.Changelog, UpdateAvailable = true };
+            : marked with { LatestVersion = offer.Version, SdkPackageVersion = offer.SdkPackageVersion, LatestChangelog = offer.Changelog, UpdateAvailable = true };
     }
 }

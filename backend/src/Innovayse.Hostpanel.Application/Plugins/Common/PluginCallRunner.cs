@@ -107,6 +107,9 @@ public sealed class PluginCallRunner
     /// <summary>Writes the sentence a problem gets when the plugin gave none.</summary>
     private readonly IErrorMessageResolver _messages;
 
+    /// <summary>Where the client portal is reachable; its origin is one an absolute redirect may name.</summary>
+    private readonly IOptions<ClientPortalOptions> _portal;
+
     /// <summary>Structured logger; records a plugin that failed, with its id.</summary>
     private readonly ILogger<PluginCallRunner> _logger;
 
@@ -118,6 +121,7 @@ public sealed class PluginCallRunner
     /// <param name="options">The body cap, the call limit and the abandon rules.</param>
     /// <param name="abandoned">Counts the calls abandoned per plugin.</param>
     /// <param name="messages">Writes the sentence a problem gets when the plugin gave none.</param>
+    /// <param name="portal">Where the client portal is reachable; its origin is one an absolute redirect may name.</param>
     /// <param name="logger">Structured logger.</param>
     public PluginCallRunner(
         IPluginCallServices services,
@@ -127,6 +131,7 @@ public sealed class PluginCallRunner
         IOptions<PluginApiOptions> options,
         PluginAbandonedCalls abandoned,
         IErrorMessageResolver messages,
+        IOptions<ClientPortalOptions> portal,
         ILogger<PluginCallRunner> logger)
     {
         _services = services;
@@ -136,6 +141,7 @@ public sealed class PluginCallRunner
         _options = options;
         _abandoned = abandoned;
         _messages = messages;
+        _portal = portal;
         _logger = logger;
     }
 
@@ -387,7 +393,7 @@ public sealed class PluginCallRunner
 
     /// <summary>Turns what the plugin answered into the host's reply.</summary>
     /// <param name="pluginId">The plugin that answered.</param>
-    /// <param name="target">The matched route: its area (only a callback may answer with a raw body), its route (only a route that declares <c>streaming</c> may answer with a stream) and the manifest of the plugin that answered.</param>
+    /// <param name="target">The matched route: its area (only a callback may answer with a raw body or a redirect), its route (only a route that declares <c>streaming</c> may answer with a stream) and the manifest of the plugin that answered.</param>
     /// <param name="reply">The plugin's reply; a plugin that returns none broke its contract.</param>
     /// <param name="limit">The call's time limit; on a stream it is the longest silence between events.</param>
     /// <param name="owner">The scope a streaming route's call owns, handed to an accepted stream; otherwise <see langword="null"/>.</param>
@@ -415,6 +421,8 @@ public sealed class PluginCallRunner
                 return MapStream(pluginId, target.Match.Route, reply, limit, owner);
             case PluginReplyKind.Raw:
                 return MapRaw(pluginId, target, reply);
+            case PluginReplyKind.Redirect:
+                return MapRedirect(pluginId, target, reply);
             default:
                 _logger.LogError("Plugin {PluginId} returned {Reply}, which is not a reply.", pluginId, reply?.Kind.ToString() ?? "no reply");
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
@@ -471,6 +479,30 @@ public sealed class PluginCallRunner
         return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, null, reply.RawBody, reply.ContentType, origins));
     }
 
+    /// <summary>
+    /// Turns a plugin's redirect into the host's. A redirect is served only on a callback, where a payer's browser returns from a
+    /// gateway and the plugin sends it on to the page that shows the result; on a client or an admin route it is a plugin fault,
+    /// as before. The address must pass <see cref="PluginRedirectLocation"/>: a path on this host, or an absolute <c>https</c>
+    /// address of the client portal or of an origin the manifest declares. The address is never logged, because it can carry a
+    /// payment token.
+    /// </summary>
+    /// <param name="pluginId">The plugin that answered.</param>
+    /// <param name="target">The matched route: the area the call came through and the manifest of the plugin that answered.</param>
+    /// <param name="reply">The plugin's redirect reply.</param>
+    /// <returns>The reply carrying the status and the checked address, or <c>PLUGIN_FAILED</c> when the area or the address is not allowed.</returns>
+    private Result<PluginReplyDto> MapRedirect(string pluginId, PluginTarget target, PluginReply reply)
+    {
+        if (target.Area == PluginArea.Callback
+            && PluginRedirectLocation.TryNormalize(
+                reply.Location, PluginRedirectLocation.AllowedOrigins(target.Manifest, _portal.Value.BaseUrl), out var safe))
+        {
+            return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, Location: safe));
+        }
+
+        _logger.LogError("Plugin {PluginId} returned a redirect that is not allowed here: not a callback, or an address the host refuses.", pluginId);
+        return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
+    }
+
     /// <summary>Turns a plugin's stream into the host's, when the route declared one.</summary>
     /// <param name="pluginId">The plugin that answered.</param>
     /// <param name="route">The route that was called.</param>
@@ -503,7 +535,7 @@ public sealed class PluginCallRunner
         return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, stream));
     }
 
-    /// <summary>Whether a reply carries a status its kind may have: 200 to 203 with a body, 204 with none, 400 to 599 except 401 and 407 for a problem, 200 to 599 except 401 and 407 for a raw body.</summary>
+    /// <summary>Whether a reply carries a status its kind may have: 200 to 203 with a body, 204 with none, 400 to 599 except 401 and 407 for a problem, 200 to 599 except 401 and 407 for a raw body, 301, 302, 303, 307 or 308 with an address for a redirect.</summary>
     /// <param name="reply">The plugin's reply.</param>
     /// <returns><see langword="true"/> when the status is one the contract allows for the reply's kind; a stream carries no status of its own.</returns>
     private static bool HasContractStatus(PluginReply reply)
@@ -514,6 +546,7 @@ public sealed class PluginCallRunner
             PluginReplyKind.NoContent => reply.Status == 204,
             PluginReplyKind.Problem => reply.Status is >= 400 and <= 599 and not (401 or 407),
             PluginReplyKind.Raw => reply.Status is >= 200 and <= 599 and not (401 or 407),
+            PluginReplyKind.Redirect => reply.Status is 301 or 302 or 303 or 307 or 308 && !string.IsNullOrEmpty(reply.Location),
 
             // A stream (checked against its route by MapStream) and a kind this host does not know carry no status rule here. An unknown
             // kind must not pass as valid: Map's default arm answers it PLUGIN_FAILED, so this method does not decide it.

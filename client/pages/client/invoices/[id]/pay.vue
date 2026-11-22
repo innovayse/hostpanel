@@ -84,7 +84,7 @@ const { pending } = await useAsyncData(
   `client-invoice-pay-${invoiceId}`,
   () => Promise.all([
     paymentStore.loadInvoice(invoiceId).then(() => paymentStore.loadBankTransfer(invoiceId)),
-    paymentStore.loadPaymentOptions()
+    paymentStore.loadPaymentOptions(invoiceId)
   ])
 )
 
@@ -102,7 +102,7 @@ const retrying = ref(false)
 const retryOptions = async (): Promise<void> => {
   retrying.value = true
   try {
-    await paymentStore.loadPaymentOptions()
+    await paymentStore.loadPaymentOptions(invoiceId)
   } finally {
     retrying.value = false
   }

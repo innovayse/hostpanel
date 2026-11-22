@@ -53,6 +53,25 @@ public sealed class OutboundConnector
     public TimeSpan ConnectTimeout => _options.ConnectTimeout;
 
     /// <summary>
+    /// Builds the handler of a guarded client: every connection it opens goes through <see cref="ConnectAsync"/> with the
+    /// connector's connect timeout. It is the one place that handler is assembled, so a client built from the factory and
+    /// one built by hand cannot differ in what they refuse.
+    /// </summary>
+    /// <param name="followRedirects">
+    /// <see langword="false"/> to stop the handler following any redirect, so a 3xx reply reaches the caller as it is.
+    /// </param>
+    /// <returns>A new handler the caller owns.</returns>
+    public SocketsHttpHandler CreateHandler(bool followRedirects)
+    {
+        return new SocketsHttpHandler
+        {
+            AllowAutoRedirect = followRedirects,
+            ConnectTimeout = ConnectTimeout,
+            ConnectCallback = ConnectAsync,
+        };
+    }
+
+    /// <summary>
     /// Resolves a host and keeps only the addresses that may be dialled; a host the deployment routes
     /// to a fixed address answers with that address alone.
     /// </summary>

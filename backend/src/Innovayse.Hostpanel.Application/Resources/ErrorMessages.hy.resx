@@ -297,6 +297,12 @@
 <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
     <value>Այս պահին այդ վճարման եղանակը հասանելի չէ։</value>
   </data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>Այս պատվերի բոլոր ապրանքների համար ընդհանուր վճարման եղանակ չկա։ Պատվիրեք դրանք առանձին։</value>
+  </data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Այս վճարման եղանակը թույլատրված չէ վճարվող ապրանքների համար։</value>
+  </data>
 <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
     <value>Այդ արժույթը հասանելի չէ։</value>
   </data>
@@ -546,9 +552,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>Այս սերվերի համար API բանալի կամ մուտքի հեշ սահմանված չէ։</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Այս սերվերի մոդուլի համար կապի ստուգումը չի աջակցվում։</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի սերվերների խումբ չի գտնվել։</value>
   </data>
@@ -618,6 +621,33 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Մանիֆեստի agentProfile-ը պետք է լինի SDK-ի սահմանած SSH բանալիների գործակալի պրոֆիլներից մեկը՝ գրված ճշգրիտ։</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի serverModules ցուցակը վավեր չէ. provisioningPanel կամ virtualServer հնարավորությամբ հավելագրիչը պետք է նշի առնվազն մեկ սերվերի մոդուլի նույնացուցիչ (տառեր, թվանշաններ, գծիկներ, կետեր և ընդգծումներ, մինչև 50 նիշ, առանց կրկնությունների), իսկ մյուս հավելագրիչները չպետք է նշեն ոչ մեկը։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>Մանիֆեստի կարգավորումներում connectionRole-ը թույլատրվում է միայն գրանցողի հավելագրիչի համար։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Մանիֆեստի երկու կարգավորում ունեն միևնույն connectionRole-ը. յուրաքանչյուր դերը կարելի է տալ միայն մեկ կարգավորման։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>Մանիֆեստի connectionRole-ը նշված է սխալ տեսակի կարգավորման վրա. apiKey-ի համար պետք է secret կարգավորում, apiUrl-ի համար՝ url, testMode-ի համար՝ boolean։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>connectionRole հայտարարող գրանցողի հավելագրիչը պետք է հայտարարի և accountName-ը, և apiKey-ը։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի մանիֆեստի sdkPackageVersion-ը վավեր տարբերակ չէ։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>Այս հավելագրիչի մանիֆեստի minHostVersion-ը բացակայում է կամ ցածր է Hostpanel-ի այն առաջին թողարկումից, որի SDK-ի վրա հավելագրիչը կառուցված է։</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Այս հավելագրիչը կառուցված է Hostpanel SDK-ի ավելի նոր տարբերակով, քան այս սերվերինն է, և այստեղ չի բեռնվի։ Թարմացրեք Hostpanel-ը կամ վերցրեք հավելագրիչի ավելի հին տարբերակ։</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Հավելագրիչը տեղադրված է, բայց չի բեռնվել։ Բեռնման սխալը ցուցադրվում է նրա կողքին։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>
@@ -661,7 +691,7 @@
     <value>Այս հավելագրիչը հայտարարում է երթուղիներ, էջեր կամ սլոտներ, սակայն այն հավելվածի տեսակի հավելագրիչ չէ և չի հայտարարում «endpoints» հնարավորությունը։</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում կամ որը նրա տեսակի հավելագրիչը չի կարող ունենալ։</value>
+    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում, որը նրա տեսակի հավելագրիչը չի կարող ունենալ կամ որին պետք է մեկ այլ հնարավորություն, որը հավելագրիչը չի հայտարարել։</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
@@ -1086,6 +1116,24 @@
   </data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>Դոմենի սեփականատիրոջ կոնտակտային տվյալները թերի են, ուստի պատվերը չի կարող ուղարկվել ռեգիստրատորին։</value>
+  </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>Ռեգիստրատորը չի վաճառում այս դոմենի ընդլայնումը։</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>Ռեգիստրատորը մերժեց տեղափոխման թույլտվության կոդը։</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>Ռեգիստրատորն այս պահին չի թույլատրում այս դոմենի տեղափոխումը։</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>Ռեգիստրատորը մերժեց անվանային սերվերները։</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>Ռեգիստրատորը մերժեց DNS գրառումը։</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>Ռեգիստրատորը չընդունեց պահպանված հաշվի տվյալները։ Դիմեք ադմինիստրատորին։</value>
   </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>Գործարքը պետք է ունենա մուտքային կամ ելքային գումար։</value>
@@ -1551,5 +1599,53 @@
   </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Առանց SSL սերվերը չի կարող ընդունել ինքնաստորագրված վկայական։ Միացրեք SSL-ը կամ հանեք ինքնաստորագրված վկայականի նշումը։</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Կառավարման վահանակի այս տեսակը հասանելի չէ։ Նախ տեղադրեք դրա պլագինը կամ ընտրեք այլ տեսակ։</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Այս սերվերի կառավարման վահանակի պլագինը տեղադրված չէ, անջատված է, կարգավորված չէ կամ չի աշխատում։ Ստուգեք այն պլագինների էջում։</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Այս սերվերի վահանակի տեսակը սպասարկում են մի քանի տեղադրված պլագիններ։ Թողեք միայն մեկը։</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Կառավարման այս վահանակը չի աջակցում պահանջված գործողությունը։</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>Կառավարման վահանակում այս ծառայության համար հաշիվ չկա։</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Կառավարման վահանակը չի ճանաչում այս ծառայության հոսթինգի փաթեթը։</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Կառավարման վահանակը չի ընդունում հաշվի այս օգտանունը։</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Կառավարման վահանակը չի ընդունում այս դոմենի անունը։</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց գաղտնաբառը։ Ընտրեք ավելի ամուր գաղտնաբառ։</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Կառավարման վահանակը հասել է իր սահմանաչափին և չի կարող ընդունել այս փոփոխությունը։</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց այս սերվերի համար պահված մուտքի տվյալները։</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց հարցումը։</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Հոսթինգի հաշիվը ստեղծվում է։ Ստուգեք կրկին մի քանի րոպեից։</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Սերվերի միացման տվյալները թերի են այս կառավարման վահանակի համար։</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Կառավարման վահանակը մերժեց պահված մուտքի տվյալները։</value>
   </data>
 </root>

@@ -63,7 +63,7 @@ public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixtu
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.PostAsJsonAsync("/api/admin/faqs", new { category = "general", sortOrder = 0, isActive = true, translations = new { fr = new { question = "Comment?", answer = "Ainsi." } } });
+        var response = await client.PostAsJsonAsync("/api/admin/faqs", new { category = "general", sortOrder = 0, isActive = true, translations = new { en = new { question = "How?", answer = "Like this." }, it = new { question = "Come?", answer = "Cosi." } } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

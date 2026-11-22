@@ -546,9 +546,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>Aucune clé d'API ni hachage d'accès n'est configuré pour ce serveur.</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Le test de connexion n'est pas pris en charge pour ce module de serveur.</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>Ce groupe de serveurs n'existe pas.</value>
   </data>
@@ -1551,5 +1548,104 @@
   </data>
   <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
     <value>L'un des documents de vue de ce plugin ouvre une adresse issue d'une réponse dans une forme ou à un endroit que ce serveur n'accepte pas.</value>
+  </data>
+<data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>Aucun mode de paiement n'est disponible pour tous les produits de cette commande. Passez-les en commande séparément.</value>
+  </data>
+<data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Ce mode de paiement n'est pas autorisé pour les produits à payer.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>La liste serverModules du manifeste n'est pas valide : un plugin avec la capacité provisioningPanel ou virtualServer doit indiquer au moins un identifiant de module de serveur (lettres, chiffres, tirets, points et traits de soulignement, 50 caractères au plus, sans doublon), et tout autre plugin ne doit en indiquer aucun.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>Un connectionRole dans les paramètres du manifeste n'est autorisé que sur un plugin de registraire.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Deux paramètres du manifeste ont le même connectionRole ; chaque rôle ne peut être attribué qu'à un seul paramètre.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>Un connectionRole du manifeste est placé sur un paramètre du mauvais type : apiKey demande un paramètre secret, apiUrl un paramètre url et testMode un paramètre booléen.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>Un plugin de registraire qui déclare un connectionRole doit déclarer à la fois accountName et apiKey.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>Le sdkPackageVersion du manifeste de ce plugin n'est pas une version valide.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>Le minHostVersion du manifeste de ce plugin est absent ou inférieur à la première version de Hostpanel qui fournit le SDK avec lequel le plugin a été construit.</value>
+  </data>
+<data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Ce plugin a été construit avec un SDK Hostpanel plus récent que celui de ce serveur et ne se chargerait pas ici. Mettez Hostpanel à jour ou utilisez une version plus ancienne du plugin.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Ce plugin est installé mais n'a pas pu être chargé. Consultez l'erreur de chargement affichée avec lui.</value>
+  </data>
+<data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>Le registraire ne vend pas cette extension de domaine.</value>
+  </data>
+<data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>Le registraire a rejeté le code d'autorisation de transfert.</value>
+  </data>
+<data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>Le registraire n'autorise pas le transfert de ce domaine pour le moment.</value>
+  </data>
+<data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>Le registraire a rejeté les serveurs de noms.</value>
+  </data>
+<data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>Le registraire a rejeté l'enregistrement DNS.</value>
+  </data>
+<data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>Le registraire n'a pas accepté les identifiants enregistrés du compte. Contactez l'administrateur.</value>
+  </data>
+<data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Un serveur sans SSL ne peut pas accepter un certificat auto-signé. Activez SSL ou décochez l'option du certificat auto-signé.</value>
+  </data>
+<data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Ce type de panneau de contrôle n'est pas disponible. Installez d'abord son plugin ou choisissez un autre type.</value>
+  </data>
+<data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Le plugin du panneau de contrôle de ce serveur n'est pas installé, est désactivé, n'est pas configuré ou ne fonctionne pas. Vérifiez-le sur la page Plugins.</value>
+  </data>
+<data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Plusieurs plugins installés gèrent le type de panneau de contrôle de ce serveur. N'en gardez qu'un seul.</value>
+  </data>
+<data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Ce panneau de contrôle ne prend pas en charge l'action demandée.</value>
+  </data>
+<data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>Le panneau de contrôle n'a aucun compte pour ce service.</value>
+  </data>
+<data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Le panneau de contrôle ne connaît pas l'offre d'hébergement de ce service.</value>
+  </data>
+<data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Le panneau de contrôle n'accepte pas ce nom d'utilisateur de compte.</value>
+  </data>
+<data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Le panneau de contrôle n'accepte pas ce nom de domaine.</value>
+  </data>
+<data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Le panneau de contrôle a rejeté le mot de passe. Choisissez-en un plus robuste.</value>
+  </data>
+<data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Le panneau de contrôle a atteint sa limite et ne peut pas accepter cette modification.</value>
+  </data>
+<data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Le panneau de contrôle a refusé les identifiants enregistrés pour ce serveur.</value>
+  </data>
+<data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Le panneau de contrôle a refusé la requête.</value>
+  </data>
+<data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Le compte d'hébergement est en cours de création. Veuillez vérifier de nouveau dans quelques minutes.</value>
+  </data>
+<data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Les informations de connexion du serveur sont incomplètes pour ce panneau de contrôle.</value>
+  </data>
+<data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Le panneau de contrôle a refusé les identifiants enregistrés.</value>
   </data>
 </root>

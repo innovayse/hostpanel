@@ -62,7 +62,7 @@ public sealed class AddEmailForwardingRuleHandler
 
         var registrar = await _registrars.ResolveAsync(domain, ct);
         var result = await registrar.AddEmailForwardingRuleAsync(
-            new EmailForwardingRuleChange(domain.Name, cmd.Source, cmd.Destination), ct);
+            new EmailForwardingRuleChange(domain.ToRef(), cmd.Source, cmd.Destination), ct);
         if (!result.Success)
         {
             _logger.LogWarning(

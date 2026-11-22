@@ -60,6 +60,29 @@ describe('useSettingsApi', () => {
     expect(callOf(mock, 1).url).toBe('/api/products/groups?activeOnly=false')
   })
 
+  it('listPaymentMethods reads the methods a checkout offers', async () => {
+    const mock = stubFetch(json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]))
+
+    expect(await useSettingsApi().listPaymentMethods()).toEqual([{ module: 'bank_transfer', displayName: 'Bank transfer' }])
+    expect(callOf(mock).url).toBe('/api/payment-methods')
+  })
+
+  it('createProductGroup POSTs the group with its allowed methods and returns the id', async () => {
+    const mock = stubFetch(json(4))
+    const payload = { name: 'Shared', description: null, allowedPaymentMethods: ['bank_transfer'] }
+
+    expect(await useSettingsApi().createProductGroup(payload)).toBe(4)
+    expect(callOf(mock)).toMatchObject({ url: '/api/products/groups', method: 'POST', body: payload })
+  })
+
+  it('updateProductGroup PUTs the group by id', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const payload = { name: 'Shared', description: 'D', allowedPaymentMethods: [] }
+
+    await useSettingsApi().updateProductGroup(4, payload)
+    expect(callOf(mock)).toMatchObject({ url: '/api/products/groups/4', method: 'PUT', body: payload })
+  })
+
   it('listProductsPage reads one page of /admin/products with the page, its size and the filters', async () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 }))
     const api = useSettingsApi()

@@ -1,0 +1,11 @@
+{
+  "demo": {
+    "label": "Modo demo",
+    "resetsIn": "Se restablece en {time}",
+    "resetsSoon": "Se restablecerá en cualquier momento",
+    "hoursMinutes": "{hours} h {minutes} min",
+    "minutes": "{minutes} min",
+    "note": "Todo lo que ve aquí son datos de ejemplo y se restablecen periódicamente.",
+    "guide": "¿Es nuevo? Lea la guía"
+  }
+}

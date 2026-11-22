@@ -17,6 +17,7 @@ describe('stripLocalePrefix', () => {
     ['/ru/hosting', '/hosting'],
     ['/hy', ''],
     ['/de/hosting', '/hosting'],
+    ['/es/hosting', '/hosting'],
     ['/hosting', '/hosting'],
   ])('turns %s into %s', (path, expected) => {
     expect(stripLocalePrefix(path)).toBe(expected)
@@ -33,6 +34,7 @@ describe('localizedUrl', () => {
     expect(localizedUrl(BASE, '/hosting', AppLocale.Ru)).toBe(`${BASE}/ru/hosting`)
     expect(localizedUrl(BASE, '', AppLocale.Hy)).toBe(`${BASE}/hy`)
     expect(localizedUrl(BASE, '/hosting', AppLocale.De)).toBe(`${BASE}/de/hosting`)
+    expect(localizedUrl(BASE, '/hosting', AppLocale.Es)).toBe(`${BASE}/es/hosting`)
   })
 })
 
@@ -42,7 +44,7 @@ describe('buildSeoLinks', () => {
 
     expect(links[0]).toEqual({ rel: 'canonical', href: `${BASE}/ru/hosting` })
     expect(links.flatMap((link) => (link.rel === 'alternate' ? [link.hreflang] : [])))
-      .toEqual([AppLocale.En, AppLocale.Ru, AppLocale.Hy, AppLocale.De, AppLocale.Fr, HREFLANG_DEFAULT])
+      .toEqual([AppLocale.En, AppLocale.Ru, AppLocale.Hy, AppLocale.De, AppLocale.Es, AppLocale.Fr, HREFLANG_DEFAULT])
   })
 
   it('points x-default at the default language', () => {

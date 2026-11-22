@@ -135,6 +135,26 @@ export interface ProductGroup {
   isActive: boolean
   /** Number of products in this group. */
   productCount: number
+  /** Payment method module ids this group may be paid with; empty when every method on offer is allowed. */
+  allowedPaymentMethods: string[]
+}
+
+/** One payment method a checkout can offer, as the group form lists it. */
+export interface PaymentMethodOption {
+  /** Module id the checkout sends back as the order's payment method. */
+  module: string
+  /** Label the payer sees. */
+  displayName: string
+}
+
+/** Payload for creating or updating a product group; the update replaces every field. */
+export interface ProductGroupPayload {
+  /** Group display name. */
+  name: string
+  /** Optional description. */
+  description: string | null
+  /** Payment method module ids the group may be paid with; empty allows every method on offer. */
+  allowedPaymentMethods: string[]
 }
 
 /** Payload for creating a new product. */

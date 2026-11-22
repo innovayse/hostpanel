@@ -18,7 +18,8 @@ public interface IProvisioningProvider
     /// A <see cref="ProvisioningResult"/> indicating success or failure,
     /// and the provider-assigned reference on success. An account the provider already holds under the
     /// requested username is answered with <see cref="ProvisioningOutcome.AlreadyExists"/>, so a retry
-    /// after a lost answer is safe.
+    /// after a lost answer is safe. An account the panel accepted and is still creating is answered with
+    /// <see cref="ProvisioningOutcome.Pending"/>.
     /// </returns>
     public Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct);
 
@@ -37,14 +38,14 @@ public interface IProvisioningProvider
     /// <summary>
     /// Re-activates a previously suspended hosting account on the provider.
     /// </summary>
-    /// <param name="provisioningRef">Provider-assigned reference for the account to unsuspend.</param>
+    /// <param name="req">Unsuspension request containing the service and the account reference.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="System.InvalidOperationException">
     /// Thrown when the provider refuses and the account is not already active; an account already
     /// active is success, so a retry is safe.
     /// </exception>
     /// <returns>A task that completes when the account is active again.</returns>
-    public Task UnsuspendAsync(string provisioningRef, CancellationToken ct);
+    public Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct);
 
     /// <summary>
     /// Permanently removes a hosting account from the provider.
@@ -61,44 +62,41 @@ public interface IProvisioningProvider
     /// <summary>
     /// Retrieves the current login credentials for a provisioned hosting account.
     /// </summary>
-    /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
+    /// <param name="req">The service and the account reference.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// A <see cref="ServiceCredentials"/> record containing username, password,
     /// domain, server IP, and control panel URL.
     /// </returns>
-    public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct);
+    public Task<ServiceCredentials> GetCredentialsAsync(AccountCredentialsOrder req, CancellationToken ct);
 
     /// <summary>
     /// Generates a single-sign-on URL for the client to access their control panel directly.
     /// </summary>
-    /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
-    /// <param name="callerIp">The address of the browser that will open the link, or <see langword="null"/> when unknown; only panels that bind a session to it read it.</param>
+    /// <param name="req">The service, the account reference and the address of the browser that will open the link, which only panels that bind a session to it read.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A time-limited control-panel sign-in link string.</returns>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct);
+    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct);
 
     /// <summary>
     /// Changes the password of a provisioned hosting account.
     /// </summary>
-    /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
-    /// <param name="newPassword">The new password to set on the hosting account.</param>
+    /// <param name="req">The service, the account reference and the new password to set on the hosting account.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="System.InvalidOperationException">
     /// Thrown when the account does not exist or the password change fails.
     /// </exception>
     /// <returns>A task that completes when the password is changed.</returns>
-    public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct);
+    public Task ChangePasswordAsync(ChangeAccountPasswordOrder req, CancellationToken ct);
 
     /// <summary>
     /// Changes the hosting package assigned to a provisioned account.
     /// </summary>
-    /// <param name="provisioningRef">Provider-assigned reference for the account.</param>
-    /// <param name="newPackage">The name of the new hosting package to assign.</param>
+    /// <param name="req">The service, the account reference and the name of the new hosting package to assign.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="System.InvalidOperationException">
     /// Thrown when the account does not exist or the package change fails.
     /// </exception>
     /// <returns>A task that completes when the package is changed.</returns>
-    public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct);
+    public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct);
 }

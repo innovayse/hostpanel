@@ -1,0 +1,94 @@
+{
+  "blockList": {
+    "subtitle": "IP-Adressen, IP-Bereiche, E-Mail-Domains und Länder, die die Betrugsprüfung immer markiert.",
+    "tabsLabel": "Typ der Sperrliste",
+    "valueLabel": {
+      "Ip": "IP-Adresse",
+      "Cidr": "IP-Bereich (CIDR)",
+      "EmailDomain": "E-Mail-Domain",
+      "Country": "Land"
+    },
+    "valuePlaceholder": {
+      "Ip": "203.0.113.7",
+      "Cidr": "203.0.113.0/24",
+      "EmailDomain": "mail.example",
+      "Country": "Land auswählen"
+    },
+    "note": "Notiz",
+    "notePlaceholder": "Grund der Sperrung (optional)",
+    "add": "Zur Sperrliste hinzufügen",
+    "added": "Eintrag zur Sperrliste hinzugefügt.",
+    "addedAt": "Hinzugefügt",
+    "removed": "Eintrag aus der Sperrliste entfernt.",
+    "empty": "Diese Sperrliste ist leer.",
+    "searchPlaceholder": "Nach Wert oder Notiz suchen",
+    "noMatches": "Keine Einträge entsprechen Ihrer Suche.",
+    "deleteTitle": "Aus der Sperrliste entfernen?",
+    "deleteMessage": "{value} wird von der Betrugsprüfung nicht mehr markiert."
+  },
+  "log": {
+    "subtitle": "Jede von der Betrugsprüfung bewertete Registrierung und Bestellung mit Entscheidung und Begründung.",
+    "decision": "Entscheidung",
+    "reason": "Grund",
+    "kind": "Prüfung",
+    "score": "Score",
+    "reasons": "Gründe",
+    "noReasons": "Keine",
+    "order": "Bestellung",
+    "searchPlaceholder": "Nach E-Mail oder IP-Adresse suchen",
+    "noMatches": "Keine Protokolleinträge entsprechen Ihrer Suche oder Ihren Filtern."
+  },
+  "settings": {
+    "title": "Betrugseinstellungen",
+    "subtitle": "Legen Sie fest, wann eine Bestellung auf Prüfung wartet und wann eine Aktion sofort abgelehnt wird.",
+    "enabled": "Betrugserkennung",
+    "enabledHint": "Wenn deaktiviert, werden Registrierungen und Bestellungen nicht bewertet und nichts wird zur Prüfung zurückgehalten.",
+    "saved": "Betrugseinstellungen gespeichert.",
+    "fields": {
+      "manualReviewRiskScore": {
+        "label": "Prüfschwelle",
+        "hint": "Ab diesem Risiko-Score (0 bis 100) wartet eine Bestellung auf die Prüfung durch einen Mitarbeiter."
+      },
+      "autoRejectRiskScore": {
+        "label": "Schwelle für automatische Ablehnung",
+        "hint": "Ab diesem Risiko-Score (0 bis 100) wird eine Aktion sofort abgelehnt. Er muss über der Prüfschwelle liegen."
+      },
+      "velocityWindowMinutes": {
+        "label": "Zeitfenster für die Häufigkeit (Minuten)",
+        "hint": "Wie weit zurück Bestellungen von einer IP-Adresse gezählt werden, von 1 bis 1440 Minuten."
+      },
+      "velocityMaxOrders": {
+        "label": "Zulässige Bestellungen im Zeitfenster",
+        "hint": "Mehr Bestellungen als dieser Wert von einer IP-Adresse innerhalb des Zeitfensters erhöhen das Risiko."
+      },
+      "maxAccountsPerIp": {
+        "label": "Zulässige Konten pro IP-Adresse",
+        "hint": "Mehr Konten als dieser Wert von einer IP-Adresse erhöhen das Risiko."
+      }
+    },
+    "errors": {
+      "scoreRange": "Geben Sie eine ganze Zahl von 0 bis 100 ein.",
+      "reviewBelowReject": "Muss niedriger sein als die Schwelle für automatische Ablehnung.",
+      "windowRange": "Geben Sie eine ganze Zahl von Minuten von 1 bis 1440 ein.",
+      "countRange": "Geben Sie eine ganze Zahl von 1 bis 100 ein."
+    },
+    "sections": {
+      "thresholds": "Schwellen für den Risiko-Score",
+      "velocity": "Häufigkeitsgrenzen pro IP-Adresse"
+    },
+    "units": {
+      "points": "Pkt.",
+      "minutes": "Min.",
+      "orders": "Bestellungen",
+      "accounts": "Konten"
+    },
+    "band": {
+      "allow": "Zulassen",
+      "review": "Prüfen",
+      "reject": "Ablehnen",
+      "range": "{from} bis {to}",
+      "empty": "keine"
+    },
+    "offNote": "Die Betrugserkennung ist deaktiviert. Die Schwellen und Grenzen unten bleiben gespeichert, werden aber nicht angewendet: Nichts wird bewertet, zur Prüfung zurückgehalten oder abgelehnt, bis Sie sie aktivieren."
+  }
+}

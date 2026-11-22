@@ -2,7 +2,8 @@
  * Fixtures of the servers and integrations tests: a provisioning server, a group, and a server's
  * SSH key management settings and installer setup, as the admin API returns them.
  */
-import type { ServerDto, ServerGroupDto, ServerOptionDto } from '@/types/server'
+import type { ServerDto, ServerGroupDto, ServerModuleOptionDto, ServerOptionDto } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '@/types/serverssh'
 import { SshAgentProfile } from '@/types/sshenums'
 
@@ -15,8 +16,8 @@ import { SshAgentProfile } from '@/types/sshenums'
 export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
   id: 1,
   name: 'host1',
-  endpoint: { hostname: 'host1.example.com', ipAddress: '203.0.113.10', assignedIpAddresses: null, useSSL: true },
-  module: 'Cwp7',
+  endpoint: { hostname: 'host1.example.com', ipAddress: '203.0.113.10', assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: false },
+  module: 'CPanel',
   username: 'root',
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   hosting: { datacenter: null, serverStatusAddress: null, monthlyCost: 20 },
@@ -42,6 +43,18 @@ export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
   usage: { activeServices: 3, monthlyRevenue: 45, currency: 'USD' },
   ...overrides,
 })
+
+/**
+ * Builds the control panel modules the module list endpoint answers: the host's own ones, and one a plugin declares.
+ *
+ * @param overrides - Modules to add after the defaults.
+ * @returns The modules.
+ */
+export const serverModuleOptionDtos = (overrides: ServerModuleOptionDto[] = []): ServerModuleOptionDto[] => [
+  { id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn },
+  { id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin },
+  ...overrides,
+]
 
 /**
  * Builds a server as the unpaged option lookup returns it.

@@ -1,0 +1,108 @@
+{
+  "products": {
+    "hero": {
+      "badge": "Soluciones de hosting fiables",
+      "headline1": "Hosting, dominios y servidores",
+      "headline2": "para cada sitio web.",
+      "subtitle": "Elija los planes de hosting, dominio, SSL y servidor que necesita su sitio, con precios claros y un soporte que responde.",
+      "cta": {
+        "viewProducts": "Ver productos",
+        "comparePlans": "Comparar planes de hosting"
+      },
+      "trustBadges": {
+        "support": "Soporte que responde",
+        "encryption": "Conexiones cifradas",
+        "uptime": "Disponibilidad fiable"
+      }
+    },
+    "products": {
+      "featured": "Destacado"
+    },
+    "pricing": {
+      "title": "Elija su plan",
+      "trial": "Iniciar prueba gratuita",
+      "cycles": {
+        "monthly": "Mensual",
+        "quarterly": "Trimestral",
+        "semiannually": "6 meses",
+        "annually": "Anual",
+        "biennially": "2 años",
+        "triennially": "3 años"
+      },
+      "popular": "⭐ Más popular",
+      "period": {
+        "monthly": "/mes",
+        "quarterly": "/trim.",
+        "semiannually": "/6 meses",
+        "annually": "/año",
+        "biennially": "/2 años"
+      },
+      "save": "Ahorre un {percent}%",
+      "more": "+{count} más",
+      "cta": {
+        "viewDemo": "Ver demo",
+        "learnMore": "Más información"
+      }
+    },
+    "help": {
+      "title": "¿No sabe qué plan le conviene?",
+      "subtitle": "Compare los planes lado a lado o pida a nuestro equipo de soporte que le ayude a elegir.",
+      "compare": "Comparar planes",
+      "contact": "Contactar con soporte"
+    },
+    "comparison": {
+      "title": "Comparar planes",
+      "headline": "Encuentre su {perfectMatch}",
+      "perfectMatchHighlight": "opción perfecta",
+      "subtitle": "Compare los planes y elija el que mejor se adapte",
+      "headers": {
+        "feature": "Característica",
+        "popular": "Popular"
+      },
+      "groupsLabel": "Grupos de planes",
+      "notIncluded": "No incluido"
+    },
+    "benefits": {
+      "title": "Por qué alojar su sitio con {benefitsHighlight}",
+      "benefitsHighlight": "nosotros",
+      "subtitle": "Hosting rápido y seguro, con un soporte que responde",
+      "speed": {
+        "title": "Rápido y fiable",
+        "description": "El almacenamiento SSD y una red estable mantienen su sitio ágil y en línea."
+      },
+      "security": {
+        "title": "Seguro por defecto",
+        "description": "Copias de seguridad periódicas y protección frente a las amenazas habituales."
+      },
+      "support": {
+        "title": "Soporte humano real",
+        "description": "Sus consultas llegan a personas que responden, no a un bot."
+      },
+      "migration": {
+        "title": "Fácil de empezar",
+        "description": "Haga el pedido en minutos y traslade su sitio con nuestra ayuda."
+      },
+      "additional": {
+        "trial": {
+          "title": "Acceso de prueba",
+          "description": "Pruebe antes de comprometerse"
+        },
+        "guarantee": {
+          "title": "Política de reembolso",
+          "description": "Consulte nuestras condiciones de reembolso"
+        },
+        "pricing": {
+          "title": "Precios claros",
+          "description": "Precios mostrados en su moneda"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Elegidos por {thousands}",
+      "thousandsHighlight": "nuestros clientes",
+      "subtitle": "Resultados reales de clientes reales"
+    },
+    "notFound": "Producto no encontrado",
+    "notFoundDescription": "El producto que busca no existe o ha sido eliminado."
+  }
+}

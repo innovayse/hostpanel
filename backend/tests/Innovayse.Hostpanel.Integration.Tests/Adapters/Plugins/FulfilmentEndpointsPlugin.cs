@@ -16,7 +16,7 @@ internal sealed class FulfilmentEndpointsPlugin : IFulfilmentPlugin, IPluginEndp
     /// <inheritdoc/>
     public Task<PluginReply> HandleAsync(PluginCall call, CancellationToken ct)
     {
-        return Task.FromResult(PluginReply.NoContent());
+        return ServingPluginReplies.AnswerAsync(call, ct);
     }
 
     /// <inheritdoc/>

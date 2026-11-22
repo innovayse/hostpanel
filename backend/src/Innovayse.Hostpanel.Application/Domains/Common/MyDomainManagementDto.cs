@@ -9,9 +9,11 @@ namespace Innovayse.Hostpanel.Application.Domains.Common;
 /// <param name="Nameservers">The domain's nameservers.</param>
 /// <param name="DnsRecords">The domain's DNS records.</param>
 /// <param name="EmailForwardingRules">The domain's email forwarding rules.</param>
+/// <param name="Capabilities">The optional operations the registrar that holds the domain offers; the portal shows an action only when it is on.</param>
 public sealed record MyDomainManagementDto(
     bool DnsManagement,
     bool EmailForwarding,
     IReadOnlyList<NameserverDto> Nameservers,
     IReadOnlyList<DnsRecordDto> DnsRecords,
-    IReadOnlyList<EmailForwardingRuleDto> EmailForwardingRules);
+    IReadOnlyList<EmailForwardingRuleDto> EmailForwardingRules,
+    RegistrarCapabilitiesDto Capabilities);

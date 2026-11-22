@@ -74,7 +74,7 @@ describe('GET and HEAD /robots.txt', () => {
 
     const body = await route.default(makeEvent()) as string
 
-    for (const path of ['/client/', '/cart/', '/checkout/', '/order/', '/ru/client/', '/hy/order/', '/de/cart/', '/fr/cart/']) {
+    for (const path of ['/client/', '/cart/', '/checkout/', '/order/', '/ru/client/', '/hy/order/', '/de/cart/', '/es/cart/', '/fr/cart/']) {
       expect(body).toContain(`Disallow: ${path}\n`)
     }
     expect(body).toContain('Allow: /\n')

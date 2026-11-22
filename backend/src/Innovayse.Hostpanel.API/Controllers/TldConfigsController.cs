@@ -140,12 +140,13 @@ public sealed class TldConfigsController : BaseApiController
     }
 
     /// <summary>Imports TLD pricing from the specified registrar module, creating or updating TLD configurations.</summary>
-    /// <param name="module">The registrar module to import from, named as a <see cref="Innovayse.Hostpanel.Domain.Domains.Enums.RegistrarModule"/> member.</param>
+    /// <param name="module">The id of the registrar plugin to import from, in any letter case.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the import result; 400 when the registrar module is unknown;
     /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
-    /// 429 when the rate limit is hit.
+    /// 502 when the registrar refuses to list its prices; 503 with <c>REGISTRAR_ACCESS_DENIED</c> when the registrar
+    /// refuses the saved credentials; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("import/{module}")]
     [Authorize(Policy = Policies.Admin)]
@@ -153,6 +154,8 @@ public sealed class TldConfigsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ImportAsync(string module, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<ImportTldPricingResult>>(new ImportTldPricingCommand(module), ct);

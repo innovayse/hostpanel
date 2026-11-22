@@ -22,6 +22,9 @@ public static class StaffAlertTemplatesSeeder
     /// <summary>Slug of the staff alert about a gateway payment reported as paid with no reference to record it under.</summary>
     public const string GatewayPaymentWithoutReferenceSlug = "gateway-payment-without-reference-admin";
 
+    /// <summary>Slug of the staff alert about a gateway payment reported as no longer paid after the invoice was settled through it.</summary>
+    public const string GatewayPaymentReversedSlug = "gateway-payment-reversed-admin";
+
     /// <summary>Adds whichever language version of the staff alerts is missing.</summary>
     /// <param name="context">Data context.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -30,7 +33,7 @@ public static class StaffAlertTemplatesSeeder
     {
         return EmailTemplateSeeding.AddMissingAsync(
             context,
-            [.. ServiceTerminationFailed(), .. GatewayPaymentStalled(), .. GatewayPaymentCredited(), .. GatewayPaymentWithoutReference()],
+            [.. ServiceTerminationFailed(), .. GatewayPaymentStalled(), .. GatewayPaymentCredited(), .. GatewayPaymentWithoutReference(), .. GatewayPaymentReversed()],
             ct);
     }
 
@@ -226,6 +229,57 @@ public static class StaffAlertTemplatesSeeder
                 "es",
                 "Pago de pasarela abonado sin referencia",
                 ["La pasarela {{ module }} informa de un pago{% if amount %} de {{ amount }} {{ currency }}{% endif %} como abonado para la factura n.º {{ invoice.id }} (cliente n.º {{ client.id }}), pero no incluye referencia de pago. No se registró ni abonó nada, porque el pago no se pudo distinguir de otro. Un operador debe localizarlo en la pasarela y registrarlo manualmente."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+        ]);
+
+    /// <summary>
+    /// The staff alert about a gateway payment reported as no longer paid after the invoice was settled through it, one
+    /// version per language. It says nothing was changed on the invoice or the ledger.
+    /// </summary>
+    /// <returns>The versions.</returns>
+    private static IReadOnlyList<EmailTemplate> GatewayPaymentReversed() => EmailTemplateSeeding.Branded(
+        GatewayPaymentReversedSlug,
+        "Sent to staff once per payment session when a gateway reports the payment an invoice was settled through as no longer paid (refunded, reversed or charged back); the invoice and the ledger are left as they were.",
+        [
+            new SeededEmailVersion("Gateway payment reported as reversed: invoice #{{ invoice.id }}", new SeededEmailCopy(
+                "en",
+                "Gateway payment reported as reversed",
+                ["The {{ module }} gateway no longer reports the payment of invoice #{{ invoice.id }} (client #{{ client.id }}) as paid. It may have been refunded, reversed or charged back at the gateway. The invoice and the ledger were not changed. An operator has to check the payment at the gateway and, if the money went back, record the refund."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Платёж через шлюз отмечен как возвращённый: счёт №{{ invoice.id }}", new SeededEmailCopy(
+                "ru",
+                "Платёж через шлюз отмечен как возвращённый",
+                ["Шлюз {{ module }} больше не сообщает об оплате по счёту №{{ invoice.id }} (клиент №{{ client.id }}). Платёж мог быть возвращён, отменён или оспорен в шлюзе. Счёт и учёт платежей не менялись. Оператору нужно проверить платёж в шлюзе и, если деньги вернулись, записать возврат."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Դարպասի վճարումը նշված է որպես հետ վերադարձված՝ հաշիվ №{{ invoice.id }}", new SeededEmailCopy(
+                "hy",
+                "Դարպասի վճարումը նշված է որպես հետ վերադարձված",
+                ["{{ module }} դարպասն այլևս չի հայտնում №{{ invoice.id }} հաշվի (հաճախորդ №{{ client.id }}) վճարման մասին։ Վճարումը կարող էր հետ վերադարձվել, չեղարկվել կամ վիճարկվել դարպասում։ Հաշիվը և վճարումների հաշվառումը չեն փոխվել։ Օպերատորը պետք է ստուգի վճարումը դարպասում և, եթե գումարը վերադարձվել է, գրանցի վերադարձը։"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Gateway-Zahlung als zurückgebucht gemeldet: Rechnung Nr. {{ invoice.id }}", new SeededEmailCopy(
+                "de",
+                "Gateway-Zahlung als zurückgebucht gemeldet",
+                ["Das Gateway {{ module }} meldet die Zahlung der Rechnung Nr. {{ invoice.id }} (Kunde Nr. {{ client.id }}) nicht mehr als bezahlt. Sie wurde möglicherweise im Gateway erstattet, storniert oder zurückgebucht. Rechnung und Buchungen wurden nicht geändert. Ein Mitarbeiter muss die Zahlung im Gateway prüfen und die Erstattung verbuchen, falls das Geld zurückgeflossen ist."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Pago de pasarela notificado como revertido: factura n.º {{ invoice.id }}", new SeededEmailCopy(
+                "es",
+                "Pago de pasarela notificado como revertido",
+                ["La pasarela {{ module }} ya no informa del pago de la factura n.º {{ invoice.id }} (cliente n.º {{ client.id }}) como abonado. Puede haberse reembolsado, revertido o devuelto en la pasarela. La factura y el libro de movimientos no se modificaron. Un operador debe comprobar el pago en la pasarela y, si el dinero se devolvió, registrar el reembolso."],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,

@@ -11,7 +11,7 @@
  * so converting it into the reader's zone could only move a date near a month boundary.
  *
  * @param value The ISO date the API sent; null, empty or unparseable values are tolerated.
- * @param locale The active i18n locale code (`en`, `ru`, `hy`, `de`, `fr`).
+ * @param locale The active i18n locale code (`en`, `ru`, `hy`, `de`, `es`, `fr`).
  * @returns The localised month and year, or an empty string when there is no date to show.
  */
 export const formatTestimonialDate = (value: string | null | undefined, locale: string): string => {

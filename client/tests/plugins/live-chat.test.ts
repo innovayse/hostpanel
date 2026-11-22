@@ -129,6 +129,14 @@ describe('live-chat plugin', () => {
     expect(tags[0]!.innerHTML).toContain('https://chat.example')
   })
 
+  it('names the language of a Spanish visitor on the conversation', async () => {
+    configureChat()
+    locale.value = 'es'
+    await loadPlugin()
+
+    expect(scripts()[0]!.innerHTML).toContain('Spanish')
+  })
+
   it('names the language of a German visitor on the conversation', async () => {
     configureChat()
     locale.value = 'de'

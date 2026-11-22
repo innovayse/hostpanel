@@ -53,13 +53,19 @@ const badgeTone: Record<PluginCardBadge, UiTone> = {
   [PluginCardBadge.Active]: UiTone.Success,
   [PluginCardBadge.PendingRestart]: UiTone.Warning,
   [PluginCardBadge.Refused]: UiTone.Danger,
+  [PluginCardBadge.LoadFailed]: UiTone.Danger,
   [PluginCardBadge.Staged]: UiTone.Info,
   [PluginCardBadge.Update]: UiTone.Warning,
   [PluginCardBadge.BuiltIn]: UiTone.Neutral,
 }
 
 /** The badges that are a state of the plugin and so carry a status dot. */
-const dotBadges: PluginCardBadge[] = [PluginCardBadge.Active, PluginCardBadge.PendingRestart, PluginCardBadge.Refused]
+const dotBadges: PluginCardBadge[] = [
+  PluginCardBadge.Active,
+  PluginCardBadge.PendingRestart,
+  PluginCardBadge.Refused,
+  PluginCardBadge.LoadFailed,
+]
 
 /**
  * Text of a badge, with the version it names where it names one.
@@ -75,6 +81,8 @@ const badgeLabel = (badge: PluginCardBadge): string => {
       return t('plugins.pluginCard.pendingRestart')
     case PluginCardBadge.Refused:
       return t('plugins.pluginCard.refused')
+    case PluginCardBadge.LoadFailed:
+      return t('plugins.pluginCard.loadFailed')
     case PluginCardBadge.Staged:
       return t('plugins.pluginCard.staged', { version: props.plugin.stagedVersion })
     case PluginCardBadge.Update:

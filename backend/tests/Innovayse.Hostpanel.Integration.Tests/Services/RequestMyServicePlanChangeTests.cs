@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Billing.Commands.CheckOverdueInvoicesCron;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
@@ -17,6 +19,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -133,6 +136,122 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var request = await ServiceChangeTestSeeds.ReadRequestAsync(factory, body.GetProperty("requestId").GetInt32());
         request.Status.Should().Be(ServiceChangeStatus.Completed);
         request.InvoiceId.Should().Be(invoiceId);
+    }
+
+    /// <summary>
+    /// The upgrade invoice's line carries the snapshot of the plan moved to and the service's quantity, so it is a digital item: the
+    /// context a fulfilment plugin gets when the invoice is paid names the new plan's SKU and metadata, and the invoice still
+    /// charges the prorated amount.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_ToADigitalPlan_RaisesAnInvoiceWhoseLineIsTheNewPlansFulfilmentLine()
+    {
+        const string metadata = """{"seats":50}""";
+        var sku = $"PRO-{Guid.NewGuid():N}".ToUpperInvariant();
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-digital");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
+            factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: sku, toMetadata: metadata, quantity: 2);
+        var expected = ServiceChangeTestSeeds.ExpectedProration(10m, 20m, seeded.NextRenewalAt);
+
+        var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).FirstAsync(i => i.Id == invoiceId);
+        invoice.HasDigitalItems.Should().BeTrue();
+        // The line total is the prorated amount; shared over the quantity it can differ by the rounding of the unit price only.
+        invoice.Total.Should().BeApproximately(expected, 0.01m);
+        var line = FulfilmentContextBuilder.Lines(invoice).Should().ContainSingle().Subject;
+        line.ProductId.Should().Be(seeded.ToProductId);
+        line.Sku.Should().Be(sku);
+        JsonDocument.Parse(line.Metadata!).RootElement.GetProperty("seats").GetInt32().Should().Be(50);
+        line.Quantity.Should().Be(2);
+        line.Currency.Should().Be("USD");
+        (await context.ActivityLogs.AnyAsync(l => l.ClientId == clientId && l.Description.Contains($"Created Upgrade Invoice - Invoice ID: {invoiceId}")))
+            .Should().BeTrue();
+    }
+
+    /// <summary>
+    /// When the quantity does not divide the prorated amount, the invoice still carries the quantity for fulfilment and its
+    /// total differs from the amount by the rounding of the unit price only: at most half a minor unit per unit of quantity.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_WithAQuantityThatDoesNotDivideTheAmount_KeepsTheQuantityAndRoundsTheUnitPriceOnly()
+    {
+        const int quantity = 3;
+        var sku = $"PRO-{Guid.NewGuid():N}".ToUpperInvariant();
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-qty3");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
+            factory, clientId, 10m, 17.77m, toType: ProductType.Digital, toSku: sku, quantity: quantity);
+        var expected = ServiceChangeTestSeeds.ExpectedProration(10m, 17.77m, seeded.NextRenewalAt);
+
+        var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).FirstAsync(i => i.Id == invoiceId);
+        var item = invoice.Items.Should().ContainSingle().Subject;
+        item.Quantity.Should().Be(quantity);
+        item.UnitPrice.Should().Be(Math.Round(expected / quantity, 2, MidpointRounding.AwayFromZero));
+        invoice.Total.Should().BeApproximately(expected, 0.005m * quantity);
+    }
+
+    /// <summary>
+    /// An upgrade to a plan that is not digital (shared hosting) raises an invoice that is not a digital item, so no
+    /// fulfilment plugin is involved in it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_ToANonDigitalPlan_RaisesAnInvoiceWithoutDigitalItems()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-shared");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+
+        var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).FirstAsync(i => i.Id == invoiceId);
+        invoice.HasDigitalItems.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An unpaid upgrade invoice of a digital plan never lapses, however long it stays unpaid: a lapse ends a renewal that was not
+    /// paid for, and an upgrade line is not a renewal, so a fulfilment plugin is never told the new plan lapsed.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_ToADigitalPlan_InvoiceNeverLapsesWhenLeftUnpaid()
+    {
+        var sku = $"PRO-{Guid.NewGuid():N}".ToUpperInvariant();
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-nolapse");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(
+            factory, clientId, 10m, 20m, toType: ProductType.Digital, toSku: sku);
+        var response = await owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+
+        // FailingSaveHost is used only for its fixed clock, 400 days on: the predicate refuses no save (always false), so the
+        // overdue cron runs for real and the test judges what it does to the unpaid invoice.
+        using var host = FailingSaveHost.Create(factory, new ManualTimeProvider(TestMoments.Present().AddDays(400)), _ => false);
+        using (var scope = host.Services.CreateScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<IMessageBus>()
+                .InvokeAsync(new CheckOverdueInvoicesCronCommand(), CancellationToken.None);
+        }
+
+        using var read = host.Services.CreateScope();
+        var invoice = await read.ServiceProvider.GetRequiredService<IHostpanelDbContext>().Invoices
+            .AsNoTracking().FirstAsync(i => i.Id == invoiceId);
+        invoice.Status.Should().Be(InvoiceStatus.Overdue);
+        invoice.LapsedAt.Should().BeNull();
     }
 
     /// <summary>

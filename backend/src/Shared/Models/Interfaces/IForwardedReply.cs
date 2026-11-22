@@ -2,7 +2,7 @@ namespace Innovayse.Hostpanel.Shared.Models.Interfaces;
 
 /// <summary>
 ///     A handler result that carries the reply to give, status included, because the status is not the
-///     use case's to choose: a plugin decides it. Implemented by the plugin reply DTO so
+///     use case's to choose: a plugin decides it, together with the body or, for a redirect, the address. Implemented by the plugin reply DTO so
 ///     <c>BaseApiController.HandleForwarded</c> can turn a <see cref="Result{T}"/> into the response without the
 ///     controller naming a status or touching the body.
 /// </summary>
@@ -34,4 +34,10 @@ public interface IForwardedReply
     /// page (it is then written inert), and for every other reply.
     /// </summary>
     public IReadOnlyList<string>? PageOrigins { get; }
+
+    /// <summary>
+    /// The address a redirect sends the caller to, written as the <c>Location</c> header with an empty body; <see langword="null"/>
+    /// for every other reply. The use case has already checked it, so the controller writes it as it is.
+    /// </summary>
+    public string? Location { get; }
 }

@@ -146,7 +146,9 @@ public sealed class PluginsController : BaseApiController
     /// administrator; 409 with <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with
     /// the build, <c>PLUGIN_DOWNGRADE_REFUSED</c> when the upload is older than the installed version and <c>force</c>
     /// is not set, or <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c> when the running Hostpanel version is below the package's
-    /// <c>minHostVersion</c> or above its <c>maxHostVersion</c> (a bound it leaves out is no limit); 413 when the upload is over the request limit or with
+    /// <c>minHostVersion</c> or above its <c>maxHostVersion</c> (a bound it leaves out is no limit), or
+    /// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> when the plugin was built on a newer SDK than the host ships; 413 when the
+    /// upload is over the request limit or with
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("install")]
@@ -344,7 +346,7 @@ public sealed class PluginsController : BaseApiController
     /// for a caller who is not an administrator or with <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines
     /// the plugin; 404 with <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>; 409 with <c>PLUGIN_REGISTRY_DISABLED</c>,
     /// <c>PLUGIN_BUILT_IN</c>, <c>PLUGIN_DOWNGRADE_REFUSED</c>, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c>,
-    /// <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c>,
+    /// <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c>, <c>PLUGIN_SDK_NEWER_THAN_HOST</c>,
     /// <c>PLUGIN_REGISTRY_VERSION_YANKED</c> or <c>PLUGIN_REGISTRY_VERSION_COMPROMISED</c>; 413 with
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 422 with <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>;
     /// 429 when the rate limit is hit; 502 with <c>PLUGIN_REGISTRY_UNAVAILABLE</c>, <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>,

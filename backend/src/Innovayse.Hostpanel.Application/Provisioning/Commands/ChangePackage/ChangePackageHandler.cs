@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Extensions;
+using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -52,6 +54,7 @@ public sealed class ChangePackageHandler
     /// <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
     /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server, or
+    /// the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses with a reason, or
     /// <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c> when the provider rejects the change.
     /// </returns>
     public async Task<Result> HandleAsync(ChangePackageCommand cmd, CancellationToken ct)
@@ -74,20 +77,8 @@ public sealed class ChangePackageHandler
             return Result.FailureCode(HostpanelErrorCodes.SERVICE_NO_SERVER_ASSIGNED);
         }
 
-        try
-        {
-            var provider = _providerFactory.CreateFor(server);
-            await provider.ChangePackageAsync(account.Value!, cmd.NewPackage, ct);
-        }
-        catch (Exception ex)
-        {
-            // The provider's own message and the server it named never reach the caller (rules
-            // on upstream detail); they are logged here for whoever has to chase the failure up.
-            _logger.LogWarning(
-                ex, "Changing package for service {ServiceId} on server {ServerId} failed.", service.Id, server.Id);
-            return Result.FailureCode(HostpanelErrorCodes.SERVICE_PACKAGE_UPSTREAM_FAILED);
-        }
-
-        return Result.Success();
+        return await PanelCall.RunAsync(
+            () => _providerFactory.CreateFor(server).ChangePackageAsync(new ChangeAccountPackageOrder(service.Id, account.Value!, cmd.NewPackage), ct),
+            _logger, "Changing package", service.Id, server.Id, HostpanelErrorCodes.SERVICE_PACKAGE_UPSTREAM_FAILED);
     }
 }

@@ -114,6 +114,27 @@ public static class ProductsTestSeeds
         return product.Id;
     }
 
+    /// <summary>Stores a product in a fresh group that may be paid only with the given payment methods.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="allowedPaymentMethods">The payment method module ids the group allows; none leaves it unrestricted.</param>
+    /// <returns>The new product id.</returns>
+    public static async Task<int> SeedProductAllowingPaymentMethodsAsync(
+        IntegrationTestFactory factory, params string[] allowedPaymentMethods)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var group = ProductGroup.Create($"restricted-{Guid.NewGuid():N}", null);
+        group.SetAllowedPaymentMethods(allowedPaymentMethods);
+        context.ProductGroups.Add(group);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var product = Product.Create(group.Id, "Restricted", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
+        product.SetPrice("USD", BillingCycle.Monthly, 10m);
+        context.Products.Add(product);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return product.Id;
+    }
+
     /// <summary>Reads back a created product's admin-grid view, including unsellable and inactive rows, as the admin grid asks.</summary>
     /// <param name="client">An authenticated admin client.</param>
     /// <param name="productId">The product to find.</param>

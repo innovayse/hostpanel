@@ -1,0 +1,61 @@
+{
+  "checkout": {
+    "title": "Finalizar compra",
+    "subtitle": "Complete su pedido",
+    "yourOrder": "Su pedido",
+    "account": "Cuenta",
+    "paymentMethod": "Método de pago",
+    "loggedInAs": "Sesión iniciada como",
+    "notYou": "¿No es usted? Cambiar de cuenta",
+    "guestNotice": "Está comprando como invitado",
+    "signIn": "Iniciar sesión",
+    "placeOrder": "Realizar pedido",
+    "redirectingToBank": "Se le está redirigiendo a la página de pago segura del banco.",
+    "noPaymentMethods": "No hay métodos de pago disponibles. Contacte con soporte.",
+    "permissionDenied": "Su cuenta no tiene permiso para realizar pedidos. Pida al titular de la cuenta que le conceda el permiso para realizar nuevos pedidos.",
+    "fields": {
+      "firstname": "Nombre",
+      "lastname": "Apellidos",
+      "email": "Correo electrónico",
+      "password": "Crear contraseña",
+      "phonenumber": "Teléfono"
+    },
+    "errors": {
+      "generic": "Se ha producido un error. Inténtelo de nuevo.",
+      "totalNotAccepted": "El total del pedido cambió, por lo que no se cobró. Revise su carrito e inténtelo de nuevo."
+    },
+    "success": {
+      "title": "¡Pago realizado con éxito!",
+      "description": "Su pedido se ha realizado y el pago está confirmado. Ya puede configurar su servicio.",
+      "orderNumber": "Pedido",
+      "status": "Pago",
+      "paid": "Pagado",
+      "amount": "Importe",
+      "setupService": "Configurar mi servicio",
+      "viewInvoices": "Ver facturas",
+      "domain": "Dominio",
+      "action": "Acción",
+      "registration": "Registro",
+      "transfer": "Transferencia",
+      "manageDomain": "Gestionar su dominio"
+    },
+    "secureCheckout": "Pago seguro",
+    "identifyPrompt": "¿Cómo debemos identificarle?",
+    "choosePayment": "Seleccione su forma de pago preferida",
+    "gatewayKinds": {
+      "bankTransfer": "Pagar por transferencia bancaria"
+    },
+    "needHelp": "¿Necesita ayuda?",
+    "supportAlways": "Nuestro soporte está aquí para ayudarle",
+    "contactUs": "Contáctenos",
+    "placeholders": {
+      "firstname": "Juan",
+      "lastname": "Pérez",
+      "email": "usted{'@'}ejemplo.com",
+      "password": "••••••••"
+    },
+    "totalChangedConfirm": "El total cambió de {shown} a {charged}. ¿Desea pagar el nuevo total?",
+    "saveForRenewals": "Guardar este método de pago para renovaciones automáticas",
+    "saveForRenewalsAgreement": "Acepto que el método de pago que introduzco para este pago se guarde con el proveedor de pagos y se cargue automáticamente en mis facturas de renovación hasta que retire este permiso. Lo introduzco una sola vez, ahora. Puedo eliminarlo en cualquier momento en Métodos de pago guardados, dentro de mi cuenta."
+  }
+}

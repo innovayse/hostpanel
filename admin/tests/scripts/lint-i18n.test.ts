@@ -11,12 +11,14 @@ import { checkI18n, declaredKeys, flattenKeys, type Catalogues } from '../../scr
  * @param en - English keys.
  * @param ru - Russian keys.
  * @param hy - Armenian keys.
+ * @param de - German keys; the English keys when left out, so a case about the other languages stays about them.
  * @returns The catalogues.
  */
-const make = (en: string[], ru: string[], hy: string[]): Catalogues => ({
+const make = (en: string[], ru: string[], hy: string[], de: string[] = en): Catalogues => ({
   en: new Set(en),
   ru: new Set(ru),
   hy: new Set(hy),
+  de: new Set(de),
 })
 
 describe('flattenKeys', () => {

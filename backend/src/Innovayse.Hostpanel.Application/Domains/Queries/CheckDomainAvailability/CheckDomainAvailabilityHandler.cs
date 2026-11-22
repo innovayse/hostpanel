@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Common.Enums;
@@ -37,7 +38,9 @@ public sealed class CheckDomainAvailabilityHandler
     /// <param name="query">The check domain availability query.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The trimmed name, whether it is available and the same outcome as a status. Never refuses.
+    /// The trimmed name, whether it is available and the same outcome as a status. A TLD no registrar sells answers not
+    /// available with <see cref="DomainAvailabilityStatus.TldNotSupported"/>; any other refusal of the registrar is its
+    /// <c>REGISTRAR_*</c> code (an unreachable or refusing registrar is unknown, never "free" or "taken").
     /// </returns>
     public async Task<Result<DomainCheckResultDto>> HandleAsync(CheckDomainAvailabilityQuery query, CancellationToken ct)
     {
@@ -51,7 +54,18 @@ public sealed class CheckDomainAvailabilityHandler
         if (existing is null)
         {
             var registrar = await _registrars.ResolveForTldAsync(domain, ct);
-            available = await registrar.Provider.CheckAvailabilityAsync(domain, ct);
+            var checkedName = await registrar.Provider.CheckAvailabilityAsync(domain, ct);
+            if (checkedName.ErrorCode == HostpanelErrorCodes.REGISTRAR_TLD_NOT_SUPPORTED)
+            {
+                return Result.Success(new DomainCheckResultDto(domain, false, DomainAvailabilityStatus.TldNotSupported));
+            }
+
+            if (checkedName.IsFailure)
+            {
+                return Result<DomainCheckResultDto>.FailureCode(checkedName.ErrorCode!);
+            }
+
+            available = checkedName.Value;
         }
 
         return Result.Success(new DomainCheckResultDto(

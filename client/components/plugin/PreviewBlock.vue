@@ -49,7 +49,7 @@
         :class="['relative min-h-[420px] w-full flex-1 overflow-hidden shadow-lg', size === PluginPreviewSize.Phone ? 'max-w-[375px]' : 'max-w-[980px]']"
         data-testid="plugin-preview-viewport"
       >
-        <UiPreviewFrame ref="frame" :key="frameKey" :src="address" :title="source?.label ?? ''" testid="plugin-preview-frame" />
+        <UiPreviewFrame ref="frame" :key="frameKey" :src="frameSrc" :title="source?.label ?? ''" testid="plugin-preview-frame" />
       </UiCard>
       <UiAlert v-else-if="insecureContext" :variant="UiAlertVariant.Warning" class="w-full" data-testid="plugin-preview-insecure">{{ $t('plugins.previewInsecure') }}</UiAlert>
       <UiText v-else-if="!loading" size="sm" tone="muted" data-testid="plugin-preview-empty">{{ $t('plugins.previewEmpty') }}</UiText>
@@ -90,7 +90,7 @@ import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from 
 import type { PluginPreviewBlock } from '~/types/pluginblock'
 import { PluginPreviewSize } from '~/types/pluginpreviewsize'
 import { PluginSelectionEvent } from '~/types/pluginselectionevent'
-import { parsePluginSelectionMessage, pluginDocumentLoaded, pluginFrameAddress, readPluginField } from '~/utils/plugins'
+import { parsePluginSelectionMessage, pluginDocumentLoaded, pluginFrameAddress, pluginFrameRevisionAddress, readPluginField } from '~/utils/plugins'
 import { UiAlertVariant, UiButtonVariant } from '~/utils/ui/enums'
 
 /** Props of PluginPreviewBlock. */
@@ -173,7 +173,7 @@ const expectedRelease = computed(() => (typeof release.value === 'string' ? rele
 /** Whether the source on screen is one the view lets select. */
 const selectableSource = computed(() => props.block.selection?.sources.includes(sourceId.value) === true)
 
-/** How many times a refresh of this block has drawn a new frame. */
+/** How many times this block has drawn a new frame: bumped by a refresh, a change of the release on the preview and a change of the note. */
 const revision = ref(0)
 /** Whether a refresh was asked for and its read has not answered yet. */
 let refreshing = false
@@ -183,6 +183,9 @@ const frameKey = computed(() => `${address.value}#${revision.value}`)
 
 /** The address that may be framed; null when the value is refused. */
 const address = computed(() => pluginFrameAddress(value.value, context.frameOrigins, window.location.origin))
+
+/** What the frame loads: the address, with the revision in its query once drawn again, so the browser's cache cannot show the old page. */
+const frameSrc = computed(() => (address.value === null ? '' : pluginFrameRevisionAddress(address.value, revision.value)))
 
 /** Whether the frame may be drawn. */
 const showFrame = computed(() => address.value !== null && documentReady.value)
@@ -345,6 +348,8 @@ watch(expectedRelease, (next, last) => {
   if (last !== undefined && last !== '' && next !== last) {
     selection.clear()
     frameReady.value = false
+    // The release on the preview moved while the address did not: draw the new page, never the one the browser kept.
+    revision.value += 1
   }
   takeHeldReady()
 }, { immediate: true })

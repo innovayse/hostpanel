@@ -13,7 +13,7 @@ calls Nitro makes while rendering are invisible to `page.route`.
 | `contact-form.spec.ts` | fill and submit; success shown and the backend received the enquiry |
 | `sign-in.spec.ts` | valid credentials open the dashboard; a wrong password is refused |
 | `theme-toggle.spec.ts` | light/dark toggle swaps palette and logo and persists across reload |
-| `language-switch.spec.ts` | en/ru/hy/de contact form: `html lang` and the `X-Language` the backend received |
+| `language-switch.spec.ts` | en/ru/hy/de/es/fr contact form: `html lang` and the `X-Language` the backend received |
 | `contact-field-errors.spec.ts` | a refused contact email is marked invalid with the backend sentence |
 | `knowledgebase.spec.ts` | category -> article, rich text kept and script/handler/`javascript:` removed; search |
 | `announcements.spec.ts` | list -> announcement, body sanitised |

@@ -54,7 +54,7 @@ public static class ProductExtensions
     /// <summary>Maps a product to its storefront catalogue DTO, pricing it in the caller's currency.</summary>
     /// <param name="product">The product to project.</param>
     /// <param name="callerCurrencyCode">ISO 4217 code of the currency the caller is billed in.</param>
-    /// <returns>The DTO the storefront reads, with no provisioning field.</returns>
+    /// <returns>The DTO the storefront reads: the SKU is public, no provisioning field is.</returns>
     public static CatalogProductDto ToCatalogDto(this Product product, string callerCurrencyCode)
     {
         ArgumentNullException.ThrowIfNull(product);
@@ -71,7 +71,8 @@ public static class ProductExtensions
             product.ToPricingDto(callerCurrencyCode),
             product.ToPriceDtos(),
             product.IsFeatured,
-            product.SortOrder);
+            product.SortOrder,
+            product.Sku);
     }
 
     /// <summary>

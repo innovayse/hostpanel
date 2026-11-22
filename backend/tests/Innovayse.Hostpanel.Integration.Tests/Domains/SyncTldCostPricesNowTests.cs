@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,7 +23,7 @@ public sealed class SyncTldCostPricesNowTests(IntegrationTestFactory factory) : 
         var (_, body) = DomainsTestSeeds.NewTldBody();
         var provider = new FakeTldPricingProvider();
         var registrars = new FakeRegistrarProviderFactory();
-        registrars.Register(RegistrarModule.NameAm, provider);
+        registrars.Register(TestRegistrarModules.First, provider);
 
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>

@@ -462,7 +462,6 @@ public sealed class PluginManifestValidatorTests : IDisposable
     /// <param name="project">The shipped provider project folder name.</param>
     [Theory]
     [InlineData("Innovayse.Providers.CWP")]
-    [InlineData("Innovayse.Providers.CWP7")]
     public void TryRead_ShippedManifest_Loads(string project)
     {
         var manifestPath = ShippedManifestPath(project);
@@ -476,9 +475,9 @@ public sealed class PluginManifestValidatorTests : IDisposable
     [Fact]
     public void ValidateSdkReference_ShippedPluginAssembly_Passes()
     {
-        var shipped = Path.Combine(AppContext.BaseDirectory, "Innovayse.Providers.CWP7.dll");
-        File.Exists(shipped).Should().BeTrue("the test project references the CWP7 provider");
-        File.Copy(shipped, Path.Combine(_folder, "Innovayse.Providers.CWP7.dll"));
+        var shipped = Path.Combine(AppContext.BaseDirectory, "Innovayse.Providers.CWP.dll");
+        File.Exists(shipped).Should().BeTrue("the test project references the CWP provider");
+        File.Copy(shipped, Path.Combine(_folder, "Innovayse.Providers.CWP.dll"));
 
         PluginManifestValidator.ValidateSdkReference(_folder).Should().BeNull();
     }

@@ -1,9 +1,12 @@
-using Hostpanel.Sdk.Plugins.HostingPanel;
+using System.Security.Cryptography;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain;
+using Innovayse.Hostpanel.Domain.Provisioning;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,119 +15,64 @@ using Microsoft.Extensions.Options;
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
 /// <summary>
-/// Tests for <see cref="ProvisioningProviderFactory"/>: which provider a server gets, and the
-/// addresses the version 7 hosting panel provider is built with, from the configured ports and never a literal.
+/// Tests for <see cref="ProvisioningProviderFactory"/> with no panel plugin installed: which provider a server gets, and the
+/// addresses the cPanel provider is built with, from the configured ports and never a literal.
 /// </summary>
 public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
 {
-    /// <summary>The loopback server standing in for the hosting panel host.</summary>
-    private StubHttpServer cwp7 = null!;
+    /// <summary>The loopback server standing in for the WHM host.</summary>
+    private StubHttpServer whm = null!;
 
-    /// <summary>Starts the stub hosting panel server before each test.</summary>
+    /// <summary>Starts the stub WHM server before each test.</summary>
     /// <returns>A task that completes when the server listens.</returns>
     public async Task InitializeAsync()
     {
-        cwp7 = await StubHttpServer.StartAsync();
+        whm = await StubHttpServer.StartAsync();
     }
 
-    /// <summary>Stops the stub hosting panel server after each test.</summary>
+    /// <summary>Stops the stub WHM server after each test.</summary>
     /// <returns>A task that completes when the server is down.</returns>
     public async Task DisposeAsync()
     {
-        await cwp7.DisposeAsync();
+        await whm.DisposeAsync();
     }
 
-    /// <summary>Builds the server row a version 7 hosting panel provider is created for.</summary>
+    /// <summary>Builds the server row a provider is created for.</summary>
     /// <param name="accessHash">The panel's access hash, or null for none.</param>
     /// <param name="module">The server's control panel module.</param>
     /// <returns>The server connection.</returns>
-    private static ServerConnectionDto ServerRow(string? accessHash, ServerModule module = ServerModule.Cwp7) =>
+    private static ServerConnectionDto ServerRow(string? accessHash, string module = ServerModules.CPanel) =>
         new(1, "srv", module, "panel.example.test", null, accessHash);
 
     /// <summary>Builds the factory under test with the given options.</summary>
     /// <param name="http">The HTTP client factory the providers draw from.</param>
     /// <param name="options">The provisioning options.</param>
     /// <returns>The factory.</returns>
-    private static ProvisioningProviderFactory BuildFactory(IHttpClientFactory http, ProvisioningOptions options) =>
-        new(http, NullLoggerFactory.Instance, Options.Create(options));
-
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
-    /// <summary>With no port configured, the provider calls the contract's default API port.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task CreateFor_UsesTheDefaultApiPort_WhenNoPortIsConfiguredAsync()
+    private static ProvisioningProviderFactory BuildFactory(IHttpClientFactory http, ProvisioningOptions options)
     {
-        var http = new StubHttpClientFactory(cwp7);
-        cwp7.Enqueue("""{ "status": "OK", "msj": "Done." }""");
-        var provider = BuildFactory(http, new ProvisioningOptions()).CreateFor(ServerRow("hash"));
-
-        await provider.UnsuspendAsync("testuser", CancellationToken.None);
-
-        http.RequestedUris.Should().ContainSingle().Which.ToString()
-            .Should().Be($"https://panel.example.test:{IHostingPanelApiClient.DefaultApiPort}/v1/account");
-    }
-#pragma warning restore CS0618
-
-    /// <summary>A configured API port is the one the provider calls.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task CreateFor_UsesTheConfiguredApiPortAsync()
-    {
-        var http = new StubHttpClientFactory(cwp7);
-        cwp7.Enqueue("""{ "status": "OK", "msj": "Done." }""");
-        var provider = BuildFactory(http, new ProvisioningOptions { Cwp7ApiPort = 2400 }).CreateFor(ServerRow("hash"));
-
-        await provider.UnsuspendAsync("testuser", CancellationToken.None);
-
-        http.RequestedUris.Should().ContainSingle().Which.Port.Should().Be(2400);
+        // No plugin is installed, so every module is the host's own; the connection reader is never reached.
+        var plugins = DetachedPanelPlugins.Build();
+        return new ProvisioningProviderFactory(
+            http,
+            NullLoggerFactory.Instance,
+            Options.Create(options),
+            plugins.Resolver,
+            plugins.Registry,
+            plugins.Activator,
+            plugins.Caller,
+            null!,
+            new PluginReferences(Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))));
     }
 
-    /// <summary>The sign-in address is built from the user-panel port option.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task CreateFor_BuildsTheSignInAddressFromTheUserPanelPortAsync()
-    {
-        var provider = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions { Cwp7UserPanelPort = 2096 })
-            .CreateFor(ServerRow("hash"));
-
-        var credentials = await provider.GetCredentialsAsync("testuser", CancellationToken.None);
-
-        credentials.CpanelUrl.Should().Be("https://panel.example.test:2096");
-        credentials.Password.Should().BeNull();
-    }
-
-    /// <summary>With no port configured the sign-in address uses the user-panel default.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task CreateFor_UsesTheDefaultUserPanelPort_WhenNoPortIsConfiguredAsync()
-    {
-        var provider = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions()).CreateFor(ServerRow("hash"));
-
-        var credentials = await provider.GetCredentialsAsync("testuser", CancellationToken.None);
-
-        credentials.CpanelUrl.Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultCwp7UserPanelPort}");
-    }
-
-    /// <summary>A server with a blank access hash is refused when the provider is built.</summary>
-    [Fact]
-    public void CreateFor_Throws_WhenTheServerHasNoAccessHash()
-    {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
-
-        var act = () => factory.CreateFor(ServerRow("  "));
-
-        act.Should().Throw<InvalidOperationException>().WithMessage("*no access hash*");
-    }
-
-    /// <summary>A module without a provider is refused by name.</summary>
+    /// <summary>A module without a provider is answered as an unavailable panel, the code a plugin that is off answers.</summary>
     [Fact]
     public void CreateFor_Throws_ForAModuleWithoutAProvider()
     {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
+        var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions());
 
-        var act = () => factory.CreateFor(ServerRow("hash", ServerModule.DirectAdmin));
+        var act = () => factory.CreateFor(ServerRow("hash", TestPanelModules.Second));
 
-        act.Should().Throw<NotSupportedException>();
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
     }
 
     /// <summary>
@@ -132,23 +80,24 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     /// with no server group is never sent to a server the factory would then refuse.
     /// </summary>
     /// <param name="useFakeProvider">Whether the development fake provider is on.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void SupportedModules_AreExactlyTheModulesTheFactoryBuilds(bool useFakeProvider)
+    public async Task SupportedModules_AreExactlyTheModulesTheFactoryBuildsAsync(bool useFakeProvider)
     {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions { UseFakeProvider = useFakeProvider });
+        var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions { UseFakeProvider = useFakeProvider });
 
-        // A module the factory refuses throws NotSupportedException; any other failure (a builder
+        // A module the factory has no provider for is refused as an unavailable panel; any other failure (a builder
         // that dislikes the stand-in credentials) still means the factory knows the module.
-        var built = Enum.GetValues<ServerModule>().Where(module =>
+        var built = ServerModules.Known.Where(module =>
         {
             try
             {
                 factory.CreateFor(ServerRow("hash", module));
                 return true;
             }
-            catch (NotSupportedException)
+            catch (DomainRuleException ex) when (ex.Code == HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE)
             {
                 return false;
             }
@@ -158,34 +107,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
             }
         });
 
-        factory.SupportedModules.Should().BeEquivalentTo(built);
-    }
-
-    /// <summary>A Plesk server gets the Plesk provider, calling the XML API on the default Plesk port.</summary>
-    /// <returns>A task that completes when the assertions have run.</returns>
-    [Fact]
-    public async Task CreateFor_BuildsThePleskProvider_OnTheDefaultPleskPortAsync()
-    {
-        var http = new StubHttpClientFactory(cwp7);
-        cwp7.Enqueue(System.Net.HttpStatusCode.OK, "<packet><customer><set><result><status>ok</status></result></set></customer></packet>", "text/xml");
-        var provider = BuildFactory(http, new ProvisioningOptions()).CreateFor(ServerRow("plesk-key", ServerModule.Plesk));
-
-        await provider.UnsuspendAsync("testuser", CancellationToken.None);
-
-        provider.Should().BeOfType<PleskProvisioningProvider>();
-        http.RequestedUris.Should().ContainSingle().Which.ToString()
-            .Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultPleskPort}/enterprise/control/agent.php");
-    }
-
-    /// <summary>A Plesk server with a blank API key is refused when the provider is built.</summary>
-    [Fact]
-    public void CreateFor_Throws_WhenAPleskServerHasNoApiKey()
-    {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
-
-        var act = () => factory.CreateFor(ServerRow(" ", ServerModule.Plesk));
-
-        act.Should().Throw<InvalidOperationException>().WithMessage("*no access hash*");
+        (await factory.SupportedModulesAsync(CancellationToken.None)).Should().BeEquivalentTo(built);
     }
 
     /// <summary>A cPanel server gets the WHM provider, calling WHM API 1 on the default WHM port with its token.</summary>
@@ -193,17 +115,43 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     [Fact]
     public async Task CreateFor_BuildsTheCPanelProvider_OnTheDefaultWhmPortAsync()
     {
-        var http = new StubHttpClientFactory(cwp7);
-        cwp7.Enqueue("""{"metadata":{"result":1,"reason":"OK"}}""");
-        var server = new ServerConnectionDto(1, "srv", ServerModule.CPanel, "panel.example.test", null, null, "root", "whm-token");
+        var http = new StubHttpClientFactory(whm);
+        whm.Enqueue("""{"metadata":{"result":1,"reason":"OK"}}""");
+        var server = new ServerConnectionDto(1, "srv", ServerModules.CPanel, "panel.example.test", null, null, "root", "whm-token");
         var provider = BuildFactory(http, new ProvisioningOptions()).CreateFor(server);
 
-        await provider.UnsuspendAsync("testuser", CancellationToken.None);
+        await provider.UnsuspendAsync(new UnsuspendAccountOrder(7, "testuser"), CancellationToken.None);
 
         provider.Should().BeOfType<WhmProvisioningProvider>();
         http.RequestedUris.Should().ContainSingle().Which.ToString()
             .Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultCPanelWhmPort}/json-api/unsuspendacct?api.version=1");
-        cwp7.Requests.Should().ContainSingle().Which.Authorization.Should().Be("whm root:whm-token");
+        whm.Requests.Should().ContainSingle().Which.Authorization.Should().Be("whm root:whm-token");
+    }
+
+    /// <summary>The configured WHM port is the one the cPanel provider calls.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task CreateFor_UsesTheConfiguredWhmPortAsync()
+    {
+        var http = new StubHttpClientFactory(whm);
+        whm.Enqueue("""{"metadata":{"result":1,"reason":"OK"}}""");
+        var server = new ServerConnectionDto(1, "srv", ServerModules.CPanel, "panel.example.test", null, null, "root", "whm-token");
+        var provider = BuildFactory(http, new ProvisioningOptions { CPanelWhmPort = 2999 }).CreateFor(server);
+
+        await provider.UnsuspendAsync(new UnsuspendAccountOrder(7, "testuser"), CancellationToken.None);
+
+        http.RequestedUris.Should().ContainSingle().Which.Port.Should().Be(2999);
+    }
+
+    /// <summary>A server saved in a different case still gets the built in cPanel provider: modules compare ignoring case.</summary>
+    [Fact]
+    public void CreateFor_MatchesTheBuiltInModuleIgnoringCase()
+    {
+        var server = new ServerConnectionDto(1, "srv", "CPANEL", "panel.example.test", null, null, "root", "whm-token");
+
+        var provider = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions()).CreateFor(server);
+
+        provider.Should().BeOfType<WhmProvisioningProvider>();
     }
 
     /// <summary>A cPanel server without a WHM username or API token is refused when the provider is built.</summary>
@@ -215,8 +163,8 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     [InlineData(null, "whm-token")]
     public void CreateFor_Throws_WhenACPanelServerHasNoUsernameOrToken(string? username, string? apiToken)
     {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions());
-        var server = new ServerConnectionDto(1, "srv", ServerModule.CPanel, "panel.example.test", null, "hash", username, apiToken);
+        var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions());
+        var server = new ServerConnectionDto(1, "srv", ServerModules.CPanel, "panel.example.test", null, "hash", username, apiToken);
 
         var act = () => factory.CreateFor(server);
 
@@ -227,7 +175,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     [Fact]
     public void ServerConnection_ToString_HidesTheApiToken()
     {
-        var server = new ServerConnectionDto(1, "srv", ServerModule.CPanel, "panel.example.test", null, null, "root", "whm-secret-token");
+        var server = new ServerConnectionDto(1, "srv", ServerModules.CPanel, "panel.example.test", null, null, "root", "whm-secret-token");
 
         server.ToString().Should().NotContain("whm-secret-token").And.Contain("root");
     }
@@ -236,7 +184,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     [Fact]
     public void CreateFor_ReturnsTheNullProvider_WhenTheFakeProviderIsOn()
     {
-        var factory = BuildFactory(new StubHttpClientFactory(cwp7), new ProvisioningOptions { UseFakeProvider = true });
+        var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions { UseFakeProvider = true });
 
         var provider = factory.CreateFor(ServerRow(null));
 

@@ -3,12 +3,14 @@
  * its tab; a widget that throws while it renders, and one whose view is slower than the widget's time
  * limit, each give way to a neutral note beside a working one, while the page stays usable; with no
  * plugin neither page shows any slot output. The slot reads carry the reader's language (en, ru, hy)
- * and the note is in that language; the cards render in dark mode too. The stub backend plays the
+ * and the note is in that language; the cards render in dark mode too. A provisioning plugin's service tab reads its own
+ * route for the service on screen and shows the API's sentence when the API refuses it. The stub backend plays the
  * C# API and lists the fake widgets a spec scripts (`setPluginSlots`).
  */
 import { expect, test } from './support/test'
-import { SERVICE_MANAGED } from './support/fixtures.mjs'
-import { resetStub, setPluginSlots, signIn, stubRequests, waitForHydration } from './support/helpers'
+import { HttpMethod } from '../types/httpmethod'
+import { PLUGIN_ID, SERVICE_MANAGED } from './support/fixtures.mjs'
+import { resetStub, scriptStub, setPluginSlots, signIn, stubRequests, waitForHydration } from './support/helpers'
 
 /** Each published language with its path prefix (English has none) and the widget note in it. */
 const LANGUAGES = [
@@ -74,6 +76,36 @@ test('the service page lists the plugin tab, reads it for this service only, and
   const slotReads = (await stubRequests(request)).filter(r => r.path.startsWith('/api/client/plugins/slots/client.service.tabs'))
   expect(slotReads.length).toBeGreaterThan(1)
   expect(slotReads.every(r => r.query === `?serviceId=${SERVICE_MANAGED.id}`)).toBe(true)
+})
+
+// The stub backend plays the API, so these two flows prove what the page sends and shows, never who may see a service:
+// that a plugin's route reaches only the caller's own service is proven by the C# tests of the route
+// (`PluginServiceConnectionRouteTenancyTests`), for every plugin type.
+test('a provisioning plugin\'s backups tab reads its route for the service on screen through the BFF', async ({ page, request }) => {
+  await setPluginSlots(request, { 'client.service.tabs': ['backups'] })
+
+  await page.goto(`/client/services/${SERVICE_MANAGED.id}`)
+  await waitForHydration(page)
+  await page.getByTestId('service-tab-plugin.acme-sites.backups').click()
+
+  await expect(page.getByTestId('plugin-stat')).toContainText('Protected')
+  const routeReads = (await stubRequests(request)).filter(r => r.path.startsWith(`/api/client/plugins/${PLUGIN_ID}/backups/`))
+  expect(routeReads.map(r => r.path)).toEqual([`/api/client/plugins/${PLUGIN_ID}/backups/${SERVICE_MANAGED.id}`])
+})
+
+test('a backups tab whose route the API refuses for the service shows the API sentence and the page stays usable', async ({ page, request }) => {
+  await setPluginSlots(request, { 'client.service.tabs': ['backups'] })
+  await scriptStub(request, {
+    method: HttpMethod.Get, path: `/api/client/plugins/${PLUGIN_ID}/backups/${SERVICE_MANAGED.id}`, status: 404, code: 'SERVICE_NOT_FOUND', detail: 'The service was not found.',
+  })
+
+  await page.goto(`/client/services/${SERVICE_MANAGED.id}`)
+  await waitForHydration(page)
+  await page.getByTestId('service-tab-plugin.acme-sites.backups').click()
+
+  await expect(page.getByTestId('plugin-stat')).toContainText('The service was not found.')
+  await page.getByTestId('service-tab-overview').click()
+  await expect(page.getByTestId('service-details')).toBeVisible()
 })
 
 test('a throwing plugin tab shows a note and the rest of the service page keeps working', async ({ page, request }) => {

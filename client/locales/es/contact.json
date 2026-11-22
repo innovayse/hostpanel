@@ -1,0 +1,65 @@
+{
+  "contact": {
+    "hero": {
+      "badge": "Póngase en contacto",
+      "title": "Estamos aquí",
+      "titleHighlight": "para ayudarle",
+      "subtitle": "¿Tiene alguna pregunta sobre hosting, dominios o su cuenta? Nuestro equipo está listo para ayudarle."
+    },
+    "form": {
+      "title": "Envíenos un mensaje",
+      "name": "Nombre completo",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "service": "¿Qué le interesa?",
+      "message": "Mensaje",
+      "placeholders": {
+        "name": "Juan Pérez",
+        "email": "juan{'@'}ejemplo.com",
+        "phone": "+34 600 000 000",
+        "service": "Seleccione un servicio",
+        "message": "Cuéntenos en qué necesita ayuda"
+      },
+      "serviceOptions": {
+        "hosting": "Hosting",
+        "domains": "Dominios",
+        "servers": "Servidores",
+        "billing": "Facturación",
+        "support": "Soporte técnico",
+        "other": "Otro"
+      },
+      "consentPrefix": "Acepto la",
+      "consentLink": "Política de privacidad",
+      "consentSuffix": "y doy mi consentimiento para que me contacten sobre mi consulta",
+      "submit": "Enviar mensaje",
+      "success": {
+        "title": "¡Mensaje enviado correctamente!",
+        "subtitle": "Le responderemos en breve."
+      },
+      "error": {
+        "consentRequired": "Acepte la política de privacidad para continuar"
+      }
+    },
+    "info": {
+      "officeAddress": {
+        "title": "Dirección de la oficina"
+      },
+      "contactMethods": {
+        "title": "Formas de contacto",
+        "email": "Correo electrónico",
+        "phone": "Teléfono",
+        "workingHours": "Horario de atención"
+      },
+      "quickConnect": {
+        "title": "Contacto rápido",
+        "telegram": "Telegram",
+        "whatsapp": "WhatsApp",
+        "liveChat": "Chat en vivo",
+        "toggle": "Contáctenos"
+      }
+    },
+    "map": {
+      "title": "Ubicación de la oficina en el mapa"
+    }
+  }
+}

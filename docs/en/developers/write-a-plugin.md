@@ -26,7 +26,7 @@ The `PluginType` enum defines what a plugin can be:
 |------|-------|-----------------------|
 | `Provisioning` | 0 | Yes: see below |
 | `Payment` | 1 | Yes: see below |
-| `Registrar` | 2 | Listed only |
+| `Registrar` | 2 | Yes: see "Registrar plugins" |
 | `Identity` | 3 | Listed only |
 | `Fulfilment` | 4 | Listed only |
 | `Hosted` | 5 | Listed only |
@@ -226,7 +226,7 @@ public class MyGatewayTests
 
 ## A provisioning plugin
 
-Inherit `ProvisioningProviderBase` and implement `IProvisioningPlugin` from `Hostpanel.Sdk.Plugins.Provisioning`. Read `backend/src/Innovayse.Providers.CWP7` as the reference implementation, it shows the full hosting panel client contract and how to handle each provisioning command (create, suspend, unsuspend, terminate, change package, change password, login).
+Implement `IProvisioningPanelPlugin` from `Hostpanel.Sdk.Plugins.Provisioning` for a hosting panel (add `IProvisioningPanelLoginPlugin` to give the account's login details), declare the `provisioningPanel` capability and list the panel's `serverModules` in the manifest. What the host calls and how it reads each answer is described under [Hosting panel plugins](#hosting-panel-plugins); the SDK's `ProvisioningContract` checks belong in your tests.
 
 ## The manifest (`plugin.json`)
 
@@ -244,6 +244,7 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'icon', type: 'string', default: '', description: 'Optional image of the plugin: a path inside the package to an SVG or PNG file, for example icon.svg or assets/icon.png. Lowercase letters, digits, dot, hyphen and underscore, forward slashes, no leading slash, no .. segment, extension .svg or .png, at most 256 KiB. Omit it to show the colour block with the plugin initial.' },
   { name: 'entryPoint', type: 'string', default: '', description: 'Fully qualified class name of the class that implements the plugin interface.' },
   { name: 'sdkVersion', type: 'string', default: '', description: 'Manifest SDK version. The accepted value is 1.0. The assembly SDK major is checked separately and older majors are refused.' },
+  { name: 'sdkPackageVersion', type: 'string', default: '', description: 'The Hostpanel.Sdk package version the plugin was built against. The Hostpanel.Sdk build step writes it, do not edit it. A host refuses an upload or registry install whose value is newer than the SDK it ships (PLUGIN_SDK_NEWER_THAN_HOST). minHostVersion may not be below the first host release that ships that SDK.' },
   { name: 'showInIntegrations', type: 'boolean', default: 'false', description: 'When true, the plugin appears as a card on the Integrations screen.' },
   { name: 'integrationsCategory', type: 'string', default: '', description: 'Category heading under which the card appears on the Integrations screen.' },
   { name: 'fields', type: 'array', default: '[]', description: 'Settings shown on the integration page, in order.' }
@@ -258,8 +259,8 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
 <SettingTable :settings="[
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Set to 2 to use the members below.' },
   { name: 'settings', type: 'array', default: '[]', description: 'Typed settings an administrator fills in. Supersedes fields; when settings is empty the host converts fields into settings.' },
-  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later) and endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it). It must agree with the interfaces the class really implements.' },
-  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. Known kinds: ssh, websites and databases (the last two need SDK 3.9.0 or later, see Websites and databases on a client hosting). The admin Plugins page shows each one a plugin declares.' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later), endpoints (the plugin class implements IPluginEndpoints; a plugin of any type that declares it gets the same client and admin routes, pages, menus and slots as an App plugin, and its public callbacks, see Callbacks from outside; an App plugin is served without declaring it), tax, and the hosting panel, virtual server and registrar names listed under Capabilities. It must agree with the interfaces the class really implements.' },
+  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. Known kinds: ssh, websites, databases and serviceConnection (websites and databases need SDK 3.9.0 or later, see Websites and databases on a client hosting; serviceConnection needs SDK 3.11.0 or later, see The server connection of a client service). The admin Plugins page shows each one a plugin declares.' },
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
@@ -382,6 +383,7 @@ What the host does:
 - The body is passed on byte for byte, never parsed or re-serialised, so a signature over it still verifies. `call.Headers` holds an allow-list of the request headers, exactly as received (see below), and `call.Query` the query string.
 - A callback may answer with `PluginReply.Raw(status, body, contentType)`, for gateways that expect a plain answer such as `OK` as `text/plain`: the bytes, status and media type are written as given, with `X-Content-Type-Options: nosniff`. A raw reply is accepted on a callback only (on a client or admin route it is a plugin fault, `PLUGIN_FAILED`), its media type must be `text/plain`, `application/json`, `application/xml`, `application/x-www-form-urlencoded` or `text/html` (anything else, script included, is `PLUGIN_FAILED`), and its body is held to `PluginApi__MaxBodyBytes`. Every raw reply that is not HTML also carries `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
 - A callback may answer an HTML page with `PluginReply.Raw(200, bytes, "text/html; charset=utf-8")`, so a gateway can serve its checkout page (a browser step, for example). The page is written under a strict policy the plugin cannot change: nothing loads, connects, posts a form or opens a frame except to the exact `https` origins its manifest lists in `externalOrigins` (a wildcard or an `http` origin names none), the page cannot be framed, has no base address and runs sandboxed (scripts and forms allowed, without the origin of the panel, so it cannot reach the panel's session or storage). It is never cached and sends no referrer, because its address can carry a payment token. Its inline script and style run; a script it loads must come from a listed origin.
+- A callback may answer with `PluginReply.Redirect(location, status)` (301, 302, 303, 307 or 308; 303 by default), for example to send the payer who returns from the gateway's page on to the page that shows the result. The host writes the status and a `Location` header and no body, never cached and with no referrer. A redirect is accepted on a callback only (on a client or admin route it is a plugin fault, `PLUGIN_FAILED`). The host checks the address again and is stricter than the SDK: it is either a path on the panel (one leading slash, never `//`, no dot segment, no encoded slash or backslash, never under `/api`) or an absolute `https` address with no user info and no port, on the origin of the client portal or on an origin the manifest lists in `externalOrigins`. It has no line break or other control character, no space, no character outside ASCII (percent-encode it), no fragment (`#`) and at most 2048 characters. Anything else is `PLUGIN_FAILED` and no `Location` is written. Never build the address from the request, a query parameter for example: an address outside the allowed ones does not pass anyway.
 - Only these request headers reach `call.Headers`: `Content-Type`, `Content-Length`, `User-Agent`, `Signature`, `Digest`, `Content-Digest`, `Date`, `Idempotency-Key`, `Webhook-Id`, `Webhook-Timestamp`, `Webhook-Signature`, and any `X-*` header except `X-Forwarded-*`, `X-Real-IP` and the host's own (`X-Language`, `X-Requested-With`, `X-Logout-Key`, `X-Service-Key`, `X-Renewed-Access-Token`). `Cookie`, `Authorization`, `Proxy-Authorization` and `Host` are never passed on. If your gateway signs a header that is not on this list, send it as an `X-*` header or put it in the body.
 - The body is capped by `PluginApi__MaxBodyBytes` (413 `PLUGIN_REQUEST_TOO_LARGE` above it) and every request to the door is counted per caller address against `RateLimit__PluginCallback` (429 above it).
 - A failure is logged with the plugin id only, never with a header, a query or a body.
@@ -390,26 +392,178 @@ What the plugin must do: verify the call itself (the gateway's signature, checks
 
 A manifest that breaks one of these rules is refused at install and at startup with a `PLUGIN_*` manifest error code that names the offending member (`PLUGIN_CALLBACK_INVALID` for a callback that declares a permission or streams, `PLUGIN_ROUTE_PATH_INVALID` and `PLUGIN_ROUTE_DUPLICATE` for its path and repeats). Read `backend/src/Hostpanel.Sdk/Plugins/Manifest` for the exact types.
 
+### Asking the host to read an order {#order-read}
+
+A payment plugin whose callback learns that an order probably changed (a webhook, or the payer's return) can ask the host to read it now, instead of waiting for the host's own schedule. This needs SDK 3.11.0 or later, and it is optional, so check for it with a type test and do without it when the host lacks it:
+
+```csharp
+if (call.Host is IPluginHostPaymentApi payment)
+{
+    await payment.RequestOrderReadAsync(gatewayOrderId, ct);
+}
+```
+
+The request is a hint, never proof: the plugin marks nothing paid. The host finds the order under the calling plugin's own id, calls `GetStatusAsync` and settles only from that answer, through the same path as the payer's return and the reconciliation job, so a repeat is safe and a wrong amount is refused as before. The host may ignore the request and never tells the plugin whether it read anything. It ignores an unknown order, an order of another plugin, a session a newer attempt replaced, an id that is empty, longer than 255 characters or has a control character, and more than `RateLimit__PluginOrderRead__PermitLimit` requests (6) for one order within `RateLimit__PluginOrderRead__WindowSeconds` (60). The plugin must work without it.
+
+A status read never moves money. If the host reads an order of an invoice it already settled through the plugin and the gateway now answers `Declined` (the contract also uses it for a refund, a reversal and a charge back), it changes nothing on the invoice or the ledger, and tells staff once per payment session by email, unless the invoice already shows a refund of its own through that gateway.
+
+A refund the host asks for carries `RefundInstruction.TransactionId` (SDK 3.11.0 or later): the transaction id the plugin itself reported when the payment became paid, or `null` when the host holds only the order id.
+
 ### Capabilities
 
 A version 2 manifest may list `capabilities`, each a name from the SDK's `PluginCapabilities`:
 
-| Capability | Allowed on | The plugin class must also implement |
-|------------|------------|--------------------------------------|
-| `storedCredentials` | `Payment` only | `IStoredCredentialPlugin` |
-| `endpoints` | any type | `IPluginEndpoints` |
+| Capability | Allowed on | Needs | The plugin class must also implement |
+|------------|------------|-------|--------------------------------------|
+| `storedCredentials` | `Payment` only | | `IStoredCredentialPlugin` |
+| `paymentReturn` | `Payment` only | | `IPaymentReturnPlugin` |
+| `endpoints` | any type | | `IPluginEndpoints` |
+| `tax` | any type | | `ITaxPlugin` |
+| `provisioningPanel` | `Provisioning` only | | `IProvisioningPanelPlugin` |
+| `provisioningPanelLogin` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
+| `provisioningPanelPackages` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `virtualServer` | `Provisioning` only | | `IVirtualServerPlugin` |
+| `virtualServerList` | `Provisioning` only | | `IVirtualServerListPlugin` |
+| `virtualServerSnapshots` | `Provisioning` only | `virtualServer` | `IVirtualServerSnapshotPlugin` |
+| `virtualServerBackups` | `Provisioning` only | `virtualServer` | `IVirtualServerBackupPlugin` |
+| `virtualServerFirewall` | `Provisioning` only | `virtualServer` | `IVirtualServerFirewallPlugin` |
+| `virtualServerConsole` | `Provisioning` only | `virtualServer` | `IVirtualServerPlugin`, with `CreateConsoleSessionAsync` supported |
+| `registrarOperations` | `Registrar` only | | `IRegistrarOperationsPlugin` |
+| `registrarEmailForwarding`, `registrarDnsManagement`, `registrarWhois`, `registrarChildNameservers`, `registrarDnssec`, `registrarRestore`, `registrarDomainList`, `registrarSuggestions`, `registrarBalance` | `Registrar` only | | the matching interface, for example `IRegistrarWhoisPlugin` for `registrarWhois` |
+
+Declaring a hosting panel, virtual server, registrar or `tax` capability makes the plugin load and shows the capability on the
+plugins page. The host calls the hosting panel contracts (see [Hosting panel plugins](#hosting-panel-plugins)) and the registrar
+contracts (see "Registrar plugins" below); it does not call the virtual server and `tax` contracts yet: a feature starts to use
+one when it ships, and a plugin that declares one before then is loaded but never asked.
 
 An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
 `api` routes or `ui` menus, pages or slots must declare `endpoints`, or the package is refused at install and skipped at
 startup (`PLUGIN_ENDPOINTS_NOT_DECLARED`). This is how one plugin, for example a `Fulfilment` plugin that sells credits,
-also gives the client a screen. An unknown name, a name declared twice, or `storedCredentials` on a type other than
-`Payment` is refused the same way (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
+also gives the client a screen. An unknown name, a name declared twice, a capability on a type that may not carry it
+(`storedCredentials` on anything but `Payment`, `virtualServer` on a `Registrar`) or a capability declared without the one it
+needs (`virtualServerSnapshots` without `virtualServer`) is refused the same way (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
 
 A declared capability is checked against the class when the plugin is activated. If the class does not implement the
 interface a capability promises, the plugin is not activated for anything, its own type's calls included: a payment
 plugin that declares `storedCredentials` without implementing `IStoredCredentialPlugin` takes no payments, and a
 fulfilment plugin that declares `endpoints` without implementing `IPluginEndpoints` receives no fulfilment calls. The
 admin log names the plugin and the capability.
+
+### Registrar plugins
+
+A registrar is the plugin whose id a TLD or a domain names: the admin picks it from the installed registrar plugins, and the
+host stores the id. A stored id is matched to a plugin id without regard to letter case. The host calls a registrar plugin
+only when it declares `registrarOperations`, and builds the connection it passes from the plugin's saved settings by their
+`connectionRole` (see below), so the host knows no setting key of yours. A plugin that is not switched on, lacks a required
+setting or is mid data migration is treated as not configured, and its domains answer `REGISTRAR_NOT_CONFIGURED`.
+
+What each capability turns on in the screens:
+
+| Capability | What the host does with it |
+|---|---|
+| `registrarOperations` | availability, register, transfer, renew, the active check, nameservers, contact, lock, privacy, auto renew, EPP code, outgoing transfer, DNS records, TLD prices and Test Connection |
+| `registrarDnsManagement` | the DNS management switch and the DNS records section of a domain |
+| `registrarEmailForwarding` | the email forwarding switch and its rules |
+| `registrarWhois` | the WHOIS lookup |
+
+The other registrar capabilities (balance, child nameservers, DNSSEC, restore, domain list, suggestions) are accepted and shown
+but nothing in the host calls them yet. An action whose capability a plugin does not declare is hidden in the admin panel and
+the portal, and answers `REGISTRAR_OPERATION_UNSUPPORTED` if it is asked for anyway.
+
+A refusal reason becomes one code and one sentence in the user's language, and your own text is never shown:
+
+| Reason | Code |
+|---|---|
+| `DomainUnavailable` | `REGISTRAR_DOMAIN_UNAVAILABLE` |
+| `TldNotSupported` | `REGISTRAR_TLD_NOT_SUPPORTED` |
+| `EppCodeInvalid` | `REGISTRAR_EPP_CODE_INVALID` |
+| `TransferNotAllowed` | `REGISTRAR_TRANSFER_NOT_ALLOWED` |
+| `ContactInvalid` | `REGISTRAR_CONTACT_VALIDATION_FAILED` |
+| `NameserverInvalid` | `REGISTRAR_NAMESERVER_INVALID` |
+| `DnsRecordInvalid` | `REGISTRAR_DNS_RECORD_INVALID` |
+| `InsufficientFunds` | `REGISTRAR_INSUFFICIENT_FUNDS` |
+| `AccessDenied` | `REGISTRAR_ACCESS_DENIED` |
+| `Other` | `REGISTRAR_ORDER_UPSTREAM_FAILED` |
+
+An order the plugin accepted but has not finished is returned with `Pending` or `RequiresPolling`, and the host asks again
+through `CheckDomainActiveAsync`. A renewal carries `CurrentExpiresAt`, the expiry the host held, so a renewal that already
+took effect is answered `AlreadyApplied` instead of charging twice. A throw means the outcome is unknown and is never read as
+a refusal. A name with a premium price is reported as not available, because the host sells at the TLD's price.
+
+### Server modules
+
+A `Provisioning` plugin that declares `provisioningPanel`, `virtualServer` or `virtualServerList` lists the server modules it
+serves in `serverModules`, for example `"serverModules": ["example-panel"]`: the short names an administrator picks for a
+server's control panel type, and the host sends the servers of those modules to the plugin. Each id is 1 to 50 ASCII letters,
+digits, dashes, dots or underscores, ids repeat nothing (case is ignored) and the list holds at least one. A plugin that
+declares none of those capabilities lists no module. A list that breaks this is refused at install and at startup with
+`PLUGIN_MANIFEST_SERVER_MODULES_INVALID`.
+
+### Hosting panel plugins {#hosting-panel-plugins}
+
+A `Provisioning` plugin that declares `provisioningPanel` and implements `IProvisioningPanelPlugin` is called for every server whose
+module it serves. The host reaches it through the same code that drives its own panels, so an order, a service and the server
+screens behave the same whoever drives the panel.
+
+| Operation | When the host calls it |
+| --- | --- |
+| `CreateAccountAsync` | an order or a setup is provisioned |
+| `SuspendAccountAsync`, `UnsuspendAccountAsync` | a service is suspended, and when it is active again |
+| `TerminateAccountAsync` | a service is terminated |
+| `ChangePackageAsync`, `ChangePasswordAsync` | a package or a password is changed, by the client or by staff |
+| `CreateSsoLinkAsync` | the control panel sign in link |
+| `ListAccountsAsync`, `GetUsageAsync` | the disk usage report: the accounts page by page, then each account's usage |
+| `TestConnectionAsync` | Test Connection on a server and the periodic account count sync |
+| `GetLoginDetailsAsync` | the account's login details, only when `provisioningPanelLogin` is declared; without it the host answers that the action is not supported |
+
+`provisioningPanelPackages` is accepted, and the host does not call `ListPackagesAsync` yet.
+
+**Which plugin serves a server.** The server's module id is compared with each plugin's `serverModules` ignoring case, so a server
+saved as `DirectAdmin` is served by a plugin that declares `directadmin`. Nothing stored is rewritten: the service keeps its server and its
+`ProvisioningRef`, and the credentials the server already holds reach the plugin in the `PanelServerConnection`. One plugin serves
+one module: when two installed plugins declare it, every call is refused with `PANEL_PLUGIN_CONFLICT`. A plugin that is installed
+but switched off, not configured, waiting for its data migration or missing a capability it declares answers
+`PANEL_PLUGIN_UNAVAILABLE`, and the host never falls back to another provider. Install and switch on the plugin before you upgrade a
+deployment whose servers were driven by a panel that has become a plugin.
+
+**What an answer does.** Each operation answers a `PanelOperationOutcome`:
+
+| Outcome | In the host |
+| --- | --- |
+| `Succeeded`, `AlreadyApplied` | The operation is done. A repeat of a done operation is success, so a retry is safe. |
+| `Pending` | The panel accepted the work and finishes it itself. For every operation except create the host counts it as done and notes it in the log. For create the service stays pending and the caller is told `PROVISIONING_PENDING` to try again; answer `AlreadyApplied` for that user name once the account is ready, and the next attempt adopts it. |
+| `NotFound` | The panel has no such account: `PANEL_ACCOUNT_NOT_FOUND`. Terminating an account that is already gone counts as done. |
+| `NotSupported` | `PANEL_OPERATION_NOT_SUPPORTED`. |
+| `Refused` | The code of the `PanelRefusalReason`: `PackageUnknown` is `PANEL_PACKAGE_UNKNOWN`, `UsernameInvalid` is `PANEL_USERNAME_INVALID`, `DomainInvalid` is `PANEL_DOMAIN_INVALID`, `PasswordRejected` is `PANEL_PASSWORD_REJECTED`, `LimitReached` is `PANEL_LIMIT_REACHED`, `AccessDenied` is `PANEL_ACCESS_DENIED` and every other reason is `PANEL_REFUSED`. The reader sees the sentence of that code in their own language, never the plugin's text. |
+
+A plugin that throws is logged by plugin id, operation and exception type only, never the message, and answers a generic upstream
+failure. A create that throws leaves the outcome unknown (`PROVISIONING_OUTCOME_UNKNOWN`), and the retry adopts the account if it
+exists, so create must be idempotent by user name and answer `AlreadyApplied` for an account that already exists;
+`ProvisioningContract.AssertCreateIsIdempotentAsync` checks it.
+
+**The connection.** The plugin receives the server as the host stores it: host name, address, `UseSsl`, user name, access hash, API
+token and `Password`, with `Port` null because the host keeps no panel port. The secrets print as `***` in a log line or an exception, and
+the plugin logs none of them. The stored password is read for a plugin call only; no provider built into the host receives it.
+
+### Registrar connection roles
+
+A `Registrar` plugin may mark which member of the registrar connection a setting fills with `connectionRole` on that setting:
+`accountName`, `apiKey` (a `secret` setting), `apiUrl` (a `url` setting), `clientIp` or `testMode` (a `boolean` setting). A role is
+given to one setting only, and a plugin that gives any role gives both `accountName` and `apiKey`. A manifest that breaks this
+is refused with `PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR`, `PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE`,
+`PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH` or `PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE`. These are the checks of the
+packaging package, so running the package on your plugin before you publish finds them first.
+
+### The panel transport
+
+A hosting panel, virtual server or registrar plugin takes `IPanelTransport` in its constructor and builds every request on the
+client it gives, and never creates its own `HttpClient`. The host's client refuses loopback, link-local and cloud metadata
+addresses, follows no redirect (a 3xx answer reaches the plugin as it is), never repeats a request and gives up after 120
+seconds. `CreateClient(server)` is the one to ask for when the plugin talks to a server it has a `PanelServerConnection` for: if
+the operator ticked "Trust the self signed certificate of this server" on the server form, that client accepts the certificate
+of that server's host name and of nothing else. The setting is the operator's alone and off by default; the plugin has no
+switch of its own. The host keeps no panel port, so `PanelServerConnection.Port` is `null` and the plugin uses its own default.
+`PanelServerConnection` also carries `UseSsl` and `Password` as the server stores them. The plugin owns the `HttpClient` it is given and disposes it when it is done (`using var http = transport.CreateClient(server);`).
 
 Each entry in `fields`:
 
@@ -469,6 +623,48 @@ When the service is terminated the host marks its websites and databases as remo
 hosting account is gone. The database user can connect from the server itself only (`127.0.0.1`, port `3306`), so a plugin
 that deploys over SSH uses it from the deploy. Store the password where you keep your own secrets and never log it: the host
 prints it as `***`, keeps no copy, and a lost password means removing the database and creating it again.
+
+## The server connection of a client's service {#service-connection}
+
+A plugin that talks to the panel behind a client's service (a backup tab, a usage page, a one click tool on the service
+page) needs to know which server the service runs on and which account the panel holds for it. This needs SDK 3.11.0 or later.
+Declare the access in the manifest, and read it at run time through `IPluginHostServiceConnectionApi`, which extends
+`IPluginHostApi` without changing it:
+
+```json
+"hostAccess": ["serviceConnection"]
+```
+
+```csharp
+if (host is IPluginHostServiceConnectionApi connections)
+{
+    PanelAccountContext account = await connections.ResolveServiceConnectionAsync(serviceId, ct);
+    // account.Server is the server and its stored credentials, account.Service.ProvisioningRef is the account name.
+}
+```
+
+The rules the host applies, in this order. A refusal at any step is a `PluginHostAccessException` whose `Failure` says why:
+
+1. The call is a client-area call, the caller holds the right to see passwords on the account (the same right the client portal asks), and the manifest declares `serviceConnection`. Otherwise `NotAllowed`. An administrator call has no client and gets nothing.
+2. The service is the call's client's. A missing service and another client's answer the same `NotFound`.
+3. An administrator bound the service's product to one of your slot widgets. Otherwise `NotAllowed`. The `productIds` in your own manifest never count.
+4. The service is active, has a provisioning reference and is assigned to a server that still exists. Otherwise `Unavailable`.
+5. The plugin is still switched on. Otherwise `NotAllowed`.
+
+Every grant is written to the client's activity log as "Plugin {id} read the server connection of service #{n}", with the
+plugin and the service only, and the line is saved before the answer is handed over. A refusal writes no line.
+
+The answer carries the credentials the host stores for the server (the password, the API token and the access hash, each only when saved).
+They are for your own panel and nothing else: send them only there, never log them, put them in a route reply or keep them past the call.
+The host prints them as `***` in every message it writes. Because the host keeps no panel port, `Port` is `null` and your plugin uses its own
+default, and `AccountId` is `null` until the server form stores one.
+
+A service tab is declared like any other slot widget. The tab asks the route, and the route resolves the connection with the service id from its path:
+
+```json
+"ui": { "slots": [ { "slot": "client.service.tabs", "id": "backups", "title": "Backups", "contextKeys": ["serviceId"], "view": "views/backups.json" } ] },
+"api": { "client": [ { "method": "get", "path": "/backups/{serviceId}", "permission": "ViewProductsServices" } ] }
+```
 
 ## Layout of blocks
 
@@ -648,6 +844,8 @@ takes no layout. A bad value is `PLUGIN_PAGE_LAYOUT_UNKNOWN`.
 
 Up to 5 `sources`, each exactly `id`, `label`, a `GET` `route` and a dotted `field`; `size` is `desktop` or `phone`, and
 the reader can switch both. A bad shape, or a preview in a slot or on an admin page, is `PLUGIN_VIEW_PREVIEW_INVALID`.
+
+The query parameter `hp-revision` is reserved for the panel: when it draws a preview again it adds `hp-revision` to the address, so the browser cannot answer with a cached page. A page of yours must not use that name for its own purposes.
 
 **Letting the reader select elements.** A preview may declare `selection`, and a chat in the same document `"selection": true`; both are off when absent:
 

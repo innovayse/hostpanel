@@ -1,6 +1,6 @@
 /**
  * The portal's languages as one list, derived from the {@link AppLocale} enum so no file spells
- * `['en', 'ru', 'hy', 'de', 'fr']` out again.
+ * the list out again.
  *
  * @module constants/appLocales
  */

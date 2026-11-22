@@ -383,7 +383,7 @@
     <value>Der Status muss einer der folgenden sein: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Der Registrar muss einer der folgenden sein: NameAm, Namecheap.</value>
+    <value>Der Registrar muss ein installiertes Registrar-Plugin sein.</value>
   </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Die Seite muss 1 oder größer sein.</value>
@@ -919,6 +919,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Die Beschreibung darf höchstens {0} Zeichen lang sein.</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Geben Sie höchstens {0} Produkte an.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Jede Zahlungsmethode darf höchstens {0} Zeichen lang sein.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Es sind höchstens {0} Zahlungsmethoden zulässig.</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Geben Sie eine gültige Produktpaket-ID an.</value>
   </data>
@@ -965,7 +974,7 @@
     <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>Verwenden Sie für die SKU Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, höchstens {0} Zeichen.</value>
+    <value>Verwenden Sie für die SKU Buchstaben und Ziffern, verbunden durch einzelne Bindestriche, Unterstriche oder Punkte, optional als zwei solche Teile getrennt durch einen Doppelpunkt, höchstens {0} Zeichen.</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Die Metadaten müssen ein JSON-Objekt sein.</value>
@@ -1753,8 +1762,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Der Status muss einer der folgenden sein: Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Das Modul muss eines der folgenden sein: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Das Modul muss eine ID aus 1 bis 50 Buchstaben, Ziffern, Punkten, Bindestrichen oder Unterstrichen sein.</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>Der Zustand muss einer der folgenden sein: Online, Offline, Untested.</value>
@@ -1782,5 +1791,8 @@
   </data>
   <data name="VatRateListStatusInvalid" xml:space="preserve">
     <value>Der Status muss einer der folgenden sein: Active, Superseded, Upcoming.</value>
+  </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Eine Gateway-Bestellkennung hat 1 bis 255 Zeichen, ohne Leerzeichen am Rand und ohne Steuerzeichen.</value>
   </data>
 </root>

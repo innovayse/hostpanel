@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
@@ -59,7 +60,7 @@ public sealed class DomainQueryExtensionsTests(IntegrationTestFactory factory) :
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var domain = await context.Domains.IncludeChildren().FirstAsync(d => d.Id == domainId);
 
-        var dto = domain.ToDto();
+        var dto = domain.ToDto(new RegistrarCapabilitiesDto(true, false, true));
 
         dto.Id.Should().Be(domainId);
         dto.Name.Should().Be(domain.Name);
@@ -68,5 +69,6 @@ public sealed class DomainQueryExtensionsTests(IntegrationTestFactory factory) :
         dto.DnsRecords.Should().ContainSingle();
         dto.EmailForwardingRules.Should().BeEmpty();
         dto.Reminders.Should().BeEmpty();
+        dto.Capabilities.Should().Be(new RegistrarCapabilitiesDto(true, false, true));
     }
 }

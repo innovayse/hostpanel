@@ -90,15 +90,15 @@ public sealed class RegisteredDomainTests
     {
         var domain = factory switch
         {
-            "register" => RegisteredDomain.Register(1, "example.com", Now, Now.AddYears(1), true, false, Currency, registrarModule: RegistrarModule.Namecheap),
-            "import" => RegisteredDomain.Import(1, "example.com", DomainStatus.Active, Now, Now.AddYears(1), true, Currency, "Name.am", RegistrarModule.Namecheap),
-            _ => RegisteredDomain.CreateTransfer(1, "example.com", Now, Currency, registrarModule: RegistrarModule.Namecheap),
+            "register" => RegisteredDomain.Register(1, "example.com", Now, Now.AddYears(1), true, false, Currency, registrarModule: "registrar-two"),
+            "import" => RegisteredDomain.Import(1, "example.com", DomainStatus.Active, Now, Now.AddYears(1), true, Currency, "Example Registrar", "registrar-two"),
+            _ => RegisteredDomain.CreateTransfer(1, "example.com", Now, Currency, registrarModule: "registrar-two"),
         };
-        var withoutModule = RegisteredDomain.Import(1, "other.com", DomainStatus.Active, Now, Now.AddYears(1), true, Currency, "Name.am");
+        var withoutModule = RegisteredDomain.Import(1, "other.com", DomainStatus.Active, Now, Now.AddYears(1), true, Currency, "Example Registrar");
 
-        domain.RegistrarModule.Should().Be(RegistrarModule.Namecheap);
+        domain.RegistrarModule.Should().Be("registrar-two");
         withoutModule.RegistrarModule.Should().BeNull();
-        withoutModule.Registrar.Should().Be("Name.am");
+        withoutModule.Registrar.Should().Be("Example Registrar");
     }
 
     /// <summary>Register keeps the currency the price was paid in instead of assuming one.</summary>

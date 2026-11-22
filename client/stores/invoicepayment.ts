@@ -114,15 +114,17 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   }
 
   /**
-   * Reads what the payer can pay with: the available gateways. A list that cannot be read is
+   * Reads what the payer can pay this invoice with: the available gateways, less those the product groups it charges do not
+   * allow. A list that cannot be read is
    * kept apart from "no gateway": {@link optionsError} holds the sentence so the page can offer a retry.
    *
+   * @param invoiceId - The invoice being paid.
    * @returns Nothing.
    */
-  const loadPaymentOptions = async (): Promise<void> => {
+  const loadPaymentOptions = async (invoiceId: string): Promise<void> => {
     optionsError.value = ''
     try {
-      gatewayMethods.value = await billing.fetchGatewayMethods()
+      gatewayMethods.value = await billing.fetchGatewayMethods({ invoiceId })
     } catch (e: unknown) {
       gatewayMethods.value = []
       optionsError.value = apiErrorMessage(e)

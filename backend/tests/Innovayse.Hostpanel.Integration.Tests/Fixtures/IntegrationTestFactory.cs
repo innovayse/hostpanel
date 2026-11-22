@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Infrastructure.Registrar;
 using JasperFx.CommandLine;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -142,11 +141,12 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             services.RemoveAll<IRegistrarProvider>();
             services.AddScoped<IRegistrarProvider, StubRegistrarProvider>();
 
-            // A domain registered at the default records the default module, and the factory then
-            // answers every later operation on it; that module must reach the same stub.
+            // Whichever module a domain or a TLD names, and even none, the factory answers with that same
+            // stub; every module counts as an installed registrar that offers every optional operation.
             services.RemoveAll<IRegistrarProviderFactory>();
-            services.AddScoped<RegistrarProviderFactory>();
-            services.AddScoped<IRegistrarProviderFactory, DefaultRegistrarProviderFactory>();
+            services.AddScoped<IRegistrarProviderFactory, StubRegistrarProviderFactory>();
+            services.RemoveAll<IRegistrarModuleCatalogue>();
+            services.AddSingleton<IRegistrarModuleCatalogue, FakeRegistrarModuleCatalogue>();
 
             // Replace real control panel provisioning provider with a no-op stub.
             services.RemoveAll<IProvisioningProvider>();

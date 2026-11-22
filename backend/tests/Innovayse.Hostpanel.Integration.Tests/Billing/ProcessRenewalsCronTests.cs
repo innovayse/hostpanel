@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -240,7 +239,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         var failing = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(failing);
         var tld = $"f{Guid.NewGuid():N}"[..12];
-        var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", "USD", true, 0, []);
+        var config = TldConfig.Create(tld, TestRegistrarModules.First, "USD", "USD", true, 0, []);
         config.UpdateSellPrices([], [], new() { [1] = 10_000_000_000_000_000m });
         context.TldConfigs.Add(config);
         await context.SaveChangesAsync(CancellationToken.None);

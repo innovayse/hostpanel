@@ -1,3 +1,5 @@
 {
-  "de": ["aup.json", "cookiePolicy.json", "privacy.json", "refundPolicy.json", "terms.json"]
+  "de": ["aup.json", "cookiePolicy.json", "privacy.json", "refundPolicy.json", "terms.json"],
+  "es": ["aup.json", "cookiePolicy.json", "privacy.json", "refundPolicy.json", "terms.json"],
+  "fr": ["aup.json", "cookiePolicy.json", "privacy.json", "refundPolicy.json", "terms.json"]
 }

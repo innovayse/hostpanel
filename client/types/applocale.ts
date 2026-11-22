@@ -12,6 +12,8 @@ export enum AppLocale {
   Hy = 'hy',
   /** German. */
   De = 'de',
+  /** Spanish. */
+  Es = 'es',
   /** French. */
   Fr = 'fr'
 }

@@ -9,7 +9,7 @@
  */
 import { computed, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts, SETTING_LOCALES } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts, SETTING_LOCALES, SettingLanguage } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
@@ -22,7 +22,6 @@ import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { MessageLanguage } from '@/locales/messages'
 import { ChatProvider } from '@/types/chatprovider'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
@@ -56,27 +55,27 @@ const providerOptions = computed(() => [
 const baseUrl = useSettingDraft(settings, SettingKey.ChatBaseUrl)
 
 /** The settings row of the website token of each language: the default token is the English tab's. */
-const TOKEN_KEYS: Record<MessageLanguage, SettingKey> = {
-  [MessageLanguage.En]: SettingKey.ChatWebsiteToken,
-  [MessageLanguage.Ru]: SettingKey.ChatWebsiteTokenRu,
-  [MessageLanguage.Hy]: SettingKey.ChatWebsiteTokenHy,
+const TOKEN_KEYS: Record<SettingLanguage, SettingKey> = {
+  [SettingLanguage.En]: SettingKey.ChatWebsiteToken,
+  [SettingLanguage.Ru]: SettingKey.ChatWebsiteTokenRu,
+  [SettingLanguage.Hy]: SettingKey.ChatWebsiteTokenHy,
 }
 
 /** The website token, one draft per language. */
 const token = useLocalizedSettingDrafts(settings, TOKEN_KEYS)
 
 /** Placeholder of the token input of each language: the default token is explained, the others are optional. */
-const tokenPlaceholders = computed<Record<MessageLanguage, string>>(() => ({
-  [MessageLanguage.En]: t('settings.trackingChat.chat.tokenHint'),
-  [MessageLanguage.Ru]: t('settings.trackingChat.chat.tokenLocaleHint'),
-  [MessageLanguage.Hy]: t('settings.trackingChat.chat.tokenLocaleHint'),
+const tokenPlaceholders = computed<Record<SettingLanguage, string>>(() => ({
+  [SettingLanguage.En]: t('settings.trackingChat.chat.tokenHint'),
+  [SettingLanguage.Ru]: t('settings.trackingChat.chat.tokenLocaleHint'),
+  [SettingLanguage.Hy]: t('settings.trackingChat.chat.tokenLocaleHint'),
 }))
 
 /** Test id suffix of the token input of each language; the default token keeps the bare `token`. */
-const tokenTestids: Record<MessageLanguage, string> = {
-  [MessageLanguage.En]: 'tracking-chat-token',
-  [MessageLanguage.Ru]: 'tracking-chat-token-ru',
-  [MessageLanguage.Hy]: 'tracking-chat-token-hy',
+const tokenTestids: Record<SettingLanguage, string> = {
+  [SettingLanguage.En]: 'tracking-chat-token',
+  [SettingLanguage.Ru]: 'tracking-chat-token-ru',
+  [SettingLanguage.Hy]: 'tracking-chat-token-hy',
 }
 </script>
 

@@ -82,6 +82,17 @@ describe('ProfileTab', () => {
     expect(wrapper.text()).toContain('client.profile.langRussian')
   })
 
+  it('offers Spanish among the language choices', async () => {
+    const wrapper = mountAccount(ProfileTab)
+    useClientStore().user = user
+    useClientStore().userLoading = false
+    await wrapper.vm.$nextTick()
+    await wrapper.find('[data-testid="account-profile-edit"]').trigger('click')
+    await wrapper.find('[data-testid="profile-language"] button').trigger('click')
+
+    expect(wrapper.find('[data-testid="profile-language"]').html()).toContain('client.profile.langSpanish')
+  })
+
   it('offers German among the language choices', async () => {
     const wrapper = mountAccount(ProfileTab)
     useClientStore().user = user

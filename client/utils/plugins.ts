@@ -11,7 +11,7 @@ import { PLUGIN_CONDITION_FIELD_PATTERN, PLUGIN_CONDITION_MAX_FIELD_LENGTH, PLUG
 import { PLUGIN_SELECTION_ID_PATTERN, PLUGIN_SELECTION_MAX_ID_LENGTH, PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import type { PluginSelectionMessage } from '~/types/pluginpreviewselection'
 import { PluginSelectionEvent } from '~/types/pluginselectionevent'
-import { PLUGIN_FRAME_TIMING } from '~/constants/pluginFrames'
+import { PLUGIN_FRAME_REVISION_PARAM, PLUGIN_FRAME_TIMING } from '~/constants/pluginFrames'
 import type { Component } from 'vue'
 import { AppWindow, BarChart3, Bot, Boxes, Cloud, Globe, LayoutGrid, Mail, MessageSquare, Puzzle, Rocket, Settings, Shield, Sparkles } from 'lucide-vue-next'
 import { formatDateTime } from '~/utils/formatDate'
@@ -431,6 +431,24 @@ export const pluginFrameAddress = (value: unknown, frameOrigins: readonly string
   if (url.username !== '' || url.password !== '' || url.origin === ownOrigin || !frameOrigins.includes(url.origin)) {
     return null
   }
+  return url.href
+}
+
+/**
+ * The address a redrawn frame loads: the same address with the revision in its query. A frame drawn again at an address
+ * the browser already holds is answered from its cache, so the page the site changed would not show; a new query is a
+ * new address to it. The first drawing keeps the plain address.
+ *
+ * @param address - The admitted address.
+ * @param revision - How many times the frame was drawn again.
+ * @returns The address to load.
+ */
+export const pluginFrameRevisionAddress = (address: string, revision: number): string => {
+  if (revision === 0) {
+    return address
+  }
+  const url = new URL(address)
+  url.searchParams.set(PLUGIN_FRAME_REVISION_PARAM, String(revision))
   return url.href
 }
 

@@ -101,6 +101,7 @@ import type { Component } from 'vue'
 import LogoLockup from '~/components/LogoLockup.vue'
 import LayoutFooterColumn from '~/components/layout/FooterColumn.vue'
 import {
+  SITE_ACCEPTABLE_USE_PATH,
   SITE_ABOUT_PATH,
   SITE_ANNOUNCEMENTS_PATH,
   SITE_CONTACT_PATH,
@@ -210,6 +211,7 @@ const columns = computed<FooterColumn[]>(() => [
       { key: 'cookies', label: t('footer.bottom.cookies'), to: localePath(SITE_COOKIE_POLICY_PATH) },
       { key: 'terms', label: t('footer.bottom.terms'), to: localePath(SITE_TERMS_PATH) },
       { key: 'refund', label: t('footer.bottom.refund'), to: localePath(SITE_REFUND_POLICY_PATH) },
+      { key: 'acceptableUse', label: t('footer.bottom.acceptableUse'), to: localePath(SITE_ACCEPTABLE_USE_PATH) },
     ],
   },
 ])

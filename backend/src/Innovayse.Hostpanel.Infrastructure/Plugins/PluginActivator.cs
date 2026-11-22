@@ -1,8 +1,4 @@
-using Hostpanel.Sdk.Plugins.Endpoints;
-using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.Payment;
 using Hostpanel.Sdk.Plugins.Store;
-using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -37,18 +33,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </remarks>
 public sealed class PluginActivator
 {
-    /// <summary>
-    /// The SDK interface each capability promises, keyed by its manifest name. A capability the validator let through
-    /// but this map does not name cannot be checked, so it fails closed as not implemented.
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, Type> CapabilityContracts =
-        new Dictionary<string, Type>(StringComparer.Ordinal)
-        {
-            [PluginCapabilities.StoredCredentials] = typeof(IStoredCredentialPlugin),
-            [PluginCapabilities.PaymentReturn] = typeof(IPaymentReturnPlugin),
-            [PluginCapabilities.Endpoints] = typeof(IPluginEndpoints),
-        };
-
     /// <summary>The data context, used to read the plugin's current settings rows.</summary>
     private readonly AppDbContext _db;
 
@@ -226,7 +210,8 @@ public sealed class PluginActivator
             id,
             PluginActivationOutcome.Activated,
             () => (TContract)ActivatorUtilities.CreateInstance(
-                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)));
+                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)),
+            values);
     }
 
     /// <summary>
@@ -278,9 +263,7 @@ public sealed class PluginActivator
     /// <returns>The capability name, or <see langword="null"/> when every declared capability is implemented.</returns>
     private static string? UnimplementedCapability(LoadedPlugin plugin)
     {
-        return plugin.Manifest.Capabilities.FirstOrDefault(capability =>
-            !CapabilityContracts.TryGetValue(capability, out var contract)
-            || !contract.IsAssignableFrom(plugin.ImplementationType));
+        return PluginCapabilityRules.FirstUnimplemented(plugin.Manifest, plugin.ImplementationType);
     }
 
     /// <summary>

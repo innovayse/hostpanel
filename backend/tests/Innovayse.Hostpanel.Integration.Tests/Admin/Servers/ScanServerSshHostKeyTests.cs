@@ -67,11 +67,7 @@ public sealed class ScanServerSshHostKeyTests(IntegrationTestFactory factory) : 
     public async Task NoAgentHostSaved_IsIncompleteAsync()
     {
         var admin = await SshAdminTestSupport.AdminAsync(factory);
-        var created = await admin.PostAsJsonAsync(
-            "/api/admin/servers",
-            ServersTestSeeds.ServerBody($"bare-{Guid.NewGuid():N}", "bare.example.test", Domain.Servers.Enums.ServerModule.Cwp7));
-        created.EnsureSuccessStatusCode();
-        var serverId = await created.Content.ReadFromJsonAsync<int>();
+        var serverId = await SshTestSeeds.SeedBareServerAsync(factory, "bare.example.test");
 
         var response = await admin.PostAsync($"/api/admin/servers/{serverId}/ssh-settings/scan-host-key", null);
 

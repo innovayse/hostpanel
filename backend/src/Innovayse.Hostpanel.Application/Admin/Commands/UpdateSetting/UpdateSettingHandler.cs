@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Audit.Common;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
@@ -56,8 +57,9 @@ public sealed class UpdateSettingHandler
     /// <returns>
     /// Success, or <c>SETTING_NOT_FOUND</c> when the id names no setting, or <c>SETTING_NOT_EDITABLE</c>
     /// when the row's key is outside <see cref="GeneralSettingKeys"/> (the row is left untouched), or
-    /// <c>INVALID_SETTING_VALUE</c> when the key has a fixed vocabulary or shape and the value does
-    /// not match it: <c>errors[key]</c> then carries what the key does accept.
+    /// <c>INVALID_SETTING_VALUE</c> when the value is longer than the key accepts (<see cref="ProtectedValueLimits.SettingValue"/>,
+    /// or <see cref="ProtectedValueLimits.LegalTextValue"/> for an operator legal text), or the key has a fixed
+    /// vocabulary or shape and the value does not match it:<c>errors[key]</c> then carries what the key does accept.
     /// </returns>
     public async Task<Result> HandleAsync(UpdateSettingCommand command, CancellationToken ct)
     {
@@ -78,6 +80,17 @@ public sealed class UpdateSettingHandler
         // Trimmed for every key: a trailing space typed into the admin table is never what an
         // operator meant, and for a URL or a handle it is the difference between working and not.
         var value = (command.Value ?? string.Empty).Trim();
+
+        // The validator only holds the ceiling every key shares; an ordinary key is held to the shorter
+        // limit here because only this handler knows the key, and an operator's legal text is the one
+        // kind of value allowed the longer one.
+        var limit = PortalSettingKeys.IsLegalText(setting.Key)
+            ? ProtectedValueLimits.LegalTextValue
+            : ProtectedValueLimits.SettingValue;
+        if (value.Length > limit)
+        {
+            return Invalid(setting.Key, $"Setting '{setting.Key}' accepts at most {limit} characters.");
+        }
 
         // Empty means "unset" for a key that seeds empty, the storefront then uses its
         // built-in default, and skips both checks below. A key that seeds with a value never

@@ -383,7 +383,7 @@
     <value>El estado debe ser uno de: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>El registrador debe ser uno de: NameAm, Namecheap.</value>
+    <value>El registrador debe ser un plugin de registrador instalado.</value>
   </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>La página debe ser 1 o mayor.</value>
@@ -919,6 +919,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Limite la descripción a {0} caracteres.</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Indica como máximo {0} productos.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Limita cada método de pago a {0} caracteres.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Permite como máximo {0} métodos de pago.</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Indique un ID de paquete de productos válido.</value>
   </data>
@@ -965,7 +974,7 @@
     <value>El orden no puede ser negativo.</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>Use letras y dígitos unidos por guiones, guiones bajos o puntos simples para el SKU, de {0} caracteres como máximo.</value>
+    <value>Use letras y dígitos unidos por guiones, guiones bajos o puntos simples para el SKU, opcionalmente en dos partes separadas por dos puntos, de {0} caracteres como máximo.</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Los metadatos deben ser un objeto JSON.</value>
@@ -1753,8 +1762,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>El estado debe ser uno de: Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>El módulo debe ser uno de: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>El módulo debe ser un id de 1 a 50 letras, dígitos, puntos, guiones o guiones bajos.</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>El estado debe ser uno de: Online, Offline, Untested.</value>
@@ -1782,5 +1791,8 @@
   </data>
   <data name="VatRateListStatusInvalid" xml:space="preserve">
     <value>El estado debe ser uno de: Active, Superseded, Upcoming.</value>
+  </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>El identificador de pedido de la pasarela tiene de 1 a 255 caracteres, sin espacios en los extremos ni caracteres de control.</value>
   </data>
 </root>

@@ -7,6 +7,8 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Domain.Services;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -355,6 +357,30 @@ public static class BillingTestSeeds
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
+    /// <summary>
+    /// Seeds a client and a 10.00 USD invoice with a live gateway session of its own, directly against the host's database,
+    /// for the tests that read or settle a gateway order without a payer's browser.
+    /// </summary>
+    /// <param name="host">The host whose database to seed against.</param>
+    /// <param name="module">The plugin id the session belongs to.</param>
+    /// <returns>The invoice id and the gateway order id of its session, unique per call.</returns>
+    public static async Task<(int InvoiceId, string OrderId)> SeedInvoiceWithSessionAsync(
+        WebApplicationFactory<Program> host, string module)
+    {
+        var clientId = await SeedClientAsync(host);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var orderId = $"gw-{Guid.NewGuid():N}";
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(14), "USD", TestMoments.Seeded);
+        invoice.AddItem("Hosting", 10m, 1);
+        invoice.SetGatewaySession(module, orderId, scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        context.Invoices.Add(invoice);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        return (invoice.Id, orderId);
+    }
+
     /// <summary>Reads a client's credit balance from the host's database.</summary>
     /// <param name="host">The host whose database the client lives in.</param>
     /// <param name="clientId">The client.</param>
@@ -367,6 +393,26 @@ public static class BillingTestSeeds
             .Where(c => c.Id == clientId)
             .Select(c => c.CreditBalance)
             .FirstAsync(CancellationToken.None);
+    }
+
+    /// <summary>Raises an invoice for the client that charges a service of the given product, as a renewal invoice does.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="clientId">The client the service and the invoice belong to; billed in USD.</param>
+    /// <param name="productId">The product the charged service runs.</param>
+    /// <returns>The new invoice id.</returns>
+    public static async Task<int> SeedInvoiceChargingProductAsync(IntegrationTestFactory factory, int clientId, int productId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var service = ClientService.Create(clientId, productId, BillingCycle.Monthly, TestMoments.Seeded);
+        context.ClientServices.Add(service);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var invoice = Invoice.Create(clientId, TestMoments.Present().AddDays(14), "USD", TestMoments.Present());
+        invoice.AddItem("Hosting", 10m, 1, service.Id);
+        context.Invoices.Add(invoice);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return invoice.Id;
     }
 
     /// <summary>Reads the <c>type</c> field of a refusal answered by <c>BaseApiController</c>.</summary>

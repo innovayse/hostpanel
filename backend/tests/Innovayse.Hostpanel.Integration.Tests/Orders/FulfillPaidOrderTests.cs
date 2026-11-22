@@ -10,8 +10,8 @@ using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -51,17 +51,17 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// Builds a host whose refund command reaches <paramref name="pluginResolver"/> instead of a real gateway.
     /// </summary>
     /// <param name="pluginResolver">The fake plugin resolver the refund resolves hosted gateways through.</param>
-    /// <param name="useRealRegistrar">Whether domain registration goes to the real, unconfigured registrar provider.</param>
+    /// <param name="useUnavailableRegistrar">Whether domain registration goes to the unavailable registrar provider, which refuses as an unconfigured registrar does.</param>
     /// <param name="configure">Further changes to the host's services, for a test that needs another fake.</param>
     /// <returns>The test host.</returns>
     private WebApplicationFactory<Program> BuildHost(
-        FakePaymentPluginResolver pluginResolver, bool useRealRegistrar = false, Action<IServiceCollection>? configure = null) =>
+        FakePaymentPluginResolver pluginResolver, bool useUnavailableRegistrar = false, Action<IServiceCollection>? configure = null) =>
         factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
         {
             s.AddSingleton<IPaymentPluginResolver>(pluginResolver);
-            if (useRealRegistrar)
+            if (useUnavailableRegistrar)
             {
-                s.AddScoped<IRegistrarProvider, NameAmRegistrarProvider>();
+                s.AddScoped<IRegistrarProvider, UnavailableRegistrarProvider>();
             }
 
             configure?.Invoke(s);
@@ -575,7 +575,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var plugin = new FakePaymentPlugin { RefundResult = "plugin-refund-2" };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
-        var host = BuildHost(resolver, useRealRegistrar: true);
+        var host = BuildHost(resolver, useUnavailableRegistrar: true);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);

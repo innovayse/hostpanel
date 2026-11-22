@@ -10,6 +10,7 @@ import en from '~/locales/en/client.json'
 import ru from '~/locales/ru/client.json'
 import hy from '~/locales/hy/client.json'
 import de from '~/locales/de/client.json'
+import es from '~/locales/es/client.json'
 import fr from '~/locales/fr/client.json'
 import { CLIENT_MENU_MESSAGES, clientMenuLabel } from '~/server/utils/clientMenuLabels'
 import { AppLocale } from '~/types/applocale'
@@ -21,6 +22,7 @@ const CATALOGUES: Record<AppLocale, { client: { nav: Record<string, string> } }>
   [AppLocale.Ru]: ru,
   [AppLocale.Hy]: hy,
   [AppLocale.De]: de,
+  [AppLocale.Es]: es,
   [AppLocale.Fr]: fr
 }
 

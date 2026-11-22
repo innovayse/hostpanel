@@ -38,7 +38,14 @@ const domain = (overrides: Record<string, unknown> = {}) => ({
   id: 7, name: 'example.com', status: DomainStatus.Active, registeredAt: '2025-01-01', expiresAt: '2099-01-01', nextDueDate: '2098-12-01',
   firstPaymentAmount: 15, recurringAmount: 12, registrationPeriod: 1, paymentMethod: 'card', priceCurrency: 'USD',
   autoRenew: false, isLocked: true, whoisPrivacy: false,
-  management: { dnsManagement: false, emailForwarding: false, nameservers: [], dnsRecords: [], emailForwardingRules: [] },
+  management: {
+    dnsManagement: false,
+    emailForwarding: false,
+    nameservers: [],
+    dnsRecords: [],
+    emailForwardingRules: [],
+    capabilities: { dnsManagement: true, emailForwarding: true, whois: true },
+  },
   ...overrides
 })
 

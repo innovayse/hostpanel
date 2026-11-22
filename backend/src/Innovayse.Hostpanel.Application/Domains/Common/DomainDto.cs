@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Common;
 /// <param name="DnsRecords">DNS records configured for this domain.</param>
 /// <param name="EmailForwardingRules">Email forwarding rules configured for this domain.</param>
 /// <param name="Reminders">Expiry reminders sent for this domain.</param>
+/// <param name="Capabilities">The optional operations the registrar that holds the domain offers.</param>
 public record DomainDto(
     int Id,
     int ClientId,
@@ -33,4 +34,5 @@ public record DomainDto(
     IReadOnlyList<NameserverDto> Nameservers,
     IReadOnlyList<DnsRecordDto> DnsRecords,
     IReadOnlyList<EmailForwardingRuleDto> EmailForwardingRules,
-    IReadOnlyList<DomainReminderDto> Reminders);
+    IReadOnlyList<DomainReminderDto> Reminders,
+    RegistrarCapabilitiesDto Capabilities);

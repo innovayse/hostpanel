@@ -9,7 +9,7 @@
  */
 import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts, SETTING_LOCALES } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts, SETTING_LOCALES, SettingLanguage } from '@/composables/useLocalizedSettingDrafts'
 import type { LocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
@@ -22,7 +22,6 @@ import SettingsTimezoneField from '@/components/settings/SettingsTimezoneField.v
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { MessageLanguage } from '@/locales/messages'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
 import { SHORT_TEXT_MAX_LENGTH } from '@/lib/limits'
@@ -173,7 +172,7 @@ interface LocalizedStorefrontField {
   /** Suffix of the test ids: `<testid>` is the English input, `<testid>-ru` and `<testid>-hy` the others. */
   testid: string
   /** The settings row of each language. */
-  keys: Record<MessageLanguage, SettingKey>
+  keys: Record<SettingLanguage, SettingKey>
   /** Locale key of the label. */
   labelKey: string
   /** Locale key of the placeholder. */
@@ -197,20 +196,20 @@ const localizedField = (
   testid: string,
   labelKey: string,
   hintKey: string,
-  keys: Record<MessageLanguage, SettingKey>,
+  keys: Record<SettingLanguage, SettingKey>,
 ): LocalizedStorefrontField => ({ group, testid, keys, labelKey, hintKey, localized: useLocalizedSettingDrafts(settings, keys) })
 
 /** The contact details written per language: an empty language shows the English text on the storefront. */
 const LOCALIZED_FIELDS: LocalizedStorefrontField[] = [
   localizedField(StorefrontGroup.Address, 'contact-address', 'settings.storefrontContent.contactAddress.label', 'settings.storefrontContent.contactAddress.hint', {
-    [MessageLanguage.En]: SettingKey.ContactAddress,
-    [MessageLanguage.Ru]: SettingKey.ContactAddressRu,
-    [MessageLanguage.Hy]: SettingKey.ContactAddressHy,
+    [SettingLanguage.En]: SettingKey.ContactAddress,
+    [SettingLanguage.Ru]: SettingKey.ContactAddressRu,
+    [SettingLanguage.Hy]: SettingKey.ContactAddressHy,
   }),
   localizedField(StorefrontGroup.Address, 'contact-hours', 'settings.storefrontContent.contactHours.label', 'settings.storefrontContent.contactHours.hint', {
-    [MessageLanguage.En]: SettingKey.ContactHours,
-    [MessageLanguage.Ru]: SettingKey.ContactHoursRu,
-    [MessageLanguage.Hy]: SettingKey.ContactHoursHy,
+    [SettingLanguage.En]: SettingKey.ContactHours,
+    [SettingLanguage.Ru]: SettingKey.ContactHoursRu,
+    [SettingLanguage.Hy]: SettingKey.ContactHoursHy,
   }),
 ]
 
@@ -221,8 +220,8 @@ const LOCALIZED_FIELDS: LocalizedStorefrontField[] = [
  * @param locale - The language of the input.
  * @returns The `data-testid` of the input.
  */
-const localizedInputTestid = (field: LocalizedStorefrontField, locale: MessageLanguage): string =>
-  locale === MessageLanguage.En ? `storefront-${field.testid}` : `storefront-${field.testid}-${locale}`
+const localizedInputTestid = (field: LocalizedStorefrontField, locale: SettingLanguage): string =>
+  locale === SettingLanguage.En ? `storefront-${field.testid}` : `storefront-${field.testid}-${locale}`
 
 /**
  * The sentence under a field whose current text breaks its rule.

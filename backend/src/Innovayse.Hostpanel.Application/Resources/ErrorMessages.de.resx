@@ -139,6 +139,8 @@
   <data name="ORDER_NOT_DELETABLE" xml:space="preserve"><value>Nur eine ausstehende oder stornierte Bestellung kann gelöscht werden.</value></data>
   <data name="ORDER_NOT_INVOICED" xml:space="preserve"><value>Für diese Bestellung gibt es noch keine Rechnung, auf die sich die Aktion beziehen könnte.</value></data>
   <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve"><value>Diese Zahlungsmethode ist derzeit nicht verfügbar.</value></data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve"><value>Für alle Produkte dieser Bestellung gibt es keine gemeinsame Zahlungsmethode. Bestellen Sie sie getrennt.</value></data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve"><value>Diese Zahlungsmethode ist für die zu bezahlenden Produkte nicht zulässig.</value></data>
   <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve"><value>Diese Währung wird nicht angeboten.</value></data>
   <data name="ACCOUNT_EMAIL_EXISTS" xml:space="preserve"><value>Mit dieser E-Mail-Adresse existiert bereits ein Konto. Melden Sie sich an, um fortzufahren.</value></data>
   <data name="ORDER_NUMBER_RANGE_EXHAUSTED" xml:space="preserve"><value>Bestellungen können derzeit nicht nummeriert werden. Bitte versuchen Sie es später erneut.</value></data>
@@ -222,7 +224,6 @@
   <data name="SERVER_CONNECTION_UNREACHABLE" xml:space="preserve"><value>Der Server ist nicht erreichbar. Details finden Sie im Serverprotokoll.</value></data>
   <data name="SERVER_CONNECTION_NO_ACCESS_HASH" xml:space="preserve"><value>Für diesen Server ist kein Access-Hash hinterlegt.</value></data>
   <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve"><value>Für diesen Server ist weder ein API-Schlüssel noch ein Access-Hash hinterlegt.</value></data>
-  <data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve"><value>Der Verbindungstest wird für dieses Servermodul nicht unterstützt.</value></data>
   <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve"><value>Servergruppe nicht gefunden.</value></data>
   <data name="PLUGIN_MANIFEST_INVALID" xml:space="preserve"><value>Dieses Archiv ist kein gültiges Plugin. Prüfen Sie, ob plugin.json im Stammverzeichnis vorhanden und korrekt aufgebaut ist.</value></data>
   <data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve"><value>Dieses Plugin wurde für eine andere SDK-Version erstellt und kann hier nicht installiert werden.</value></data>
@@ -259,7 +260,7 @@
   <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve"><value>Dieses Plugin deklariert eine Seite, deren ID ungültig ist oder in einem Panel doppelt vorkommt: Verwenden Sie 1 bis 64 Kleinbuchstaben, Ziffern, Bindestriche und Unterstriche, beginnend mit einem Buchstaben oder einer Ziffer.</value></data>
   <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve"><value>Diese Plugin-Seite existiert nicht.</value></data>
   <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve"><value>Dieses Plugin deklariert Routen, Seiten oder Slots, ist aber kein App-Plugin und deklariert die Capability „endpoints“ nicht.</value></data>
-  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve"><value>Dieses Plugin deklariert eine Capability, die der Host nicht kennt oder die sein Plugin-Typ nicht haben kann.</value></data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve"><value>Dieses Plugin deklariert eine Capability, die der Host nicht kennt, die sein Plugin-Typ nicht haben kann oder die eine andere Capability braucht, die das Plugin nicht deklariert.</value></data>
   <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve"><value>Dieses Archiv enthält einen Eintrag, der außerhalb des Plugin-Ordners schreiben würde, und wurde abgelehnt.</value></data>
   <data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve"><value>Dieses Archiv enthält Einträge, die sich nicht gemeinsam entpacken lassen, zum Beispiel eine Datei und einen Ordner mit demselben Namen, und wurde abgelehnt.</value></data>
   <data name="PLUGIN_ID_INVALID" xml:space="preserve"><value>Diese Plugin-ID ist ungültig.</value></data>
@@ -401,6 +402,12 @@
   <data name="REGISTRAR_DOMAIN_UNAVAILABLE" xml:space="preserve"><value>Die Registrierungsstelle meldet, dass dieser Domainname nicht verfügbar ist.</value></data>
   <data name="REGISTRAR_INSUFFICIENT_FUNDS" xml:space="preserve"><value>Das Guthaben des Registrar-Kontos reicht für diesen Kauf nicht aus.</value></data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve"><value>Die Kontaktdaten des Domaininhabers sind unvollständig, daher kann die Bestellung nicht an die Registrierungsstelle gesendet werden.</value></data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve"><value>Die Registrierungsstelle vergibt diese Domainendung nicht.</value></data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve"><value>Die Registrierungsstelle hat den Transfercode abgelehnt.</value></data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve"><value>Die Registrierungsstelle erlaubt den Transfer dieser Domain derzeit nicht.</value></data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve"><value>Die Registrierungsstelle hat die Nameserver abgelehnt.</value></data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve"><value>Die Registrierungsstelle hat den DNS-Eintrag abgelehnt.</value></data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve"><value>Die Registrierungsstelle hat die gespeicherten Zugangsdaten nicht akzeptiert. Wenden Sie sich an den Administrator.</value></data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve"><value>Eine Transaktion benötigt einen Eingangs- oder Ausgangsbetrag.</value></data>
   <data name="INVOICE_REFUND_EXCEEDS_PAID" xml:space="preserve"><value>Die Erstattung übersteigt den bezahlten und noch nicht erstatteten Betrag.</value></data>
   <data name="INVOICE_CREDIT_EXCEEDS_DUE" xml:space="preserve"><value>Die Gutschrift übersteigt den noch offenen Rechnungsbetrag.</value></data>
@@ -558,7 +565,82 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Das agentProfile im Manifest muss eines der SSH-Schlüssel-Agent-Profile sein, die dieses SDK definiert, und genau so geschrieben sein.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>Die Liste serverModules im Manifest ist ungültig: Ein Plugin mit der Capability provisioningPanel oder virtualServer muss mindestens eine Servermodul-ID angeben (Buchstaben, Ziffern, Bindestriche, Punkte und Unterstriche, bis zu 50 Zeichen, ohne Wiederholung), jedes andere Plugin darf keine angeben.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>Eine connectionRole in den Manifest-Einstellungen ist nur bei einem Registrar-Plugin erlaubt.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Zwei Einstellungen im Manifest haben dieselbe connectionRole; jede Rolle darf nur einer Einstellung zugewiesen werden.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>Eine connectionRole im Manifest steht bei einer Einstellung des falschen Typs: apiKey braucht eine Einstellung vom Typ secret, apiUrl vom Typ url und testMode vom Typ boolean.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>Ein Registrar-Plugin, das eine connectionRole angibt, muss sowohl accountName als auch apiKey angeben.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>Die sdkPackageVersion im Manifest dieses Plugins ist keine gültige Version.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>Die minHostVersion im Manifest dieses Plugins fehlt oder liegt unter der ersten Hostpanel-Version, die das SDK mitbringt, mit dem das Plugin gebaut wurde.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Dieses Plugin wurde mit einem neueren Hostpanel-SDK gebaut, als dieser Server mitbringt, und würde hier nicht geladen. Aktualisieren Sie Hostpanel oder nehmen Sie eine ältere Version des Plugins.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Dieses Plugin ist installiert, konnte aber nicht geladen werden. Den Ladefehler sehen Sie daneben.</value>
+  </data>
   <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
     <value>Eines der Ansichtsdokumente dieses Plugins öffnet eine Adresse aus einer Antwort in einer Form oder an einer Stelle, die dieser Server nicht akzeptiert.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Ein Server ohne SSL kann kein selbstsigniertes Zertifikat akzeptieren. Aktivieren Sie SSL oder deaktivieren Sie die Option für selbstsignierte Zertifikate.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Dieser Bedienfeldtyp ist nicht verfügbar. Installieren Sie zuerst das Plugin dafür oder wählen Sie einen anderen Typ.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Das Plugin für das Bedienfeld dieses Servers ist nicht installiert, ausgeschaltet, nicht konfiguriert oder funktioniert nicht. Prüfen Sie es auf der Plugin-Seite.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Mehrere installierte Plugins bedienen den Bedienfeldtyp dieses Servers. Behalten Sie nur eines.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Dieses Bedienfeld unterstützt die angeforderte Aktion nicht.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>Das Bedienfeld hat kein Konto für diesen Dienst.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Das Bedienfeld kennt das Hosting-Paket dieses Dienstes nicht.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Das Bedienfeld akzeptiert diesen Kontobenutzernamen nicht.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Das Bedienfeld akzeptiert diesen Domainnamen nicht.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Das Bedienfeld hat das Passwort abgelehnt. Wählen Sie ein stärkeres.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Das Bedienfeld hat sein Limit erreicht und kann diese Änderung nicht annehmen.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Das Bedienfeld hat die für diesen Server gespeicherten Zugangsdaten abgelehnt.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Das Bedienfeld hat die Anfrage abgelehnt.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Das Hosting-Konto wird erstellt. Bitte prüfen Sie in einigen Minuten erneut.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Die Verbindungsdaten des Servers sind für dieses Bedienfeld unvollständig.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Das Bedienfeld hat die gespeicherten Zugangsdaten abgelehnt.</value>
   </data>
 </root>

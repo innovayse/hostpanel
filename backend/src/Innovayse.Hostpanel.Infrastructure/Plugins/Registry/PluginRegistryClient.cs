@@ -684,7 +684,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
             icon,
             category,
             latest,
-            UntrustedText.Clean(item.SdkVersion, MaxSdkVersionLength),
+            UntrustedText.Clean(item.SdkPackageVersion, MaxSdkVersionLength),
             item.Verified,
             pricing,
             Distribution: Enum.TryParse<PluginRegistryDistribution>(item.Distribution, ignoreCase: true, out var distribution) && Enum.IsDefined(distribution)
@@ -766,7 +766,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 null,
                 PluginRegistryCategory.Other,
                 item.Version!,
-                UntrustedText.Clean(item.SdkVersion, MaxSdkVersionLength),
+                UntrustedText.Clean(item.SdkPackageVersion, MaxSdkVersionLength),
                 item.Verified ?? false,
                 item.RequiresLicence ?? false ? PluginRegistryPricing.Paid : PluginRegistryPricing.Free,
                 LatestChangelog: CleanMultiline(item.Changelog, MaxChangelogLength)));
@@ -811,7 +811,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
 
         return new RegistryPluginVersion(
             item.Version!,
-            UntrustedText.Clean(item.SdkVersion, MaxSdkVersionLength),
+            UntrustedText.Clean(item.SdkPackageVersion, MaxSdkVersionLength),
             Math.Max(0, item.SizeBytes),
             item.PublishedAt,
             status,

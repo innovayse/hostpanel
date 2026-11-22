@@ -22,6 +22,8 @@ export const MessageLanguage = {
   Ru: ContentLanguage.Ru,
   /** Armenian. */
   Hy: ContentLanguage.Hy,
+  /** German. */
+  De: ContentLanguage.De,
 } as const
 
 /** A language the admin interface is translated into. */
@@ -44,6 +46,7 @@ export const buildMessages = (files: Record<string, MessageTree>): Record<Messag
     [MessageLanguage.En]: {},
     [MessageLanguage.Ru]: {},
     [MessageLanguage.Hy]: {},
+    [MessageLanguage.De]: {},
   }
   for (const [path, tree] of Object.entries(files)) {
     const match = /^\.\/([^/]+)\/([^/]+)\.json$/.exec(path)

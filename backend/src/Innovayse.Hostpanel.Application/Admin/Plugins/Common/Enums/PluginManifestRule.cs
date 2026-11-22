@@ -176,4 +176,43 @@ public enum PluginManifestRule
 
     /// <summary>The <c>agentProfile</c> is not one of the SSH key agent profiles the SDK defines.</summary>
     AgentProfileInvalid = 43,
+
+    /// <summary>
+    /// The <c>serverModules</c> list is not valid: a plugin that declares the <c>provisioningPanel</c> or <c>virtualServer</c>
+    /// capability lists no server module or one the SDK refuses (empty, too long, a bad character or a repeat), or a plugin
+    /// without either capability lists some.
+    /// </summary>
+    ServerModulesInvalid = 44,
+
+    /// <summary>A setting names a <c>connectionRole</c> in a plugin that is not a registrar plugin.</summary>
+    ConnectionRoleNotRegistrar = 45,
+
+    /// <summary>Two settings of a registrar plugin name the same <c>connectionRole</c>.</summary>
+    ConnectionRoleDuplicate = 46,
+
+    /// <summary>A <c>connectionRole</c> sits on a setting of a type that cannot carry it (<c>apiKey</c> needs a secret, <c>apiUrl</c> a url, <c>testMode</c> a boolean).</summary>
+    ConnectionRoleTypeMismatch = 47,
+
+    /// <summary>A registrar plugin names a <c>connectionRole</c> but not both <c>accountName</c> and <c>apiKey</c>.</summary>
+    ConnectionRolesIncomplete = 48,
+
+    /// <summary>The <c>sdkPackageVersion</c> is not a valid semantic version.</summary>
+    SdkPackageVersionInvalid = 49,
+
+    /// <summary>
+    /// The <c>minHostVersion</c> is missing or below the first host release that ships the SDK the plugin was built
+    /// against.
+    /// </summary>
+    MinHostVersionBelowSdk = 50,
+
+    /// <summary>
+    /// The <c>sdkPackageVersion</c> is newer than the SDK this host ships, so the plugin's assembly cannot load here.
+    /// </summary>
+    SdkNewerThanHost = 51,
+
+    /// <summary>
+    /// The plugin is installed and its manifest is accepted, but none of its assemblies could be loaded or none defines
+    /// the entry point; the plugin's detail carries the load error.
+    /// </summary>
+    AssemblyLoadFailed = 52,
 }

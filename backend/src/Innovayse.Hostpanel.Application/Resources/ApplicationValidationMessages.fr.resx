@@ -1759,10 +1759,7 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Le statut doit être l'un des suivants : Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Le module doit être l'un des suivants : CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
-  </data>
-  <data name="ServerListStateInvalid" xml:space="preserve">
+    <data name="ServerListStateInvalid" xml:space="preserve">
     <value>L'état doit être l'un des suivants : Online, Offline, Untested.</value>
   </data>
   <data name="ProductListTypeInvalid" xml:space="preserve">
@@ -1782,5 +1779,20 @@
   </data>
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Le nombre maximal de services actifs doit être 0 ou vide pour illimité, ou un nombre positif.</value>
+  </data>
+<data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Indiquez {0} produits au plus.</value>
+  </data>
+<data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Gardez chaque mode de paiement sous {0} caractères.</value>
+  </data>
+<data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Autorisez {0} modes de paiement au plus.</value>
+  </data>
+<data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Le module doit être un identifiant de 1 à 50 lettres, chiffres, points, tirets ou traits de soulignement.</value>
+  </data>
+<data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Un identifiant de commande de passerelle compte de 1 à 255 caractères, sans espace ni caractère de contrôle au début ou à la fin.</value>
   </data>
 </root>

@@ -1,0 +1,11 @@
+{
+  "whatsapp": {
+    "contactUs": "Contáctenos por WhatsApp",
+    "tooltip": "Chatee con nosotros por WhatsApp",
+    "defaultMessage": "¡Hola! Me interesan sus servicios."
+  },
+  "telegram": {
+    "contactUs": "Contáctenos por Telegram",
+    "tooltip": "Escríbanos por Telegram"
+  }
+}

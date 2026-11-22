@@ -65,7 +65,7 @@ public sealed class OrdersController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the new order's id and number, its invoice id and its payment token; 400 with
-    /// <c>VALIDATION_ERROR</c>, <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c>,
+    /// <c>VALIDATION_ERROR</c>, <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c>, <c>PAYMENT_NO_COMMON_METHOD</c>,
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c>, <c>ORDER_GUEST_DETAILS_REQUIRED</c>,
     /// <c>PRODUCT_NOT_AVAILABLE</c>, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c>,
     /// <c>ORDER_DOMAIN_PRICING_INVALID</c>, <c>PRODUCT_BUNDLE_NOT_AVAILABLE</c>, <c>ORDER_BUNDLE_ITEMS_MISMATCH</c>,
@@ -330,7 +330,7 @@ public sealed class OrdersController : BaseApiController
     /// <returns>
     /// 200 with the redirect URL; 400 with <c>VALIDATION_ERROR</c> (a method to keep without the consent wording
     /// version), <c>ORDER_NOT_INVOICED</c>,
-    /// <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or <c>GATEWAY_CURRENCY_MISMATCH</c>;
+    /// <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c>, <c>PAYMENT_METHOD_NOT_ALLOWED</c>, <c>PAYMENT_NO_COMMON_METHOD</c> or <c>GATEWAY_CURRENCY_MISMATCH</c>;
     /// 401 with <c>UNAUTHORIZED</c> when a guest asks to keep the payment method, which only the signed-in owner of the invoice may;
     /// 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when a signed-in linked user without <c>ViewPayInvoices</c> asks to keep the

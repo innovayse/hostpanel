@@ -1,9 +1,16 @@
+using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Application.Admin.Servers.Common;
+using Innovayse.Hostpanel.Application.Admin.Servers.Common.Enums;
+using Innovayse.Hostpanel.Application.Admin.Servers.Extensions;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Common.Enums;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -11,17 +18,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Monitoring;
 
 /// <summary>
 /// Disk usage service. Returns cached stats from the database.
-/// UpdateNowAsync polls all cPanel servers and upserts the cache; every other hosting server and every
-/// server that cannot be polled is answered as a failure instead of being left out silently.
+/// UpdateNowAsync polls every cPanel server and every server a panel plugin serves, and upserts the cache; a server that
+/// cannot be polled is answered as a failure instead of being left out silently. A server of any other module is no part of the report.
 /// </summary>
 public sealed class DiskUsageService : IDiskUsageService
 {
-    /// <summary>Modules whose servers host client accounts; a server of any other module (licensing, VPS) is not part of this report.</summary>
-    private static readonly ServerModule[] HostingPanelModules =
-    [
-        ServerModule.CPanel, ServerModule.Plesk, ServerModule.DirectAdmin, ServerModule.Centos, ServerModule.Cwp7, ServerModule.Virtualmin,
-    ];
-
     /// <summary>The database the servers are read from and the cached figures are written to.</summary>
     private readonly AppDbContext _db;
 
@@ -34,17 +35,33 @@ public sealed class DiskUsageService : IDiskUsageService
     /// <summary>The source of the current moment.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Finds the installed plugin that serves a server module.</summary>
+    private readonly IServerModulePluginResolver _resolver;
+
+    /// <summary>Reads the accounts of a server a panel plugin serves.</summary>
+    private readonly PanelPluginAccountReader _pluginReader;
+
     /// <summary>Initializes a new instance of the <see cref="DiskUsageService"/> class.</summary>
     /// <param name="db">The database the servers are read from and the cached figures are written to.</param>
     /// <param name="httpFactory">Creates the clients that query each hosting server.</param>
     /// <param name="logger">Records a server that could not be polled.</param>
     /// <param name="clock">The source of the current moment.</param>
-    public DiskUsageService(AppDbContext db, IHttpClientFactory httpFactory, ILogger<DiskUsageService> logger, IClock clock)
+    /// <param name="resolver">Finds the installed plugin that serves a server module.</param>
+    /// <param name="pluginReader">Reads the accounts of a server a panel plugin serves.</param>
+    public DiskUsageService(
+        AppDbContext db,
+        IHttpClientFactory httpFactory,
+        ILogger<DiskUsageService> logger,
+        IClock clock,
+        IServerModulePluginResolver resolver,
+        PanelPluginAccountReader pluginReader)
     {
         _db = db;
         _httpFactory = httpFactory;
         _logger = logger;
         _clock = clock;
+        _resolver = resolver;
+        _pluginReader = pluginReader;
     }
 
     /// <inheritdoc/>
@@ -57,10 +74,11 @@ public sealed class DiskUsageService : IDiskUsageService
     /// <inheritdoc/>
     public async Task<DiskUsageDto> UpdateNowAsync(CancellationToken ct)
     {
-        // Load every enabled hosting server; those whose panel cannot report usage are answered as failures below
-        var servers = await _db.Servers
-            .Where(s => HostingPanelModules.Contains(s.Module) && !s.IsDisabled)
-            .ToListAsync(ct);
+        // Load every enabled hosting server, the host's own panels and the ones a plugin serves; one whose panel cannot
+        // be polled is answered as a failure below. Filtered after loading: which plugin serves a module is not in SQL.
+        var servers = (await _db.Servers.Where(s => !s.IsDisabled).ToListAsync(ct))
+            .Where(IsHostingServer)
+            .ToList();
         var failures = new List<DiskUsageFailureDto>();
 
         // Load all client services with client info (to map cPanel domain → client name)
@@ -84,53 +102,22 @@ public sealed class DiskUsageService : IDiskUsageService
 
         foreach (var server in servers)
         {
-            if (server.Module != ServerModule.CPanel)
-            {
-                failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.UnsupportedModule));
-                continue;
-            }
-
+            var match = _resolver.Find(server.Module, PluginCapabilities.ProvisioningPanel);
             try
             {
-                CpanelWhmApi api;
-                if (!string.IsNullOrEmpty(server.ApiToken))
-                {
-                    api = CpanelWhmApi.Create(server.Hostname, server.Username, server.ApiToken, _httpFactory);
-                }
-                else if (!string.IsNullOrEmpty(server.AccessHash))
-                {
-                    api = CpanelWhmApi.CreateWithHash(server.Hostname, server.Username, server.AccessHash, _httpFactory);
-                }
-                else
+                var accounts = await ReadAccountsAsync(server, match, ct);
+                if (accounts is null)
                 {
                     _logger.LogWarning("Server {Name} has no ApiToken or AccessHash, so the disk usage poll is skipped.", server.Name);
                     failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.MissingCredentials));
                     continue;
                 }
 
-                var accounts = await api.ListAccountsAsync(ct);
-                var fetchedAt = _clock.UtcNow;
-
-                foreach (var acct in accounts)
-                {
-                    var clientName = domainToClient.TryGetValue(acct.Domain.ToLowerInvariant(), out var cn) ? cn
-                        : domainToClient.TryGetValue(acct.Username.ToLowerInvariant(), out var cu) ? cu
-                        : acct.Username;
-
-                    var key = (server.Name, acct.Domain.ToLowerInvariant());
-                    if (cache.TryGetValue(key, out var stat))
-                    {
-                        stat.RecordUsage(acct.DiskUsedMb, acct.DiskLimitMb, acct.BwUsedMb, acct.BwLimitMb, fetchedAt);
-                    }
-                    else
-                    {
-                        var newStat = Domain.Hosting.DiskUsageStat.Create(
-                            server.Name, acct.Domain, clientName,
-                            acct.DiskUsedMb, acct.DiskLimitMb, acct.BwUsedMb, acct.BwLimitMb, fetchedAt);
-                        _db.DiskUsageStats.Add(newStat);
-                        cache[key] = newStat;
-                    }
-                }
+                Upsert(server, accounts, domainToClient, cache);
+            }
+            catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED)
+            {
+                failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.UnsupportedModule));
             }
             catch (Exception ex)
             {
@@ -143,6 +130,86 @@ public sealed class DiskUsageService : IDiskUsageService
 
         var allStats = await _db.DiskUsageStats.OrderBy(s => s.ServerName).ThenBy(s => s.Domain).ToListAsync(ct);
         return BuildReport(allStats, failures);
+    }
+
+    /// <summary>Tells whether a server hosts client accounts: one of the host's panel modules, or one an installed panel plugin serves.</summary>
+    /// <param name="server">The server.</param>
+    /// <returns><see langword="true"/> when the server is part of the disk usage report.</returns>
+    private bool IsHostingServer(Server server)
+    {
+        return ServerModules.Known.Any(module => ServerModules.Same(module, server.Module))
+            || _resolver.Find(server.Module, PluginCapabilities.ProvisioningPanel).Outcome is not ServerModulePluginOutcome.NotServed;
+    }
+
+    /// <summary>Reads the accounts of one server from the plugin that serves its module, or from WHM when no plugin does.</summary>
+    /// <param name="server">The server.</param>
+    /// <param name="match">The plugin that serves the server's module, if any.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The accounts, or <see langword="null"/> when a cPanel server stores neither an API token nor an access hash.</returns>
+    /// <exception cref="DomainRuleException">Thrown with <c>PANEL_PLUGIN_CONFLICT</c> when two plugins serve the module, and with a panel code when the plugin refuses.</exception>
+    private async Task<IReadOnlyList<HostedAccountUsage>?> ReadAccountsAsync(Server server, ServerModulePluginMatch match, CancellationToken ct)
+    {
+        switch (match.Outcome)
+        {
+            case ServerModulePluginOutcome.Served:
+                return await _pluginReader.ReadAsync(match.PluginId!, server.ToConnection().ToPanelConnection(server.Password), ct);
+            case ServerModulePluginOutcome.Conflict:
+                throw new DomainRuleException(HostpanelErrorCodes.PANEL_PLUGIN_CONFLICT, "More than one plugin serves the server's module.");
+        }
+
+        CpanelWhmApi api;
+        if (!string.IsNullOrEmpty(server.ApiToken))
+        {
+            api = CpanelWhmApi.Create(server.Hostname, server.Username, server.ApiToken, _httpFactory);
+        }
+        else if (!string.IsNullOrEmpty(server.AccessHash))
+        {
+            api = CpanelWhmApi.CreateWithHash(server.Hostname, server.Username, server.AccessHash, _httpFactory);
+        }
+        else
+        {
+            return null;
+        }
+
+        var accounts = await api.ListAccountsAsync(ct);
+        return accounts
+            .Select(acct => new HostedAccountUsage(acct.Username, acct.Domain, acct.DiskUsedMb, acct.DiskLimitMb, acct.BwUsedMb, acct.BwLimitMb))
+            .ToList();
+    }
+
+    /// <summary>Writes one server's account usage into the cache, the one place both the cPanel and the plugin path store it.</summary>
+    /// <param name="server">The server the accounts live on.</param>
+    /// <param name="accounts">The usage the panel reported.</param>
+    /// <param name="domainToClient">Client name per lower cased domain, to label each row.</param>
+    /// <param name="cache">The cached rows keyed by server name and lower cased domain; new rows are added to it.</param>
+    private void Upsert(
+        Server server,
+        IReadOnlyList<HostedAccountUsage> accounts,
+        IReadOnlyDictionary<string, string> domainToClient,
+        Dictionary<(string ServerName, string Domain), Domain.Hosting.DiskUsageStat> cache)
+    {
+        var fetchedAt = _clock.UtcNow;
+
+        foreach (var acct in accounts)
+        {
+            var clientName = domainToClient.TryGetValue(acct.Domain.ToLowerInvariant(), out var cn) ? cn
+                : domainToClient.TryGetValue(acct.Username.ToLowerInvariant(), out var cu) ? cu
+                : acct.Username;
+
+            var key = (server.Name, acct.Domain.ToLowerInvariant());
+            if (cache.TryGetValue(key, out var stat))
+            {
+                stat.RecordUsage(acct.DiskUsedMb, acct.DiskLimitMb, acct.BwUsedMb, acct.BwLimitMb, fetchedAt);
+            }
+            else
+            {
+                var newStat = Domain.Hosting.DiskUsageStat.Create(
+                    server.Name, acct.Domain, clientName,
+                    acct.DiskUsedMb, acct.DiskLimitMb, acct.BwUsedMb, acct.BwLimitMb, fetchedAt);
+                _db.DiskUsageStats.Add(newStat);
+                cache[key] = newStat;
+            }
+        }
     }
 
     /// <summary>Groups the stored stats per server and formats the figures for display.</summary>

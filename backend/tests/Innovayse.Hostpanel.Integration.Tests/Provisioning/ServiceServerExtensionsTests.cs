@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -39,7 +38,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
             Hostname: "srv.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModule.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, "hash"),
             UseSSL: true,
@@ -49,7 +48,8 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), TestMoments.Seeded);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -73,7 +73,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
 
         server.Should().NotBeNull();
         server!.Id.Should().Be(serverId);
-        server.Module.Should().Be(ServerModule.Cwp7);
+        server.Module.Should().Be(ServerModules.CPanel);
         server.AccessHash.Should().Be("hash");
     }
 

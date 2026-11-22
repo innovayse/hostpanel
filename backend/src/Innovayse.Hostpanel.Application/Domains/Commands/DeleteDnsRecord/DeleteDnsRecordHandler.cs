@@ -62,13 +62,15 @@ public sealed class DeleteDnsRecordHandler
             return Result.FailureCode(HostpanelErrorCodes.DNS_RECORD_NOT_FOUND);
         }
 
+        // The registrar finds the record by what it holds, so the record is kept before it leaves the domain.
+        var removed = domain.DnsRecords.First(r => r.Id == cmd.RecordId!.Value).ToDetached();
         domain.RemoveDnsRecord(cmd.RecordId!.Value);
 
         if (domain.RegistrarRef is not null)
         {
             var registrar = await _registrars.ResolveAsync(domain, ct);
             var result = await registrar.DeleteDnsRecordAsync(
-                new DnsRecordRemoval(new DomainRef(domain.Name, domain.RegistrarRef), cmd.RecordId!.Value), ct);
+                new DnsRecordRemoval(new DomainRef(domain.Name, domain.RegistrarRef), removed), ct);
 
             if (!result.Success)
             {

@@ -1,0 +1,83 @@
+{
+  "seo": {
+    "home": {
+      "title": "{site}: hosting web, dominios y servidores {'|'} Portal de clientes",
+      "h1": "Hosting web, dominios y servidores con un portal de clientes de autoservicio",
+      "description": "{site} ofrece hosting web, registro de dominios, VPS y servidores dedicados con configuración automática, facturación en línea y un portal de clientes para gestionar servicios, facturas y soporte.",
+      "keywords": "hosting web, registro de dominios, VPS, servidores dedicados, certificados SSL, portal de clientes, facturación en línea, panel de control de hosting"
+    },
+    "contact": {
+      "title": "Contacto: póngase en contacto {'|'} {site}",
+      "description": "Contacte con {site} para recibir ayuda con hosting, dominios, servidores o facturación. Correo: contact{'@'}yourdomain.com, teléfono: +1 000 000 0000.",
+      "keywords": "contactar {site}, soporte de hosting, consultas de facturación, ayuda con dominios, consulta comercial"
+    },
+    "products": {
+      "title": "Servicios de hosting, servidores y dominios {'|'} {site}",
+      "description": "Explore los planes de hosting, servidores, dominios y servicios adicionales de {site}. Haga su pedido en línea y gestione todo desde su portal de clientes.",
+      "keywords": "servicios de hosting, VPS, servidores dedicados, dominios, certificados SSL, servicios adicionales, pedido en línea"
+    },
+    "faq": {
+      "title": "Preguntas frecuentes (FAQ) {'|'} {site}",
+      "description": "Encuentre respuestas a las preguntas frecuentes sobre hosting, dominios, servidores, facturación y su cuenta de cliente en {site}.",
+      "keywords": "preguntas frecuentes, dudas sobre hosting, dudas sobre dominios, facturación, facturas, soporte, cuenta de cliente"
+    },
+    "faqCategory": {
+      "general": {
+        "title": "Preguntas frecuentes generales {'|'} {site}",
+        "h1": "Preguntas generales",
+        "description": "Respuestas a las preguntas más comunes sobre pedidos, facturación, su cuenta de cliente y soporte.",
+        "keywords": "preguntas frecuentes generales, pedidos, facturación, cuenta de cliente, soporte, primeros pasos"
+      },
+      "products": {
+        "title": "Preguntas sobre hosting y servicios {'|'} {site}",
+        "h1": "Preguntas sobre hosting y servicios",
+        "description": "Respuestas sobre planes de hosting, dominios, servidores, precios, configuración y renovaciones.",
+        "keywords": "preguntas sobre hosting, preguntas sobre dominios, dudas sobre servidores, precios, configuración, renovaciones"
+      }
+    },
+    "hosting": {
+      "title": "Planes de hosting web rápido y fiable {'|'} {site}",
+      "description": "Elija el plan de hosting web adecuado para su sitio. Almacenamiento SSD, certificado SSL gratuito y soporte experto. Pida en línea y se configura automáticamente.",
+      "keywords": "hosting web, hosting SSD, hosting en la nube, planes de hosting web, hosting gestionado, hosting con SSL, panel de control de hosting"
+    },
+    "hostingPlan": {
+      "named": "{name}: plan de hosting web {'|'} {site}",
+      "title": "Detalles del plan de hosting {'|'} {site}",
+      "description": "Consulte la información detallada de nuestro plan de hosting. Almacenamiento SSD, SSL gratuito, alto rendimiento y soporte incluido.",
+      "keywords": "plan de hosting, hosting web, almacenamiento SSD, certificado SSL, hosting gestionado"
+    },
+    "domains": {
+      "title": "Registro y transferencia de dominios {'|'} {site}",
+      "description": "Registre o transfiera su nombre de dominio. Busque extensiones como .com, .net y .org y gestione DNS y renovaciones desde su portal de clientes.",
+      "keywords": "registro de dominios, transferencia de dominios, comprar dominio, búsqueda de dominios, renovación de dominios, gestión de DNS, privacidad WHOIS"
+    },
+    "legal": {
+      "aup": {
+        "title": "Política de uso aceptable {'|'} {site}",
+        "description": "Conozca las políticas de uso aceptable de los servicios de hosting, servidores y dominios de {site}."
+      },
+      "privacy": {
+        "title": "Política de privacidad {'|'} {site}",
+        "description": "Descubra cómo {site} recopila, utiliza y protege su información personal. Lea nuestra Política de privacidad para conocer el tratamiento de los datos."
+      },
+      "refund": {
+        "title": "Política de reembolso y cancelación {'|'} {site}",
+        "description": "Conozca las políticas de reembolso y cancelación de los servicios de hosting, servidores y dominios de {site}."
+      },
+      "terms": {
+        "title": "Condiciones del servicio {'|'} {site}",
+        "description": "Lea nuestras Condiciones del servicio para conocer las normas de uso de los servicios de {site}."
+      },
+      "cookies": {
+        "title": "Política de cookies {'|'} {site}",
+        "description": "Descubra cómo {site} utiliza cookies para mejorar su experiencia de navegación. Qué son las cookies, cómo las usamos y cómo puede gestionar sus preferencias.",
+        "ogDescription": "Descubra cómo {site} utiliza cookies en su sitio web y cómo puede gestionar sus preferencias.",
+        "twitterDescription": "Conozca cómo usamos cookies en nuestro sitio web"
+      }
+    },
+    "about": {
+      "title": "Sobre nosotros {'|'} {site}",
+      "description": "Quién es {site}, qué hace y cómo contactar con el equipo."
+    }
+  }
+}

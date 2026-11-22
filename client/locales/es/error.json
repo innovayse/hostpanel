@@ -1,0 +1,24 @@
+{
+  "error": {
+    "403": {
+      "title": "Acceso denegado",
+      "message": "No tiene permiso para acceder a esta página."
+    },
+    "404": {
+      "title": "Página no encontrada",
+      "message": "La página que busca no existe o se ha movido."
+    },
+    "500": {
+      "title": "Error del servidor",
+      "message": "Algo ha fallado por nuestra parte. Estamos trabajando para solucionarlo."
+    },
+    "goBack": "Volver",
+    "goHome": "Ir al inicio",
+    "helpText": "Si necesita ayuda, no dude en",
+    "contactUs": "contactarnos",
+    "default": {
+      "title": "Algo ha salido mal",
+      "message": "Se ha producido un error inesperado. Inténtelo de nuevo más tarde."
+    }
+  }
+}

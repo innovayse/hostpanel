@@ -16,7 +16,7 @@ import type {
   ServerGroupDto,
   ServerGroupPayload,
   ServerListFilters,
-  ServerModule,
+  ServerModuleOptionDto,
   ServerOptionDto,
   ServerPayload,
   TestConnectionResultDto,
@@ -37,6 +37,9 @@ export const useServersStore = defineStore('servers', () => {
 
   /** Every server as a lean option, for the screens that choose a server or sum up all of them. */
   const serverOptions = ref<ServerOptionDto[]>([])
+
+  /** The control panel modules a server can be given: the host's own and the ones installed panel plugins declare. */
+  const moduleOptions = ref<ServerModuleOptionDto[]>([])
 
   /** All server groups with their assigned servers. */
   const groups = ref<ServerGroupDto[]>([])
@@ -83,12 +86,24 @@ export const useServersStore = defineStore('servers', () => {
    * @param module - Keep only the servers that run this module; every server when omitted.
    * @returns Resolves when the request is over; a refusal is left in `error`.
    */
-  const fetchServerOptions = async (module?: ServerModule): Promise<void> => {
+  const fetchServerOptions = async (module?: string): Promise<void> => {
     optionsLoading.value = true
     const result = await runAction(error, () => api.listServerOptions(module))
     optionsLoading.value = false
     if (result.ok) {
       serverOptions.value = result.value
+    }
+  }
+
+  /**
+   * Loads the control panel modules a server can be given into `moduleOptions`, for the server form and the module filter.
+   *
+   * @returns Resolves when the request is over; a refusal is left in `error`.
+   */
+  const fetchModuleOptions = async (): Promise<void> => {
+    const result = await runAction(error, () => api.listServerModules())
+    if (result.ok) {
+      moduleOptions.value = result.value
     }
   }
 
@@ -186,6 +201,7 @@ export const useServersStore = defineStore('servers', () => {
     pageSize,
     totalCount,
     serverOptions,
+    moduleOptions,
     groups,
     loading,
     optionsLoading,
@@ -194,6 +210,7 @@ export const useServersStore = defineStore('servers', () => {
     fieldErrors,
     fetchServers,
     fetchServerOptions,
+    fetchModuleOptions,
     fetchGroups,
     createServer,
     updateServer,

@@ -14,9 +14,6 @@ public static class IntegrationCatalogue
     /// <summary>Category label of the payment gateways.</summary>
     private const string PaymentGateways = "Payment Gateways";
 
-    /// <summary>Category label of the domain registrars.</summary>
-    private const string DomainRegistrars = "Domain Registrars";
-
     /// <summary>Category label of the hosting and provisioning panels.</summary>
     private const string HostingProvisioning = "Hosting / Provisioning";
 
@@ -31,9 +28,6 @@ public static class IntegrationCatalogue
 
     /// <summary>Input kind of a multi-line text field.</summary>
     private const IntegrationFieldType TextArea = IntegrationFieldType.TextArea;
-
-    /// <summary>Input kind of an on/off switch.</summary>
-    private const IntegrationFieldType Toggle = IntegrationFieldType.Toggle;
 
     /// <summary>
     /// Integrations shown in the list and the detail form, in display order. The hosted payment
@@ -51,33 +45,6 @@ public static class IntegrationCatalogue
                 new(BankTransferFields.ExpiryDays, "Days until an unconfirmed transfer lapses", Text, Required: false),
             ],
             []),
-        [IntegrationSlugs.Namecheap] = new("Namecheap", DomainRegistrars,
-            [
-                new("api_key", "API Key", Password, Required: true),
-                new("api_username", "API Username", Text, Required: true),
-                new("client_ip", "Whitelisted Client IP", Text, Required: true),
-            ],
-            ["api_key", "api_username", "client_ip"]),
-        [IntegrationSlugs.NameAm] = new("Name.am", DomainRegistrars,
-            [
-                new("email", "Account Email", Text, Required: true),
-                new("password", "Account Password", Password, Required: true),
-                new("api_url", "API URL", Text, Required: false),
-                new("test_mode", "Test Mode", Toggle, Required: false),
-            ],
-            ["email", "password"]),
-        [IntegrationSlugs.ResellerClub] = new("ResellerClub", DomainRegistrars,
-            [
-                new("reseller_id", "Reseller ID", Text, Required: true),
-                new("api_key", "API Key", Password, Required: true),
-            ],
-            ["reseller_id", "api_key"]),
-        [IntegrationSlugs.Enom] = new("ENOM", DomainRegistrars,
-            [
-                new("account_id", "Account ID", Text, Required: true),
-                new("api_key", "API Key", Password, Required: true),
-            ],
-            ["account_id", "api_key"]),
         [IntegrationSlugs.Cpanel] = new("cPanel WHM", HostingProvisioning,
             [
                 new("host", "WHM Host", Text, Required: true),
@@ -86,14 +53,6 @@ public static class IntegrationCatalogue
                 new("api_token", "API Token", Password, Required: true),
             ],
             ["host", "username", "api_token"]),
-        [IntegrationSlugs.Plesk] = new("Plesk", HostingProvisioning,
-            [
-                new("host", "Plesk Host", Text, Required: true),
-                new("port", "Port", Text, Required: false),
-                new("username", "Username", Text, Required: true),
-                new("password", "Password", Password, Required: true),
-            ],
-            ["host", "username", "password"]),
         [IntegrationSlugs.Cwp] = new("CentOS Web Panel", HostingProvisioning,
             [
                 new("host", "CWP Host", Text, Required: true),
@@ -101,7 +60,6 @@ public static class IntegrationCatalogue
                 new("api_key", "API Key", Password, Required: true),
             ],
             ["host", "api_key"]),
-        [IntegrationSlugs.Cwp7] = new("CWP7", HostingProvisioning, [], []),
         [IntegrationSlugs.Smtp] = new("SMTP Server", "Email / SMTP",
             [
                 new("host", "SMTP Host", Text, Required: true),

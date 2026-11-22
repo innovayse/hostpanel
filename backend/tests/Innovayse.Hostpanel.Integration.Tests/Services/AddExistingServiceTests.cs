@@ -4,7 +4,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.AddExistingService;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -95,7 +95,7 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
     public async Task AddExisting_OnCPanel_RefusesAUsernameThePanelCannotBeAskedAboutAsync()
     {
         var ids = await SeedClientAndProductAsync();
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModule.CPanel);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.CPanel);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
         var body = new
         {

@@ -22,6 +22,7 @@ import {
   parsePluginChatStep,
   pluginDocumentLoaded,
   pluginFrameAddress,
+  pluginFrameRevisionAddress,
   fillPluginPath,
   pluginMenuLinks,
   formatPluginValue,
@@ -744,5 +745,21 @@ describe('pluginOpenUrlTarget', () => {
     [null, 'no reply'],
   ])('refuses %j (%s)', (reply) => {
     expect(pluginOpenUrlTarget(reply, 'url', origins)).toBeNull()
+  })
+})
+
+describe('pluginFrameRevisionAddress', () => {
+  it('keeps the plain address for the first drawing', () => {
+    expect(pluginFrameRevisionAddress('https://a.example/p', 0)).toBe('https://a.example/p')
+  })
+
+  it('puts the revision in the query, beside the query the address has', () => {
+    expect(pluginFrameRevisionAddress('https://a.example/p', 2)).toBe('https://a.example/p?hp-revision=2')
+    expect(pluginFrameRevisionAddress('https://a.example/p?x=1', 3)).toBe('https://a.example/p?x=1&hp-revision=3')
+  })
+
+  it('replaces a revision the address already carries, and leaves a plugin query parameter named revision alone', () => {
+    expect(pluginFrameRevisionAddress('https://a.example/p?hp-revision=1', 2)).toBe('https://a.example/p?hp-revision=2')
+    expect(pluginFrameRevisionAddress('https://a.example/p?revision=9', 2)).toBe('https://a.example/p?revision=9&hp-revision=2')
   })
 })

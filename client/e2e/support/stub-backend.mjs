@@ -464,6 +464,12 @@ const routePlugin = (method, path, res, query, language, body) => {
     }
     return true
   }
+  // A provisioning plugin's backups tab (#1357): the plugin answers for the managed service on screen. The stub cannot prove
+  // that a plugin's route reaches only the caller's own service, the C# tests of the route do.
+  if (method === 'GET' && path === `${own}/backups/${SERVICE_MANAGED.id}`) {
+    send(res, 200, { status: 'Protected' })
+    return true
+  }
   if (method === 'GET' && path === `${own}/sites`) {
     send(res, 200, [{ id: PLUGIN_SITE.id, name: PLUGIN_SITE.name, status: pluginSiteStatus }])
     return true

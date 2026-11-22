@@ -21,7 +21,7 @@ import UiText from '@/components/ui/UiText.vue'
 import ServerFacts from '@/components/servers/ServerFacts.vue'
 import { EMPTY_VALUE, formatDateTime, formatRelativeFromNow } from '@/lib/format'
 import { SERVER_STATE_KEYS, SERVER_STATE_TONES, serverAccountsLabel, serverLoadPercent, serverState } from '@/lib/servers'
-import { MODULE_LABELS } from '@/types/server'
+import { moduleLabel } from '@/types/server'
 import type { ServerDto, ServerTestOutcome } from '@/types/server'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTextTag } from '@/utils/ui/text'
@@ -76,11 +76,11 @@ const state = computed<{ tone: UiTone; key: string } | null>(() => {
     <UiStack gap="md">
       <UiStack direction="row" justify="between" align="start" gap="sm">
         <UiStack gap="xs" class="min-w-0">
-          <UiText v-if="server" tone="muted" size="xs" class="font-semibold" :data-testid="`servers-module-${server.module}`">{{ MODULE_LABELS[server.module] }}</UiText>
+          <UiText v-if="server" tone="muted" size="xs" class="font-semibold" :data-testid="`servers-module-${server.module}`">{{ moduleLabel(server.module) }}</UiText>
           <UiSkeletonBar v-else class="h-3 w-16 rounded" aria-hidden="true" />
           <UiStack v-if="server" direction="row" align="center" gap="sm" wrap>
             <UiText tone="primary" size="lg" class="min-w-0 break-words font-medium">{{ server.name }}</UiText>
-            <UiTooltip v-if="server.limits.isDefault" :text="t('servers.servers.defaultHint', { module: MODULE_LABELS[server.module] })">
+            <UiTooltip v-if="server.limits.isDefault" :text="t('servers.servers.defaultHint', { module: moduleLabel(server.module) })">
               <UiBadge tone="warning" small data-testid="server-default-badge">{{ t('servers.servers.default') }}</UiBadge>
             </UiTooltip>
             <UiTooltip v-if="server.limits.isDisabled" :text="t('servers.servers.disabledHint')">

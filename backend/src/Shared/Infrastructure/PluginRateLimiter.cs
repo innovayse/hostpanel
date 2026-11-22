@@ -51,6 +51,9 @@ public sealed class PluginRateLimiter : IDisposable
 
             // What a plugin changes on a client's hosting, taken by the plugin hosting path per plugin and client (#1294).
             [RateLimitPolicies.HostingResources] = SlidingWindow(limits.HostingResources, disabled),
+
+            // How often a payment plugin's callback may ask for one gateway order to be read, per plugin and order (#1356).
+            [RateLimitPolicies.PluginOrderRead] = SlidingWindow(limits.PluginOrderRead, disabled),
         };
 
         _streams = PartitionedRateLimiter.Create<string, string>(key => disabled
@@ -70,7 +73,7 @@ public sealed class PluginRateLimiter : IDisposable
 
     /// <summary>Takes one request from a tier's budget.</summary>
     /// <param name="policy">One of <see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>,
-    /// <see cref="RateLimitPolicies.PluginHeavy"/>, <see cref="RateLimitPolicies.SshKeys"/> or <see cref="RateLimitPolicies.HostingResources"/>.</param>
+    /// <see cref="RateLimitPolicies.PluginHeavy"/>, <see cref="RateLimitPolicies.SshKeys"/>, <see cref="RateLimitPolicies.HostingResources"/> or <see cref="RateLimitPolicies.PluginOrderRead"/>.</param>
     /// <param name="key">The partition, from <see cref="KeyFor"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The lease; <see cref="RateLimitLease.IsAcquired"/> is false when the budget is spent.</returns>

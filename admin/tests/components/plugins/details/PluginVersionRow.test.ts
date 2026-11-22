@@ -49,6 +49,12 @@ describe('PluginVersionRow', () => {
     expect(wrapper.get('[data-testid="plugin-version-compatibility-3.0.0"]').text()).toBe('Does not run on this host')
   })
 
+  it('names the SDK a version was built on beside its host range, and says nothing when the registry does not state it', () => {
+    expect(mountRow({ sdkPackageVersion: '3.11.0' }).get('[data-testid="plugin-version-sdk-3.0.0"]').text()).toBe('Built on SDK 3.11.0')
+    expect(mountRow({ sdkPackageVersion: '' }).find('[data-testid="plugin-version-sdk-3.0.0"]').exists()).toBe(false)
+    expect(mountRow().find('[data-testid="plugin-version-sdk-3.0.0"]').exists()).toBe(false)
+  })
+
   it('shows the release notes and the permissions, or says there are none', () => {
     const withBoth = mountRow({ changelog: 'Faster refunds.', permissions: ['payments.charge', 'orders.read'] })
     const withNone = mountRow()

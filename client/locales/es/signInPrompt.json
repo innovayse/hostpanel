@@ -1,0 +1,7 @@
+{
+  "signInPrompt": {
+    "message": "No ha iniciado sesión. Inicie sesión para ver sus servicios, facturas y tickets.",
+    "signIn": "Iniciar sesión",
+    "dismiss": "Ahora no"
+  }
+}

@@ -46,6 +46,20 @@ public static class StatusMapping
             // Exact row: the panel could not be asked or its answer was lost, so the outcome is unknown and a retry
             // settles it; the name carries no token for a generic arm.
             "PROVISIONING_OUTCOME_UNKNOWN" => new(503, "Service Unavailable"),
+            // Exact row: the panel accepted the account and is still creating it, a retry signal like the unknown outcome above;
+            // the name carries no token for a generic arm.
+            "PROVISIONING_PENDING" => new(503, "Service Unavailable"),
+            // Exact row: the plugin that serves the server's panel is switched off, unconfigured or broken, a dependency that
+            // cannot answer now (503 with Retry-After), and the name carries no token for a generic arm.
+            "PANEL_PLUGIN_UNAVAILABLE" => new(503, "Service Unavailable"),
+            // Exact rows: the panel refused the action because of the service's own state or data (a conflict), and
+            // PANEL_ACCOUNT_NOT_FOUND must not answer 404, which would read as a missing route; the names carry no CONFLICT /
+            // ALREADY token and one carries NOT_FOUND.
+            "PANEL_OPERATION_NOT_SUPPORTED" or "PANEL_ACCOUNT_NOT_FOUND" or "PANEL_PACKAGE_UNKNOWN" or "PANEL_USERNAME_INVALID"
+                or "PANEL_DOMAIN_INVALID" or "PANEL_PASSWORD_REJECTED" or "PANEL_LIMIT_REACHED" => new(409, "Conflict"),
+            // Exact rows: the panel refused the host's own credentials or the request outright, an upstream failure (502); the
+            // access denied code must not answer 403, which would read as the caller lacking a permission.
+            "PANEL_ACCESS_DENIED" or "PANEL_REFUSED" => new(502, "Bad Gateway"),
             // Exact row: the order number sequence outgrew the configured number length, a state of
             // the deployment rather than of the request, and the name carries no token for it.
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),
@@ -78,6 +92,8 @@ public static class StatusMapping
             "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
             // Exact row: the package is well formed, but the running host version is outside the range it declares.
             "PLUGIN_HOST_VERSION_OUT_OF_RANGE" => new(409, "Conflict"),
+            // Exact row: the package is well formed, but it was built against a newer SDK than this host ships.
+            "PLUGIN_SDK_NEWER_THAN_HOST" => new(409, "Conflict"),
             // Exact rows: the plugin registry is a dependency of the install, not part of the caller's request. Off in this
             // deployment is a state conflict (409); unreachable, a bad reply, a refused or altered package are a gateway
             // failing (502); no answer in time is a gateway timeout (504); the operator's trust policy declining a
@@ -158,6 +174,13 @@ public static class StatusMapping
             // deployment's state rather than the caller's (503).
             "REGISTRAR_DOMAIN_UNAVAILABLE" => new(409, "Conflict"),
             "REGISTRAR_INSUFFICIENT_FUNDS" => new(503, "Service Unavailable"),
+            // Exact rows: the registrar's refusal of what the plugin was asked, each a state or a
+            // meaning the registrar rejects rather than a malformed request (409 and 422), and the
+            // operator's own credentials the registrar turned down (503, as an empty balance is).
+            "REGISTRAR_TLD_NOT_SUPPORTED" or "REGISTRAR_TRANSFER_NOT_ALLOWED" => new(409, "Conflict"),
+            "REGISTRAR_EPP_CODE_INVALID" or "REGISTRAR_NAMESERVER_INVALID" or "REGISTRAR_DNS_RECORD_INVALID"
+                => new(422, "Unprocessable Content"),
+            "REGISTRAR_ACCESS_DENIED" => new(503, "Service Unavailable"),
             // Exact row: the body parsed but moves no money, a meaning that is wrong rather than a
             // malformed request.
             "TRANSACTION_AMOUNT_REQUIRED" => new(422, "Unprocessable Content"),

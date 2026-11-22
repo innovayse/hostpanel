@@ -25,7 +25,8 @@
   "localeLabels": {
     "en": "English",
     "hy": "Հայերեն",
-    "ru": "Русский"
+    "ru": "Русский",
+    "de": "Deutsch"
   },
   "theme": {
     "label": "Թեմա",

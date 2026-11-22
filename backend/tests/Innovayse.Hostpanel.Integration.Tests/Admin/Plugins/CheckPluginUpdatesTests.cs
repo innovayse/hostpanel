@@ -151,7 +151,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
         var registry = new FakePluginRegistryClient();
         var pluginId = $"test-lic-{Guid.NewGuid():N}";
         registry.Publish(pluginId, "1.5.0", [1]);
-        registry.LicensedVersions[pluginId] = [new RegistryPluginVersion("3.0.0", "1.0", 1, TestMoments.Seeded, PluginRegistryVersionStatus.Published, null, null, null, null, null, [], null, [])];
+        registry.LicensedVersions[pluginId] = [new RegistryPluginVersion("3.0.0", "1.0.0", 1, TestMoments.Seeded, PluginRegistryVersionStatus.Published, null, null, null, null, null, [], null, [])];
         registry.Details[pluginId] = new RegistryPluginDetails(
             registry.Details[pluginId].Summary with { LatestVersion = "3.0.0" }, null, null, null, null, null, null, null);
         var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);

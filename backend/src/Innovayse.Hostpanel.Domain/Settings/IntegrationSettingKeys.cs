@@ -20,17 +20,8 @@ public static class IntegrationSettingKeys
     /// <summary>The stored value of an enabled flag that is off.</summary>
     public const string DisabledValue = "false";
 
-    /// <summary>The field name that stores whether a registrar runs against its test endpoint.</summary>
-    public const string TestModeField = "test_mode";
-
-    /// <summary>The field name that stores a registrar account's e-mail address.</summary>
-    public const string EmailField = "email";
-
     /// <summary>The field name that stores a registrar account's password.</summary>
     public const string PasswordField = "password";
-
-    /// <summary>The field name that stores a registrar's API base URL.</summary>
-    public const string ApiUrlField = "api_url";
 
     /// <summary>The field name that stores a hosting panel's host.</summary>
     public const string HostField = "host";

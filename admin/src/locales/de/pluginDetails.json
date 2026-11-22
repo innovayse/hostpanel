@@ -1,0 +1,153 @@
+{
+  "tabs": {
+    "label": "Plugin-Bereiche",
+    "overview": "Übersicht",
+    "versions": "Versionen",
+    "licence": "Lizenz",
+    "changes": "Änderungen",
+    "settings": "Einstellungen"
+  },
+  "notFoundTitle": "Plugin nicht gefunden",
+  "notFoundDescription": "Dieses Plugin ist auf diesem Server nicht installiert.",
+  "verified": "Verifiziert",
+  "pricing": {
+    "Free": "Kostenlos",
+    "Paid": "Kostenpflichtig",
+    "Private": "Privat"
+  },
+  "byAuthor": "von {author}",
+  "installedVersion": "Installiert: {version}",
+  "staged": "Version {version} vorbereitet, wird nach dem Neustart angewendet",
+  "updateAvailable": "Update verfügbar: {version}",
+  "updateTo": "Auf {version} aktualisieren",
+  "uninstall": "Deinstallieren",
+  "links": {
+    "heading": "Links",
+    "documentation": "Dokumentation",
+    "support": "Support",
+    "repository": "Quell-Repository",
+    "buy": "Lizenz kaufen",
+    "licence": "Lizenz: {licence}"
+  },
+  "licence": {
+    "heading": "Lizenzschlüssel",
+    "saved": "Schlüssel gespeichert",
+    "missing": "Kein Schlüssel gespeichert",
+    "description": "Dieses Plugin benötigt einen Lizenzschlüssel. Der Schlüssel ist nur schreibbar: Er wird auf diesem Server gespeichert und nie wieder angezeigt.",
+    "label": "Lizenzschlüssel",
+    "placeholder": "Lizenzschlüssel einfügen",
+    "save": "Schlüssel speichern",
+    "remove": "Schlüssel entfernen",
+    "needed": "Speichern Sie einen Lizenzschlüssel, bevor Sie dieses Plugin installieren."
+  },
+  "versions": {
+    "heading": "Versionen",
+    "emptyTitle": "Keine Versionen aufgeführt",
+    "emptyDescription": "Die Registry listet keine Version dieses Plugins auf.",
+    "status": {
+      "Published": "Veröffentlicht",
+      "Deprecated": "Veraltet",
+      "Yanked": "Zurückgezogen"
+    },
+    "installed": "Installiert",
+    "staged": "Vorbereitet",
+    "latest": "Neueste",
+    "compatible": "Läuft auf diesem Host",
+    "incompatible": "Läuft nicht auf diesem Host",
+    "action": {
+      "fresh": "Installieren",
+      "current": "Installiert",
+      "newer": "Aktualisieren",
+      "older": "Downgrade"
+    },
+    "published": "Veröffentlicht am {date}",
+    "hostRange": "Host-Versionen {min} bis {max}",
+    "hostMin": "Host-Version {min} oder neuer",
+    "hostMax": "Host-Version {max} oder älter",
+    "hostAny": "Läuft auf jeder Host-Version",
+    "sdk": "Mit SDK {version} erstellt",
+    "reason": "Grund: {reason}",
+    "noReason": {
+      "Deprecated": "Der Herausgeber hat diese Version als veraltet markiert.",
+      "Yanked": "Der Herausgeber hat diese Version zurückgezogen, sie kann nicht installiert werden."
+    },
+    "replacement": "Verwenden Sie stattdessen Version {version}.",
+    "changelog": "Versionshinweise",
+    "noChangelog": "Keine Versionshinweise.",
+    "permissions": "Berechtigungen",
+    "noPermissions": "Fordert keine Berechtigungen an."
+  },
+  "confirm": {
+    "installTitle": "Diese Version installieren?",
+    "installMessage": "Version {version} von {name} installieren? Die Änderung wird nach einem Server-Neustart wirksam.",
+    "install": "Installieren",
+    "downgradeTitle": "Eine ältere Version installieren?",
+    "downgradeMessage": "Version {version} von {name} ist älter als die installierte Version {installed}. Eine ältere Version enthält möglicherweise keine Fehlerbehebungen und kann Daten, die die neuere geschrieben hat, eventuell nicht lesen. Die Änderung wird nach einem Server-Neustart wirksam. Trotzdem installieren?",
+    "downgrade": "Ältere Version installieren"
+  },
+  "feedback": {
+    "licenceSaved": "Der Lizenzschlüssel wurde gespeichert.",
+    "licenceRemoved": "Der Lizenzschlüssel wurde entfernt."
+  },
+  "changes": {
+    "heading": "Änderungen von {from} auf {to}",
+    "headingFresh": "Versionshinweise zu {version}"
+  },
+  "settings": {
+    "emptyTitle": "Keine Einstellungen",
+    "emptyDescription": "Dieses Plugin hat keine änderbaren Einstellungen."
+  },
+  "title": "Plugin",
+  "overview": {
+    "details": "Details",
+    "installation": "Installation",
+    "compatibility": "Kompatibilität",
+    "permissions": "Berechtigungen",
+    "noDescription": "Das Plugin enthält keine Beschreibung.",
+    "notGiven": "Nicht angegeben",
+    "notRecorded": "Nicht erfasst",
+    "notUpdated": "Seit der Installation nicht aktualisiert",
+    "author": "Autor",
+    "type": "Typ",
+    "category": "Kategorie",
+    "id": "Plugin-ID",
+    "types": {
+      "provisioning": "Hosting-Bereitstellung",
+      "payment": "Zahlungs-Gateway",
+      "registrar": "Domain-Registrar",
+      "identity": "Anmeldung und Kundenidentität",
+      "fulfilment": "Fulfillment digitaler Produkte",
+      "hosted": "Hintergrunddienst",
+      "app": "App mit eigenen Seiten"
+    },
+    "state": {
+      "label": "Zustand",
+      "running": "Geladen und aktiv",
+      "afterRestart": "Wird nach dem nächsten Neustart geladen",
+      "refused": "Beim Start abgelehnt",
+      "loadFailed": "Beim Start nicht geladen"
+    },
+    "sourceLabel": "Quelle",
+    "source": {
+      "BuiltIn": "Im Lieferumfang des Servers",
+      "Uploaded": "Hochgeladene Paketdatei",
+      "Registry": "Plugin-Registry"
+    },
+    "installedAt": "Installiert",
+    "updatedAt": "Zuletzt aktualisiert",
+    "installedBy": "Installiert von",
+    "signerLabel": "Signiert von",
+    "signer": {
+      "Unsigned": "Nicht signiert",
+      "VerifiedPublisher": "Einem verifizierten Herausgeber",
+      "OwnKey": "Ihrem eigenen Schlüssel"
+    },
+    "signerKey": "Signaturschlüssel",
+    "size": "Paketgröße",
+    "sha256": "SHA-256 des Pakets",
+    "installedVersion": "Installierte Version",
+    "stagedVersion": "Vorbereitete Version",
+    "hostVersions": "Serverversionen",
+    "sdkVersion": "Plugin-SDK"
+  }
+}

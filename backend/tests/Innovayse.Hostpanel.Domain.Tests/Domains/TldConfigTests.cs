@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Domains;
 
@@ -9,7 +8,7 @@ public sealed class TldConfigTests
     /// <summary>Builds a TLD configuration the tests act on.</summary>
     /// <returns>A new configuration for <c>.com</c>.</returns>
     private static TldConfig NewConfig() =>
-        TldConfig.Create(" .COM ", RegistrarModule.NameAm, "AMD", "USD", true, 1, ["popular"]);
+        TldConfig.Create(" .COM ", "registrar-one", "AMD", "USD", true, 1, ["popular"]);
 
     /// <summary>Create trims and lower-cases the extension and keeps the other fields.</summary>
     [Fact]
@@ -23,6 +22,30 @@ public sealed class TldConfigTests
         config.IsEnabled.Should().BeTrue();
         config.Categories.Should().Equal("popular");
         config.LastSyncedAt.Should().BeNull();
+    }
+
+    /// <summary>Create keeps the registrar plugin id without the spaces around it, and a blank id is refused.</summary>
+    [Fact]
+    public void Create_TrimsTheRegistrarModuleAndRefusesABlankOne()
+    {
+        var config = TldConfig.Create("com", " registrar-one ", "AMD", "USD", true, 1, []);
+
+        config.RegistrarModule.Should().Be("registrar-one");
+        FluentActions.Invoking(() => TldConfig.Create("com", " ", "AMD", "USD", true, 1, []))
+            .Should().Throw<ArgumentException>();
+    }
+
+    /// <summary>Update replaces the registrar module with the trimmed id, and a blank id is refused.</summary>
+    [Fact]
+    public void Update_ReplacesTheRegistrarModuleAndRefusesABlankOne()
+    {
+        var config = NewConfig();
+
+        config.Update("registrar-two ", "AMD", "USD", true, 1, []);
+
+        config.RegistrarModule.Should().Be("registrar-two");
+        FluentActions.Invoking(() => config.Update("", "AMD", "USD", true, 1, []))
+            .Should().Throw<ArgumentException>();
     }
 
     /// <summary>UpdateSellPrices replaces the three sell price tables.</summary>

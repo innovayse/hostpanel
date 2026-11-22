@@ -7,6 +7,7 @@ using Hostpanel.Sdk.Plugins.Slots;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -61,6 +62,33 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
     /// <summary>The highest product id the greedy plugin's manifest lists, far above any product a test seeds.</summary>
     public const int GreedyProductIdCeiling = 100_000;
 
+    /// <summary>Gets the id of an enabled plugin that declares <c>hostAccess: ["serviceConnection"]</c> (#1357).</summary>
+    public string ConnectionPluginId { get; } = PluginActivationTestSeeds.NewId("conn");
+
+    /// <summary>Gets the id of a second enabled plugin that declares service connection access, which must never use the first one's binding.</summary>
+    public string OtherConnectionPluginId { get; } = PluginActivationTestSeeds.NewId("conn-other");
+
+    /// <summary>
+    /// Gets the id of an enabled plugin that declares service connection access and whose service tab widget's manifest lists
+    /// every product id up to <see cref="GreedyProductIdCeiling"/>; no operator binds it.
+    /// </summary>
+    public string GreedyConnectionPluginId { get; } = PluginActivationTestSeeds.NewId("conn-greedy");
+
+    /// <summary>
+    /// Gets the id of an enabled plugin of each type in <see cref="ServingPluginTypes.Types"/> that declares <c>endpoints</c> and
+    /// <c>serviceConnection</c>, implements the endpoints contract and answers a client route that reads the server connection
+    /// of the service named in the path (#1357).
+    /// </summary>
+    public IReadOnlyDictionary<PluginType, string> ServingPluginIds { get; } = ServingPluginTypes.Types.ToDictionary(
+        type => type, type => PluginActivationTestSeeds.NewId($"route-{type.ToString().ToLowerInvariant()}"));
+
+    /// <summary>
+    /// Gets the id of an enabled plugin of each type that declares the routes and widgets of <see cref="ServingPluginIds"/> but
+    /// not the <c>endpoints</c> capability, so the host serves none of them.
+    /// </summary>
+    public IReadOnlyDictionary<PluginType, string> PlainServingPluginIds { get; } = ServingPluginTypes.Types.ToDictionary(
+        type => type, type => PluginActivationTestSeeds.NewId($"plain-{type.ToString().ToLowerInvariant()}"));
+
     /// <summary>Gets the id of an enabled plugin that declares <c>hostAccess: ["websites"]</c> only.</summary>
     public string WebsitesPluginId { get; } = PluginActivationTestSeeds.NewId("websites");
 
@@ -92,11 +120,19 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
             Plugin(SshPluginId, [PluginHostAccess.Ssh]),
             Plugin(OtherSshPluginId, [PluginHostAccess.Ssh]),
             Plugin(GreedySshPluginId, [PluginHostAccess.Ssh], [.. Enumerable.Range(1, GreedyProductIdCeiling)]),
+            Plugin(ConnectionPluginId, [PluginHostAccess.ServiceConnection]),
+            Plugin(OtherConnectionPluginId, [PluginHostAccess.ServiceConnection]),
+            Plugin(GreedyConnectionPluginId, [PluginHostAccess.ServiceConnection], [.. Enumerable.Range(1, GreedyProductIdCeiling)]),
             Plugin(WebsitesPluginId, [PluginHostAccess.Websites]),
             Plugin(DatabasesPluginId, [PluginHostAccess.Databases]),
             Plugin(HostingPluginId, [PluginHostAccess.Websites, PluginHostAccess.Databases]),
             Plugin(OtherHostingPluginId, [PluginHostAccess.Websites, PluginHostAccess.Databases]),
             Plugin(PlainPluginId, []));
+
+        foreach (var serving in ServingPlugins())
+        {
+            registry.Register(serving);
+        }
 
         using (var scope = Factory.Services.CreateScope())
         {
@@ -107,10 +143,14 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
                 OtherSshPluginId,
                 PlainPluginId,
                 GreedySshPluginId,
+                ConnectionPluginId,
+                OtherConnectionPluginId,
+                GreedyConnectionPluginId,
                 WebsitesPluginId,
                 DatabasesPluginId,
                 HostingPluginId,
                 OtherHostingPluginId);
+            await PluginActivationTestSeeds.EnableAsync(db, [.. ServingPluginIds.Values, .. PlainServingPluginIds.Values]);
         }
 
         Host = Factory.WithWebHostBuilder(builder =>
@@ -183,7 +223,7 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
     /// <summary>
     /// Seeds a client with one active service on a fresh server, whose domain is <c>{label}.example.test</c>, bound to no
     /// plugin. A binding replaces the plugin's whole product list, so a test with several services binds them in one
-    /// <see cref="BindProductsOfAsync"/> call after seeding all of them.
+    /// <see cref="BindProductsOfAsync(string, int[])"/> call after seeding all of them.
     /// </summary>
     /// <param name="label">Label for the generated e-mail and the service's domain.</param>
     /// <returns>The owner, server and service.</returns>
@@ -344,6 +384,25 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
         return SshTestSeeds.OwnerWithServiceAsync(Factory, label);
     }
 
+    /// <summary>Seeds a client with one active service on a fresh server that stores a password, a token and an access hash.</summary>
+    /// <param name="label">Label for the generated e-mail.</param>
+    /// <param name="credentials">The credentials the server stores.</param>
+    /// <returns>The owner, server and service.</returns>
+    public Task<SshOwnerScenario> OwnerWithCredentialsAsync(string label, ServerCredentials credentials)
+    {
+        return SshTestSeeds.OwnerWithServiceAsync(Factory, label, credentials);
+    }
+
+    /// <summary>Runs <paramref name="act"/> against the service connection API one plugin call is handed.</summary>
+    /// <typeparam name="T">What the action answers.</typeparam>
+    /// <param name="binding">The call.</param>
+    /// <param name="act">What the plugin does with the service connection API.</param>
+    /// <returns>What <paramref name="act"/> answered.</returns>
+    public Task<T> AsConnectionPluginAsync<T>(PluginCallBinding binding, Func<IPluginHostServiceConnectionApi, Task<T>> act)
+    {
+        return AsPluginAsync(binding, api => act((IPluginHostServiceConnectionApi)api));
+    }
+
     /// <summary>
     /// Binds exactly the products of <paramref name="serviceIds"/> to <paramref name="pluginId"/>'s service tab widget
     /// through the admin route an operator uses (#823), replacing any earlier binding; no services unbinds every product.
@@ -351,7 +410,20 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
     /// <param name="pluginId">The plugin.</param>
     /// <param name="serviceIds">Services whose products are bound.</param>
     /// <returns>A task that completes when the binding is stored.</returns>
-    public async Task BindProductsOfAsync(string pluginId, params int[] serviceIds)
+    public Task BindProductsOfAsync(string pluginId, params int[] serviceIds)
+    {
+        return BindProductsOfAsync(pluginId, ServiceTabWidget, serviceIds);
+    }
+
+    /// <summary>
+    /// Binds exactly the products of <paramref name="serviceIds"/> to one service tab widget of <paramref name="pluginId"/>
+    /// through the admin route an operator uses (#823), replacing any earlier binding; no services unbinds every product.
+    /// </summary>
+    /// <param name="pluginId">The plugin.</param>
+    /// <param name="widgetId">The widget the plugin puts into the client service tabs slot.</param>
+    /// <param name="serviceIds">Services whose products are bound.</param>
+    /// <returns>A task that completes when the binding is stored.</returns>
+    public async Task BindProductsOfAsync(string pluginId, string widgetId, params int[] serviceIds)
     {
         var productIds = new List<int>();
         foreach (var serviceId in serviceIds)
@@ -361,7 +433,7 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
 
         using var admin = await AdminClientAsync();
         var response = await admin.PutAsJsonAsync(
-            $"/api/admin/plugins/{pluginId}/slot-widgets/{PluginSlots.ClientServiceTabs}/{ServiceTabWidget}", new { productIds });
+            $"/api/admin/plugins/{pluginId}/slot-widgets/{PluginSlots.ClientServiceTabs}/{widgetId}", new { productIds });
         response.EnsureSuccessStatusCode();
     }
 
@@ -557,6 +629,18 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
     private static string Quote(string identifier)
     {
         return "\"" + identifier.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+    }
+
+    /// <summary>Builds the serving plugin of every type in <see cref="ServingPluginTypes.Types"/> and its twin without the <c>endpoints</c> capability.</summary>
+    /// <returns>The loaded plugins.</returns>
+    private IEnumerable<LoadedPlugin> ServingPlugins()
+    {
+        foreach (var type in ServingPluginTypes.Types)
+        {
+            var implementation = PluginCapabilitySeeds.ImplementationOf(type);
+            yield return PluginCapabilitySeeds.Serving(ServingPluginIds[type], type, implementation, PluginCapabilities.Endpoints);
+            yield return PluginCapabilitySeeds.Serving(PlainServingPluginIds[type], type, implementation);
+        }
     }
 
     /// <summary>Builds an app plugin whose manifest declares <paramref name="hostAccess"/>.</summary>

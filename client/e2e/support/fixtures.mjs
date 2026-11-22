@@ -1063,7 +1063,8 @@ export const SLOT_PLUGIN_ID = 'acme-sites'
 
 /**
  * The fake widgets' view documents by widget id: `ok` renders text; `broken` is a tabs block with no
- * tab list, which throws while it is set up, so the slot must isolate it; `slow` is answered only after
+ * tab list, which throws while it is set up, so the slot must isolate it; `backups` is a provisioning plugin's service tab, a stat
+ * that reads the plugin's own route for the service on screen; `slow` is answered only after
  * {@link SLOT_SLOW_VIEW_DELAY_MS}, past the widget's 5 s limit, so the slot must give way to its note.
  *
  * @type {Record<string, { schema: number, blocks: Record<string, unknown>[] }>}
@@ -1072,6 +1073,7 @@ export const SLOT_WIDGET_VIEWS = {
   ok: { schema: 1, blocks: [{ kind: 'text', text: 'Site is live' }] },
   broken: { schema: 1, blocks: [{ kind: 'tabs', tabs: null }] },
   slow: { schema: 1, blocks: [{ kind: 'text', text: 'Slow' }] },
+  backups: { schema: 1, blocks: [{ kind: 'stat', label: 'Backups', source: { route: { method: 'get', path: '/backups/{serviceId}' }, field: 'status' } }] },
 }
 
 /** How long the stub holds the `slow` widget's view, in milliseconds: past the widget's 5000 ms limit. */

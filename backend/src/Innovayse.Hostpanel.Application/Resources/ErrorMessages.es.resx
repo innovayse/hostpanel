@@ -297,6 +297,12 @@
   <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
     <value>Ese método de pago no está disponible en este momento.</value>
   </data>
+  <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
+    <value>No hay un método de pago común para todos los productos de este pedido. Pídalos por separado.</value>
+  </data>
+  <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
+    <value>Este método de pago no está permitido para los productos que se pagan.</value>
+  </data>
   <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
     <value>Esa moneda no está disponible.</value>
   </data>
@@ -546,9 +552,6 @@
   <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>No hay ninguna clave de API ni hash de acceso configurados para este servidor.</value>
   </data>
-  <data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>La prueba de conexión no es compatible con este módulo de servidor.</value>
-  </data>
   <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>No existe ese grupo de servidores.</value>
   </data>
@@ -658,7 +661,7 @@
     <value>Este complemento declara rutas, páginas o ranuras, pero no es un complemento de aplicación ni declara la capacidad "endpoints".</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>Este complemento declara una capacidad que el host no conoce o que su tipo de complemento no puede tener.</value>
+    <value>Este complemento declara una capacidad que el host no conoce, que su tipo de complemento no puede tener o que necesita otra capacidad que el complemento no declara.</value>
   </data>
   <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Ese archivo contiene una entrada que escribiría fuera de la carpeta propia del complemento y fue rechazado.</value>
@@ -1082,6 +1085,24 @@
   </data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>Los datos de contacto del titular están incompletos, por lo que no se puede enviar el pedido al registrador.</value>
+  </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>El registrador no vende esta extensión de dominio.</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>El registrador rechazó el código de autorización de la transferencia.</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>El registrador no permite transferir este dominio por ahora.</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>El registrador rechazó los servidores de nombres.</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>El registrador rechazó el registro DNS.</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>El registrador no aceptó las credenciales guardadas de la cuenta. Contacte con el administrador.</value>
   </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>Una transacción debe tener un importe de entrada o de salida.</value>
@@ -1548,7 +1569,82 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>El agentProfile del manifiesto debe ser uno de los perfiles del agente de claves SSH que define este SDK, escrito exactamente igual.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>La lista serverModules del manifiesto no es válida: un complemento con la capacidad provisioningPanel o virtualServer debe indicar al menos un id de módulo de servidor (letras, dígitos, guiones, puntos y guiones bajos, hasta 50 caracteres, sin repeticiones), y cualquier otro complemento no debe indicar ninguno.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>Un connectionRole en los ajustes del manifiesto solo se permite en un complemento de registrador.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Dos ajustes del manifiesto tienen el mismo connectionRole; cada rol solo puede asignarse a un ajuste.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>Un connectionRole del manifiesto está en un ajuste de tipo incorrecto: apiKey necesita un ajuste secret, apiUrl uno url y testMode uno boolean.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>Un complemento de registrador que declara un connectionRole debe declarar accountName y apiKey.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>El sdkPackageVersion del manifiesto de este complemento no es una versión válida.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>El minHostVersion del manifiesto de este complemento falta o es inferior a la primera versión de Hostpanel que incluye el SDK con el que se compiló el complemento.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Este complemento se compiló con un SDK de Hostpanel más reciente que el de este servidor y no se cargaría aquí. Actualice Hostpanel o use una versión anterior del complemento.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Este complemento está instalado pero no se pudo cargar. El error de carga se muestra junto a él.</value>
+  </data>
   <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
     <value>Uno de los documentos de vista de este plugin abre una dirección de una respuesta con una forma o en un lugar que este servidor no acepta.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Un servidor sin SSL no puede aceptar un certificado autofirmado. Active SSL o desactive la opción de certificado autofirmado.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Este tipo de panel de control no está disponible. Instale primero su plugin o elija otro tipo.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>El plugin del panel de control de este servidor no está instalado, está desactivado, sin configurar o no funciona. Compruébelo en la página de plugins.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Varios plugins instalados atienden el tipo de panel de este servidor. Conserve solo uno.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Este panel de control no admite la acción solicitada.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>El panel de control no tiene ninguna cuenta para este servicio.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>El panel de control no conoce el paquete de alojamiento de este servicio.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>El panel de control no acepta este nombre de usuario de la cuenta.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>El panel de control no acepta este nombre de dominio.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>El panel de control rechazó la contraseña. Elija una más segura.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>El panel de control alcanzó su límite y no puede aceptar este cambio.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>El panel de control rechazó las credenciales guardadas para este servidor.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>El panel de control rechazó la solicitud.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>La cuenta de alojamiento se está creando. Vuelva a comprobarlo en unos minutos.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Los datos de conexión del servidor están incompletos para este panel de control.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>El panel de control rechazó las credenciales guardadas.</value>
   </data>
 </root>

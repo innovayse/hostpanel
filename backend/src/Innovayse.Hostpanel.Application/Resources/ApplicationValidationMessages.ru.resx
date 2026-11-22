@@ -383,7 +383,7 @@
     <value>Статус должен быть одним из: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Регистратор должен быть одним из: NameAm, Namecheap.</value>
+    <value>Регистратор должен быть установленным плагином регистратора.</value>
   </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Вид ставки должен быть одним из: Standard, Reduced.</value>
@@ -925,6 +925,15 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Описание не должно превышать {0} символов.</value>
   </data>
+  <data name="ListAvailablePaymentMethodsTooManyProducts" xml:space="preserve">
+    <value>Укажите не более {0} товаров.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodTooLong" xml:space="preserve">
+    <value>Каждый способ оплаты не должен превышать {0} символов.</value>
+  </data>
+  <data name="ProductGroupPaymentMethodsTooMany" xml:space="preserve">
+    <value>Допускается не более {0} способов оплаты.</value>
+  </data>
   <data name="ProductBundleIdInvalid" xml:space="preserve">
     <value>Укажите корректный идентификатор набора продуктов.</value>
   </data>
@@ -971,7 +980,7 @@
     <value>Порядок сортировки не может быть отрицательным.</value>
   </data>
   <data name="ProductSkuInvalid" xml:space="preserve">
-    <value>SKU может содержать только буквы и цифры, разделённые одиночными дефисами, подчёркиваниями или точками, не длиннее {0} символов.</value>
+    <value>SKU может содержать только буквы и цифры, разделённые одиночными дефисами, подчёркиваниями или точками, по желанию в двух таких частях через одно двоеточие, не длиннее {0} символов.</value>
   </data>
   <data name="ProductMetadataInvalid" xml:space="preserve">
     <value>Метаданные должны быть объектом JSON.</value>
@@ -1759,8 +1768,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Модуль должен быть одним из: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Модуль должен быть идентификатором из букв, цифр, точек, дефисов или подчёркиваний длиной от 1 до 50 символов.</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>Состояние должно быть одним из: Online, Offline, Untested.</value>
@@ -1782,5 +1791,8 @@
   </data>
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Максимальное число активных услуг должно быть 0 или пустым (без ограничений) либо положительным числом.</value>
+  </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Идентификатор заказа шлюза содержит от 1 до 255 символов, без пробелов по краям и управляющих символов.</value>
   </data>
 </root>

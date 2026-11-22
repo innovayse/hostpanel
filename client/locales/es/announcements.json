@@ -1,0 +1,17 @@
+{
+  "announcements": {
+    "badge": "Novedades y actualizaciones",
+    "title": "Anuncios",
+    "subtitle": "Manténgase al día con las últimas noticias, actualizaciones y ofertas especiales.",
+    "allMonths": "Todos",
+    "filterLabel": "Filtrar por mes",
+    "readMore": "Seguir leyendo",
+    "empty": "No hay anuncios por el momento.",
+    "signInRequired": "Inicie sesión para leer los anuncios",
+    "signInRequiredDesc": "Los anuncios se muestran a los clientes que han iniciado sesión.",
+    "signIn": "Iniciar sesión",
+    "errorDesc": "Inténtelo de nuevo más tarde.",
+    "backToList": "Volver a Anuncios",
+    "published": "Publicado"
+  }
+}

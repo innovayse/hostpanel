@@ -21,7 +21,7 @@ public sealed class SettingConfiguration : IEntityTypeConfiguration<Setting>
 
         builder.Property(x => x.Value)
             .IsRequired()
-            .HasMaxLength(ProtectedColumnWidth.For(ProtectedValueLimits.SettingValue));
+            .HasMaxLength(ProtectedColumnWidth.For(ProtectedValueLimits.LegalTextValue));
 
         builder.Property(x => x.Description)
             .HasMaxLength(500);

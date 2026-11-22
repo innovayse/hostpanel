@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,17 +36,19 @@ public static class SshTestSeeds
     /// <param name="port">Customer-facing port.</param>
     /// <param name="module">Control panel module.</param>
     /// <param name="enabled">Whether SSH key management is enabled.</param>
+    /// <param name="credentials">The credentials the server stores, or <see langword="null"/> for an access hash only.</param>
     /// <returns>The server id.</returns>
     public static async Task<int> SeedServerAsync(
-        IntegrationTestFactory factory, string hostname, int port, ServerModule module = ServerModule.Cwp7, bool enabled = true)
+        IntegrationTestFactory factory,
+        string hostname,
+        int port,
+        string module = ServerModules.Cwp7,
+        bool enabled = true,
+        ServerCredentials? credentials = null)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var server = Server.Create(new ServerDetails(
-            $"ssh-srv-{Guid.NewGuid():N}", hostname, null, null, module, "root", new ServerCredentials(null, null, "hash"), true, null,
-            false, false, 0m, null, null, ServerNameServers.None), TestMoments.Seeded);
-        context.Servers.Add(server);
-        await context.SaveChangesAsync(CancellationToken.None);
+        var server = await ServersTestSeeds.AddServerAsync(context, $"ssh-srv-{Guid.NewGuid():N}", hostname, module, credentials);
 
         var settings = ServerSshSettings.CreateFor(server.Id);
         settings.Configure(enabled, hostname, port, hostname, 22, "hpsshkeys", "PRIVATE-KEY-PLACEHOLDER",
@@ -55,6 +56,18 @@ public static class SshTestSeeds
         context.ServerSshSettings.Add(settings);
         await context.SaveChangesAsync(CancellationToken.None);
         return server.Id;
+    }
+
+    /// <summary>Seeds a server with no SSH settings yet.</summary>
+    /// <param name="factory">The shared host.</param>
+    /// <param name="hostname">Customer-facing hostname.</param>
+    /// <param name="module">Control panel module.</param>
+    /// <returns>The server id.</returns>
+    public static async Task<int> SeedBareServerAsync(IntegrationTestFactory factory, string hostname, string module = ServerModules.Cwp7)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return (await ServersTestSeeds.AddServerAsync(context, $"ssh-srv-{Guid.NewGuid():N}", hostname, module)).Id;
     }
 
     /// <summary>Seeds an active hosting service for a client on a server.</summary>
@@ -83,12 +96,13 @@ public static class SshTestSeeds
     /// <summary>Registers a client with one active service on a fresh SSH-enabled server.</summary>
     /// <param name="factory">The shared host.</param>
     /// <param name="label">Label for the generated e-mail.</param>
+    /// <param name="credentials">The credentials the server stores, or <see langword="null"/> for an access hash only.</param>
     /// <returns>The client's HTTP client, its id, the server id and the service id.</returns>
     public static async Task<SshOwnerScenario> OwnerWithServiceAsync(
-        IntegrationTestFactory factory, string label)
+        IntegrationTestFactory factory, string label, ServerCredentials? credentials = null)
     {
         var (http, clientId) = await DomainsTestSeeds.RegisterOwnerAsync(factory, label);
-        var serverId = await SeedServerAsync(factory, $"{label}.example.test", 22);
+        var serverId = await SeedServerAsync(factory, $"{label}.example.test", 22, credentials: credentials);
         var serviceId = await SeedServiceAsync(factory, clientId, serverId, "web");
         return new SshOwnerScenario(http, clientId, serverId, serviceId);
     }

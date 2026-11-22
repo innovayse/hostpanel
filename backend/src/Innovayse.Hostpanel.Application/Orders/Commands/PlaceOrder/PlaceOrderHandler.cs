@@ -152,6 +152,7 @@ public sealed class PlaceOrderHandler
     /// The new order's id and number, its invoice id, its payment token and the total and currency it
     /// is billed in, or
     /// <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c> when the checkout is not offering that method,
+    /// <c>PAYMENT_NO_COMMON_METHOD</c> when the products' groups allow no payment method in common (the payer splits the order),
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c> when a guest chose a currency this panel does not offer,
     /// <c>ORDER_FRAUD_REJECTED</c> when fraud detection refuses the order (nothing is created; an order that only scores
     /// into the review band is placed and held, not refused),
@@ -222,7 +223,8 @@ public sealed class PlaceOrderHandler
             return Result<PlaceOrderResultDto>.FailureCode(currency.ErrorCode!);
         }
 
-        var methodAvailable = await EnsurePaymentMethodAvailableAsync(cmd.PaymentMethod, currency.Value!, ct);
+        var methodAvailable = await EnsurePaymentMethodAvailableAsync(
+            cmd.PaymentMethod, currency.Value!, cmd.Items.Select(i => i.ProductId).ToList(), ct);
         if (methodAvailable.IsFailure)
         {
             return Result<PlaceOrderResultDto>.FailureCode(methodAvailable.ErrorCode!);
@@ -714,16 +716,18 @@ public sealed class PlaceOrderHandler
     /// </remarks>
     /// <param name="paymentMethod">Module id the checkout sent.</param>
     /// <param name="currencyCode">ISO 4217 alpha code the order's invoice will bill in.</param>
+    /// <param name="productIds">The products the order buys; their groups may restrict the methods the order is paid with.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <see cref="HostpanelErrorCodes.ORDER_PAYMENT_METHOD_UNAVAILABLE"/> when the
-    /// method is not on offer.
+    /// Success, <see cref="HostpanelErrorCodes.ORDER_PAYMENT_METHOD_UNAVAILABLE"/> when the
+    /// method is not on offer (a method the products' groups do not allow is not offered), or
+    /// <see cref="HostpanelErrorCodes.PAYMENT_NO_COMMON_METHOD"/> when the groups of the products allow no method in common.
     /// </returns>
     private async Task<Result> EnsurePaymentMethodAvailableAsync(
-        string paymentMethod, string currencyCode, CancellationToken ct)
+        string paymentMethod, string currencyCode, IReadOnlyList<int> productIds, CancellationToken ct)
     {
         var available = await _bus.InvokeAsync<Result<IReadOnlyList<AvailablePaymentMethodDto>>>(
-            new ListAvailablePaymentMethodsQuery(currencyCode), ct);
+            new ListAvailablePaymentMethodsQuery(currencyCode, productIds), ct);
 
         if (available.IsFailure)
         {

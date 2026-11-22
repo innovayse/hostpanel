@@ -17,7 +17,9 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// The newest version the registry publishes. For an installed plugin with an update offered it is the version the update
 /// installs: the newest published version that runs on this host, which can be older than the registry's newest.
 /// </param>
-/// <param name="SdkVersion">The plugin SDK version <paramref name="LatestVersion"/> targets.</param>
+/// <param name="SdkPackageVersion">
+/// The <c>Hostpanel.Sdk</c> package version <paramref name="LatestVersion"/> was built on.
+/// </param>
 /// <param name="Verified">Whether the registry vouches for the publisher.</param>
 /// <param name="Pricing">Whether the plugin is free, paid or private.</param>
 /// <param name="Installed">Whether a plugin with this id is installed on this server.</param>
@@ -40,7 +42,7 @@ public sealed record RegistryPluginDto(
     string? IconUrl,
     PluginRegistryCategory Category,
     string LatestVersion,
-    string SdkVersion,
+    string SdkPackageVersion,
     bool Verified,
     PluginRegistryPricing Pricing,
     bool Installed = false,

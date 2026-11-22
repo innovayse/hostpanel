@@ -20,6 +20,7 @@ export const hostServer: ServerDto = {
   name: 'host1',
   endpoint: {
     hostname: 'host1.example.test',
+    apiHost: null,
     ipAddress: '203.0.113.10',
     assignedIpAddresses: null,
     useSSL: true,

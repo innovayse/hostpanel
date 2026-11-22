@@ -37,7 +37,7 @@ export interface InstalledPluginFilter {
  * @param plugin - The installed plugin.
  * @returns True when the plugin's rule is {@link PluginManifestRule.AssemblyLoadFailed}.
  */
-export const isLoadFailed = (plugin: PluginListItemDto): boolean => plugin.refusedRule === PluginManifestRule.AssemblyLoadFailed
+const isLoadFailed = (plugin: PluginListItemDto): boolean => plugin.refusedRule === PluginManifestRule.AssemblyLoadFailed
 
 /**
  * The state a plugin is in on this server.

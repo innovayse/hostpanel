@@ -3,7 +3,7 @@
  * category narrowing the Installed tab applies.
  */
 import { describe, expect, it } from 'vitest'
-import { filterInstalledPlugins, InstalledPluginState, installedPluginState, isLoadFailed } from '@/lib/installedPlugins'
+import { filterInstalledPlugins, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
 import { PluginManifestRule, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
 
@@ -49,13 +49,11 @@ describe('installedPluginState', () => {
     expect(installedPluginState(makePlugin(failed))).toBe(InstalledPluginState.LoadFailed)
     expect(installedPluginState(makePlugin({ ...failed, status: PluginStatus.Refused }))).toBe(InstalledPluginState.LoadFailed)
   })
-})
 
-describe('isLoadFailed', () => {
-  it('is true only for the load failure rule', () => {
-    expect(isLoadFailed(makePlugin({ refusedRule: PluginManifestRule.AssemblyLoadFailed }))).toBe(true)
-    expect(isLoadFailed(makePlugin({ refusedRule: PluginManifestRule.SdkNewerThanHost }))).toBe(false)
-    expect(isLoadFailed(makePlugin())).toBe(false)
+  it('treats any other broken rule as a refusal, not a load failure', () => {
+    const refused = { status: PluginStatus.Refused, isLoaded: false, refusedRule: PluginManifestRule.SdkNewerThanHost }
+
+    expect(installedPluginState(makePlugin(refused))).toBe(InstalledPluginState.Refused)
   })
 })
 

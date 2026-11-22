@@ -321,8 +321,8 @@ public sealed class SdkContractTests
     }
 
     /// <summary>
-    /// A fulfilment plugin has the four hooks the host calls, in the host's vocabulary, and the plan change hook SDK 3.12.0
-    /// added as a default method that does nothing.
+    /// A fulfilment plugin has the four hooks the host calls, in the host's vocabulary, and the plan change hook
+    /// SDK 3.12.0 added as a default method that does nothing.
     /// </summary>
     [Fact]
     public void IFulfilmentPlugin_HasTheFourHooks()

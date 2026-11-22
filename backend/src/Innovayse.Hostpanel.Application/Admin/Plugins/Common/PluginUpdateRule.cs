@@ -28,8 +28,7 @@ public static class PluginUpdateRule
     /// <summary>
     /// Picks the version to offer as an update: the newest published version that is an update, whose host range admits
     /// the running host and that was built on an SDK the host ships. An update the host cannot run or load is never
-    /// offered,
-    /// even when it is the registry's newest version.
+    /// offered, even when it is the registry's newest version.
     /// </summary>
     /// <param name="versions">Every version the registry lists for the plugin.</param>
     /// <param name="hostVersion">The running Hostpanel version text.</param>

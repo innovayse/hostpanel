@@ -3,9 +3,9 @@
  * and the registry's shape, so `PluginCard` knows neither.
  */
 import { enumValueOf } from '@/lib/enumValue'
-import { isLoadFailed } from '@/lib/installedPlugins'
+import { InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
 import { translate } from '@/lib/translate'
-import { PluginCardBadge, PluginCategory, PluginStatus } from '@/types/plugin'
+import { PluginCardBadge, PluginCategory } from '@/types/plugin'
 import type { PluginCardModel, PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 
 /**
@@ -31,15 +31,15 @@ export const categoryLabel = (category: string): string => {
  * whose assembly failed to load wears only the LoadFailed badge and carries the load error as the rule's detail.
  */
 export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string | null): PluginCardModel => {
-  const loadFailed = isLoadFailed(plugin)
-  const refused = plugin.status === PluginStatus.Refused || loadFailed
+  const state = installedPluginState(plugin)
+  const refused = state === InstalledPluginState.LoadFailed || state === InstalledPluginState.Refused
   const badges: PluginCardBadge[] = []
-  if (loadFailed) {
+  if (state === InstalledPluginState.LoadFailed) {
     badges.push(PluginCardBadge.LoadFailed)
-  } else if (refused) {
+  } else if (state === InstalledPluginState.Refused) {
     badges.push(PluginCardBadge.Refused)
   } else {
-    badges.push(plugin.isLoaded ? PluginCardBadge.Active : PluginCardBadge.PendingRestart)
+    badges.push(state === InstalledPluginState.Active ? PluginCardBadge.Active : PluginCardBadge.PendingRestart)
     if (plugin.stagedVersion !== null) {
       badges.push(PluginCardBadge.Staged)
     }

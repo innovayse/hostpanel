@@ -215,8 +215,7 @@ public static class PluginLoader
             {
                 // Every assembly was tried, so each one that did not yield the entry point left its error. The one that
                 // was asked for the entry point and could not give it is the cause; a helper assembly that failed to
-                // load
-                // is only the fallback.
+                // load is only the fallback.
                 var cause = failures.OfType<TypeLoadException>().FirstOrDefault() ?? failures[0];
                 logger.LogError(
                     cause,
@@ -224,8 +223,7 @@ public static class PluginLoader
                     manifest.EntryPoint, manifest.Id);
 
                 // The plugin is installed and its manifest was accepted, so it must not look healthy in the admin list:
-                // the
-                // load error is kept beside it.
+                // the load error is kept beside it.
                 RefuseLoad(registry, manifest.Id, origin, FirstLine(cause.Message));
                 continue;
             }

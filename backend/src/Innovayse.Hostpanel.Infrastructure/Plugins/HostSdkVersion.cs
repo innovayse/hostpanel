@@ -9,7 +9,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </summary>
 internal static class HostSdkVersion
 {
-    /// <summary>Gets the SDK package version as <c>major.minor.patch</c>, the form the build tooling writes into a manifest.</summary>
+    /// <summary>
+    /// Gets the SDK package version as <c>major.minor.patch</c>, the form the build tooling writes into a manifest.
+    /// </summary>
     public static string Current { get; } = Read();
 
     /// <summary>Reads the version of the SDK assembly.</summary>

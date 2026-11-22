@@ -37,8 +37,8 @@ public sealed class PluginUpdateOffer
     /// <returns>
     /// The row with the installed state set. When an update is offered, <c>UpdateAvailable</c> is true and
     /// <c>LatestVersion</c>, <c>SdkPackageVersion</c> and <c>LatestChangelog</c> describe the offered version, which is
-    /// the one an
-    /// update installs. No offer is made when the versions cannot be read, because an update that runs here cannot be proven.
+    /// the one an update installs. No offer is made when the versions cannot be read, because an update that runs here
+    /// cannot be proven.
     /// </returns>
     public async Task<RegistryPluginDto> MarkAsync(RegistryPluginDto entry, InstalledPluginPackage package, CancellationToken ct)
     {
@@ -49,10 +49,13 @@ public sealed class PluginUpdateOffer
         }
 
         var read = await _reader.ReadAsync(entry.Id, ct);
-        var offer = read.IsFailure
-            ? null
-            : PluginUpdateRule.NewestOffer(
-                read.Value!.Versions, _hostVersion.Version, _hostSdkVersion.Version, package.Manifest.Version, package.StagedVersion);
+        if (read.IsFailure || read.Value is not { } view)
+        {
+            return marked;
+        }
+
+        var offer = PluginUpdateRule.NewestOffer(
+            view.Versions, _hostVersion.Version, _hostSdkVersion.Version, package.Manifest.Version, package.StagedVersion);
         if (offer is null)
         {
             return marked;

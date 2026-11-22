@@ -18,10 +18,8 @@ public static class PluginSdkCompatibility
     /// </param>
     /// <returns>
     /// <see langword="false"/> only when the plugin's version is a version and is newer than the host's. A version that
-    /// is
-    /// not stated, or is not a version (a manifest's is refused by the package checker, a registry's is only its
-    /// claim), is
-    /// not stated and is not checked; a host version that is not a version cannot be compared and refuses nothing.
+    /// is not stated, or is not a version (a manifest's is refused by the package checker, a registry's is only its
+    /// claim), is not checked; a host version that is not a version cannot be compared and refuses nothing.
     /// </returns>
     public static bool IsSupported(string hostSdkVersion, string? pluginSdkVersion)
     {

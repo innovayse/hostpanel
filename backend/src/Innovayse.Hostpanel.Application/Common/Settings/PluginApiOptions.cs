@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Domain.Plugins;
 
 namespace Innovayse.Hostpanel.Application.Common.Settings;
@@ -17,14 +18,11 @@ public sealed class PluginApiOptions
     /// <summary>The largest <see cref="MaxBodyBytes"/> a deployment may configure, in bytes (64 MiB).</summary>
     public const int MaxBodyBytesCeiling = 67_108_864;
 
-    /// <summary>
-    /// How many keys one plugin store scope (a plugin and one client, or a plugin's plugin-wide values) holds by default.
-    /// Generous for settings, cursors and per-client state; a plugin that needs more belongs in its own storage.
-    /// </summary>
-    public const int DefaultMaxStoreKeysPerScope = 1000;
+    /// <summary>How many keys one plugin store scope (a plugin and one client, or a plugin's plugin-wide values) holds by default: the SDK's documented limit, which a host must not exceed.</summary>
+    public const int DefaultMaxStoreKeysPerScope = PluginStoreLimits.MaxKeys;
 
-    /// <summary>The largest <see cref="MaxStoreKeysPerScope"/> a deployment may configure.</summary>
-    public const int MaxStoreKeysPerScopeCeiling = 100_000;
+    /// <summary>The largest <see cref="MaxStoreKeysPerScope"/> a deployment may configure: the SDK's <see cref="PluginStoreLimits.MaxKeys"/>. A host may lower the limit, never raise it.</summary>
+    public const int MaxStoreKeysPerScopeCeiling = PluginStoreLimits.MaxKeys;
 
     /// <summary>
     /// How many characters one plugin store scope holds by default, keys and values together (4 Mi characters, about

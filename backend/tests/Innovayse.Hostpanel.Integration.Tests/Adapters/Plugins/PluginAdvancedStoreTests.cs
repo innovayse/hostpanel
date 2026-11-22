@@ -235,6 +235,54 @@ public sealed class PluginAdvancedStoreTests : IClassFixture<IntegrationTestFact
         await AssertTotalsMatchRowsAsync(plugin);
     }
 
+    /// <summary>
+    /// A write that needs room releases at most the quota's key count of expired rows, the oldest first: of five expired rows
+    /// under a quota of four, the four that expired first are released and the newest-expired one stays beside the new key.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Write_NeedingRoom_ReleasesAtMostTheQuotaOfExpiredRowsOldestFirstAsync()
+    {
+        var plugin = NewPlugin();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var seeding = StoreOf(db, plugin);
+        for (var i = 0; i < 5; i++)
+        {
+            await seeding.SetAsync($"old-{i}", "v", TimeSpan.FromMinutes(i + 1), CancellationToken.None);
+        }
+
+        _time.Advance(TimeSpan.FromMinutes(10));
+        var lowered = StoreOf(db, plugin, quota: new PluginStoreQuota(4, PluginApiOptions.DefaultMaxStoreCharsPerScope));
+        await lowered.SetAsync("fresh", "v", CancellationToken.None);
+
+        (await RowsAsync(plugin)).Select(row => row.Key).Should().BeEquivalentTo("old-4", "fresh");
+        await AssertTotalsMatchRowsAsync(plugin);
+    }
+
+    /// <summary>A scope over a lowered quota that still does not fit after the release refuses the write and keeps every row.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Write_OverALoweredQuota_ThatStillDoesNotFit_IsRefusedAndWritesNothingAsync()
+    {
+        var plugin = NewPlugin();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var seeding = StoreOf(db, plugin);
+        for (var i = 0; i < 5; i++)
+        {
+            await seeding.SetAsync($"old-{i}", "v", TimeSpan.FromMinutes(i + 1), CancellationToken.None);
+        }
+
+        _time.Advance(TimeSpan.FromMinutes(10));
+        var lowered = StoreOf(db, plugin, quota: new PluginStoreQuota(2, PluginApiOptions.DefaultMaxStoreCharsPerScope));
+        var write = () => lowered.SetAsync("fresh", "v", CancellationToken.None);
+
+        await write.Should().ThrowAsync<PluginStoreQuotaException>();
+        (await RowsAsync(plugin)).Should().HaveCount(5);
+        await AssertTotalsMatchRowsAsync(plugin);
+    }
+
     /// <summary>Keys that have not expired still fill the scope: the write of a new key is refused.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

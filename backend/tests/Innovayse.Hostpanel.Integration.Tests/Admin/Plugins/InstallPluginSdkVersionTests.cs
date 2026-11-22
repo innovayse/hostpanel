@@ -9,11 +9,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 
 /// <summary>
 /// <c>POST /api/admin/plugins/install</c> against the package's <c>sdkPackageVersion</c>: a plugin built on the SDK the
-/// host
-/// ships (or an older one, or one that states none) installs; one built on a newer SDK is refused with
+/// host ships (or an older one, or one that states none) installs; one built on a newer SDK is refused with
 /// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> (409) in the caller's language and nothing is installed; a value that is not a
-/// version
-/// and a <c>minHostVersion</c> below the first host that ships the SDK are refused as manifest rules (400).
+/// version and a <c>minHostVersion</c> below the first host that ships the SDK are refused as manifest rules (400).
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class InstallPluginSdkVersionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IDisposable

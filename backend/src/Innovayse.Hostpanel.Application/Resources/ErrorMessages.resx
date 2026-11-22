@@ -639,6 +639,18 @@
   <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
     <value>A registrar plugin that declares a connectionRole must declare both accountName and apiKey.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>The sdkPackageVersion in this plugin's manifest is not a valid version.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>The minHostVersion in this plugin's manifest is missing or lower than the first Hostpanel release that ships the SDK the plugin was built against.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>This plugin was built against a newer Hostpanel SDK than this server ships and would not load here. Update Hostpanel or use an older version of the plugin.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>This plugin is installed but could not be loaded. See the load error shown with it.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>

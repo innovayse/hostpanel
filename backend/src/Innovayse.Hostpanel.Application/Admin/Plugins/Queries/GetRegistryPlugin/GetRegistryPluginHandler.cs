@@ -85,7 +85,7 @@ public sealed class GetRegistryPluginHandler
                 v.Changelog,
                 v.MinHostVersion,
                 v.MaxHostVersion,
-                PluginHostCompatibility.IsCompatible(host, v.MinHostVersion, v.MaxHostVersion),
+                PluginHostCompatibility.IsCompatible(host, v.MinHostVersion, v.MaxHostVersion) && PluginSdkCompatibility.IsSupported(v.SdkVersion),
                 v.Permissions,
                 v.Screenshots))
             .ToList();

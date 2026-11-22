@@ -26,8 +26,9 @@ public static class PluginUpdateRule
     }
 
     /// <summary>
-    /// Picks the version to offer as an update: the newest published version that is an update and whose host range admits
-    /// the running host. An update the host cannot run is never offered, even when it is the registry's newest version.
+    /// Picks the version to offer as an update: the newest published version that is an update, whose host range admits
+    /// the running host and that was built on an SDK the host ships. An update the host cannot run or load is never offered,
+    /// even when it is the registry's newest version.
     /// </summary>
     /// <param name="versions">Every version the registry lists for the plugin.</param>
     /// <param name="hostVersion">The running Hostpanel version text.</param>
@@ -45,6 +46,7 @@ public static class PluginUpdateRule
             .Select(g => g.OrderByDescending(v => v.Status.Strictness()).First())
             .Where(v => v.Status == PluginRegistryVersionStatus.Published
                 && PluginHostCompatibility.IsCompatible(hostVersion, v.MinHostVersion, v.MaxHostVersion)
+                && PluginSdkCompatibility.IsSupported(v.SdkVersion)
                 && IsUpdate(installed, staged, v.Version))
             .OrderByDescending(v => v.Version, Comparer<string>.Create(CompareVersions))
             .FirstOrDefault();

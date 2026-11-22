@@ -445,7 +445,7 @@ public sealed class FakeRegistryServer : HttpMessageHandler
             : Reply(own.Select(p => new
             {
                 version = p.Version,
-                sdkVersion = "3.1.0",
+                sdkPackageVersion = "3.1.0",
                 sizeBytes = p.Package.Length,
                 publishedAt = TestMoments.Seeded,
                 status = "Published",
@@ -469,7 +469,7 @@ public sealed class FakeRegistryServer : HttpMessageHandler
                 downloadUrl = $"{BaseUrl}plugins/{id}/versions/{plugin.Version}/download",
                 sha256 = plugin.Sha256,
                 verified = true,
-                sdkVersion = "3.1.0",
+                sdkPackageVersion = "3.1.0",
                 requiresLicence = false,
             });
     }
@@ -557,7 +557,7 @@ public sealed class FakeRegistryServer : HttpMessageHandler
                     downloadUrl = p.HostOnly ? string.Empty : $"{BaseUrl}plugins/{p.PluginId}/versions/{p.Version}/download",
                     sha256 = p.Sha256,
                     verified = true,
-                    sdkVersion = "3.1.0",
+                    sdkPackageVersion = "3.1.0",
                     requiresLicence = false,
                 }));
         }

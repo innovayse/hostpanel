@@ -89,7 +89,8 @@ public sealed class InstallRegistryPluginHandler
     /// for a host only plugin <c>PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED</c>, <c>PLUGIN_REGISTRY_INSTANCE_REVOKED</c> or another
     /// <c>PLUGIN_REGISTRY_INSTANCE_*</c> or <c>PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED</c> failure of the registration or of a signed call;
     /// <c>PLUGIN_REGISTRY_VERSION_YANKED</c> for a withdrawn version, <c>PLUGIN_REGISTRY_VERSION_COMPROMISED</c> for one the
-    /// registry rejected as unsafe and <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c> when it does not run on this Hostpanel version;
+    /// registry rejected as unsafe, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c> when it does not run on this Hostpanel version and
+    /// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> when the registry states it was built on a newer SDK than this host ships;
     /// <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines the plugin or its signing key;
     /// <c>PLUGIN_REGISTRY_PACKAGE_REFUSED</c> when the package cannot be fetched safely or is another plugin or version;
     /// <c>PLUGIN_REGISTRY_CHECKSUM_MISMATCH</c> when it does not hash to the published checksum; or any refusal of
@@ -155,6 +156,13 @@ public sealed class InstallRegistryPluginHandler
         if (!PluginHostCompatibility.IsCompatible(_hostVersion.Version, described.MinHostVersion, described.MaxHostVersion))
         {
             return await RefuseAsync(command, "host version is outside the supported range", HostpanelErrorCodes.PLUGIN_REGISTRY_HOST_INCOMPATIBLE, null, ct);
+        }
+
+        // Refused before the download: the registry states the SDK the version was built on, and a plugin built on a newer
+        // SDK than this host ships would install and then fail to load. The package's own manifest is checked again on install.
+        if (!PluginSdkCompatibility.IsSupported(described.SdkVersion))
+        {
+            return await RefuseAsync(command, "built on a newer SDK than this host ships", HostpanelErrorCodes.PLUGIN_SDK_NEWER_THAN_HOST, null, ct);
         }
 
         if (trust == PluginRegistryTrust.VerifiedOnly && !release.Verified)

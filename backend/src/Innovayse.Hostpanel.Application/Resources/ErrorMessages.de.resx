@@ -575,6 +575,18 @@
   <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
     <value>Ein Registrar-Plugin, das eine connectionRole angibt, muss sowohl accountName als auch apiKey angeben.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>Die sdkPackageVersion im Manifest dieses Plugins ist keine gültige Version.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>Die minHostVersion im Manifest dieses Plugins fehlt oder liegt unter der ersten Hostpanel-Version, die das SDK mitbringt, mit dem das Plugin gebaut wurde.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Dieses Plugin wurde mit einem neueren Hostpanel-SDK gebaut, als dieser Server mitbringt, und würde hier nicht geladen. Aktualisieren Sie Hostpanel oder nehmen Sie eine ältere Version des Plugins.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Dieses Plugin ist installiert, konnte aber nicht geladen werden. Den Ladefehler sehen Sie daneben.</value>
+  </data>
   <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
     <value>Eines der Ansichtsdokumente dieses Plugins öffnet eine Adresse aus einer Antwort in einer Form oder an einer Stelle, die dieser Server nicht akzeptiert.</value>
   </data>

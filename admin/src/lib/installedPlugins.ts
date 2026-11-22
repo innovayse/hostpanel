@@ -2,7 +2,7 @@
  * Narrowing of the installed plugin list for its search box and filters: the state a plugin is in,
  * and the pure filter the Installed tab applies to the store's list.
  */
-import { PluginStatus } from '@/types/plugin'
+import { PluginManifestRule, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
 
 /** Closed set of the states the Installed tab filters by; the strings are the values kept in the address. */
@@ -13,6 +13,8 @@ export const InstalledPluginState = {
   PendingRestart: 'pendingRestart',
   /** Skipped by the host because it broke a manifest rule. */
   Refused: 'refused',
+  /** Installed, but its assembly failed to load, so it does not run. */
+  LoadFailed: 'loadFailed',
 } as const
 
 /** One of the {@link InstalledPluginState} values. */
@@ -29,12 +31,25 @@ export interface InstalledPluginFilter {
 }
 
 /**
+ * Whether the plugin is installed but its assembly failed to load; the server names that failure as a rule of its own,
+ * whose detail is the load error.
+ *
+ * @param plugin - The installed plugin.
+ * @returns True when the plugin's rule is {@link PluginManifestRule.AssemblyLoadFailed}.
+ */
+export const isLoadFailed = (plugin: PluginListItemDto): boolean => plugin.refusedRule === PluginManifestRule.AssemblyLoadFailed
+
+/**
  * The state a plugin is in on this server.
  *
  * @param plugin - The installed plugin.
- * @returns Refused for a plugin the host skipped, Active for a loaded one, PendingRestart otherwise.
+ * @returns LoadFailed for a plugin whose assembly did not load, Refused for one the host skipped, Active for a loaded
+ * one, PendingRestart otherwise.
  */
 export const installedPluginState = (plugin: PluginListItemDto): InstalledPluginState => {
+  if (isLoadFailed(plugin)) {
+    return InstalledPluginState.LoadFailed
+  }
   if (plugin.status === PluginStatus.Refused) {
     return InstalledPluginState.Refused
   }

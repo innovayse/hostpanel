@@ -114,7 +114,7 @@ Content-Type: application/json
     "downloadUrl": "/v1/plugins/sample-gateway/versions/1.2.0/download",
     "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
     "verified": true,
-    "sdkVersion": "3.1.0",
+    "sdkPackageVersion": "3.1.0",
     "requiresLicence": false,
     "changelog": "Fixes a rounding error."
   }
@@ -187,7 +187,7 @@ GET {BaseUrl}plugins/{id}/versions
 [
   {
     "version": "1.2.0",
-    "sdkVersion": "3.1.0",
+    "sdkPackageVersion": "3.1.0",
     "sizeBytes": 20480,
     "publishedAt": "2026-01-02T03:04:05Z",
     "status": "Published",
@@ -231,7 +231,7 @@ Hostpanel проверяет каждую запись, и одна запись
 | `category` | Необязателен. Неизвестное или отсутствующее значение показывается как `Other`. |
 | `description` | Необязателен, обрезается до 2000 символов. |
 | `publisherName` | Необязателен (`author` тоже читается), обрезается до 200 символов. |
-| `sdkVersion` | Необязателен, обрезается до 32 символов, показывается только для сведения. В списке его может не быть. |
+| `sdkPackageVersion` | Необязателен, обрезается до 32 символов. Версия пакета `Hostpanel.Sdk`, на которой собрана версия плагина, то же значение, что `sdkPackageVersion` в её `plugin.json`. Хост не ставит версию, у которой значение новее SDK хоста (`PLUGIN_SDK_NEWER_THAN_HOST`), и не предлагает её как обновление, поэтому реестр может отдавать поле в списке, в релизе и в каждой строке версий. Версия без поля не проверяется. |
 | `iconUrl` | Необязателен. Абсолютный или относительный к `BaseUrl`. Сохраняется только если он на собственном origin реестра; любой другой адрес значка отбрасывается. |
 | `verified` | Необязателен, при отсутствии `false`. Показывается как значок. Решение о доверии при установке читает `verified` из релиза, поэтому отдавайте его в обоих местах. |
 

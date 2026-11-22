@@ -14,7 +14,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="IconUrl">The icon address.</param>
 /// <param name="Category">The category name.</param>
 /// <param name="LatestVersion">The newest version; <see langword="null"/> when nothing is published.</param>
-/// <param name="SdkVersion">The SDK version the newest version targets, when the registry states it.</param>
+/// <param name="SdkPackageVersion">The Hostpanel.Sdk package version the newest version targets, when the registry states it.</param>
 /// <param name="Verified">Whether the registry vouches for the publisher.</param>
 /// <param name="Pricing">The pricing name.</param>
 /// <param name="Distribution">The distribution name (<c>Download</c> or <c>HostOnly</c>); absent from a registry that has no restricted plugins.</param>
@@ -33,7 +33,7 @@ internal sealed record PluginRegistryEntryWire(
     string? IconUrl,
     string? Category,
     string? LatestVersion,
-    string? SdkVersion,
+    string? SdkPackageVersion,
     bool Verified,
     string? Pricing,
     string? Distribution = null,

@@ -52,6 +52,14 @@ export const PluginManifestRule = {
   SlotContextKeyNotOffered: 'SlotContextKeyNotOffered',
   /** A file in the plugin folder could not be read. */
   AssemblyUnreadable: 'AssemblyUnreadable',
+  /** The manifest's `sdkPackageVersion` is not a valid semantic version. */
+  SdkPackageVersionInvalid: 'SdkPackageVersionInvalid',
+  /** The manifest's `minHostVersion` is missing or below the first host release that ships the SDK the plugin was built on. */
+  MinHostVersionBelowSdk: 'MinHostVersionBelowSdk',
+  /** The plugin was built on a newer SDK than this host ships, so its assembly cannot load here. */
+  SdkNewerThanHost: 'SdkNewerThanHost',
+  /** The plugin is installed and its manifest is accepted, but its assembly failed to load; the detail is the load error. */
+  AssemblyLoadFailed: 'AssemblyLoadFailed',
   /** A slot widget id is not valid. */
   SlotWidgetIdInvalid: 'SlotWidgetIdInvalid',
   /** The same widget id is declared twice for one slot. */
@@ -164,6 +172,8 @@ export interface PluginPackagePreviewDto {
   maxHostVersion: string | null
   /** The version this server runs, the one the range is compared with. */
   hostVersion: string
+  /** The plugin SDK version the package was built on (`sdkPackageVersion` of the manifest), null or absent when it names none. */
+  sdkPackageVersion?: string | null
   /** Whether this server's version is inside the range; the install is refused otherwise. */
   compatible: boolean
 }
@@ -210,6 +220,8 @@ export interface PluginListItemDto {
   minHostVersion?: string | null
   /** Highest server version the plugin runs on, null for no upper bound. */
   maxHostVersion?: string | null
+  /** The plugin SDK version the installed package was built on (`sdkPackageVersion` of the manifest), null or absent when it names none. */
+  sdkPackageVersion?: string | null
   /** Where the package came from; null for a plugin installed before installs were recorded and for a refused or removed row. */
   source?: PluginSource | null
   /** ISO 8601 moment the plugin was first installed, null when no install was recorded. */
@@ -542,6 +554,8 @@ export interface RegistryPluginVersionDto {
   minHostVersion: string | null
   /** Newest host version it runs on, null when unbounded. */
   maxHostVersion: string | null
+  /** The plugin SDK package version it was built on (`sdkPackageVersion`), empty, null or absent when the registry does not state it. */
+  sdkPackageVersion?: string | null
   /** Whether it runs on this host. */
   compatible: boolean
   /** Permissions the version asks for. */
@@ -624,6 +638,8 @@ export enum PluginCardBadge {
   PendingRestart = 'pendingRestart',
   /** The host skipped the plugin because it broke a manifest rule. */
   Refused = 'refused',
+  /** The plugin is installed but its assembly failed to load, so it does not run; its load error is the refusal detail. */
+  LoadFailed = 'loadFailed',
   /** A newer upload is staged to apply at the next restart. */
   Staged = 'staged',
   /** The registry offers a newer version. */

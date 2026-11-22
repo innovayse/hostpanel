@@ -30,6 +30,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </summary>
 public static class PluginLoader
 {
+    /// <summary>The longest load error kept for the admin list, in characters.</summary>
+    private const int MaxLoadErrorLength = 300;
+
     /// <summary>
     /// Discovers all valid plugins under each of <paramref name="pluginRoots"/>, in order, loads their
     /// assemblies, and registers them as keyed scoped services in <paramref name="services"/>. A
@@ -177,11 +180,13 @@ public static class PluginLoader
             if (dllFiles.Length == 0)
             {
                 logger.LogError("No DLL found for plugin {Id} in {Dir}, skipping", manifest.Id, pluginDir);
+                RefuseLoad(registry, manifest.Id, origin, "the plugin folder holds no assembly");
                 continue;
             }
 
             Type? pluginType = null;
             TypeLoadException? notDefined = null;
+            Exception? loadFailure = null;
             foreach (var dll in dllFiles)
             {
                 try
@@ -203,6 +208,7 @@ public static class PluginLoader
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to load assembly {Dll} for plugin {Id}", dll, manifest.Id);
+                    loadFailure ??= ex;
                 }
             }
 
@@ -212,6 +218,16 @@ public static class PluginLoader
                     notDefined,
                     "Entry point type '{EntryPoint}' not found for plugin {Id}, skipping",
                     manifest.EntryPoint, manifest.Id);
+
+                // The plugin is installed and its manifest was accepted, so it must not look healthy in the admin list: the
+                // load error is kept beside it. A load that threw is the cause; otherwise no assembly defines the entry point.
+                RefuseLoad(
+                    registry,
+                    manifest.Id,
+                    origin,
+                    loadFailure is not null || notDefined is not null
+                        ? FirstLine((loadFailure ?? notDefined)!.Message)
+                        : $"no assembly defines the entry point '{manifest.EntryPoint}'");
                 continue;
             }
 
@@ -269,6 +285,25 @@ public static class PluginLoader
         services.AddSingleton(registry);
         services.AddSingleton<IPluginRegistry>(registry);
         services.AddSingleton<IPluginIntegrationRegistry>(integrationRegistry);
+    }
+
+    /// <summary>Keeps an installed plugin that could not be loaded in the registry, so the admin list shows it with the reason.</summary>
+    /// <param name="registry">The registry the loader fills.</param>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <param name="origin">Where the plugin folder is.</param>
+    /// <param name="detail">Why the plugin did not load.</param>
+    private static void RefuseLoad(PluginRegistry registry, string pluginId, PluginOrigin origin, string detail)
+    {
+        registry.RegisterRefused(new RefusedPlugin(pluginId, PluginManifestRule.AssemblyLoadFailed, detail, origin == PluginOrigin.BuiltIn));
+    }
+
+    /// <summary>Cuts a load error to its first line and a fixed length: the admin list shows what failed, never a stack.</summary>
+    /// <param name="message">The exception message.</param>
+    /// <returns>The first line of the message, at most <see cref="MaxLoadErrorLength"/> characters.</returns>
+    private static string FirstLine(string message)
+    {
+        var line = message.Split('\n', 2)[0].Trim();
+        return line.Length <= MaxLoadErrorLength ? line : line[..MaxLoadErrorLength];
     }
 
     /// <summary>

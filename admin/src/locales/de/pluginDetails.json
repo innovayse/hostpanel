@@ -65,6 +65,7 @@
     "hostMin": "Host-Version {min} oder neuer",
     "hostMax": "Host-Version {max} oder älter",
     "hostAny": "Läuft auf jeder Host-Version",
+    "sdk": "Mit SDK {version} erstellt",
     "reason": "Grund: {reason}",
     "noReason": {
       "Deprecated": "Der Herausgeber hat diese Version als veraltet markiert.",
@@ -123,7 +124,8 @@
       "label": "Zustand",
       "running": "Geladen und aktiv",
       "afterRestart": "Wird nach dem nächsten Neustart geladen",
-      "refused": "Beim Start abgelehnt"
+      "refused": "Beim Start abgelehnt",
+      "loadFailed": "Beim Start nicht geladen"
     },
     "sourceLabel": "Quelle",
     "source": {
@@ -145,6 +147,7 @@
     "sha256": "SHA-256 des Pakets",
     "installedVersion": "Installierte Version",
     "stagedVersion": "Vorbereitete Version",
-    "hostVersions": "Serverversionen"
+    "hostVersions": "Serverversionen",
+    "sdkVersion": "Plugin-SDK"
   }
 }

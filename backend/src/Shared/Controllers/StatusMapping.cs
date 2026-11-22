@@ -78,6 +78,8 @@ public static class StatusMapping
             "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
             // Exact row: the package is well formed, but the running host version is outside the range it declares.
             "PLUGIN_HOST_VERSION_OUT_OF_RANGE" => new(409, "Conflict"),
+            // Exact row: the package is well formed, but it was built against a newer SDK than this host ships.
+            "PLUGIN_SDK_NEWER_THAN_HOST" => new(409, "Conflict"),
             // Exact rows: the plugin registry is a dependency of the install, not part of the caller's request. Off in this
             // deployment is a state conflict (409); unreachable, a bad reply, a refused or altered package are a gateway
             // failing (502); no answer in time is a gateway timeout (504); the operator's trust policy declining a

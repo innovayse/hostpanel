@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Plugins: a plugin package records the `Hostpanel.Sdk` version it was built against in `plugin.json` as `sdkPackageVersion` (written by the SDK build, not by hand). An upload or registry install of a plugin built on a newer SDK than the one the server ships is refused with `PLUGIN_SDK_NEWER_THAN_HOST` (409), the update check does not offer such a version, the registry protocol carries the value as `sdkPackageVersion`, and a plugin that is installed but whose assembly cannot be loaded now shows in the plugin list as refused with its load error instead of looking healthy.
+
 ## [0.8.0] - 2026-11-21
 
 ### Added

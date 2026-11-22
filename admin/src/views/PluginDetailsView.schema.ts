@@ -43,7 +43,7 @@ export const PLUGIN_OVERVIEW_COMPATIBILITY_CARD = {
   key: 'compatibility',
   title: 'pluginDetails.overview.compatibility',
   span: SkeletonSpan.Half,
-  rows: ['pluginDetails.overview.installedVersion', 'pluginDetails.overview.stagedVersion', 'pluginDetails.overview.hostVersions'],
+  rows: ['pluginDetails.overview.installedVersion', 'pluginDetails.overview.stagedVersion', 'pluginDetails.overview.hostVersions', 'pluginDetails.overview.sdkVersion'],
 } as const
 
 /** The cards of the installed overview: the first four share two columns and the release notes take the whole row under them. */

@@ -1,6 +1,7 @@
 using Hostpanel.Sdk.Packaging.Manifest;
 using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
@@ -54,11 +55,27 @@ internal static class PluginManifestValidator
 
         // What follows is what only the host knows: the access kinds and capabilities it defines and whether it serves
         // the plugin's endpoints. The package knows none of these.
-        return CheckHostAccess(manifest)
+        return CheckSdkNotNewerThanHost(manifest)
+            ?? CheckHostAccess(manifest)
             ?? PluginCapabilityRules.Validate(manifest)
             ?? CheckServerModules(manifest)
             ?? CheckEndpointsDeclared(manifest)
             ?? CheckPageLayouts(manifest);
+    }
+
+    /// <summary>
+    /// Checks that the SDK the plugin was built against is not newer than the one this host ships: the plugin's assembly
+    /// would fail to load at the next start. A manifest that states no SDK package version is not checked.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.SdkNewerThanHost"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckSdkNotNewerThanHost(PluginManifest manifest)
+    {
+        return PluginSdkCompatibility.IsSupported(manifest.SdkPackageVersion)
+            ? null
+            : new PluginManifestViolation(
+                PluginManifestRule.SdkNewerThanHost,
+                $"sdkPackageVersion {manifest.SdkPackageVersion} is newer than SDK {PluginSdkCompatibility.HostSdkVersion}, which this host ships");
     }
 
     /// <summary>

@@ -91,15 +91,25 @@ public sealed class PluginUpdateRuleTests
         PluginUpdateRule.NewestOffer(versions, "dev", "1.0.0", null)!.Version.Should().Be("2.0.0");
     }
 
+    /// <summary>A version built on a newer SDK than the host ships is never offered, even as the registry's newest; one that states none is.</summary>
+    [Fact]
+    public void NewestOffer_SkipsAVersionBuiltOnANewerSdkThanTheHostShips()
+    {
+        var versions = new[] { Version("1.1.0", sdk: ""), Version("2.0.0", sdk: "999.0.0") };
+
+        PluginUpdateRule.NewestOffer(versions, "2.0.0", "1.0.0", null)!.Version.Should().Be("1.1.0");
+    }
+
     /// <summary>Builds one listed registry version.</summary>
     /// <param name="version">The version text.</param>
     /// <param name="status">Where the version stands in the registry.</param>
     /// <param name="min">The oldest host version it runs on, or <see langword="null"/>.</param>
     /// <param name="max">The newest host version it runs on, or <see langword="null"/>.</param>
+    /// <param name="sdk">The SDK version the version targets; empty when not stated.</param>
     /// <returns>The version row.</returns>
     private static RegistryPluginVersion Version(
-        string version, PluginRegistryVersionStatus status = PluginRegistryVersionStatus.Published, string? min = null, string? max = null)
+        string version, PluginRegistryVersionStatus status = PluginRegistryVersionStatus.Published, string? min = null, string? max = null, string sdk = "1.0")
     {
-        return new RegistryPluginVersion(version, "1.0", 1, TestMoments.Seeded, status, null, null, min, max, null, [], null, []);
+        return new RegistryPluginVersion(version, sdk, 1, TestMoments.Seeded, status, null, null, min, max, null, [], null, []);
     }
 }

@@ -91,6 +91,17 @@ describe('fromInstalled', () => {
     expect(card.updateVersion).toBeNull()
     expect(card.refusal).toEqual({ rule: PluginManifestRule.RouteDuplicate, detail: 'GET /a' })
   })
+
+  it('gives a plugin whose assembly failed to load only the LoadFailed badge and the load error as the rule detail', () => {
+    const card = fromInstalled(
+      { ...installed, isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load file or assembly' },
+      '2.0.0',
+    )
+
+    expect(card.badges).toEqual([PluginCardBadge.LoadFailed])
+    expect(card.updateVersion).toBeNull()
+    expect(card.refusal).toEqual({ rule: PluginManifestRule.AssemblyLoadFailed, detail: 'Could not load file or assembly' })
+  })
 })
 
 describe('fromRegistry', () => {

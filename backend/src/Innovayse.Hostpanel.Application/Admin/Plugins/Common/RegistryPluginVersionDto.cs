@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Changelog">The release notes as plain text; <see langword="null"/> when none.</param>
 /// <param name="MinHostVersion">The oldest Hostpanel version it runs on; <see langword="null"/> for no lower bound.</param>
 /// <param name="MaxHostVersion">The newest Hostpanel version it runs on; <see langword="null"/> for no upper bound.</param>
-/// <param name="Compatible">Whether it runs on the Hostpanel version this server runs.</param>
+/// <param name="Compatible">Whether it runs on the Hostpanel version this server runs and was built on an SDK this server ships.</param>
 /// <param name="Permissions">The sensitive capabilities the version declares.</param>
 /// <param name="Screenshots">The screenshots, on the registry's own origin.</param>
 public sealed record RegistryPluginVersionDto(

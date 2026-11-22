@@ -244,6 +244,7 @@ public class MyGatewayTests
   { name: 'icon', type: 'string', default: '', description: 'Необязательное изображение плагина: путь внутри пакета к файлу SVG или PNG, например icon.svg или assets/icon.png. Строчные буквы, цифры, точка, дефис и подчёркивание, прямые слеши, без начального слеша и сегмента .., расширение .svg или .png, не более 256 КиБ. Если не указывать, показывается цветной блок с первой буквой плагина.' },
   { name: 'entryPoint', type: 'string', default: '', description: 'Полное имя класса, реализующего интерфейс плагина.' },
   { name: 'sdkVersion', type: 'string', default: '', description: 'Версия SDK в манифесте. Допустимое значение 1.0. Основная версия SDK сборки проверяется отдельно, и более старые основные версии отклоняются.' },
+  { name: 'sdkPackageVersion', type: 'string', default: '', description: 'Версия пакета Hostpanel.Sdk, на которой собран плагин. Её пишет сборка Hostpanel.Sdk, не правьте вручную. Хост отклоняет загрузку или установку из реестра, если значение новее SDK хоста (PLUGIN_SDK_NEWER_THAN_HOST). minHostVersion не может быть ниже первого выпуска хоста с этим SDK.' },
   { name: 'showInIntegrations', type: 'boolean', default: 'false', description: 'Если true, плагин появляется карточкой на экране «Интеграции».' },
   { name: 'integrationsCategory', type: 'string', default: '', description: 'Заголовок категории, под которым карточка появляется на экране «Интеграции».' },
   { name: 'fields', type: 'array', default: '[]', description: 'Настройки, которые показываются на странице интеграции, по порядку.' }

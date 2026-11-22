@@ -904,6 +904,18 @@ public static class HostpanelErrorCodes
     /// <summary>A registrar plugin names a connectionRole but not both accountName and apiKey (400).</summary>
     public const string PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE = "PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE";
 
+    /// <summary>The plugin manifest's sdkPackageVersion is not a valid semantic version (400).</summary>
+    public const string PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID = "PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID";
+
+    /// <summary>The plugin manifest's minHostVersion is missing or below the first host release that ships the SDK the plugin was built against (400).</summary>
+    public const string PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK = "PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK";
+
+    /// <summary>The plugin was built against a newer Hostpanel.Sdk than this host ships, so its assembly cannot load here (409).</summary>
+    public const string PLUGIN_SDK_NEWER_THAN_HOST = "PLUGIN_SDK_NEWER_THAN_HOST";
+
+    /// <summary>The plugin is installed but none of its assemblies could be loaded, or none defines its entry point; shown on the plugin page, never an API answer.</summary>
+    public const string PLUGIN_ASSEMBLY_LOAD_FAILED = "PLUGIN_ASSEMBLY_LOAD_FAILED";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 

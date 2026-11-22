@@ -258,7 +258,7 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
 <SettingTable :settings="[
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Set to 2 to use the members below.' },
   { name: 'settings', type: 'array', default: '[]', description: 'Typed settings an administrator fills in. Supersedes fields; when settings is empty the host converts fields into settings.' },
-  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later) and endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it). It must agree with the interfaces the class really implements.' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later), endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it), tax, and the hosting panel, virtual server and registrar names listed under Capabilities. It must agree with the interfaces the class really implements.' },
   { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. Known kinds: ssh, websites and databases (the last two need SDK 3.9.0 or later, see Websites and databases on a client hosting). The admin Plugins page shows each one a plugin declares.' },
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
@@ -394,22 +394,69 @@ A manifest that breaks one of these rules is refused at install and at startup w
 
 A version 2 manifest may list `capabilities`, each a name from the SDK's `PluginCapabilities`:
 
-| Capability | Allowed on | The plugin class must also implement |
-|------------|------------|--------------------------------------|
-| `storedCredentials` | `Payment` only | `IStoredCredentialPlugin` |
-| `endpoints` | any type | `IPluginEndpoints` |
+| Capability | Allowed on | Needs | The plugin class must also implement |
+|------------|------------|-------|--------------------------------------|
+| `storedCredentials` | `Payment` only | | `IStoredCredentialPlugin` |
+| `paymentReturn` | `Payment` only | | `IPaymentReturnPlugin` |
+| `endpoints` | any type | | `IPluginEndpoints` |
+| `tax` | any type | | `ITaxPlugin` |
+| `provisioningPanel` | `Provisioning` only | | `IProvisioningPanelPlugin` |
+| `provisioningPanelLogin` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
+| `provisioningPanelPackages` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `virtualServer` | `Provisioning` only | | `IVirtualServerPlugin` |
+| `virtualServerList` | `Provisioning` only | | `IVirtualServerListPlugin` |
+| `virtualServerSnapshots` | `Provisioning` only | `virtualServer` | `IVirtualServerSnapshotPlugin` |
+| `virtualServerBackups` | `Provisioning` only | `virtualServer` | `IVirtualServerBackupPlugin` |
+| `virtualServerFirewall` | `Provisioning` only | `virtualServer` | `IVirtualServerFirewallPlugin` |
+| `virtualServerConsole` | `Provisioning` only | `virtualServer` | `IVirtualServerPlugin`, with `CreateConsoleSessionAsync` supported |
+| `registrarOperations` | `Registrar` only | | `IRegistrarOperationsPlugin` |
+| `registrarEmailForwarding`, `registrarDnsManagement`, `registrarWhois`, `registrarChildNameservers`, `registrarDnssec`, `registrarRestore`, `registrarDomainList`, `registrarSuggestions`, `registrarBalance` | `Registrar` only | | the matching interface, for example `IRegistrarWhoisPlugin` for `registrarWhois` |
+
+Declaring a hosting panel, virtual server, registrar or `tax` capability makes the plugin load and shows the capability on the
+plugins page. The host does not call those contracts yet: a feature starts to use one when it ships, and a plugin that declares
+one before then is loaded but never asked.
 
 An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
 `api` routes or `ui` menus, pages or slots must declare `endpoints`, or the package is refused at install and skipped at
 startup (`PLUGIN_ENDPOINTS_NOT_DECLARED`). This is how one plugin, for example a `Fulfilment` plugin that sells credits,
-also gives the client a screen. An unknown name, a name declared twice, or `storedCredentials` on a type other than
-`Payment` is refused the same way (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
+also gives the client a screen. An unknown name, a name declared twice, a capability on a type that may not carry it
+(`storedCredentials` on anything but `Payment`, `virtualServer` on a `Registrar`) or a capability declared without the one it
+needs (`virtualServerSnapshots` without `virtualServer`) is refused the same way (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
 
 A declared capability is checked against the class when the plugin is activated. If the class does not implement the
 interface a capability promises, the plugin is not activated for anything, its own type's calls included: a payment
 plugin that declares `storedCredentials` without implementing `IStoredCredentialPlugin` takes no payments, and a
 fulfilment plugin that declares `endpoints` without implementing `IPluginEndpoints` receives no fulfilment calls. The
 admin log names the plugin and the capability.
+
+### Server modules
+
+A `Provisioning` plugin that declares `provisioningPanel`, `virtualServer` or `virtualServerList` lists the server modules it
+serves in `serverModules`, for example `"serverModules": ["example-panel"]`: the short names an administrator picks for a
+server's control panel type, and the host sends the servers of those modules to the plugin. Each id is 1 to 50 ASCII letters,
+digits, dashes, dots or underscores, ids repeat nothing (case is ignored) and the list holds at least one. A plugin that
+declares none of those capabilities lists no module. A list that breaks this is refused at install and at startup with
+`PLUGIN_MANIFEST_SERVER_MODULES_INVALID`.
+
+### Registrar connection roles
+
+A `Registrar` plugin may mark which member of the registrar connection a setting fills with `connectionRole` on that setting:
+`accountName`, `apiKey` (a `secret` setting), `apiUrl` (a `url` setting), `clientIp` or `testMode` (a `boolean` setting). A role is
+given to one setting only, and a plugin that gives any role gives both `accountName` and `apiKey`. A manifest that breaks this
+is refused with `PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR`, `PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE`,
+`PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH` or `PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE`. These are the checks of the
+packaging package, so running the package on your plugin before you publish finds them first.
+
+### The panel transport
+
+A hosting panel, virtual server or registrar plugin takes `IPanelTransport` in its constructor and builds every request on the
+client it gives, and never creates its own `HttpClient`. The host's client refuses loopback, link-local and cloud metadata
+addresses, follows no redirect (a 3xx answer reaches the plugin as it is), never repeats a request and gives up after 120
+seconds. `CreateClient(server)` is the one to ask for when the plugin talks to a server it has a `PanelServerConnection` for: if
+the operator ticked "Trust the self signed certificate of this server" on the server form, that client accepts the certificate
+of that server's host name and of nothing else. The setting is the operator's alone and off by default; the plugin has no
+switch of its own. The host keeps no panel port, so `PanelServerConnection.Port` is `null` and the plugin uses its own default.
+`PanelServerConnection` also carries `UseSsl` and `Password` as the server stores them. The plugin owns the `HttpClient` it is given and disposes it when it is done (`using var http = transport.CreateClient(server);`).
 
 Each entry in `fields`:
 

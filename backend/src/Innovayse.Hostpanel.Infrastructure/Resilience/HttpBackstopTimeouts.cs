@@ -32,6 +32,13 @@ public static class HttpBackstopTimeouts
     /// <summary>WHM API client, resolved by name per cPanel server.</summary>
     public static readonly TimeSpan CPanelWhm = TimeSpan.FromSeconds(120);
 
+    /// <summary>
+    /// The client the host hands a panel, virtual server or registrar plugin through <c>IPanelTransport</c>. It has no
+    /// resilience pipeline, so this is its only timeout: as long as the slowest panel budget (account creation), so it never
+    /// cuts a call short that the panel's own profile would allow.
+    /// </summary>
+    public static readonly TimeSpan PanelTransport = TimeSpan.FromSeconds(120);
+
     /// <summary>The migration pull client.</summary>
     public static readonly TimeSpan Migration = TimeSpan.FromMinutes(5);
 

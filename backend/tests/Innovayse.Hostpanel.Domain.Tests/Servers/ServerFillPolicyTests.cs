@@ -201,7 +201,8 @@ public sealed class ServerFillPolicyTests
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), Now);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), Now);
         server.RecordConnectionTest(isOnline: true, accountsCount: accounts, new DateTimeOffset(2026, 10, 1, 8, 0, 0, TimeSpan.Zero));
         return server;
     }

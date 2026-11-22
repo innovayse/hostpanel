@@ -159,8 +159,29 @@ Installer-ը գրում է հիմնական կարգավորումը ընտրվ�
   { name: 'jail_sections', type: 'string', default: 'basicshell,editors,extendedshell,netutils,terminfo', description: 'jk_init բաժինները, որոնք պատճենվում են նոր jail-ի մեջ։' },
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Մուտքի shell-ը, որ սահմանվում է, երբ հաճախորդը գրանցվում է jail-ում։' },
   { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Լրացուցիչ ուղիներ, որոնք jk_cp-ով պատճենվում են յուրաքանչյուր jail-ի մեջ, երբ jail-ում դրանք չկան կամ սերվերի պատճենը փոխվել է (չկա jail-ում, այլ չափ ունի կամ ավելի նոր է)։ Սերվերում բացակայող ուղիները բաց են թողնվում, իսկ արդեն պատճենվածները կրկին չեն պատճենվում։ Գրառումը, որը գաղտնի բանալիների նյութ է կամ պարունակում է այն (սիմվոլիկ հղումները հետևելով), մերժվում է, իսկ install.sh --check-ը զգուշացնում է՝ private թղթապանակ կամ *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx, *.jks ֆայլ։ Ելքային TLS-ի համար նշեք /etc/pki/tls/certs, /etc/pki/ca-trust/extracted և /etc/ssl/certs, բայց երբեք՝ /etc/pki/tls։ Ներառում է dircolors-ը և shell-ի պրոֆիլի գրառումները, որոնք անհրաժեշտ են bash login-ին։ Rsync, tar, gzip և unzip-ը թույլ են տալիս CI/CD-ին կայքերը տեղակայել SSH-ով։' },
-  { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Թղթապանակ, որտեղ գրվում է տնային թղթապանակի bind-mount systemd unit-ը յուրաքանչյուր գրանցված հաշվի համար։' }
+  { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Թղթապանակ, որտեղ գրվում է տնային թղթապանակի bind-mount systemd unit-ը յուրաքանչյուր գրանցված հաշվի համար։' },
+  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Պրովայդերի օգնականների թղթապանակը, որոնք կանգնած են կայքի և տվյալների բազայի գործողությունների հետևում (ensure-website, remove-website, ensure-database, remove-database)։ Օգնական չունեցող գործողությունը պատասխանում է not_supported։ Agent 1.5.0 և ավելի նոր։' }
 ]" />
+
+## Կայքեր և տվյալների բազաներ {#websites-and-databases}
+
+Agent 1.5.0-ը հարցմամբ կարող է հոսթինգի հաշվին տալ կայք և տվյալների բազաներ։ Յուրաքանչյուր գործողության համար այն `helper_dir`-ից գործարկում է root-ին պատկանող մեկ օգնական։ CWP պրոֆիլը բերում է բոլոր չորսը, ուստի CWP սերվերում ոչինչ կարգավորել պետք չէ։ Օգնական չունեցող սերվերը պատասխանում է `not_supported`, իսկ ping-ի պատասխանը թվարկում է հասանելի գործողությունները (`capabilities`) և սերվերի առաջարկած PHP տարբերակները (`php_versions`, օրինակ՝ `["8.1", "8.2", "8.3"]`, դատարկ է, երբ սերվերում `php-versions` օգնական չկա)։
+
+| Գործողություն | Հարցման դաշտեր | Հաջող պատասխան |
+|---------------|----------------|----------------|
+| `ensure-website` | `account`, `hostname`, `docroot`, կամընտիր `php`, կամընտիր `link_root` | `changed` |
+| `remove-website` | `account`, `hostname` | `changed` |
+| `ensure-database` | `account`, `label` | `created`, `database`, `username` և `password` (միայն երբ `created`-ը true է) |
+| `remove-database` | `account`, `label` | `changed` |
+
+- `hostname`-ը պետք է լինի հաշվի սեփական դոմենը կամ նրա ենթադոմենը։
+- `docroot`-ը հաշվարկվում է հաշվի տնային թղթապանակից, երբեք դուրս չի գալիս դրանից և երբեք չի ուղղվում `.ssh`-ի կամ `.conf`-ի ներսում։
+- `php`-ը (օրինակ՝ `8.3`) ընտրում է այդ տարբերակի տեղադրված php-fpm-ը, որը պետք է լինի ping-ի պատասխանի `php_versions`-ից մեկը (հակառակ դեպքում՝ `php_version_unsupported`)։ `link_root`-ը փաստաթղթերի արմատային թղթապանակը նշում է որպես սիմվոլիկ հղում, որը փոխարկվում է տեղակայման ժամանակ. սա ավելացնում է php-fpm pool-ի այն տողերը, որոնք այդպիսի փոխարկումը պահանջում է Apache-ի հետևում, և պահանջում է `php`։
+- `label`-ը 1-ից 15 փոքրատառ և թվանշան է, որը սկսվում է տառով։ Տվյալների բազան և նրա օգտատերը կոչվում են `<account>_<label>`։ Հաշիվը կարող է ունենալ 10։
+
+Օգնականները իդեմպոտենտ են, պահում են root-ին պատկանող գրառում այն մասին, ինչ ստեղծել են, և `remove-*`-ը դիպչում է միայն դրան. կայքը կամ տվյալների բազան, որը ստեղծել է ուրիշը, մերժվում է `site_not_owned`-ով։ Յուրաքանչյուր խմբագրվող ֆայլի պահուստային պատճենը ստեղծվում է նախապես, Apache-ի և php-fpm-ի կարգավորումը ստուգվում է սահուն վերաբեռնումից առաջ, իսկ ձախողված ստուգումը վերականգնում է ֆայլերը։ Տվյալների բազայի գաղտնաբառը ստեղծվում է սերվերում, հետ է ուղարկվում միայն բազան ստեղծած պատասխանում և երբեք չի գրվում որևէ մատյանում։ Եթե այն կորել է, հեռացրեք տվյալների բազան և նորից ստեղծեք։
+
+1.5.0-ում ավելացված սխալները՝ `not_supported`, `site_not_owned`, `website_conflict`, `php_version_unsupported`, `website_failed`, `database_failed`, `database_limit`։ Հարցումների և պատասխանների ամբողջական ձևերը agent-ի `README.md`-ում են։
 
 ## Բանալիները ծառայության կյանքի ընթացքում {#keys-over-a-service-s-life}
 
@@ -192,6 +213,13 @@ Installer-ը գրում է հիմնական կարգավորումը ընտրվ�
 | `ssh_disabled` | Հաշվի shell-ն անջատված shell է (օրինակ՝ `/sbin/nologin`), և `jail_enrol`-ը անջատված է |
 | `unsafe_path` | `.ssh` թղթապանակը կամ `authorized_keys` ֆայլը սիմվոլիկ հղում է կամ անսպասելի տիրոջ է պատկանում |
 | `file_too_large` | `authorized_keys`-ը գերազանցում է չափի սահմանաչափը |
+| `not_supported` | Սերվերում այս գործողության համար օգնական չկա |
+| `site_not_owned` | Hostname-ը հաշվի դոմենը չէ, կամ այդ անունով vhost կամ տվյալների բազա կա, բայց այն agent-ը չի ստեղծել |
+| `website_conflict` | Վահանակի ստեղծած vhost-ը սպասարկում է այլ փաստաթղթերի արմատային թղթապանակ |
+| `php_version_unsupported` | Պահանջված php-fpm տարբերակը տեղադրված չէ |
+| `website_failed` | Կայքի գործողությունը ձախողվեց։ Ձախողված կարգավորման ստուգումը վերականգնում է ֆայլերը |
+| `database_failed` | Տվյալների բազայի գործողությունը ձախողվեց։ Ձախողված ստեղծումը հեռացնում է արածը |
+| `database_limit` | Հաշիվն արդեն ունի agent-ի ստեղծած 10 տվյալների բազա |
 | `timeout` | Հարցումը չափազանց երկար տևեց (stdin՝ 10 վ, ընդհանուր՝ 60 վ) |
 | `internal_error` | Agent-ի կողմի խափանում։ Մանրամասները սերվերի աուդիտի մատյանում են |
 

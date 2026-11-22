@@ -261,7 +261,7 @@ public class MyGatewayTests
 <SettingTable :settings="[
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Սահմանեք 2՝ ստորև նշված անդամներն օգտագործելու համար։' },
   { name: 'settings', type: 'array', default: '[]', description: 'Տիպավորված կարգավորումներ, որոնք լրացնում է ադմինիստրատորը։ Փոխարինում է fields-ին. երբ settings-ը դատարկ է, սերվերը fields-ը վերածում է settings-ի։' },
-  { name: 'capabilities', type: 'string[]', default: '[]', description: 'Ինչ կարող է անել պլագինը, ցուցադրվում է առանց ակտիվացնելու։ Հայտնի անուններ՝ storedCredentials (վճարային պլագին, որը նաև իրականացնում է IStoredCredentialPlugin), paymentReturn (վճարային պլագին, որը նաև իրականացնում է IPaymentReturnPlugin, SDK 3.7.0 կամ ավելի նոր) և endpoints (պլագինի դասն իրականացնում է IPluginEndpoints. App չհանդիսացող պլագինի համար սերվերը մատուցում է միայն նրա հանրային հետկանչերը, տես Արտաքին հետկանչեր. App պլագինը մատուցվում է առանց այն հայտարարելու)։ Պետք է համընկնի այն ինտերֆեյսների հետ, որոնք դասը իրոք իրականացնում է։' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'Ինչ կարող է անել պլագինը, ցուցադրվում է առանց ակտիվացնելու։ Հայտնի անուններ՝ storedCredentials (վճարային պլագին, որը նաև իրականացնում է IStoredCredentialPlugin), paymentReturn (վճարային պլագին, որը նաև իրականացնում է IPaymentReturnPlugin, SDK 3.7.0 կամ ավելի նոր), endpoints (պլագինի դասն իրականացնում է IPluginEndpoints. App չհանդիսացող պլագինի համար սերվերը մատուցում է միայն նրա հանրային հետկանչերը, տես Արտաքին հետկանչեր. App պլագինը մատուցվում է առանց այն հայտարարելու), tax, ինչպես նաև Capabilities բաժնում թվարկված հոսթինգ-վահանակների, վիրտուալ սերվերների և registrar-ների անունները։ Պետք է համընկնի այն ինտերֆեյսների հետ, որոնք դասը իրոք իրականացնում է։' },
   { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Հաճախորդի հոսթինգին հասանելիության տեսակներ, որոնք պլագինը խնդրում է սերվերից։ Հայտնի տեսակներն են՝ ssh, websites և databases (վերջին երկուսը պահանջում են SDK 3.9.0 կամ ավելի նոր, տե՛ս հաճախորդի հոսթինգում կայքերի և տվյալների բազաների բաժինը)։ Ադմինի վահանակի Պլագիններ էջը ցույց է տալիս պլագինի հայտարարած յուրաքանչյուրը։' },
   { name: 'locales', type: 'object', default: '{}', description: 'Տեքստեր՝ ըստ լեզվի կոդի, ապա ըստ բանալու, օրինակ՝ en լեզուն menu.chat բանալիով և Chat տեքստով։ Տեքստի բանալին ունի առնվազն երկու կետով բաժանված մաս, օրինակ՝ menu.chat։ en տեքստերը պետք է սահմանեն մանիֆեստում օգտագործվող բոլոր բանալիները։' },
   { name: 'api', type: 'object', default: '{}', description: 'Երթուղիներ, որոնք սերվերը փոխանցում է պլագինին՝ api.client և api.admin, յուրաքանչյուրը երթուղիների ցանկ։' },
@@ -397,22 +397,69 @@ Fixes the renewal date."
 
 2-րդ տարբերակի մանիֆեստը կարող է թվարկել `capabilities`, յուրաքանչյուրը SDK-ի `PluginCapabilities`-ից մի անուն՝
 
-| Capability | Թույլատրվում է | Պլագինի դասը նաև պետք է իրականացնի |
-|------------|------------|--------------------------------------|
-| `storedCredentials` | միայն `Payment` | `IStoredCredentialPlugin` |
-| `endpoints` | ցանկացած տեսակ | `IPluginEndpoints` |
+| Capability | Թույլատրվում է | Պահանջում է | Պլագինի դասը նաև պետք է իրականացնի |
+|------------|------------|-------|--------------------------------------|
+| `storedCredentials` | միայն `Payment` |  | `IStoredCredentialPlugin` |
+| `paymentReturn` | միայն `Payment` |  | `IPaymentReturnPlugin` |
+| `endpoints` | ցանկացած տեսակ |  | `IPluginEndpoints` |
+| `tax` | ցանկացած տեսակ |  | `ITaxPlugin` |
+| `provisioningPanel` | միայն `Provisioning` |  | `IProvisioningPanelPlugin` |
+| `provisioningPanelLogin` | միայն `Provisioning` | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
+| `provisioningPanelPackages` | միայն `Provisioning` | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `virtualServer` | միայն `Provisioning` |  | `IVirtualServerPlugin` |
+| `virtualServerList` | միայն `Provisioning` |  | `IVirtualServerListPlugin` |
+| `virtualServerSnapshots` | միայն `Provisioning` | `virtualServer` | `IVirtualServerSnapshotPlugin` |
+| `virtualServerBackups` | միայն `Provisioning` | `virtualServer` | `IVirtualServerBackupPlugin` |
+| `virtualServerFirewall` | միայն `Provisioning` | `virtualServer` | `IVirtualServerFirewallPlugin` |
+| `virtualServerConsole` | միայն `Provisioning` | `virtualServer` | `IVirtualServerPlugin`՝ `CreateConsoleSessionAsync`-ի աջակցությամբ |
+| `registrarOperations` | միայն `Registrar` |  | `IRegistrarOperationsPlugin` |
+| `registrarEmailForwarding`, `registrarDnsManagement`, `registrarWhois`, `registrarChildNameservers`, `registrarDnssec`, `registrarRestore`, `registrarDomainList`, `registrarSuggestions`, `registrarBalance` | միայն `Registrar` |  | համապատասխան ինտերֆեյսը, օրինակ՝ `IRegistrarWhoisPlugin` `registrarWhois`-ի համար |
+
+Հոսթինգ-վահանակի, վիրտուալ սերվերի, registrar-ի կամ `tax` capability հայտարարելը պլագինին թույլ է տալիս բեռնվել և capability-ն ցույց է տալիս
+պլագինների էջում։ Սերվերը այդ պայմանագրերը դեռ չի կանչում. գործառույթը սկսում է օգտագործել մեկը, երբ թողարկվում է, իսկ
+պլագինը, որը այն հայտարարում է ավելի շուտ, բեռնվում է, բայց նրան երբեք չեն դիմում։
 
 `App` պլագինը պատասխանում է երթուղիներին և ցուցադրում է էջեր, մենյուներ ու սլոտներ՝ առանց ինչ-որ բան հայտարարելու։ Ցանկացած այլ տեսակ, որը հայտարարում է
 `api` երթուղիներ կամ `ui` մենյուներ, էջեր կամ սլոտներ, պետք է հայտարարի `endpoints`, այլապես փաթեթը մերժվում է տեղադրման ժամանակ և բաց է թողնվում
 գործարկման ժամանակ (`PLUGIN_ENDPOINTS_NOT_DECLARED`)։ Այսպես է մեկ պլագինը, օրինակ՝ կրեդիտներ վաճառող `Fulfilment` պլագինը,
-նաև հաճախորդին տալիս էկրան։ Անհայտ անունը, երկու անգամ հայտարարված անունը կամ `Payment`-ից տարբեր տեսակի վրա `storedCredentials`-ը
-մերժվում է նույն կերպ (`PLUGIN_CAPABILITY_NOT_ALLOWED`)։
+նաև հաճախորդին տալիս էկրան։ Անհայտ անունը, երկու անգամ հայտարարված անունը, capability-ն այն տեսակի վրա, որը չի կարող այն կրել
+(`storedCredentials`՝ `Payment`-ից տարբեր տեսակի վրա, `virtualServer`՝ `Registrar`-ի վրա) կամ capability-ն առանց այն capability-ի, որ նա
+պահանջում է (`virtualServerSnapshots` առանց `virtualServer`-ի), մերժվում է նույն կերպ (`PLUGIN_CAPABILITY_NOT_ALLOWED`)։
 
 Հայտարարված capability-ն ստուգվում է դասի դեմ պլագինը ակտիվացնելիս։ Եթե դասը չի իրականացնում
 capability-ի խոստացած ինտերֆեյսը, պլագինը ոչ մի բանի համար չի ակտիվանում, ներառյալ իր սեփական տեսակի կանչերը. վճարային
 պլագինը, որը հայտարարում է `storedCredentials`՝ առանց `IStoredCredentialPlugin`-ը իրականացնելու, վճարումներ չի ընդունում, իսկ
 fulfilment պլագինը, որը հայտարարում է `endpoints`՝ առանց `IPluginEndpoints`-ը իրականացնելու, fulfilment կանչեր չի ստանում։
 Ադմինի մատյանը նշում է պլագինը և capability-ն։
+
+### Սերվերային մոդուլներ {#server-modules}
+
+`Provisioning` պլագինը, որը հայտարարում է `provisioningPanel`, `virtualServer` կամ `virtualServerList`, իր սպասարկած սերվերային
+մոդուլները թվարկում է `serverModules`-ում, օրինակ՝ `"serverModules": ["example-panel"]`. դրանք կարճ անուններ են, որոնցից ադմինը ընտրում է
+սերվերի կառավարման վահանակի տեսակը, և սերվերը այդ մոդուլների սերվերները ուղարկում է պլագինին։ Յուրաքանչյուր id 1-ից 50 ASCII տառ է,
+թվանշան, գծիկ, կետ կամ ընդգծում, id-ները չեն կրկնվում (մեծատառը հաշվի չի առնվում), իսկ ցանկում կա առնվազն մեկը։
+Պլագինը, որը այդ capability-ներից ոչ մեկը չի հայտարարում, մոդուլներ չի թվարկում։ Այս կանոնը խախտող ցանկը մերժվում է տեղադրման և
+գործարկման ժամանակ `PLUGIN_MANIFEST_SERVER_MODULES_INVALID`-ով։
+
+### Registrar-ի կապի դերեր {#registrar-connection-roles}
+
+`Registrar` պլագինը կարող է նշել, registrar-ի կապի որ անդամն է լրացնում կարգավորումը, այդ կարգավորման `connectionRole`-ով՝
+`accountName`, `apiKey` (`secret` կարգավորում), `apiUrl` (`url` կարգավորում), `clientIp` կամ `testMode` (`boolean` կարգավորում)։ Դերը
+տրվում է միայն մեկ կարգավորման, իսկ պլագինը, որը որևէ դեր է տալիս, տալիս է և՛ `accountName`, և՛ `apiKey`։ Այս կանոնը խախտող մանիֆեստը
+մերժվում է `PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR`, `PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE`,
+`PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH` կամ `PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE`-ով։ Սրանք փաթեթավորման
+փաթեթի ստուգումներն են, ուստի հրապարակելուց առաջ փաթեթը ձեր պլագինի վրա գործարկելը դրանք գտնում է առաջինը։
+
+### Վահանակի տրանսպորտը {#the-panel-transport}
+
+Հոսթինգ-վահանակի, վիրտուալ սերվերի կամ registrar-ի պլագինը կոնստրուկտորում ընդունում է `IPanelTransport` և յուրաքանչյուր հարցում կառուցում է
+նրա տված կլիենտով, իսկ սեփական `HttpClient` չի ստեղծում։ Սերվերի կլիենտը մերժում է loopback, link-local և ամպային մետատվյալների
+հասցեները, վերահասցեավորում չի հետևում (3xx պատասխանը պլագինին հասնում է առանց փոփոխության), հարցումը երբեք չի կրկնում և հրաժարվում է 120
+վայրկյանից։ `CreateClient(server)`-ը պետք է խնդրել, երբ պլագինը խոսում է սերվերի հետ, որի համար ունի `PanelServerConnection`. եթե
+օպերատորը սերվերի ձևում նշել է «Վստահել այս սերվերի ինքնաստորագրված վկայականին», այդ կլիենտը ընդունում է այդ սերվերի հոսթի անվան
+վկայականը և ուրիշ ոչ մեկինը։ Կարգավորումը միայն օպերատորինն է և լռելյայն անջատված է. պլագինը սեփական
+անջատիչ չունի։ Սերվերը վահանակի պորտ չի պահում, ուստի `PanelServerConnection.Port`-ը `null` է, և պլագինը օգտագործում է իր լռելյայն պորտը։
+`PanelServerConnection`-ը նաև կրում է `UseSsl` և `Password`՝ այնպես, ինչպես սերվերը դրանք պահում է։ Պլագինը տիրապետում է իրեն տրված `HttpClient`-ին և աշխատանքն ավարտելիս ազատում է այն (`using var http = transport.CreateClient(server);`)։
 
 `fields`-ի յուրաքանչյուր գրառում՝
 

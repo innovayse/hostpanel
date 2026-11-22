@@ -889,6 +889,21 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest agentProfile is not one of the SSH key agent profiles the SDK defines (400).</summary>
     public const string PLUGIN_MANIFEST_AGENT_PROFILE_INVALID = "PLUGIN_MANIFEST_AGENT_PROFILE_INVALID";
 
+    /// <summary>The manifest serverModules list is missing or badly formed on a plugin with a provisioningPanel or virtualServer capability, or present on one without (400).</summary>
+    public const string PLUGIN_MANIFEST_SERVER_MODULES_INVALID = "PLUGIN_MANIFEST_SERVER_MODULES_INVALID";
+
+    /// <summary>A manifest setting names a connectionRole in a plugin that is not a registrar plugin (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR = "PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR";
+
+    /// <summary>Two manifest settings name the same connectionRole (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE = "PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE";
+
+    /// <summary>A manifest connectionRole sits on a setting of a type that cannot carry it (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH = "PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH";
+
+    /// <summary>A registrar plugin names a connectionRole but not both accountName and apiKey (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE = "PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 
@@ -1831,6 +1846,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The country code of a server location is not two letters (400).</summary>
     public const string LOCATION_COUNTRY_CODE_INVALID = Domain.Locations.ServerLocationErrors.CountryCodeInvalid;
+
+    /// <summary>A server without SSL cannot accept a self signed certificate (400).</summary>
+    public const string SERVER_SELF_SIGNED_REQUIRES_SSL = Domain.Servers.ServerErrors.SelfSignedRequiresSsl;
 
     /// <summary>The sort order of a project is negative (400).</summary>
     public const string PROJECT_SORT_ORDER_NEGATIVE = Domain.Projects.ProjectErrors.SortOrderNegative;

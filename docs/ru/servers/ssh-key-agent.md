@@ -159,8 +159,29 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
   { name: 'jail_sections', type: 'string', default: 'basicshell,editors,extendedshell,netutils,terminfo', description: 'Разделы jk_init, копируемые в новый jail.' },
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Оболочка входа, задаваемая при включении клиента в jail.' },
   { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Дополнительные пути, копируемые в каждый jail через jk_cp, когда их нет в jail или копия на сервере изменилась (нет в jail, другой размер или более новая). Пути, которых нет на сервере, пропускаются, а уже скопированные не копируются повторно. Запись, которая является закрытым ключевым материалом или содержит его (с учётом символических ссылок), отклоняется, а install.sh --check выводит предупреждение: каталог private либо файл *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx или *.jks; для исходящего TLS укажите /etc/pki/tls/certs, /etc/pki/ca-trust/extracted и /etc/ssl/certs, но никогда не /etc/pki/tls. Включает dircolors и записи профиля оболочки, необходимые для входа в bash; rsync, tar, gzip и unzip позволяют CI/CD развёртывать сайты по SSH.' },
-  { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Каталог, в который для каждой включённой учётной записи записывается юнит systemd с bind-монтированием домашнего каталога.' }
+  { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Каталог, в который для каждой включённой учётной записи записывается юнит systemd с bind-монтированием домашнего каталога.' },
+  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Каталог вспомогательных программ провайдера, стоящих за операциями с сайтами и базами данных (ensure-website, remove-website, ensure-database, remove-database). Операция без своей вспомогательной программы отвечает not_supported. Агент версии 1.5.0 и новее.' }
 ]" />
+
+## Сайты и базы данных {#websites-and-databases}
+
+Агент 1.5.0 по запросу может создать для хостинг-аккаунта сайт и базы данных. На каждую операцию он запускает одну вспомогательную программу, принадлежащую root, из `helper_dir`; профиль CWP поставляет все четыре, поэтому на сервере с CWP ничего настраивать не нужно. Сервер без вспомогательной программы отвечает `not_supported`, а ответ на ping перечисляет доступные операции (`capabilities`) и версии PHP, которые предлагает сервер (`php_versions`, например `["8.1", "8.2", "8.3"]`; пусто, если на сервере нет вспомогательной программы `php-versions`).
+
+| Операция | Поля запроса | Успешный ответ |
+|-----------|----------------|----------------|
+| `ensure-website` | `account`, `hostname`, `docroot`, необязательное `php`, необязательное `link_root` | `changed` |
+| `remove-website` | `account`, `hostname` | `changed` |
+| `ensure-database` | `account`, `label` | `created`, `database`, `username` и `password` (только когда `created` равно true) |
+| `remove-database` | `account`, `label` | `changed` |
+
+- `hostname` должен быть собственным доменом учётной записи или его поддоменом.
+- `docroot` задаётся относительно домашнего каталога учётной записи, никогда не выходит за его пределы и никогда не указывает внутрь `.ssh` или `.conf`.
+- `php` (например, `8.3`) выбирает установленный php-fpm этой версии, которая должна входить в `php_versions` из ответа на ping (иначе `php_version_unsupported`); `link_root` помечает корневой каталог документов как символическую ссылку, которую переключают при развёртывании: это добавляет строки пула php-fpm, нужные для такого переключения за Apache, и требует `php`.
+- `label` содержит от 1 до 15 строчных букв и цифр и начинается с буквы; база данных и её пользователь называются `<account>_<label>`. У учётной записи может быть 10 баз.
+
+Вспомогательные программы идемпотентны, ведут принадлежащую root запись о том, что создали, а `remove-*` трогает только это: сайт или база данных, созданные кем-то другим, отклоняются с `site_not_owned`. Каждый изменяемый файл предварительно копируется в резервную копию, конфигурация Apache и php-fpm проверяется перед плавной перезагрузкой, а неудачная проверка восстанавливает файлы. Пароль базы данных генерируется на сервере, возвращается только в ответе, создавшем базу, и никогда не попадает в журналы; если он утерян, удалите базу данных и создайте её заново.
+
+Ошибки, добавленные в 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `php_version_unsupported`, `website_failed`, `database_failed`, `database_limit`. Полные формы запросов и ответов приведены в `README.md` агента.
 
 ## Ключи в течение жизни услуги {#keys-over-a-service-s-life}
 
@@ -192,6 +213,13 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
 | `ssh_disabled` | Оболочка учётной записи отключена (например, `/sbin/nologin`), а `jail_enrol` выключен |
 | `unsafe_path` | Каталог `.ssh` или файл `authorized_keys` является символической ссылкой или имеет неожиданного владельца |
 | `file_too_large` | `authorized_keys` превышает предельный размер |
+| `not_supported` | На сервере нет вспомогательной программы для этой операции |
+| `site_not_owned` | Имя хоста не принадлежит домену учётной записи, либо виртуальный хост или база данных с таким именем существуют, но создал их не агент |
+| `website_conflict` | Виртуальный хост, созданный панелью, обслуживает другой корневой каталог документов |
+| `php_version_unsupported` | Запрошенная версия php-fpm не установлена |
+| `website_failed` | Операция с сайтом не удалась; неудачная проверка конфигурации восстанавливает файлы |
+| `database_failed` | Операция с базой данных не удалась; при неудачном создании созданное удаляется |
+| `database_limit` | У учётной записи уже 10 баз данных, созданных агентом |
 | `timeout` | Запрос выполнялся слишком долго (stdin: 10 с, всего: 60 с) |
 | `internal_error` | Сбой на стороне агента; подробности в журнале аудита сервера |
 

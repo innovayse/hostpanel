@@ -257,7 +257,8 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
             new ServerDetails(
                 $"protected-{Guid.NewGuid():N}", "server.example.test", null, null, ServerModule.CPanel, "root",
                 new ServerCredentials(password, apiToken, accessHash), true, null, false, false, 0m, null, null,
-                ServerNameServers.None),
+                ServerNameServers.None,
+                false),
             TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync();

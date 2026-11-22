@@ -40,6 +40,12 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// <summary>Gets whether SSL should be used when connecting to the server API.</summary>
     public bool UseSSL { get; private set; }
 
+    /// <summary>
+    /// Gets whether the operator trusts the self signed certificate of this server's API. The plugin transport then accepts
+    /// that certificate for this server's own host name and nothing else; it is off by default.
+    /// </summary>
+    public bool AcceptsSelfSignedCertificate { get; private set; }
+
     /// <summary>Gets the maximum number of accounts allowed on this server. Null means unlimited.</summary>
     public int? MaxAccounts { get; private set; }
 
@@ -194,8 +200,16 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// Applies all fields from a <see cref="ServerDetails"/> value object.
     /// </summary>
     /// <param name="d">The details to apply.</param>
+    /// <exception cref="DomainRuleException">The details accept a self signed certificate on a server without SSL.</exception>
     private void Apply(ServerDetails d)
     {
+        if (d.AcceptsSelfSignedCertificate && !d.UseSSL)
+        {
+            throw new DomainRuleException(
+                ServerErrors.SelfSignedRequiresSsl,
+                "A server without SSL cannot accept a self signed certificate.");
+        }
+
         Name = d.Name;
         Hostname = d.Hostname;
         IpAddress = d.IpAddress;
@@ -220,6 +234,7 @@ public sealed class Server : BaseEntity, IAggregateRoot
         }
 
         UseSSL = d.UseSSL;
+        AcceptsSelfSignedCertificate = d.AcceptsSelfSignedCertificate;
         MaxAccounts = d.MaxAccounts;
         IsDefault = d.IsDefault;
         IsDisabled = d.IsDisabled;

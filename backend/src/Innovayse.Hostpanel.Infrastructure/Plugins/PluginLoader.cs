@@ -218,7 +218,7 @@ public static class PluginLoader
             // A plugin that declares the endpoints capability promises the host it can answer routes. Declaring it without
             // implementing the contract is a broken manifest, refused here like any other, and kept in the registry so the
             // admin list shows why. The id is already claimed above, so an upload cannot stand in for it.
-            if (manifest.Declares(PluginCapabilities.Endpoints) && !typeof(IPluginEndpoints).IsAssignableFrom(pluginType))
+            if (manifest.Declares(PluginCapabilities.Endpoints) && !PluginCapabilityRules.IsImplementedBy(PluginCapabilities.Endpoints, pluginType))
             {
                 var detail = $"capabilities declares '{PluginCapabilities.Endpoints}' but '{manifest.EntryPoint}' does not implement IPluginEndpoints";
                 logger.LogWarning(

@@ -35,6 +35,7 @@ using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
@@ -718,6 +719,10 @@ public static class DependencyInjection
         // WHM API client for cPanel servers, named only, like Plesk. The chain (no request logging, no
         // redirects, the WHM resilience profile) is one extension, which the tests resolve as well.
         services.AddCPanelWhmHttpClient();
+
+        // The transport every panel, virtual server and registrar plugin reaches its servers through: the guarded named
+        // client with no redirect and no retry, and the per server choice to trust a self signed certificate.
+        services.AddPanelTransport();
 
         // Migration
         services.AddScoped<MigrationPullWorker>();

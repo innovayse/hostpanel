@@ -624,6 +624,21 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Մանիֆեստի agentProfile-ը պետք է լինի SDK-ի սահմանած SSH բանալիների գործակալի պրոֆիլներից մեկը՝ գրված ճշգրիտ։</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի serverModules ցուցակը վավեր չէ. provisioningPanel կամ virtualServer հնարավորությամբ հավելագրիչը պետք է նշի առնվազն մեկ սերվերի մոդուլի նույնացուցիչ (տառեր, թվանշաններ, գծիկներ, կետեր և ընդգծումներ, մինչև 50 նիշ, առանց կրկնությունների), իսկ մյուս հավելագրիչները չպետք է նշեն ոչ մեկը։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>Մանիֆեստի կարգավորումներում connectionRole-ը թույլատրվում է միայն գրանցողի հավելագրիչի համար։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Մանիֆեստի երկու կարգավորում ունեն միևնույն connectionRole-ը. յուրաքանչյուր դերը կարելի է տալ միայն մեկ կարգավորման։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>Մանիֆեստի connectionRole-ը նշված է սխալ տեսակի կարգավորման վրա. apiKey-ի համար պետք է secret կարգավորում, apiUrl-ի համար՝ url, testMode-ի համար՝ boolean։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>connectionRole հայտարարող գրանցողի հավելագրիչը պետք է հայտարարի և accountName-ը, և apiKey-ը։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>
@@ -667,7 +682,7 @@
     <value>Այս հավելագրիչը հայտարարում է երթուղիներ, էջեր կամ սլոտներ, սակայն այն հավելվածի տեսակի հավելագրիչ չէ և չի հայտարարում «endpoints» հնարավորությունը։</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում կամ որը նրա տեսակի հավելագրիչը չի կարող ունենալ։</value>
+    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում, որը նրա տեսակի հավելագրիչը չի կարող ունենալ կամ որին պետք է մեկ այլ հնարավորություն, որը հավելագրիչը չի հայտարարել։</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
@@ -1557,5 +1572,8 @@
   </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Առանց SSL սերվերը չի կարող ընդունել ինքնաստորագրված վկայական։ Միացրեք SSL-ը կամ հանեք ինքնաստորագրված վկայականի նշումը։</value>
   </data>
 </root>

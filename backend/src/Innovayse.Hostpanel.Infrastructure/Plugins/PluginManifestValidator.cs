@@ -1,5 +1,4 @@
 using Hostpanel.Sdk.Packaging.Manifest;
-using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
@@ -23,18 +22,6 @@ internal static class PluginManifestValidator
 {
     /// <summary>The first manifest version that may declare <c>hostAccess</c>.</summary>
     private const int HostAccessManifestVersion = 2;
-
-    /// <summary>
-    /// The capabilities this host knows and the plugin types that may carry each; <see langword="null"/> means every
-    /// type. A name missing here is refused, so a capability the host cannot honour never reaches activation.
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, PluginType?> CapabilityTypes =
-        new Dictionary<string, PluginType?>(StringComparer.Ordinal)
-        {
-            [PluginCapabilities.StoredCredentials] = PluginType.Payment,
-            [PluginCapabilities.PaymentReturn] = PluginType.Payment,
-            [PluginCapabilities.Endpoints] = null,
-        };
 
     /// <summary>
     /// What the host decides for the package's rules: the manifest versions it reads (the package's default, <c>1</c> and
@@ -68,7 +55,8 @@ internal static class PluginManifestValidator
         // What follows is what only the host knows: the access kinds and capabilities it defines and whether it serves
         // the plugin's endpoints. The package knows none of these.
         return CheckHostAccess(manifest)
-            ?? CheckCapabilities(manifest)
+            ?? PluginCapabilityRules.Validate(manifest)
+            ?? CheckServerModules(manifest)
             ?? CheckEndpointsDeclared(manifest)
             ?? CheckPageLayouts(manifest);
     }
@@ -97,36 +85,31 @@ internal static class PluginManifestValidator
     }
 
     /// <summary>
-    /// Checks that every declared capability is one the host knows, declared once, and one the plugin's type may carry.
+    /// Checks <c>serverModules</c>, the module ids whose servers a provisioning plugin serves: a plugin that declares a
+    /// provisioning capability lists at least one id and every id is well formed and unique (the SDK's
+    /// <see cref="PluginServerModules.Validate"/>), and a plugin without one lists none, because no server would ever be
+    /// sent to it and the list would read as a promise the host does not keep.
     /// </summary>
     /// <param name="manifest">The manifest.</param>
-    /// <returns>The <see cref="PluginManifestRule.CapabilityNotAllowed"/> violation, or <see langword="null"/>.</returns>
-    private static PluginManifestViolation? CheckCapabilities(PluginManifest manifest)
+    /// <returns>The <see cref="PluginManifestRule.ServerModulesInvalid"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckServerModules(PluginManifest manifest)
     {
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var capability in manifest.Capabilities)
+        if (!PluginCapabilityRules.DeclaresProvisioning(manifest))
         {
-            // A repeat is refused rather than ignored: it is a manifest mistake, and the list is shown to the operator.
-            if (!seen.Add(capability))
-            {
-                return new PluginManifestViolation(
-                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}' twice");
-            }
-
-            if (!CapabilityTypes.TryGetValue(capability, out var only))
-            {
-                return new PluginManifestViolation(
-                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}', which this host does not define");
-            }
-
-            if (only is { } type && manifest.Type != type)
-            {
-                return new PluginManifestViolation(
-                    PluginManifestRule.CapabilityNotAllowed, $"capabilities names '{capability}', which only a {type} plugin may carry");
-            }
+            return manifest.ServerModules.Count == 0
+                ? null
+                : new PluginManifestViolation(
+                    PluginManifestRule.ServerModulesInvalid, "serverModules is listed by a plugin that declares no provisioning capability");
         }
 
-        return null;
+        var broken = PluginServerModules.Validate(manifest.ServerModules).FirstOrDefault();
+        return broken is null
+            ? null
+            : new PluginManifestViolation(
+                PluginManifestRule.ServerModulesInvalid,
+                broken.Index is { } index
+                    ? $"serverModules entry {index} breaks the rule {broken.Rule}"
+                    : $"serverModules breaks the rule {broken.Rule}");
     }
 
     /// <summary>

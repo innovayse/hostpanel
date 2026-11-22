@@ -624,6 +624,21 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>The agentProfile in the manifest must be one of the SSH key agent profiles this SDK defines, written exactly.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>The serverModules list in the manifest is not valid: a plugin with the provisioningPanel or virtualServer capability must list at least one server module id (letters, digits, dashes, dots and underscores, up to 50 characters, no repeats), and any other plugin must list none.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>A connectionRole in the manifest settings is only allowed on a registrar plugin.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Two settings in the manifest have the same connectionRole; each role may be given to one setting only.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>A connectionRole in the manifest is on a setting of the wrong type: apiKey needs a secret setting, apiUrl a url setting and testMode a boolean setting.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>A registrar plugin that declares a connectionRole must declare both accountName and apiKey.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>
@@ -667,7 +682,7 @@
     <value>This plugin declares routes, pages or slots, but it is not an app plugin and does not declare the "endpoints" capability.</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>This plugin declares a capability that the host does not know or that its plugin type cannot have.</value>
+    <value>This plugin declares a capability that the host does not know, that its plugin type cannot have, or that needs another capability the plugin does not declare.</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>That archive contains an entry that would write outside the plugin's own folder and was rejected.</value>
@@ -1557,5 +1572,8 @@
   </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>A server without SSL cannot accept a self signed certificate. Turn SSL on or clear the self signed certificate option.</value>
   </data>
 </root>

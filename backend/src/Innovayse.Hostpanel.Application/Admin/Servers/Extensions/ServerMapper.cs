@@ -27,7 +27,7 @@ public static class ServerMapper
     public static ServerDto ToDto(Server s, IReadOnlyDictionary<int, string> groupMap, ServerUsageDto? usage = null) =>
         new(
             s.Id, s.Name,
-            new ServerEndpointDto(s.Hostname, s.IpAddress, s.AssignedIpAddresses, s.UseSSL),
+            new ServerEndpointDto(s.Hostname, s.IpAddress, s.AssignedIpAddresses, s.UseSSL, s.AcceptsSelfSignedCertificate),
             s.Module.ToString(), s.Username,
             new ServerLimitsDto(s.MaxAccounts, s.IsDefault, s.IsDisabled),
             new ServerHostingDto(s.Datacenter, s.ServerStatusAddress, s.MonthlyCost),

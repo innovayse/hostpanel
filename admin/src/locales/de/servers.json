@@ -39,6 +39,7 @@
     "accessHashValue": "Access-Hash {value}",
     "usedByCpanelWhmAnd": "Wird von cPanel/WHM und CWP für die tokenbasierte Authentifizierung verwendet.",
     "useSslForConnections": "SSL für Verbindungen verwenden",
+    "acceptSelfSignedCertificate": "Dem selbstsignierten Zertifikat dieses Servers vertrauen",
     "addServer": "Server hinzufügen",
     "secondary": "Sekundärer",
     "third": "Dritter",

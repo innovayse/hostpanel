@@ -664,7 +664,7 @@
     <value>Este complemento declara rutas, páginas o ranuras, pero no es un complemento de aplicación ni declara la capacidad "endpoints".</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>Este complemento declara una capacidad que el host no conoce o que su tipo de complemento no puede tener.</value>
+    <value>Este complemento declara una capacidad que el host no conoce, que su tipo de complemento no puede tener o que necesita otra capacidad que el complemento no declara.</value>
   </data>
   <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Ese archivo contiene una entrada que escribiría fuera de la carpeta propia del complemento y fue rechazado.</value>
@@ -1554,7 +1554,25 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>El agentProfile del manifiesto debe ser uno de los perfiles del agente de claves SSH que define este SDK, escrito exactamente igual.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>La lista serverModules del manifiesto no es válida: un complemento con la capacidad provisioningPanel o virtualServer debe indicar al menos un id de módulo de servidor (letras, dígitos, guiones, puntos y guiones bajos, hasta 50 caracteres, sin repeticiones), y cualquier otro complemento no debe indicar ninguno.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>Un connectionRole en los ajustes del manifiesto solo se permite en un complemento de registrador.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>Dos ajustes del manifiesto tienen el mismo connectionRole; cada rol solo puede asignarse a un ajuste.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>Un connectionRole del manifiesto está en un ajuste de tipo incorrecto: apiKey necesita un ajuste secret, apiUrl uno url y testMode uno boolean.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>Un complemento de registrador que declara un connectionRole debe declarar accountName y apiKey.</value>
+  </data>
   <data name="PLUGIN_VIEW_OPEN_URL_INVALID" xml:space="preserve">
     <value>Uno de los documentos de vista de este plugin abre una dirección de una respuesta con una forma o en un lugar que este servidor no acepta.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Un servidor sin SSL no puede aceptar un certificado autofirmado. Active SSL o desactive la opción de certificado autofirmado.</value>
   </data>
 </root>

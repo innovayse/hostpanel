@@ -200,7 +200,8 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), TestMoments.Seeded);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), TestMoments.Seeded);
         server.RecordConnectionTest(true, accounts, TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);

@@ -11,7 +11,13 @@ import { SshAgentProfile } from '../../src/types/sshenums'
 export const hostServer: ServerDto = {
   id: 1,
   name: 'host1',
-  endpoint: { hostname: 'host1.example.test', ipAddress: '203.0.113.10', assignedIpAddresses: null, useSSL: true },
+  endpoint: {
+    hostname: 'host1.example.test',
+    ipAddress: '203.0.113.10',
+    assignedIpAddresses: null,
+    useSSL: true,
+    acceptsSelfSignedCertificate: false,
+  },
   module: 'Cwp7',
   username: 'root',
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },

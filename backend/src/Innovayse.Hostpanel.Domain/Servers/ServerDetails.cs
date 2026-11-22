@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Domain.Servers;
 /// <param name="Datacenter">Datacenter or NOC provider name.</param>
 /// <param name="ServerStatusAddress">URL to the server status page folder.</param>
 /// <param name="NameServers">Nameservers the server's accounts are delegated to.</param>
+/// <param name="AcceptsSelfSignedCertificate">Whether the operator trusts the self signed certificate of the server's API; off unless set, and only possible with SSL.</param>
 public record ServerDetails(
     string Name,
     string Hostname,
@@ -36,4 +37,5 @@ public record ServerDetails(
     decimal MonthlyCost,
     string? Datacenter,
     string? ServerStatusAddress,
-    ServerNameServers NameServers);
+    ServerNameServers NameServers,
+    bool AcceptsSelfSignedCertificate);

@@ -57,6 +57,33 @@ describe('ServerFormModal', () => {
     })
   })
 
+  it('sends the self signed certificate choice, off for a new server and on once the toggle is flipped', async () => {
+    const wrapper = mountModal()
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ endpoint: { acceptsSelfSignedCertificate: false } })
+
+    await wrapper.get('[data-testid="server-form-self-signed"]').trigger('click')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[1]?.[0]).toMatchObject({ endpoint: { acceptsSelfSignedCertificate: true } })
+  })
+
+  it('loads the stored self signed certificate choice and drops it when SSL is switched off', async () => {
+    const wrapper = mountModal({
+      server: serverDto({ endpoint: { hostname: 'host9.example.com', ipAddress: null, assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: true } }),
+    })
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ endpoint: { acceptsSelfSignedCertificate: true } })
+
+    await wrapper.get('[data-testid="server-form-ssl"]').trigger('click')
+    expect(wrapper.get('[data-testid="server-form-self-signed"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[1]?.[0]).toMatchObject({ endpoint: { useSSL: false, acceptsSelfSignedCertificate: false } })
+  })
+
   it('sends no account cap once the max accounts limit is switched to unlimited', async () => {
     const wrapper = mountModal({ server: serverDto() })
 

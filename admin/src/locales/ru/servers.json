@@ -39,6 +39,7 @@
     "accessHashValue": "Хеш доступа {value}",
     "usedByCpanelWhmAnd": "Используется cPanel/WHM и CWP для аутентификации по токену.",
     "useSslForConnections": "Использовать SSL для подключений",
+    "acceptSelfSignedCertificate": "Доверять самоподписанному сертификату этого сервера",
     "addServer": "Добавить сервер",
     "secondary": "Второй",
     "third": "Третий",

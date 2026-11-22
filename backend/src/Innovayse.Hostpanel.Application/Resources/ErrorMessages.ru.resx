@@ -624,6 +624,21 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Профиль agentProfile в манифесте должен быть одним из профилей SSH-агента ключей, которые задаёт SDK, и записан точно.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>Список serverModules в манифесте недопустим: плагин с возможностью provisioningPanel или virtualServer должен перечислить хотя бы один идентификатор модуля сервера (буквы, цифры, дефисы, точки и подчёркивания, до 50 символов, без повторов), а любой другой плагин не должен перечислять ни одного.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>connectionRole в настройках манифеста разрешён только у плагина регистратора.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>У двух настроек манифеста одинаковый connectionRole: каждую роль можно назначить только одной настройке.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>connectionRole в манифесте указан у настройки неподходящего типа: для apiKey нужна настройка secret, для apiUrl настройка url, для testMode настройка boolean.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>Плагин регистратора, который объявляет connectionRole, должен объявить и accountName, и apiKey.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>
@@ -667,7 +682,7 @@
     <value>Этот плагин объявляет маршруты, страницы или слоты, но не является плагином-приложением и не объявляет возможность «endpoints».</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>Этот плагин объявляет возможность, которую хост не знает или которая недоступна для его типа плагина.</value>
+    <value>Этот плагин объявляет возможность, которую хост не знает, которая недоступна для его типа плагина или которой нужна другая возможность, не объявленная плагином.</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Этот архив содержит запись, которая записала бы файл вне папки плагина, и был отклонён.</value>
@@ -1557,5 +1572,8 @@
   </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>Максимальное число активных услуг должно быть 0 или пустым (без ограничений) либо положительным числом.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Сервер без SSL не может принимать самоподписанный сертификат. Включите SSL или снимите отметку о самоподписанном сертификате.</value>
   </data>
 </root>

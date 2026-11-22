@@ -45,7 +45,7 @@ public static class SshTestSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(new ServerDetails(
             $"ssh-srv-{Guid.NewGuid():N}", hostname, null, null, module, "root", new ServerCredentials(null, null, "hash"), true, null,
-            false, false, 0m, null, null, ServerNameServers.None), TestMoments.Seeded);
+            false, false, 0m, null, null, ServerNameServers.None, false), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 

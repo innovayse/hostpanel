@@ -8,6 +8,7 @@
  * C# API and lists the fake widgets a spec scripts (`setPluginSlots`).
  */
 import { expect, test } from './support/test'
+import { HttpMethod } from '../types/httpmethod'
 import { PLUGIN_ID, SERVICE_MANAGED } from './support/fixtures.mjs'
 import { resetStub, scriptStub, setPluginSlots, signIn, stubRequests, waitForHydration } from './support/helpers'
 
@@ -95,7 +96,7 @@ test('a provisioning plugin\'s backups tab reads its route for the service on sc
 test('a backups tab whose route the API refuses for the service shows the API sentence and the page stays usable', async ({ page, request }) => {
   await setPluginSlots(request, { 'client.service.tabs': ['backups'] })
   await scriptStub(request, {
-    method: 'GET', path: `/api/client/plugins/${PLUGIN_ID}/backups/${SERVICE_MANAGED.id}`, status: 404, code: 'SERVICE_NOT_FOUND', detail: 'The service was not found.',
+    method: HttpMethod.Get, path: `/api/client/plugins/${PLUGIN_ID}/backups/${SERVICE_MANAGED.id}`, status: 404, code: 'SERVICE_NOT_FOUND', detail: 'The service was not found.',
   })
 
   await page.goto(`/client/services/${SERVICE_MANAGED.id}`)

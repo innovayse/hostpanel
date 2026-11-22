@@ -7,7 +7,6 @@ using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;

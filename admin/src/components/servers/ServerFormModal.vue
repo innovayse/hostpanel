@@ -9,7 +9,8 @@
  */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ServerModule, ServerModuleSource, moduleLabel } from '@/types/server'
+import { ServerModule, moduleLabel } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
 import type { ServerDto, ServerModuleOptionDto, ServerPayload } from '@/types/server'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import StoredSecretState from '@/components/servers/StoredSecretState.vue'

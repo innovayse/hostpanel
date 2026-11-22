@@ -3,6 +3,7 @@
  */
 
 import { translate } from '@/lib/translate'
+import type { ServerModuleSource } from '@/types/serverenums'
 
 /**
  * The control panel module ids the host itself knows, spelled as a server stores them. A server's module is an open id:
@@ -20,17 +21,6 @@ export const ServerModule = {
 
 /** An id the host itself knows. */
 export type ServerModule = (typeof ServerModule)[keyof typeof ServerModule]
-
-/** Where a control panel module the server form offers comes from. */
-export const ServerModuleSource = {
-  /** The host's own code, or an id saved servers still carry. */
-  BuiltIn: 'BuiltIn',
-  /** An installed plugin declares it. */
-  Plugin: 'Plugin',
-} as const
-
-/** Where a control panel module comes from. */
-export type ServerModuleSource = (typeof ServerModuleSource)[keyof typeof ServerModuleSource]
 
 /** One control panel module an administrator can give a server (`GET /admin/servers/modules`). */
 export interface ServerModuleOptionDto {

@@ -88,7 +88,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     {
         var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions { UseFakeProvider = useFakeProvider });
 
-        // A module the factory refuses throws NotSupportedException; any other failure (a builder
+        // A module the factory has no provider for is refused as an unavailable panel; any other failure (a builder
         // that dislikes the stand-in credentials) still means the factory knows the module.
         var built = ServerModules.Known.Where(module =>
         {
@@ -97,7 +97,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
                 factory.CreateFor(ServerRow("hash", module));
                 return true;
             }
-            catch (NotSupportedException)
+            catch (DomainRuleException ex) when (ex.Code == HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE)
             {
                 return false;
             }

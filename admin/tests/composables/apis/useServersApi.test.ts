@@ -5,7 +5,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useServersApi } from '@/composables/apis/useServersApi'
-import { ServerModule, ServerModuleSource, ServerState } from '@/types/server'
+import { ServerModule, ServerState } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {

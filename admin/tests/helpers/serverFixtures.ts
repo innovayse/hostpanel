@@ -3,7 +3,7 @@
  * SSH key management settings and installer setup, as the admin API returns them.
  */
 import type { ServerDto, ServerGroupDto, ServerModuleOptionDto, ServerOptionDto } from '@/types/server'
-import { ServerModuleSource } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '@/types/serverssh'
 import { SshAgentProfile } from '@/types/sshenums'
 

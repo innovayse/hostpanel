@@ -4,7 +4,7 @@
  */
 import type { PaginatedList } from '../../src/types/paginatedlist'
 import type { ServerDto, ServerModuleOptionDto, TestConnectionResultDto } from '../../src/types/server'
-import { ServerModuleSource } from '../../src/types/server'
+import { ServerModuleSource } from '../../src/types/serverenums'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../../src/types/serverssh'
 import { SshAgentProfile } from '../../src/types/sshenums'
 

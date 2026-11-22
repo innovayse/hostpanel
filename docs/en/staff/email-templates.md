@@ -96,6 +96,7 @@ Example using a condition and a loop:
   { name: 'gateway-payment-stalled-admin', type: 'string', default: '', description: 'Sent to staff when a gateway payment has been pending too long. Placeholders: invoice.id, client.id, module, pending_hours' },
   { name: 'gateway-payment-credited-admin', type: 'string', default: '', description: 'Sent to staff when a gateway payment took money the invoice could not record and the amount was added to the client credit balance or held for manual resolution. Placeholders: invoice.id, client.id, module, reference, amount, currency, credited' },
   { name: 'gateway-payment-without-reference-admin', type: 'string', default: '', description: 'Sent to staff when a gateway reports a payment as paid but sends no payment reference. Nothing is recorded; the operator must find and record it by hand. Placeholders: invoice.id, client.id, module, amount, currency' },
+  { name: 'gateway-payment-reversed-admin', type: 'string', default: '', description: 'Sent to staff when a gateway reports the payment an invoice was settled through as no longer paid (refunded, reversed or charged back at the gateway). The invoice and the ledger are not changed; the operator checks the payment at the gateway. Placeholders: invoice.id, client.id, module' },
 ]" />
 
 ### Services

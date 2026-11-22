@@ -1792,4 +1792,7 @@
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
   </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>A gateway order id is 1 to 255 characters with no leading or trailing white space or control characters.</value>
+  </data>
 </root>

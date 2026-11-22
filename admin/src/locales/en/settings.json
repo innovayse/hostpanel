@@ -496,6 +496,7 @@
       "domain-transferred": "Domain transferred",
       "email-campaign": "Email campaign",
       "gateway-payment-credited-admin": "Gateway payment credited (staff)",
+      "gateway-payment-reversed-admin": "Gateway payment reversed (staff)",
       "gateway-payment-stalled-admin": "Gateway payment stalled (staff)",
       "gateway-payment-without-reference-admin": "Gateway payment without reference (staff)",
       "invoice-renewal-reminder": "Invoice renewal reminder",

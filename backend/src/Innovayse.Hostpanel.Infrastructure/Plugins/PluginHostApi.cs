@@ -1,5 +1,6 @@
 using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Provisioning;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
@@ -14,7 +15,9 @@ using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
  *
  * The two SSH methods (#758), the hosting methods (#1294) and the service connection method (#1357) only delegate to the
  * Application's PluginSshAccessService, PluginHostingService and PluginServiceConnectionService with this call's
- * binding, and turn its refusal into the SDK's PluginHostAccessException at the plugin boundary. No use case is dispatched from here: an adapter never calls a handler.
+ * binding, and turn its refusal into the SDK's PluginHostAccessException at the plugin boundary. The order read (#1356)
+ * delegates to PluginOrderReadService the same way and has no refusal to turn: the SDK says the host may ignore the
+ * request and never reports what it did. No use case is dispatched from here: an adapter never calls a handler.
  */
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -23,8 +26,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// The SDK's <see cref="IPluginHostApi"/> for one call, bound when it is built to the call's
 /// <see cref="PluginCallBinding"/>: no method takes a client id, so a plugin reads only the facts of that client, and
 /// only what the caller could see in the portal. It also implements the optional <see cref="IPluginHostHostingApi"/>
-/// (websites and databases on the client's hosting, #1294) and <see cref="IPluginHostServiceConnectionApi"/> (the
-/// server connection of one of the client's services, #1357).
+/// (websites and databases on the client's hosting, #1294), <see cref="IPluginHostServiceConnectionApi"/> (the
+/// server connection of one of the client's services, #1357) and <see cref="IPluginHostPaymentApi"/> (a payment plugin's
+/// callback asks the host to read one gateway order, #1356).
 /// </summary>
 /// <remarks>
 /// <list type="bullet">
@@ -39,7 +43,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// Each list is the newest <see cref="PluginHostLimits.MaxListed"/> rows, and a call without a client, or whose client row
 /// is gone, gets no profile and empty lists.
 /// </remarks>
-internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceConnectionApi
+internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceConnectionApi, IPluginHostPaymentApi
 {
     /// <summary>The call's client and the permissions its caller holds there.</summary>
     private readonly PluginCallBinding _binding;
@@ -62,6 +66,9 @@ internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceC
     /// <summary>Hands the plugin the server connection of one of the bound client's services.</summary>
     private readonly PluginServiceConnectionService _connections;
 
+    /// <summary>Reads the gateway order a payment plugin's callback names.</summary>
+    private readonly PluginOrderReadService _orders;
+
     /// <summary>Initializes the facts of one call.</summary>
     /// <param name="binding">The call's client and the permissions its caller holds there.</param>
     /// <param name="facts">Reads the client, service and invoice rows of the bound client.</param>
@@ -70,6 +77,7 @@ internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceC
     /// <param name="ssh">Issues and revokes the plugin's SSH identities for the bound client.</param>
     /// <param name="hosting">Reads what the hosting can do, and sets up and removes the plugin's websites and databases.</param>
     /// <param name="connections">Hands the plugin the server connection of one of the bound client's services.</param>
+    /// <param name="orders">Reads the gateway order a payment plugin's callback names.</param>
     public PluginHostApi(
         PluginCallBinding binding,
         IPluginHostFactsReader facts,
@@ -77,7 +85,8 @@ internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceC
         IPayerCurrencyResolver payerCurrency,
         PluginSshAccessService ssh,
         PluginHostingService hosting,
-        PluginServiceConnectionService connections)
+        PluginServiceConnectionService connections,
+        PluginOrderReadService orders)
     {
         _binding = binding;
         _facts = facts;
@@ -86,6 +95,7 @@ internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceC
         _ssh = ssh;
         _hosting = hosting;
         _connections = connections;
+        _orders = orders;
     }
 
     /// <inheritdoc/>
@@ -194,5 +204,12 @@ internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceC
     public async Task<PanelAccountContext> ResolveServiceConnectionAsync(int serviceId, CancellationToken ct)
     {
         return (await _connections.ResolveAsync(_binding, serviceId, ct)).GrantedOrThrow().ToPanel();
+    }
+
+    /// <inheritdoc/>
+    public async Task RequestOrderReadAsync(string gatewayOrderId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(gatewayOrderId);
+        await _orders.RequestAsync(_binding, gatewayOrderId, ct);
     }
 }

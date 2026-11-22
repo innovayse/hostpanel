@@ -2,6 +2,7 @@ using System.Reflection;
 using Innovayse.Hostpanel.API.Controllers;
 using Innovayse.Hostpanel.API.Plugins;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
@@ -46,6 +47,29 @@ public sealed class PluginCallbackControllerTests
     public void TheCallbackDoor_HasItsOwnPrefix()
     {
         typeof(PluginCallbacksController).GetCustomAttribute<RouteAttribute>(inherit: true)!.Template.Should().Be("api/plugins");
+    }
+
+    /// <summary>
+    /// The callback door documents every status it can answer with a redirect: the five the SDK allows, and no other 3xx,
+    /// because a response type that is not declared is not in the generated contract.
+    /// </summary>
+    [Fact]
+    public void TheCallbackDoor_DeclaresTheFiveRedirectStatuses()
+    {
+        var declared = typeof(PluginCallbacksController).GetMethod(nameof(PluginCallbacksController.CallAsync))!
+            .GetCustomAttributes<ProducesResponseTypeAttribute>()
+            .Select(attribute => attribute.StatusCode)
+            .Where(status => status is >= 300 and <= 399);
+
+        declared.Should().BeEquivalentTo(
+            new[]
+            {
+                StatusCodes.Status301MovedPermanently,
+                StatusCodes.Status302Found,
+                StatusCodes.Status303SeeOther,
+                StatusCodes.Status307TemporaryRedirect,
+                StatusCodes.Status308PermanentRedirect,
+            });
     }
 
     /// <summary>No signed-in plugin door is anonymous: only the callback door may be.</summary>

@@ -1792,4 +1792,7 @@
   <data name="VatRateListStatusInvalid" xml:space="preserve">
     <value>Der Status muss einer der folgenden sein: Active, Superseded, Upcoming.</value>
   </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Eine Gateway-Bestellkennung hat 1 bis 255 Zeichen, ohne Leerzeichen am Rand und ohne Steuerzeichen.</value>
+  </data>
 </root>

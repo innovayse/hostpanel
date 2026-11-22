@@ -60,6 +60,12 @@ public static class RateLimitPolicies
     public const string HostingResources = "hosting-resources";
 
     /// <summary>
+    /// How often a payment plugin's callback may ask the host to read one gateway order. Not a route tier: it is taken
+    /// inside a plugin call, per plugin and gateway order, because every permit is a call to the gateway's status API.
+    /// </summary>
+    public const string PluginOrderRead = "plugin-order-read";
+
+    /// <summary>
     /// Operations whose cost is measured in what they hold rather than how often they are asked
     /// for: report exports, a migration run. Limited by how many may be in flight at once,
     /// because a per-minute budget does not describe the harm.

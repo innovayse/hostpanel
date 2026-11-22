@@ -500,6 +500,7 @@
       "domain-transferred": "Domain transferiert",
       "email-campaign": "E-Mail-Kampagne",
       "gateway-payment-credited-admin": "Gateway-Zahlung gutgeschrieben (Mitarbeiter)",
+      "gateway-payment-reversed-admin": "Gateway-Zahlung zurückgebucht (Mitarbeiter)",
       "gateway-payment-stalled-admin": "Gateway-Zahlung hängt fest (Mitarbeiter)",
       "gateway-payment-without-reference-admin": "Gateway-Zahlung ohne Referenz (Mitarbeiter)",
       "invoice-renewal-reminder": "Erinnerung an Verlängerungsrechnung",

@@ -552,6 +552,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTimeOffset?>("GatewayReversalNotifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("GatewayStalledNotifiedAt")
                         .HasColumnType("timestamp with time zone");
 

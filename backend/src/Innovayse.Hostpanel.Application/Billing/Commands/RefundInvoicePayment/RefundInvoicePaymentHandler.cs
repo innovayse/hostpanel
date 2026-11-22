@@ -45,7 +45,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
 /// <see cref="RefundInstruction"/>; a retry of the same amount after the lease reuses it, so a plugin that passes it on as
 /// the gateway's idempotency key cannot refund twice. The instruction also carries what the ledger already holds as
 /// refunded through the gateway order (<see cref="RefundInstruction.AlreadyRefundedMinor"/>), so a gateway without an
-/// idempotency key can tell a retry from a new partial refund.
+/// idempotency key can tell a retry from a new partial refund, and the transaction id the plugin reported when the payment
+/// became paid (<see cref="RefundInstruction.TransactionId"/>), read from the ledger, <see langword="null"/> when the host
+/// holds only the order id.
 /// </para>
 /// </remarks>
 public sealed class RefundInvoicePaymentHandler
@@ -300,19 +302,19 @@ public sealed class RefundInvoicePaymentHandler
         // of this refund from a new partial one. The pending refund is not on the ledger until it is recorded, so it is
         // never counted; a manual or credit refund moved no gateway money and is left out. The source is a property of the
         // ledger row (Transaction), not of the invoice's own payment line, so the ledger is what is read.
-        var gatewayRefunds = await _context.Transactions
-            .AsNoTracking()
-            .Where(t => t.InvoiceId == invoice.Id && t.Source == TransactionSource.GatewayRefund && t.PaymentMethod == module)
+        var gatewayRefunds = await GatewayLedger(invoice.Id, module, TransactionSource.GatewayRefund)
             .Select(t => t.AmountOut)
             .ToListAsync(ct);
         var alreadyRefundedMinor = gatewayRefunds.Sum(amountOut => CurrencyCode.ToMinorUnits(amountOut, invoice.Currency));
+        var transactionId = await ReadPaymentTransactionIdAsync(invoice.Id, module, gatewayOrderId, ct);
         string reference;
         try
         {
             // CancellationToken.None on purpose: the claim is saved, so a caller that disconnects must not abandon a refund
             // whose money may already be moving; the claim and its refund id make a later retry safe.
             reference = await plugin.RefundAsync(
-                new RefundInstruction(gatewayOrderId, amountMinor, refundId.ToString("N"), alreadyRefundedMinor), CancellationToken.None);
+                new RefundInstruction(gatewayOrderId, amountMinor, refundId.ToString("N"), alreadyRefundedMinor) { TransactionId = transactionId },
+                CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -324,6 +326,43 @@ public sealed class RefundInvoicePaymentHandler
 
         refunded.Add(new RefundOutcome(module, reference, refundedAmount));
         return Result.Success();
+    }
+
+    /// <summary>
+    /// The ledger rows one gateway wrote for an invoice, of one source: the payments it took or the refunds it made. Rows with
+    /// no invoice link (money handed back to the balance) are not part of the invoice and never match.
+    /// </summary>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="module">The plugin id the rows were written under.</param>
+    /// <param name="source">Whether to read the payments or the refunds.</param>
+    /// <returns>The untracked rows, in no order.</returns>
+    private IQueryable<Transaction> GatewayLedger(int invoiceId, string module, TransactionSource source)
+    {
+        return _context.Transactions
+            .AsNoTracking()
+            .Where(t => t.InvoiceId == invoiceId && t.Source == source && t.PaymentMethod == module);
+    }
+
+    /// <summary>
+    /// Reads the transaction id the plugin itself reported when the payment became paid, from the newest payment row the
+    /// gateway wrote for the invoice, so a refund that needs it does not have to read the order again. The host records the
+    /// order id under a payment the plugin gave no transaction id for; that is the SDK's "the host holds none", so it is
+    /// answered as <see langword="null"/> and never passed off as an id the plugin reported.
+    /// </summary>
+    /// <param name="invoiceId">The invoice being refunded.</param>
+    /// <param name="module">The plugin id of the invoice's kept gateway session.</param>
+    /// <param name="gatewayOrderId">The gateway-side order the money was paid on.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The plugin's own transaction id, or <see langword="null"/> when the host holds none.</returns>
+    private async Task<string?> ReadPaymentTransactionIdAsync(int invoiceId, string module, string gatewayOrderId, CancellationToken ct)
+    {
+        var reference = await GatewayLedger(invoiceId, module, TransactionSource.GatewayPayment)
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.Id)
+            .Select(t => t.TransactionId)
+            .FirstOrDefaultAsync(ct);
+
+        return string.IsNullOrEmpty(reference) || reference == gatewayOrderId ? null : reference;
     }
 
     /// <summary>

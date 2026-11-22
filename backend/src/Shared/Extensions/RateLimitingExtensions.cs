@@ -84,6 +84,7 @@ public static class RateLimitingExtensions
             .Validate(
                 o => IsPositive(o.Global) && IsPositive(o.Auth) && IsPositive(o.Upstream)
                     && IsPositive(o.Strict) && IsPositive(o.SshKeys) && IsPositive(o.HostingResources)
+                    && IsPositive(o.PluginOrderRead)
                     && IsPositive(o.PluginDefault)
                     && IsPositive(o.PluginStrict) && IsPositive(o.PluginHeavy) && IsPositive(o.PluginCallback)
                     && o.ConcurrentPermitLimit > 0 && o.PluginStreamPermitLimit > 0 && o.TrustedProxyCount >= 0,
@@ -100,6 +101,7 @@ public static class RateLimitingExtensions
                     && o.Strict.PermitLimit <= o.Global.PermitLimit
                     && o.SshKeys.PermitLimit <= o.Global.PermitLimit
                     && o.HostingResources.PermitLimit <= o.Global.PermitLimit
+                    && o.PluginOrderRead.PermitLimit <= o.Global.PermitLimit
                     && o.PluginDefault.PermitLimit <= o.Global.PermitLimit
                     && o.PluginStrict.PermitLimit <= o.Global.PermitLimit
                     && o.PluginHeavy.PermitLimit <= o.Global.PermitLimit

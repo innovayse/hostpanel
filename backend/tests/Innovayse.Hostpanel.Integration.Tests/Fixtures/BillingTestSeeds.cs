@@ -357,6 +357,30 @@ public static class BillingTestSeeds
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
+    /// <summary>
+    /// Seeds a client and a 10.00 USD invoice with a live gateway session of its own, directly against the host's database,
+    /// for the tests that read or settle a gateway order without a payer's browser.
+    /// </summary>
+    /// <param name="host">The host whose database to seed against.</param>
+    /// <param name="module">The plugin id the session belongs to.</param>
+    /// <returns>The invoice id and the gateway order id of its session, unique per call.</returns>
+    public static async Task<(int InvoiceId, string OrderId)> SeedInvoiceWithSessionAsync(
+        WebApplicationFactory<Program> host, string module)
+    {
+        var clientId = await SeedClientAsync(host);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+
+        var orderId = $"gw-{Guid.NewGuid():N}";
+        var invoice = Invoice.Create(clientId, TestMoments.Seeded.AddDays(14), "USD", TestMoments.Seeded);
+        invoice.AddItem("Hosting", 10m, 1);
+        invoice.SetGatewaySession(module, orderId, scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        context.Invoices.Add(invoice);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        return (invoice.Id, orderId);
+    }
+
     /// <summary>Reads a client's credit balance from the host's database.</summary>
     /// <param name="host">The host whose database the client lives in.</param>
     /// <param name="clientId">The client.</param>

@@ -397,7 +397,17 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`PluginPageOrigins`), which writes `default-src 'none'` with only those origins for script, style, font, connect, frame and
   form-action, `base-uri 'none'`, `frame-ancestors 'none'` and a sandbox without the application's origin, plus `no-store` and no
   referrer. The client named after a plugin id and the factory's unnamed client do not follow redirects
-  (`AddNoRedirects`). The SDK's `Redirect` reply kind (`PluginReply.Redirect`) is not served yet: it is answered `PLUGIN_FAILED`.
+  (`AddNoRedirects`). The SDK's `Redirect` reply kind is served on callback routes only (#1356): `PluginCallRunner.MapRedirect` keeps the status
+  (301, 302, 303, 307, 308) and hands the address to `Application/Plugins/Common/PluginRedirectLocation`, which accepts a path on the
+  panel (one leading slash, no `//`, no dot segment, no encoded slash or backslash after one round of decoding, never under `/api`)
+  or an absolute `https` address with no user info and no port on `PluginRedirectLocation.AllowedOrigins` (the client portal's
+  origin, when `ClientBaseUrl` is `https`, and the manifest's pure `https` `externalOrigins`, the list a callback page already
+  uses), and nothing with a control character, white space, a non-ASCII character, a fragment or more than 2048 characters. It is
+  narrower than the SDK on purpose, so a plugin that builds the address from the request is still no open redirect. A refused
+  address, a redirect on a client or admin route and a status outside the five are `PLUGIN_FAILED`, logged by plugin id only (the
+  address can carry a payment token). `Shared/Infrastructure/RedirectReplyResult` writes the status, `Location` (a relative
+  address stays relative), no body, `no-store`, `no-referrer`, `nosniff` and the inert policy `RawReplyResult` shares;
+  `BaseApiController.HandleForwarded` chooses it when the reply carries a `Location`.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
@@ -733,12 +743,18 @@ docker/                              compose set (shared·dev·prod·platform), 
     outside a routed call. It is scoped to the plugin id and no client, and each operation runs in its own unit of work.
   - **`RefundInstruction.AlreadyRefundedMinor`.** What the host already recorded as refunded through the gateway order before
     this `RefundId`. A gateway with no idempotency key compares its refunded total with it to tell a retry from a new refund.
+  - **`RefundInstruction.TransactionId` (SDK 3.11.0, #1356).** The transaction id the plugin reported when the payment became
+    paid, read by `RefundInvoicePaymentHandler` from the newest `GatewayPayment` ledger row of the invoice and the plugin
+    (`GatewayLedger`, the query the refunded total uses too). `null` when the row holds the gateway order id, which is what the
+    host records when the plugin reported none, so the SDK's "null when the host holds none" is true; a hand back row with no
+    invoice link never matches.
   - **Plugin assembly namespace.** `Innovayse.Hostpanel.Plugins.<Name>` is the one carve-out from the reserved
     `Innovayse.Hostpanel.` prefix, and a file name already shipped by another plugin is refused with `PLUGIN_ASSEMBLY_CONFLICT`
     (see "Plugin assembly names" above).
   - **Callback door.** Only an allow-list of request headers (plus non-refused `X-*` ones) reaches a plugin on a callback, never
-    the caller's credentials. A raw reply is accepted on a callback only, with a media type from an allow-list (markup and
-    script refused) and a size cap, and is sent with `nosniff` and `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+    the caller's credentials. A raw reply or a redirect is accepted on a callback only (`PluginReplyKind.Raw` and `Redirect`). A raw reply carries a media type
+    from an allow-list (markup and script refused) and a size cap, and is sent with `nosniff` and
+    `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`; a redirect follows `PluginRedirectLocation`.
 - **Plugin icon (#845).** The manifest's optional `icon` is a package-relative `.svg` or `.png` path. `PluginIconReader`
   (`Infrastructure/Plugins`, an adapter over the packaging package's `PluginIconChecker`) checks it at load (`PluginLoader`) and at install (`PluginPackageStore`, on the unpacked
   files): plain lowercase path segments with no `..`, no link on the way, at most 256 KiB read from one bounded handle,
@@ -1293,6 +1309,26 @@ docker/                              compose set (shared·dev·prod·platform), 
     `ISshKeyProviderFactory.Supports`, so the module-to-agent mapping exists once, and the adapter tests run the agent's
     golden vectors (`backend/agent/ssh-key-agent/tests/contract`, linked into the test output). When a service is terminated
     `RemoveHostingResourcesOnServiceTerminatedHandler` marks its resources `Removed` with no server call.
+  - **Reading a gateway order from a callback (#1356, SDK 3.11.0).** `PluginHostApi` also implements the optional
+    `IPluginHostPaymentApi.RequestOrderReadAsync` and only hands the call's `PluginCallBinding` to the Application's
+    `Billing/Common/PluginOrderReadService` (no adapter takes `IMessageBus`, `PluginHostingGateTests`). The service ignores,
+    silently and in this order, an id that fails `GatewayOrderIds.IsWellFormed` (1 to 255 characters, no control character, no
+    white space at the ends), and a spent `RateLimit:PluginOrderRead` budget (the `plugin-order-read` tier, 6 a minute, per
+    plugin and gateway order, fail closed; `PluginHostAccessKey.ForOrder`, the key's subject carries its kind, `client:` or
+    `order:`), then dispatches `ReadGatewayOrderCommand(binding.PluginId, id)` and swallows every failure (only the caller's
+    cancellation propagates); it never reports an outcome to the plugin. `ReadGatewayOrderHandler` finds the invoice by
+    `GatewayModule` (the binding's plugin, never anything the plugin sent) and `GatewayOrderId`; an unknown order, another
+    plugin's order and a session a newer attempt replaced find nothing and call nothing. **Nothing new settles a payment**: an
+    invoice not settled through the plugin goes through `CompleteGatewayPaymentCommand`, the one settlement path (amount,
+    currency and reference checks, surplus, saved method, fulfilment, an idempotent replay), so the plugin's status read alone
+    decides.
+  - **A status read never moves money (#1356).** For an invoice already settled through the plugin the handler reads the status
+    once; `Declined` (the SDK folds a refund, a reversal and a charge back into it, so partial from full and the host's own
+    refund from the gateway's cannot be told apart) changes nothing on the invoice or the ledger. Staff get
+    `GatewayPaymentReversedEvent` (the `gateway-payment-reversed-admin` template in five languages) once per session: the mark
+    `Invoices.GatewayReversalNotifiedAt` (`Invoice.MarkGatewayReversalNotified`, cleared with the other gateway marks by a new
+    session) is saved first and the event published after, and nothing is read or sent when the mark is set or
+    `Invoice.ShowsRefundThrough` says the invoice is refunded, has a refund through that gateway or has one in flight.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
@@ -1301,7 +1337,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     `plugin-strict` or `plugin-heavy` (the manifest route's `RateLimit`, default when none) with
     `Shared/Infrastructure/PluginRateLimiter`, keyed by plugin and client account (client calls) or administrator
     (admin calls). A streaming route also takes a `plugin-stream` concurrency lease, held until the response is
-    disposed. Budgets are `RateLimit:PluginDefault|PluginStrict|PluginHeavy|PluginStreamPermitLimit`. A refusal is the
+    disposed. Budgets are `RateLimit:PluginDefault|PluginStrict|PluginHeavy|PluginStreamPermitLimit`. Three more tiers are not route tiers
+    but are taken inside a call, per plugin and subject, through `IPluginHostAccessLimiter`: `ssh-keys`, `hosting-resources`
+    and `plugin-order-read` (`RateLimit:SshKeys|HostingResources|PluginOrderRead`). A refusal is the
     middleware's own 429 (`RateLimitingExtensions.WriteRejectionAsync`). The limiter is a no-limiter in Testing, and
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has

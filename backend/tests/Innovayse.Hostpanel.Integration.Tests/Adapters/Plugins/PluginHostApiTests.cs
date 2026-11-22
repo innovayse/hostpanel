@@ -1,5 +1,6 @@
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Host;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
@@ -331,7 +332,8 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
             sp.GetRequiredService<IPayerCurrencyResolver>(),
             sp.GetRequiredService<PluginSshAccessService>(),
             sp.GetRequiredService<PluginHostingService>(),
-            sp.GetRequiredService<PluginServiceConnectionService>());
+            sp.GetRequiredService<PluginServiceConnectionService>(),
+            sp.GetRequiredService<PluginOrderReadService>());
     }
 
     /// <summary>Seeds a product so services can reference it.</summary>

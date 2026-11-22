@@ -96,6 +96,7 @@ keywords: "шаблоны писем, плейсхолдеры, транзакц
   { name: 'gateway-payment-stalled-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда платёж через шлюз слишком долго находится в ожидании. Плейсхолдеры: invoice.id, client.id, module, pending_hours' },
   { name: 'gateway-payment-credited-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда шлюз принял платёж, который счёт не смог записать, и сумма была добавлена на кредитный баланс клиента или оставлена для ручного разбора. Плейсхолдеры: invoice.id, client.id, module, reference, amount, currency, credited' },
   { name: 'gateway-payment-without-reference-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда шлюз сообщает о платеже как об оплаченном, но не присылает ссылку на платёж. Ничего не записывается; оператор должен найти и записать платёж вручную. Плейсхолдеры: invoice.id, client.id, module, amount, currency' },
+  { name: 'gateway-payment-reversed-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда шлюз сообщает, что платёж, которым был закрыт счёт, больше не оплачен (возврат, отмена или оспаривание в шлюзе). Счёт и учёт платежей не меняются; оператор проверяет платёж в шлюзе. Плейсхолдеры: invoice.id, client.id, module' },
 ]" />
 
 ### Услуги {#services}

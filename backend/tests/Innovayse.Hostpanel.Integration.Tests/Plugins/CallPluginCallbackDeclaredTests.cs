@@ -20,7 +20,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// A callback the plugin declares under <c>api.callbacks</c> reaches the plugin through the public door, with no sign-in,
 /// the body byte for byte and the headers as sent; a callback of a disabled plugin, an undeclared path and a wrong method
 /// answer the same 404; a body over the cap is refused with 413 before the plugin runs; a raw reply is written as the plugin
-/// chose it, with its status and media type, unless it is over the cap or has no valid media type.
+/// chose it, with its status and media type, unless it is over the cap or has no valid media type; a redirect is served on a
+/// callback only, to a path on this host or an https address of the portal or of an origin the manifest declares, and every
+/// other address, status or route is a plugin fault.
 /// </summary>
 public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
 {
@@ -372,6 +374,165 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
         policy.Should().Contain("connect-src 'none'").And.Contain("frame-src 'none'").And.Contain("form-action 'none'")
             .And.Contain("font-src 'none'").And.Contain("script-src 'unsafe-inline';").And.Contain("img-src data:;");
         policy.Should().NotContain("https:");
+    }
+
+    /// <summary>A callback's redirect is answered with the status the plugin chose, the address as the host checked it and no body, never cached and inert.</summary>
+    /// <param name="status">One of the five redirect statuses.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(301)]
+    [InlineData(302)]
+    [InlineData(303)]
+    [InlineData(307)]
+    [InlineData(308)]
+    public async Task ARedirect_IsServedWithItsStatusAndInertHeaders(int status)
+    {
+        _probe.Behaviour = _ => PluginReply.Redirect("/payment/result?x=1", status);
+        using var http = _host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var response = await http.PostAsync($"/api/plugins/{_pluginId}/callback/pay/o-7", new StringContent("{}"));
+
+        ((int)response.StatusCode).Should().Be(status);
+
+        // A relative address stays relative: the host never completes it from the request's host or a proxy header.
+        response.Headers.Location!.OriginalString.Should().Be("/payment/result?x=1");
+        response.Headers.CacheControl!.NoStore.Should().BeTrue();
+        response.Headers.GetValues("Referrer-Policy").Should().Equal("no-referrer");
+        response.Headers.GetValues("X-Content-Type-Options").Should().Equal("nosniff");
+        response.Headers.GetValues("Content-Security-Policy").Should().Equal("default-src 'none'; frame-ancestors 'none'");
+        (await response.Content.ReadAsByteArrayAsync()).Should().BeEmpty();
+    }
+
+    /// <summary>An absolute address of an origin the plugin's manifest declares is served as it is.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ARedirect_ToADeclaredOrigin_IsServed()
+    {
+        _probe.Behaviour = _ => PluginReply.Redirect($"{GatewayOrigin}/done?order=o-7");
+        using var http = _host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var response = await http.PostAsync($"/api/plugins/{_pluginId}/callback/pay/o-7", new StringContent("{}"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
+        response.Headers.Location!.OriginalString.Should().Be($"{GatewayOrigin}/done?order=o-7");
+    }
+
+    /// <summary>An absolute address of the client portal is served when the portal is served over https.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ARedirect_ToThePortalOrigin_IsServed()
+    {
+        _probe.Behaviour = _ => PluginReply.Redirect("https://portal.example/payment/result?x=1");
+        using var portal = _host.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.PostConfigure<ClientPortalOptions>(options => options.BaseUrl = "https://portal.example")));
+        using var http = portal.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var response = await http.PostAsync($"/api/plugins/{_pluginId}/callback/pay/o-7", new StringContent("{}"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.SeeOther);
+        response.Headers.Location!.OriginalString.Should().Be("https://portal.example/payment/result?x=1");
+    }
+
+    /// <summary>
+    /// An address the host's rules refuse is a plugin fault, whether the SDK factory would have built it or not: nothing is
+    /// written to <c>Location</c>, and the answer is the one every bad reply gets.
+    /// </summary>
+    /// <param name="location">The address the plugin gave.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("//evil.test")]
+    [InlineData("/\\evil.test")]
+    [InlineData("/%2f/evil.test")]
+    [InlineData("/./api/x")]
+    [InlineData("/%2e%2e/api")]
+    [InlineData("/api")]
+    [InlineData("/API/x")]
+    [InlineData("http://js.gateway.example/x")]
+    [InlineData("https://user@js.gateway.example/x")]
+    [InlineData("https://evil.test/x")]
+    [InlineData("https://js.gateway.example:8443/x")]
+    [InlineData("/ok\r\nSet-Cookie: a=b")]
+    [InlineData("/ok\tx")]
+    [InlineData("/ok\0x")]
+    [InlineData("/ok\u007fx")]
+    [InlineData("/ok\u0085x")]
+    [InlineData(" /ok")]
+    [InlineData("/ok ")]
+    [InlineData("")]
+    public async Task ARedirect_ToARefusedAddress_IsAPluginFailureWithNoLocation(string location)
+    {
+        _probe.Behaviour = _ => ForgedPluginReply.Create(PluginReplyKind.Redirect, 303, location: location);
+        using var http = _host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var response = await http.PostAsync($"/api/plugins/{_pluginId}/callback/pay/o-7", new StringContent("{}"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        response.Headers.Location.Should().BeNull();
+        (await response.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_FAILED);
+    }
+
+    /// <summary>A redirect reply with a status that is not one of the five is a plugin fault, however the reply was built.</summary>
+    /// <param name="status">A status the contract does not allow for a redirect.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(200)]
+    [InlineData(304)]
+    [InlineData(399)]
+    [InlineData(404)]
+    public async Task ARedirect_WithAStatusOutsideTheFive_IsAPluginFailure(int status)
+    {
+        _probe.Behaviour = _ => ForgedPluginReply.Create(PluginReplyKind.Redirect, status, location: "/payment/result");
+        using var http = _host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var response = await http.PostAsync($"/api/plugins/{_pluginId}/callback/pay/o-7", new StringContent("{}"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        response.Headers.Location.Should().BeNull();
+    }
+
+    /// <summary>
+    /// The open redirect regression: a plugin that builds the address from a parameter of the request, which a caller chose,
+    /// is refused for an address outside the allowed origins, so a payer is never sent to a host nobody named.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ARedirect_BuiltFromTheRequest_CannotLeaveTheAllowedOrigins()
+    {
+        _probe.Behaviour = call => PluginReply.Redirect(call.Query["next"][0]);
+        using var http = _host.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        using var evil = await http.PostAsync(
+            $"/api/plugins/{_pluginId}/callback/pay/o-7?next=https://evil.test/steal", new StringContent("{}"));
+        using var network = await http.PostAsync(
+            $"/api/plugins/{_pluginId}/callback/pay/o-7?next=//evil.test/steal", new StringContent("{}"));
+
+        evil.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        evil.Headers.Location.Should().BeNull();
+        network.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        network.Headers.Location.Should().BeNull();
+    }
+
+    /// <summary>A redirect on a signed-in route is a plugin fault as before: only a callback is served one.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ARedirect_OnAClientOrAdminRoute_IsAPluginFailure()
+    {
+        _probe.Behaviour = _ => PluginReply.Redirect("/payment/result");
+        var owner = await ClientsTestSeeds.RegisterClientAsync(_factory, "cb-redirect-client");
+        using var client = AppPluginFixture.WithBearerOf(_host, owner.Client);
+        using var admin = _host.CreateClient();
+        admin.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await _factory.GetAdminTokenAsync());
+
+        using var clientCall = await client.GetAsync($"/api/client/plugins/{_paymentId}/ping");
+        using var adminCall = await admin.GetAsync($"/api/admin/plugins/{_paymentId}/ext/stats");
+
+        clientCall.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        clientCall.Headers.Location.Should().BeNull();
+        adminCall.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        adminCall.Headers.Location.Should().BeNull();
+        (await clientCall.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_FAILED);
+        (await adminCall.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_FAILED);
     }
 
     /// <summary>A raw reply with an empty body and a refusing status answers that status with no body.</summary>

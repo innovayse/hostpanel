@@ -211,7 +211,8 @@ public sealed class PluginHostingService
             && existing.IsIssuedTo(binding.PluginId)
             && existing.State is HostingResourceState.Active
             && existing.IsBoundTo(account.ServerId, account.Username)
-            && existing.Matches(documentRoot, php, spec.DocumentRootMayBeLink))
+            && existing.Matches(documentRoot, php, spec.DocumentRootMayBeLink)
+            && !existing.NeedsPhpCliPath)
         {
             return PluginHostOutcome<HostedWebsite>.Granted(Describe(existing));
         }
@@ -251,15 +252,19 @@ public sealed class PluginHostingService
         }
 
         var website = staged.Resource!;
-        if (!staged.IsNew && website.State is HostingResourceState.Active && website.Matches(documentRoot, php, spec.DocumentRootMayBeLink))
+        if (!staged.IsNew
+            && website.State is HostingResourceState.Active
+            && website.Matches(documentRoot, php, spec.DocumentRootMayBeLink)
+            && !website.NeedsPhpCliPath)
         {
             // Another call of the same plugin finished the same website while this one waited.
             return PluginHostOutcome<HostedWebsite>.Granted(Describe(website));
         }
 
+        ProvisionedWebsite provisioned;
         try
         {
-            await provider.EnsureWebsiteAsync(
+            provisioned = await provider.EnsureWebsiteAsync(
                 new WebsiteOrder(account, website.WebsiteId, hostname, documentRoot, php, spec.DocumentRootMayBeLink), ct);
         }
         catch (SshProviderException ex)
@@ -280,11 +285,9 @@ public sealed class PluginHostingService
             website.MarkActive();
         }
 
-        if (!website.Matches(documentRoot, php, spec.DocumentRootMayBeLink))
-        {
-            // The server applied the specification asked for now, which a resumed or an Active record may not hold yet.
-            website.Respecify(documentRoot, php, spec.DocumentRootMayBeLink);
-        }
+        // The server applied the specification asked for now, which a resumed or an Active record may not hold yet, and
+        // told the PHP CLI path of its version, which a record made before the host kept it lacks.
+        website.Respecify(documentRoot, php, spec.DocumentRootMayBeLink, provisioned.PhpCliPath);
 
         await _activity.RecordAsync(
             new ActivityLogEntry(
@@ -784,7 +787,8 @@ public sealed class PluginHostingService
             website.Hostname,
             website.DocumentRoot,
             HostingSpecRules.DocumentRootPath(website.AccountUsername, website.DocumentRoot),
-            website.PhpVersion);
+            website.PhpVersion,
+            website.PhpCliPath);
     }
 
     /// <summary>The host's answer for a database record.</summary>

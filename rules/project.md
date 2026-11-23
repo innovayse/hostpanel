@@ -1348,13 +1348,13 @@ docker/                              compose set (shared·dev·prod·platform), 
     `ServiceDatabase` (table-per-concrete-type under `HostingResource`; the plugin that holds one is `IssuedToPluginId`, the
     server and account are pinned) and are saved `Pending` before the server is called, so a retry resumes them; the same save
     moves `ClientService.HostingResourceRevision`, which serialises the per-service limit. Idempotency is from the records: an
-    Active website with the same specification, and an Active database, answer with no server call, and a repeated database
+    Active website with the same specification (and, when it runs PHP, a stored `PhpCliPath`), and an Active database, answer with no server call, and a repeated database
     answers a null password. **The password** comes back from the agent only for the call that creates the database; it is never
     stored, logged, put in an activity line or an exception (`HostedDatabase` and `ProvisionedDatabase` mask it; the tests
     search every column and log line). Removal drops only the plugin's own record (`NotFound` otherwise), is idempotent, and
     marks `RemoveFailed` when the server does not confirm. The server side is `IHostingResourceProvider`
     (`Infrastructure/Integrations/SshAgent/AgentHostingResourceProvider`, agent contract `ensure-website`, `remove-website`,
-    `ensure-database`, `remove-database`, `ping.capabilities`, `ping.php_versions` and (agent 1.6.0) `ping.php_cli`); its factory asks
+    `ensure-database`, `remove-database`, `ping.capabilities`, `ping.php_versions` and (agent 1.6.0) `ping.php_cli`); `EnsureWebsiteAsync` returns `ProvisionedWebsite` carrying the agent's `php_cli`, which `ServiceWebsite.Respecify` stores as `PhpCliPath` (cleared when the website has no PHP; `NeedsPhpCliPath` makes an Active website with PHP and no path be ensured once more, which backfills the rows made before #1427) and which `PluginHostingMappingExtensions` hands to the SDK's `PluginWebsite.PhpCliPath`; its factory asks
     `ISshKeyProviderFactory.Supports`, so the module-to-agent mapping exists once, and the adapter tests run the agent's
     golden vectors (`backend/agent/ssh-key-agent/tests/contract`, linked into the test output). When a service is terminated
     `RemoveHostingResourcesOnServiceTerminatedHandler` marks its resources `Removed` with no server call.

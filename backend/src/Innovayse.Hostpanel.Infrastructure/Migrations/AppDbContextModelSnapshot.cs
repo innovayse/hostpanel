@@ -5818,6 +5818,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(253)
                         .HasColumnType("character varying(253)");
 
+                    b.Property<string>("PhpCliPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("PhpVersion")
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");

@@ -42,7 +42,7 @@ public sealed class ServiceWebsiteTests
         var website = ActiveWebsite();
         var id = website.WebsiteId;
 
-        website.Respecify(" public_html ", null, false);
+        website.Respecify(" public_html ", null, false, null);
 
         Assert.Equal("public_html", website.DocumentRoot);
         Assert.Null(website.PhpVersion);
@@ -59,9 +59,67 @@ public sealed class ServiceWebsiteTests
         var removed = ActiveWebsite();
         removed.MarkRemoved();
 
-        Assert.Throws<InvalidOperationException>(() => pending.Respecify("sites/app", null, false));
-        Assert.Throws<InvalidOperationException>(() => removed.Respecify("sites/app", null, false));
-        Assert.Throws<ArgumentException>(() => ActiveWebsite().Respecify(" ", null, false));
-        Assert.Throws<ArgumentException>(() => ActiveWebsite().Respecify("sites/app", " ", false));
+        Assert.Throws<InvalidOperationException>(() => pending.Respecify("sites/app", null, false, null));
+        Assert.Throws<InvalidOperationException>(() => removed.Respecify("sites/app", null, false, null));
+        Assert.Throws<ArgumentException>(() => ActiveWebsite().Respecify(" ", null, false, null));
+        Assert.Throws<ArgumentException>(() => ActiveWebsite().Respecify("sites/app", " ", false, null));
+        Assert.Throws<ArgumentException>(() => ActiveWebsite().Respecify("sites/app", "8.3", false, " "));
+    }
+
+    /// <summary>A new website has no CLI path yet, and one that runs PHP is waiting for it.</summary>
+    [Fact]
+    public void Create_StartsWithoutAPhpCliPath()
+    {
+        var website = ActiveWebsite();
+
+        Assert.Null(website.PhpCliPath);
+        Assert.True(website.NeedsPhpCliPath);
+    }
+
+    /// <summary>A website that runs no PHP never waits for a CLI path.</summary>
+    [Fact]
+    public void NeedsPhpCliPath_IsFalseWithoutPhp()
+    {
+        var website = ServiceWebsite.Create(10, 1, "web", "acme.sites", "app.example.com", "sites/app", null, false);
+        website.MarkActive();
+
+        Assert.False(website.NeedsPhpCliPath);
+    }
+
+    /// <summary>The CLI path the server reported is stored trimmed and stops the website waiting for it.</summary>
+    [Fact]
+    public void Respecify_StoresThePhpCliPath()
+    {
+        var website = ActiveWebsite();
+
+        website.Respecify("sites/app", "8.3", true, " /usr/bin/php8.3 ");
+
+        Assert.Equal("/usr/bin/php8.3", website.PhpCliPath);
+        Assert.False(website.NeedsPhpCliPath);
+    }
+
+    /// <summary>A path the server did not report leaves the website waiting for it.</summary>
+    [Fact]
+    public void Respecify_WithoutAReportedPath_KeepsTheWebsiteWaiting()
+    {
+        var website = ActiveWebsite();
+
+        website.Respecify("sites/app", "8.3", true, null);
+
+        Assert.Null(website.PhpCliPath);
+        Assert.True(website.NeedsPhpCliPath);
+    }
+
+    /// <summary>A website that drops PHP drops the CLI path with it, whatever path came with the call.</summary>
+    [Fact]
+    public void Respecify_WithoutPhp_ClearsThePhpCliPath()
+    {
+        var website = ActiveWebsite();
+        website.Respecify("sites/app", "8.3", true, "/usr/bin/php8.3");
+
+        website.Respecify("sites/app", null, false, "/usr/bin/php8.3");
+
+        Assert.Null(website.PhpCliPath);
+        Assert.False(website.NeedsPhpCliPath);
     }
 }

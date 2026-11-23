@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { APP_LOCALES } from '~/constants/appLocales'
+import { APP_LOCALES, DEFAULT_APP_LOCALE } from '~/constants/appLocales'
 import type { AppLocale } from '~/types/applocale'
 import {
   DASHBOARD_ROWS,
@@ -79,10 +79,9 @@ describe('nova locales', () => {
   })
 
   it('carries the same keys in every locale, so no language falls back mid-page', () => {
-    const [first, ...rest] = LOCALES
-    const reference = [...messages[first]].sort()
+    const reference = [...messages[DEFAULT_APP_LOCALE]].sort()
 
-    for (const locale of rest) {
+    for (const locale of LOCALES.filter(candidate => candidate !== DEFAULT_APP_LOCALE)) {
       expect([...messages[locale]].sort(), locale).toEqual(reference)
     }
   })

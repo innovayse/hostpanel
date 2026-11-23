@@ -1,0 +1,18 @@
+{
+  "hero": {
+    "badge": "Hébergement, domaines et serveurs au même endroit",
+    "title": "Un hébergement rapide et fiable pour votre site web",
+    "subtitle": "Hébergement web, domaines et serveurs avec un vrai support, dans un seul portail client",
+    "cta": {
+      "secondary": "Voir les offres d'hébergement"
+    },
+    "stats": {
+      "clients": "Clients satisfaits",
+      "uptime": "Disponibilité",
+      "regions": "Régions"
+    },
+    "search": {
+      "placeholder": "Trouvez votre nom de domaine"
+    }
+  }
+}

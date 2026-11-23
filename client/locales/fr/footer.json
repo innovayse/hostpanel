@@ -1,0 +1,48 @@
+{
+  "footer": {
+    "tagline": "Un hébergement web et des domaines rapides et fiables, avec de vraies personnes au support.",
+    "cta": {
+      "title": "Prêt à mettre votre site en ligne ?",
+      "text": "Trouvez un domaine ou choisissez une offre d'hébergement et soyez en ligne en quelques minutes.",
+      "plans": "Commencer"
+    },
+    "columns": {
+      "hosting": "Hébergement",
+      "domains": "Domaines",
+      "company": "Entreprise",
+      "support": "Support",
+      "legal": "Mentions légales"
+    },
+    "hosting": {
+      "all": "Toutes les offres"
+    },
+    "domains": {
+      "register": "Enregistrer un domaine",
+      "transfer": "Transférer un domaine",
+      "pricing": "Tarifs des domaines"
+    },
+    "company": {
+      "about": "À propos de nous",
+      "contact": "Contact",
+      "announcements": "Annonces"
+    },
+    "support": {
+      "help": "Centre d'aide",
+      "faq": "FAQ",
+      "ticket": "Contacter le support"
+    },
+    "trust": {
+      "secure": "Connexion sécurisée",
+      "payments": "Paiements sûrs",
+      "guarantee": "Garantie satisfait ou remboursé"
+    },
+    "bottom": {
+      "rights": "Tous droits réservés.",
+      "privacy": "Politique de confidentialité",
+      "cookies": "Politique relative aux cookies",
+      "terms": "Conditions d'utilisation",
+      "refund": "Politique de remboursement",
+      "acceptableUse": "Politique d'utilisation acceptable"
+    }
+  }
+}

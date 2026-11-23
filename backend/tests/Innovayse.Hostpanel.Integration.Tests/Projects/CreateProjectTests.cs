@@ -63,7 +63,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.PostAsJsonAsync("/api/admin/projects", new { slug = "bad-locale", url = (string?)null, imageUrls = Array.Empty<string>(), sortOrder = 0, isActive = true, translations = new { fr = new { title = "Titre", summary = (string?)null, description = (string?)null } } });
+        var response = await client.PostAsJsonAsync("/api/admin/projects", new { slug = "bad-locale", url = (string?)null, imageUrls = Array.Empty<string>(), sortOrder = 0, isActive = true, translations = new { en = new { title = "Title", summary = (string?)null, description = (string?)null }, it = new { title = "Titolo", summary = (string?)null, description = (string?)null } } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

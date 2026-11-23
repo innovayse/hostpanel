@@ -89,7 +89,7 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.PostAsJsonAsync("/api/admin/testimonials", new { name = "A", company = (string?)null, avatarUrl = (string?)null, rating = 5, sortOrder = 0, isActive = true, translations = new { fr = new { role = (string?)null, quote = "Bonjour" } } });
+        var response = await client.PostAsJsonAsync("/api/admin/testimonials", new { name = "A", company = (string?)null, avatarUrl = (string?)null, rating = 5, sortOrder = 0, isActive = true, translations = new { en = new { role = (string?)null, quote = "Hello" }, it = new { role = (string?)null, quote = "Ciao" } } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

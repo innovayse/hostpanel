@@ -1,0 +1,15 @@
+{
+  "configure": {
+    "title": "Configurer",
+    "back": "Retour aux produits",
+    "notFound": "Produit introuvable.",
+    "includedFeatures": "Fonctionnalités incluses",
+    "chooseBillingCycle": "Choisir le cycle de facturation",
+    "orderSummary": "Récapitulatif de la commande",
+    "setupFees": "Frais d'installation",
+    "totalDueToday": "Total à payer aujourd'hui",
+    "continue": "Continuer",
+    "haveQuestions": "Des questions ? Contactez notre équipe commerciale.",
+    "clickHere": "Cliquez ici"
+  }
+}

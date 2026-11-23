@@ -1,0 +1,108 @@
+{
+  "products": {
+    "hero": {
+      "badge": "Solutions d'hébergement fiables",
+      "headline1": "Hébergement, domaines et serveurs",
+      "headline2": "pour chaque site web.",
+      "subtitle": "Choisissez les offres d'hébergement, de domaine, de SSL et de serveur dont votre site a besoin, avec des prix clairs et un support qui répond.",
+      "cta": {
+        "viewProducts": "Voir les produits",
+        "comparePlans": "Comparer les offres d'hébergement"
+      },
+      "trustBadges": {
+        "support": "Un support qui répond",
+        "encryption": "Connexions chiffrées",
+        "uptime": "Disponibilité fiable"
+      }
+    },
+    "products": {
+      "featured": "À la une"
+    },
+    "pricing": {
+      "title": "Choisissez votre offre",
+      "trial": "Démarrer l'essai gratuit",
+      "cycles": {
+        "monthly": "Mensuel",
+        "quarterly": "Trimestriel",
+        "semiannually": "6 mois",
+        "annually": "Annuel",
+        "biennially": "2 ans",
+        "triennially": "3 ans"
+      },
+      "popular": "⭐ La plus populaire",
+      "period": {
+        "monthly": "/mois",
+        "quarterly": "/trim.",
+        "semiannually": "/6 mois",
+        "annually": "/an",
+        "biennially": "/2 ans"
+      },
+      "save": "Économisez {percent} %",
+      "more": "+{count} de plus",
+      "cta": {
+        "viewDemo": "Voir la démo",
+        "learnMore": "En savoir plus"
+      }
+    },
+    "help": {
+      "title": "Vous ne savez pas quelle offre choisir ?",
+      "subtitle": "Comparez les offres côte à côte, ou demandez à notre équipe de support de vous aider à choisir.",
+      "compare": "Comparer les offres",
+      "contact": "Contacter le support"
+    },
+    "comparison": {
+      "title": "Comparer les offres",
+      "headline": "Trouvez {perfectMatch}",
+      "perfectMatchHighlight": "l'offre idéale",
+      "subtitle": "Comparez les offres et choisissez celle qui vous convient",
+      "headers": {
+        "feature": "Fonctionnalité",
+        "popular": "Populaire"
+      },
+      "groupsLabel": "Groupes d'offres",
+      "notIncluded": "Non inclus"
+    },
+    "benefits": {
+      "title": "Pourquoi héberger chez {benefitsHighlight}",
+      "benefitsHighlight": "nous",
+      "subtitle": "Un hébergement rapide et sécurisé, avec un support qui répond",
+      "speed": {
+        "title": "Rapide et fiable",
+        "description": "Un stockage SSD et un réseau stable gardent votre site rapide et en ligne."
+      },
+      "security": {
+        "title": "Sécurisé par défaut",
+        "description": "Des sauvegardes régulières et une protection contre les menaces courantes."
+      },
+      "support": {
+        "title": "Un vrai support humain",
+        "description": "Vos questions arrivent à des personnes qui répondent, pas à un robot."
+      },
+      "migration": {
+        "title": "Facile à démarrer",
+        "description": "Commandez en quelques minutes et transférez votre site avec notre aide."
+      },
+      "additional": {
+        "trial": {
+          "title": "Accès d'essai",
+          "description": "Essayez avant de vous engager"
+        },
+        "guarantee": {
+          "title": "Politique de remboursement",
+          "description": "Consultez nos conditions de remboursement"
+        },
+        "pricing": {
+          "title": "Des prix clairs",
+          "description": "Prix affichés dans votre devise"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Adoré par {thousands}",
+      "thousandsHighlight": "nos clients",
+      "subtitle": "De vrais résultats pour de vrais clients"
+    },
+    "notFound": "Produit introuvable",
+    "notFoundDescription": "Le produit que vous recherchez n'existe pas ou a été supprimé."
+  }
+}

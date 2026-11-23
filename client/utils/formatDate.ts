@@ -8,7 +8,7 @@
  * 2. **A calendar date is not a moment.** A renewal date is a day on a bill; a ticket reply is
  *    an instant. {@link formatDate} answers the first, {@link formatDateTime} the second, and
  *    they differ in more than the presence of a clock: see the timezone note below.
- * 3. **The locale is the visitor's, not the server's.** The portal ships en/ru/hy/de/es and date-fns
+ * 3. **The locale is the visitor's, not the server's.** The portal ships en/ru/hy/de/es/fr and date-fns
  *    carries every one of them, so an Armenian customer reads an Armenian month name.
  *
  * ## Timezone: why the calendar path never touches `Date` arithmetic
@@ -49,6 +49,7 @@ import { format, isValid, parseISO } from 'date-fns'
 import { de } from 'date-fns/locale/de'
 import { enUS } from 'date-fns/locale/en-US'
 import { es } from 'date-fns/locale/es'
+import { fr } from 'date-fns/locale/fr'
 import { hy } from 'date-fns/locale/hy'
 import { ru } from 'date-fns/locale/ru'
 import type { Locale } from 'date-fns'
@@ -74,7 +75,8 @@ const DATE_LOCALES: Record<AppLocale, Locale> = {
   [AppLocale.Ru]: ru,
   [AppLocale.Hy]: hy,
   [AppLocale.De]: de,
-  [AppLocale.Es]: es
+  [AppLocale.Es]: es,
+  [AppLocale.Fr]: fr
 }
 
 /**

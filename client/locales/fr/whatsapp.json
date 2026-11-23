@@ -1,0 +1,11 @@
+{
+  "whatsapp": {
+    "contactUs": "Contactez-nous sur WhatsApp",
+    "tooltip": "Discutez avec nous sur WhatsApp",
+    "defaultMessage": "Bonjour ! Vos services m'intéressent."
+  },
+  "telegram": {
+    "contactUs": "Contactez-nous sur Telegram",
+    "tooltip": "Écrivez-nous sur Telegram"
+  }
+}

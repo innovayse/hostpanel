@@ -21,6 +21,9 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="CreatedAt">When the service was ordered, shown as its registration date.</param>
 /// <param name="SuspensionSource">Why the service is suspended, or <see langword="null"/> when it is not.</param>
 /// <param name="Usage">The latest disk and bandwidth figures the server reported, or <see langword="null"/> when it reported none.</param>
+/// <param name="TrialStatus">Where the service is in its free trial, or <see langword="null"/> when it is not a trial.</param>
+/// <param name="TrialEndsAt">When the free trial ends, or <see langword="null"/> when it is not a trial.</param>
+/// <param name="TrialDaysLeft">Whole days left of an active trial, rounded up and never negative; <see langword="null"/> unless the trial is active.</param>
 public sealed record ClientServiceDto(
     int Id,
     int ProductId,
@@ -38,4 +41,7 @@ public sealed record ClientServiceDto(
     ServiceServerDto? Server,
     DateTimeOffset CreatedAt,
     SuspensionSource? SuspensionSource,
-    ServiceUsageDto? Usage);
+    ServiceUsageDto? Usage,
+    TrialStatus? TrialStatus,
+    DateTimeOffset? TrialEndsAt,
+    int? TrialDaysLeft);

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ public sealed class ListOverdueSuspensionsPastLimitHandler
         // place stays until someone lifts it. A service billed by hand (AutoRenew off) is left to
         // staff as well, even when it was suspended for non-payment before it was switched over.
         // A terminated service is no longer suspended, so a rerun of the caller finds nothing left to do.
-        var ids = await _context.ClientServices.AsNoTracking()
+        var ids = await _context.ClientServices.AsNoTracking().NotInTrial()
             .Where(s => s.Status == ServiceStatus.Suspended
                 && s.SuspensionSource == SuspensionSource.Overdue
                 && s.AutoRenew

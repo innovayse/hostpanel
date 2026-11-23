@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A client can start a **free trial** of a product that has one (`POST /api/me/services/trial` with `{"productId": 12}`, answered with `201` and the new service id). The service is created with no order and no invoice: a product without a hosting module (a digital product) is activated at once, and a hosting trial is created and then set up by the client as for any order. A client gets one trial per product: a second try is refused with `ORDER_TRIAL_ALREADY_USED` (409) and a product whose trial is off with `PRODUCT_TRIAL_NOT_AVAILABLE` (409). The service lists and the service detail show `trialStatus`, `trialEndsAt` and `trialDaysLeft`, and the public catalogue shows `trialEnabled` and `trialDays`. A trial service is left out of renewal invoicing, renewal reminders, overdue suspension and automatic termination. The end of the trial (reminders, conversion to a paid service and termination) follows in a later change (#81).
+
 ## [0.9.1] - 2026-11-23
 
 ### Added

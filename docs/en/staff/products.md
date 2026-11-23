@@ -173,6 +173,12 @@ Feature names line up across products in a comparison table, so use the same spe
 - **Recommended**: only one product per group can carry the Recommended badge. Setting it on a product clears it from all others in the same group.
 - **Hidden**: sets the product Inactive and removes it from the storefront order form. An inactive product cannot be ordered by anyone (`PRODUCT_NOT_AVAILABLE`).
 
+## Free trial
+
+A product that has a free trial can be tried by a client without an order or an invoice. The client's portal calls `POST /api/me/services/trial` with `{"productId": 12}`; the answer is `201` with the new service id. The service is created at once: a product without a hosting module is activated immediately, and a hosting trial is set up by the client afterwards, as for any order. A client gets one trial per product; a second try is refused (`ORDER_TRIAL_ALREADY_USED`, 409), and so is a product whose trial is off (`PRODUCT_TRIAL_NOT_AVAILABLE`, 409). An inactive or missing product and a suspended client are refused as for an ordinary order.
+
+The service lists and the service detail show `trialStatus`, `trialEndsAt` and `trialDaysLeft`, and the public catalogue (`GET /api/public/products`) shows `trialEnabled` and `trialDays`. A trial service is left out of renewal invoicing, renewal reminders, overdue suspension and automatic termination. The end of the trial (reminders, conversion to a paid service and termination) is handled in a later change.
+
 ## Product bundles
 
 A **product bundle** sells several products together as one offer, for example a hosting plan with a mailbox, optionally with a domain registration, at a discount. The bundle is a recipe for an order: the client orders the bundle, and the order contains one line per product, plus a domain line when the bundle includes a domain.

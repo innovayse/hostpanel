@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,7 @@ public sealed class ListEndOfCycleTerminationsDueHandler
         ListEndOfCycleTerminationsDueQuery query, CancellationToken ct)
     {
         // A terminated service is left out, so a rerun of the caller finds nothing left to do.
-        var due = await _context.ClientServices.AsNoTracking()
+        var due = await _context.ClientServices.AsNoTracking().NotInTrial()
             .Where(s => s.AutoTerminateEndOfCycle
                 && s.Status != ServiceStatus.Terminated
                 && s.NextRenewalAt != null

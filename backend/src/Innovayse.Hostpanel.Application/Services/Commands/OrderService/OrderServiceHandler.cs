@@ -64,7 +64,9 @@ public sealed class OrderServiceHandler
     /// left for this handler to price and the product has no price for that cycle in the
     /// client's currency, or <c>ORDER_LINE_SERVICE_CONFLICT</c> when the service already stored for the order line belongs to another
     /// client or product, or, for a service ordered with no order line, <c>ORDER_PRODUCT_SOLD_OUT</c> or
-    /// <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's cap on live services or its one-per-client rule refuses it.
+    /// <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's cap on live services or its one-per-client rule refuses it, or,
+    /// for a trial, <c>ORDER_TRIAL_ALREADY_USED</c> when the client has already used the trial of the product (also when a
+    /// parallel start recorded it first); a refused trial records nothing.
     /// </returns>
     public async Task<Result<int>> HandleAsync(OrderServiceCommand cmd, CancellationToken ct)
     {
@@ -100,6 +102,13 @@ public sealed class OrderServiceHandler
             return Result<int>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
         }
 
+        // A client gets one trial of a product, ever: a recorded trial refuses another before anything is priced or
+        // locked. The unique index on the record still decides a race between two starts below.
+        if (cmd.Trial is not null && await TrialAlreadyUsedAsync(cmd, ct))
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.ORDER_TRIAL_ALREADY_USED);
+        }
+
         // The order-fulfilment callers pass the amounts snapshotted on the order line: zero
         // included, which is a free period and stays free. The client's own route passes null and
         // the amounts come from the product's price in that client's currency. Only a null amount
@@ -119,10 +128,11 @@ public sealed class OrderServiceHandler
 
         // A line of an order already took its place when the order was placed, so only a service ordered with no line is
         // checked, and a refusal there would never strand a paid order. The count and the save that takes the place
-        // run under the product's lock, so a parallel order waits for this one and counts it.
+        // run under the product's lock, so a parallel order waits for this one and counts it. A trial always runs in a
+        // transaction, so its service and the record of the trial are written together or not at all.
         var placeLimited = cmd.OrderItemId is null && Product.IsPlaceLimited(product.MaxActiveServices, product.OnePerClient);
-        await using var placesTransaction = placeLimited ? await _context.BeginTransactionAsync(ct) : null;
-        if (placesTransaction is not null)
+        await using var transaction = placeLimited || cmd.Trial is not null ? await _context.BeginTransactionAsync(ct) : null;
+        if (placeLimited)
         {
             await _context.LockProductPlacesAsync([product.Id], ct);
             var room = await _bus.InvokeAsync<Result>(new CheckProductLimitsQuery([product.Id], cmd.ClientId), ct);
@@ -132,10 +142,17 @@ public sealed class OrderServiceHandler
             }
         }
 
+        var now = _clock.UtcNow;
         var service = ClientService.CreateOrdered(
-            cmd.ClientId, cmd.ProductId, cmd.BillingCycle, cmd.Domain, firstPayment, recurring, cmd.PaymentMethod, cmd.FirstInvoiceId, _clock.UtcNow, cmd.OrderItemId);
+            cmd.ClientId, cmd.ProductId, cmd.BillingCycle, cmd.Domain, firstPayment, recurring, cmd.PaymentMethod, cmd.FirstInvoiceId, now, cmd.OrderItemId, cmd.Trial);
 
         _context.ClientServices.Add(service);
+        var trialRecord = cmd.Trial is null ? null : ClientProductTrial.Create(cmd.ClientId, cmd.ProductId, now);
+        if (trialRecord is not null)
+        {
+            _context.ClientProductTrials.Add(trialRecord);
+        }
+
         try
         {
             await _context.SaveChangesAsync(ct);
@@ -153,10 +170,24 @@ public sealed class OrderServiceHandler
 
             return winner;
         }
-
-        if (placesTransaction is not null)
+        catch (ConcurrencyConflictException) when (trialRecord is not null)
         {
-            await placesTransaction.CommitAsync(ct);
+            // A parallel start of the same trial passed the check above and recorded it first; the unique index refused
+            // this record, so this attempt drops its service and its record and the transaction ends without a commit.
+            _context.DiscardPendingChanges();
+            return Result<int>.FailureCode(HostpanelErrorCodes.ORDER_TRIAL_ALREADY_USED);
+        }
+
+        if (trialRecord is not null)
+        {
+            // The service's id exists only after the first save; the record is linked to it in the same transaction.
+            trialRecord.AttachService(service.Id);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(ct);
         }
 
         return Result<int>.Success(service.Id);
@@ -190,6 +221,15 @@ public sealed class OrderServiceHandler
             ? Result<int>.Success(existing.Id)
             : Result<int>.FailureCode(HostpanelErrorCodes.ORDER_LINE_SERVICE_CONFLICT);
     }
+
+    /// <summary>Tells whether the client has already used the trial of the product.</summary>
+    /// <param name="cmd">The order command, naming the client and the product.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when a record of the client's trial of the product exists.</returns>
+    private Task<bool> TrialAlreadyUsedAsync(OrderServiceCommand cmd, CancellationToken ct) =>
+        _context.ClientProductTrials
+            .AsNoTracking()
+            .AnyAsync(t => t.ClientId == cmd.ClientId && t.ProductId == cmd.ProductId, ct);
 
     /// <summary>
     /// Asks the Products module for the product's stored price for the ordered cycle in the

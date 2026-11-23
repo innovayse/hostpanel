@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ public sealed class GetRenewableServicesHandler
     /// <returns>The due services ordered by id. Never refuses.</returns>
     public async Task<Result<IReadOnlyList<RenewableServiceDto>>> HandleAsync(GetRenewableServicesQuery query, CancellationToken ct)
     {
-        var services = _context.ClientServices.AsNoTracking()
+        var services = _context.ClientServices.AsNoTracking().NotInTrial()
             .Where(s => s.Status == ServiceStatus.Active && s.AutoRenew
                         && s.NextRenewalAt != null && s.NextRenewalAt <= query.DueBy);
         if (query.ClientId is { } clientId)

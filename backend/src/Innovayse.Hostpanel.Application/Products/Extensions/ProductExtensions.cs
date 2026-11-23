@@ -72,7 +72,9 @@ public static class ProductExtensions
             product.ToPriceDtos(),
             product.IsFeatured,
             product.SortOrder,
-            product.Sku);
+            product.Sku,
+            product.TrialEnabled,
+            product.TrialEnabled ? product.TrialDays : 0);
     }
 
     /// <summary>

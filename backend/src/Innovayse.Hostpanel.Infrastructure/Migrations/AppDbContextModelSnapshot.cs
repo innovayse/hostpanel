@@ -4169,6 +4169,35 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("CancellationRequests");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ClientProductTrial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ClientProductTrials_ClientId_ProductId");
+
+                    b.ToTable("ClientProductTrials");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ClientService", b =>
                 {
                     b.Property<int>("Id")
@@ -4291,6 +4320,29 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("TerminatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("TrialAutoConvert")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("TrialEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TrialGracePeriodDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTimeOffset?>("TrialPaymentDueAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TrialReminderDays")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TrialStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("Username")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -4317,6 +4369,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("ProductId", "Status");
 
                     b.HasIndex("Status", "NextRenewalAt");
+
+                    b.HasIndex("TrialStatus", "TrialEndsAt");
 
                     b.ToTable("ClientServices");
                 });

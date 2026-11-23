@@ -10,6 +10,7 @@ using Innovayse.Hostpanel.Application.Services.Commands.OrderMyService;
 using Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
 using Innovayse.Hostpanel.Application.Services.Commands.RevokeMySshKey;
 using Innovayse.Hostpanel.Application.Services.Commands.SetupMyService;
+using Innovayse.Hostpanel.Application.Services.Commands.StartMyTrial;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceCancellationStatus;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceHostingInfo;
@@ -114,6 +115,32 @@ public sealed class MyServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> OrderAsync([FromBody] OrderMyServiceCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<int>>(command, ct);
+        return HandleResult(outcome, id => CreatedResult("/api/me/services", id));
+    }
+
+    /// <summary>Starts the free trial of a product on the authenticated client's own account.</summary>
+    /// <param name="command">The product whose trial is started.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 201 with the new service id; 400 with <c>VALIDATION_ERROR</c> for a malformed body or <c>PRODUCT_NOT_AVAILABLE</c> when
+    /// the product is not on sale or has no price; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the
+    /// user lacks <c>PlaceNewOrders</c>, or with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c>; 404 with
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c> or <c>PRODUCT_NOT_FOUND</c>; 409 with <c>PRODUCT_TRIAL_NOT_AVAILABLE</c> when the product
+    /// offers no trial, <c>ORDER_TRIAL_ALREADY_USED</c> when the client already had it, or <c>ORDER_PRODUCT_SOLD_OUT</c> or
+    /// <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's limits refuse it.
+    /// </returns>
+    [HttpPost("trial")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.PlaceNewOrders)]
+    [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> StartTrialAsync([FromBody] StartMyTrialCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<int>>(command, ct);
         return HandleResult(outcome, id => CreatedResult("/api/me/services", id));

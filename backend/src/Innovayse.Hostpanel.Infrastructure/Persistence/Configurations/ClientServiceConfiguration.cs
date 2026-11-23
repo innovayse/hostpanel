@@ -34,6 +34,9 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         // against on every order, and by the catalogue for every capped product.
         builder.HasIndex(x => new { x.ProductId, x.Status });
 
+        // The trial sweeps: the active trials that are due to end or to be reminded.
+        builder.HasIndex(x => new { x.TrialStatus, x.TrialEndsAt });
+
         // The source system's service id, kept for migration de-duplication. A source id is unique
         // only within one source, so it is unique per client, and only where one is set.
         builder.HasIndex(x => new { x.ClientId, x.ExternalId })
@@ -52,6 +55,12 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.OrderItemId);
         builder.Property(x => x.BillingCycle).IsRequired().HasConversion(new BillingCycleConverter()).HasMaxLength(20);
         builder.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.TrialStatus).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.TrialEndsAt);
+        builder.Property(x => x.TrialPaymentDueAt);
+        builder.Property(x => x.TrialAutoConvert).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.TrialGracePeriodDays).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.TrialReminderDays);
         builder.Property(x => x.FirstPaymentAmount).HasColumnType("numeric(18,4)");
         builder.Property(x => x.RecurringAmount).HasColumnType("numeric(18,4)");
         builder.Property(x => x.ProvisioningRef).HasMaxLength(500);

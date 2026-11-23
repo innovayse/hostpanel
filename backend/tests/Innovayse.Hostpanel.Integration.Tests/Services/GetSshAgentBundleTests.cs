@@ -38,7 +38,7 @@ public sealed class GetSshAgentBundleTests(IntegrationTestFactory factory) : ICl
         }
 
         var names = entries.Select(e => e.Name.Split('/', 2)[1]).ToList();
-        names.Should().Contain(["hostpanel-ssh-key-agent", "install.sh", "uninstall.sh", "profiles/cwp.conf", "profiles/generic-linux.conf", "providers/cwp/account-check", "README.md"]);
+        names.Should().Contain(["hostpanel-ssh-key-agent", "install.sh", "uninstall.sh", "profiles/generic-linux.conf", "providers/generic-linux/detect", "README.md"]);
         names.Should().NotContain(n => n.StartsWith("tests/") || n.Contains("__pycache__"));
         entries.Single(e => e.Name.EndsWith("/install.sh")).Mode.Should().HaveFlag(UnixFileMode.UserExecute);
         entries.Single(e => e.Name.EndsWith("/README.md")).Mode.Should().NotHaveFlag(UnixFileMode.UserExecute);

@@ -563,8 +563,6 @@ The files are covered by the package signature like the rest of the package, and
 
 For a server whose module the plugin serves, the host offers the profile on the server's SSH dialog and builds an installer bundle for it: the agent and its files plus the plugin's profile and helpers, packed the same way every time, so the SHA256 the administrator sees is the one of the download (`GET /api/public/ssh-agent/bundle.tar.gz?profile=<id>`, answered 404 `SSH_AGENT_PROFILE_NOT_FOUND` for an id no loaded plugin ships). A file of the plugin replaces a file the host embeds at the same path. Two plugins that ship the same profile id are not allowed: the second one loads without its profile.
 
-The host still embeds one profile for a legacy server module id until the plugin that serves it ships its own. That profile is transitional: it is used only while no plugin supplies a profile for the module, and it will be removed.
-
 ### Registrar connection roles
 
 A `Registrar` plugin may mark which member of the registrar connection a setting fills with `connectionRole` on that setting:

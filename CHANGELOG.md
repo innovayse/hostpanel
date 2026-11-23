@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - The built in Control Web Panel (CWP) support is gone: the `GET /api/admin/integrations/cwp/server-info` endpoint, the `cwp` integration slug and its catalogue entry, the `HttpResilience:Cwp` profile and the built in `Centos` server module are removed, and the CWP plugin replaces them. This is a breaking change: install and switch on the CWP plugin before you upgrade a deployment that has CWP servers; until then those servers answer `PANEL_PLUGIN_UNAVAILABLE`.
+- The SSH key agent no longer carries a hosting panel profile (#1428): the `providers/cwp` helpers and `profiles/cwp.conf` are removed from the agent, together with the `Cwp7` module id and the transitional built in profile of the host. The profile and helpers now come from the panel plugin, which ships its own (`sshAgentProfile` in its manifest). A server stored on the old module is served by the plugin that declares that module, and the agent installer bundle for it is built from the plugin's files.
 
 ## [0.9.1] - 2026-11-23
 

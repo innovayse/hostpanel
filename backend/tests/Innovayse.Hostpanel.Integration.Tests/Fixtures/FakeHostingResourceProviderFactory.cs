@@ -25,6 +25,6 @@ public sealed class FakeHostingResourceProviderFactory : IHostingResourceProvide
     /// <inheritdoc/>
     public IHostingResourceProvider? CreateFor(ServerSshTargetDto target)
     {
-        return target.Module is ServerModules.Cwp7 ? AgentFor(target.ServerId) : null;
+        return target.Module is ServerModules.Linux ? AgentFor(target.ServerId) : null;
     }
 }

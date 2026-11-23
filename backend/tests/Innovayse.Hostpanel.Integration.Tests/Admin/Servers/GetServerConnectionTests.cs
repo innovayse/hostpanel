@@ -23,7 +23,7 @@ public sealed class GetServerConnectionTests(IntegrationTestFactory factory) : I
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be(serverId);
-        result.Value.Module.Should().Be(ServerModules.Cwp7);
+        result.Value.Module.Should().Be(ServerModules.Linux);
         result.Value.Hostname.Should().NotBeNullOrWhiteSpace();
     }
 

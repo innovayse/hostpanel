@@ -209,8 +209,7 @@ class OperationTests(AgentTestCase):
 
     def test_profiles_name_the_default_host_key_file(self):
         root = os.path.join(os.path.dirname(__file__), "..", "profiles")
-        for name in ("generic-linux.conf", "cwp.conf"):
-            self.assertEqual(agent.load_config(os.path.join(root, name))["host_key_file"], "/etc/ssh/ssh_host_ed25519_key.pub")
+        self.assertEqual(agent.load_config(os.path.join(root, "generic-linux.conf"))["host_key_file"], "/etc/ssh/ssh_host_ed25519_key.pub")
 
     def test_unmanaged_keys_are_preserved_and_never_listed(self):
         ssh_dir = os.path.join(self.home_root, "alice", ".ssh")
@@ -304,16 +303,15 @@ class BoundaryTests(AgentTestCase):
         self.assertEqual(self.call(op="ping")["php_versions"], [])
 
     def test_ping_reports_provider_and_binding(self):
-        self.config["provider"] = "cwp"
+        self.config["provider"] = "generic-linux"
         self.config["binding"] = KEY_ID_A
         pong = self.call(op="ping")
-        self.assertEqual((pong["provider"], pong["binding"]), ("cwp", KEY_ID_A))
+        self.assertEqual((pong["provider"], pong["binding"]), ("generic-linux", KEY_ID_A))
 
     def test_profiles_load_and_bad_binding_refused(self):
         root = os.path.join(os.path.dirname(__file__), "..", "profiles")
-        for name in ("generic-linux.conf", "cwp.conf"):
-            loaded = agent.load_config(os.path.join(root, name))
-            self.assertEqual(loaded["binding"], "")
+        loaded = agent.load_config(os.path.join(root, "generic-linux.conf"))
+        self.assertEqual(loaded["binding"], "")
         broken = os.path.join(self.tmp.name, "broken.conf")
         with open(broken, "w") as handle:
             handle.write("[agent]\nbinding = ../../etc\n")
@@ -328,9 +326,6 @@ class BoundaryTests(AgentTestCase):
         generic = agent.load_config(os.path.join(root, "generic-linux.conf"))
         self.assertEqual(generic["jail_sections"], ["basicshell", "extendedshell", "editors", "netutils", "terminfo"])
         self.assertEqual(generic["jail_extras"], [])
-        panel = agent.load_config(os.path.join(root, "cwp.conf"))
-        self.assertIn("/etc/bashrc", panel["jail_extras"])
-        self.assertTrue(panel["jail_sections"])
 
 
 class PolicyTests(AgentTestCase):

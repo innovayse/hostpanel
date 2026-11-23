@@ -59,7 +59,7 @@ public sealed class FakeSshAgent : ISshKeyProvider
     public Task<SshAgentInfo> PingAsync(CancellationToken ct)
     {
         Record("ping", null);
-        return Task.FromResult(new SshAgentInfo("1.1.0", "cwp", Binding, HostKey));
+        return Task.FromResult(new SshAgentInfo("1.1.0", "generic-linux", Binding, HostKey));
     }
 
     /// <inheritdoc/>

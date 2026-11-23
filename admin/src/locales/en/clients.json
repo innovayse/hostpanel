@@ -129,7 +129,6 @@
   "cancellationRequests": {
     "cancellationRequests": "Cancellation Requests",
     "reviewAndProcessServiceCancellation": "Review and process service cancellation requests",
-    "totalcountRequestValue": "Requests: {totalCount}",
     "noCancellationRequestsFound": "No cancellation requests found",
     "searchRequests": "Search by reason or id",
     "noRequestsMatchYourFilters": "No cancellation requests match your filters",
@@ -147,7 +146,6 @@
     "invoiceSelected": "Invoice",
     "noUninvoicedBillableItems": "No uninvoiced billable items.",
     "invoicedItems": "Invoiced Items",
-    "invoicedtotalcountItemValue": "Items: {invoicedTotalCount}",
     "noInvoicedBillableItems": "No invoiced billable items.",
     "searchItems": "Search by description or id",
     "noUninvoicedItemsMatchYourFilters": "No uninvoiced billable items match your filters.",
@@ -213,7 +211,6 @@
     "registerThisDomainWithThe": "Register this domain with the registrar?",
     "eppAuthorizationCode": "EPP Authorization Code",
     "useThisCodeToTransfer": "Use this code to transfer your domain to another registrar. Keep it private.",
-    "copy": "Copy",
     "registrarCommandDone": "Done. The registrar accepted the change.",
     "contactSaved": "Contact details saved."
   },
@@ -222,7 +219,6 @@
   },
   "clientEmails": {
     "emails": "Emails",
-    "totalcountEmailValue": "Emails: {totalCount}",
     "status": "Status",
     "delivered": "Delivered",
     "failure": {
@@ -244,7 +240,6 @@
     "createAsDraft": "Create as Draft",
     "addItem": "Add item",
     "allStatuses": "All Statuses",
-    "clientinvoicestotalInvoiceValue": "Invoices: {clientInvoicesTotal}",
     "deleteInvoice": "Delete Invoice",
     "confirmDeleteInvoice": "Are you sure you want to delete invoice #{id}?",
     "bulkActionDone": "Done for the selected invoices.",
@@ -257,7 +252,6 @@
     "activityLog": "Activity Log",
     "logEntry": "Log Entry",
     "user": "User",
-    "totalcountEntrValue": "Entries: {totalCount}",
     "searchLog": "Search the activity log"
   },
   "clientOpenTicket": {
@@ -295,7 +289,6 @@
   "clientQuotes": {
     "createDate": "Create Date",
     "noQuotesFound": "No quotes found.",
-    "clientquotestotalQuoteValue": "Quotes: {clientQuotesTotal}",
     "deleteQuote": "Delete Quote",
     "confirmDeleteQuote": "Are you sure you want to delete quote #{id}?",
     "quoteDeleted": "Quote deleted.",
@@ -351,7 +344,6 @@
   },
   "clientServicesList": {
     "nextDue": "Next Due",
-    "totalcountServiceValue": "Services: {totalCount}",
     "noServicesFoundForThis": "No services found for this client",
     "searchServices": "Search by domain, product or ID",
     "noServicesMatchYourFilters": "No services match your filters"
@@ -440,15 +432,13 @@
     "openedLastYear": "Opened Last Year",
     "dateOpened": "Date Opened",
     "noDataAvailableInTable": "No data available in table",
-    "noTicketsMatchYourFilters": "No tickets match your filters",
-    "totalcountTicketValue": "Tickets: {totalCount}"
+    "noTicketsMatchYourFilters": "No tickets match your filters"
   },
   "clientTransactions": {
     "addTransaction": "Add transaction",
     "totalIn": "Total In",
     "totalFees": "Total Fees",
     "totalOut": "Total Out",
-    "totalcountTransactionValue": "Transactions: {totalCount}",
     "deleteTransaction": "Delete Transaction",
     "confirmDeleteTransaction": "Are you sure you want to delete transaction #{id}?",
     "transactionAdded": "Transaction added.",
@@ -494,7 +484,6 @@
     "searchByNameOrEmail": "Search by name or email",
     "lastLogin": "Last Login",
     "sendPasswordResetEmail": "Send reset email",
-    "totalcountUserValue": "Users: {totalCount}",
     "noUsersFound": "No users found",
     "noUsersMatchYourSearch": "No users match your search",
     "passwordResetEmailSent": "Password reset email sent.",
@@ -561,12 +550,10 @@
     "deduct": "Deduct credit",
     "reason": "Reason",
     "reasonPlaceholder": "Why the balance is adjusted",
-    "apply": "Apply",
     "adjusted": "The credit balance was adjusted and the client was told the new balance.",
     "history": "History",
     "historyEmpty": "No movements are recorded yet. A balance the client already had is not itemised.",
     "change": "Change",
-    "entriesCount": "{count} movements",
     "movement": {
       "AdminAdd": "Credit added by staff",
       "AdminDeduct": "Credit deducted by staff",

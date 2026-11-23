@@ -23,7 +23,6 @@
     "rangeUpTo": "Runs on server versions up to {max}.",
     "sdk": "Built on plugin SDK {version}",
     "incompatible": "This plugin does not run on this server's version {host}. {range}",
-    "install": "Install",
     "hostAccess": {
       "ssh": "Run commands on a client's hosting account over SSH",
       "websites": "Manage the websites of a client's hosting service",
@@ -107,9 +106,7 @@
     "byAuthor": "by {author}",
     "version": "v{version}",
     "verified": "Verified",
-    "install": "Install",
     "update": "Update to {version}",
-    "details": "Details",
     "emptyTitle": "No plugins found",
     "emptyDescription": "Try another search or category.",
     "total": "{total} plugins",
@@ -190,9 +187,6 @@
     "notFoundTitle": "Page not found",
     "tableEmpty": "Nothing to show yet.",
     "chatMessage": "Message",
-    "chatSend": "Send",
-    "chatStop": "Stop",
-    "chatResultDetails": "Details",
     "chatStepStopped": "stopped",
     "chatStepsCount": "{done} of {total} done",
     "chatLog": "Conversation",
@@ -201,7 +195,6 @@
     "chatHint": "Enter to send, Shift+Enter for a new line",
     "openUrlBlocked": "This browser blocked the new tab. Allow pop-ups for this site and try again.",
     "openUrlRefused": "The plugin answered with an address that cannot be opened.",
-    "chatRetry": "Retry",
     "chatWriting": "Writing a reply"
   }
 }

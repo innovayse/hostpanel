@@ -162,7 +162,6 @@
     "ticketSettings": "Տոմսի կարգավորումներ",
     "noRepliesYet": "Պատասխաններ դեռ չկան",
     "typeYourReply": "Մուտքագրեք ձեր պատասխանը",
-    "reply": "Պատասխանել",
     "conversation": "Նամակագրություն",
     "staff": "Աշխատակից",
     "deleteTicket": "Ջնջել տոմսը",
@@ -170,7 +169,6 @@
     "ticketClosed": "Տոմսը փակված է։",
     "ticketReopened": "Տոմսը վերաբացված է։",
     "replySent": "Պատասխանն ուղարկված է։",
-    "details": "Մանրամասներ",
     "created": "Ստեղծվել է",
     "assignee": "Պատասխանատու",
     "unassigned": "Նշանակված չէ"
@@ -179,7 +177,6 @@
     "supportTickets": "Աջակցության տոմսեր",
     "manageAllClientSupportRequests": "Հաճախորդների բոլոր աջակցության հայտերի կառավարում",
     "searchTicketsBySubject": "Տոմսերի որոնում ըստ թեմայի",
-    "totalcountRecordsFoundShowingShowingfrom": "Գտնվել է գրառում՝ {totalCount}, ցուցադրված են {showingFrom}-{showingTo}",
     "flag": "Նշել դրոշակով",
     "unflag": "Հանել դրոշակը",
     "noRepliesYet": "Պատասխաններ դեռ չկան",
@@ -187,7 +184,6 @@
     "noTicketsFound": "Տոմսեր չեն գտնվել",
     "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
     "tryAdjustingYourFiltersOr": "Փորձեք փոխել ֆիլտրերը կամ որոնման հարցումը։",
-    "clearFilters": "Մաքրել ֆիլտրերը",
     "confirmBulkDeleteTitle": "Ջնջե՞լ ընտրված տոմսերը",
     "confirmBulkDeleteMessage": "Ընդմիշտ կջնջվի {count} տոմս։ Այս գործողությունը հնարավոր չէ հետարկել։"
   }

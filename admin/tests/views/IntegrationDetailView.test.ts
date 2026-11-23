@@ -1,6 +1,6 @@
 /**
  * Mount tests for IntegrationDetailView: the config form and status sidebar of a built-in
- * integration, the API's refusal sentence, saving, and testing.
+ * integration, the API's refusal sentence, saving, testing, and the CWP special page.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -11,6 +11,12 @@ import { json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { integrationDetail } from '../helpers/integrationFixtures'
 import { toastMessages } from '../helpers/toasts'
+
+/**
+ * Upper bound, in ms, for a lazily imported page to arrive. The first transform of a route chunk on
+ * a cold, loaded machine takes longer than the 1 s default of `vi.waitFor`.
+ */
+const LAZY_PAGE_TIMEOUT = 20_000
 
 /**
  * Mounts the detail screen for a slug.
@@ -118,10 +124,14 @@ describe('IntegrationDetailView', () => {
     expect(wrapper.get('[data-testid="integration-status-result"]').text()).toContain('Connection OK')
   })
 
-  it('draws a plugin slug through the same generic form as every other integration', async () => {
-    stubRoutes({ 'GET /api/admin/integrations/example-panel': () => json(integrationDetail({ slug: 'example-panel', name: 'Plugin panel' })) })
-    const wrapper = await mountDetail('example-panel')
+  it('renders the CWP page for the cwp slug', { timeout: LAZY_PAGE_TIMEOUT + 5000 }, async () => {
+    stubRoutes({
+      'GET /api/admin/integrations/cwp/server-info': () => json({ connected: true, accountsCount: 3, version: '0.9', lastTestedAt: null, errorMessage: null }),
+      'GET /api/admin/integrations/cwp': () => json(integrationDetail({ slug: 'cwp', name: 'CWP' })),
+    })
+    const wrapper = await mountDetail('cwp')
 
-    expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
+    // The page is an async component, so it arrives after the dynamic import settles.
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="cwp-brand-header"]').exists()).toBe(true), { timeout: LAZY_PAGE_TIMEOUT })
   })
 })

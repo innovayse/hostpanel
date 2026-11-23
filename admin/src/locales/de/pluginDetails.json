@@ -20,7 +20,6 @@
   "staged": "Version {version} vorbereitet, wird nach dem Neustart angewendet",
   "updateAvailable": "Update verfügbar: {version}",
   "updateTo": "Auf {version} aktualisieren",
-  "uninstall": "Deinstallieren",
   "links": {
     "heading": "Links",
     "documentation": "Dokumentation",

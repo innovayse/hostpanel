@@ -40,6 +40,13 @@ describe('useIntegrationsApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/integrations/bank-transfer/test', method: 'POST' })
   })
 
+  it('getCwpServerInfo reads the CWP server-info endpoint', async () => {
+    const mock = stubFetch(json({}))
+
+    await useIntegrationsApi().getCwpServerInfo()
+    expect(callOf(mock).url).toBe('/api/admin/integrations/cwp/server-info')
+  })
+
   it('rejects when the API refuses', async () => {
     stubFetch(problem('Required field missing.', 422))
 

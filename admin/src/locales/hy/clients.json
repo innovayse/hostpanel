@@ -129,7 +129,6 @@
   "cancellationRequests": {
     "cancellationRequests": "Չեղարկման հայտեր",
     "reviewAndProcessServiceCancellation": "Ծառայությունների չեղարկման հայտերի դիտում և մշակում",
-    "totalcountRequestValue": "Հայտեր՝ {totalCount}",
     "noCancellationRequestsFound": "Չեղարկման հայտեր չեն գտնվել",
     "searchRequests": "Որոնում ըստ պատճառի կամ համարի",
     "noRequestsMatchYourFilters": "Ֆիլտրերին համապատասխան չեղարկման հայտեր չկան",
@@ -147,7 +146,6 @@
     "invoiceSelected": "Դուրս գրել հաշիվ",
     "noUninvoicedBillableItems": "Չհաշվարկված վճարվող դիրքեր չկան։",
     "invoicedItems": "Հաշվարկված դիրքեր",
-    "invoicedtotalcountItemValue": "Դիրքեր՝ {invoicedTotalCount}",
     "noInvoicedBillableItems": "Հաշվարկված վճարվող դիրքեր չկան։",
     "searchItems": "Որոնում ըստ նկարագրության կամ համարի",
     "noUninvoicedItemsMatchYourFilters": "Ֆիլտրերին համապատասխան չհաշվարկված վճարվող դիրքեր չկան։",
@@ -213,7 +211,6 @@
     "registerThisDomainWithThe": "Գրանցե՞լ այս դոմեյնը գրանցողի մոտ",
     "eppAuthorizationCode": "EPP թույլտվության կոդ",
     "useThisCodeToTransfer": "Օգտագործեք այս կոդը դոմեյնը մեկ այլ գրանցողի տեղափոխելու համար։ Պահեք այն գաղտնի։",
-    "copy": "Պատճենել",
     "registrarCommandDone": "Պատրաստ է։ Ռեգիստրատորն ընդունեց փոփոխությունը։",
     "contactSaved": "Կոնտակտային տվյալները պահպանվեցին։"
   },
@@ -222,7 +219,6 @@
   },
   "clientEmails": {
     "emails": "Նամակներ",
-    "totalcountEmailValue": "Նամակներ՝ {totalCount}",
     "status": "Կարգավիճակ",
     "delivered": "Առաքված է",
     "failure": {
@@ -244,7 +240,6 @@
     "createAsDraft": "Ստեղծել որպես սևագիր",
     "addItem": "Ավելացնել դիրք",
     "allStatuses": "Բոլոր կարգավիճակները",
-    "clientinvoicestotalInvoiceValue": "Հաշիվներ՝ {clientInvoicesTotal}",
     "deleteInvoice": "Ջնջել հաշիվը",
     "confirmDeleteInvoice": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} հաշիվ-ապրանքագիրը։",
     "bulkActionDone": "Կատարվեց ընտրված հաշիվների համար։",
@@ -257,7 +252,6 @@
     "activityLog": "Գործունեության մատյան",
     "logEntry": "Մատյանի գրառում",
     "user": "Օգտատեր",
-    "totalcountEntrValue": "Գրառումներ՝ {totalCount}",
     "searchLog": "Որոնել գործունեության մատյանում"
   },
   "clientOpenTicket": {
@@ -295,7 +289,6 @@
   "clientQuotes": {
     "createDate": "Ստեղծման ամսաթիվ",
     "noQuotesFound": "Առաջարկներ չեն գտնվել։",
-    "clientquotestotalQuoteValue": "Առաջարկներ՝ {clientQuotesTotal}",
     "deleteQuote": "Ջնջել առաջարկը",
     "confirmDeleteQuote": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} առաջարկը։",
     "quoteDeleted": "Առաջարկը ջնջվեց։",
@@ -351,7 +344,6 @@
   },
   "clientServicesList": {
     "nextDue": "Հաջորդ վճարում",
-    "totalcountServiceValue": "Ծառայություններ՝ {totalCount}",
     "noServicesFoundForThis": "Այս հաճախորդի համար ծառայություններ չեն գտնվել",
     "searchServices": "Որոնում ըստ դոմենի, արտադրանքի կամ ID-ի",
     "noServicesMatchYourFilters": "Ֆիլտրերին համապատասխան ծառայություններ չկան"
@@ -440,15 +432,13 @@
     "openedLastYear": "Բացվել է անցյալ տարի",
     "dateOpened": "Բացման ամսաթիվ",
     "noDataAvailableInTable": "Աղյուսակում տվյալներ չկան",
-    "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
-    "totalcountTicketValue": "Տոմսեր՝ {totalCount}"
+    "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան"
   },
   "clientTransactions": {
     "addTransaction": "Ավելացնել գործարք",
     "totalIn": "Ընդհանուր մուտք",
     "totalFees": "Ընդհանուր միջնորդավճարներ",
     "totalOut": "Ընդհանուր ելք",
-    "totalcountTransactionValue": "Գործարքներ՝ {totalCount}",
     "deleteTransaction": "Ջնջել գործարքը",
     "confirmDeleteTransaction": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} գործարքը։",
     "transactionAdded": "Գործարքը ավելացվեց։",
@@ -494,7 +484,6 @@
     "searchByNameOrEmail": "Որոնում ըստ անվան կամ էլ. փոստի",
     "lastLogin": "Վերջին մուտք",
     "sendPasswordResetEmail": "Ուղարկել վերականգնման նամակ",
-    "totalcountUserValue": "Օգտատերեր՝ {totalCount}",
     "noUsersFound": "Օգտատերեր չեն գտնվել",
     "noUsersMatchYourSearch": "Որոնմանը համապատասխան օգտատերեր չկան",
     "passwordResetEmailSent": "Գաղտնաբառի վերականգնման նամակը ուղարկվեց։",
@@ -561,12 +550,10 @@
     "deduct": "Հանել մնացորդից",
     "reason": "Պատճառ",
     "reasonPlaceholder": "Ինչու է մնացորդը ճշգրտվում",
-    "apply": "Կիրառել",
     "adjusted": "Մնացորդը ճշգրտվեց, հաճախորդին ուղարկվեց նոր մնացորդը։",
     "history": "Պատմություն",
     "historyEmpty": "Շարժեր դեռ չկան։ Հաճախորդի արդեն եղած մնացորդը մանրամասն չի ցուցադրվում։",
     "change": "Փոփոխություն",
-    "entriesCount": "Շարժեր՝ {count}",
     "movement": {
       "AdminAdd": "Մնացորդը համալրվեց աշխատակցի կողմից",
       "AdminDeduct": "Մնացորդից հանվեց աշխատակցի կողմից",

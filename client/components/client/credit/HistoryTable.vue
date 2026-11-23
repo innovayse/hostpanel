@@ -32,7 +32,7 @@
             <UiText :as="UiTextTag.Span" size="sm" :data-testid="`credit-entry-type-${entry.id}`">{{ $t(`client.credit.movement.${entry.movement}`) }}</UiText>
           </UiTableTd>
           <UiTableTd>
-            <UiLink tone="primary" v-if="entry.invoiceId !== null" :to="clientInvoicePath(entry.invoiceId)" :data-testid="`credit-entry-invoice-${entry.id}`">
+            <UiLink v-if="entry.invoiceId !== null" tone="primary" :to="clientInvoicePath(entry.invoiceId)" :data-testid="`credit-entry-invoice-${entry.id}`">
               #{{ entry.invoiceId }}
             </UiLink>
             <UiText v-else :as="UiTextTag.Span" size="sm" :tone="UiTextTone.Subtle">{{ EMPTY_DATE }}</UiText>

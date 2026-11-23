@@ -552,7 +552,7 @@ export const SERVICE_MANAGED = {
 /** What the stub answers for the managed service's SSH access; the username and command are filled from the service. */
 export const SSH_ACCESS = {
   state: 'Available',
-  hostname: 'panel.e2e.test',
+  hostname: 'cwp.e2e.test',
   port: 2222,
   maxKeys: 20,
 }

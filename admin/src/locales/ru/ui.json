@@ -98,8 +98,7 @@
   },
   "input": {
     "showPassword": "Показать пароль",
-    "hidePassword": "Скрыть пароль",
-    "clearSearch": "Очистить"
+    "hidePassword": "Скрыть пароль"
   },
   "uiLocalizedField": {
     "emptyTab": "Не заполнено",

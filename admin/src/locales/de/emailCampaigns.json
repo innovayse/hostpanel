@@ -11,7 +11,6 @@
     "emptyDescription": "Erstellen Sie eine Kampagne, um eine E-Mail an eine Kundengruppe zu senden.",
     "searchPlaceholder": "Nach Betreff suchen",
     "noMatches": "Keine Kampagnen entsprechen Ihren Filtern",
-    "totalCount": "Kampagnen: {totalCount}",
     "deleteTitle": "Kampagne löschen",
     "deleteMessage": "Sind Sie sicher, dass Sie diese Kampagne im Entwurfsstatus löschen möchten? Dies kann nicht rückgängig gemacht werden."
   },

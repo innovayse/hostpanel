@@ -34,7 +34,7 @@
               <Download :size="16" :stroke-width="2" class="mr-2" />
               {{ $t('common.pdf') }}
             </UiButton>
-            <UiButton variant="primary" v-if="isOutstanding" :to="payPath" data-testid="invoice-pay-now">
+            <UiButton v-if="isOutstanding" variant="primary" :to="payPath" data-testid="invoice-pay-now">
               <CreditCard :size="16" :stroke-width="2" class="mr-2" />
               {{ $t('client.invoices.pay') }}
             </UiButton>

@@ -57,7 +57,7 @@ describe('breadcrumbOf', () => {
 
   it('leaves out a page the menu files under a section but that lives at another address', () => {
     expect(trail('/integrations/payments')).toEqual(['Integrations!'])
-    expect(trail('/integrations/example/configure', '/integrations/:slug/configure')).toEqual(['Integrations', 'Configure!'])
+    expect(trail('/integrations/cwp/configure', '/integrations/:slug/configure')).toEqual(['Integrations', 'Configure!'])
   })
 
   it('links every step but the last, to the entry it names', () => {

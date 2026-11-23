@@ -21,7 +21,6 @@
   "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
   "updateAvailable": "Հասանելի է թարմացում՝ {version}",
   "updateTo": "Թարմացնել մինչև {version}",
-  "uninstall": "Հեռացնել",
   "links": {
     "heading": "Հղումներ",
     "documentation": "Փաստաթղթեր",

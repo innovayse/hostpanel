@@ -762,7 +762,7 @@ onMounted(() => {
             {{ t('clients.clientSummary.productsServices2') }}
             <template #actions>
               <UiLink :to="clientSectionPath(clientId, ClientSection.Services)" :variant="UiButtonVariant.Link" data-testid="client-summary-services-all">
-                {{ t('clients.clientSummary.viewAll') }}
+                {{ t('shared.viewAll') }}
               </UiLink>
             </template>
           </UiSectionHeader>
@@ -803,7 +803,7 @@ onMounted(() => {
             {{ t('shared.domains') }}
             <template #actions>
               <UiLink :to="clientSectionPath(clientId, ClientSection.Domains)" :variant="UiButtonVariant.Link" data-testid="client-summary-domains-all">
-                {{ t('clients.clientSummary.viewAll') }}
+                {{ t('shared.viewAll') }}
               </UiLink>
             </template>
           </UiSectionHeader>
@@ -851,7 +851,7 @@ onMounted(() => {
             {{ t('clients.clientSummary.currentQuotes') }}
             <template #actions>
               <UiLink :to="clientSectionPath(clientId, ClientSection.Quotes)" :variant="UiButtonVariant.Link" data-testid="client-summary-quotes-all">
-                {{ t('clients.clientSummary.viewAll') }}
+                {{ t('shared.viewAll') }}
               </UiLink>
             </template>
           </UiSectionHeader>

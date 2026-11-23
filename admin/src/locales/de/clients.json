@@ -129,7 +129,6 @@
   "cancellationRequests": {
     "cancellationRequests": "Kündigungsanfragen",
     "reviewAndProcessServiceCancellation": "Service-Kündigungsanfragen prüfen und bearbeiten",
-    "totalcountRequestValue": "Anfragen: {totalCount}",
     "noCancellationRequestsFound": "Keine Kündigungsanfragen gefunden",
     "searchRequests": "Nach Grund oder ID suchen",
     "noRequestsMatchYourFilters": "Keine Kündigungsanfragen entsprechen Ihren Filtern",
@@ -146,7 +145,6 @@
     "invoiceSelectedItems": "Ausgewählte Positionen abrechnen",
     "noUninvoicedBillableItems": "Keine nicht abgerechneten Positionen.",
     "invoicedItems": "Abgerechnete Positionen",
-    "invoicedtotalcountItemValue": "Positionen: {invoicedTotalCount}",
     "noInvoicedBillableItems": "Keine abgerechneten Positionen.",
     "searchItems": "Nach Beschreibung oder ID suchen",
     "noUninvoicedItemsMatchYourFilters": "Keine nicht abgerechneten Positionen entsprechen Ihren Filtern.",
@@ -213,7 +211,6 @@
     "registerThisDomainWithThe": "Diese Domain beim Registrar registrieren?",
     "eppAuthorizationCode": "EPP-Autorisierungscode",
     "useThisCodeToTransfer": "Verwenden Sie diesen Code, um Ihre Domain zu einem anderen Registrar zu transferieren. Halten Sie ihn vertraulich.",
-    "copy": "Kopieren",
     "registrarCommandDone": "Erledigt. Der Registrar hat die Änderung akzeptiert.",
     "contactSaved": "Kontaktdaten gespeichert."
   },
@@ -222,7 +219,6 @@
   },
   "clientEmails": {
     "emails": "E-Mails",
-    "totalcountEmailValue": "E-Mails: {totalCount}",
     "status": "Status",
     "delivered": "Zugestellt",
     "failure": {
@@ -244,7 +240,6 @@
     "createAsDraft": "Als Entwurf erstellen",
     "addItem": "Position hinzufügen",
     "allStatuses": "Alle Status",
-    "clientinvoicestotalInvoiceValue": "Rechnungen: {clientInvoicesTotal}",
     "deleteInvoice": "Rechnung löschen",
     "confirmDeleteInvoice": "Sind Sie sicher, dass Sie Rechnung #{id} löschen möchten?",
     "bulkActionDone": "Für die ausgewählten Rechnungen erledigt.",
@@ -257,7 +252,6 @@
     "activityLog": "Aktivitätsprotokoll",
     "logEntry": "Protokolleintrag",
     "user": "Benutzer",
-    "totalcountEntrValue": "Einträge: {totalCount}",
     "searchLog": "Aktivitätsprotokoll durchsuchen"
   },
   "clientOpenTicket": {
@@ -295,7 +289,6 @@
   "clientQuotes": {
     "createDate": "Erstellungsdatum",
     "noQuotesFound": "Keine Angebote gefunden.",
-    "clientquotestotalQuoteValue": "Angebote: {clientQuotesTotal}",
     "deleteQuote": "Angebot löschen",
     "confirmDeleteQuote": "Sind Sie sicher, dass Sie Angebot #{id} löschen möchten?",
     "quoteDeleted": "Angebot gelöscht.",
@@ -351,7 +344,6 @@
   },
   "clientServicesList": {
     "nextDue": "Nächste Fälligkeit",
-    "totalcountServiceValue": "Services: {totalCount}",
     "noServicesFoundForThis": "Keine Services für diesen Kunden gefunden",
     "searchServices": "Nach Domain, Produkt oder ID suchen",
     "noServicesMatchYourFilters": "Keine Services entsprechen Ihren Filtern"
@@ -440,15 +432,13 @@
     "openedLastYear": "Im letzten Jahr eröffnet",
     "dateOpened": "Eröffnet am",
     "noDataAvailableInTable": "Keine Daten in der Tabelle vorhanden",
-    "noTicketsMatchYourFilters": "Keine Tickets entsprechen Ihren Filtern",
-    "totalcountTicketValue": "Tickets: {totalCount}"
+    "noTicketsMatchYourFilters": "Keine Tickets entsprechen Ihren Filtern"
   },
   "clientTransactions": {
     "addTransaction": "Transaktion hinzufügen",
     "totalIn": "Eingänge gesamt",
     "totalFees": "Gebühren gesamt",
     "totalOut": "Ausgänge gesamt",
-    "totalcountTransactionValue": "Transaktionen: {totalCount}",
     "deleteTransaction": "Transaktion löschen",
     "confirmDeleteTransaction": "Sind Sie sicher, dass Sie Transaktion #{id} löschen möchten?",
     "transactionAdded": "Transaktion hinzugefügt.",
@@ -494,7 +484,6 @@
     "searchByNameOrEmail": "Nach Name oder E-Mail suchen",
     "lastLogin": "Letzte Anmeldung",
     "sendPasswordResetEmail": "Reset-E-Mail senden",
-    "totalcountUserValue": "Benutzer: {totalCount}",
     "noUsersFound": "Keine Benutzer gefunden",
     "noUsersMatchYourSearch": "Keine Benutzer entsprechen Ihrer Suche",
     "passwordResetEmailSent": "E-Mail zum Zurücksetzen des Passworts gesendet.",
@@ -561,12 +550,10 @@
     "deduct": "Guthaben abziehen",
     "reason": "Grund",
     "reasonPlaceholder": "Warum das Guthaben angepasst wird",
-    "apply": "Anwenden",
     "adjusted": "Das Guthaben wurde angepasst und der Kunde über den neuen Stand informiert.",
     "history": "Verlauf",
     "historyEmpty": "Noch keine Bewegungen erfasst. Ein bereits vorhandenes Guthaben des Kunden wird nicht einzeln aufgeführt.",
     "change": "Änderung",
-    "entriesCount": "{count} Bewegungen",
     "movement": {
       "AdminAdd": "Guthaben vom Mitarbeiter hinzugefügt",
       "AdminDeduct": "Guthaben vom Mitarbeiter abgezogen",

@@ -109,8 +109,6 @@ onMounted(load)
       @retry="load"
     />
 
-    <!-- Outcome of the last save -->
-
     <!-- Content: the schema's two cards, placeholders while the integration is read -->
     <UiDetailCards v-if="loadError === null" :columns="schema.columns" :ratio="schema.ratio" :loading="store.current === null">
       <template #card-config>

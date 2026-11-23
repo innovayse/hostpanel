@@ -48,7 +48,6 @@
     "validFrom": {
       "label": "Valid from",
       "hint": "A rate stays in force until a later row of the same country and kind starts. To change a rate, add a row with the new start day; edit a row only to correct a mistake. A shipped rate whose day you move later is not imported again."
-    },
-    "cancel": "Cancel"
+    }
   }
 }

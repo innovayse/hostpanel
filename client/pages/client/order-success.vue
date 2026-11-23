@@ -29,8 +29,9 @@
 
       <!-- Where to go next -->
       <UiStack gap="sm">
-        <UiButton variant="primary"
+        <UiButton
           v-if="domainName"
+          variant="primary"
           :to="localePath(CLIENT_DOMAINS_PATH)"
           size="lg"
           full-width
@@ -38,7 +39,7 @@
         >
           {{ $t('common.manage') }}
         </UiButton>
-        <UiButton variant="primary" v-if="!digitalOnly" size="lg" full-width data-testid="order-success-setup-service" @click="openServices">
+        <UiButton v-if="!digitalOnly" variant="primary" size="lg" full-width data-testid="order-success-setup-service" @click="openServices">
           {{ $t('client.services.completeSetup') }}
         </UiButton>
         <UiButton

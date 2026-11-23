@@ -98,8 +98,7 @@
   },
   "input": {
     "showPassword": "Ցուցադրել գաղտնաբառը",
-    "hidePassword": "Թաքցնել գաղտնաբառը",
-    "clearSearch": "Մաքրել"
+    "hidePassword": "Թաքցնել գաղտնաբառը"
   },
   "uiLocalizedField": {
     "emptyTab": "Լրացված չէ",

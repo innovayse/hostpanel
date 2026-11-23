@@ -5,7 +5,6 @@
   "empty": "Noch keine Steuerregeln. Fügen Sie eine Regel hinzu, um neue Rechnungen automatisch zu besteuern.",
   "searchPlaceholder": "Nach Name, Land oder Region suchen",
   "noMatches": "Keine Steuerregeln entsprechen Ihren Filtern",
-  "clearFilters": "Filter zurücksetzen",
   "table": {
     "name": "Name",
     "country": "Land",
@@ -46,7 +45,6 @@
     "enabled": {
       "label": "Aktiviert",
       "hint": "Nur aktivierte Regeln werden für neue Rechnungen verwendet."
-    },
-    "cancel": "Abbrechen"
+    }
   }
 }

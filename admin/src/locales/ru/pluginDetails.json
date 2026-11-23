@@ -21,7 +21,6 @@
   "staged": "Версия {version} подготовлена, применится после перезапуска",
   "updateAvailable": "Доступно обновление: {version}",
   "updateTo": "Обновить до {version}",
-  "uninstall": "Удалить",
   "links": {
     "heading": "Ссылки",
     "documentation": "Документация",

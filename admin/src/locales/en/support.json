@@ -162,7 +162,6 @@
     "ticketSettings": "Ticket Settings",
     "noRepliesYet": "No replies yet",
     "typeYourReply": "Type your reply",
-    "reply": "Reply",
     "conversation": "Conversation",
     "staff": "Staff",
     "deleteTicket": "Delete Ticket",
@@ -170,7 +169,6 @@
     "ticketClosed": "Ticket closed.",
     "ticketReopened": "Ticket reopened.",
     "replySent": "Reply sent.",
-    "details": "Details",
     "created": "Created",
     "assignee": "Assignee",
     "unassigned": "Unassigned"
@@ -179,7 +177,6 @@
     "supportTickets": "Support Tickets",
     "manageAllClientSupportRequests": "Manage all client support requests",
     "searchTicketsBySubject": "Search tickets by subject",
-    "totalcountRecordsFoundShowingShowingfrom": "{totalCount} Records Found, Showing {showingFrom} to {showingTo}",
     "flag": "Flag",
     "unflag": "Unflag",
     "noRepliesYet": "No replies yet",
@@ -187,7 +184,6 @@
     "noTicketsFound": "No tickets found",
     "noTicketsMatchYourFilters": "No tickets match your filters",
     "tryAdjustingYourFiltersOr": "Try adjusting your filters or search query.",
-    "clearFilters": "Clear filters",
     "confirmBulkDeleteTitle": "Delete the selected tickets?",
     "confirmBulkDeleteMessage": "{count} tickets will be deleted permanently. This cannot be undone."
   }

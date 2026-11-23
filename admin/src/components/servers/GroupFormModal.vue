@@ -143,7 +143,7 @@ const handleSubmit = (): void => {
             :type="UiInputType.Text"
             :invalid="invalid"
             :aria-describedby="describedby"
-            :placeholder="t('servers.groupForm.eGWebServers')"
+            :placeholder="t('servers.groupForm.eGCwpServers')"
             data-testid="group-form-name"
           />
         </template>

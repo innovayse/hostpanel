@@ -14,7 +14,7 @@ import UiCodeBlock from '@/components/ui/UiCodeBlock.vue'
  */
 const mountBlock = () =>
   mount(UiCodeBlock, {
-    props: { code: 'sudo ./install.sh --provider generic-linux "ssh-ed25519 AAAA x"', copyLabel: 'Copy', copiedLabel: 'Copied' },
+    props: { code: 'sudo ./install.sh --provider cwp "ssh-ed25519 AAAA x"', copyLabel: 'Copy', copiedLabel: 'Copied' },
     attrs: { 'data-testid': 'cmd' },
   })
 
@@ -27,7 +27,7 @@ describe('UiCodeBlock', () => {
   it('shows the text verbatim with the test id on the box', () => {
     const wrapper = mountBlock()
 
-    expect(wrapper.get('[data-testid="cmd"]').text()).toBe('sudo ./install.sh --provider generic-linux "ssh-ed25519 AAAA x"')
+    expect(wrapper.get('[data-testid="cmd"]').text()).toBe('sudo ./install.sh --provider cwp "ssh-ed25519 AAAA x"')
     expect(wrapper.find('[data-testid="cmd-copy"]').exists()).toBe(true)
   })
 
@@ -39,7 +39,7 @@ describe('UiCodeBlock', () => {
     await wrapper.get('[data-testid="cmd-copy"]').trigger('click')
     await flushPromises()
 
-    expect(writeText).toHaveBeenCalledWith('sudo ./install.sh --provider generic-linux "ssh-ed25519 AAAA x"')
+    expect(writeText).toHaveBeenCalledWith('sudo ./install.sh --provider cwp "ssh-ed25519 AAAA x"')
     expect(wrapper.get('[data-testid="cmd-copy"]').text()).toBe('Copied')
   })
 

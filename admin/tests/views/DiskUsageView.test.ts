@@ -70,7 +70,7 @@ describe('DiskUsageView actions', () => {
         lastUpdated: null,
         servers: [],
         failures: [
-          { serverName: 'host-1', reason: 'UnsupportedModule' },
+          { serverName: 'cwp-1', reason: 'UnsupportedModule' },
           { serverName: 'cp-2', reason: 'Unreachable' },
           { serverName: 'cp-3', reason: 'MissingCredentials' },
         ],
@@ -83,7 +83,7 @@ describe('DiskUsageView actions', () => {
 
     const failures = wrapper.findAll('[data-testid="report-failure"]').map(row => row.text())
     expect(failures).toHaveLength(3)
-    expect(failures[0]).toContain('host-1')
+    expect(failures[0]).toContain('cwp-1')
     expect(failures[0]).toContain('cannot report disk and bandwidth')
     expect(failures[1]).toContain('did not answer')
     expect(failures[2]).toContain('no API token')

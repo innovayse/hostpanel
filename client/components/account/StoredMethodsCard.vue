@@ -83,7 +83,8 @@
       <UiAlert v-if="error" variant="error" data-testid="stored-methods-error">{{ error }}</UiAlert>
       <UiAlert v-if="success" variant="success" data-testid="stored-methods-success">{{ success }}</UiAlert>
       <UiStack direction="row" gap="none">
-        <UiButton variant="primary"
+        <UiButton
+          variant="primary"
           :loading="starting"
           :disabled="!selectedModule || !consent || !gatewayOptions.length"
           data-testid="stored-methods-start"

@@ -98,8 +98,7 @@
   },
   "input": {
     "showPassword": "Show password",
-    "hidePassword": "Hide password",
-    "clearSearch": "Clear"
+    "hidePassword": "Hide password"
   },
   "uiLocalizedField": {
     "emptyTab": "Not filled in",

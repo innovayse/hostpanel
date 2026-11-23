@@ -69,12 +69,12 @@ describe('UiAlert', () => {
     const wrapper = mountWithKit(UiAlert, { slots: { action: 'Retry' } })
 
     expect(wrapper.classes()).toContain('flex-wrap')
-    expect(wrapper.find('div.max-sm\:w-full').text()).toBe('Retry')
+    expect(wrapper.find('div.max-sm\\:w-full').text()).toBe('Retry')
   })
 
   it('draws no action wrapper without the slot', () => {
     const wrapper = mountWithKit(UiAlert)
 
-    expect(wrapper.find('div.max-sm\:w-full').exists()).toBe(false)
+    expect(wrapper.find('div.max-sm\\:w-full').exists()).toBe(false)
   })
 })

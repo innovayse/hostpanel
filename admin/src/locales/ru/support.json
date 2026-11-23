@@ -162,7 +162,6 @@
     "ticketSettings": "Настройки тикета",
     "noRepliesYet": "Ответов пока нет",
     "typeYourReply": "Введите ваш ответ",
-    "reply": "Ответить",
     "conversation": "Переписка",
     "staff": "Сотрудник",
     "deleteTicket": "Удалить тикет",
@@ -170,7 +169,6 @@
     "ticketClosed": "Тикет закрыт.",
     "ticketReopened": "Тикет снова открыт.",
     "replySent": "Ответ отправлен.",
-    "details": "Детали",
     "created": "Создан",
     "assignee": "Ответственный",
     "unassigned": "Не назначен"
@@ -179,7 +177,6 @@
     "supportTickets": "Тикеты поддержки",
     "manageAllClientSupportRequests": "Управление всеми обращениями клиентов в поддержку",
     "searchTicketsBySubject": "Поиск тикетов по теме",
-    "totalcountRecordsFoundShowingShowingfrom": "Найдено записей: {totalCount}, показаны {showingFrom}-{showingTo}",
     "flag": "Пометить",
     "unflag": "Снять пометку",
     "noRepliesYet": "Ответов пока нет",
@@ -187,7 +184,6 @@
     "noTicketsFound": "Тикеты не найдены",
     "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",
     "tryAdjustingYourFiltersOr": "Попробуйте изменить фильтры или поисковый запрос.",
-    "clearFilters": "Сбросить фильтры",
     "confirmBulkDeleteTitle": "Удалить выбранные тикеты?",
     "confirmBulkDeleteMessage": "Будет безвозвратно удалено тикетов: {count}. Это действие нельзя отменить."
   }

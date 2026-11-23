@@ -6,7 +6,7 @@
       <UiAlert variant="success" data-testid="service-plan-change-success">
         {{ $t(RESULT_KEYS[result.status], { amount: money(result.prorationAmount, result.currencyCode) }) }}
       </UiAlert>
-      <UiLink tone="primary" v-if="result.invoiceId !== null" :to="clientInvoicePayPath(result.invoiceId)" testid="service-plan-change-pay">
+      <UiLink v-if="result.invoiceId !== null" tone="primary" :to="clientInvoicePayPath(result.invoiceId)" testid="service-plan-change-pay">
         {{ $t('common.pay') }}
       </UiLink>
     </UiStack>
@@ -38,7 +38,8 @@
         </UiStack>
 
         <template #actions>
-          <UiButton variant="primary"
+          <UiButton
+            variant="primary"
             type="submit"
             :loading="submitting"
             :disabled="selectedProductId === null"

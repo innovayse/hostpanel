@@ -40,8 +40,7 @@
     "validFrom": {
       "label": "Gültig ab",
       "hint": "Ein Satz bleibt in Kraft, bis eine spätere Zeile desselben Landes und derselben Art beginnt. Um einen Satz zu ändern, fügen Sie eine Zeile mit dem neuen Starttag hinzu; bearbeiten Sie eine Zeile nur, um einen Fehler zu korrigieren. Ein mitgelieferter Satz, dessen Tag Sie nach hinten verschieben, wird nicht erneut importiert."
-    },
-    "cancel": "Abbrechen"
+    }
   },
   "filters": {
     "status": "Status"

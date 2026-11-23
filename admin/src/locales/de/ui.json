@@ -92,8 +92,7 @@
   },
   "input": {
     "showPassword": "Passwort anzeigen",
-    "hidePassword": "Passwort ausblenden",
-    "clearSearch": "Leeren"
+    "hidePassword": "Passwort ausblenden"
   },
   "uiDateTimePicker": {
     "title": "Datum und Uhrzeit auswählen"

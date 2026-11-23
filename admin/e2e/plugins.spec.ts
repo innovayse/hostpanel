@@ -7,19 +7,19 @@ import { HttpMethod } from '../src/types/http'
 import { PluginSettingKey } from '../src/types/setting'
 import { PluginHostAccess } from '../src/types/plugin'
 import { expect, test } from '@playwright/test'
-import { panelPlugin } from './fixtures/integrations'
+import { cwpPlugin } from './fixtures/integrations'
 import { tinyPng } from './fixtures/settings'
 import type { PluginListItemDto, PluginPackagePreviewDto } from '../src/types/plugin'
 import type { Setting } from '../src/types/setting'
 import { json, stubApi } from './support/stubApi'
 
 /** What the server reads out of the uploaded archive: SSH access, a changelog and no version limit. */
-const panelPreview: PluginPackagePreviewDto = {
-  id: panelPlugin.id,
-  name: panelPlugin.name,
-  version: panelPlugin.version,
-  author: panelPlugin.author,
-  description: panelPlugin.description,
+const cwpPreview: PluginPackagePreviewDto = {
+  id: cwpPlugin.id,
+  name: cwpPlugin.name,
+  version: cwpPlugin.version,
+  author: cwpPlugin.author,
+  description: cwpPlugin.description,
   hostAccess: [PluginHostAccess.Ssh],
   capabilities: [],
   changelog: 'First release.',
@@ -37,12 +37,12 @@ test('uploading an archive installs the plugin and offers the restart', async ({
     signedIn: true,
     routes: [
       { method: HttpMethod.Get, path: '/api/admin/plugins', respond: () => ({ body: stored }) },
-      json(HttpMethod.Post, '/api/admin/plugins/inspect', panelPreview),
+      json(HttpMethod.Post, '/api/admin/plugins/inspect', cwpPreview),
       {
         method: HttpMethod.Post,
         path: '/api/admin/plugins/install',
         respond: () => {
-          stored.push({ ...panelPlugin, isLoaded: false })
+          stored.push({ ...cwpPlugin, isLoaded: false })
           return { body: { requiresRestart: true } }
         },
       },
@@ -54,8 +54,8 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   await expect(page.getByTestId('plugins-empty')).toBeVisible()
 
   await page.getByTestId('plugins-upload-open').click()
-  await page.getByTestId('plugin-zip-input').setInputFiles({ name: 'panel.zip', mimeType: 'application/zip', buffer: tinyPng })
-  await expect(page.getByTestId('plugin-selected-name')).toContainText('panel.zip')
+  await page.getByTestId('plugin-zip-input').setInputFiles({ name: 'cwp.zip', mimeType: 'application/zip', buffer: tinyPng })
+  await expect(page.getByTestId('plugin-selected-name')).toContainText('cwp.zip')
   await page.getByTestId('plugin-install').click()
 
   await expect(page.getByTestId('plugin-install-access-ssh')).toBeVisible()
@@ -66,11 +66,11 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   // The install runs behind the processing dialog, which ends with the restart note and a Close button.
   await expect(page.getByTestId('plugin-processing-restart')).toBeVisible()
   await page.getByTestId('plugin-processing-close').click()
-  await expect(page.getByTestId(`plugin-card-${panelPlugin.id}`)).toContainText(panelPlugin.name)
+  await expect(page.getByTestId(`plugin-card-${cwpPlugin.id}`)).toContainText(cwpPlugin.name)
   await expect(page.getByTestId('plugins-restart-banner')).toBeVisible()
   const [install] = api.callsTo(HttpMethod.Post, '/api/admin/plugins/install')
   expect(install?.contentType).toContain('multipart/form-data')
-  expect(install?.postData).toContain('filename="panel.zip"')
+  expect(install?.postData).toContain('filename="cwp.zip"')
 
   await page.getByTestId('plugins-restart').click()
   await expect.poll(() => api.callsTo(HttpMethod.Post, '/api/admin/plugins/restart').length).toBe(1)
@@ -79,13 +79,13 @@ test('uploading an archive installs the plugin and offers the restart', async ({
 test('the gear of an installed plugin opens its own page', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
-    routes: [json(HttpMethod.Get, '/api/admin/plugins', [{ ...panelPlugin }])],
+    routes: [json(HttpMethod.Get, '/api/admin/plugins', [{ ...cwpPlugin }])],
   })
 
   await page.goto('/plugins')
-  await page.getByTestId(`plugin-settings-${panelPlugin.id}`).click()
+  await page.getByTestId(`plugin-settings-${cwpPlugin.id}`).click()
 
-  await expect(page).toHaveURL(new RegExp(`/plugins/${panelPlugin.id}$`))
+  await expect(page).toHaveURL(new RegExp(`/plugins/${cwpPlugin.id}$`))
 })
 
 test('a refused install shows the API sentence', async ({ page }) => {

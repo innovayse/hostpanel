@@ -1,0 +1,69 @@
+<script setup lang="ts">
+/**
+ * Body of the brand card of the CWP integration config page.
+ *
+ * Shows the CWP logo, title, a version badge, and the connection state as a toned badge. The card around it, and its
+ * skeleton while the config is still being read, is the brand card of `CwpIntegrationView.schema`, which `UiDetailCards` draws.
+ */
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { INTEGRATION_META } from '@/types/integrationmeta'
+import { IntegrationSlug } from '@/types/integration'
+import { ProviderConnectionState } from '@/types/providerstatus'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
+import UiBadge from '@/components/ui/UiBadge.vue'
+import UiHeading from '@/components/ui/UiHeading.vue'
+import UiImage from '@/components/ui/UiImage.vue'
+import UiStack from '@/components/ui/UiStack.vue'
+import UiText from '@/components/ui/UiText.vue'
+
+/** Translation function. */
+const { t } = useI18n()
+
+/** Props for CwpBrandHeader. */
+const props = defineProps<{
+  /** CWP version string to display in the badge, or null while loading. */
+  version: string | null
+  /** Connection status: controls the badge tone and caption. */
+  status: ProviderConnectionState
+}>()
+
+/** Static metadata of the CWP integration (logo and tile colour). */
+const meta = INTEGRATION_META[IntegrationSlug.Cwp]
+
+/** Badge tone per connection state. */
+const statusTone = computed<UiTone>(() => {
+  if (props.status === ProviderConnectionState.Connected) {
+    return UiTone.Success
+  }
+  return props.status === ProviderConnectionState.Error ? UiTone.Danger : UiTone.Neutral
+})
+
+/** Badge caption per connection state. */
+const statusLabel = computed<string>(() => {
+  if (props.status === ProviderConnectionState.Connected) {
+    return t('shared.connected')
+  }
+  return props.status === ProviderConnectionState.Error
+    ? t('integrations.cwpBrandHeader.connectionError')
+    : t('integrations.cwpBrandHeader.unknown')
+})
+</script>
+
+<template>
+  <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" wrap data-testid="cwp-brand-header">
+    <UiStack :align="UiAlignItems.Center" :justify="UiJustify.Center" class="h-11 w-11 shrink-0 rounded-control p-2" :class="meta.color">
+      <UiImage :src="meta.logo" alt="" class="h-full w-full object-contain brightness-0 invert" />
+    </UiStack>
+    <UiStack :gap="UiGap.Xs" class="min-w-0 flex-1">
+      <UiHeading :level="1" :variant="UiHeadingVariant.Card" class="truncate">{{ t('integrations.cwpBrandHeader.centosWebPanel') }}</UiHeading>
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('integrations.cwpBrandHeader.provisioningProvider') }}</UiText>
+    </UiStack>
+    <UiBadge v-if="props.version" :tone="UiTone.Neutral" small class="font-mono" data-testid="cwp-version">
+      v{{ props.version }}
+    </UiBadge>
+    <UiBadge :tone="statusTone" dot data-testid="cwp-status">{{ statusLabel }}</UiBadge>
+  </UiStack>
+</template>

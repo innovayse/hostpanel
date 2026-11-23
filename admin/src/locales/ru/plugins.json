@@ -23,7 +23,6 @@
     "rangeUpTo": "Работает с версиями сервера до {max}.",
     "sdk": "Собран на SDK плагинов {version}",
     "incompatible": "Этот плагин не работает с версией этого сервера {host}. {range}",
-    "install": "Установить",
     "hostAccess": {
       "ssh": "Выполнять команды в хостинг-аккаунте клиента по SSH",
       "websites": "Управлять сайтами хостинг-услуги клиента",
@@ -107,9 +106,7 @@
     "byAuthor": "автор: {author}",
     "version": "v{version}",
     "verified": "Проверен",
-    "install": "Установить",
     "update": "Обновить до {version}",
-    "details": "Подробнее",
     "emptyTitle": "Плагины не найдены",
     "emptyDescription": "Попробуйте другой запрос или категорию.",
     "total": "Плагинов: {total}",
@@ -190,9 +187,6 @@
     "notFoundTitle": "Страница не найдена",
     "tableEmpty": "Пока нечего показать.",
     "chatMessage": "Сообщение",
-    "chatSend": "Отправить",
-    "chatStop": "Остановить",
-    "chatResultDetails": "Подробнее",
     "chatStepStopped": "остановлено",
     "chatStepsCount": "Выполнено {done} из {total}",
     "chatLog": "Разговор",
@@ -201,7 +195,6 @@
     "chatHint": "Enter отправляет, Shift+Enter переносит строку",
     "openUrlBlocked": "Браузер заблокировал новую вкладку. Разрешите всплывающие окна для этого сайта и повторите.",
     "openUrlRefused": "Плагин вернул адрес, который нельзя открыть.",
-    "chatRetry": "Повторить",
     "chatWriting": "Пишется ответ"
   }
 }

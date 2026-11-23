@@ -23,7 +23,6 @@
     "rangeUpTo": "Աշխատում է սերվերի մինչև {max} տարբերակների հետ։",
     "sdk": "Կառուցված է հավելագրիչների SDK {version}-ով",
     "incompatible": "Այս հավելագրիչը չի աշխատում այս սերվերի {host} տարբերակի հետ։ {range}",
-    "install": "Տեղադրել",
     "hostAccess": {
       "ssh": "Կատարել հրամաններ հաճախորդի հոսթինգ հաշվում SSH-ով",
       "websites": "Կառավարել հաճախորդի հոսթինգ ծառայության կայքերը",
@@ -107,9 +106,7 @@
     "byAuthor": "հեղինակ՝ {author}",
     "version": "v{version}",
     "verified": "Ստուգված",
-    "install": "Տեղադրել",
     "update": "Թարմացնել մինչև {version}",
-    "details": "Մանրամասներ",
     "emptyTitle": "Պլագիններ չեն գտնվել",
     "emptyDescription": "Փորձեք այլ հարցում կամ կատեգորիա։",
     "total": "Պլագիններ՝ {total}",
@@ -190,9 +187,6 @@
     "notFoundTitle": "Էջը չի գտնվել",
     "tableEmpty": "Դեռ ցուցադրելու բան չկա։",
     "chatMessage": "Հաղորդագրություն",
-    "chatSend": "Ուղարկել",
-    "chatStop": "Կանգնեցնել",
-    "chatResultDetails": "Մանրամասներ",
     "chatStepStopped": "կանգնեցված է",
     "chatStepsCount": "Կատարված է {done}-ը {total}-ից",
     "chatLog": "Զրույց",
@@ -201,7 +195,6 @@
     "chatHint": "Enter՝ ուղարկելու, Shift+Enter՝ նոր տողի համար",
     "openUrlBlocked": "Դիտարկիչը արգելափակեց նոր ներդիրը։ Թույլատրեք pop-up-ները այս կայքի համար և կրկնեք։",
     "openUrlRefused": "Պլագինը վերադարձրեց հասցե, որը հնարավոր չէ բացել։",
-    "chatRetry": "Կրկնել",
     "chatWriting": "Պատասխանը գրվում է"
   }
 }

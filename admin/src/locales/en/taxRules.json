@@ -5,7 +5,6 @@
   "empty": "No tax rules yet. Add a rule to tax new invoices automatically.",
   "searchPlaceholder": "Search by name, country or region",
   "noMatches": "No tax rules match your filters",
-  "clearFilters": "Clear filters",
   "table": {
     "name": "Name",
     "country": "Country",
@@ -46,7 +45,6 @@
     "enabled": {
       "label": "Enabled",
       "hint": "Only enabled rules are used on new invoices."
-    },
-    "cancel": "Cancel"
+    }
   }
 }

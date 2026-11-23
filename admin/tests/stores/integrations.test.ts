@@ -1,13 +1,13 @@
 /**
  * Tests for the integrations store: list with category normalisation, detail, save-then-reread
- * and the connection test, through the real `useApi` transport. A refusal keeps the API's own
+ * the connection test and the live CWP status, through the real `useApi` transport. A refusal keeps the API's own
  * sentence; nothing throws.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useIntegrationsStore } from '@/stores/integrations'
-import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { callOf, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 
 /** The sentence shown when nothing answered. */
 const NO_ANSWER = 'Could not reach the server. Check your connection and try again.'
@@ -123,5 +123,37 @@ describe('integrationsStore.testConnection', () => {
 
     await store.testConnection('bank-transfer')
     expect(store.testResult).toMatchObject({ success: false, message: NO_ANSWER })
+  })
+})
+
+describe('integrationsStore.fetchCwpServerInfo', () => {
+  it('reads the CWP endpoint and fills the status', async () => {
+    const mock = stubFetch(json({ connected: true }))
+    const store = useIntegrationsStore()
+
+    await store.fetchCwpServerInfo()
+    expect(callOf(mock).url).toBe('/api/admin/integrations/cwp/server-info')
+    expect(store.cwpServerInfo).toEqual({ connected: true })
+    expect(store.cwpServerInfoError).toBeNull()
+  })
+
+  it('keeps the API sentence and the previous status on refusal', async () => {
+    const store = useIntegrationsStore()
+    stubFetch(json({ connected: true }))
+    await store.fetchCwpServerInfo()
+
+    stubFetch(problem('Server unreachable.', 502))
+    await store.fetchCwpServerInfo()
+    expect(store.cwpServerInfoError).toBe('Server unreachable.')
+    expect(store.cwpServerInfo).toEqual({ connected: true })
+    expect(store.error).toBeNull()
+  })
+
+  it('keeps the no-answer sentence offline', async () => {
+    stubOffline()
+    const store = useIntegrationsStore()
+
+    await store.fetchCwpServerInfo()
+    expect(store.cwpServerInfoError).toBe(NO_ANSWER)
   })
 })

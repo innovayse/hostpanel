@@ -129,7 +129,6 @@
   "cancellationRequests": {
     "cancellationRequests": "Запросы на отмену",
     "reviewAndProcessServiceCancellation": "Просмотр и обработка запросов на отмену услуг",
-    "totalcountRequestValue": "Запросов: {totalCount}",
     "noCancellationRequestsFound": "Запросы на отмену не найдены",
     "searchRequests": "Поиск по причине или номеру",
     "noRequestsMatchYourFilters": "Нет запросов на отмену, подходящих под фильтры",
@@ -147,7 +146,6 @@
     "invoiceSelected": "Выставить счёт",
     "noUninvoicedBillableItems": "Нет невыставленных оплачиваемых позиций.",
     "invoicedItems": "Выставленные позиции",
-    "invoicedtotalcountItemValue": "Позиций: {invoicedTotalCount}",
     "noInvoicedBillableItems": "Нет выставленных оплачиваемых позиций.",
     "searchItems": "Поиск по описанию или номеру",
     "noUninvoicedItemsMatchYourFilters": "Нет невыставленных оплачиваемых позиций, подходящих под фильтры.",
@@ -213,7 +211,6 @@
     "registerThisDomainWithThe": "Зарегистрировать этот домен у регистратора?",
     "eppAuthorizationCode": "Код авторизации EPP",
     "useThisCodeToTransfer": "Используйте этот код для переноса домена к другому регистратору. Храните его в тайне.",
-    "copy": "Копировать",
     "registrarCommandDone": "Готово. Регистратор принял изменение.",
     "contactSaved": "Контактные данные сохранены."
   },
@@ -222,7 +219,6 @@
   },
   "clientEmails": {
     "emails": "Письма",
-    "totalcountEmailValue": "Писем: {totalCount}",
     "status": "Статус",
     "delivered": "Доставлено",
     "failure": {
@@ -244,7 +240,6 @@
     "createAsDraft": "Создать как черновик",
     "addItem": "Добавить позицию",
     "allStatuses": "Все статусы",
-    "clientinvoicestotalInvoiceValue": "Счетов: {clientInvoicesTotal}",
     "deleteInvoice": "Удалить счёт",
     "confirmDeleteInvoice": "Вы уверены, что хотите удалить счёт #{id}?",
     "bulkActionDone": "Выполнено для выбранных счетов.",
@@ -257,7 +252,6 @@
     "activityLog": "Журнал активности",
     "logEntry": "Запись журнала",
     "user": "Пользователь",
-    "totalcountEntrValue": "Записей: {totalCount}",
     "searchLog": "Поиск по журналу активности"
   },
   "clientOpenTicket": {
@@ -295,7 +289,6 @@
   "clientQuotes": {
     "createDate": "Дата создания",
     "noQuotesFound": "Предложения не найдены.",
-    "clientquotestotalQuoteValue": "Предложений: {clientQuotesTotal}",
     "deleteQuote": "Удалить предложение",
     "confirmDeleteQuote": "Вы уверены, что хотите удалить предложение #{id}?",
     "quoteDeleted": "Предложение удалено.",
@@ -351,7 +344,6 @@
   },
   "clientServicesList": {
     "nextDue": "Следующая оплата",
-    "totalcountServiceValue": "Услуг: {totalCount}",
     "noServicesFoundForThis": "Для этого клиента услуги не найдены",
     "searchServices": "Поиск по домену, продукту или ID",
     "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам"
@@ -440,15 +432,13 @@
     "openedLastYear": "Открыто в прошлом году",
     "dateOpened": "Дата открытия",
     "noDataAvailableInTable": "В таблице нет данных",
-    "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",
-    "totalcountTicketValue": "Тикетов: {totalCount}"
+    "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам"
   },
   "clientTransactions": {
     "addTransaction": "Добавить транзакцию",
     "totalIn": "Всего поступлений",
     "totalFees": "Всего комиссий",
     "totalOut": "Всего расходов",
-    "totalcountTransactionValue": "Транзакций: {totalCount}",
     "deleteTransaction": "Удалить транзакцию",
     "confirmDeleteTransaction": "Вы уверены, что хотите удалить транзакцию #{id}?",
     "transactionAdded": "Транзакция добавлена.",
@@ -494,7 +484,6 @@
     "searchByNameOrEmail": "Поиск по имени или почте",
     "lastLogin": "Последний вход",
     "sendPasswordResetEmail": "Отправить письмо для сброса",
-    "totalcountUserValue": "Пользователей: {totalCount}",
     "noUsersFound": "Пользователи не найдены",
     "noUsersMatchYourSearch": "Нет пользователей, подходящих под поиск",
     "passwordResetEmailSent": "Письмо для сброса пароля отправлено.",
@@ -561,12 +550,10 @@
     "deduct": "Списать с баланса",
     "reason": "Причина",
     "reasonPlaceholder": "Почему баланс корректируется",
-    "apply": "Применить",
     "adjusted": "Баланс скорректирован, клиенту отправлен новый баланс.",
     "history": "История",
     "historyEmpty": "Операций пока нет. Баланс, который уже был у клиента, не детализируется.",
     "change": "Изменение",
-    "entriesCount": "Операций: {count}",
     "movement": {
       "AdminAdd": "Баланс пополнен сотрудником",
       "AdminDeduct": "Баланс списан сотрудником",

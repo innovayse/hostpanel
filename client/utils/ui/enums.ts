@@ -621,6 +621,8 @@ export enum UiTextTag {
   Time = 'time',
   /** A form label. */
   Label = 'label',
+  /** A native disclosure widget. */
+  Details = 'details',
   /** The summary of a details disclosure. */
   Summary = 'summary',
   /** A term of a description list. */

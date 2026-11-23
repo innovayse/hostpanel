@@ -50,10 +50,10 @@ const answerReads = (state: SshAccessState, keys: Record<string, unknown>[] = []
   table[`GET ${ACCESS_PATH}`] = {
     body: {
       state,
-      hostname: 'panel.example.test',
+      hostname: 'cwp.example.test',
       port: 2222,
       username: 'web',
-      connectCommand: state === SshAccessState.Available ? 'ssh -p 2222 web@panel.example.test' : null,
+      connectCommand: state === SshAccessState.Available ? 'ssh -p 2222 web@cwp.example.test' : null,
       maxKeys: 20
     }
   }
@@ -110,7 +110,7 @@ describe('ServiceSshKeys', () => {
 
     expect(requestsTo(stub.requests, ACCESS_PATH)).toHaveLength(1)
     expect(requestsTo(stub.requests, KEYS_PATH)).toHaveLength(1)
-    expect(wrapper.find('[data-testid="service-ssh-command"]').text()).toBe('ssh -p 2222 web@panel.example.test')
+    expect(wrapper.find('[data-testid="service-ssh-command"]').text()).toBe('ssh -p 2222 web@cwp.example.test')
     expect(wrapper.find('[data-testid="service-ssh-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="service-ssh-form"]').exists()).toBe(true)
   })
@@ -122,7 +122,7 @@ describe('ServiceSshKeys', () => {
     await wrapper.find('[data-testid="ui-accordion-toggle-1"]').trigger('click')
     const html = wrapper.find('[data-testid="service-ssh-deploy"]').html()
     expect(html).toContain('ssh -p 2222 -i ~/.ssh/deploy_key')
-    expect(html).toContain('web@panel.example.test:public_html/')
+    expect(html).toContain('web@cwp.example.test:public_html/')
   })
 
   it('offers no deployment guide without a form', async () => {

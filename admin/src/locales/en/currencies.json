@@ -36,9 +36,7 @@
   },
   "pricesPicker": {
     "title": "Update Product Prices",
-    "description": "Choose which non-base currencies to recompute from the base prices.",
-    "cancel": "Cancel",
-    "continue": "Continue"
+    "description": "Choose which non-base currencies to recompute from the base prices."
   },
   "pricesConfirm": {
     "title": "Overwrite Product Prices",
@@ -78,7 +76,6 @@
       "label": "Enabled",
       "baseHint": "The base currency is always enabled.",
       "hint": "Whether payers may be billed in this currency"
-    },
-    "cancel": "Cancel"
+    }
   }
 }

@@ -8,8 +8,9 @@
       </UiStack>
     </UiStack>
     <UiStack direction="row" align="center" gap="sm">
-      <UiButton variant="primary"
+      <UiButton
         v-if="canLogin"
+        variant="primary"
         size="sm"
         :loading="ssoLoading"
         class="hidden sm:flex"

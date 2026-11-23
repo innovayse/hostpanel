@@ -1,4 +1,10 @@
 {
+  "cwpBrandHeader": {
+    "centosWebPanel": "CentOS Web Panel",
+    "provisioningProvider": "Provisioning Provider",
+    "connectionError": "Connection Error",
+    "unknown": "Unknown"
+  },
   "integrationCard": {
     "plugin": "Plugin",
     "configure": "Configure",
@@ -50,6 +56,15 @@
     "noIntegrationsInThisCategory": "No integrations in this category",
     "emptyHint": "Install a plugin from the catalogue or upload a plugin package to add one.",
     "browsePlugins": "Browse plugins"
+  },
+  "common": {
+    "never": "Never"
+  },
+  "providerStatus": {
+    "notConnected": "Not Connected",
+    "statusUnknown": "Status Unknown",
+    "lastTested": "Last Tested",
+    "cwpVersion": "CWP Version"
   },
   "integrationConfigForm": {
     "enterValue": "Enter {label}",

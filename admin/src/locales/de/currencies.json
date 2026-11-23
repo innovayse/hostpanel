@@ -36,9 +36,7 @@
   },
   "pricesPicker": {
     "title": "Produktpreise aktualisieren",
-    "description": "Wählen Sie, welche Nicht-Basiswährungen aus den Basispreisen neu berechnet werden sollen.",
-    "cancel": "Abbrechen",
-    "continue": "Weiter"
+    "description": "Wählen Sie, welche Nicht-Basiswährungen aus den Basispreisen neu berechnet werden sollen."
   },
   "pricesConfirm": {
     "title": "Produktpreise überschreiben",
@@ -78,7 +76,6 @@
       "label": "Aktiviert",
       "baseHint": "Die Basiswährung ist immer aktiviert.",
       "hint": "Ob Zahler in dieser Währung abgerechnet werden dürfen"
-    },
-    "cancel": "Abbrechen"
+    }
   }
 }

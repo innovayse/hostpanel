@@ -7,6 +7,7 @@
  * a click, Enter or Space on it (`select`). A shape without a label is decoration and is hidden from assistive technology.
  * The map owns no data and no highlight: the screen decides each fill and what a choice does.
  */
+import { mapShapeFocusClasses } from '@/utils/ui/svgMap'
 import type { UiMapShape } from '@/utils/ui/svgMap'
 
 /** Props for UiSvgMap. */
@@ -44,7 +45,7 @@ const emit = defineEmits<{
       <path
         v-else
         :d="shape.path"
-        :class="[shape.fill, 'stroke-surface-card cursor-pointer outline-none']"
+        :class="[shape.fill, 'stroke-surface-card cursor-pointer', mapShapeFocusClasses]"
         stroke-width="0.3"
         role="button"
         tabindex="0"

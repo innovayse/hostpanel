@@ -41,7 +41,7 @@ const ALLOWED_BY_FILE: Record<string, string[]> = {
   'components/ui/UiLogoWallItem.vue': ['max-w-[13rem]'],
   // A popover panel is bound to the viewport, not the page: on a phone it must never overflow the screen edge.
   'components/ui/UiPhoneCountryPicker.vue': ['max-w-[calc(100vw-2rem)]'],
-  'components/ui/UiTooltip.vue':['max-w-[calc(100vw-2rem)]'],
+  'components/ui/UiTooltip.vue': ['max-w-[calc(100vw-2rem)]'],
   'pages/client/domains/transfer.vue': ['max-w-lg'],
   'pages/client/order-success.vue': ['max-w-md'],
   'pages/client/services/[id]/setup.vue': ['max-w-xl'],

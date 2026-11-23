@@ -9,10 +9,10 @@ import ManageUsersView from '@/views/ManageUsersView.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
+import { toastsOnScreen } from '../helpers/toasts'
 import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import schema from '@/views/ManageUsersView.schema'
 import { useAuthStore } from '@/stores/auth'
-import { useToastStore } from '@/stores/toast'
 import { AuthMode } from '@/types/auth'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -54,13 +54,6 @@ const mountUsers = async () => (await mountUsersAt('/clients/users')).wrapper
  * @returns One URL per call, in order.
  */
 const urlsOf = (mock: ReturnType<typeof stubRoutes>): string[] => mock.mock.calls.map(([url]) => url as string)
-
-/**
- * The toasts on screen as sentence and tone pairs.
- *
- * @returns One pair per toast, oldest first.
- */
-const toastsOnScreen = (): Array<[string, UiTone]> => useToastStore().toasts.map((toast) => [toast.message, toast.tone])
 
 describe('ManageUsersView', () => {
   afterEach(() => {

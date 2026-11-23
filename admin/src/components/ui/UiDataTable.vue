@@ -67,6 +67,7 @@ withDefaults(defineProps<{
   paginationTestid: undefined,
 })
 
+/** Events emitted by UiDataTable. */
 defineEmits<{
   /** Emitted with the page the reader chose. */
   'update:page': [page: number]

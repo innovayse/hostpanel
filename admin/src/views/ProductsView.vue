@@ -215,7 +215,7 @@ const hasRows = computed<boolean>(() => store.productPage.length > 0)
 /** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
 const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
-/** The success line of the last save, shown above the table; a refusal shows inside the dialog. */
+/** Reports the outcome of a save as a toast: the success line and the refusal both. */
 const feedback = useOutcomeToast()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()

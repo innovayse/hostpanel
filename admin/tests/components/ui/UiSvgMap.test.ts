@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiSvgMap from '@/components/ui/UiSvgMap.vue'
+import { mapShapeFocusClasses } from '@/utils/ui/svgMap'
 import type { UiMapShape } from '@/utils/ui/svgMap'
 
 /** One decorative outline and one labelled one. */
@@ -37,6 +38,17 @@ describe('UiSvgMap', () => {
     expect(wrapper.get('[data-testid="shape-b"]').attributes('role')).toBe('button')
     expect(wrapper.get('[data-testid="shape-b"]').attributes('tabindex')).toBe('0')
     expect(wrapper.get('[data-testid="shape-b"]').attributes('aria-label')).toBe('B: 3')
+  })
+
+  it('shows keyboard focus on a labelled outline as an accent stroke, and keeps a decorative one plain', () => {
+    const wrapper = mountMap()
+    const labelled = wrapper.get('[data-testid="shape-b"]').classes()
+
+    for (const focusClass of mapShapeFocusClasses.split(' ')) {
+      expect(labelled).toContain(focusClass)
+    }
+    expect(labelled).toContain('focus-visible:stroke-text-accent')
+    expect(wrapper.findAll('path')[0]?.classes()).not.toContain('focus-visible:stroke-text-accent')
   })
 
   it('reports the pointer and focus entering and leaving a labelled outline', async () => {

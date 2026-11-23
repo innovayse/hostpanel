@@ -92,7 +92,9 @@ describe('UiPageHeader', () => {
 
       await trigger.trigger('click')
 
-      const rows = wrapper.findAll('[role="menuitem"]')
+      const panel = wrapper.find('[data-testid="ui-popover-panel"]')
+      expect(panel.attributes('role')).toBe('menu')
+      const rows = panel.findAll('[role="menuitem"]')
       expect(rows.map((row) => row.text())).toEqual(['Order new', 'Refresh'])
     })
 

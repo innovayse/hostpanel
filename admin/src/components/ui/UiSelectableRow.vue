@@ -9,7 +9,9 @@
  * `data-testid` and other attributes fall through to the row; `selectTestid` names the choosing button.
  */
 import UiStack from '@/components/ui/UiStack.vue'
+import { UiButtonType } from '@/utils/ui/button'
 import { focusRingClasses } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 
 /** Props for UiSelectableRow. */
 defineProps<{
@@ -34,15 +36,15 @@ const rowClasses = {
 
 <template>
   <UiStack
-    direction="row"
-    align="start"
-    gap="xs"
+    :direction="UiDirection.Row"
+    :align="UiAlignItems.Start"
+    :gap="UiGap.Xs"
     class="rounded-control border p-1.5 transition-colors"
     :class="selected ? rowClasses.selected : rowClasses.idle"
     :data-selected="selected ? 'true' : undefined"
   >
     <button
-      type="button"
+      :type="UiButtonType.Button"
       class="min-w-0 flex-1 cursor-pointer rounded-control p-1.5 text-left"
       :class="focusRingClasses"
       :aria-pressed="selected"

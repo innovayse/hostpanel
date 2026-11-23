@@ -16,6 +16,12 @@ export interface UiMapShape {
   testid?: string
 }
 
+/**
+ * Focus look of a labelled outline. The kit's `focusRingClasses` draw a box shadow, which an SVG path does not render,
+ * so keyboard focus is drawn as the same accent colour on the outline's stroke, thickened to stay visible on a fill.
+ */
+export const mapShapeFocusClasses = 'outline-none focus-visible:stroke-text-accent focus-visible:[stroke-width:1.2]'
+
 /** Closed set of the shapes a legend swatch takes. */
 export const UiLegendSwatchShape = {
   /** A small rounded square, one entry of a key. */

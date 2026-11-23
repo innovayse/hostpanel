@@ -20,7 +20,6 @@ test('the screen lists the waiting transfers', async ({ page }) => {
   await expect(page.getByTestId('billing-bank-transfers-table')).toContainText('INV-6')
   await expect(page.getByTestId('billing-bank-transfers-table')).toContainText('$100.00')
   await expect(page.getByTestId('billing-bank-transfer-invoice-5')).toHaveAttribute('href', '/billing/5')
-  await expect(page.getByTestId('billing-bank-transfers-count')).toContainText('2 Records Found')
 })
 
 test('confirming asks first, posts, and the transfer leaves the list', async ({ page }) => {
@@ -95,10 +94,9 @@ test('the screen shows the empty state when nothing waits', async ({ page }) => 
   await page.goto('/billing/bank-transfers')
 
   await expect(page.getByTestId('billing-bank-transfers-table')).toContainText('No bank transfers are waiting.')
-  await expect(page.getByTestId('billing-bank-transfers-count')).toContainText('0 Records Found')
 })
 
-test('a refused load shows the API sentence and no empty state or count', async ({ page }) => {
+test('a refused load shows the API sentence and no empty state', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [json(HttpMethod.Get, '/api/billing/bank-transfers/pending', transfersRefusal, 403)],
@@ -108,5 +106,4 @@ test('a refused load shows the API sentence and no empty state or count', async 
 
   await expect(page.getByTestId('billing-bank-transfers-error')).toContainText(transfersRefusalSentence)
   await expect(page.getByTestId('billing-bank-transfers-table')).not.toContainText('No bank transfers are waiting.')
-  await expect(page.getByTestId('billing-bank-transfers-count')).toHaveCount(0)
 })

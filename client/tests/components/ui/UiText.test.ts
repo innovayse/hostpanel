@@ -19,6 +19,11 @@ describe('UiText', () => {
     expect(mountWithKit(UiText, { props: { as: UiTextTag.Span } }).element.tagName).toBe('SPAN')
   })
 
+  it('draws a native disclosure and its summary', () => {
+    expect(mountWithKit(UiText, { props: { as: UiTextTag.Details } }).element.tagName).toBe('DETAILS')
+    expect(mountWithKit(UiText, { props: { as: UiTextTag.Summary } }).element.tagName).toBe('SUMMARY')
+  })
+
   it.each([
     [UiTextSize.Xs, 'text-xs'],
     [UiTextSize.Sm, 'text-sm'],

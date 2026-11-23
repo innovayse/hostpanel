@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test'
 import { domainsPage, hostingProductName, hostingService, ordersPage, pendingOrder, registeredDomain, servicesPage } from './fixtures/orders'
 import type { OrderListItem } from '../src/types/order'
 import { OrderStatus } from '../src/types/order'
+import { toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('accepting a pending order posts the command and reloads the list', async ({ page }) => {
@@ -59,7 +60,7 @@ test('a refused accept shows the API sentence and keeps the order pending', asyn
   await page.getByTestId(`orders-actions-${pendingOrder.id}`).click()
   await page.getByTestId(`orders-accept-${pendingOrder.id}`).click()
 
-  await expect(page.getByTestId('orders-action-feedback')).toContainText(sentence)
+  await expect(toastWith(page, sentence)).toBeVisible()
   await page.getByTestId(`orders-actions-${pendingOrder.id}`).click()
   await expect(page.getByTestId(`orders-accept-${pendingOrder.id}`)).toBeVisible()
 })

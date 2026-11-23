@@ -67,11 +67,23 @@ hp_die() { local code="$1"; shift; echo "$*" >&2; exit "$code"; }
 # hp_result <json>: the single line the agent parses against its schema. Built only from validated values.
 hp_result() { printf 'RESULT %s\n' "$1"; }
 
-# hp_require_account <name>: sets ACCOUNT, HOME_L (the logical home) and HOME_DIR (the file path of it).
+# hp_home_root: the directory the account homes are under, from home_root in agent.conf (default /home), as a logical
+# path without a trailing slash. Anything but a plain absolute path is refused.
+hp_home_root() {
+  local root
+  root="$(hp_conf_value home_root)"
+  root="${root:-/home}"
+  root="${root%/}"
+  [[ "$root" =~ ^/[A-Za-z0-9._/-]+$ ]] && [[ "$root" != *..* ]] || hp_die 1 "home_root must be a plain absolute path"
+  echo "$root"
+}
+
+# hp_require_account <name>: sets ACCOUNT, HOME_L (the logical home, under home_root) and HOME_DIR (the file path of it).
 hp_require_account() {
   [[ "$1" =~ $ACCOUNT_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad account"
   ACCOUNT="$1"
-  HOME_L="/home/$ACCOUNT"
+  HOME_L="$(hp_home_root)" || exit 1
+  HOME_L="$HOME_L/$ACCOUNT"
   HOME_DIR="$ROOT$HOME_L"
   [ -d "$HOME_DIR" ] && [ ! -L "$HOME_DIR" ] || hp_die "$EXIT_NOT_OWNED" "no home for $ACCOUNT"
 }

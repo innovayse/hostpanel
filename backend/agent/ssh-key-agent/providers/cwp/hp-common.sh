@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034 # the variables below are read by the helpers that source this file
 # hp-common.sh: shared by the CWP ops helpers (ensure-website, remove-website, ensure-database, remove-database).
 # Sourced, never run. It holds what all four need: the tool and tree paths, input validation, the root-owned
 # registry of what the agent created, the backup/restore of edited files, and the one RESULT line the agent parses.

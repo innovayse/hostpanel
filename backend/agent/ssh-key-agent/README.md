@@ -297,7 +297,7 @@ runs as, the virtual host directory and every PHP version with its CLI.
 * **One pool per account and PHP version** (`hp-<account>.conf`, pool `[hp-<account>-<NN>]`, socket
   `hp-<account>-<NN>.sock` owned by the web user, mode 0660). Websites of the account on one version share it; it goes
   when the last one is removed or moved to another version.
-* **Document root.** The home gets `o+x`, missing directories are created owned by the account with mode 755. With
+* **Document root.** The account home is `<home_root>/<account>` (`home_root` of `agent.conf`, default `/home`). The home gets `o+x`, missing directories are created owned by the account with mode 755. With
   `link_root` the last component is never created (the deployer links it). nginx passes `$realpath_root` as
   `SCRIPT_FILENAME` and `DOCUMENT_ROOT`; behind Apache the pool gets `opcache.validate_timestamps=1`,
   `opcache.revalidate_freq=0`, `opcache.revalidate_path=1` and `realpath_cache_size=0`.

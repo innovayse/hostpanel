@@ -143,6 +143,19 @@ jobs:
       - name: Run the image version tests
         run: sh scripts/test-image-version.sh
 
+  # The SSH key agent (backend/agent/ssh-key-agent): its Python unit tests, which also run every helper for real against
+  # a stand-in server tree, then a syntax check and shellcheck of the provider helpers. The same job as agent:test in
+  # .gitlab-ci.yml. shellcheck is preinstalled on the runner image.
+  agent:
+    name: SSH key agent (unit tests + shell helpers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: python3 -m unittest discover -s backend/agent/ssh-key-agent/tests
+      - name: Check the syntax of every helper and lint them with shellcheck
+        run: sh scripts/check-agent-helpers.sh
+
   # The Integration suite starts a full API host for every test class (about 690 of them), each on
   # a database of its own on one shared PostgreSQL container. The test project's
   # integration.runsettings (picked up by dotnet test) bounds its native memory, and the suite is

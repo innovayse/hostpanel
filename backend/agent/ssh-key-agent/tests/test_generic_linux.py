@@ -559,3 +559,37 @@ class DetectionTests(GenericLinuxCase):
         done = subprocess.run([os.path.join(self.helper_dir, name)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               env=dict(test_ops.agent.JAIL_ENV), check=True, text=True)
         return done.stdout
+
+
+class HomeRootTests(GenericLinuxCase):
+    """The helpers find the account's home under the agent's home_root setting, not under a fixed /home."""
+
+    def setUp(self):
+        super().setUp()
+        self.build(SCENARIOS[0])
+
+
+    def move_home(self, root):
+        """Makes the homes reachable below another home_root (a link inside the server root) and sets it in the agent configuration."""
+        target = os.path.join(self.root, root.strip("/"))
+        os.makedirs(os.path.dirname(target))
+        os.symlink(self.home_root, target)
+        self.set_agent_conf("home_root = %s\n" % root)
+
+    def test_the_vhost_and_directories_use_the_configured_home_root(self):
+        self.move_home("/srv/homes/")
+        self.assertTrue(self.call(**self.site(link_root=False))["ok"])
+        self.assertIn("/srv/homes/alice/sites/app", self.vhost())
+        self.assertTrue(os.path.isdir(os.path.join(self.root, "srv/homes/alice/sites/app")))
+        self.assertEqual(self.call(**WEBSITE_REMOVE), {"v": 1, "ok": True, "changed": True})
+        self.assertFalse(os.path.exists(os.path.join(self.root, "srv/homes/alice/sites/app")))
+
+    def test_an_account_without_a_home_under_home_root_is_refused(self):
+        self.set_agent_conf("home_root = /srv/other\n")
+        self.assertEqual(self.call(**self.site())["error"], "site_not_owned")
+        self.assertFalse(os.path.exists(self.vhost_path()))
+
+    def test_a_home_root_that_is_not_a_plain_absolute_path_is_refused(self):
+        for value in ("relative", "/a/../b", "/a b"):
+            self.set_agent_conf("home_root = %s\n" % value)
+            self.assertEqual(self.call(**self.site())["error"], "website_failed", value)

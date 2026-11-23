@@ -1,7 +1,6 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Text;
-using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.SshAgent;
 

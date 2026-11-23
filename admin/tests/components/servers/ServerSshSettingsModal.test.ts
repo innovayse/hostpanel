@@ -156,7 +156,7 @@ describe('ServerSshSettingsModal', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="server-ssh-health"]').text()).toBe('Agent reachable')
-    expect(wrapper.get('[data-testid="server-ssh-agent-version"]').text()).toBe('Agent 1.1.0 (cwp)')
+    expect(wrapper.get('[data-testid="server-ssh-agent-version"]').text()).toBe(`Agent 1.1.0 (${SSH_AGENT_PROFILE})`)
   })
 
   it('shows the version alone when the agent sent no profile', async () => {

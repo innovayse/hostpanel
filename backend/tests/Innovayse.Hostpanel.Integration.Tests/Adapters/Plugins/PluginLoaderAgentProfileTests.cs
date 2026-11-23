@@ -1,4 +1,3 @@
-using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;

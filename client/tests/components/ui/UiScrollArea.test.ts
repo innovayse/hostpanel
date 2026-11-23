@@ -26,7 +26,7 @@ describe('UiScrollArea', () => {
   it('hands its element to the parent once mounted and takes it back on unmount', () => {
     const updates: Array<HTMLElement | null> = []
     const wrapper = mountWithKit(UiScrollArea, {
-      attachTo: document.body,
+      attachToBody: true,
       props: { element: null, 'onUpdate:element': (value: HTMLElement | null) => updates.push(value) },
     })
 

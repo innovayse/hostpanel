@@ -106,7 +106,7 @@ describe('UiTabs reveal of the active tab', () => {
   })
 
   it('fades the side of the bar that still hides tabs', async () => {
-    const wrapper = mountWithKit(UiTabs, { props: { tabs: TABS, modelValue: 'overview' }, attachTo: document.body })
+    const wrapper = mountWithKit(UiTabs, { props: { tabs: TABS, modelValue: 'overview' }, attachToBody: true })
     const list = wrapper.find('[role="tablist"]').element as HTMLElement
     for (const [key, value] of Object.entries({ clientWidth: 100, scrollWidth: 300, scrollLeft: 0 })) {
       Object.defineProperty(list, key, { value, configurable: true, writable: true })

@@ -116,16 +116,17 @@ describe('SkeletonFieldKind', () => {
   })
 
   it('is optional on a field, which then is an input', () => {
-    const field = form.columns[0][0].fields[0]
-    expect(field.kind).toBeUndefined()
-    expect(field.required).toBe(true)
+    const field = form.columns[0]?.[0]?.fields[0]
+    expect(field).toBeDefined()
+    expect(field?.kind).toBeUndefined()
+    expect(field?.required).toBe(true)
   })
 })
 
 describe('SkeletonSpan', () => {
   it('has a half and a full row', () => {
     expect(Object.values(SkeletonSpan)).toEqual(['half', 'full'])
-    expect(form.columns[0][0].fields[1].span).toBe(SkeletonSpan.Full)
+    expect(form.columns[0]?.[0]?.fields[1]?.span).toBe(SkeletonSpan.Full)
   })
 })
 

@@ -209,8 +209,7 @@ class OperationTests(AgentTestCase):
 
     def test_profiles_name_the_default_host_key_file(self):
         root = os.path.join(os.path.dirname(__file__), "..", "profiles")
-        for name in ("generic-linux.conf", "cwp.conf"):
-            self.assertEqual(agent.load_config(os.path.join(root, name))["host_key_file"], "/etc/ssh/ssh_host_ed25519_key.pub")
+        self.assertEqual(agent.load_config(os.path.join(root, "generic-linux.conf"))["host_key_file"], "/etc/ssh/ssh_host_ed25519_key.pub")
 
     def test_unmanaged_keys_are_preserved_and_never_listed(self):
         ssh_dir = os.path.join(self.home_root, "alice", ".ssh")

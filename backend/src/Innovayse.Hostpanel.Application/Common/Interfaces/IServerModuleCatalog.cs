@@ -18,4 +18,10 @@ public interface IServerModuleCatalog
     /// when no plugin serves it any more, so a server saved before its panel plugin was removed can still be edited.</param>
     /// <returns>The id to store, or <see langword="null"/> when neither the host, an installed plugin nor the server's own stored module knows it.</returns>
     public string? Canonical(string module, string? stored = null);
+
+    /// <summary>Lists the server modules one installed plugin declares in its manifest.</summary>
+    /// <param name="pluginId">The plugin id, as the manifest declares it.</param>
+    /// <returns>The declared <c>serverModules</c> of a loaded plugin that declares a provisioning capability, in the manifest's spelling; empty
+    /// for any other plugin, a plugin that is not loaded and a plugin that serves no server module.</returns>
+    public IReadOnlyList<string> ModulesOf(string pluginId);
 }

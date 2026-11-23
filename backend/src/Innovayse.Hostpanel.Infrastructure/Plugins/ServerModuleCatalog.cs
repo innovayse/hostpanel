@@ -35,7 +35,7 @@ public sealed class ServerModuleCatalog : IServerModuleCatalog
             options[id] = new ServerModuleOptionDto(id, id, ServerModuleSource.BuiltIn);
         }
 
-        foreach (var plugin in _registry.OfType(PluginType.Provisioning).Where(p => PluginCapabilityRules.DeclaresProvisioning(p.Manifest)))
+        foreach (var plugin in ProvisioningPlugins())
         {
             foreach (var id in plugin.Manifest.ServerModules)
             {
@@ -48,9 +48,25 @@ public sealed class ServerModuleCatalog : IServerModuleCatalog
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<string> ModulesOf(string pluginId)
+    {
+        return ProvisioningPlugins()
+            .Where(plugin => string.Equals(plugin.Manifest.Id, pluginId, StringComparison.Ordinal))
+            .SelectMany(plugin => plugin.Manifest.ServerModules)
+            .ToList();
+    }
+
+    /// <inheritdoc/>
     public string? Canonical(string module, string? stored = null)
     {
         return List().FirstOrDefault(option => ServerModules.Same(option.Id, module))?.Id
             ?? (stored is not null && ServerModules.Same(stored, module) ? stored : null);
+    }
+
+    /// <summary>Lists the loaded provisioning plugins that declare an operation on a provisioned server: the only plugins whose <c>serverModules</c> count.</summary>
+    /// <returns>The plugins, in the registry's order.</returns>
+    private IEnumerable<LoadedPlugin> ProvisioningPlugins()
+    {
+        return _registry.OfType(PluginType.Provisioning).Where(plugin => PluginCapabilityRules.DeclaresProvisioning(plugin.Manifest));
     }
 }

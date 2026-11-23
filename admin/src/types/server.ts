@@ -207,6 +207,8 @@ export interface ServerOptionDto {
   ipAddress: string | null
   /** Whether the last connection test succeeded, or null if never tested. */
   isOnline: boolean | null
+  /** ISO 8601 timestamp of the last connection test, or null if never tested. */
+  lastTestedAt: string | null
   /** Account count from the last test, or null if unknown. */
   accountsCount: number | null
   /** Account capacity and whether the server takes new accounts. */

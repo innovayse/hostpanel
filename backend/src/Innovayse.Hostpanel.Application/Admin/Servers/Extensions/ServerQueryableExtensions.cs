@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
 
@@ -47,5 +48,26 @@ public static class ServerQueryableExtensions
 
         var wanted = modules.Select(module => module.ToLowerInvariant()).ToList();
         return servers.Where(s => wanted.Contains(s.Module.ToLower()));
+    }
+
+    /// <summary>
+    /// Projects the servers to <see cref="ServerOptionDto"/> in SQL, so no credential or hosting column is read. The one projection of
+    /// the lean server read, shared by the option lookup and the plugin settings page.
+    /// </summary>
+    /// <param name="servers">The servers to project, already narrowed and ordered by the caller.</param>
+    /// <returns>The projected query.</returns>
+    public static IQueryable<ServerOptionDto> ToOptions(this IQueryable<Server> servers)
+    {
+        ArgumentNullException.ThrowIfNull(servers);
+
+        return servers.Select(s => new ServerOptionDto(
+            s.Id,
+            s.Name,
+            s.Hostname,
+            s.IpAddress,
+            s.IsOnline,
+            s.LastTestedAt,
+            s.AccountsCount,
+            new ServerLimitsDto(s.MaxAccounts, s.IsDefault, s.IsDisabled)));
     }
 }

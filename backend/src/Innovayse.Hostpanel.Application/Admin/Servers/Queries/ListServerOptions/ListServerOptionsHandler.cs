@@ -30,14 +30,7 @@ public sealed class ListServerOptionsHandler
         var options = await _context.Servers.AsNoTracking()
             .Matching(query.Module)
             .OrderBy(s => s.Name).ThenBy(s => s.Id)
-            .Select(s => new ServerOptionDto(
-                s.Id,
-                s.Name,
-                s.Hostname,
-                s.IpAddress,
-                s.IsOnline,
-                s.AccountsCount,
-                new ServerLimitsDto(s.MaxAccounts, s.IsDefault, s.IsDisabled)))
+            .ToOptions()
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<ServerOptionDto>>.Success(options);

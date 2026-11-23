@@ -1,6 +1,7 @@
 /**
- * Mount tests for PluginSettingsTab: the config panel only when the plugin has a config form, the slot widget
- * bindings when it declares widgets, the retryable load error, and a note when there is nothing to configure.
+ * Mount tests for PluginSettingsTab: the config panel only when the plugin has a config form, the servers section only when
+ * the plugin declares a server module, the slot widget bindings when it declares widgets, the retryable load errors, and a
+ * note when there is nothing to configure.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import PluginSettingsTab from '@/components/plugins/details/PluginSettingsTab.vue'
@@ -10,6 +11,7 @@ import { json } from '../../../helpers/fetch'
 import { mountScreen } from '../../../helpers/mount'
 import { makeInstalled } from '../../../helpers/pluginDetails'
 import { stubRoutes } from '../../../helpers/routes'
+import { serverOptionDto } from '../../../helpers/serverFixtures'
 
 /** Products to choose from; only the fields the row reads. */
 const products = [{ id: 3, name: 'Shared' }] as Product[]
@@ -30,6 +32,10 @@ const mountTab = async (props: Record<string, unknown> = {}) => {
   const { wrapper } = await mountScreen(PluginSettingsTab, {
     plugin: makeInstalled(),
     hasConfig: false,
+    serverModules: [],
+    servers: [],
+    serversError: null,
+    serversLoading: false,
     widgets: [],
     products,
     widgetsError: null,
@@ -58,6 +64,48 @@ describe('PluginSettingsTab', () => {
 
     expect(wrapper.find('[data-testid="plugin-slot-widgets-example-pay"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-config-panel"]').exists()).toBe(false)
+  })
+
+  it('shows the servers of a plugin that declares a server module, beside its widgets', async () => {
+    const wrapper = await mountTab({ serverModules: ['examplepanel'], servers: [serverOptionDto({ id: 7, name: 'Frankfurt 1' })], widgets })
+
+    expect(wrapper.find('[data-testid="plugin-servers-card"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-server-7"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-slot-widgets-example-pay"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(false)
+  })
+
+  it('shows the servers section with its empty note when the plugin serves a module no server uses', async () => {
+    const wrapper = await mountTab({ serverModules: ['examplepanel'] })
+
+    expect(wrapper.find('[data-testid="plugin-servers-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(false)
+  })
+
+  it('shows no servers section for a plugin that declares no server module, even when servers are passed', async () => {
+    const wrapper = await mountTab({ servers: [serverOptionDto({ id: 7 })] })
+
+    expect(wrapper.find('[data-testid="plugin-servers-card"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-server-7"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(true)
+  })
+
+  it('holds the place of the servers with a skeleton while they load, without the empty note', async () => {
+    const wrapper = await mountTab({ serversLoading: true })
+
+    expect(wrapper.find('[data-testid="plugin-servers-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(false)
+  })
+
+  it('shows the servers load error with a retry instead of the section', async () => {
+    const wrapper = await mountTab({ serverModules: ['examplepanel'], serversError: 'Servers unavailable.' })
+
+    expect(wrapper.get('[data-testid="plugin-servers-error"]').text()).toContain('Servers unavailable.')
+    expect(wrapper.find('[data-testid="plugin-servers-card"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="plugin-servers-error-retry"]').trigger('click')
+    expect(wrapper.emitted('retryServers')).toHaveLength(1)
+    expect(wrapper.emitted('retry')).toBeUndefined()
   })
 
   it('says there is nothing to configure when the plugin has neither', async () => {

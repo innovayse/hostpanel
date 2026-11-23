@@ -94,6 +94,14 @@
     "emptyTitle": "Keine Einstellungen",
     "emptyDescription": "Dieses Plugin hat keine änderbaren Einstellungen."
   },
+  "servers": {
+    "heading": "Server",
+    "description": "Server auf den Modulen, die dieses Plugin bedient ({modules}). Die Verbindung jedes Servers wird auf seiner Serverseite eingerichtet und getestet.",
+    "lastTested": "Zuletzt getestet {when}",
+    "neverTested": "Nie getestet",
+    "empty": "Noch kein Server nutzt dieses Plugin.",
+    "openServers": "Server öffnen, um einen hinzuzufügen"
+  },
   "title": "Plugin",
   "overview": {
     "details": "Details",

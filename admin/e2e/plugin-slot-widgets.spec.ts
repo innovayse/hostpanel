@@ -17,12 +17,13 @@ const LIST_PATH = `/api/admin/plugins/${widgetPlugin.id}/slot-widgets`
 /** Path of the binding of the sample widget. */
 const SAVE_PATH = `${LIST_PATH}/admin.service.panels/usage`
 
-/** The routes every test shares: the registry knows nothing of the sample plugin (the page works without it) and no integration is listed. */
+/** The routes every test shares: the registry knows nothing of the sample plugin (the page works without it), no integration is listed and the plugin serves no server module. */
 const baseRoutes = [
   json(HttpMethod.Get, '/api/admin/plugins', [widgetPlugin]),
   json(HttpMethod.Get, '/api/admin/integrations', []),
   json(HttpMethod.Get, `/api/admin/plugins/registry/${widgetPlugin.id}`, { type: 'PLUGIN_REGISTRY_PLUGIN_NOT_FOUND', title: 'Not found', status: 404, detail: 'No such plugin.' }, 404),
   json(HttpMethod.Get, '/api/products', bindableProducts),
+  json(HttpMethod.Get, `/api/admin/plugins/${widgetPlugin.id}/servers`, { modules: [], servers: [] }),
 ]
 
 /**

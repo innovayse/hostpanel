@@ -146,5 +146,13 @@
   "settings": {
     "emptyTitle": "Sin ajustes",
     "emptyDescription": "Este complemento no tiene ajustes que cambiar."
+  },
+  "servers": {
+    "heading": "Servidores",
+    "description": "Servidores en los módulos que atiende este complemento ({modules}). La conexión de cada servidor se configura y se prueba en su página.",
+    "lastTested": "Última prueba {when}",
+    "neverTested": "Nunca probado",
+    "empty": "Ningún servidor usa este complemento todavía.",
+    "openServers": "Abrir Servidores para añadir uno"
   }
 }

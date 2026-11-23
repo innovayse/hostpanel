@@ -34,6 +34,7 @@ const stubRoutes = (routes: Record<string, () => Response>) =>
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry?': () => json({ items: [], total: 0, pageSize: 20 }),
       'GET /api/admin/plugins/example-pay/slot-widgets': () => json([]),
+      'GET /api/admin/plugins/example-pay/servers': () => json({ modules: [], servers: [] }),
       'GET /api/admin/plugins': () => json([makeInstalled()]),
       'GET /api/admin/integrations': () => json([]),
       'GET /api/products': () => json([]),
@@ -248,7 +249,46 @@ describe('PluginDetailsView', () => {
     expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/example-pay/slot-widgets')).toBe(true)
   })
 
-  it('offers no Settings tab and loads no widgets for a plugin that is not loaded', async () => {
+  it('shows the servers a panel plugin serves on the Settings tab, from the one read of the servers of the plugin', async () => {
+    const server = { id: 7, name: 'Frankfurt 1', hostname: 'fra1.example.test', ipAddress: null, isOnline: true, lastTestedAt: '2026-01-02T10:00:00Z', accountsCount: 4, limits: { maxAccounts: null, isDefault: false, isDisabled: false } }
+    const mock = stubRoutes({
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+      'GET /api/admin/plugins/example-pay/servers': () => json({ modules: ['examplepanel'], servers: [server] }),
+    })
+    const wrapper = await mountPage('settings')
+
+    expect(wrapper.get('[data-testid="plugin-server-7"]').text()).toContain('Frankfurt 1')
+    expect(wrapper.get('[data-testid="plugin-server-state-7"]').text()).toBe('Online')
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/example-pay/servers')).toBe(true)
+  })
+
+  it('shows no servers section on the Settings tab of a plugin that serves no server module', async () => {
+    stubRoutes({ [DETAILS_URL]: () => problem('No such plugin.', 404) })
+    const wrapper = await mountPage('settings')
+
+    expect(wrapper.find('[data-testid="plugin-servers-card"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(true)
+  })
+
+  it('shows the refusal of the servers read with a retry that reads them again', async () => {
+    let answer: () => Response = () => problem('Servers unavailable.', 503)
+    const mock = stubRoutes({
+      [DETAILS_URL]: () => problem('No such plugin.', 404),
+      'GET /api/admin/plugins/example-pay/servers': () => answer(),
+    })
+    const wrapper = await mountPage('settings')
+
+    expect(wrapper.get('[data-testid="plugin-servers-error"]').text()).toContain('Servers unavailable.')
+    answer = () => json({ modules: ['examplepanel'], servers: [] })
+    await wrapper.get('[data-testid="plugin-servers-error-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-servers-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-servers-empty"]').exists()).toBe(true)
+    expect(mock.mock.calls.filter(([url]) => String(url) === '/api/admin/plugins/example-pay/servers')).toHaveLength(2)
+  })
+
+  it('offers no Settings tab and loads no widgets or servers for a plugin that is not loaded', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json([makeInstalled({ isLoaded: false })]),
       [DETAILS_URL]: () => problem('No such plugin.', 404),
@@ -257,6 +297,7 @@ describe('PluginDetailsView', () => {
 
     expect(wrapper.find('[data-testid="plugin-details-tab-settings"]').exists()).toBe(false)
     expect(mock.mock.calls.some(([url]) => String(url).includes('slot-widgets'))).toBe(false)
+    expect(mock.mock.calls.some(([url]) => String(url).includes('/servers'))).toBe(false)
   })
 
   it('links back to the list from the page header, as the kit back pill with an icon', async () => {

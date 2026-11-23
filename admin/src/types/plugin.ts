@@ -1,3 +1,5 @@
+import type { ServerOptionDto } from '@/types/server'
+
 /** Closed set of plugin types a manifest declares; the strings are the API's enum names. */
 export const PluginType = {
   /** Hosting and server provisioning through a hosting panel. */
@@ -262,6 +264,14 @@ export interface PluginSlotWidgetBindingDto {
   productIds: number[]
   /** True when the operator bound the widget at all; then the operator binding decides, even when every bound product was deleted (productIds empty, the widget shows nowhere). */
   isBound: boolean
+}
+
+/** The servers a panel plugin serves (GET /api/admin/plugins/{pluginId}/servers). */
+export interface PluginServersDto {
+  /** The server modules the plugin declares; empty for a plugin that serves none. */
+  modules: string[]
+  /** The servers stored on one of those modules, by name; empty when none is. */
+  servers: ServerOptionDto[]
 }
 
 /** Body of PUT /api/admin/plugins/{pluginId}/slot-widgets/{slotId}/{widgetId}: the new binding of one widget. */

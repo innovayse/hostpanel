@@ -70,6 +70,7 @@ export const serverOptionDto = (overrides: Partial<ServerOptionDto> = {}): Serve
   hostname: 'host1.example.com',
   ipAddress: '203.0.113.10',
   isOnline: true,
+  lastTestedAt: null,
   accountsCount: 12,
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   ...overrides,

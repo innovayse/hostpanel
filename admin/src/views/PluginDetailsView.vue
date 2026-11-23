@@ -40,6 +40,7 @@ import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { AppRoute } from '@/lib/routes'
 import { PluginErrorCode, PluginProcessingStep, VersionRelation } from '@/types/plugin'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto, RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
+import type { ServerOptionDto } from '@/types/server'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
@@ -129,6 +130,18 @@ const widgetsLoading = computed<boolean>(() => store.slotWidgetsLoading[pluginId
 
 /** The sentence of the failed load of the plugin's slot widgets, null when none. */
 const widgetsError = computed<string | null>(() => store.slotWidgetsError[pluginId.value] ?? null)
+
+/** The server modules the plugin declares; empty until loaded and for a plugin that serves none. */
+const serverModules = computed<string[]>(() => store.pluginServers[pluginId.value]?.modules ?? [])
+
+/** The servers stored on the modules the plugin declares; empty until loaded. */
+const pluginServers = computed<ServerOptionDto[]>(() => store.pluginServers[pluginId.value]?.servers ?? [])
+
+/** True while the plugin's servers load, so the Settings tab shows a skeleton instead of an empty note. */
+const serversLoading = computed<boolean>(() => store.pluginServersLoading[pluginId.value] === true)
+
+/** The sentence of the failed load of the plugin's servers, null when none. */
+const serversError = computed<string | null>(() => store.pluginServersError[pluginId.value] ?? null)
 
 /** True while an install, update, uninstall or licence change of this plugin is in flight. */
 const busy = computed<boolean>(() => store.isBusy(pluginId.value))
@@ -246,14 +259,25 @@ const loadWidgets = async (): Promise<void> => {
 }
 
 /**
+ * Loads the servers the plugin serves; a plugin that is not loaded declares no server module the server can list.
+ *
+ * @returns Resolves when the request is over.
+ */
+const loadServers = async (): Promise<void> => {
+  if (plugin.value?.isLoaded === true) {
+    await store.fetchServersFor(pluginId.value)
+  }
+}
+
+/**
  * Loads everything the page shows: the list first (the plugin must be known), the registry details, the integrations
- * list and the slot widgets alongside.
+ * list, the servers and the slot widgets alongside.
  *
  * @returns Resolves when every request is over.
  */
 const load = async (): Promise<void> => {
   await Promise.all([loadList(), loadRegistry(), integrations.fetchAll()])
-  await loadWidgets()
+  await Promise.all([loadWidgets(), loadServers()])
 }
 
 /**
@@ -390,6 +414,7 @@ const handleRestart = async (): Promise<void> => {
 watch(pluginId, () => {
   void loadRegistry()
   void loadWidgets()
+  void loadServers()
 })
 
 // The removal's outcome (the restart note) stays on screen until the operator closes it, then the page is left.
@@ -459,6 +484,10 @@ onMounted(load)
         v-else-if="activeTab === DetailsTab.Settings"
         :plugin="plugin"
         :has-config="hasConfig"
+        :server-modules="serverModules"
+        :servers="pluginServers"
+        :servers-error="serversError"
+        :servers-loading="serversLoading"
         :widgets="widgets"
         :products="store.productOptions"
         :widgets-error="widgetsError"
@@ -466,6 +495,7 @@ onMounted(load)
         :save="(widget, productIds) => store.saveSlotWidgetProducts(pluginId, widget, productIds)"
         :binding-error="store.bindingError"
         @retry="loadWidgets"
+        @retry-servers="loadServers"
       />
       <PluginVersionList
         v-else-if="activeTab === DetailsTab.Versions && details !== null"

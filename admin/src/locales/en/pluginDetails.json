@@ -146,5 +146,13 @@
   "settings": {
     "emptyTitle": "No settings",
     "emptyDescription": "This plugin has no settings to change."
+  },
+  "servers": {
+    "heading": "Servers",
+    "description": "Servers on the modules this plugin serves ({modules}). The connection of each server is set and tested on its server page.",
+    "lastTested": "Last tested {when}",
+    "neverTested": "Never tested",
+    "empty": "No server uses this plugin yet.",
+    "openServers": "Open Servers to add one"
   }
 }

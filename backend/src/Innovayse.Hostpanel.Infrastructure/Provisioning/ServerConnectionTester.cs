@@ -157,7 +157,8 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         {
             // Inside the try: an address that cannot be turned into a URL is an unreachable server.
 #pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP client and HostingPanelAddress, which the cPanel path also uses), obsolete since SDK 3.1.0; stays until a cPanel plugin and a legacy CWP plugin exist.
-            var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
+            // Dialled at the server's API address when it has one, the host name otherwise.
+            var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.ApiEndpointHost, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
 #pragma warning restore CS0618
             var info = await client.GetVersionAsync(connection, ct);
             var accounts = await client.CountAccountsAsync(connection, ct);
@@ -201,11 +202,11 @@ public sealed class ServerConnectionTester : IServerConnectionTester
     }
 
 #pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP client and HostingPanelAddress, which the cPanel path also uses), obsolete since SDK 3.1.0; stays until a cPanel plugin and a legacy CWP plugin exist.
-    /// <summary>Builds the panel connection for a server on the panel's default API port.</summary>
+    /// <summary>Builds the panel connection for a server on the panel's default API port, dialled at the server's API address when it has one.</summary>
     /// <param name="server">The server to reach.</param>
     /// <param name="apiKey">The credential the server stores for its panel API.</param>
     /// <returns>The connection to hand the panel client.</returns>
     private static HostingPanelConnection ConnectionTo(Server server, string apiKey) =>
-        new(server.Hostname, IHostingPanelApiClient.DefaultApiPort, apiKey);
+        new(server.ApiEndpointHost, IHostingPanelApiClient.DefaultApiPort, apiKey);
 #pragma warning restore CS0618
 }

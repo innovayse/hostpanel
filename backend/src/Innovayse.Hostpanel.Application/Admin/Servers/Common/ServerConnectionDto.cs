@@ -1,4 +1,5 @@
 using System.Text;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
@@ -37,7 +38,7 @@ public sealed record ServerConnectionDto(
     /// Gets the host the panel's API is dialled at: <see cref="ApiHost"/> when one is set, otherwise
     /// <see cref="Hostname"/>. Use this for API calls, never for a URL shown to a client.
     /// </summary>
-    public string ApiEndpointHost => string.IsNullOrWhiteSpace(ApiHost) ? Hostname : ApiHost;
+    public string ApiEndpointHost => Server.ResolveApiEndpointHost(Hostname, ApiHost);
 
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

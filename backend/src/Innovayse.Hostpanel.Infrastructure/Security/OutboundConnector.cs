@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Sockets;
-using Innovayse.Hostpanel.Infrastructure.Security.Enums;
 using Innovayse.Hostpanel.Infrastructure.Security.Settings;
+using Innovayse.Hostpanel.Shared.Infrastructure;
+using Innovayse.Hostpanel.Shared.Infrastructure.Enums;
 using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Infrastructure.Security;

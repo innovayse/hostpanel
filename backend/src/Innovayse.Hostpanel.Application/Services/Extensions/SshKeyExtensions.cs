@@ -16,6 +16,7 @@ public static class SshKeyExtensions
             key.KeyId,
             key.Label,
             key.Fingerprint,
+            key.AllowedFrom,
             key.CreatedAt,
             key.SyncState,
             !key.IsBoundTo(context.Service.ServerId, context.Service.ProvisioningRef),

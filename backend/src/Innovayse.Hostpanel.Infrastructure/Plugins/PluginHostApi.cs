@@ -28,7 +28,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// only what the caller could see in the portal. It also implements the optional <see cref="IPluginHostHostingApi"/>
 /// (websites and databases on the client's hosting, #1294), <see cref="IPluginHostServiceConnectionApi"/> (the
 /// server connection of one of the client's services, #1357) and <see cref="IPluginHostPaymentApi"/> (a payment plugin's
-/// callback asks the host to read one gateway order, #1356).
+/// callback asks the host to read one gateway order, #1356) and <see cref="IPluginHostSshSourceApi"/> (an SSH key limited to
+/// the addresses a plugin names).
 /// </summary>
 /// <remarks>
 /// <list type="bullet">
@@ -43,7 +44,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// Each list is the newest <see cref="PluginHostLimits.MaxListed"/> rows, and a call without a client, or whose client row
 /// is gone, gets no profile and empty lists.
 /// </remarks>
-internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceConnectionApi, IPluginHostPaymentApi
+internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceConnectionApi, IPluginHostPaymentApi, IPluginHostSshSourceApi
 {
     /// <summary>The call's client and the permissions its caller holds there.</summary>
     private readonly PluginCallBinding _binding;
@@ -157,9 +158,17 @@ internal sealed class PluginHostApi : IPluginHostHostingApi, IPluginHostServiceC
     }
 
     /// <inheritdoc/>
-    public async Task<PluginSshAccess> IssueSshAccessAsync(int serviceId, string label, CancellationToken ct)
+    public Task<PluginSshAccess> IssueSshAccessAsync(int serviceId, string label, CancellationToken ct)
     {
-        return (await _ssh.IssueAsync(_binding, serviceId, label, ct)).GrantedOrThrow();
+        return IssueSshAccessAsync(serviceId, label, [], ct);
+    }
+
+    /// <inheritdoc/>
+    public async Task<PluginSshAccess> IssueSshAccessAsync(
+        int serviceId, string label, IReadOnlyList<string> allowedFrom, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(allowedFrom);
+        return (await _ssh.IssueAsync(_binding, serviceId, label, allowedFrom, ct)).GrantedOrThrow();
     }
 
     /// <inheritdoc/>

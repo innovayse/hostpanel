@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Ssh;
@@ -16,6 +17,15 @@ public sealed class AgentSshKeyProviderTests
     private static readonly SshAgentEndpoint Endpoint = new(
         7, "agent.example.net", 2200, "hpsshkeys", "PRIVATE", "SHA256:abc", TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
+    /// <summary>The account every contract vector acts on.</summary>
+    private static readonly SshAccount VectorAccount = new(7, "alice");
+
+    /// <summary>Gets the rows of the <c>add</c> vectors.</summary>
+    public static TheoryData<int> AddVectors => AgentContractVectors.Rows("add");
+
+    /// <summary>Gets the rows of the <c>ping</c> vectors.</summary>
+    public static TheoryData<int> PingVectors => AgentContractVectors.Rows("ping");
+
     /// <summary>Adding a key sends exactly one version 1 <c>add</c> request for the account and key id to the server's own endpoint.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -24,7 +34,7 @@ public sealed class AgentSshKeyProviderTests
         var transport = new RecordingTransport("""{"v":1,"ok":true,"changed":true}""");
         var keyId = Guid.NewGuid();
 
-        await new AgentSshKeyProvider(Endpoint, transport.SendAsync).AddKeyAsync(new SshAccount(7, "web"), keyId, "ssh-ed25519 AAAA", default);
+        await new AgentSshKeyProvider(Endpoint, transport.SendAsync).AddKeyAsync(new SshAccount(7, "web"), keyId, "ssh-ed25519 AAAA", [], default);
 
         var (endpoint, request) = Assert.Single(transport.Sent);
         Assert.Same(Endpoint, endpoint);
@@ -33,6 +43,86 @@ public sealed class AgentSshKeyProviderTests
         Assert.Equal("web", request["account"]!.GetValue<string>());
         Assert.Equal(keyId.ToString(), request["key_id"]!.GetValue<string>());
         Assert.Equal(5, request.Count);
+    }
+
+    /// <summary>A key with sources sends them as the <c>from</c> list, in order.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Add_WithSources_SendsThemAsTheFromListAsync()
+    {
+        var transport = new RecordingTransport("""{"v":1,"ok":true,"changed":true}""");
+
+        await new AgentSshKeyProvider(Endpoint, transport.SendAsync).AddKeyAsync(
+            new SshAccount(7, "web"), Guid.NewGuid(), "ssh-ed25519 AAAA", ["203.0.113.7", "198.51.100.0/24"], default);
+
+        var (_, request) = Assert.Single(transport.Sent);
+        Assert.Equal(new[] { "203.0.113.7", "198.51.100.0/24" }, request["from"]!.AsArray().Select(node => node!.GetValue<string>()));
+        Assert.Equal(6, request.Count);
+    }
+
+    /// <summary>The receipt carries the host key of the answer, and an agent that sends none gives a receipt without one.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Add_ReceiptCarriesTheHostKey_AndToleratesOldAgentsAsync()
+    {
+        var current = new AgentSshKeyProvider(Endpoint, new RecordingTransport("""{"v":1,"ok":true,"changed":true,"host_key":"ssh-ed25519 AAAAhost"}""").SendAsync);
+        var old = new AgentSshKeyProvider(Endpoint, new RecordingTransport("""{"v":1,"ok":true,"changed":true}""").SendAsync);
+        var account = new SshAccount(7, "web");
+
+        Assert.Equal(new SshKeyReceipt("ssh-ed25519 AAAAhost"), await current.AddKeyAsync(account, Guid.NewGuid(), "ssh-ed25519 AAAA", [], default));
+        Assert.Equal(new SshKeyReceipt(null), await old.AddKeyAsync(account, Guid.NewGuid(), "ssh-ed25519 AAAA", [], default));
+    }
+
+    /// <summary>Every <c>add</c> vector: the request the host builds equals it, and the answer is read as it says.</summary>
+    /// <param name="index">The vector's position in its file.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [MemberData(nameof(AddVectors))]
+    public async Task Add_MatchesTheGoldenVectorAsync(int index)
+    {
+        var vector = AgentContractVectors.Load("add")[index];
+        var transport = new RecordingTransport(vector.Response.ToJsonString());
+        var provider = new AgentSshKeyProvider(Endpoint, transport.SendAsync);
+        var sources = vector.Request["from"]?.AsArray().Select(node => node!.GetValue<string>()).ToList() ?? [];
+        var keyId = Guid.Parse(vector.Request["key_id"]!.GetValue<string>());
+        var publicKey = vector.Request["public_key"]!.GetValue<string>();
+
+        if (vector.Response["ok"]!.GetValue<bool>())
+        {
+            var receipt = await provider.AddKeyAsync(VectorAccount, keyId, publicKey, sources, default);
+            Assert.Equal(vector.Response["host_key"]?.GetValue<string>(), receipt.HostKey);
+        }
+        else
+        {
+            var ex = await Assert.ThrowsAsync<SshProviderException>(() => provider.AddKeyAsync(VectorAccount, keyId, publicKey, sources, default));
+            Assert.Equal(
+                vector.Response["error"]!.GetValue<string>() switch
+                {
+                    "key_id_conflict" => SshProviderFailure.KeyIdConflict,
+                    "duplicate_key" => SshProviderFailure.DuplicateKey,
+                    "invalid_request" => SshProviderFailure.InvalidRequest,
+                    var other => throw new InvalidOperationException($"The vector names an error this test does not map: {other}."),
+                },
+                ex.Failure);
+        }
+
+        Assert.True(JsonNode.DeepEquals(vector.Request, Assert.Single(transport.Sent).Request));
+    }
+
+    /// <summary>Every <c>ping</c> vector: the host key of the answer is read, and an answer without one gives none.</summary>
+    /// <param name="index">The vector's position in its file.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [MemberData(nameof(PingVectors))]
+    public async Task Ping_ReadsTheHostKeyOfTheGoldenVectorAsync(int index)
+    {
+        var vector = AgentContractVectors.Load("ping")[index];
+        var transport = new RecordingTransport(vector.Response.ToJsonString());
+
+        var info = await new AgentSshKeyProvider(Endpoint, transport.SendAsync).PingAsync(default);
+
+        Assert.True(JsonNode.DeepEquals(vector.Request, Assert.Single(transport.Sent).Request));
+        Assert.Equal(vector.Response["host_key"]?.GetValue<string>(), info.HostKey);
     }
 
     /// <summary>Removing a jail sends one <c>remove-jail</c> request for the account and reads whether a jail was removed.</summary>

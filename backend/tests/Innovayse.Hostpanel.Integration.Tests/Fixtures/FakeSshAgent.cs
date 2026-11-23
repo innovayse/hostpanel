@@ -14,6 +14,9 @@ public sealed class FakeSshAgent : ISshKeyProvider
     /// <summary>Installed keys per account.</summary>
     private readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, string>> _accounts = new();
 
+    /// <summary>The sources each installed key was added with, by key id; an empty list for a key without any.</summary>
+    private readonly ConcurrentDictionary<Guid, IReadOnlyList<string>> _sources = new();
+
     /// <summary>Initialises the agent.</summary>
     /// <param name="serverId">The server this agent runs on.</param>
     public FakeSshAgent(int serverId)
@@ -36,6 +39,9 @@ public sealed class FakeSshAgent : ISshKeyProvider
     /// <summary>The binding this agent reports on ping; null like an install that predates bindings.</summary>
     public Guid? Binding { get; set; }
 
+    /// <summary>The host key line this agent reports on ping and add; null like an agent without a host key file.</summary>
+    public string? HostKey { get; set; }
+
     /// <summary>Whether accounts have a login shell.</summary>
     public bool ShellEnabled { get; set; } = true;
 
@@ -44,11 +50,16 @@ public sealed class FakeSshAgent : ISshKeyProvider
     /// <returns>Key ids to key lines.</returns>
     public IReadOnlyDictionary<Guid, string> KeysOf(string username) => Account(username);
 
+    /// <summary>The sources a key was last added with.</summary>
+    /// <param name="keyId">The key.</param>
+    /// <returns>The sources, empty for a key without any, or null when the key was never added.</returns>
+    public IReadOnlyList<string>? AllowedFromOf(Guid keyId) => _sources.TryGetValue(keyId, out var sources) ? sources : null;
+
     /// <inheritdoc/>
     public Task<SshAgentInfo> PingAsync(CancellationToken ct)
     {
         Record("ping", null);
-        return Task.FromResult(new SshAgentInfo("1.1.0", "cwp", Binding));
+        return Task.FromResult(new SshAgentInfo("1.1.0", "cwp", Binding, HostKey));
     }
 
     /// <inheritdoc/>
@@ -67,14 +78,18 @@ public sealed class FakeSshAgent : ISshKeyProvider
     }
 
     /// <inheritdoc/>
-    public async Task AddKeyAsync(SshAccount account, Guid keyId, string publicKey, CancellationToken ct)
+    public async Task<SshKeyReceipt> AddKeyAsync(
+        SshAccount account, Guid keyId, string publicKey, IReadOnlyList<string> allowedFrom, CancellationToken ct)
     {
         Record("add", account);
         Account(account.Username)[keyId] = publicKey;
+        _sources[keyId] = allowedFrom;
         if (WhileAdding is { } during)
         {
             await during();
         }
+
+        return new SshKeyReceipt(HostKey);
     }
 
     /// <inheritdoc/>

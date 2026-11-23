@@ -578,10 +578,30 @@ class DatabaseHelperTests(OpsTestCase):
 class ContractVectorTests(OpsTestCase):
     """The golden vectors in tests/contract (the .NET adapter's fixtures) are exactly what the agent answers."""
 
+    def prepare_account(self, case):
+        """
+        Gives a vector its own account state: no .ssh directory except the authorized_keys lines the vector lists, and
+        the host key file's content when the vector names one (none otherwise, so the answer carries no host_key).
+        """
+        shutil.rmtree(os.path.join(self.home_root, "alice", ".ssh"), ignore_errors=True)
+        if "authorized_keys" in case:
+            ssh_dir = os.path.join(self.home_root, "alice", ".ssh")
+            os.makedirs(ssh_dir, mode=0o700)
+            with open(os.path.join(ssh_dir, "authorized_keys"), "w") as handle:
+                handle.write("\n".join(case["authorized_keys"]) + "\n")
+            os.chmod(os.path.join(ssh_dir, "authorized_keys"), 0o600)
+        self.config.pop("host_key_file", None)
+        if "host_key_file" in case:
+            path = os.path.join(self.tmp.name, "ssh_host_ed25519_key.pub")
+            with open(path, "w") as handle:
+                handle.write(case["host_key_file"] + "\n")
+            self.config["host_key_file"] = path
+
     def test_every_vector_is_what_the_agent_answers(self):
         for path in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "contract", "*.json"))):
             for case in json.loads(self.read(path))["cases"]:
                 with self.subTest(file=os.path.basename(path), case=case["name"]):
+                    self.prepare_account(case)
                     shutil.rmtree(self.helper_dir, ignore_errors=True)
                     for op in case.get("installed", []):
                         self.install_stub(op)
@@ -589,7 +609,7 @@ class ContractVectorTests(OpsTestCase):
                         self.install_stub("php-versions", out="\n".join(case["php_versions_output"]))
                     if "capabilities_output" in case:
                         self.install_stub("capabilities", out="\n".join(case["capabilities_output"]))
-                    if case["helper"] is not None:
+                    if case.get("helper") is not None:
                         self.install_stub(case["request"]["op"], case["helper"]["exit"],
                                           "RESULT " + json.dumps(case["helper"]["result"]))
                     self.assertEqual(agent.handle(json.dumps(case["request"]), self.config), case["response"])

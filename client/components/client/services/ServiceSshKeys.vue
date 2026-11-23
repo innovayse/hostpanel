@@ -49,6 +49,9 @@
             <UiText weight="medium" truncate data-testid="service-ssh-key-label">{{ key.label }}</UiText>
             <UiText size="xs" tone="muted" class="font-mono break-all" data-testid="service-ssh-key-fingerprint">{{ key.fingerprint }}</UiText>
             <UiText size="xs" tone="subtle">{{ $t('client.services.ssh.addedOn', { date: formatDate(key.createdAt) }) }}</UiText>
+            <UiText v-if="key.allowedFrom.length > 0" size="xs" tone="subtle" class="break-all" data-testid="service-ssh-key-allowed-from">
+              {{ $t('client.services.ssh.allowedFrom', { sources: key.allowedFrom.join(', ') }) }}
+            </UiText>
           </UiStack>
           <UiBadge v-if="badgeKey(key)" variant="warning" data-testid="service-ssh-key-badge">{{ $t(badgeKey(key)) }}</UiBadge>
           <UiButton

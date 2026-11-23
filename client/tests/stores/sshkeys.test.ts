@@ -58,7 +58,7 @@ const access = (state: SshAccessState): Record<string, unknown> =>
  * @returns The key.
  */
 const key = (keyId: string): Record<string, unknown> =>
-  ({ keyId, label: 'l', fingerprint: 'SHA256:x', createdAt: '', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true })
+  ({ keyId, label: 'l', fingerprint: 'SHA256:x', allowedFrom: [], createdAt: '', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true })
 
 /**
  * A refusal as the BFF answers it.

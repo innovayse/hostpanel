@@ -31,6 +31,9 @@ public sealed class SshKeyConfiguration : IEntityTypeConfiguration<SshKey>
         // The plugin id rule (PluginIdentifier) caps an id at 64 characters; null for a key the client added.
         builder.Property(x => x.IssuedToPluginId).HasMaxLength(64);
 
+        // A PostgreSQL text array: the sources the key may be used from, empty for a key that works from anywhere.
+        builder.Property(x => x.AllowedFrom).IsRequired().HasColumnType("text[]");
+
         builder.Ignore(x => x.IsActive);
 
         builder.HasOne<ClientService>()

@@ -33,10 +33,15 @@ public interface ISshKeyProvider
     /// <param name="account">The hosting account on this provider's server.</param>
     /// <param name="keyId">Stable key id, written into the key comment.</param>
     /// <param name="publicKey">Canonical <c>ssh-ed25519 &lt;base64&gt;</c> line.</param>
+    /// <param name="allowedFrom">
+    /// The addresses and CIDR networks the key may be used from (<see cref="SshAllowedFromRules"/>), or an empty list for a
+    /// key that works from anywhere. An agent older than 1.6.0 refuses a non-empty list.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the server confirmed the install.</returns>
+    /// <returns>The receipt once the server confirmed the install, with the server's host key when it reports one.</returns>
     /// <exception cref="SshProviderException">Thrown when the server fails or refuses.</exception>
-    public Task AddKeyAsync(SshAccount account, Guid keyId, string publicKey, CancellationToken ct);
+    public Task<SshKeyReceipt> AddKeyAsync(
+        SshAccount account, Guid keyId, string publicKey, IReadOnlyList<string> allowedFrom, CancellationToken ct);
 
     /// <summary>Removes a key. Idempotent: removing an absent key succeeds.</summary>
     /// <param name="account">The hosting account on this provider's server.</param>

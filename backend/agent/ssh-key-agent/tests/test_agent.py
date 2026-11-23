@@ -131,6 +131,87 @@ class OperationTests(AgentTestCase):
         dup = self.call(op="add", account="alice", key_id=KEY_ID_B, public_key=make_key(1))
         self.assertEqual(dup["error"], "duplicate_key")
 
+    def test_add_with_sources_writes_the_from_option_and_lists_the_key(self):
+        added = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1),
+                          **{"from": ["203.0.113.7", "198.51.100.0/24"]})
+        self.assertTrue(added["ok"], added)
+        self.assertTrue(self.authorized_keys().startswith('from="203.0.113.7,198.51.100.0/24" ssh-ed25519 '))
+        self.assertTrue(self.authorized_keys().rstrip().endswith("hostpanel:" + KEY_ID_A))
+        listed = self.call(op="list", account="alice")
+        self.assertEqual([k["key_id"] for k in listed["keys"]], [KEY_ID_A])
+        self.assertEqual(listed["unmanaged_keys"], 0)
+        self.assertTrue(self.call(op="revoke", account="alice", key_id=KEY_ID_A)["changed"])
+        self.assertNotIn(KEY_ID_A, self.authorized_keys())
+
+    def test_add_with_the_same_sources_is_idempotent_and_with_other_sources_conflicts(self):
+        sources = {"from": ["203.0.113.7"]}
+        self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **sources)
+        again = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **sources)
+        self.assertFalse(again["changed"])
+        other = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **{"from": ["203.0.113.8"]})
+        self.assertEqual(other["error"], "key_id_conflict")
+        none = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1))
+        self.assertEqual(none["error"], "key_id_conflict")
+        self.assertEqual(self.authorized_keys().count("ssh-ed25519"), 1)
+
+    def test_invalid_sources_are_refused_and_write_nothing(self):
+        bad = [[], "203.0.113.7", ["*.example.com"], ["example.com"], ["203.0.113.7", "203.0.113.7"], ["198.51.100.5/24"],
+               ["203.0.113.256"], ["010.0.0.1"], ["203.0.113.0/033"], ["::1.2.3.4"], ["fe80::1%eth0"], ['1.2.3.4"'],
+               ["!203.0.113.7"], [7], ["203.0.113.7/"], ["1.2.3.4/33"], ["2001:db8::/129"], ["203.0.113.7\n"],
+               ["10.0.0.%d" % n for n in range(17)]]
+        for sources in bad:
+            with self.subTest(sources=sources):
+                result = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **{"from": sources})
+                self.assertEqual(result["error"], "invalid_request")
+        self.assertFalse(os.path.exists(os.path.join(self.home_root, "alice", ".ssh", "authorized_keys")))
+
+    def test_valid_sources_are_accepted(self):
+        for sources in (["203.0.113.7"], ["0.0.0.0/0"], ["::/0"], ["2001:db8::1", "2001:DB8:1::/48"], ["10.0.0.%d" % n for n in range(16)]):
+            with self.subTest(sources=sources):
+                self.assertTrue(agent.is_source_list(sources))
+
+    def test_a_duplicate_key_with_sources_is_still_a_duplicate(self):
+        self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **{"from": ["203.0.113.7"]})
+        dup = self.call(op="add", account="alice", key_id=KEY_ID_B, public_key=make_key(1))
+        self.assertEqual(dup["error"], "duplicate_key")
+
+    def test_a_from_option_that_is_not_ours_is_unmanaged(self):
+        ssh_dir = os.path.join(self.home_root, "alice", ".ssh")
+        os.makedirs(ssh_dir)
+        with open(os.path.join(ssh_dir, "authorized_keys"), "w") as handle:
+            handle.write('from="*.example.com" ssh-ed25519 AAAA hostpanel:%s\n' % KEY_ID_A)
+        self.assertEqual(self.call(op="list", account="alice")["keys"], [])
+
+    def write_host_key(self, content):
+        """Points the agent at a host key file with this content and returns its path."""
+        path = os.path.join(self.tmp.name, "host.pub")
+        with open(path, "w") as handle:
+            handle.write(content)
+        self.config["host_key_file"] = path
+        return path
+
+    def test_ping_and_add_report_the_host_key_without_its_comment(self):
+        blob = make_key(9).split()[1]
+        self.write_host_key("ssh-ed25519 %s root@server\n" % blob)
+        self.assertEqual(self.call(op="ping")["host_key"], "ssh-ed25519 " + blob)
+        added = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1))
+        self.assertEqual(added["host_key"], "ssh-ed25519 " + blob)
+
+    def test_no_host_key_is_reported_when_the_file_is_unusable(self):
+        for content in ("", "ssh-rsa AAAAB3NzaC1yc2E= root@server\n", "%s\n%s\n" % (make_key(8), make_key(9)), "garbage"):
+            with self.subTest(content=content):
+                self.write_host_key(content)
+                self.assertNotIn("host_key", self.call(op="ping"))
+        self.config["host_key_file"] = os.path.join(self.tmp.name, "missing.pub")
+        self.assertNotIn("host_key", self.call(op="ping"))
+        self.config["host_key_file"] = ""
+        self.assertNotIn("host_key", self.call(op="ping"))
+
+    def test_profiles_name_the_default_host_key_file(self):
+        root = os.path.join(os.path.dirname(__file__), "..", "profiles")
+        for name in ("generic-linux.conf", "cwp.conf"):
+            self.assertEqual(agent.load_config(os.path.join(root, name))["host_key_file"], "/etc/ssh/ssh_host_ed25519_key.pub")
+
     def test_unmanaged_keys_are_preserved_and_never_listed(self):
         ssh_dir = os.path.join(self.home_root, "alice", ".ssh")
         os.mkdir(ssh_dir, 0o700)

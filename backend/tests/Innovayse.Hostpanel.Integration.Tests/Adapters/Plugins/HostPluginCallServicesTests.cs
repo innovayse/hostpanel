@@ -177,7 +177,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
                 InterfaceMethodNames(typeof(IPluginHostApi))
                     .Concat(InterfaceMethodNames(typeof(IPluginHostHostingApi)))
                     .Concat(InterfaceMethodNames(typeof(IPluginHostServiceConnectionApi)))
-                    .Concat(InterfaceMethodNames(typeof(IPluginHostPaymentApi))));
+                    .Concat(InterfaceMethodNames(typeof(IPluginHostPaymentApi)))
+                    .Concat(InterfaceMethodNames(typeof(IPluginHostSshSourceApi))));
         PublicMethodNames(typeof(PluginStore)).Should()
             .BeEquivalentTo(InterfaceMethodNames(typeof(IPluginStore)).Concat(InterfaceMethodNames(typeof(IPluginStoreAdvanced))));
 

@@ -173,6 +173,7 @@
         "keysTitle": "Ihre Schlüssel ({count}/{max})",
         "noKeys": "Noch keine SSH-Schlüssel. Fügen Sie unten Ihren öffentlichen Schlüssel hinzu, um sich ohne Passwort anzumelden.",
         "addedOn": "Hinzugefügt am {date}",
+        "allowedFrom": "Nur von {sources}",
         "addTitle": "Schlüssel hinzufügen",
         "publicKey": "Öffentlicher Schlüssel (ED25519)",
         "publicKeyPlaceholder": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… you{'@'}laptop",

@@ -64,6 +64,13 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
     /// </summary>
     public string? IssuedToPluginId { get; private set; }
 
+    /// <summary>
+    /// Gets the addresses and CIDR networks the key may be used from, written into its authorized key line (the rule is
+    /// <see cref="SshAllowedFromRules"/>), or an empty list for a key that works from anywhere. Set once, by
+    /// <see cref="Create"/>, and re-sent unchanged when the key is put back after a suspension. Treat it as read-only.
+    /// </summary>
+    public string[] AllowedFrom { get; private set; } = [];
+
     /// <summary>Gets whether this key is still live from the customer's point of view.</summary>
     public bool IsActive => SyncState is not SshKeySyncState.Revoked;
 
@@ -83,13 +90,19 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
     /// The plugin the host issues the key to, or <see langword="null"/> for a key the client adds. Required rather than
     /// defaulted, so no caller records a plugin's key as the client's by leaving it out.
     /// </param>
+    /// <param name="allowedFrom">
+    /// The addresses and CIDR networks the key may be used from, or <see langword="null"/> or empty for a key that works
+    /// from anywhere. A key the client adds has none.
+    /// </param>
     /// <returns>The new key.</returns>
     /// <exception cref="ArgumentException">
-    /// A text is blank, or <paramref name="issuedToPluginId"/> is set and blank.
+    /// A text is blank, <paramref name="issuedToPluginId"/> is set and blank, or <paramref name="allowedFrom"/> is not a
+    /// valid list (<see cref="SshAllowedFromRules"/>).
     /// </exception>
     public static SshKey Create(
         int clientServiceId, int serverId, string accountUsername,
-        string label, string publicKey, string fingerprint, string? issuedToPluginId)
+        string label, string publicKey, string fingerprint, string? issuedToPluginId,
+        IReadOnlyList<string>? allowedFrom = null)
     {
         EnsureText(accountUsername, nameof(accountUsername));
         EnsureText(label, nameof(label));
@@ -102,6 +115,12 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
             ArgumentException.ThrowIfNullOrWhiteSpace(issuedToPluginId);
         }
 
+        var sources = allowedFrom is { Count: > 0 } ? allowedFrom.ToArray() : [];
+        if (sources.Length > 0 && !SshAllowedFromRules.IsValidList(sources))
+        {
+            throw new ArgumentException("The sources are not a valid list of addresses.", nameof(allowedFrom));
+        }
+
         return new SshKey
         {
             KeyId = Guid.NewGuid(),
@@ -112,6 +131,7 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
             PublicKey = publicKey,
             Fingerprint = fingerprint,
             IssuedToPluginId = issuedToPluginId,
+            AllowedFrom = sources,
             SyncState = SshKeySyncState.Pending,
         };
     }

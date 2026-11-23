@@ -42,6 +42,27 @@ public sealed class RevokePluginSshAccessTests(PluginHostAccessFixture fixture) 
             .Should().Be(PluginHostAccessFailure.NotFound, "a revoked key is no longer the plugin's to revoke");
     }
 
+    /// <summary>A key issued with sources is taken back like any other: it leaves the account and its record is revoked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task KeyIssuedWithSources_IsRevokedAsync()
+    {
+        var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-revoke-from");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        var call = PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId);
+        var access = await fixture.AsPluginAsync(
+            call, api => ((IPluginHostSshSourceApi)api).IssueSshAccessAsync(owner.ServiceId, "deploy", ["203.0.113.7"], CancellationToken.None));
+
+        await fixture.AsPluginAsync(call, async api =>
+        {
+            await api.RevokeSshAccessAsync(owner.ServiceId, access.KeyId, CancellationToken.None);
+            return true;
+        });
+
+        fixture.Agents().AgentFor(owner.ServerId).KeysOf("web").Should().BeEmpty();
+        (await fixture.KeyAsync(access.KeyId))!.SyncState.Should().Be(SshKeySyncState.Revoked);
+    }
+
     /// <summary>A client's own key, and a key of another client, answer NotFound and stay on the account.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

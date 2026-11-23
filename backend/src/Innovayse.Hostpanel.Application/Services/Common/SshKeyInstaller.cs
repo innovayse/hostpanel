@@ -64,28 +64,33 @@ public sealed class SshKeyInstaller
     /// <param name="label">The key's label, already validated.</param>
     /// <param name="key">The parsed public key.</param>
     /// <param name="issuedToPluginId">The plugin the host issues the key to, or <see langword="null"/> for a client's key.</param>
+    /// <param name="allowedFrom">
+    /// The sources the key may be used from, already checked against <see cref="SshAllowedFromRules"/>, or an empty list
+    /// for a key that works from anywhere.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The installed key, or <c>SSH_KEY_ALREADY_INSTALLED</c>, <c>SSH_KEY_LIMIT_REACHED</c>, <c>SSH_ACCESS_UNAVAILABLE</c>,
+    /// The installed key with the server's host key when the agent reports one, or <c>SSH_KEY_ALREADY_INSTALLED</c>, <c>SSH_KEY_LIMIT_REACHED</c>, <c>SSH_ACCESS_UNAVAILABLE</c>,
     /// <c>SSH_KEY_INVALID</c> or <c>SSH_SERVER_UNAVAILABLE</c> (the record then says the install failed).
     /// </returns>
-    public async Task<Result<SshKey>> InstallAsync(
-        SshServiceContext context, string label, SshPublicKey key, string? issuedToPluginId, CancellationToken ct)
+    public async Task<Result<SshKeyInstallation>> InstallAsync(
+        SshServiceContext context, string label, SshPublicKey key, string? issuedToPluginId,
+        IReadOnlyList<string> allowedFrom, CancellationToken ct)
     {
         if (context.State is not SshAccessState.Available
             || context.Account is not { } account
             || context.Provider is not { } provider)
         {
-            return Result<SshKey>.FailureCode(HostpanelErrorCodes.SSH_ACCESS_UNAVAILABLE);
+            return Result<SshKeyInstallation>.FailureCode(HostpanelErrorCodes.SSH_ACCESS_UNAVAILABLE);
         }
 
         SshKey? record = null;
         for (var attempt = 1; record is null; attempt++)
         {
-            var staged = await StageAsync(context.Service.Id, account, label, key, issuedToPluginId, ct);
+            var staged = await StageAsync(context.Service.Id, account, label, key, issuedToPluginId, allowedFrom, ct);
             if (staged.IsFailure)
             {
-                return staged;
+                return Result<SshKeyInstallation>.FailureCode(staged.ErrorCode ?? HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
             }
 
             try
@@ -100,7 +105,7 @@ public sealed class SshKeyInstaller
                 ForgetStaged(context.Service.Id, staged.Value!);
                 if (attempt >= MaxSaveAttempts)
                 {
-                    return Result<SshKey>.FailureCode(HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
+                    return Result<SshKeyInstallation>.FailureCode(HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
                 }
 
                 // Not a secret, so the shared generator is fine: it only spreads two racing retries apart.
@@ -108,9 +113,10 @@ public sealed class SshKeyInstaller
             }
         }
 
+        SshKeyReceipt receipt;
         try
         {
-            await provider.AddKeyAsync(account, record.KeyId, record.PublicKey, ct);
+            receipt = await provider.AddKeyAsync(account, record.KeyId, record.PublicKey, record.AllowedFrom, ct);
             record.MarkInstalled();
         }
         catch (SshProviderException ex)
@@ -124,7 +130,7 @@ public sealed class SshKeyInstaller
                 // describe something that never happened.
                 _context.SshKeys.Remove(record);
                 await _context.SaveChangesAsync(ct);
-                return Result<SshKey>.FailureCode(ex.Failure switch
+                return Result<SshKeyInstallation>.FailureCode(ex.Failure switch
                 {
                     SshProviderFailure.DuplicateKey => HostpanelErrorCodes.SSH_KEY_ALREADY_INSTALLED,
                     SshProviderFailure.TooManyKeys => HostpanelErrorCodes.SSH_KEY_LIMIT_REACHED,
@@ -144,7 +150,7 @@ public sealed class SshKeyInstaller
             }
 
             await _context.SaveChangesAsync(CancellationToken.None);
-            return Result<SshKey>.FailureCode(HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
+            return Result<SshKeyInstallation>.FailureCode(HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
         }
         catch (OperationCanceledException) when (issuedToPluginId is not null)
         {
@@ -156,7 +162,7 @@ public sealed class SshKeyInstaller
             throw;
         }
 
-        return Result<SshKey>.Success(record);
+        return Result<SshKeyInstallation>.Success(new SshKeyInstallation(record, receipt.HostKey));
     }
 
     /// <summary>
@@ -208,10 +214,12 @@ public sealed class SshKeyInstaller
     /// <param name="label">The key's label.</param>
     /// <param name="key">The parsed public key.</param>
     /// <param name="issuedToPluginId">The plugin the key is issued to, or <see langword="null"/>.</param>
+    /// <param name="allowedFrom">The sources the key may be used from; empty for none.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The staged key, or <c>SSH_KEY_ALREADY_INSTALLED</c>, <c>SSH_KEY_LIMIT_REACHED</c> or <c>SSH_ACCESS_UNAVAILABLE</c>.</returns>
     private async Task<Result<SshKey>> StageAsync(
-        int serviceId, SshAccount account, string label, SshPublicKey key, string? issuedToPluginId, CancellationToken ct)
+        int serviceId, SshAccount account, string label, SshPublicKey key, string? issuedToPluginId,
+        IReadOnlyList<string> allowedFrom, CancellationToken ct)
     {
         var service = await _context.ClientServices.FirstOrDefaultAsync(s => s.Id == serviceId, ct);
         if (service is null)
@@ -234,7 +242,7 @@ public sealed class SshKeyInstaller
         }
 
         var record = SshKey.Create(
-            serviceId, account.ServerId, account.Username, label, key.Canonical, key.Fingerprint, issuedToPluginId);
+            serviceId, account.ServerId, account.Username, label, key.Canonical, key.Fingerprint, issuedToPluginId, allowedFrom);
         service.RecordSshKeyAdded();
         _context.SshKeys.Add(record);
         return Result<SshKey>.Success(record);

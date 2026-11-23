@@ -32,7 +32,7 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
         var response = await _agent.SendAsync(new JsonObject { ["op"] = "ping" }, ct);
         var provider = response["provider"]?.GetValue<string>();
         var binding = Guid.TryParse(response["binding"]?.GetValue<string>(), out var parsed) ? parsed : (Guid?)null;
-        return new SshAgentInfo(response["agent_version"]?.GetValue<string>() ?? "unknown", provider, binding);
+        return new SshAgentInfo(response["agent_version"]?.GetValue<string>() ?? "unknown", provider, binding, HostKeyOf(response));
     }
 
     /// <inheritdoc/>
@@ -62,12 +62,21 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
     }
 
     /// <inheritdoc/>
-    public async Task AddKeyAsync(SshAccount account, Guid keyId, string publicKey, CancellationToken ct)
+    public async Task<SshKeyReceipt> AddKeyAsync(
+        SshAccount account, Guid keyId, string publicKey, IReadOnlyList<string> allowedFrom, CancellationToken ct)
     {
         var request = _agent.Request("add", account);
         request["key_id"] = keyId.ToString("D");
         request["public_key"] = publicKey;
-        await _agent.SendAsync(request, ct);
+
+        // Only a key with sources carries the field, so an agent older than 1.6.0 still takes a key without any.
+        if (allowedFrom.Count > 0)
+        {
+            request["from"] = new JsonArray(allowedFrom.Select(source => (JsonNode?)JsonValue.Create(source)).ToArray());
+        }
+
+        var response = await _agent.SendAsync(request, ct);
+        return new SshKeyReceipt(HostKeyOf(response));
     }
 
     /// <inheritdoc/>
@@ -83,5 +92,13 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
     {
         var response = await _agent.SendAsync(_agent.Request("remove-jail", account), ct);
         return response["removed"]?.GetValue<bool>() == true;
+    }
+
+    /// <summary>Reads the server's host key line from a ping or add answer.</summary>
+    /// <param name="response">The agent's answer.</param>
+    /// <returns>The line, or <see langword="null"/> when the agent (older, or without a host key file) sent none.</returns>
+    private static string? HostKeyOf(JsonObject response)
+    {
+        return response["host_key"]?.GetValue<string>();
     }
 }

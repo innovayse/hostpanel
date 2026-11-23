@@ -93,7 +93,7 @@ const mountIn = async (state: SshAccessState, keys: Record<string, unknown>[] = 
 }
 
 /** One installed key. */
-const KEY_ROW = { keyId: 'k1', label: 'laptop', fingerprint: 'SHA256:abc', createdAt: '2026-10-27T00:00:00Z', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true }
+const KEY_ROW = { keyId: 'k1', label: 'laptop', fingerprint: 'SHA256:abc', allowedFrom: [], createdAt: '2026-10-27T00:00:00Z', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true }
 
 describe('ServiceSshKeys', () => {
   beforeEach(async () => {
@@ -185,6 +185,14 @@ describe('ServiceSshKeys', () => {
     expect(rows[0]?.find('[data-testid="service-ssh-revoke"]').exists()).toBe(true)
     expect(rows[1]?.find('[data-testid="service-ssh-key-badge"]').text()).toContain('client.services.ssh.sync.Stale')
     expect(rows[1]?.find('[data-testid="service-ssh-revoke"]').exists()).toBe(true)
+  })
+
+  it('shows the sources a key is limited to and nothing for an open key', async () => {
+    const wrapper = await mountIn(SshAccessState.Available, [KEY_ROW, { ...KEY_ROW, keyId: 'k2', allowedFrom: ['203.0.113.7', '198.51.100.0/24'] }])
+
+    const rows = wrapper.findAll('[data-testid="service-ssh-key"]')
+    expect(rows[0]?.find('[data-testid="service-ssh-key-allowed-from"]').exists()).toBe(false)
+    expect(rows[1]?.find('[data-testid="service-ssh-key-allowed-from"]').text()).toContain('client.services.ssh.allowedFrom')
   })
 
   it('refuses a private key in the browser', async () => {

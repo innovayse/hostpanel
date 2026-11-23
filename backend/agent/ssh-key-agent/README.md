@@ -80,10 +80,10 @@ stdin as one JSON document; the agent never executes a shell or takes a path fro
 
 | Request | Success response fields |
 |---|---|
-| `{"v":1,"op":"ping"}` | `agent_version`, `provider`, `binding`, `capabilities` (1.5.0+: the ops of "Websites and databases" this server has a helper for; 1.6.0+: and, when the provider ships a `capabilities` helper, that lists), `php_versions` (the php versions the server offers, sorted, for example `["8.1","8.2","8.3"]`; `[]` without a `php-versions` helper), `php_cli` (1.6.0+: version to absolute CLI path for the versions whose helper line names one, `{}` otherwise) |
+| `{"v":1,"op":"ping"}` | `agent_version`, `provider`, `binding`, `capabilities` (1.5.0+: the ops of "Websites and databases" this server has a helper for; 1.6.0+: and, when the provider ships a `capabilities` helper, that lists), `php_versions` (the php versions the server offers, sorted, for example `["8.1","8.2","8.3"]`; `[]` without a `php-versions` helper), `php_cli` (1.6.0+: version to absolute CLI path for the versions whose helper line names one, `{}` otherwise), `host_key` (1.8.0+: the server's public ED25519 host key line without a comment, read from `host_key_file`; absent when none is readable) |
 | `{"v":1,"op":"status","account":"u"}` | `shell_enabled`, `managed_keys`, `unmanaged_keys`, `reason` when disabled |
 | `{"v":1,"op":"list","account":"u"}` | `keys: [{key_id, fingerprint}]`, `unmanaged_keys` |
-| `{"v":1,"op":"add","account":"u","key_id":"<uuid>","public_key":"ssh-ed25519 …"}` | `key_id`, `fingerprint`, `changed` |
+| `{"v":1,"op":"add","account":"u","key_id":"<uuid>","public_key":"ssh-ed25519 …","from":["203.0.113.7","198.51.100.0/24"]}` (`from` optional, 1.8.0+) | `key_id`, `fingerprint`, `changed`, and since 1.8.0 `host_key` as on ping |
 | `{"v":1,"op":"revoke","account":"u","key_id":"<uuid>"}` | `key_id`, `changed` |
 | `{"v":1,"op":"ensure-website","account":"u","hostname":"h","docroot":"d","php":"8.3","link_root":true}` (1.5.0+; `php`, `link_root` optional) | `changed`, and since 1.6.0 `php_cli` (absolute path of that version's CLI) when `php` was given and the helper names it |
 | `{"v":1,"op":"remove-website","account":"u","hostname":"h"}` (1.5.0+) | `changed` |
@@ -93,7 +93,7 @@ stdin as one JSON document; the agent never executes a shell or takes a path fro
 Every response carries `"v":1` and `"ok"`. Refusals are `{"ok":false,"error":"<code>"}`:
 `invalid_request`, `unsupported_version`, `unknown_operation`, `request_too_large`,
 `invalid_account`, `account_not_found`, `account_not_eligible`, `account_suspended`,
-`invalid_key`, `duplicate_key`, `key_id_conflict`, `too_many_keys`, `ssh_disabled`, `unsafe_path`,
+`invalid_key`, `duplicate_key`, `key_id_conflict` (also: the same key id with another `from` list), `too_many_keys`, `ssh_disabled`, `unsafe_path`,
 `file_too_large`, `timeout`, `internal_error`; from the optional ops: `not_supported`, `site_not_owned`,
 `account_exists` (1.4.0+), and since 1.5.0 `website_conflict`, `php_version_unsupported`, `website_failed`,
 `database_failed`, `database_limit`. Unknown request fields are refused. `add` and
@@ -112,7 +112,7 @@ additive; older HostPanels ignore them and older agents simply omit them.
 * **Symlink / traversal**: `.ssh` and `authorized_keys` are opened with `O_NOFOLLOW` relative to
   directory descriptors; a foreign-owned or non-directory `.ssh` is `unsafe_path`.
 * **Atomic writes**: `O_EXCL` temp file, `fsync`, `rename`, `fsync` of the directory.
-* **Only its own keys**: managed lines are `ssh-ed25519 <blob> hostpanel:<key_id>`; keys added by
+* **Only its own keys**: managed lines are `ssh-ed25519 <blob> hostpanel:<key_id>`, with `from="<sources>" ` in front when the key was added with sources (1.8.0+: 1 to 16 distinct plain IPv4 or IPv6 addresses or CIDR networks with zero host bits, nothing else, so no host name, wildcard, negation or quote reaches the line); keys added by
   other means are counted but never listed, changed or removed.
 * **Timeouts**: 10 s for stdin, 60 s per request, so a silent client cannot pin a root process.
 * **Audit**: every `add`/`revoke` is appended to the root-only audit log, with fingerprint, never
@@ -128,6 +128,7 @@ additive; older HostPanels ignore them and older agents simply omit them.
 | `ssh_group` | Only members may receive keys, set it when only one group may log in over SSH (e.g. a jailed-shell group). |
 | `eligible_list` | Root-owned, not group/world-writable file, one account per line: an SSH opt-in list. |
 | `helper_dir` | Absolute directory of the provider helpers behind the 1.5.0 website and database ops (default `/usr/local/libexec/hostpanel-ssh-key-agent`). A missing helper makes its op `not_supported`. |
+| `host_key_file` | Public host key reported by ping and add (1.8.0+), default `/etc/ssh/ssh_host_ed25519_key.pub`. Point it at the key of the sshd the customers connect to. Empty, a missing file, or a file that is not exactly one ED25519 key line reports no host key. |
 | `web_server` | `apache` or `nginx`, read by the generic-linux helpers (1.6.0+). Empty: the one that is running. Set it when both or neither is running, or the website ops are refused. |
 
 ## Jailed SSH enrolment (`jail_enrol`, agent 1.2.0+)

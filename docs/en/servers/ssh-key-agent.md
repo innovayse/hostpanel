@@ -161,7 +161,8 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'jail_extras', type: 'string', default: 'empty (the jail-extras helper lists the deploy tools)', description: 'Extra paths copied into each jail with jk_cp when the jail lacks one or its host copy changed (missing in the jail, another size, or newer). Paths missing on the host are skipped, and an entry already in place is not copied again. An entry that is or contains (symlinks followed) private key material is refused and install.sh --check warns: a private directory, or a file named *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx or *.jks; for outgoing TLS list /etc/pki/tls/certs, /etc/pki/ca-trust/extracted and /etc/ssl/certs, never /etc/pki/tls. Includes dircolors and shell profile entries needed by bash login; rsync, tar, gzip and unzip let CI/CD deploy sites over SSH. Added to what the jail-extras helper of the provider lists; the private key check covers both.' },
   { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' },
   { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' },
-  { name: 'web_server', type: 'string', default: '(empty)', description: 'apache or nginx. Read by the generic-linux website helpers. Empty means the one that is running; set it when both or neither is running, or the website operations are refused. Agent 1.6.0 and later.' }
+  { name: 'web_server', type: 'string', default: '(empty)', description: 'apache or nginx. Read by the generic-linux website helpers. Empty means the one that is running; set it when both or neither is running, or the website operations are refused. Agent 1.6.0 and later.' },
+  { name: 'host_key_file', type: 'string', default: '/etc/ssh/ssh_host_ed25519_key.pub', description: 'The public host key of the server, reported on ping and on add so Hostpanel can show it to the customer and hand it to a plugin. Point it at the key of the sshd the customers connect to. Empty, a missing file, or a file that is not exactly one ED25519 key line reports no host key. Agent 1.6.0 and later.' }
 ]" />
 
 ## Jail extras hold only public trust material
@@ -225,6 +226,18 @@ Agent 1.6.0 ships website and database helpers for the `generic-linux` profile, 
 
 `/usr/local/libexec/hostpanel-ssh-key-agent/detect` prints what the helpers found on a server, including the database client and unit.
 
+## Limiting a key to some addresses, and the host key {#source-restriction-and-host-key}
+
+Agent 1.8.0 and later can limit where a key may be used from. A plugin that issues an SSH key (the `IPluginHostSshSourceApi` of Hostpanel.Sdk 3.16.0) names the addresses or CIDR networks, and the agent writes them into the key's line in `authorized_keys`:
+
+```
+from="203.0.113.7,198.51.100.0/24" ssh-ed25519 AAAA... hostpanel:<key id>
+```
+
+A connection from any other address is refused by the server. A key without a list works from anywhere, as before, and a client's own keys never have one. A list holds 1 to 16 distinct entries, each a plain IPv4 or IPv6 address or a CIDR network whose host bits are zero (`198.51.100.0/24`, not `198.51.100.5/24`). Host names, wildcards and negations are refused, so nothing but an address reaches the key line. The same key id asked again with another list answers `key_id_conflict`: revoke the key and add it again to change its sources. The sources stay with the key: when a suspended service is unsuspended, the key comes back with the same list. The client sees the list next to the key on the service's **SSH Keys** tab.
+
+`ping` and `add` also return the server's public host key (`host_key`, one `ssh-ed25519 ...` line without a comment), read from `host_key_file` (default `/etc/ssh/ssh_host_ed25519_key.pub`). The host hands it to the plugin with the access it issued, so the plugin can pin the key from the first connection instead of trusting whatever a first scan shows. Set `host_key_file` to the key of the sshd customers connect to when that is not the default one. An agent older than 1.6.0 reports no host key and refuses a key with a list (`invalid_request`), so update the agent before a plugin asks for sources.
+
 ## Keys over a service's life
 
 | Event | Keys on the server | In Hostpanel |
@@ -250,7 +263,7 @@ These codes come from the agent itself and appear in Hostpanel's error responses
 | `account_suspended` | Account's password is locked (`usermod -L`) and `check_shadow_lock` is on |
 | `invalid_key` | Public key is not a valid ED25519 key |
 | `duplicate_key` | This key fingerprint already exists under a different `key_id` |
-| `key_id_conflict` | Same `key_id`, different key material |
+| `key_id_conflict` | Same `key_id`, different key material or a different list of sources |
 | `too_many_keys` | Account has reached the maximum number of managed keys |
 | `ssh_disabled` | Account's shell is a disabled shell (e.g. `/sbin/nologin`) and `jail_enrol` is off |
 | `unsafe_path` | The `.ssh` directory or `authorized_keys` file is a symlink or owned unexpectedly |

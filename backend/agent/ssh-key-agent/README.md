@@ -275,11 +275,12 @@ reaches a helper only through the agent's own fixed environment (`JAIL_ENV`), wh
 * **Databases.** `CREATE DATABASE` (utf8mb4) and a user for `localhost` and `127.0.0.1` with all privileges on that database
   only, at most 10 per account.
 
-## Generic Linux websites (`providers/generic-linux`, agent 1.6.0+)
-
-The `generic-linux` profile ships the website helpers for a plain Linux server with no panel: `ensure-website`,
-`remove-website`, `php-versions`, `capabilities`, `detect` and the shared `hp-common.sh`. There are no database helpers, so
-`ping` never lists the database ops there. `detect` is for an administrator: it prints the web server it found, the user it
+## Generic Linux websites and databases (`providers/generic-linux`, agent 1.6.0+)
+The `generic-linux` profile ships the website and database helpers for a plain Linux server with no panel: `ensure-website`,
+`remove-website`, `ensure-database`, `remove-database`, `php-versions`, `capabilities`, `detect` and the shared `hp-common.sh`.
+`ping` lists a database op only when the server has MySQL or MariaDB (see Databases below). `detect` is for an administrator:
+it prints the web server it found, the user it runs as, the virtual host directory, every PHP version with its CLI, and the
+database client and server unit.
 runs as, the virtual host directory and every PHP version with its CLI.
 
 * **Web server.** The one that is running (`systemctl is-active` of `apache2`, `httpd`, `nginx`). Both or neither running
@@ -307,6 +308,14 @@ runs as, the virtual host directory and every PHP version with its CLI.
 * **Safe change.** Every edited file is copied first, the web server and php-fpm configuration are tested, and only then
   are they reloaded (`systemctl reload`); a failed test restores the files and answers `website_failed`. Enabled Apache
   modules (`proxy_fcgi`) are left enabled. HTTP only; TLS is left to the server's own certificate handling.
+* **Databases.** Present when a `mariadb` client (else `mysql`) is installed and one of the units `mysql`, `mysqld` or
+  `mariadb` is running; otherwise `ping` lists neither database op and the helpers refuse (`database_failed`). The
+  helpers act as the database administrator through `/root/.my.cnf` when it exists, else through root's socket
+  authentication. The database and its user are `<account>_<label>` (utf8mb4), the user exists for `localhost` and
+  `127.0.0.1` only, at most 10 per account. The 40 hex password is generated in the helper and returned only by the call
+  that creates the database (a repeat answers `created` false with none); it is never stored or logged. The registry
+  entry `database.<label>` is written before the database is created, and `remove-database` drops only a database with
+  an entry (any other answers `site_not_owned`). A failed creation drops what it made and forgets the entry.
 
 ## Lifecycle
 

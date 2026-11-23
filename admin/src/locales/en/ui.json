@@ -4,7 +4,7 @@
     "filterValue": "Filter {value}",
     "selectField": "Select field",
     "enterValue": "Enter value",
-    "addFilter": "Add Filter",
+    "addFilter": "Add filter",
     "exactMatch": "Exact Match",
     "containing": "Containing"
   },
@@ -45,20 +45,15 @@
   },
   "uiFieldSelector": {
     "fields": "Fields",
-    "selectedCount": "{count} of {total} fields",
-    "clearAll": "Clear All"
+    "selectedCount": "{count} of {total} fields"
   },
   "uiFilterTrigger": {
     "filters": "Filters",
-    "title": "Filters",
-    "apply": "Apply",
-    "reset": "Clear",
-    "cancel": "Cancel"
+    "title": "Filters"
   },
   "uiFilterChips": {
     "label": "Active filters",
-    "remove": "Remove filter {label}: {value}",
-    "clearAll": "Clear all"
+    "remove": "Remove filter {label}: {value}"
   },
   "uiSelect": {
     "choose": "Choose an option",
@@ -71,14 +66,9 @@
     "countryCode": "Country calling code"
   },
   "selectCountry": "Select country",
-  "dialog": {
-    "close": "Close",
-    "confirm": "Confirm"
-  },
   "pagination": {
     "navigation": "Pagination",
     "previous": "Previous",
-    "next": "Next",
     "page": "Page",
     "range": "{from} to {to} of {total}",
     "pageOf": "Page {page} of {count}",
@@ -108,11 +98,7 @@
   },
   "input": {
     "showPassword": "Show password",
-    "hidePassword": "Hide password",
-    "clearSearch": "Clear"
-  },
-  "errorState": {
-    "retry": "Retry"
+    "hidePassword": "Hide password"
   },
   "uiLocalizedField": {
     "emptyTab": "Not filled in",

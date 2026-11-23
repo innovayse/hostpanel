@@ -73,7 +73,7 @@ describe('ServerSshSettingsModal', () => {
     expect((wrapper.get('[data-testid="server-ssh-hostname"]').element as HTMLInputElement).value).toBe(SETTINGS.sshHostname)
     expect((wrapper.get('[data-testid="server-ssh-private-key"]').element as HTMLTextAreaElement).value).toBe('')
     expect(wrapper.find('[data-testid="server-ssh-install-command"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="server-ssh-generate"]').text()).toBe('Generate identity')
+    expect(wrapper.get('[data-testid="server-ssh-generate"]').text()).toBe('Generate')
   })
 
   it('generates an identity and shows the hash-verifying installer command', async () => {
@@ -90,7 +90,7 @@ describe('ServerSshSettingsModal', () => {
     expect(command).toContain('b'.repeat(64))
     expect(command).toContain(`--provider '${SSH_AGENT_PROFILE}' --binding '${SETUP_WITH_KEY.binding}'`)
     expect(command).not.toContain('PRIVATE')
-    expect(wrapper.get('[data-testid="server-ssh-generate"]').text()).toBe('Rotate identity')
+    expect(wrapper.get('[data-testid="server-ssh-generate"]').text()).toBe('Rotate')
   })
 
   it('shows the firewall and sshd lines that let only this HostPanel in on the agent port', async () => {

@@ -14,6 +14,7 @@ import { useToastStore } from '@/stores/toast'
 import { invalid, json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** The settings the API starts with. */
 const stored: FraudSettings = {
@@ -44,6 +45,15 @@ const inputOf = (wrapper: VueWrapper, field: string): ReturnType<VueWrapper['get
  */
 const errorOf = (wrapper: VueWrapper, field: string): ReturnType<VueWrapper['find']> =>
   wrapper.find(`[data-testid="ui-form-field-${field}"] [role="alert"]`)
+
+/**
+ * The captions of the risk bands under the bar.
+ *
+ * @param wrapper - The mounted screen.
+ * @returns The caption of each band, in scale order.
+ */
+const bandCaptions = (wrapper: VueWrapper): string[] =>
+  wrapper.findAll('[data-testid="fraud-risk-band"] [data-testid="ui-chart-legend"] li').map(item => item.text())
 
 /**
  * Finds the body of the PUT a stub received.
@@ -106,14 +116,11 @@ describe('FraudSettingsView', () => {
     stubRouteTable({ 'GET /admin/fraud/settings': () => json(stored) })
     const { wrapper } = await mountScreen(FraudSettingsView)
 
-    expect(wrapper.get('[data-testid="fraud-risk-band-caption-allow"]').text()).toBe('Allow, 0 to 49')
-    expect(wrapper.get('[data-testid="fraud-risk-band-caption-review"]').text()).toBe('Review, 50 to 79')
-    expect(wrapper.get('[data-testid="fraud-risk-band-caption-reject"]').text()).toBe('Reject, 80 to 100')
+    expect(bandCaptions(wrapper)).toEqual(['Allow, 0 to 49', 'Review, 50 to 79', 'Reject, 80 to 100'])
 
     await inputOf(wrapper, 'manualReviewRiskScore').setValue('30')
 
-    expect(wrapper.get('[data-testid="fraud-risk-band-caption-allow"]').text()).toBe('Allow, 0 to 29')
-    expect(wrapper.get('[data-testid="fraud-risk-band-caption-review"]').text()).toBe('Review, 30 to 79')
+    expect(bandCaptions(wrapper)).toEqual(['Allow, 0 to 29', 'Review, 30 to 79', 'Reject, 80 to 100'])
   })
 
   it('disables the numbers and says nothing is applied while protection is off, keeping their values', async () => {
@@ -205,7 +212,7 @@ describe('FraudSettingsView', () => {
     await flushPromises()
 
     expect(errorOf(wrapper, 'velocityWindowMinutes').text()).toBe('The window is too long for this plan.')
-    expect(wrapper.find('[data-testid="fraud-settings-result"]').exists()).toBe(false)
+    expect(toastMessages()).toEqual([])
   })
 
   it('shows a refusal that names no field in the banner', async () => {
@@ -218,7 +225,7 @@ describe('FraudSettingsView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="fraud-settings-result"]').text()).toBe('Not available in the demo.')
+    expect(toastMessages()).toContain('Not available in the demo.')
   })
 
   it('loads again from the Retry of a refused load', async () => {

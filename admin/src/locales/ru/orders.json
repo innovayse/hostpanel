@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "accept": "Принять",
     "orderInfo": "Информация о заказе",
     "overview": "Обзор",
     "created": "Создан",
@@ -18,15 +17,13 @@
     "orderCancelled": "Заказ отменён.",
     "confirmCancelTitle": "Отменить этот заказ?",
     "confirmCancelMessage": "Заказ будет отменён. Это действие нельзя отменить.",
-    "cancelOrder": "Отменить заказ",
     "linesSubtotal": "Сумма позиций заказа (без налога и кредита)",
     "invoiceTotal": "Итого по счёту",
     "fulfilment": "Выполнение",
-    "retry": "Повторить",
     "lineRetried": "Позиция повторена и выполнена.",
     "attempts": "Попыток: {count}, последняя {at}",
     "finishRefund": "Часть суммы возвращена. Завершите возврат вручную.",
-    "closeRefund": "Возврат завершён",
+    "closeRefund": "Отметить возврат",
     "confirmCloseRefundTitle": "Закрыть этот возврат?",
     "confirmCloseRefundMessage": "Подтвердите, что стоимость этой позиции возвращена клиенту, вами или остановившимся возвратом. Недавно начатый возврат может ещё выполняться, и закрыть его пока нельзя; закрыть можно только возврат, зависший дольше срока повторной попытки. Позиция будет закрыта как возвращённая, и повторить её будет нельзя. Действие записывается в журнал клиента.",
     "refundClosed": "Позиция закрыта как возвращённая."
@@ -36,16 +33,12 @@
     "searchOrders": "Поиск заказов по номеру или id",
     "order": "Заказ №",
     "items": "Позиции",
-    "accept": "Принять",
-    "totalcountOrderValue": "Заказов: {totalCount}",
     "noOrdersFound": "Заказы не найдены",
     "noOrdersMatchYourFilters": "Нет заказов по этому фильтру",
-    "clearFilters": "Сбросить фильтр",
     "orderAccepted": "Заказ принят.",
     "orderCancelled": "Заказ отменён.",
     "confirmCancelTitle": "Отменить этот заказ?",
     "confirmCancelMessage": "Заказ будет отменён. Это действие нельзя отменить.",
-    "cancelOrder": "Отменить заказ",
     "failedLines": "Повторить: {count}",
     "needsAttention": "Требует внимания",
     "reviewQueue": "На проверке"
@@ -87,7 +80,8 @@
     "rejectReasonLabel": "Причина",
     "rejectReasonHint": "Клиент прочитает эту причину в письме.",
     "rejectReasonPlaceholder": "Почему заказ отклонён",
-    "rejectReasonRequired": "Укажите причину.",
-    "rejectSubmit": "Отклонить заказ"
-  }
+    "rejectReasonRequired": "Укажите причину."
+  },
+  "accept": "Принять",
+  "cancelOrder": "Отменить заказ"
 }

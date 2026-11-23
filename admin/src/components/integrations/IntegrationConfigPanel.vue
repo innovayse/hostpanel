@@ -10,8 +10,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useIntegrationsStore } from '@/stores/integrations'
-import { useResultBanner } from '@/composables/useResultBanner'
-import { UiTone } from '@/utils/ui/tone'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { INTEGRATION_META } from '@/types/integrationmeta'
 import type { IntegrationConfigPayload, IntegrationSlug } from '@/types/integration'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
@@ -19,7 +18,7 @@ import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatu
 import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import { UiGap } from '@/utils/ui/layout'
 import schema from '@/views/IntegrationDetailView.schema'
 
 /** Props for IntegrationConfigPanel. */
@@ -38,10 +37,7 @@ const store = useIntegrationsStore()
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last save. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** Static metadata hint for this integration. */
 const hint = computed<string | undefined>(() => INTEGRATION_META[props.slug as IntegrationSlug]?.hint)
@@ -66,7 +62,6 @@ const endpointHost = computed<string | undefined>(() => {
  * @returns Resolves when the integration has settled.
  */
 const load = async (): Promise<void> => {
-  feedback.clear()
   await store.fetchOne(props.slug)
   loadError.value = store.error
 }
@@ -78,7 +73,6 @@ const load = async (): Promise<void> => {
  * @returns Promise that resolves when save is complete.
  */
 const handleSave = async (payload: IntegrationConfigPayload): Promise<void> => {
-  feedback.clear()
   if (await store.saveConfig(props.slug, payload)) {
     feedback.show(t('integrations.integrationDetail.saved'), false)
   } else {
@@ -105,7 +99,7 @@ onMounted(load)
 </script>
 
 <template>
-  <UiStack gap="md" class="w-full" data-testid="integration-config-panel">
+  <UiStack :gap="UiGap.Md" class="w-full" data-testid="integration-config-panel">
     <!-- Error -->
     <UiErrorState
       v-if="loadError !== null"
@@ -114,9 +108,6 @@ onMounted(load)
       testid="integration-error"
       @retry="load"
     />
-
-    <!-- Outcome of the last save -->
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="integration-feedback" />
 
     <!-- Content: the schema's two cards, placeholders while the integration is read -->
     <UiDetailCards v-if="loadError === null" :columns="schema.columns" :ratio="schema.ratio" :loading="store.current === null">

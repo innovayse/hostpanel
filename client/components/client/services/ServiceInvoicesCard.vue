@@ -2,16 +2,12 @@
   <UiCard data-testid="service-invoices">
     <UiCardHeader :title="$t('client.services.relatedInvoices')" :icon="FileText" />
 
-    <UiStack v-if="invoicesLoading" gap="sm">
-      <UiSkeleton v-for="i in 3" :key="i" shape="block" class="h-10" />
-    </UiStack>
-
     <!--
       Why the table is empty, when it is empty because the read failed. "No invoices found for
       this service" must never be printed for an answer that never arrived: a failed read is
       never rendered as an absence of invoices.
     -->
-    <UiAlert v-else-if="invoicesError" variant="error" data-testid="service-invoices-error">{{ invoicesError }}</UiAlert>
+    <UiAlert v-if="invoicesError" variant="error" data-testid="service-invoices-error">{{ invoicesError }}</UiAlert>
 
     <!--
       An empty list is "nothing is recorded against this service", never "nothing was charged".
@@ -19,33 +15,41 @@
       and the API reports how many such invoices this client holds so the difference can be said
       out loud rather than implied by a blank table.
     -->
-    <UiText v-else-if="!relatedInvoices.length" size="sm" tone="subtle" class="text-center py-6" data-testid="service-invoices-empty">
-      {{ $t('client.services.noInvoices') }}
-    </UiText>
-
-    <UiTable v-else scrollable>
-      <UiTableHead>
-        <UiTableRow :hoverable="false">
-          <UiTableTh>{{ $t('client.services.invoiceId') }}</UiTableTh>
-          <UiTableTh>{{ $t('client.services.invoiceDate') }}</UiTableTh>
-          <UiTableTh>{{ $t('client.services.invoiceDue') }}</UiTableTh>
-          <UiTableTh align="right">{{ $t('client.services.invoiceAmount') }}</UiTableTh>
-          <UiTableTh align="right">{{ $t('client.services.invoiceStatus') }}</UiTableTh>
-        </UiTableRow>
-      </UiTableHead>
+    <UiTable
+      v-else
+      scrollable
+      :label="$t('client.services.relatedInvoices')"
+      :columns="5"
+      :loading="invoicesLoading"
+      :empty="!relatedInvoices.length"
+      :empty-text="$t('client.services.noInvoices')"
+      :empty-icon="FileText"
+      data-testid="service-invoices-table"
+    >
+      <template #head>
+        <UiTableHead>
+          <UiTableRow :hoverable="false">
+            <UiTableTh>{{ $t('client.services.invoiceId') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.services.invoiceDate') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.services.invoiceDue') }}</UiTableTh>
+            <UiTableTh align="right">{{ $t('client.services.invoiceAmount') }}</UiTableTh>
+            <UiTableTh align="right">{{ $t('client.services.invoiceStatus') }}</UiTableTh>
+          </UiTableRow>
+        </UiTableHead>
+      </template>
       <UiTableBody>
         <UiTableRow v-for="invoice in relatedInvoices" :key="invoice.id" :data-testid="`service-invoice-${invoice.id}`">
           <UiTableTd>
-            <UiLink data-testid="service-invoice-link" :to="clientInvoicePath(invoice.id)" :underline="false" class="font-medium">#{{ invoice.id }}</UiLink>
+            <UiLink tone="primary" data-testid="service-invoice-link" :to="clientInvoicePath(invoice.id)" :underline="false" class="font-medium">#{{ invoice.id }}</UiLink>
           </UiTableTd>
           <UiTableTd>
-            <UiText as="span" size="sm" tone="subtle">{{ formatDate(invoice.invoiceDate) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" tone="subtle">{{ formatDate(invoice.invoiceDate) }}</UiText>
           </UiTableTd>
           <UiTableTd>
-            <UiText as="span" size="sm" tone="subtle">{{ formatDate(invoice.dueDate) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" tone="subtle">{{ formatDate(invoice.dueDate) }}</UiText>
           </UiTableTd>
           <UiTableTd align="right">
-            <UiText as="span" size="sm" weight="medium">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiText>
           </UiTableTd>
           <UiTableTd align="right">
             <ClientStatusBadge :status="invoice.status" />
@@ -67,7 +71,7 @@
       data-testid="service-invoices-unrecorded"
     >
       {{ $t('client.services.unrecordedNote', { count: unattributedInvoices }) }}
-      <UiLink data-testid="service-invoices-all" :to="CLIENT_INVOICES_PATH" :underline="false">{{ $t('client.services.viewAllInvoices') }}</UiLink>
+      <UiLink tone="primary" data-testid="service-invoices-all" :to="CLIENT_INVOICES_PATH" :underline="false">{{ $t('client.services.viewAllInvoices') }}</UiLink>
     </UiAlert>
   </UiCard>
 </template>
@@ -83,6 +87,7 @@ import { storeToRefs } from 'pinia'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** The service management store that owns the list, its loading flag and its failure sentence. */
 const { relatedInvoices, unattributedInvoices, invoicesLoading, invoicesError } = storeToRefs(useServiceManagementStore())

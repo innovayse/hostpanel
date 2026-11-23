@@ -11,7 +11,7 @@ import { AppRoute } from '@/lib/routes'
 import { DownloadsTab } from '@/types/supporttab'
 import { SkeletonFieldKind, SkeletonKind, SkeletonPartKind, SkeletonSpan } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, FormSkeletonPart, SkeletonTable, TabsSkeletonPart } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** Key of the card of the categories table, the suffix of its `card-<key>` slot. */
 export const DOWNLOAD_CATEGORIES_CARD = 'categories'
@@ -23,8 +23,8 @@ export const DOWNLOAD_FILES_CARD = 'files'
 export const DOWNLOADS_TABS_PART: TabsSkeletonPart = {
   kind: SkeletonPartKind.Tabs,
   tabs: [
-    { key: DownloadsTab.Category, label: 'shared.addCategory' },
-    { key: DownloadsTab.Download, label: 'support.downloads.addDownload' },
+    { key: DownloadsTab.Category, label: 'shared.createCategory' },
+    { key: DownloadsTab.Download, label: 'support.downloads.createDownload' },
   ],
 }
 
@@ -74,7 +74,7 @@ export const DOWNLOAD_CATEGORIES_TABLE: SkeletonTable = {
   columns: [
     { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
     { key: 'description', label: 'shared.description' },
-    { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+    { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }
@@ -85,7 +85,7 @@ export const DOWNLOAD_FILES_TABLE: SkeletonTable = {
     { key: 'title', label: 'shared.title', size: UiColumnSize.Grow },
     { key: 'description', label: 'shared.description' },
     { key: 'downloads', label: 'support.downloads.downloads', numeric: true, size: UiColumnSize.Compact },
-    { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+    { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }

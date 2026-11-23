@@ -10,6 +10,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -56,6 +57,6 @@ describe('InvoiceNotesTab', () => {
     await wrapper.get('[data-testid="billing-invoice-notes-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-notes-feedback"]').text()).toBe('Notes are too long.')
+    expect(toastMessages()).toContain('Notes are too long.')
   })
 })

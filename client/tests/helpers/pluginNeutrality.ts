@@ -1,9 +1,8 @@
 /**
  * Scanner for the plugin-neutral rule: the host interface names no plugin. A plugin id or a plugin entry
- * point type name inside a source file is a reference to one deployment's plugin. The names are those of
- * the in-tree plugin manifests (the `id` and the simple name of the `entryPoint` of each `plugin.json`
- * under `backend/src/Innovayse.Providers.*`); the backend architecture test `PluginNeutralSourceTests`
- * reads them from the manifests and holds the backend to the same rule.
+ * point type name inside a source file is a reference to one deployment's plugin. The names are a fixed
+ * deny list kept in this file: the ids and entry point types of plugins that ship outside this repository,
+ * and the former built-in providers that are now plugins only.
  *
  * @module tests/helpers/pluginNeutrality
  */
@@ -11,7 +10,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-/** The plugin ids and entry point type names of the in-tree plugin manifests, plus the former built-in provider names (a deny list). */
+/** The ids and entry point type names of external plugins, plus the former built-in provider names (a deny list). */
 export const PLUGIN_NAMES: readonly string[] = [
   'innovayse-cwp',
   'inecobank',

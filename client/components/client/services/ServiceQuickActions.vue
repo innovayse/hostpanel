@@ -11,7 +11,7 @@
         @click="emit('cpanel')"
       >
         <ChevronRight :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.services.quickCpanel') }}
+        {{ $t('client.services.actionLoginCpanel') }}
       </UiButton>
       <UiButton
         v-if="store.mayDo(Permission.ViewPayInvoices)"
@@ -31,7 +31,7 @@
         @click="emit('cancel')"
       >
         <ChevronRight :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.services.quickCancel') }}
+        {{ $t('client.services.cancelBtn') }}
       </UiButton>
     </UiStack>
   </UiCard>

@@ -6,10 +6,9 @@
       "services": "Services",
       "process": "Processus",
       "faq": "FAQ",
-      "login": "Se connecter",
-      "start": "Commencer",
       "cart": "Panier",
-      "menu": "Menu"
+      "menu": "Menu",
+      "apps": "Applications"
     },
     "hero": {
       "titleLine1": "Toute votre",
@@ -17,7 +16,6 @@
       "titleAccent": "numérique",
       "lead": "Domaines, hébergement, serveurs et facturation dans un seul portail client. Enregistrez un domaine en quelques minutes et gérez tout depuis un seul panneau.",
       "ctaPrimary": "Vérifier un domaine",
-      "ctaSecondary": "Parler à un spécialiste",
       "statClients": "clients",
       "statUptime": "disponibilité",
       "statRegions": "régions"
@@ -25,7 +23,6 @@
     "domainSearch": {
       "title": "Trouvez votre domaine",
       "placeholder": "exemple",
-      "cta": "Rechercher",
       "available": "disponible",
       "taken": "indisponible",
       "empty": "Saisissez un nom et appuyez sur Rechercher.",
@@ -75,8 +72,6 @@
       "eyebrow": "Processus",
       "title": "Quatre étapes pour se lancer",
       "lead": "Des étapes claires et une équipe de support à chaque étape.",
-      "start": "Commencer",
-      "talk": "Parler à un spécialiste",
       "note": "Vous ne savez pas quelle offre choisir ? Notre équipe vous aide à choisir.",
       "step1Title": "Choisissez une offre",
       "step1Body": "Choisissez un hébergement ou un serveur et recherchez le domaine que vous souhaitez.",
@@ -94,8 +89,6 @@
     "testimonials": {
       "eyebrow": "Clients",
       "title": "Ce qu'ils disent de nous",
-      "prev": "Précédent",
-      "next": "Suivant",
       "rating": "Noté {rating} sur 5",
       "slide": "Témoignage {current} sur {total}",
       "goTo": "Afficher le témoignage de {name}"
@@ -223,6 +216,10 @@
       "email": "E-mail",
       "phone": "Téléphone",
       "response": "Réponse habituelle : {time}"
+    },
+    "actions": {
+      "getStarted": "Commencer",
+      "talkToSpecialist": "Parler à un spécialiste"
     }
   }
 }

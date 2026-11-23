@@ -1,5 +1,5 @@
 <template>
-  <section v-if="features.length" class="py-14 md:py-20 bg-classic-page" data-testid="sections-security">
+  <UiSection v-if="features.length" :contained="false" padding="lg" class="bg-classic-page" data-testid="sections-security">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -23,7 +23,7 @@
         </ClassicCard>
       </UiBalancedGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

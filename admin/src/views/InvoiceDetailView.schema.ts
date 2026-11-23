@@ -8,7 +8,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { DetailSkeletonSchema, SkeletonTable } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiAlign, UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The read-only line items: the description and the amount; the real card heads its table from these columns. */
 export const INVOICE_ITEMS_TABLE: SkeletonTable = {
@@ -40,7 +40,7 @@ const schema: DetailSkeletonSchema = {
         title: 'shared.transactions',
         table: {
           columns: [
-            { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+            { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
             { key: 'method', label: 'shared.paymentMethod', size: UiColumnSize.Grow },
             { key: 'transactionId', label: 'shared.transactionId' },
             { key: 'amount', label: 'shared.amount', align: UiAlign.Right, numeric: true, size: UiColumnSize.Compact },
@@ -54,10 +54,10 @@ const schema: DetailSkeletonSchema = {
         title: 'shared.transactionHistory',
         table: {
           columns: [
-            { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+            { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
             { key: 'method', label: 'shared.paymentMethod' },
             { key: 'transactionId', label: 'shared.transactionId' },
-            { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+            { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
             { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
           ],
           rows: 2,

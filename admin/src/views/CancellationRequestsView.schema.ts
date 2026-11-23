@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The cancellation requests list. */
 const schema: ListSkeletonSchema = {
@@ -17,12 +17,12 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'service', label: 'shared.productService', size: UiColumnSize.Grow },
       { key: 'client', label: 'shared.client' },
       { key: 'reason', label: 'shared.reason' },
-      { key: 'type', label: 'shared.type', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'type', label: 'shared.type', kind: UiColumnKind.Status },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

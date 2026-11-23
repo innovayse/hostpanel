@@ -17,7 +17,7 @@
     />
     <UiText
       v-else
-      as="span"
+      :as="UiTextTag.Span"
       tone="inherit"
       weight="semibold"
       class="whitespace-nowrap text-lg tracking-tight opacity-60 transition-opacity duration-200 motion-reduce:transition-none group-hover:opacity-100 group-focus-visible:opacity-100"
@@ -38,6 +38,7 @@
 import UiLink from '~/components/ui/UiLink.vue'
 import UiStack from '~/components/ui/UiStack.vue'
 import type { LogoWallItem } from '~/utils/ui/logoWall'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of UiLogoWallItem. */
 interface Props {

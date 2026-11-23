@@ -1,11 +1,10 @@
 {
   "title": "Umsatzsteuersätze",
   "description": "Der Umsatzsteuersatz (USt./MwSt.) jedes EU-Mitgliedstaats und der Tag, ab dem er gilt. Ein Verbraucher in einem anderen Mitgliedstaat erhält für digitale Dienstleistungen eine Rechnung zum Regelsatz seines eigenen Landes. Ermäßigte Sätze werden zur Referenz gespeichert und nie automatisch angewendet.",
-  "addRate": "Umsatzsteuersatz hinzufügen",
+  "addRate": "Umsatzsteuersatz erstellen",
   "empty": "Noch keine Umsatzsteuersätze. Fügen Sie einen Satz hinzu oder starten Sie die Anwendung neu, um die mitgelieferten Sätze zu importieren.",
   "searchPlaceholder": "Nach Ländercode suchen",
   "noMatches": "Keine Umsatzsteuersätze entsprechen Ihrer Suche",
-  "totalCount": "Umsatzsteuersätze: {totalCount}",
   "table": {
     "country": "Land",
     "kind": "Art",
@@ -19,14 +18,12 @@
   },
   "deleteModal": {
     "title": "Umsatzsteuersatz löschen",
-    "message": "Den Satz „{kind}“ für {country}, der ab {validFrom} gilt, löschen? Bereits ausgestellte Rechnungen behalten den Satz, mit dem sie versteuert wurden.",
-    "confirmLabel": "Löschen"
+    "message": "Den Satz „{kind}“ für {country}, der ab {validFrom} gilt, löschen? Bereits ausgestellte Rechnungen behalten den Satz, mit dem sie versteuert wurden."
   },
   "toasts": {
     "deleted": "Der Umsatzsteuersatz wurde gelöscht."
   },
   "form": {
-    "addTitle": "Umsatzsteuersatz hinzufügen",
     "editTitle": "Umsatzsteuersatz bearbeiten",
     "country": {
       "label": "Mitgliedstaat",
@@ -43,10 +40,7 @@
     "validFrom": {
       "label": "Gültig ab",
       "hint": "Ein Satz bleibt in Kraft, bis eine spätere Zeile desselben Landes und derselben Art beginnt. Um einen Satz zu ändern, fügen Sie eine Zeile mit dem neuen Starttag hinzu; bearbeiten Sie eine Zeile nur, um einen Fehler zu korrigieren. Ein mitgelieferter Satz, dessen Tag Sie nach hinten verschieben, wird nicht erneut importiert."
-    },
-    "cancel": "Abbrechen",
-    "add": "Hinzufügen",
-    "save": "Speichern"
+    }
   },
   "filters": {
     "status": "Status"

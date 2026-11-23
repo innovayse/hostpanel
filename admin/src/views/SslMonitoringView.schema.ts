@@ -5,7 +5,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -15,10 +15,10 @@ const schema: ReportSkeletonSchema = {
   table: {
     columns: [
       { key: 'domainName', label: 'shared.domainName', size: UiColumnSize.Grow },
-      { key: 'hasSsl', label: 'shared.status' },
+      { key: 'hasSsl', label: 'shared.status', kind: UiColumnKind.Status },
       { key: 'issuer', label: 'reports.sslMonitoring.issuer' },
-      { key: 'expiresAt', label: 'reports.sslMonitoring.expiry' },
-      { key: 'lastUpdate', label: 'reports.sslMonitoring.lastUpdate' },
+      { key: 'expiresAt', label: 'reports.sslMonitoring.expiry', kind: UiColumnKind.Date },
+      { key: 'lastUpdate', label: 'reports.sslMonitoring.lastUpdate', kind: UiColumnKind.Date },
     ],
     grouped: true,
   },

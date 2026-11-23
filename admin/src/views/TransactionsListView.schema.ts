@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The transactions list. */
 const schema: ListSkeletonSchema = {
@@ -27,7 +27,7 @@ const schema: ListSkeletonSchema = {
     pagination: true,
     columns: [
       { key: 'client', label: 'shared.clientName', cardRole: UiCardRole.Title },
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'paymentMethod', label: 'shared.paymentMethod' },
       { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
       { key: 'amountIn', label: 'shared.amountIn', numeric: true, size: UiColumnSize.Compact },

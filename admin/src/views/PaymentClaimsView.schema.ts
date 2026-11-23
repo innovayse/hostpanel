@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The held payment claims list. */
 const schema: ListSkeletonSchema = {
@@ -16,12 +16,12 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'invoice', label: 'shared.invoice', size: UiColumnSize.Compact },
+      { key: 'invoice', label: 'shared.invoice', kind: UiColumnKind.Id },
       { key: 'client', label: 'shared.client', size: UiColumnSize.Grow },
       { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
       { key: 'gateway', label: 'billing.paymentClaims.gatewayModule' },
-      { key: 'created', label: 'billing.paymentClaims.created', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge },
+      { key: 'created', label: 'billing.paymentClaims.created', kind: UiColumnKind.Date },
+      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
     ],
   },
 }

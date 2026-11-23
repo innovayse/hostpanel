@@ -25,6 +25,24 @@ export const UiDirection = {
 /** One of the directions. */
 export type UiDirection = (typeof UiDirection)[keyof typeof UiDirection]
 
+/** Closed set of elements a stack can be drawn as. */
+export const UiStackTag = {
+  Div: 'div',
+  Header: 'header',
+  Footer: 'footer',
+  Aside: 'aside',
+  Nav: 'nav',
+  Main: 'main',
+  Section: 'section',
+  Article: 'article',
+  Ul: 'ul',
+  Ol: 'ol',
+  Li: 'li',
+} as const
+
+/** One of the elements a stack can be drawn as. */
+export type UiStackTag = (typeof UiStackTag)[keyof typeof UiStackTag]
+
 /**
  * Gap classes for a flex/grid container. Each also publishes its gap as `--stack-gap`, which `UiPageHeader` reads
  * to subtract the gap its parent already puts under it, so the header-to-content distance is the same on every screen.
@@ -126,15 +144,15 @@ export const gridColumnClasses: Record<UiGridColumns, string> = {
 }
 
 /**
- * Column classes that follow the width of the nearest `@container` instead of the screen: one column below 48rem
- * (768px), the full count from 56rem. A card inside a sidebar layout or beside another card is far narrower than the
- * screen, so only its own width says whether its fields still fit side by side.
+ * Column classes that follow the width of the nearest `@container` instead of the screen: one column below 32rem
+ * (512px), two from there, the full count of a wider grid from 48rem or 56rem. A card inside a sidebar layout or beside
+ * another card is far narrower than the screen, so only its own width says whether its fields still fit side by side.
  */
 export const containerGridColumnClasses: Record<UiGridColumns, string> = {
   1: 'grid-cols-1',
-  2: 'grid-cols-1 @3xl:grid-cols-2',
-  3: 'grid-cols-1 @3xl:grid-cols-2 @4xl:grid-cols-3',
-  4: 'grid-cols-1 @3xl:grid-cols-2 @4xl:grid-cols-4',
+  2: 'grid-cols-1 @lg:grid-cols-2',
+  3: 'grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3',
+  4: 'grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-4',
   6: 'grid-cols-2 @3xl:grid-cols-3 @4xl:grid-cols-6',
 }
 
@@ -149,16 +167,19 @@ export const pairedGridColumnClasses: Record<UiGridColumns, string> = {
 
 /** Closed set of minimum card widths for a grid that fills its row with as many columns as fit. */
 export const UiGridMinWidth = {
+  /** Small figures (a caption over a value): two across on a phone, then as many as the grid's own width holds. */
+  Xs: 'xs',
   Sm: 'sm',
   Md: 'md',
   Lg: 'lg',
 } as const
 
-/** One of the minimum card widths (14rem, 18rem, 24rem). */
+/** One of the minimum card widths (9rem, 14rem, 18rem, 24rem). */
 export type UiGridMinWidth = (typeof UiGridMinWidth)[keyof typeof UiGridMinWidth]
 
-/** Auto-fill column classes per minimum width: one column on phones, then as many columns as fit. */
+/** Column classes per minimum width: as many columns as fit (one on a phone, except the smallest, which fits two). */
 export const gridMinWidthClasses: Record<UiGridMinWidth, string> = {
+  xs: 'grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]',
   sm: 'grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(14rem,1fr))]',
   md: 'grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(18rem,1fr))]',
   lg: 'grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(24rem,1fr))]',
@@ -188,4 +209,50 @@ export const splitRatioClasses: Record<UiSplitRatio, string> = {
   'wide-main': 'grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]',
   'wide-aside': 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.7fr)]',
   'one-third': 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]',
+}
+
+/** Closed set of fixed widths a control or a placeholder bar can take, so no screen writes its own `w-*` class. */
+export const UiWidth = {
+  Xs: 'xs',
+  Sm: 'sm',
+  Md: 'md',
+  Lg: 'lg',
+  TwoThirds: 'two-thirds',
+  Full: 'full',
+} as const
+
+/** One of the fixed widths. */
+export type UiWidth = (typeof UiWidth)[keyof typeof UiWidth]
+
+/** `width` classes of each fixed width. */
+export const widthClasses: Record<UiWidth, string> = {
+  xs: 'w-24',
+  sm: 'w-32',
+  md: 'w-40',
+  lg: 'w-48',
+  'two-thirds': 'w-2/3',
+  full: 'w-full',
+}
+
+/** `min-width` classes of the fixed widths a stack can be kept from shrinking below (a column of amounts that must line up). */
+export const minWidthClasses: Record<UiWidth, string> = {
+  xs: 'min-w-24',
+  sm: 'min-w-32',
+  md: 'min-w-40',
+  lg: 'min-w-48',
+  'two-thirds': 'min-w-2/3',
+  full: 'min-w-full',
+}
+
+/** Closed set of widest sizes a form may grow to on a wide screen. */
+export const UiMaxWidth = {
+  Form: 'form',
+} as const
+
+/** One of the widest sizes. */
+export type UiMaxWidth = (typeof UiMaxWidth)[keyof typeof UiMaxWidth]
+
+/** `max-width` classes of each widest size; a form stays readable instead of stretching across a wide page. */
+export const maxWidthClasses: Record<UiMaxWidth, string> = {
+  form: 'max-w-3xl',
 }

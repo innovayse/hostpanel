@@ -16,6 +16,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import type { SettingDraft } from '@/composables/useSettingDraft'
 import { isKnownTimezone, timezoneIdOf, timezoneLabel, timezoneOptions } from '@/lib/timezones'
+import { UiGap } from '@/utils/ui/layout'
 import type { UiSelectOption } from '@/utils/ui/select'
 
 const { t, locale } = useI18n()
@@ -77,7 +78,7 @@ const model = computed<string>({
 
 <template>
   <SettingNotSeeded v-if="!draft.setting.value" :setting-key="settingKey" :env-name="envName" />
-  <UiStack v-else gap="xs">
+  <UiStack v-else :gap="UiGap.Xs">
     <UiField :label="label" :hint="hint">
       <template #default="{ id }">
         <UiSelect

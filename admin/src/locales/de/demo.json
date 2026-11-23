@@ -6,11 +6,12 @@
     "minutes": "{minutes} Min.",
     "hoursMinutes": "{hours} Std. {minutes} Min.",
     "dataResets": "Alle Änderungen hier sind temporär und werden regelmäßig zurückgesetzt.",
-    "guide": "Neu hier? Lesen Sie die Anleitung"
+    "guide": "Anleitung lesen",
+    "guideTitle": "Neu hier? Lesen Sie die Anleitung"
   },
   "login": {
     "hint": "Dies ist eine öffentliche Demo. Nutzen Sie das folgende Konto, um sich umzusehen.",
-    "use": "Verwenden",
+    "use": "Konto verwenden",
     "email": "E-Mail: {email}",
     "password": "Passwort: {password}",
     "roles": {

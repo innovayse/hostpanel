@@ -12,6 +12,7 @@ import { mountRouted, mountRoutedSettled } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -56,7 +57,6 @@ describe('PendingBankTransfersView', () => {
     expect(table).toContain('$100.00')
     expect(wrapper.get('[data-testid="billing-bank-transfer-invoice-5"]').attributes('href')).toBe('/billing/5')
     expect(wrapper.get('[data-testid="billing-bank-transfer-client-5"]').attributes('href')).toBe('/clients/9')
-    expect(wrapper.get('[data-testid="billing-bank-transfers-count"]').text()).toContain('1 Records Found')
   })
 
   it('shows the empty state when nothing waits', async () => {
@@ -147,7 +147,7 @@ describe('PendingBankTransfersView', () => {
     await wrapper.get('[data-testid="billing-bank-transfers-confirm-dialog"] [data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-bank-transfers-feedback"]').text()).toBe('No bank transfer is waiting on this invoice.')
+    expect(toastMessages()).toContain('No bank transfer is waiting on this invoice.')
     expect(lines(mock).filter((line) => line.startsWith('GET /api/billing/bank-transfers/pending')).length).toBe(2)
   })
 
@@ -156,7 +156,6 @@ describe('PendingBankTransfersView', () => {
     const wrapper = await mountRoutedSettled(PendingBankTransfersView, '/billing/bank-transfers')
 
     expect(wrapper.get('[data-testid="billing-bank-transfers-error"]').text()).toContain('Not allowed.')
-    expect(wrapper.find('[data-testid="billing-bank-transfers-count"]').exists()).toBe(false)
     const before = mock.mock.calls.length
 
     await wrapper.get('[data-testid="billing-bank-transfers-error-retry"]').trigger('click')

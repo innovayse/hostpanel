@@ -12,6 +12,7 @@ import AuthShell from '@/components/auth/AuthShell.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import { AppRoute } from '@/lib/routes'
 import { Icon } from '@/lib/icons'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -35,8 +36,8 @@ const handleSignOut = async (): Promise<void> => {
 
 <template>
   <AuthShell :title="t('auth.forbidden.title')" :subtitle="t('auth.forbidden.description')">
-    <UiButton :icon="Icon.SignOut" variant="primary" block type="button" data-testid="forbidden-sign-out" @click="handleSignOut">
-      {{ t('common.signOut') }}
+    <UiButton :icon="Icon.SignOut" :variant="UiButtonVariant.Primary" block type="button" data-testid="forbidden-sign-out" @click="handleSignOut">
+      {{ t('shared.signOut') }}
     </UiButton>
   </AuthShell>
 </template>

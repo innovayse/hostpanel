@@ -1,17 +1,17 @@
 <template>
-  <section class="py-8 md:py-20 bg-ui-page relative overflow-hidden" data-testid="products-benefits">
+  <UiStack :as="UiStackTag.Section" gap="none" class="py-8 md:py-20 bg-ui-page relative overflow-hidden" data-testid="products-benefits">
     <UiDecor class="inset-0">
       <UiDecor class="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-secondary-500/15 rounded-full blur-[180px]" />
       <UiDecor class="top-20 left-1/4 w-2 h-2 bg-secondary-600/60 dark:bg-secondary-400/60 rounded-full animate-float [animation-delay:0.7s]" />
       <UiDecor class="bottom-1/4 right-1/3 w-3 h-3 bg-cyan-400/50 rounded-full animate-float [animation-delay:1.6s]" />
     </UiDecor>
 
-    <UiContainer class="relative z-10">
+    <UiContainer class="relative z-10 w-full">
       <MarketingSectionHeader class="mb-16" :subtitle="$t('products.benefits.subtitle')">
         <template #title>
           <i18n-t keypath="products.benefits.title" tag="span">
             <template #benefitsHighlight>
-              <span class="bg-gradient-to-r from-secondary-600 dark:from-secondary-400 to-cyan-400 bg-clip-text text-transparent [.tpl-classic_&]:bg-none [.tpl-classic_&]:text-classic-brand">{{ $t('products.benefits.benefitsHighlight') }}</span>
+              <UiGradientText class="bg-gradient-to-r from-secondary-600 dark:from-secondary-400 to-cyan-400 [.tpl-classic_&]:bg-none [.tpl-classic_&]:text-classic-brand">{{ $t('products.benefits.benefitsHighlight') }}</UiGradientText>
             </template>
           </i18n-t>
         </template>
@@ -29,9 +29,9 @@
         >
           <UiDecor class="inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-secondary-500/10 to-cyan-500/5" />
 
-          <span class="relative inline-flex w-12 h-12 rounded-xl bg-gradient-to-br from-secondary-500/25 to-cyan-500/15 items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300 border border-secondary-500/25 [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border-0 [.tpl-classic_&]:bg-none [.tpl-classic_&]:bg-classic-brand-soft [.tpl-classic_&]:group-hover:scale-100">
+          <UiStack :as="UiStackTag.Span" direction="row" align="center" justify="center" gap="none" class="relative mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-secondary-500/25 to-cyan-500/15 mb-4 group-hover:scale-105 transition-transform duration-300 border border-secondary-500/25 [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border-0 [.tpl-classic_&]:bg-none [.tpl-classic_&]:bg-classic-brand-soft [.tpl-classic_&]:group-hover:scale-100">
             <Icon :name="benefit.icon" class="text-2xl text-secondary-700 dark:text-secondary-400 [.tpl-classic_&]:text-classic-brand" />
-          </span>
+          </UiStack>
 
           <UiHeading :level="3" class="relative text-lg mb-3 [.tpl-classic_&]:font-semibold [.tpl-classic_&]:text-classic-ink">{{ benefit.title }}</UiHeading>
           <UiText tone="muted" size="sm" class="relative leading-relaxed [.tpl-classic_&]:text-classic-muted">{{ benefit.description }}</UiText>
@@ -59,7 +59,7 @@
     <!-- Corner decorations -->
     <UiDecor class="top-0 right-0 w-48 h-48 border-r-2 border-t-2 border-cyan-500/25" />
     <UiDecor class="bottom-0 left-0 w-48 h-48 border-l-2 border-b-2 border-secondary-500/25" />
-  </section>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -74,6 +74,7 @@
 
 import { revealDelay } from '~/utils/reveal'
 import { BadgeCheck, CheckCircle, ShieldCheck } from 'lucide-vue-next'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Translation helpers and the active language. */
 const { t } = useI18n()

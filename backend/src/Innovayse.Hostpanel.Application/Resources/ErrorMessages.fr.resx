@@ -405,6 +405,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Le package d'hébergement n'a pas pu être modifié. Veuillez réessayer ou contacter le support.</value>
   </data>
+<data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Le compte d'hébergement n'a pas pu être lu depuis le panneau de contrôle. Veuillez réessayer ou contacter le support.</value>
+  </data>
 <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Le service n'a pas pu être suspendu sur le serveur d'hébergement. Veuillez réessayer ou contacter le support.</value>
   </data>

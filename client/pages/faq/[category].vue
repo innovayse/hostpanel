@@ -44,10 +44,12 @@
             :to="localePath(SITE_FAQ_PATH)"
             variant="subtle"
             size="lg"
+            :title="t('faq.backToAll')"
+            :aria-label="t('faq.backToAll')"
             data-testid="faq-back-to-all"
           >
             <ArrowLeft :size="16" :stroke-width="2" class="mr-2" />
-            {{ t('faq.backToAll') }}
+            {{ t('common.back') }}
           </UiButton>
         </UiStack>
       </UiStack>

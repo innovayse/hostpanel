@@ -1,7 +1,7 @@
 <template>
   <NuxtLink
     :to="item.to"
-    class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200"
+    class="group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200"
     :class="active
       ? 'border border-primary-500/20 bg-primary-500/10 text-primary-600 dark:text-primary-400'
       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white'"
@@ -13,10 +13,10 @@
       :size="18"
       :stroke-width="2"
       :class="active
-        ? 'text-primary-600 dark:text-primary-400'
-        : 'text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300'"
+        ? 'shrink-0 text-primary-600 dark:text-primary-400'
+        : 'shrink-0 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300'"
     />
-    {{ item.label }}
+    <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="medium" class="min-w-0 break-words">{{ item.label }}</UiText>
   </NuxtLink>
 </template>
 
@@ -25,6 +25,7 @@
  * One link of the client sidebar: icon and label, highlighted when it is the current section.
  */
 import type { ClientNavItem } from '~/types/clientnavitem'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ClientLayoutNavItem. */
 interface Props {

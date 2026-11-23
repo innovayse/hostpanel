@@ -1,4 +1,6 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Microsoft.Extensions.Logging;
 
@@ -77,5 +79,13 @@ public sealed class NullCPanelProvisioningProvider : IProvisioningProvider
     {
         _logger.LogInformation("NullCPanelProvisioningProvider: change package ref={Ref} → {Package}", req.ProvisioningRef, req.NewPackage);
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="DomainRuleException">Always thrown with <c>PANEL_OPERATION_NOT_SUPPORTED</c>, like the real cPanel provider this stands in for.</exception>
+    public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct)
+    {
+        throw new DomainRuleException(
+            HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The cPanel provider does not read a single account.");
     }
 }

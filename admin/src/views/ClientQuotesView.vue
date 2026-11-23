@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { useQuotesStore } from '@/stores/quotes'
 import { useListQuery } from '@/composables/useListQuery'
 import { QuoteFilterKey, useQuoteFilters } from '@/composables/useQuoteFilters'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
 import { statusLabel, quoteStageTone } from '@/lib/tones'
@@ -20,16 +20,13 @@ import { formatPlainAmount } from '@/lib/money'
 import QuoteFilterFields from '@/components/billing/QuoteFilterFields.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -38,16 +35,15 @@ import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientQuotesView.schema'
 import type { QuoteListItem } from '@/types/quote'
-import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
+import { UiButtonVariant, UiButtonType } from '@/utils/ui/button'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { quoteAddPath, quotePath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiHeadingVariant } from '@/utils/ui/text'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -89,10 +85,7 @@ const deleting = ref(false)
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Loads the page the address names with the filters and search it holds.
@@ -127,7 +120,6 @@ const executeDelete = async (): Promise<void> => {
   if (!deleteTargetId.value) {
     return
   }
-  feedback.clear()
   deleting.value = true
   const ok = await store.deleteQuote(deleteTargetId.value)
   deleting.value = false
@@ -207,21 +199,20 @@ const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
 
 <template>
   <UiStack>
-    <UiSectionHeader :level="1" variant="card">
+    <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('shared.quotes') }}
       <template #actions>
         <UiButton :action="UiActionKind.Add"
-          type="button"
+          :type="UiButtonType.Button"
           :variant="UiButtonVariant.Primary"
           data-testid="client-quotes-create"
           @click="createQuote"
         >
-          {{ t('clients.clientQuotes.createNewQuote') }}
+          {{ t('shared.createQuote') }}
         </UiButton>
       </template>
     </UiSectionHeader>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-quotes-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -253,73 +244,58 @@ const quoteActions = (quote: QuoteListItem): UiMenuAction[] => [
         />
       </UiListToolbar>
 
-      <UiCard class="overflow-x-auto">
-        <UiTable
-          :density="UiTableDensity.Comfortable"
-          :loading="initialLoading"
-          :empty="!initialLoading && store.clientQuotes.length === 0"
-          data-testid="client-quotes-table"
-        >
-          <UiSchemaTableHead :columns="schema.table.columns" />
-          <UiTableBody divided>
-            <UiTableRow v-for="quote in store.clientQuotes" :key="quote.id" hoverable>
-              <UiTableCell muted>#{{ quote.id }}</UiTableCell>
-              <UiTableCell>{{ quote.subject }}</UiTableCell>
-              <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
-              <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="quoteStageTone(quote.stage)" small>
-                  {{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}
-                </UiBadge>
-              </UiTableCell>
-              <UiTableCell actions>
-                <UiRowActions :actions="quoteActions(quote)" :testid="`client-quotes-actions-${quote.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-          <template #empty>
-            <UiEmptyState
-              :title="narrowed ? t('clients.clientQuotes.noQuotesMatchYourFilters') : t('clients.clientQuotes.noQuotesFound')"
-              data-testid="client-quotes-empty"
-            >
-              <template v-if="activeCount > 0" #actions>
-                <UiButton :variant="UiButtonVariant.Link" data-testid="client-quotes-clear-empty" @click="clearAll">
-                  {{ t('clients.clientQuotes.clearFilters') }}
-                </UiButton>
-              </template>
-            </UiEmptyState>
-          </template>
-        </UiTable>
-        <UiStack
-          v-if="initialLoading || store.clientQuotesTotal > LEDGER_PAGE_SIZE"
-          direction="row"
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
-        >
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-            {{ t('clients.clientQuotes.clientquotestotalQuoteValue', { clientQuotesTotal: store.clientQuotesTotal }) }}
-          </UiText>
-          <UiPagination
-            :page="page"
-            :total="store.clientQuotesTotal"
-            :page-size="LEDGER_PAGE_SIZE"
-            :loading="initialLoading"
-            testid="client-quotes-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
-      </UiCard>
+      <UiDataTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        :empty="!initialLoading && store.clientQuotes.length === 0"
+        :page="page"
+        :total="store.clientQuotesTotal"
+        :page-size="LEDGER_PAGE_SIZE"
+        pagination-testid="client-quotes-pagination"
+        data-testid="client-quotes-table"
+        @update:page="setPage"
+      >
+        <UiSchemaTableHead :columns="schema.table.columns" />
+        <UiTableBody>
+          <UiTableRow v-for="quote in store.clientQuotes" :key="quote.id" hoverable>
+            <UiTableCell muted>#{{ quote.id }}</UiTableCell>
+            <UiTableCell>{{ quote.subject }}</UiTableCell>
+            <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
+            <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
+            <UiTableCell>
+              <UiBadge :tone="quoteStageTone(quote.stage)" small>
+                {{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}
+              </UiBadge>
+            </UiTableCell>
+            <UiTableCell actions>
+              <UiRowActions :actions="quoteActions(quote)" :testid="`client-quotes-actions-${quote.id}`" />
+            </UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+        <template #empty>
+          <UiEmptyState
+            :title="narrowed ? t('clients.clientQuotes.noQuotesMatchYourFilters') : t('clients.clientQuotes.noQuotesFound')"
+            data-testid="client-quotes-empty"
+          >
+            <template v-if="activeCount > 0" #actions>
+              <UiButton :variant="UiButtonVariant.Link" data-testid="client-quotes-clear-empty" @click="clearAll">
+                {{ t('shared.clearFilters') }}
+              </UiButton>
+            </template>
+          </UiEmptyState>
+        </template>
+      </UiDataTable>
     </template>
 
     <UiDialog
       v-if="showDeleteModal"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientQuotes.deleteQuote')"
       :message="t('clients.clientQuotes.confirmDeleteQuote', { id: deleteTargetId })"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="executeDelete"
       @close="dismissDelete"
     />

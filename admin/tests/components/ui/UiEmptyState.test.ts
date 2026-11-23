@@ -51,4 +51,10 @@ describe('UiEmptyState', () => {
 
     expect(wrapper.classes()).toContain('py-12')
   })
+
+  it('lets the actions wrap and stay centred, so two long buttons do not overflow a phone', () => {
+    const wrapper = mount(UiEmptyState, { props: { title: 'Nothing' }, slots: { actions: '<b />' } })
+
+    expect(wrapper.get('[data-testid="ui-empty-state-actions"]').classes()).toEqual(expect.arrayContaining(['flex-wrap', 'justify-center']))
+  })
 })

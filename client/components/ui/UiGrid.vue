@@ -12,12 +12,12 @@
  * from `lg`), so a screen never repeats `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`.
  */
 import { computed } from 'vue'
-import { UiGap, UiGridColumns } from '~/utils/ui/enums'
+import { UiGap, UiGridColumns, UiGridTag } from '~/utils/ui/enums'
 
 /** Props of UiGrid. */
 interface Props {
   /** Tag to render (use `ul` for a list of cards). */
-  as?: string
+  as?: `${UiGridTag}`
   /** Responsive column preset. */
   cols?: `${UiGridColumns}`
   /** Space between cells. */
@@ -26,7 +26,7 @@ interface Props {
 
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
-  as: 'div',
+  as: UiGridTag.Div,
   cols: UiGridColumns.Two,
   gap: UiGap.Md,
 })

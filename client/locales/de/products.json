@@ -20,7 +20,6 @@
     },
     "pricing": {
       "title": "Wählen Sie Ihren Tarif",
-      "trial": "Kostenlos testen",
       "cycles": {
         "monthly": "Monatlich",
         "quarterly": "Vierteljährlich",

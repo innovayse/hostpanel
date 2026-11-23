@@ -12,8 +12,6 @@
       "title": "Server Error",
       "message": "Something went wrong on our end. We're working to fix it."
     },
-    "goBack": "Go Back",
-    "goHome": "Go Home",
     "helpText": "If you need assistance, feel free to",
     "contactUs": "contact us",
     "default": {

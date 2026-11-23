@@ -115,7 +115,7 @@ watch(filters, (val) => {
 </script>
 
 <template>
-  <div class="space-y-3">
+  <div class="@container space-y-3">
     <div
       v-for="(f, i) in filters"
       :key="f.key"
@@ -135,8 +135,8 @@ watch(filters, (val) => {
         </UiIconButton>
       </div>
 
-      <!-- Controls: one column on a phone, field + condition + value side by side from sm up -->
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <!-- Controls: one column while the editor is narrow (a phone, or a side panel), field + condition + value side by side once it is wide enough -->
+      <div class="grid grid-cols-1 gap-3 @lg:grid-cols-3">
         <UiSelect v-model="f.field" :options="fieldOptions" :placeholder="t('ui.uiAdvancedFilters.selectField')" />
         <UiSelect v-model="f.condition" :options="conditionOptions" :placeholder="t('ui.uiAdvancedFilters.exactMatch')" />
         <UiInput

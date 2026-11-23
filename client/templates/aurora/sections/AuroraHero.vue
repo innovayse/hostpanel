@@ -1,14 +1,14 @@
 <template>
   <UiStack gap="none" class="min-w-0">
     <UiBadge v-if="badge" variant="primary" rounded class="gap-2.5 self-start" data-testid="hero-badge">
-      <span class="h-[7px] w-[7px] rounded-full bg-ok" />
+      <UiDot size="sm" class="bg-ok" />
       {{ badge }}
     </UiBadge>
 
     <UiHeading :level="1" size="display" class="font-display leading-[1.08]" :class="badge ? 'mt-[22px]' : ''" data-testid="hero-title">
-      {{ t('aurora.hero.titleLine1') }}<br>
-      {{ t('aurora.hero.titleLine2') }}<br>
-      <UiText as="span" size="inherit" tone="inherit" weight="bold" class="bg-hero-grad bg-clip-text text-transparent">
+      <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="block">{{ t('aurora.hero.titleLine1') }}</UiText>
+      <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="block">{{ t('aurora.hero.titleLine2') }}</UiText>
+      <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="block bg-hero-grad bg-clip-text text-transparent">
         {{ t('aurora.hero.titleAccent') }}
       </UiText>
     </UiHeading>
@@ -32,7 +32,7 @@
         data-testid="hero-cta-secondary"
         :class="[LINE_BUTTON, 'px-[26px] py-[15px] text-base']"
       >
-        {{ t('aurora.hero.ctaSecondary') }}
+        {{ t('aurora.actions.talkToSpecialist') }}
       </UiButton>
     </UiStack>
 
@@ -57,6 +57,7 @@
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
 import { SITE_CONTACT_PATH, SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

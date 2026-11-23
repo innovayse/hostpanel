@@ -23,6 +23,7 @@ import { EMPTY_VALUE } from '@/lib/format'
 import { TLD_PERIODS, calcMargin, marginTone } from '@/lib/tldPricing'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -62,12 +63,12 @@ const emit = defineEmits<{
         <UiTableHeader numeric>{{ t('settings.tldConfigForm.margin') }}</UiTableHeader>
       </UiTableRow>
     </UiTableHead>
-    <UiTableBody divided>
+    <UiTableBody>
       <UiTableRow v-for="period in TLD_PERIODS" :key="period">
         <UiTableCell muted>
           {{ period }} {{ Number(period) === 1 ? t('shared.year') : t('settings.tldConfigForm.years') }}
         </UiTableCell>
-        <UiTableCell class="pr-2">
+        <UiTableCell>
           <UiStepper
             :model-value="cost[period] ?? 0"
             :step="0.01"
@@ -77,7 +78,7 @@ const emit = defineEmits<{
             @update:model-value="emit('update:cost', period, $event)"
           />
         </UiTableCell>
-        <UiTableCell class="pr-2">
+        <UiTableCell>
           <UiStepper
             :model-value="sell[period] ?? 0"
             :step="0.01"
@@ -89,14 +90,14 @@ const emit = defineEmits<{
         </UiTableCell>
         <UiTableCell numeric>
           <UiTooltip v-if="!comparable" :text="t('settings.tldConfigForm.marginDifferentCurrencies')">
-            <UiText tone="muted" size="sm" class="font-medium" tabindex="0" :data-testid="`${testid}-margin-${period}`">
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="font-medium" tabindex="0" :data-testid="`${testid}-margin-${period}`">
               {{ EMPTY_VALUE }}
             </UiText>
           </UiTooltip>
           <UiText
             v-else
             :tone="marginTone(cost[period], sell[period])"
-            size="sm"
+            :size="UiTextSize.Sm"
             class="font-medium"
             :data-testid="`${testid}-margin-${period}`"
           >

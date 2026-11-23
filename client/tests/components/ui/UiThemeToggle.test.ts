@@ -79,7 +79,7 @@ describe('ThemeToggle', () => {
     const wrapper = mountWithKit(ThemeToggle, { props: { variant: 'bare', size: 'lg' }, attrs: { class: 'h-10 border-classic-border' } })
 
     const button = wrapper.find('[data-testid="theme-toggle"]')
-    expect(button.classes()).toEqual(expect.arrayContaining(['w-10', 'h-10', 'border-classic-border']))
+    expect(button.classes()).toEqual(expect.arrayContaining(['w-11', 'h-11', 'sm:w-10', 'sm:h-10', 'border-classic-border']))
     expect(wrapper.find('[data-testid="theme-toggle-sun"]').attributes('width')).toBe('20')
   })
 })

@@ -6,23 +6,21 @@
       :lead="t('nova.performance.lead')"
     />
 
-    <UiBalancedGrid v-if="stats.length" as="ul" :count="stats.length" class="mt-10" data-testid="nova-performance-stats">
-      <li v-for="stat in stats" :key="stat.key" :data-testid="`nova-performance-stat-${stat.key}`">
+    <UiBalancedGrid v-if="stats.length" :as="UiGridTag.Ul" :count="stats.length" class="mt-10" data-testid="nova-performance-stats">
+      <UiStack v-for="stat in stats" :key="stat.key" :as="UiStackTag.Li" gap="none" :data-testid="`nova-performance-stat-${stat.key}`">
         <UiCard padding="lg" class="h-full text-center !border-nova-border !bg-nova-bg">
-          <span class="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-nova-surface-2 text-nova-brand">
-            <Icon :name="PERFORMANCE_STAT_CARDS[stat.key].icon" class="h-[22px] w-[22px]" aria-hidden="true" />
-          </span>
-          <UiText as="p" size="inherit" tone="inherit" class="mt-4 text-[28px] font-extrabold tracking-tight text-nova-ink">
+          <UiIconTile :icon="PERFORMANCE_STAT_CARDS[stat.key].icon" size="lg" tone="nova" class="mx-auto" />
+          <UiText :as="UiTextTag.P" size="inherit" tone="inherit" class="mt-4 text-[28px] font-extrabold tracking-tight text-nova-ink">
             {{ stat.value }}
           </UiText>
-          <UiText as="p" size="inherit" tone="inherit" class="mt-1 text-[14px] text-nova-muted">
+          <UiText :as="UiTextTag.P" size="inherit" tone="inherit" class="mt-1 text-[14px] text-nova-muted">
             {{ t(PERFORMANCE_STAT_CARDS[stat.key].titleKey) }}
           </UiText>
         </UiCard>
-      </li>
+      </UiStack>
     </UiBalancedGrid>
 
-    <UiGrid v-if="features.length" as="ul" cols="3" gap="lg" class="mt-10">
+    <UiGrid v-if="features.length" :as="UiGridTag.Ul" cols="3" gap="lg" class="mt-10">
       <NovaFeatureCard v-for="feature in features" :key="feature.key" :feature="feature" />
     </UiGrid>
   </UiSection>
@@ -42,6 +40,7 @@ import NovaFeatureCard from '~/templates/nova/sections/FeatureCard.vue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { PERFORMANCE_FEATURES, PERFORMANCE_STAT_CARDS } from '~/templates/nova/content'
 import { useVisibleFeatures } from '~/templates/nova/features'
+import { UiGridTag, UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

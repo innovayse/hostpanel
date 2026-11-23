@@ -4,13 +4,19 @@
 
     <!-- Native disclosure on purpose: see the script header. -->
     <UiStack gap="sm" class="mt-9">
-      <details
+      <UiText
         v-for="item in faqs"
         :key="item.id"
+        :as="UiTextTag.Details"
+        size="inherit"
+        tone="inherit"
         class="group rounded-2xl border border-nova-border bg-nova-surface px-5"
         :data-testid="`nova-faq-${item.id}`"
       >
-        <summary
+        <UiText
+          :as="UiTextTag.Summary"
+          size="inherit"
+          tone="inherit"
           class="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 py-4 text-[16px] font-semibold text-nova-ink marker:content-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nova-brand"
         >
           <UiHeading :level="3" size="bare" class="min-w-0 text-[16px] font-semibold">
@@ -21,11 +27,11 @@
             class="h-5 w-5 shrink-0 text-nova-muted transition-transform group-open:rotate-180"
             aria-hidden="true"
           />
-        </summary>
+        </UiText>
         <UiText size="inherit" tone="inherit" class="pb-5 text-[15px] leading-[1.7] text-nova-muted">
           {{ item.answer }}
         </UiText>
-      </details>
+      </UiText>
     </UiStack>
 
     <UiStack v-if="hasMore" direction="row" class="mt-6">
@@ -60,6 +66,7 @@ import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import { useStorefrontStore } from '~/stores/storefront'
 import { SITE_FAQ_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the section copy, and the active language. */
 const { t, locale } = useI18n()

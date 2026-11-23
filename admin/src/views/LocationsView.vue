@@ -20,6 +20,8 @@ import type { ServerLocation } from '@/types/serverlocation'
 import { storefrontTestIds } from '@/types/storefront'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { EMPTY_VALUE } from '@/lib/format'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import schema from '@/views/LocationsView.schema'
 
 const { t } = useI18n()
@@ -80,19 +82,15 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
     :testids="testids"
     :title="t(navTitleKey(AppRoute.StorefrontLocations))"
     :subtitle="t('storefront.locations.subtitle')"
-    :add-label="t('storefront.locations.add')"
+    :add-label="t('storefront.locations.create')"
     :empty-label="t('storefront.locations.empty')"
     :delete-title="t('storefront.locations.deleteTitle')"
-    :edit-label="t('storefront.locations.edit')"
-    :delete-label="t('storefront.locations.delete')"
     :move-up-label="t('storefront.list.moveUp')"
     :move-down-label="t('storefront.list.moveDown')"
     :columns="columns"
     :items="store.items"
     :loading="store.loading"
     :error="store.error"
-    :action-error="store.actionError"
-    :outcome="list.outcome.value"
     :saving-order="list.savingOrder.value"
     :delete-target="list.deleteTarget.value"
     :deleting="list.deleting.value"
@@ -107,14 +105,14 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
   >
     <template #row="{ item }">
       <UiTableCell>
-        <UiBadge tone="neutral" small>{{ item.countryCode }}</UiBadge>
+        <UiBadge :tone="UiTone.Neutral" small>{{ item.countryCode }}</UiBadge>
       </UiTableCell>
       <UiTableCell>
-        <UiText tone="primary" size="lg" class="font-medium">{{ nameOf(item) }}</UiText>
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-medium">{{ nameOf(item) }}</UiText>
       </UiTableCell>
       <UiTableCell muted>{{ cityOf(item) || EMPTY_VALUE }}</UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? 'success' : 'neutral'" small>
+        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
           {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
         </UiBadge>
       </UiTableCell>

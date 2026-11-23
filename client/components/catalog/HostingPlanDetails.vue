@@ -1,5 +1,5 @@
 <template>
-  <section class="py-8 md:py-20 bg-ui-surface relative overflow-hidden [.tpl-classic_&]:bg-classic-page md:[.tpl-classic_&]:py-12" data-testid="hosting-plan-details">
+  <UiStack :as="UiStackTag.Section" gap="none" class="py-8 md:py-20 bg-ui-surface relative overflow-hidden [.tpl-classic_&]:bg-classic-page md:[.tpl-classic_&]:py-12" data-testid="hosting-plan-details">
     <UiDecor class="inset-0">
       <UiDecor class="inset-0 bg-gradient-to-r from-secondary-500/5 via-transparent to-primary-500/5" />
       <UiDecor class="top-1/3 left-1/4 w-[400px] h-[400px] bg-primary-500/10 rounded-full blur-[130px] animate-blob animation-delay-4000" />
@@ -11,7 +11,7 @@
     <UiDecor class="top-0 right-0 w-48 h-48 border-r-2 border-t-2 border-secondary-500/25" />
     <UiDecor class="bottom-0 left-0 w-48 h-48 border-l-2 border-b-2 border-primary-500/25" />
 
-    <UiContainer class="relative z-10">
+    <UiContainer class="relative z-10 w-full">
       <UiStack gap="lg">
         <!-- Billing cycles -->
         <UiCard
@@ -29,8 +29,10 @@
               :data-testid="`hosting-plan-cycle-${option.cycle}`"
               @click="emit('update:selectedCycle', option.cycle)"
             >
-              <span class="flex flex-col items-center"><span class="text-xs font-semibold">{{ option.label }}</span>
-              <span class="text-base font-bold mt-1">{{ option.price }}</span></span>
+              <UiStack :as="UiStackTag.Span" gap="none" align="center">
+                <UiText :as="UiTextTag.Span" size="xs" weight="semibold" tone="inherit">{{ option.label }}</UiText>
+                <UiText :as="UiTextTag.Span" weight="bold" tone="inherit" class="mt-1">{{ option.price }}</UiText>
+              </UiStack>
             </UiButton>
           </UiGrid>
         </UiCard>
@@ -44,7 +46,7 @@
           :class="revealDelay(100)"
         >
           <UiHeading :level="2" size="subsection" class="text-xl mb-6">{{ $t('hosting.includedFeatures') }}</UiHeading>
-          <UiGrid as="ul" cols="1" gap="sm" class="md:grid-cols-2">
+          <UiGrid :as="UiGridTag.Ul" cols="1" gap="sm" class="md:grid-cols-2">
             <UiListItem
               v-for="(feature, index) in features"
               :key="feature"
@@ -52,19 +54,21 @@
               :class="revealDelay(index * 50)"
             >
               <CheckCircle :size="16" :stroke-width="2" class="text-primary-600 dark:text-primary-400 flex-shrink-0 [.tpl-classic_&]:text-classic-brand" />
-              <span class="text-sm">{{ feature }}</span>
+              <UiText :as="UiTextTag.Span" size="sm" tone="inherit">{{ feature }}</UiText>
             </UiListItem>
           </UiGrid>
         </UiCard>
 
         <!-- Closing call to action -->
-        <div
+        <UiStack
+          gap="none"
+          align="center"
           class="text-center pt-4 animate-reveal-up motion-reduce:animate-none"
           :class="revealDelay(200)"
         >
           <UiButton
+            variant="primary"
             size="lg"
-            class="px-10 py-4 font-bold bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 hover:scale-[1.02] shadow-lg shadow-primary-500/30 [.tpl-classic_&]:bg-none [.tpl-classic_&]:shadow-none [.tpl-classic_&]:hover:scale-100 [.tpl-classic_&]:font-semibold"
             data-testid="hosting-plan-order-bottom"
             @click="emit('order')"
           >
@@ -75,10 +79,10 @@
             <Lock :size="12" :stroke-width="2" class="inline mr-1" />
             {{ $t('cart.secureCheckout') }}
           </UiText>
-        </div>
+        </UiStack>
       </UiStack>
     </UiContainer>
-  </section>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -93,6 +97,7 @@ import { revealDelay } from '~/utils/reveal'
 import { CheckCircle, Lock, ShoppingCart } from 'lucide-vue-next'
 import type { PricingCycle } from '~/types/pricingcycle'
 import type { PricingCycleOption } from '~/types/pricingcycleoption'
+import { UiGridTag, UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of HostingPlanDetails. */
 interface Props {

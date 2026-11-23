@@ -18,6 +18,7 @@ import { reportFilterLabel } from '@/lib/reportsSchema'
 import { ReportRetentionGroupKind } from '@/types/reportretention'
 import type { ReportRetention, ReportRetentionGroup, ReportRetentionRow } from '@/types/reportretention'
 import type { ReportTableData } from '@/types/reporttabledata'
+import { UiLabelVariant } from '@/utils/ui/text'
 import schema from '@/views/CustomerRetentionView.schema'
 
 const { t } = useI18n()
@@ -85,7 +86,7 @@ const activeLabel = (row: ReportRetentionRow): string => {
 <template>
   <ReportPage :retry="load" :schema="schema" :table="table">
     <template #filters>
-      <UiLabel variant="inline">
+      <UiLabel :variant="UiLabelVariant.Inline">
         <UiCheckbox v-model="includeActive" data-testid="report-include-active" />
         {{ includeActiveLabel }}
       </UiLabel>

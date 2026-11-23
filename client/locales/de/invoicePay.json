@@ -10,10 +10,9 @@
     "payByCardHosted": "Mit Karte bezahlen",
     "noPaymentOption": "Die Online-Zahlung ist derzeit nicht verfügbar. Bitte kontaktieren Sie den Support, um diese Rechnung zu bezahlen.",
     "hostedHint": "Wählen Sie Mit Karte bezahlen, um die Zahlung auf der sicheren Seite des Zahlungsanbieters abzuschließen.",
-    "retry": "Erneut versuchen",
     "bankTransfer": {
       "hint": "Bezahlen Sie per Banküberweisung. Sie sehen die Bankdaten und einen Verwendungszweck für die Überweisung, und die Rechnung wird als bezahlt markiert, sobald wir den Geldeingang bestätigt haben.",
-      "choose": "Per Banküberweisung bezahlen",
+      "choose": "Banküberweisung",
       "heading": "Per Banküberweisung bezahlen",
       "awaiting": "Warten auf Zahlungsbestätigung",
       "intro": "Überweisen Sie den Betrag mit den untenstehenden Angaben. Geben Sie den Verwendungszweck genau wie angezeigt an, damit wir Ihre Zahlung dieser Rechnung zuordnen können.",
@@ -25,7 +24,6 @@
       "iban": "IBAN",
       "swift": "SWIFT / BIC",
       "copy": "{field} kopieren",
-      "copied": "Kopiert",
       "noDetails": "Für diese Überweisung sind noch keine Bankverbindungsdaten hinterlegt. Bitte kontaktieren Sie uns für das Zielkonto und geben Sie die oben genannte Referenz an.",
       "afterwards": "Wir haben Ihnen diese Angaben auch per E-Mail gesendet. Die Rechnung bleibt offen, bis wir den Geldeingang auf unserem Konto sehen; das kann einige Bankarbeitstage dauern."
     }

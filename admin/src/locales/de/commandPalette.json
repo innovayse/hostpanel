@@ -2,7 +2,6 @@
   "title": "Befehlspalette",
   "open": "Im Panel suchen",
   "placeholder": "Seiten und Aktionen suchen",
-  "close": "Schließen",
   "empty": "Keine Ergebnisse für \"{query}\"",
   "hintNavigate": "Pfeiltasten zum Navigieren",
   "hintOpen": "Eingabetaste zum Öffnen",
@@ -14,7 +13,6 @@
   },
   "actions": {
     "newClient": "Kunde erstellen",
-    "newTicket": "Support-Ticket erstellen",
     "newQuote": "Angebot erstellen",
     "addTransaction": "Transaktion hinzufügen",
     "newBillableItem": "Abrechenbare Position erstellen"

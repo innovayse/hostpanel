@@ -1,7 +1,7 @@
 <template>
   <UiStack
     v-if="hasNotices"
-    as="section"
+    :as="UiStackTag.Section"
     gap="md"
     :aria-labelledby="headingId"
     data-testid="service-notices"
@@ -26,7 +26,7 @@
     >
       {{ $t('client.services.setupRequiredNotice') }}
       <template #action>
-        <UiButton :to="clientServiceSetupPath(serviceId)" size="sm" class="shrink-0" data-testid="service-complete-setup">
+        <UiButton variant="primary" :to="clientServiceSetupPath(serviceId)" size="sm" class="shrink-0" data-testid="service-complete-setup">
           <Zap :size="14" class="mr-1.5" />
           {{ $t('client.services.completeSetup') }}
         </UiButton>
@@ -51,6 +51,7 @@ import { CancellationType } from '~/types/cancellationtype'
 import type { CancellationStatus } from '~/types/cancellationstatus'
 import type { ClientService } from '~/types/clientservice'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of ServiceNotices. */
 interface Props {

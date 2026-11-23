@@ -1,6 +1,7 @@
 using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain;
+using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Provisioning.Extensions;
 
@@ -27,6 +28,20 @@ public static class PanelOutcomeExtensions
             PanelRefusalReason.LimitReached => HostpanelErrorCodes.PANEL_LIMIT_REACHED,
             PanelRefusalReason.AccessDenied => HostpanelErrorCodes.PANEL_ACCESS_DENIED,
             _ => HostpanelErrorCodes.PANEL_REFUSED,
+        };
+    }
+
+    /// <summary>Maps the state a panel plugin reports for an account to the host's own.</summary>
+    /// <param name="status">The state the plugin reported.</param>
+    /// <returns>The host's account status.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="status"/> is a value the host does not know, such as one a newer SDK adds.</exception>
+    public static HostedAccountStatus ToHostedAccountStatus(this PanelAccountStatus status)
+    {
+        return status switch
+        {
+            PanelAccountStatus.Active => HostedAccountStatus.Active,
+            PanelAccountStatus.Suspended => HostedAccountStatus.Suspended,
+            _ => throw new ArgumentOutOfRangeException(nameof(status), status, "The host does not know this account status."),
         };
     }
 

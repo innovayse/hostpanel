@@ -11,6 +11,7 @@ import { mountRouted } from '../helpers/mount'
 import { callOf, json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -74,7 +75,7 @@ describe('ClientCreditView', () => {
     })
     const wrapper = await mountCredit()
 
-    expect(wrapper.find('[data-testid="client-credit-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-credit-table"] [data-testid="ui-table-empty"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="client-credit-balance"]').text()).toContain('7.00')
   })
 
@@ -122,7 +123,7 @@ describe('ClientCreditView', () => {
     await wrapper.get('[data-testid="client-credit-form"]').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-credit-feedback"]').text()).toBe('There is not enough credit.')
+    expect(toastMessages()).toContain('There is not enough credit.')
   })
 
   it('keeps the loaded page and says why when a later page cannot be read', async () => {
@@ -154,7 +155,7 @@ describe('ClientCreditView', () => {
 
     expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(2)
     expect(wrapper.get('[data-testid="client-credit-form"]').findAll('[data-testid="ui-field-skeleton"]')).toHaveLength(3)
-    expect(wrapper.get('[data-testid="ui-detail-card-history"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-credit-table"]').find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="client-credit-submit"]').attributes('disabled')).toBeDefined()
   })
 })

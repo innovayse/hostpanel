@@ -87,8 +87,7 @@
     },
     "contact": {
       "title": "Privacy Concerns?",
-      "description": "Our Data Protection Team is ready to assist you with any questions regarding your information at {site}.",
-      "link": "Get in Touch"
+      "description": "Our Data Protection Team is ready to assist you with any questions regarding your information at {site}."
     }
   }
 }

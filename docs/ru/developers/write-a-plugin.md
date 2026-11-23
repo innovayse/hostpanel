@@ -422,6 +422,7 @@ if (call.Host is IPluginHostPaymentApi payment)
 | `provisioningPanel` | только `Provisioning` |  | `IProvisioningPanelPlugin` |
 | `provisioningPanelLogin` | только `Provisioning` | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
 | `provisioningPanelPackages` | только `Provisioning` | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `provisioningPanelAccount` | только `Provisioning` | `provisioningPanel` | `IProvisioningPanelAccountPlugin` |
 | `virtualServer` | только `Provisioning` |  | `IVirtualServerPlugin` |
 | `virtualServerList` | только `Provisioning` |  | `IVirtualServerListPlugin` |
 | `virtualServerSnapshots` | только `Provisioning` | `virtualServer` | `IVirtualServerSnapshotPlugin` |
@@ -515,8 +516,11 @@ if (call.Host is IPluginHostPaymentApi payment)
 | `ListAccountsAsync`, `GetUsageAsync` | отчёт об использовании диска: аккаунты постранично, затем использование каждого |
 | `TestConnectionAsync` | «Проверить соединение» на сервере и периодическая синхронизация числа аккаунтов |
 | `GetLoginDetailsAsync` | данные для входа в аккаунт, только если объявлено `provisioningPanelLogin`; без него хост отвечает, что действие не поддерживается |
+| `GetAccountAsync` | синхронизация услуги с панелью и чтение после создания аккаунта: один аккаунт по его ссылке, только если объявлено `provisioningPanelAccount`; без него хост отвечает, что действие не поддерживается |
 
 `provisioningPanelPackages` принимается, но `ListPackagesAsync` хост пока не вызывает.
+
+**Чтение одного аккаунта.** Плагин, который также реализует `IProvisioningPanelAccountPlugin` и объявляет `provisioningPanelAccount`, позволяет хосту прочитать один аккаунт по его `ProvisioningRef`: статус, домен, пакет и, если панель его сообщает, `IpAddress` (адрес IPv4 или IPv6 в текстовом виде, всё остальное игнорируется). Поле, которое панель оставила `null`, показывается как не сообщённое. Хост читает аккаунт сразу после создания, чтобы записать IP-адрес в услугу, и когда сотрудник нажимает **Синхронизировать с панелью** в услуге. Чтение ничего не меняет в панели. Синхронизация считает источником истины платформу: через перечисленные выше операции она просит панель приостановить или возобновить аккаунт в соответствии с услугой и сменить пакет на пакет продукта, устанавливает сохранённый пароль только если сотрудник отметил флажок и записывает IP-адрес, который сообщила панель. Домен только показывается и никогда не меняется. Без этой возможности синхронизация отвечает `PANEL_OPERATION_NOT_SUPPORTED`, а после создания аккаунта неудачное чтение только записывается в журнал, и выдача услуги проходит.
 
 **Какой плагин обслуживает сервер.** Идентификатор модуля сервера сравнивается с `serverModules` каждого плагина без учёта регистра,
 поэтому сервер, сохранённый как `DirectAdmin`, обслуживает плагин, объявивший `directadmin`. Ничего сохранённого не переписывается: услуга

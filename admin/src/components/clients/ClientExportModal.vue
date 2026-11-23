@@ -14,9 +14,12 @@ import UiLabel from '@/components/ui/UiLabel.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiGap } from '@/utils/ui/layout'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { MimeType } from '@/types/http'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -125,9 +128,9 @@ const download = async (): Promise<void> => {
 </script>
 
 <template>
-  <UiDialog :title="t('clients.clientExport.exportData')" size="md" @close="emit('close')">
+  <UiDialog :title="t('shared.export')" :size="UiDialogSize.Md" @close="emit('close')">
     <UiStack>
-      <UiAlert v-if="store.exportError" variant="error" data-testid="clients-export-error">
+      <UiAlert v-if="store.exportError" :variant="UiTone.Danger" data-testid="clients-export-error">
         {{ store.exportError }}
       </UiAlert>
       <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ clientName }}</UiText>
@@ -143,7 +146,7 @@ const download = async (): Promise<void> => {
         />
         {{ t('shared.selectAll') }}
       </UiLabel>
-      <UiGrid :columns="2" gap="sm">
+      <UiGrid :columns="2" :gap="UiGap.Sm" container>
         <UiLabel v-for="field in FIELDS" :key="field.key" :variant="UiLabelVariant.Inline">
           <UiCheckbox
             :model-value="selected[field.key] === true"
@@ -162,14 +165,14 @@ const download = async (): Promise<void> => {
       </UiText>
     </UiStack>
     <template #footer>
-      <UiButton :action="UiActionKind.Download"
+      <UiButton :action="UiActionKind.Export"
         :variant="UiButtonVariant.Primary"
         :loading="downloading"
         :disabled="!anySelected"
         data-testid="clients-export-download"
         @click="download"
       >
-        {{ t('shared.download') }}
+        {{ t('shared.export') }}
       </UiButton>
     </template>
   </UiDialog>

@@ -12,7 +12,7 @@
     <template v-else>
       <UiCard data-testid="invoice-header">
         <UiStack direction="row" justify="between" align="start" wrap class="mb-4">
-          <UiStack gap="xs">
+          <UiStack gap="xs" class="min-w-0">
             <UiStack direction="row" align="center" gap="sm" wrap>
               <UiHeading :level="1" size="subsection" data-testid="invoice-heading">
                 {{ $t('client.invoices.heading', { id: invoice.id }) }}
@@ -21,21 +21,22 @@
             </UiStack>
             <UiText size="sm" tone="muted">{{ $t('client.invoices.issued') }} {{ formatDate(invoice.invoiceDate) }}</UiText>
           </UiStack>
-          <UiStack direction="row" align="center" gap="sm">
+          <UiStack direction="row" align="center" gap="sm" wrap>
             <ClientStatusBadge :status="invoice.status" />
             <UiButton
               v-if="canDownload"
               variant="secondary"
               :loading="paymentStore.pdfDownloading"
+              :hint="$t('client.invoices.downloadPdf')"
               data-testid="invoice-download"
               @click="paymentStore.downloadInvoicePdf(String(route.params.id))"
             >
               <Download :size="16" :stroke-width="2" class="mr-2" />
-              {{ $t('client.invoices.downloadPdf') }}
+              {{ $t('common.pdf') }}
             </UiButton>
-            <UiButton v-if="isOutstanding" :to="payPath" data-testid="invoice-pay-now">
+            <UiButton v-if="isOutstanding" variant="primary" :to="payPath" data-testid="invoice-pay-now">
               <CreditCard :size="16" :stroke-width="2" class="mr-2" />
-              {{ $t('client.invoices.payNow') }}
+              {{ $t('client.invoices.pay') }}
             </UiButton>
           </UiStack>
         </UiStack>
@@ -44,7 +45,7 @@
           {{ paymentStore.pdfError }}
         </UiAlert>
 
-        <UiGrid as="dl" cols="3" gap="md">
+        <UiGrid :as="UiGridTag.Dl" cols="3" gap="md">
           <UiDescriptionItem :label="$t('client.invoices.dueDate')" :value="formatDate(invoice.dueDate)" :value-class="isOverdue ? '!text-red-600 dark:!text-red-400' : ''" />
           <!-- `paidAt` is a moment, not a calendar day, so it is rendered with its time. -->
           <UiDescriptionItem v-if="formatDateTime(invoice.paidAt) !== EMPTY_DATE" :label="$t('client.invoices.datePaid')" :value="formatDateTime(invoice.paidAt)" />
@@ -61,7 +62,7 @@
       <!-- Pay with the credit balance: offered only while money is owed, the invoice is no top-up and there is credit. -->
       <ClientInvoicesApplyCreditCard :invoice="invoice" @applied="reload" />
 
-      <UiTable data-testid="invoice-items">
+      <UiTable scrollable :label="$t('client.invoices.colDescription')" data-testid="invoice-items">
         <UiTableHead>
           <UiTableRow :hoverable="false">
             <UiTableTh>{{ $t('client.invoices.colDescription') }}</UiTableTh>
@@ -71,10 +72,10 @@
         <UiTableBody>
           <UiTableRow v-for="item in invoice.items" :key="item.id">
             <UiTableTd>
-              <UiText as="span" size="sm" tone="muted">{{ item.description }}</UiText>
+              <UiText :as="UiTextTag.Span" size="sm" tone="muted">{{ item.description }}</UiText>
               <UiText
                 v-if="item.discountPercent > 0"
-                as="span"
+                :as="UiTextTag.Span"
                 size="xs"
                 tone="muted"
                 data-testid="invoice-item-discount"
@@ -83,26 +84,26 @@
               </UiText>
             </UiTableTd>
             <UiTableTd align="right">
-              <UiText as="span" size="sm" weight="medium">{{ money(item.amount) }}</UiText>
+              <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ money(item.amount) }}</UiText>
             </UiTableTd>
           </UiTableRow>
         </UiTableBody>
         <UiTableFoot>
           <UiTableRow :hoverable="false">
-            <UiTableTd><UiText as="span" size="sm" tone="muted">{{ $t('client.invoices.subtotal') }}</UiText></UiTableTd>
-            <UiTableTd align="right"><UiText as="span" size="sm">{{ money(invoice.subTotal) }}</UiText></UiTableTd>
+            <UiTableTd><UiText :as="UiTextTag.Span" size="sm" tone="muted">{{ $t('client.invoices.subtotal') }}</UiText></UiTableTd>
+            <UiTableTd align="right"><UiText :as="UiTextTag.Span" size="sm">{{ money(invoice.subTotal) }}</UiText></UiTableTd>
           </UiTableRow>
           <UiTableRow v-if="invoice.tax > 0" :hoverable="false">
-            <UiTableTd><UiText as="span" size="sm" tone="muted">{{ $t('client.invoices.tax') }}</UiText></UiTableTd>
-            <UiTableTd align="right"><UiText as="span" size="sm">{{ money(invoice.tax) }}</UiText></UiTableTd>
+            <UiTableTd><UiText :as="UiTextTag.Span" size="sm" tone="muted">{{ $t('client.invoices.tax') }}</UiText></UiTableTd>
+            <UiTableTd align="right"><UiText :as="UiTextTag.Span" size="sm">{{ money(invoice.tax) }}</UiText></UiTableTd>
           </UiTableRow>
           <UiTableRow v-if="invoice.credit > 0" :hoverable="false">
-            <UiTableTd><UiText as="span" size="sm" tone="muted">{{ $t('client.invoices.creditApplied') }}</UiText></UiTableTd>
-            <UiTableTd align="right"><UiText as="span" size="sm" tone="success">-{{ money(invoice.credit) }}</UiText></UiTableTd>
+            <UiTableTd><UiText :as="UiTextTag.Span" size="sm" tone="muted">{{ $t('client.invoices.creditApplied') }}</UiText></UiTableTd>
+            <UiTableTd align="right"><UiText :as="UiTextTag.Span" size="sm" tone="success">-{{ money(invoice.credit) }}</UiText></UiTableTd>
           </UiTableRow>
           <UiTableRow :hoverable="false">
-            <UiTableTd><UiText as="span" weight="bold">{{ $t('client.invoices.total') }}</UiText></UiTableTd>
-            <UiTableTd align="right"><UiText as="span" weight="bold">{{ money(invoice.total) }}</UiText></UiTableTd>
+            <UiTableTd><UiText :as="UiTextTag.Span" weight="bold">{{ $t('client.invoices.total') }}</UiText></UiTableTd>
+            <UiTableTd align="right"><UiText :as="UiTextTag.Span" weight="bold">{{ money(invoice.total) }}</UiText></UiTableTd>
           </UiTableRow>
         </UiTableFoot>
       </UiTable>
@@ -114,9 +115,9 @@
       <UiAlert v-if="isOutstanding" variant="info" data-testid="invoice-unpaid-banner">
         {{ $t('client.invoices.unpaidBanner') }}
         <template #action>
-          <UiButton :to="payPath" size="sm" class="flex-shrink-0" data-testid="invoice-pay-amount">
+          <UiButton variant="primary" :to="payPath" size="sm" class="flex-shrink-0" data-testid="invoice-pay-amount">
             <CreditCard :size="16" :stroke-width="2" class="mr-2" />
-            {{ $t('client.invoices.payAmount') }} {{ money(balanceDue(invoice)) }}
+            {{ $t('client.invoices.pay') }} {{ money(balanceDue(invoice)) }}
           </UiButton>
         </template>
       </UiAlert>
@@ -136,6 +137,7 @@ import { InvoiceStatus } from '~/types/invoicestatus'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { EMPTY_DATE, formatDate, formatDateTime } from '~/utils/formatDate'
 import { balanceDue, isInvoiceOutstanding, isInvoiceOverdue } from '~/utils/invoice'
+import { UiGridTag, UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

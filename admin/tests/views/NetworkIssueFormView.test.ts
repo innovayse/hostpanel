@@ -10,6 +10,7 @@ import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/ty
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** The issue the edit-mode tests load. */
 const issue = {
@@ -93,7 +94,7 @@ describe('NetworkIssueFormView', () => {
     })
   })
 
-  it('shows the API sentence next to the save button when the save is refused', async () => {
+  it('toasts the API sentence when the save is refused', async () => {
     stubRoutes({ 'POST /api/network-issues': () => problem('Title is taken.', 409) })
     const wrapper = await mountView(NetworkIssueFormView)
 
@@ -101,7 +102,7 @@ describe('NetworkIssueFormView', () => {
     await wrapper.get('[data-testid="network-issue-form-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="network-issue-form-save-error"]').text()).toBe('Title is taken.')
+    expect(toastMessages()).toEqual(['Title is taken.'])
   })
 
   it('offers a retry instead of the form when the issue cannot be loaded', async () => {

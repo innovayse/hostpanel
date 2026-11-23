@@ -1,7 +1,7 @@
 {
   "list": {
     "subtitle": "Escribe un correo una vez y envíalo a los clientes que elijas",
-    "add": "Nueva campaña",
+    "create": "Crear campaña",
     "scheduledAt": "Programado para",
     "sentAt": "Enviado",
     "delivery": "Entrega",
@@ -11,8 +11,6 @@
     "emptyDescription": "Crea una campaña para enviar un correo a un grupo de clientes.",
     "searchPlaceholder": "Buscar por asunto",
     "noMatches": "Ninguna campaña coincide con tus filtros",
-    "clearFilters": "Borrar filtros",
-    "totalCount": "Campañas: {totalCount}",
     "deleteTitle": "Eliminar campaña",
     "deleteMessage": "¿Seguro que quieres eliminar este borrador de campaña? Esta acción no se puede deshacer."
   },
@@ -45,7 +43,6 @@
   "daysPlaceholder": "Días",
   "daysSuffix": "días de antelación",
   "daysAgoSuffix": "días o más",
-  "removeSegment": "Quitar",
   "stats": {
     "total": "Destinatarios",
     "pending": "Pendiente",
@@ -80,9 +77,6 @@
     "audienceCount": "Clientes coincidentes: {count}",
     "audienceIncomplete": "Completa todas las reglas para ver cuántos clientes coinciden.",
     "saveDraft": "Guardar borrador",
-    "preview": "Vista previa",
-    "schedule": "Programar",
-    "sendNow": "Enviar ahora",
     "cancelSchedule": "Cancelar programación",
     "sendNowTitle": "Enviar la campaña ahora",
     "sendNowMessage": "La campaña se guarda y se envía a todos los clientes coincidentes a la vez. Esta acción no se puede deshacer.",

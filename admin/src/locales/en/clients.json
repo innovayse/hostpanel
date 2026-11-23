@@ -7,11 +7,10 @@
     "item": "Item",
     "rate": "Rate",
     "service": "Service",
-    "saveEntries": "Save Entries",
     "pleaseFillInAtLeastOne": "Please fill in at least one row with a description and hours."
   },
   "addTransaction": {
-    "addNewTransaction": "Add New Transaction",
+    "title": "Add transaction",
     "transactionDescription": "Transaction description",
     "externalReference": "External reference",
     "invoiceIdOptional": "Invoice (optional)",
@@ -27,7 +26,6 @@
     "passwordIsRequired": "Password is required"
   },
   "clientExport": {
-    "exportData": "Export Data",
     "chooseWhichDataPointsTo": "Choose which data points to include in the export.",
     "generatingAnExportForA": "Generating an export for a client with a substantial amount of history may take a while.",
     "profileData": "Profile Data",
@@ -51,7 +49,7 @@
   },
   "contactForm": {
     "editContact": "Edit Contact",
-    "addContact": "Add Contact",
+    "addContact": "Add contact",
     "profile": "Profile",
     "contactType": "Contact Type",
     "address": "Address",
@@ -72,7 +70,7 @@
     "deleted": "DNS record deleted."
   },
   "domainContact": {
-    "modifyContactDetails": "Modify Contact Details",
+    "modifyContactDetails": "Edit contact details",
     "organization": "Organization",
     "123MainSt": "123 Main St",
     "postalCode": "Postal Code"
@@ -108,7 +106,6 @@
     "transferOwnershipToThisUser": "Transfer ownership to this user",
     "owner": "Owner",
     "noAccountsLinked": "No accounts linked",
-    "permanentlyDelete": "Permanently Delete",
     "deleteUser": "Delete User",
     "firstNamePlaceholder": "First name",
     "lastNamePlaceholder": "Last name",
@@ -118,7 +115,7 @@
   "addClient": {
     "addNewClient": "Add New Client",
     "createANewClientAccount": "Create a new client account",
-    "createClient": "Create Client",
+    "createClient": "Create client",
     "accountOwner": "Account Owner",
     "createANewUser": "Create a new user",
     "associateWithAnExistingUser": "Associate with an existing user",
@@ -132,27 +129,23 @@
   "cancellationRequests": {
     "cancellationRequests": "Cancellation Requests",
     "reviewAndProcessServiceCancellation": "Review and process service cancellation requests",
-    "deleteRequest": "Delete request",
-    "totalcountRequestValue": "Requests: {totalCount}",
     "noCancellationRequestsFound": "No cancellation requests found",
     "searchRequests": "Search by reason or id",
     "noRequestsMatchYourFilters": "No cancellation requests match your filters",
-    "clearFilters": "Clear filters",
     "deleteCancellationRequest": "Delete Cancellation Request",
     "areYouSureYouWant": "Are you sure you want to delete this cancellation request?",
     "requestDeleted": "Cancellation request deleted."
   },
   "clientBillableItems": {
     "billableItems": "Billable Items",
-    "addTimeBillingEntries": "Add Time Billing Entries",
-    "addBillableItem": "Add Billable Item",
+    "addTimeBillingEntries": "Add time billing",
+    "addBillableItem": "Add billable item",
     "uninvoicedItemsLength": "Uninvoiced Items ({length})",
     "uninvoicedItemsAmountLength": "Uninvoiced items: {amount} ({length})",
-    "invoiceSelectedItems": "Invoice Selected Items",
+    "invoiceSelectedItems": "Invoice selected items",
     "invoiceSelected": "Invoice",
     "noUninvoicedBillableItems": "No uninvoiced billable items.",
     "invoicedItems": "Invoiced Items",
-    "invoicedtotalcountItemValue": "Items: {invoicedTotalCount}",
     "noInvoicedBillableItems": "No invoiced billable items.",
     "searchItems": "Search by description or id",
     "noUninvoicedItemsMatchYourFilters": "No uninvoiced billable items match your filters.",
@@ -169,7 +162,7 @@
   },
   "clientContacts": {
     "contactsLength": "Contacts ({length})",
-    "addContact": "Add Contact",
+    "addContact": "Add contact",
     "noContactsAddedYet": "No contacts added yet",
     "deleteContact": "Delete Contact",
     "areYouSureYouWant": "Are you sure you want to delete this contact? This cannot be undone.",
@@ -197,10 +190,10 @@
     "registrarCommands": "Registrar Commands",
     "register": "Register",
     "renew": "Renew",
-    "modifyContactDetails": "Modify Contact Details",
-    "getEppCode": "Get EPP Code",
-    "disableIdProtection": "Disable ID Protection",
-    "enableIdProtection": "Enable ID Protection",
+    "modifyContactDetails": "Edit contact",
+    "getEppCode": "Get EPP code",
+    "disableIdProtection": "Disable ID protection",
+    "enableIdProtection": "Enable ID protection",
     "datesBilling": "Dates & Billing",
     "registrationPeriod": "Registration Period",
     "years": "Years",
@@ -212,13 +205,12 @@
     "registrarLock": "Registrar Lock",
     "renewDomain": "Renew Domain",
     "numberOfYears": "Number of years",
-    "cancelTransfer": "Cancel Transfer",
+    "cancelTransfer": "Cancel transfer",
     "cancelThisTransferAtThe": "Cancel this pending transfer at the registrar?",
     "registerDomain": "Register Domain",
     "registerThisDomainWithThe": "Register this domain with the registrar?",
     "eppAuthorizationCode": "EPP Authorization Code",
     "useThisCodeToTransfer": "Use this code to transfer your domain to another registrar. Keep it private.",
-    "copy": "Copy",
     "registrarCommandDone": "Done. The registrar accepted the change.",
     "contactSaved": "Contact details saved."
   },
@@ -227,7 +219,6 @@
   },
   "clientEmails": {
     "emails": "Emails",
-    "totalcountEmailValue": "Emails: {totalCount}",
     "status": "Status",
     "delivered": "Delivered",
     "failure": {
@@ -243,14 +234,12 @@
     "searchEmails": "Search emails"
   },
   "clientInvoices": {
-    "createInvoice": "Create Invoice",
+    "createInvoice": "Create invoice",
     "newInvoice": "New Invoice",
     "selectDueDate": "Select due date",
     "createAsDraft": "Create as Draft",
-    "addItem": "Add Item",
-    "createInvoice2": "Create Invoice",
+    "addItem": "Add item",
     "allStatuses": "All Statuses",
-    "clientinvoicestotalInvoiceValue": "Invoices: {clientInvoicesTotal}",
     "deleteInvoice": "Delete Invoice",
     "confirmDeleteInvoice": "Are you sure you want to delete invoice #{id}?",
     "bulkActionDone": "Done for the selected invoices.",
@@ -259,20 +248,16 @@
   "clientNav": {
     "strip": "Client section tabs"
   },
-  "clientLayout": {
-    "exportData": "Export Data"
-  },
   "clientLog": {
     "activityLog": "Activity Log",
     "logEntry": "Log Entry",
     "user": "User",
-    "totalcountEntrValue": "Entries: {totalCount}",
     "searchLog": "Search the activity log"
   },
   "clientOpenTicket": {
     "ticketSubject": "Ticket subject",
     "describeTheIssue": "Describe the issue",
-    "openTicket": "Open Ticket"
+    "createTicket": "Create ticket"
   },
   "clientProfile": {
     "statusEffects": {
@@ -302,32 +287,27 @@
     "noContactsAddedYet": "No contacts added yet"
   },
   "clientQuotes": {
-    "createNewQuote": "Create New Quote",
     "createDate": "Create Date",
     "noQuotesFound": "No quotes found.",
-    "clientquotestotalQuoteValue": "Quotes: {clientQuotesTotal}",
     "deleteQuote": "Delete Quote",
     "confirmDeleteQuote": "Are you sure you want to delete quote #{id}?",
     "quoteDeleted": "Quote deleted.",
-    "noQuotesMatchYourFilters": "No quotes match your filters",
-    "clearFilters": "Clear filters"
+    "noQuotesMatchYourFilters": "No quotes match your filters"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Service #{id}: {productName}",
-    "loginToControlPanel": "Open Panel",
+    "loginToControlPanel": "Open control panel",
     "serviceInfo": "Service Info",
     "order": "Order #",
     "server": "Server",
     "provisioningRef": "Provisioning Ref",
-    "dedicatedIp": "Dedicated IP",
+    "dedicatedIp": "Assigned IP",
     "moduleCommands": "Module Commands",
     "serviceTerminated": "Service Terminated",
-    "create": "Create",
     "terminate": "Terminate",
     "suspend": "Suspend",
-    "changePackage": "Change Package",
+    "changePackage": "Change package",
     "unsuspend": "Unsuspend",
-    "changeStatus": "Change Status",
     "addons": "Addons",
     "noAddonsFound": "No addons found.",
     "billing": "Billing",
@@ -347,7 +327,6 @@
     "enterANewPasswordFor": "Enter a new password for the hosting account.",
     "newPassword": "New Password",
     "enterNewPassword": "Enter new password",
-    "confirm": "Confirm",
     "enterTheNewHostingPackage": "Enter the new hosting package name.",
     "packageName": "Package Name",
     "eGStarterPlan": "e.g. starter_plan",
@@ -355,31 +334,44 @@
     "areYouSureYouWant": "Are you sure you want to suspend this service? The client will lose access until the service is unsuspended.",
     "terminateService": "Terminate Service",
     "thisActionCannotBeUndone": "This action cannot be undone. The service will be permanently terminated.",
-    "saveServiceInfo": "Save service info",
-    "saveBilling": "Save billing",
-    "saveAutomation": "Save automation",
-    "saveNotes": "Save notes",
-    "saveTerminationDate": "Save termination date",
     "changeStatusTo": "Change status to {status}",
     "provisioned": "Service created on the server.",
     "passwordChanged": "Password changed.",
     "packageChanged": "Package changed.",
     "suspended": "Service suspended.",
     "unsuspended": "Service unsuspended.",
-    "terminated": "Service terminated."
+    "terminated": "Service terminated.",
+    "syncWithPanel": "Sync with panel",
+    "syncIntro": "The account is read from the panel once and brought in step with this service. The status and the package of this service are applied to the panel, and the IP address the panel reports is recorded here.",
+    "syncNotChanged": "The domain and the username are never changed on the panel; a difference is only reported.",
+    "syncPushPassword": "Also set the panel password",
+    "syncPushPasswordHint": "Sets the password stored on this service on the panel. A panel never reports its passwords, so this is done only when you ask.",
+    "syncedWithPanel": "Service synced with the panel.",
+    "syncPanelValue": "Panel: {value}",
+    "syncField": {
+      "status": "Status",
+      "package": "Package",
+      "domain": "Domain",
+      "password": "Password",
+      "ipAddress": "IP address"
+    },
+    "syncOutcome": {
+      "inSync": "In step",
+      "applied": "Applied",
+      "failed": "Failed",
+      "unsupported": "Cannot be reconciled"
+    }
   },
   "clientServicesList": {
     "nextDue": "Next Due",
-    "totalcountServiceValue": "Services: {totalCount}",
     "noServicesFoundForThis": "No services found for this client",
     "searchServices": "Search by domain, product or ID",
-    "noServicesMatchYourFilters": "No services match your filters",
-    "clearFilters": "Clear filters"
+    "noServicesMatchYourFilters": "No services match your filters"
   },
   "clientsList": {
     "manageYourClientAccounts": "Manage your client accounts",
     "searchPlaceholder": "Search by name, company or ID",
-    "addClient": "Add Client",
+    "createClient": "Create client",
     "searchByEmail": "Search by email",
     "searchByPhone": "Search by phone",
     "2fa": "2FA",
@@ -391,7 +383,6 @@
     "off": "Off",
     "noClientsMatchYourFilters": "No clients match your filters",
     "noClientsFound": "No clients found",
-    "clearFilters": "Clear filters",
     "suspended": "Suspended",
     "closed": "Closed"
   },
@@ -407,7 +398,6 @@
     "twoFactorAuth": "Two-Factor Auth",
     "contacts": "Contacts",
     "noAdditionalContacts": "No additional contacts",
-    "viewAll": "View All →",
     "invoicesBilling": "Invoices / Billing",
     "paid": "Paid",
     "draft": "Draft",
@@ -420,8 +410,6 @@
     "clientExpenses": "Client Expenses",
     "netIncome": "Net Income",
     "creditBalance": "Credit Balance",
-    "createInvoice": "Create Invoice",
-    "createNewQuote": "Create New Quote",
     "productsServices": "Products / Services",
     "activeServices": "Active Services",
     "activeservicescountTotalservicescountTotal": "{activeServicesCount} ({totalServicesCount} Total)",
@@ -429,7 +417,7 @@
     "acceptedquotescountTotalquotescountTotal": "{acceptedQuotesCount} ({totalQuotesCount} Total)",
     "openTickets": "Open Tickets",
     "openticketscountTotalticketscountTotal": "{openTicketsCount} ({totalTicketsCount} Total)",
-    "viewAllTickets": "View all Tickets",
+    "viewAllTickets": "View all tickets",
     "recentEmails": "Recent Emails",
     "noEmailsSent": "No emails sent",
     "addNotesAboutThisClient": "Add notes about this client",
@@ -447,7 +435,6 @@
     "ticketSettings": "Ticket Settings",
     "noRepliesYet": "No replies yet",
     "typeYourReply": "Type your reply",
-    "reply": "Reply",
     "conversation": "Conversation",
     "staff": "Staff",
     "deleteTicket": "Delete Ticket",
@@ -459,45 +446,37 @@
   },
   "clientTickets": {
     "tickets": "Tickets",
-    "openNewTicket": "Open New Ticket +",
     "openedThisMonth": "Opened This Month",
     "openedLastMonth": "Opened Last Month",
     "openedThisYear": "Opened This Year",
     "openedLastYear": "Opened Last Year",
     "dateOpened": "Date Opened",
     "noDataAvailableInTable": "No data available in table",
-    "noTicketsMatchYourFilters": "No tickets match your filters",
-    "clearFilters": "Clear filters",
-    "totalcountTicketValue": "Tickets: {totalCount}"
+    "noTicketsMatchYourFilters": "No tickets match your filters"
   },
   "clientTransactions": {
-    "addNewTransaction": "Add New Transaction",
+    "addTransaction": "Add transaction",
     "totalIn": "Total In",
     "totalFees": "Total Fees",
     "totalOut": "Total Out",
-    "totalcountTransactionValue": "Transactions: {totalCount}",
     "deleteTransaction": "Delete Transaction",
     "confirmDeleteTransaction": "Are you sure you want to delete transaction #{id}?",
     "transactionAdded": "Transaction added.",
     "transactionDeleted": "Transaction deleted.",
-    "noTransactionsMatchYourFilters": "No transactions match your filters",
-    "clearFilters": "Clear filters"
+    "noTransactionsMatchYourFilters": "No transactions match your filters"
   },
   "clientUsers": {
     "usersLength": "Users ({length})",
-    "addUser": "Add User",
     "addUserToAccount": "Add User to Account",
-    "searchExisting": "Search Existing",
-    "inviteByEmail": "Invite by Email",
+    "searchExisting": "Search existing",
+    "inviteByEmail": "Invite by email",
     "permissions": "Permissions",
-    "addUser2": "Add User",
-    "sendInvite": "Send Invite",
+    "sendInvite": "Send invite",
     "role": "Role",
     "lastLogin": "Last Login",
     "owner": "Owner",
     "user": "User",
     "manage": "Manage",
-    "remove": "Remove",
     "noUsersLinkedToThis": "No users linked to this client.",
     "transferOwnership": "Transfer Ownership",
     "transfer": "Transfer",
@@ -522,19 +501,17 @@
   "manageUsers": {
     "manageUsers": "Manage Users",
     "viewAndManageUserAccounts": "View and manage user accounts",
-    "addClient": "Add Client",
     "searchByNameOrEmail": "Search by name or email",
     "lastLogin": "Last Login",
-    "manageUser": "Manage User",
-    "sendPasswordResetEmail": "Send Password Reset Email",
-    "totalcountUserValue": "Users: {totalCount}",
+    "sendPasswordResetEmail": "Send reset email",
     "noUsersFound": "No users found",
     "noUsersMatchYourSearch": "No users match your search",
     "passwordResetEmailSent": "Password reset email sent.",
     "never": "Never",
     "userSaved": "User saved.",
     "userDeleted": "User deleted.",
-    "passwordChanged": "Password changed."
+    "passwordChanged": "Password changed.",
+    "passwordsManagedBySso": "Passwords are managed in the sign-on service, so they cannot be changed or reset here."
   },
   "serviceAddons": {
     "serviceAddons": "Service Addons",
@@ -547,19 +524,18 @@
     "log": "Log"
   },
   "addExistingService": {
-    "open": "Add existing account",
+    "open": "Add account",
     "title": "Add an existing hosting account",
     "intro": "For an account that already exists on the server: restored, moved from another server, or set up by hand. The service starts Active; nothing is created on the panel and no email is sent.",
     "username": "Panel username",
     "recurringAmount": "Recurring amount",
     "startedAt": "Current period started",
-    "today": "Today",
-    "add": "Add service"
+    "today": "Today"
   },
   "vat": {
     "title": "VAT number",
     "none": "No VAT number is recorded. Enter it as the Tax ID in the client profile.",
-    "check": "Check again",
+    "check": "Check VAT number",
     "checked": "VAT number checked.",
     "checkedAt": "Checked {date}",
     "status": {
@@ -576,8 +552,8 @@
     "accountId": "Account ID",
     "accountIdHint": "The identifier that system gives this client.",
     "accountIdPlaceholder": "Enter the account ID",
-    "clear": "Clear link",
-    "clearConfirmTitle": "Clear the external account link?",
+    "remove": "Remove link",
+    "clearConfirmTitle": "Remove the external account link?",
     "clearConfirmMessage": "The client will no longer be linked to an account in the other system. You can link it again later.",
     "saved": "External account link saved.",
     "cleared": "External account link cleared.",
@@ -594,12 +570,10 @@
     "deduct": "Deduct credit",
     "reason": "Reason",
     "reasonPlaceholder": "Why the balance is adjusted",
-    "apply": "Apply",
     "adjusted": "The credit balance was adjusted and the client was told the new balance.",
     "history": "History",
     "historyEmpty": "No movements are recorded yet. A balance the client already had is not itemised.",
     "change": "Change",
-    "entriesCount": "{count} movements",
     "movement": {
       "AdminAdd": "Credit added by staff",
       "AdminDeduct": "Credit deducted by staff",
@@ -619,8 +593,8 @@
   "clientGroups": {
     "title": "Client Groups",
     "subtitle": "Segment clients with a discount and a colour.",
-    "add": "Add group",
-    "createTitle": "Add client group",
+    "add": "Create group",
+    "createTitle": "Create client group",
     "editTitle": "Edit client group",
     "empty": "No client groups yet.",
     "namePlaceholder": "For example Resellers",

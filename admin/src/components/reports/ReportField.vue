@@ -5,7 +5,9 @@
 import { computed } from 'vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { UiGap } from '@/utils/ui/layout'
 import type { ReportFieldWidth } from '@/utils/ui/reportField'
+import { UiLabelVariant } from '@/utils/ui/text'
 
 /** Props for ReportField. */
 const props = withDefaults(defineProps<{
@@ -30,8 +32,8 @@ const classes = computed<string>(() => widthClasses[props.width])
 </script>
 
 <template>
-  <UiStack gap="xs" :class="classes">
-    <UiLabel variant="field">
+  <UiStack :gap="UiGap.Xs" :class="classes">
+    <UiLabel :variant="UiLabelVariant.Field">
       {{ label }}
     </UiLabel>
     <slot />

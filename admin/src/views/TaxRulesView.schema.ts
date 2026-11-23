@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The tax rules list. */
 const schema: ListSkeletonSchema = {
@@ -21,7 +21,7 @@ const schema: ListSkeletonSchema = {
       { key: 'country', label: 'taxRules.table.country', align: UiAlign.Left },
       { key: 'region', label: 'taxRules.table.region', align: UiAlign.Left },
       { key: 'rate', label: 'taxRules.table.rate', numeric: true, size: UiColumnSize.Compact },
-      { key: 'enabled', label: 'taxRules.table.enabled', align: UiAlign.Left, size: UiColumnSize.Compact },
+      { key: 'enabled', label: 'taxRules.table.enabled', align: UiAlign.Left, kind: UiColumnKind.Status },
       { key: 'actions', label: 'taxRules.table.actions', actions: true },
     ],
   },

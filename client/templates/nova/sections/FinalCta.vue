@@ -21,7 +21,7 @@
 
       <UiStack direction="row" wrap justify="center" gap="sm" class="mt-9">
         <NovaCta :to="localePath(SITE_HOSTING_PATH)" size="lg" lift class="px-8" data-testid="nova-final-cta-primary">
-          {{ t('nova.finalCta.primary') }}
+          {{ t('nova.cta.getStarted') }}
         </NovaCta>
         <NovaCta
           :to="localePath(SITE_HOSTING_PLANS_PATH)"
@@ -30,7 +30,7 @@
           class="px-8 bg-nova-bg"
           data-testid="nova-final-cta-secondary"
         >
-          {{ t('nova.finalCta.secondary') }}
+          {{ t('nova.cta.seePlans') }}
         </NovaCta>
       </UiStack>
     </UiCard>

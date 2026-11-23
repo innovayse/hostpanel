@@ -176,6 +176,17 @@ describe('ClassicHosting', () => {
     expect(table.find('[data-testid="classic-hosting-compare-row-Backups"]').text()).toContain('hosting.comparison.notIncluded')
   })
 
+  it('draws the comparison table without a frame of its own, through the kit flush option', async () => {
+    const wrapper = await mountHosting({
+      plans: [{ id: 2, name: 'Starter' }, { id: 3, name: 'Business' }],
+      comparisonRows: [{ label: 'Disk', values: ['5 GB', '20 GB'] }, { label: 'Emails', values: ['10', '50'] }],
+    })
+
+    const frame = wrapper.find('[data-testid="classic-hosting-compare"] table').element.parentElement?.parentElement
+    expect(frame?.classList.contains('border')).toBe(false)
+    expect(frame?.classList.contains('bg-ui-surface')).toBe(false)
+  })
+
   it('hides the comparison table when the plans share too few lines', async () => {
     const wrapper = await mountHosting({ plans: [{ id: 2, name: 'Starter' }], comparisonRows: [{ label: 'Disk', values: ['5 GB'] }] })
 

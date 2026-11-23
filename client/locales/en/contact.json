@@ -31,7 +31,7 @@
       "consentPrefix": "I agree to the",
       "consentLink": "Privacy Policy",
       "consentSuffix": "and consent to be contacted about my inquiry",
-      "submit": "Send Message",
+      "submit": "Send message",
       "success": {
         "title": "Message sent successfully!",
         "subtitle": "We'll get back to you soon."
@@ -54,7 +54,7 @@
         "title": "Quick Connect",
         "telegram": "Telegram",
         "whatsapp": "WhatsApp",
-        "liveChat": "Live Chat",
+        "liveChat": "Live chat",
         "toggle": "Contact us"
       }
     },

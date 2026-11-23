@@ -37,15 +37,19 @@ describe('bootTheme', () => {
     expect(themeColors()).toEqual(['#070b18', '#070b18'])
   })
 
-  it('follows the system for "system", no choice or an unknown value', () => {
+  it('follows the system with no choice or an unknown value', () => {
     stubSchemeQuery(true)
-    expect(bootTheme(THEME_BOOT_CONFIG)).toBe(true)
-
-    window.localStorage.setItem(THEME_STORAGE_KEY, AdminTheme.System)
     expect(bootTheme(THEME_BOOT_CONFIG)).toBe(true)
 
     window.localStorage.setItem(THEME_STORAGE_KEY, 'sepia')
     expect(bootTheme(THEME_BOOT_CONFIG)).toBe(true)
+  })
+
+  it('lets a choice made on the page win over storage', () => {
+    stubSchemeQuery(false)
+    window.localStorage.setItem(THEME_STORAGE_KEY, AdminTheme.Dark)
+
+    expect(bootTheme(THEME_BOOT_CONFIG, AdminTheme.Light)).toBe(true)
   })
 
   it('falls back to dark without matchMedia', () => {

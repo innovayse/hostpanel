@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useServicesApi } from '@/composables/apis/useServicesApi'
-import { BillingCycle, ServiceStatus, type ServiceBillingTermsPayload, type ServiceHostingAccountPayload } from '@/types/service'
+import { BillingCycle, PanelSyncField, PanelSyncOutcome, ServiceStatus, type ServiceBillingTermsPayload, type ServiceHostingAccountPayload } from '@/types/service'
 import { json, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -91,6 +91,14 @@ describe('useServicesApi', () => {
 
     expect(await useServicesApi().getPanelLoginUrl(4)).toEqual({ url: 'https://panel.example/login' })
     expect(callOf(mock).url).toBe('/api/provisioning/4/cpanel-sso')
+  })
+
+  it('syncServiceWithPanel POSTs the password choice to the admin route and returns what was done', async () => {
+    const answer = { fields: [{ field: PanelSyncField.Status, outcome: PanelSyncOutcome.Applied, panelValue: 'Suspended' }] }
+    const mock = stubFetch(json(answer))
+
+    expect(await useServicesApi().syncServiceWithPanel(4, { pushPassword: true })).toEqual(answer)
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/services/4/sync-panel', method: 'POST', body: { pushPassword: true } })
   })
 
   it('provisioning commands POST to /provisioning with their bodies', async () => {

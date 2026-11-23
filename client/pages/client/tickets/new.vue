@@ -1,12 +1,17 @@
 <template>
   <UiStack gap="lg" class="max-w-2xl">
-    <UiBackLink :to="CLIENT_TICKETS_PATH" :label="$t('client.tickets.backTo')" testid="ticket-back" />
-
-    <UiPageHeader :title="$t('client.tickets.newTitle')" :description="$t('client.tickets.newSubtitle')" class="!mb-0" />
+    <UiPageHeader
+      :title="$t('client.tickets.newTitle')"
+      :description="$t('client.tickets.newSubtitle')"
+      :back-to="CLIENT_TICKETS_PATH"
+      :back-label="$t('client.tickets.backTo')"
+      back-testid="ticket-back"
+      class="!mb-0"
+    />
 
     <UiCard v-if="submitted" data-testid="ticket-success">
       <UiEmptyState :icon="CheckCircle" :title="$t('client.tickets.successTitle')" :description="$t('client.tickets.successSubtitle')">
-        <UiButton :to="CLIENT_TICKETS_PATH" data-testid="ticket-view-all">{{ $t('client.tickets.viewMyTickets') }}</UiButton>
+        <UiButton variant="primary" :to="CLIENT_TICKETS_PATH" data-testid="ticket-view-all">{{ $t('client.tickets.viewMyTickets') }}</UiButton>
       </UiEmptyState>
     </UiCard>
 
@@ -44,9 +49,9 @@
         />
 
         <template #actions>
-          <UiButton type="submit" :loading="ticketLoading" full-width data-testid="ticket-submit">
+          <UiButton variant="primary" type="submit" :loading="ticketLoading" full-width data-testid="ticket-submit">
             <Send v-if="!ticketLoading" :size="16" :stroke-width="2" class="mr-2" />
-            {{ $t('client.tickets.submit') }}
+            {{ $t('client.tickets.create') }}
           </UiButton>
         </template>
       </UiForm>

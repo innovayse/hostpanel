@@ -1,8 +1,8 @@
 <template>
   <UiStack direction="row" align="center" justify="between" gap="sm" :data-testid="testid">
-    <UiText as="span" size="sm" tone="muted">{{ label }}</UiText>
+    <UiText :as="UiTextTag.Span" size="sm" tone="muted">{{ label }}</UiText>
     <slot>
-      <UiText as="span" size="sm" weight="bold">{{ value }}</UiText>
+      <UiText :as="UiTextTag.Span" size="sm" weight="bold" class="min-w-0 break-words text-right">{{ value }}</UiText>
     </slot>
   </UiStack>
 </template>
@@ -12,6 +12,7 @@
  * One label/value line of a summary card: the label muted on the left, the value bold on the
  * right. The default slot replaces the value when it needs more than text (a badge).
  */
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ClientSummaryRow. */
 interface Props {

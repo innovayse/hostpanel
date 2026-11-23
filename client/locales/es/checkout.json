@@ -31,13 +31,11 @@
       "status": "Pago",
       "paid": "Pagado",
       "amount": "Importe",
-      "setupService": "Configurar mi servicio",
       "viewInvoices": "Ver facturas",
       "domain": "Dominio",
       "action": "Acción",
       "registration": "Registro",
-      "transfer": "Transferencia",
-      "manageDomain": "Gestionar su dominio"
+      "transfer": "Transferencia"
     },
     "secureCheckout": "Pago seguro",
     "identifyPrompt": "¿Cómo debemos identificarle?",

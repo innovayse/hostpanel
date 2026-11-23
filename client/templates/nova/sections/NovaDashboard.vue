@@ -17,16 +17,16 @@
         </NovaCta>
       </template>
       <template #end>
-        <div class="n-reveal">
+        <UiStack gap="none" class="n-reveal">
           <NovaDashboardWindow />
-        </div>
+        </UiStack>
       </template>
     </UiSplit>
   </UiSection>
 
-  <div v-else class="n-reveal min-w-0">
+  <UiStack v-else gap="none" class="n-reveal min-w-0">
     <NovaDashboardWindow />
-  </div>
+  </UiStack>
 </template>
 
 <script setup lang="ts">

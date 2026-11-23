@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Provisioning;
+using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -45,4 +46,8 @@ public sealed class StubProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct)
         => Task.CompletedTask;
+
+    /// <inheritdoc/>
+    public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct)
+        => Task.FromResult(new HostedAccountState(HostedAccountStatus.Active, null, null, null));
 }

@@ -26,10 +26,13 @@ import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -135,14 +138,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UiDialog :title="t('clients.addTransaction.addNewTransaction')" size="lg" @close="emit('close')">
+  <UiDialog :title="t('clients.addTransaction.title')" :size="UiDialogSize.Lg" @close="emit('close')">
     <UiStack>
-      <UiAlert v-if="saveError" variant="error" data-testid="clients-add-transaction-error">
+      <UiAlert v-if="saveError" :variant="UiTone.Danger" data-testid="clients-add-transaction-error">
         {{ saveError }}
       </UiAlert>
 
       <UiForm stacked @submit="handleSave">
-        <UiGrid :columns="2">
+        <UiGrid :columns="2" container>
           <UiStack>
             <UiField :label="t('shared.date')">
               <UiDatePicker v-model="date" />
@@ -152,7 +155,7 @@ onMounted(async () => {
                 <UiInput
                   :id="id"
                   v-model="description"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('clients.addTransaction.transactionDescription')"
                   data-testid="clients-add-transaction-description"
                 />
@@ -163,7 +166,7 @@ onMounted(async () => {
                 <UiInput
                   :id="id"
                   v-model="transactionId"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('clients.addTransaction.externalReference')"
                   data-testid="clients-add-transaction-reference"
                 />
@@ -211,9 +214,9 @@ onMounted(async () => {
           </UiStack>
         </UiGrid>
 
-        <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm">
+        <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
           <UiButton :action="UiActionKind.Cancel"
-            type="button"
+            :type="UiButtonType.Button"
             :variant="UiButtonVariant.Secondary"
             data-testid="clients-add-transaction-cancel"
             @click="emit('close')"
@@ -221,7 +224,7 @@ onMounted(async () => {
             {{ t('shared.cancel') }}
           </UiButton>
           <UiButton :action="UiActionKind.Save"
-            type="submit"
+            :type="UiButtonType.Submit"
             :variant="UiButtonVariant.Primary"
             :loading="internalSaving"
             data-testid="clients-add-transaction-save"

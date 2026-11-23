@@ -5,49 +5,43 @@
  * The search text and the page live in the address (`useListQuery`), so a reload or a shared link restores the same
  * list, which the API narrows before it pages. The list and every refusal sentence come from the users store; this
  * screen only renders them and routes the row actions (manage, reset email, change password). Every action reports
- * its outcome above the table (success, or the API's sentence); a refused load shows the sentence with a Retry button.
+ * its outcome as a toast (success, or the API's sentence), which is fixed on the window so it is seen wherever the page
+ * is scrolled and above an open dialog; a refused load shows
+ * the sentence with a Retry button. Where the sign-on service owns the passwords, the two password actions are not
+ * offered and a note says where passwords are managed.
  */
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
 import { useUsersStore } from '@/stores/clientAccounts'
+import { AuthMode } from '@/types/auth'
 import type { UserDetail, UserListItem } from '@/types/useraccount'
 import UserFormModal from '@/components/clients/UserFormModal.vue'
 import ChangePasswordModal from '@/components/clients/ChangePasswordModal.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ManageUsersView.schema'
 import { useListQuery } from '@/composables/useListQuery'
-import { NOTICE_VISIBLE_MS } from '@/lib/limits'
-import { AppRoute } from '@/lib/routes'
-import { UiTableDensity } from '@/utils/ui/injection'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { EMPTY_VALUE } from '@/lib/format'
-import { UiTextSize } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
-import { UiButtonVariant } from '@/utils/ui/button'
-import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
-
-/** The header actions, each with its icon; on a phone only the primary one stays a button. */
-const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('clients.manageUsers.addClient'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'users-add-client', to: AppRoute.ClientsAdd },
-])
 
 /** Users store: the paged list, the detail and the refusal sentences. */
 const store = useUsersStore()
@@ -67,37 +61,32 @@ const changingPasswordFor = ref<string | null>(null)
 /** True while saving a password change. */
 const savingPassword = ref(false)
 
-/**
- * Message reporting a failed action, null when there is nothing to report (owned by the store).
- *
- * Kept separate from `store.error`, which reports a failed *list load* and is rendered in place
- * of the table; an action failure must not hide the table the user is still working in.
- */
-const actionError = computed(() => store.actionError)
+/** The outcome of the last action, reported as a toast, which stays in view wherever the page is scrolled. */
+const banner = useOutcomeToast()
 
-/** Message reporting a completed action, null when there is nothing to report. */
-const actionSuccess = ref<string | null>(null)
-
-/** Timer that clears the success message. */
-const successTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+/** Auth store: it knows whether the sign-on service owns the accounts, and with them their passwords. */
+const auth = useAuthStore()
 
 /**
- * Shows a success message and clears it after a few seconds.
- *
- * Auto-clearing matches the sibling client screens (ClientUsersView, ClientContactsView): a
- * success needs acknowledging, not dismissing, which is why only this half expires.
- *
- * @param message - The message to display.
+ * Whether the sign-on service owns the accounts' passwords. The API refuses every password action then, so the screen
+ * does not offer them and says where passwords are managed instead.
  */
-const showSuccess = (message: string): void => {
-  store.actionError = null
-  actionSuccess.value = message
-  if (successTimer.value !== null) {
-    clearTimeout(successTimer.value)
+const passwordsManagedBySso = computed<boolean>(() => auth.mode === AuthMode.Sso)
+
+/**
+ * Reports the outcome of a store action: the success sentence as a toast, or the API's own sentence of a refusal.
+ *
+ * @param succeeded - Whether the API accepted the action; when false the store holds the refusal in `actionError`.
+ * @param successText - The sentence a success is reported with.
+ * @returns The same flag, so a caller can continue only after a success.
+ */
+const report = (succeeded: boolean, successText: string): boolean => {
+  if (succeeded) {
+    banner.show(successText, false)
+  } else if (store.actionError) {
+    banner.show(store.actionError, true)
   }
-  successTimer.value = setTimeout(() => {
-    actionSuccess.value = null
-  }, NOTICE_VISIBLE_MS)
+  return succeeded
 }
 
 /**
@@ -141,12 +130,10 @@ const handleSaveUser = async (
     return
   }
   savingUser.value = true
-  actionSuccess.value = null
-  const saved = await store.updateUser(editingUser.value.id, data)
+  const saved = report(await store.updateUser(editingUser.value.id, data), t('clients.manageUsers.userSaved'))
   savingUser.value = false
   if (saved) {
     editingUser.value = null
-    showSuccess(t('clients.manageUsers.userSaved'))
     await reload()
   }
 }
@@ -156,10 +143,8 @@ const handleDeleteUser = async (): Promise<void> => {
   if (!editingUser.value) {
     return
   }
-  actionSuccess.value = null
-  if (await store.deleteUser(editingUser.value.id)) {
+  if (report(await store.deleteUser(editingUser.value.id), t('clients.manageUsers.userDeleted'))) {
     editingUser.value = null
-    showSuccess(t('clients.manageUsers.userDeleted'))
     await reload()
     await stepBackWhenEmpty(store.users.length === 0)
   }
@@ -171,9 +156,7 @@ const handleDeleteUser = async (): Promise<void> => {
  * @param userId - The user's Identity ID.
  */
 const handleSendPasswordReset = async (userId: string): Promise<void> => {
-  if (await store.sendPasswordReset(userId)) {
-    showSuccess(t('clients.manageUsers.passwordResetEmailSent'))
-  }
+  report(await store.sendPasswordReset(userId), t('clients.manageUsers.passwordResetEmailSent'))
 }
 
 /**
@@ -195,10 +178,8 @@ const handleChangePassword = async (password: string): Promise<void> => {
     return
   }
   savingPassword.value = true
-  actionSuccess.value = null
-  if (await store.changePassword(changingPasswordFor.value, password)) {
+  if (report(await store.changePassword(changingPasswordFor.value, password), t('clients.manageUsers.passwordChanged'))) {
     changingPasswordFor.value = null
-    showSuccess(t('clients.manageUsers.passwordChanged'))
   }
   savingPassword.value = false
 }
@@ -218,13 +199,6 @@ const formatDate = (dateStr: string | null): string => {
     hour: '2-digit', minute: '2-digit',
   })
 }
-
-/** Stops the pending success-message timer. */
-onUnmounted(() => {
-  if (successTimer.value !== null) {
-    clearTimeout(successTimer.value)
-  }
-})
 
 /**
  * Row actions for a managed user.
@@ -248,8 +222,12 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
    * @returns Nothing.
    */
   const onPassword = (): void => openChangePasswordModal(user.id)
+  const manage: UiMenuAction = { label: t('shared.edit'), icon: Icon.Settings, testid: `users-manage-${user.id}`, onSelect: onManage }
+  if (passwordsManagedBySso.value) {
+    return [manage]
+  }
   return [
-    { label: t('clients.manageUsers.manageUser'), icon: Icon.Settings, testid: `users-manage-${user.id}`, onSelect: onManage },
+    manage,
     { label: t('clients.manageUsers.sendPasswordResetEmail'), icon: Icon.Mail, testid: `users-reset-${user.id}`, onSelect: onReset },
     { label: t('shared.changePassword'), icon: Icon.Key, testid: `users-password-${user.id}`, onSelect: onPassword },
   ]
@@ -257,17 +235,13 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
 </script>
 
 <template>
-  <UiStack gap="md" class="w-full">
-    <!-- Action feedback: sits above the table so a failed action never replaces it -->
-    <UiAlert v-if="actionSuccess" variant="success" data-testid="users-action-success">
-      {{ actionSuccess }}
-    </UiAlert>
-    <UiAlert v-if="actionError" variant="error" data-testid="users-action-error">
-      {{ actionError }}
+  <UiStack :gap="UiGap.Md">
+    <!-- Where passwords are managed, when this screen cannot set them -->
+    <UiAlert v-if="passwordsManagedBySso" :variant="UiTone.Info" data-testid="users-passwords-managed-by-sso">
+      {{ t('clients.manageUsers.passwordsManagedBySso') }}
     </UiAlert>
 
-    <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
-    </UiPageHeader>
+    <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
     <!-- Search box: the search is the only thing the identity provider can narrow the list by -->
     <UiListToolbar
@@ -286,16 +260,20 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       @retry="reload"
     />
 
-    <!-- Table (also draws the loading and the empty state) -->
-    <UiTable
+    <!-- Table card: the rows, the loading and empty states and the pager -->
+    <UiDataTable
       v-else
-      :density="UiTableDensity.Comfortable"
       :loading="initialLoading"
-      :empty="!store.loading && store.users.length === 0"
+      :empty="!initialLoading && store.users.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="users-pagination"
       data-testid="users-table"
+      @update:page="setPage"
     >
       <UiSchemaTableHead :columns="schema.table.columns" />
-      <UiTableBody divided>
+      <UiTableBody>
         <UiTableRow v-for="user in store.users" :key="user.id" hoverable :data-testid="`users-row-${user.id}`">
           <UiTableCell muted>{{ user.clientId ?? EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>{{ user.firstName }}</UiTableCell>
@@ -310,26 +288,7 @@ const manageUserActions = (user: UserListItem): UiMenuAction[] => {
       <template #empty>
         <UiEmptyState :title="narrowed ? t('clients.manageUsers.noUsersMatchYourSearch') : t('clients.manageUsers.noUsersFound')" />
       </template>
-    </UiTable>
-
-    <!-- Pagination -->
-    <UiStack
-      v-if="!store.error && store.totalCount > store.pageSize"
-      direction="row"
-      align="center"
-      justify="between"
-    >
-      <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
-        {{ t('clients.manageUsers.totalcountUserValue', { totalCount: store.totalCount }) }}
-      </UiResultCount>
-      <UiPagination
-        :page="page"
-        :total="store.totalCount"
-        :page-size="store.pageSize"
-        testid="users-pagination"
-        @update:page="setPage"
-      />
-    </UiStack>
+    </UiDataTable>
 
     <!-- Manage User Modal -->
     <Teleport to="body">

@@ -1,5 +1,5 @@
 <template>
-  <section v-if="faqs.length" :class="sectionClasses" data-testid="sections-faq">
+  <UiSection v-if="faqs.length" :contained="false" padding="lg" :class="sectionClasses" data-testid="sections-faq">
     <!-- Background (aurora and nova only; the classic template stays flat) -->
     <UiDecor v-if="!isClassic" class="inset-0">
       <UiDecor class="inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-secondary-500/5" />
@@ -38,7 +38,7 @@
         :label="$t('faq.filterLabel')"
       />
 
-      <div>
+      <UiStack gap="none">
         <!-- Questions -->
         <UiAccordion
           :key="activeCategory"
@@ -50,12 +50,12 @@
         />
 
         <!-- View all FAQs (when limited) -->
-        <div v-if="hasMore" class="text-center mb-8">
+        <UiStack v-if="hasMore" align="center" gap="none" class="mb-8">
           <UiButton variant="outline" size="lg" :to="localePath(SITE_FAQ_PATH)" data-testid="faq-view-all">
-            <span>{{ $t('faq.viewAll') }}</span>
+            {{ $t('faq.viewAll') }}
             <ArrowRight :size="18" :stroke-width="2" class="ml-2" />
           </UiButton>
-        </div>
+        </UiStack>
 
         <!-- Contact card, classic: flat, with a solid brand button -->
         <ClassicCard v-if="isClassic" class="text-center" padding="xl" data-testid="faq-contact">
@@ -63,9 +63,9 @@
             <ClassicIconTile icon="mdi:message-text-outline" />
             <UiHeading :level="3" size="bare" class="text-xl font-semibold text-classic-ink">{{ $t('faq.cta.title') }}</UiHeading>
             <UiText tone="inherit" size="sm" class="mb-3 max-w-[75ch] text-classic-muted">{{ $t('faq.cta.description') }}</UiText>
-            <UiButton :to="localePath(SITE_CONTACT_PATH)" data-testid="faq-contact-button">
+            <UiButton :to="localePath(SITE_CONTACT_PATH)" variant="primary" size="md" data-testid="faq-contact-button">
               <MessageSquare :size="18" :stroke-width="2" class="mr-2" />
-              {{ $t('faq.cta.button') }}
+              {{ $t('common.contactUs') }}
             </UiButton>
           </UiStack>
         </ClassicCard>
@@ -80,20 +80,20 @@
           <MessageCircle :size="48" :stroke-width="2" class="relative text-primary-600 dark:text-primary-400 mx-auto mb-4 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
           <UiHeading :level="3" size="subsection" class="relative text-xl mb-2">{{ $t('faq.cta.title') }}</UiHeading>
           <UiText tone="muted" size="sm" class="relative mb-6 max-w-[75ch] mx-auto">{{ $t('faq.cta.description') }}</UiText>
-          <UiButton class="relative hover:shadow-lg hover:shadow-primary-500/50 transition-all duration-300" :to="localePath(SITE_CONTACT_PATH)" data-testid="faq-contact-button">
+          <UiButton class="relative" :to="localePath(SITE_CONTACT_PATH)" variant="primary" size="md" data-testid="faq-contact-button">
             <MessageSquare :size="18" :stroke-width="2" class="mr-2" />
-            {{ $t('faq.cta.button') }}
+            {{ $t('common.contactUs') }}
           </UiButton>
 
           <UiDecor class="top-0 right-0 w-14 h-14 border-r-2 border-t-2 border-primary-500/50 rounded-tr-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </UiCard>
-      </div>
+      </UiStack>
     </UiContainer>
 
     <!-- Section corner decorations -->
     <UiDecor v-if="!isClassic" class="top-0 right-0 w-40 h-40 border-r-2 border-t-2 border-secondary-500/25" />
     <UiDecor v-if="!isClassic" class="bottom-0 left-0 w-40 h-40 border-l-2 border-b-2 border-primary-500/25" />
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">
@@ -140,8 +140,8 @@ const isClassic = computed(() => templateName.value === TemplateName.Classic)
 
 /** Classes of the section: flat charcoal-or-white for classic, the decorated surface otherwise. */
 const sectionClasses = computed(() => isClassic.value
-  ? 'py-14 md:py-20 bg-classic-surface border-y border-classic-border'
-  : 'py-12 md:py-20 bg-ui-surface relative overflow-hidden')
+  ? 'bg-classic-surface border-y border-classic-border'
+  : 'bg-ui-surface relative overflow-hidden')
 
 /** The "every category" choice of the tabs. */
 const ALL_CATEGORIES = 'all'

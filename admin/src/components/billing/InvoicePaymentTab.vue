@@ -22,13 +22,17 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
 import { InvoiceStatus } from '@/types/invoice'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiInputType } from '@/utils/ui/input'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -76,23 +80,23 @@ const submit = async (): Promise<void> => {
 
 <template>
   <UiStack data-testid="billing-invoice-payment">
-    <UiCard v-if="isDraft" padding="md">
-      <UiText tone="muted" size="md" data-testid="billing-invoice-payment-draft">
+    <UiCard v-if="isDraft" :padding="UiCardPadding.Md">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md" data-testid="billing-invoice-payment-draft">
         {{ t('billing.invoicePaymentTab.publishTheInvoiceBeforeAdding') }}
       </UiText>
     </UiCard>
 
-    <UiAlert v-else-if="isCancelled" variant="warning" data-testid="billing-invoice-payment-cancelled">
+    <UiAlert v-else-if="isCancelled" :variant="UiTone.Warning" data-testid="billing-invoice-payment-cancelled">
       {{ t('billing.invoicePaymentTab.invoiceIsCancelledPleaseMark') }}
     </UiAlert>
 
     <template v-else>
-      <UiCard padding="md">
+      <UiCard :padding="UiCardPadding.Md" container>
         <UiForm stacked data-testid="billing-invoice-payment-form" @submit="submit">
-          <UiHeading :level="3" variant="card">
-            {{ t('billing.invoicePaymentTab.addPayment') }}
+          <UiHeading :level="3" :variant="UiHeadingVariant.Card">
+            {{ t('billing.invoiceDetail.addPayment') }}
           </UiHeading>
-          <UiGrid :columns="2">
+          <UiGrid :columns="2" container>
             <UiField :label="t('shared.date')" :error="store.fieldErrors.date">
               <UiDatePicker v-model="form.paymentDate.value" :placeholder="t('shared.selectDate')" />
             </UiField>
@@ -137,7 +141,7 @@ const submit = async (): Promise<void> => {
                 <UiInput
                   :id="id"
                   v-model="form.transactionId.value"
-                  type="text"
+                  :type="UiInputType.Text"
                   :invalid="invalid"
                   :placeholder="t('billing.invoicePaymentTab.gatewayReference')"
                   data-testid="billing-invoice-payment-reference"
@@ -147,16 +151,15 @@ const submit = async (): Promise<void> => {
           </UiGrid>
           <UiFormActions>
             <UiButton :action="UiActionKind.Add"
-              type="submit"
-              variant="primary"
+              :type="UiButtonType.Submit"
+              :variant="UiButtonVariant.Primary"
               :loading="form.submitting.value"
               :disabled="!form.canSubmit.value"
               data-testid="billing-invoice-payment-submit"
             >
-              {{ t('billing.invoicePaymentTab.addPayment') }}
+              {{ t('shared.add') }}
             </UiButton>
           </UiFormActions>
-          <UiStatusMessage :message="form.feedback.message.value" :tone="form.feedbackTone.value" data-testid="billing-invoice-payment-feedback" />
         </UiForm>
       </UiCard>
 

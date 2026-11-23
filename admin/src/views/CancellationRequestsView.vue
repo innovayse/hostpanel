@@ -13,10 +13,10 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -25,12 +25,8 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -46,11 +42,12 @@ import { Icon } from '@/lib/icons'
 import { cancellationStatusLabel, cancellationStatusTone, cancellationTypeLabel, cancellationTypeTone } from '@/lib/tones'
 import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { clientPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiTableDensity } from '@/utils/ui/injection'
-import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -119,10 +116,7 @@ const deleting = ref(false)
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Loads the page the address names with the filters and search it holds, and records whether the load was refused.
@@ -172,7 +166,6 @@ const handleDelete = async (): Promise<void> => {
   if (id === null) {
     return
   }
-  feedback.clear()
   deleting.value = true
   const deleted = await store.deleteRequest(id)
   deleting.value = false
@@ -200,7 +193,7 @@ const dismissDelete = (): void => {
  */
 const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
   {
-    label: t('clients.cancellationRequests.deleteRequest'),
+    label: t('shared.delete'),
     icon: Icon.Trash,
     testid: `cancellations-delete-${item.id}`,
     /**
@@ -261,7 +254,6 @@ const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
       </UiField>
     </UiListToolbar>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="cancellations-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -271,77 +263,70 @@ const cancellationActions = (item: CancellationRequestItem): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard v-if="hasRows || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="cancellations-table">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody>
-          <UiTableRow
-            v-for="item in store.cancellations"
-            :key="item.id"
-            hoverable
-            bordered
-            :data-testid="`cancellations-row-${item.id}`"
-          >
-            <UiTableCell muted>{{ formatDate(item.createdAt) }}</UiTableCell>
-            <UiTableCell>{{ item.serviceName }}</UiTableCell>
-            <UiTableCell>
-              <UiLink variant="link" :to="clientPath(item.clientId)" :data-testid="`cancellations-client-${item.id}`">
-                {{ item.clientName }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiText tone="secondary" :title="item.reason ?? ''">
-                {{ item.reason ? shorten(item.reason) : EMPTY_VALUE }}
-              </UiText>
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="cancellationTypeTone(item.type)" small>{{ cancellationTypeLabel(item.type) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="cancellationStatusTone(item.status)" small>
-                {{ cancellationStatusLabel(item.status) }}
-              </UiBadge>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="cancellationActions(item)" :testid="`cancellations-actions-${item.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-          {{ t('clients.cancellationRequests.totalcountRequestValue', { totalCount: store.totalCount }) }}
-        </UiResultCount>
-        <UiPagination
-          :page="page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="cancellations-pagination"
-          @update:page="setPage"
-        />
-      </UiStack>
-    </UiCard>
-
-    <UiCard v-else-if="loadError === null">
-      <UiEmptyState
-        :title="narrowed ? t('clients.cancellationRequests.noRequestsMatchYourFilters') : t('clients.cancellationRequests.noCancellationRequestsFound')"
-        data-testid="cancellations-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Remove" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="cancellations-clear-filters" @click="clearAll">
-            {{ t('clients.cancellationRequests.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    <UiDataTable
+      v-if="loadError === null"
+      :loading="initialLoading"
+      :empty="!store.loading && !hasRows"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="cancellations-pagination"
+      data-testid="cancellations-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="item in store.cancellations"
+          :key="item.id"
+          hoverable
+          :data-testid="`cancellations-row-${item.id}`"
+        >
+          <UiTableCell muted>{{ formatDate(item.createdAt) }}</UiTableCell>
+          <UiTableCell>{{ item.serviceName }}</UiTableCell>
+          <UiTableCell>
+            <UiLink :variant="UiButtonVariant.Link" :to="clientPath(item.clientId)" :data-testid="`cancellations-client-${item.id}`">
+              {{ item.clientName }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiText :tone="UiTextTone.Secondary" :title="item.reason ?? ''">
+              {{ item.reason ? shorten(item.reason) : EMPTY_VALUE }}
+            </UiText>
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="cancellationTypeTone(item.type)" small>{{ cancellationTypeLabel(item.type) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="cancellationStatusTone(item.status)" small>
+              {{ cancellationStatusLabel(item.status) }}
+            </UiBadge>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="cancellationActions(item)" :testid="`cancellations-actions-${item.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('clients.cancellationRequests.noRequestsMatchYourFilters') : t('clients.cancellationRequests.noCancellationRequestsFound')"
+          data-testid="cancellations-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Remove" :size="UiSize.Lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="cancellations-clear-filters" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
+      </template>
+    </UiDataTable>
 
     <UiDialog
       v-if="deleteTarget !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.cancellationRequests.deleteCancellationRequest')"
       :message="t('clients.cancellationRequests.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"

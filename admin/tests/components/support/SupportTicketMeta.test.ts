@@ -7,7 +7,6 @@ import { mount } from '@vue/test-utils'
 import SupportTicketMeta from '@/components/support/SupportTicketMeta.vue'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import type { Ticket } from '@/types/ticket'
-import { UiTone } from '@/utils/ui/tone'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** A ticket assigned to nobody, in the Awaiting Reply status. */
@@ -81,13 +80,5 @@ describe('SupportTicketMeta', () => {
     await wrapper.get('[data-testid="ticket-departments-error-retry"]').trigger('click')
 
     expect(wrapper.emitted('retryDepartments')).toHaveLength(1)
-  })
-
-  it('shows the outcome of the save in its tone', () => {
-    const wrapper = mountMeta({ feedback: 'Refused.', feedbackTone: UiTone.Danger })
-
-    const line = wrapper.get('[data-testid="ticket-save-feedback"]')
-    expect(line.text()).toBe('Refused.')
-    expect(line.attributes('data-tone')).toBe('danger')
   })
 })

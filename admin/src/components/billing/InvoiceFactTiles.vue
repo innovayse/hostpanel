@@ -12,6 +12,7 @@ import UiStatTile from '@/components/ui/UiStatTile.vue'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import type { InvoiceDetail } from '@/types/invoice'
+import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
@@ -53,7 +54,7 @@ const tiles = computed<FactTile[]>(() => {
 </script>
 
 <template>
-  <UiGrid :columns="4" gap="md">
+  <UiGrid :columns="4" :gap="UiGap.Md">
     <UiStatTile
       v-for="tile in tiles"
       :key="tile.key"

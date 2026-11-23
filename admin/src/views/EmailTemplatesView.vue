@@ -13,7 +13,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EmailTemplateDialog from '@/components/settings/EmailTemplateDialog.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -26,7 +26,6 @@ import { useDocsGuide } from '@/composables/useDocsGuide'
 import { useListQuery } from '@/composables/useListQuery'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -41,7 +40,8 @@ import { emailTemplateGroupOf, humanizeSlug, languageBadge, splitSubject } from 
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { translateOrRaw } from '@/lib/translate'
-import { UiTextSize, UiTextTag } from '@/utils/ui/text'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
@@ -237,64 +237,66 @@ const templateActions = (slug: string): UiMenuAction[] => {
       @retry="store.fetchEmailTemplates()"
     />
 
-    <UiCard v-else-if="narrowed && shownGroups.length === 0 && !store.loading">
-      <UiEmptyState :title="t('settings.emailTemplates.noMatches')" data-testid="email-templates-no-matches" />
-    </UiCard>
-
-    <UiCard v-else>
-      <UiTable
-        :empty-text="t('settings.emailTemplates.noTemplatesFound')"
-        :density="UiTableDensity.Comfortable"
-        :loading="store.loading"
-        :empty="!store.loading && groups.length === 0"
-        data-testid="email-templates-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="group in shownGroups"
-            :key="group.slug"
-            hoverable
-            :data-testid="`email-templates-row-${group.slug}`"
-          >
-            <UiTableCell>
-              <UiStack gap="none">
-                <UiText class="font-semibold text-text-primary" :data-testid="`email-templates-name-${group.slug}`">
-                  {{ nameOf(group.slug) }}
-                </UiText>
-                <UiText tone="muted" :size="UiTextSize.Xs" class="font-mono">{{ group.slug }}</UiText>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell muted>
-              <UiStack direction="row" gap="xs" wrap align="center">
-                <template v-for="(part, index) in splitSubject(group.shown.subject)" :key="index">
-                  <UiBadge v-if="part.placeholder" small class="font-mono" :data-testid="`email-templates-placeholder-${group.slug}`">
-                    {{ part.text }}
-                  </UiBadge>
-                  <UiText v-else :as="UiTextTag.Span" class="whitespace-pre-wrap">{{ part.text }}</UiText>
-                </template>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell>
-              <UiStack direction="row" gap="xs">
-                <UiBadge
-                  v-for="version in group.versions"
-                  :key="version.id"
-                  small
-                  :title="t(`storefront.locales.${version.language}`)"
-                  :data-testid="`email-templates-row-${group.slug}-${version.language}`"
-                >
-                  {{ languageBadge(version.language) }}
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="store.loading"
+      :empty="!store.loading && shownGroups.length === 0"
+      data-testid="email-templates-table"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="group in shownGroups"
+          :key="group.slug"
+          hoverable
+          :data-testid="`email-templates-row-${group.slug}`"
+        >
+          <UiTableCell>
+            <UiStack :gap="UiGap.None">
+              <UiText class="font-semibold text-text-primary" :data-testid="`email-templates-name-${group.slug}`">
+                {{ nameOf(group.slug) }}
+              </UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-mono">{{ group.slug }}</UiText>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell muted>
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs" wrap :align="UiAlignItems.Center">
+              <template v-for="(part, index) in splitSubject(group.shown.subject)" :key="index">
+                <UiBadge v-if="part.placeholder" small class="font-mono" :data-testid="`email-templates-placeholder-${group.slug}`">
+                  {{ part.text }}
                 </UiBadge>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="templateActions(group.slug)" :testid="`email-templates-actions-${group.slug}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
+                <UiText v-else :as="UiTextTag.Span" class="whitespace-pre-wrap">{{ part.text }}</UiText>
+              </template>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell>
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs">
+              <UiBadge
+                v-for="version in group.versions"
+                :key="version.id"
+                small
+                :title="t(`storefront.locales.${version.language}`)"
+                :data-testid="`email-templates-row-${group.slug}-${version.language}`"
+              >
+                {{ languageBadge(version.language) }}
+              </UiBadge>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="templateActions(group.slug)" :testid="`email-templates-actions-${group.slug}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          v-if="narrowed"
+          :title="t('settings.emailTemplates.noMatches')"
+          data-testid="email-templates-no-matches"
+        />
+        <UiEmptyState v-else :title="t('settings.emailTemplates.noTemplatesFound')" />
+      </template>
+    </UiDataTable>
 
     <EmailTemplateDialog
       v-if="editingSlug !== null"

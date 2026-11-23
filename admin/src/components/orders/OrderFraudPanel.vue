@@ -19,6 +19,10 @@ import { statusLabel } from '@/lib/tones'
 import { OrderStatus } from '@/types/order'
 import type { OrderDetail } from '@/types/order'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant, UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translates a key into the active locale. */
@@ -45,27 +49,27 @@ const underReview = computed<boolean>(() => props.order.status === OrderStatus.U
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="order-fraud">
+  <UiCard :padding="UiCardPadding.Md" data-testid="order-fraud">
     <UiStack>
-      <UiHeading :level="2" variant="section">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">
         {{ t('orders.fraud.title') }}
       </UiHeading>
-      <UiText v-if="underReview" tone="warning" size="sm" data-testid="order-fraud-held">
+      <UiText v-if="underReview" :tone="UiTextTone.Warning" :size="UiTextSize.Sm" data-testid="order-fraud-held">
         {{ t('orders.fraud.held') }}
       </UiText>
       <OrderFact :label="t('shared.ipAddress')">
-        <span data-testid="order-fraud-ip">{{ order.ipAddress ?? '-' }}</span>
+        <UiText :as="UiTextTag.Span" data-testid="order-fraud-ip">{{ order.ipAddress ?? '-' }}</UiText>
       </OrderFact>
       <OrderFact :label="t('orders.fraud.score')">
         <UiBadge :tone="UiTone.Danger" small data-testid="order-fraud-score">
           {{ order.fraudScore }}
         </UiBadge>
       </OrderFact>
-      <UiStack gap="xs">
-        <UiText tone="muted" size="sm">
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
           {{ t('orders.fraud.reasons') }}
         </UiText>
-        <UiStack v-if="order.fraudReasons.length > 0" direction="row" gap="xs" wrap data-testid="order-fraud-reasons">
+        <UiStack v-if="order.fraudReasons.length > 0" :direction="UiDirection.Row" :gap="UiGap.Xs" wrap data-testid="order-fraud-reasons">
           <UiBadge
             v-for="reason in order.fraudReasons"
             :key="reason"
@@ -76,14 +80,14 @@ const underReview = computed<boolean>(() => props.order.status === OrderStatus.U
             {{ statusLabel(FRAUD_REASON_OPTIONS, reason) }}
           </UiBadge>
         </UiStack>
-        <UiText v-else tone="muted" size="sm" data-testid="order-fraud-no-reasons">
+        <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="order-fraud-no-reasons">
           {{ t('orders.fraud.noReasons') }}
         </UiText>
       </UiStack>
-      <UiStack v-if="underReview" direction="row" gap="sm" wrap>
+      <UiStack v-if="underReview" :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
         <UiButton :icon="Icon.Check"
           :variant="UiButtonVariant.Secondary"
-          size="sm"
+          :size="UiSize.Sm"
           :disabled="busy"
           data-testid="order-fraud-approve"
           @click="emit('approve')"
@@ -91,7 +95,7 @@ const underReview = computed<boolean>(() => props.order.status === OrderStatus.U
         </UiButton>
         <UiButton :icon="Icon.Close"
           :variant="UiButtonVariant.Danger"
-          size="sm"
+          :size="UiSize.Sm"
           :disabled="busy"
           data-testid="order-fraud-reject"
           @click="emit('reject')"

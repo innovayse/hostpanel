@@ -1,13 +1,16 @@
 <template>
-  <div class="flex items-start gap-3 p-4 rounded-xl border" :class="styles.wrap" :role="role">
+  <div class="flex flex-wrap items-start gap-3 p-4 rounded-xl border" :class="styles.wrap" :role="role">
     <component :is="icon" :size="iconSize" :stroke-width="2" class="flex-shrink-0 mt-0.5" :class="styles.icon" />
-    <div class="flex-1 min-w-0">
+    <div class="min-w-0 flex-1 basis-40">
       <p v-if="title" class="font-semibold text-sm" :class="styles.title">{{ title }}</p>
       <div class="text-sm" :class="[styles.body, title ? 'mt-0.5' : '']">
         <slot />
       </div>
     </div>
-    <slot name="action" />
+    <!-- On a phone the action drops under the text, aligned with it, instead of squeezing it -->
+    <div v-if="$slots.action" class="max-sm:w-full max-sm:pl-7 sm:shrink-0">
+      <slot name="action" />
+    </div>
   </div>
 </template>
 

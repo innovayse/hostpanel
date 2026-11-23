@@ -1,8 +1,8 @@
 <template>
   <UiStack gap="xs" data-testid="usage-bar">
     <UiStack direction="row" justify="between">
-      <UiText as="span" size="xs" tone="subtle">{{ label }}</UiText>
-      <UiText as="span" size="xs" tone="subtle">{{ usageText }}</UiText>
+      <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ label }}</UiText>
+      <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ usageText }}</UiText>
     </UiStack>
     <UiProgress :value="usagePercent(usedMb, limitMb)" :label="label" :tone="tone" :value-text="usageText" />
   </UiStack>
@@ -16,6 +16,7 @@
 import { computed } from 'vue'
 import type { UiTone } from '~/utils/ui/enums'
 import { usagePercent } from '~/utils/serviceUsage'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translates a key in the active language. */
 const { t } = useI18n()

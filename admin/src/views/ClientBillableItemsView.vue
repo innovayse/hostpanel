@@ -15,7 +15,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { BILLABLE_ITEM_TYPE_OPTIONS } from '@/lib/constants'
 import { formatPlainAmount } from '@/lib/money'
@@ -26,36 +26,31 @@ import BillableItemTypeField from '@/components/billing/BillableItemTypeField.vu
 import { BillableItemType } from '@/types/billableitem'
 import type { ClientBillableItem, ClientBillableItemFilters, CurrencyAmount } from '@/types/billableitem'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiDetailCards from '@/components/ui/UiDetailCards.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiBulkBar from '@/components/ui/UiBulkBar.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
-import { BILLABLE_ITEMS_CARDS_PART, INVOICED_ITEMS_TABLE, UNINVOICED_ITEMS_TABLE } from '@/views/ClientBillableItemsView.schema'
+import { INVOICED_ITEMS_TABLE, UNINVOICED_ITEMS_TABLE } from '@/views/ClientBillableItemsView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import type { UiBulkAction } from '@/utils/ui/bulkBar'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
-import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiHeadingVariant } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -78,7 +73,7 @@ const initialLoading = computed(() => loading.value && uninvoicedItems.value.len
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last action. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 
 /** The filter fields the dialog edits; each is one query key and one `ClientBillableItemFilters` member. */
 const FilterKey = {
@@ -106,9 +101,6 @@ const chips = chipsOf(() => [
     value: typeOfAddress.value === undefined ? undefined : statusLabel(BILLABLE_ITEM_TYPE_OPTIONS, typeOfAddress.value),
   },
 ])
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /**
  * Shows the outcome of one action: the success sentence, or the API's sentence of the refusal.
@@ -203,7 +195,6 @@ const fetchBillableItems = async (): Promise<void> => {
  * @returns Promise that resolves when the operation completes.
  */
 const handleInvoiceSelected = async (): Promise<void> => {
-  feedback.clear()
   invoicing.value = true
   const invoiced = await store.invoiceSelected(clientId.value, [...selection.ids.value])
   invoicing.value = false
@@ -239,7 +230,6 @@ const handleDelete = (id: number): void => {
  * @returns Promise that resolves when deletion completes.
  */
 const confirmDelete = async (): Promise<void> => {
-  feedback.clear()
   deleting.value = true
   const ids = pendingDeleteId.value !== null ? [pendingDeleteId.value] : [...selection.ids.value]
   const deleted = await store.deleteItems(clientId.value, ids)
@@ -342,7 +332,7 @@ loadOnChange(fetchBillableItems)
 
 <template>
   <UiStack>
-    <UiSectionHeader :level="1" variant="card">
+    <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('clients.clientBillableItems.billableItems') }}
       <template #actions>
         <UiButton :action="UiActionKind.Add"
@@ -381,7 +371,6 @@ loadOnChange(fetchBillableItems)
       <BillableItemTypeField v-model="draft.type" testid="client-billable-filter-type" />
     </UiListToolbar>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-billable-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -391,85 +380,79 @@ loadOnChange(fetchBillableItems)
       @retry="fetchBillableItems()"
     />
 
-    <UiDetailCards v-else :columns="BILLABLE_ITEMS_CARDS_PART.columns" :loading="initialLoading">
-      <template #card-uninvoiced>
-        <UiStack>
-          <UiHeading :level="2" variant="card">
+    <template v-else>
+      <UiDataTable
+        :loading="initialLoading"
+        :empty="!loading && uninvoicedItems.length === 0"
+        :selection="selection"
+        select-all-testid="client-billable-select-all"
+        data-testid="client-billable-uninvoiced-table"
+      >
+        <template #header>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">
             {{ uninvoicedTotalLabel
               ? t('clients.clientBillableItems.uninvoicedItemsAmountLength', { amount: uninvoicedTotalLabel, length: uninvoicedItems.length })
               : t('clients.clientBillableItems.uninvoicedItemsLength', { length: uninvoicedItems.length }) }}
           </UiHeading>
-          <UiTable
-            v-if="uninvoicedItems.length > 0"
-            :density="UiTableDensity.Comfortable"
-            :selection="selection"
-            select-all-testid="client-billable-select-all"
-            data-testid="client-billable-uninvoiced-table"
+        </template>
+        <UiSchemaTableHead :columns="UNINVOICED_ITEMS_TABLE.columns" />
+        <UiTableBody>
+          <UiTableRow
+            v-for="item in uninvoicedItems"
+            :key="item.id"
+            hoverable
+            :row-id="item.id"
+            :select-testid="`client-billable-select-${item.id}`"
           >
-            <UiSchemaTableHead :columns="UNINVOICED_ITEMS_TABLE.columns" />
-            <UiTableBody divided>
-              <UiTableRow
-                v-for="item in uninvoicedItems"
-                :key="item.id"
-                hoverable
-                :row-id="item.id"
-                :select-testid="`client-billable-select-${item.id}`"
-              >
-                <UiTableCell muted>{{ item.id }}</UiTableCell>
-                <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
-                <UiTableCell actions>
-                  <UiRowActions :actions="billableItemActions(item)" :testid="`client-billable-actions-${item.id}`" />
-                </UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
+            <UiTableCell muted>{{ item.id }}</UiTableCell>
+            <UiTableCell>{{ item.description }}</UiTableCell>
+            <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
+            <UiTableCell actions>
+              <UiRowActions :actions="billableItemActions(item)" :testid="`client-billable-actions-${item.id}`" />
+            </UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+        <template #empty>
           <UiEmptyState
-            v-else
             :title="narrowed ? t('clients.clientBillableItems.noUninvoicedItemsMatchYourFilters') : t('clients.clientBillableItems.noUninvoicedBillableItems')"
             data-testid="client-billable-uninvoiced-empty"
           />
-        </UiStack>
-      </template>
-      <template #card-invoiced>
-        <UiTable v-if="invoicedItems.length > 0" :density="UiTableDensity.Comfortable" data-testid="client-billable-invoiced-table">
-          <UiSchemaTableHead :columns="INVOICED_ITEMS_TABLE.columns" />
-          <UiTableBody divided>
-            <UiTableRow v-for="item in invoicedItems" :key="item.id" hoverable>
-              <UiTableCell muted>{{ item.id }}</UiTableCell>
-              <UiTableCell>{{ item.description }}</UiTableCell>
-              <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
-              <UiTableCell>
-                <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
-                <template v-else>{{ EMPTY_VALUE }}</template>
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
-        <UiEmptyState
-          v-else
-          :title="narrowed ? t('clients.clientBillableItems.noInvoicedItemsMatchYourFilters') : t('clients.clientBillableItems.noInvoicedBillableItems')"
-          data-testid="client-billable-invoiced-empty"
-        />
-        <UiStack
-          v-if="invoicedTotalCount > invoicedPageSize"
-          direction="row"
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
-        >
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-            {{ t('clients.clientBillableItems.invoicedtotalcountItemValue', { invoicedTotalCount }) }}
-          </UiText>
-          <UiPagination
-            :page="page"
-            :total="invoicedTotalCount"
-            :page-size="invoicedPageSize"
-            testid="client-billable-pagination"
-            @update:page="setPage"
+        </template>
+      </UiDataTable>
+
+      <UiDataTable
+        :loading="initialLoading"
+        :empty="!loading && invoicedItems.length === 0"
+        :page="page"
+        :total="invoicedTotalCount"
+        :page-size="invoicedPageSize"
+        pagination-testid="client-billable-pagination"
+        data-testid="client-billable-invoiced-table"
+        @update:page="setPage"
+      >
+        <template #header>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
+        </template>
+        <UiSchemaTableHead :columns="INVOICED_ITEMS_TABLE.columns" />
+        <UiTableBody>
+          <UiTableRow v-for="item in invoicedItems" :key="item.id" hoverable>
+            <UiTableCell muted>{{ item.id }}</UiTableCell>
+            <UiTableCell>{{ item.description }}</UiTableCell>
+            <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
+            <UiTableCell>
+              <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
+              <template v-else>{{ EMPTY_VALUE }}</template>
+            </UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+        <template #empty>
+          <UiEmptyState
+            :title="narrowed ? t('clients.clientBillableItems.noInvoicedItemsMatchYourFilters') : t('clients.clientBillableItems.noInvoicedBillableItems')"
+            data-testid="client-billable-invoiced-empty"
           />
-        </UiStack>
-      </template>
-    </UiDetailCards>
+        </template>
+      </UiDataTable>
+    </template>
 
     <UiBulkBar
       :count="selection.count.value"
@@ -481,10 +464,10 @@ loadOnChange(fetchBillableItems)
 
     <UiDialog
       v-if="showInvoiceConfirmModal"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientBillableItems.confirmInvoice')"
       :message="t('clients.clientBillableItems.areYouSureYouWant')"
-      :confirm-label="t('shared.ok')"
+      :confirm-label="t('clients.clientBillableItems.invoiceSelected')"
       :loading="invoicing"
       @confirm="handleInvoiceSelected"
       @close="dismissInvoice"
@@ -492,14 +475,14 @@ loadOnChange(fetchBillableItems)
 
     <UiDialog
       v-if="showDeleteConfirmModal"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientBillableItems.confirmDelete')"
       :message="pendingDeleteId !== null
         ? t('clients.clientBillableItems.areYouSureYouWant2')
         : t('clients.clientBillableItems.confirmDeleteSelected', { count: selection.count.value }, selection.count.value)"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmDelete"
       @close="dismissDelete"
     />

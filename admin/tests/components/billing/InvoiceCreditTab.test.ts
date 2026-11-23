@@ -10,6 +10,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -35,6 +36,13 @@ describe('InvoiceCreditTab', () => {
 
     expect(wrapper.get('[data-testid="billing-invoice-credit-add"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="billing-invoice-credit-remove"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('names the two buttons by what they do, not by a generic Go', () => {
+    const wrapper = mountWithApp(InvoiceCreditTab, { props: { invoice: invoiceFixture() } })
+
+    expect(wrapper.get('[data-testid="billing-invoice-credit-add"]').text()).toBe('Add')
+    expect(wrapper.get('[data-testid="billing-invoice-credit-remove"]').text()).toBe('Remove')
   })
 
   it('shows the credit available under each box', () => {
@@ -114,7 +122,7 @@ describe('InvoiceCreditTab', () => {
     await wrapper.get('[data-testid="billing-invoice-credit-add"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-credit-feedback"]').text()).toBe('The client has no credit.')
+    expect(toastMessages()).toContain('The client has no credit.')
   })
 
   it('names the amount to take back in the invoice currency in the remove credit prompt of an AMD invoice', async () => {

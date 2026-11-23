@@ -1,7 +1,7 @@
 /**
  * Column description for the shared report table.
  */
-import type { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import type { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** Closed set of ways a report table cell formats its raw value. */
 export const ReportCellFormat = {
@@ -28,6 +28,8 @@ export interface ReportColumn {
   align?: UiAlign
   /** Width the column takes, as the other tables size theirs: as narrow as its content, one line (the default) or the one column that takes the rest. */
   size?: UiColumnSize
+  /** Kind of data the column holds, which sets its width when `size` is omitted (a status, a date or an id shrinks); free text when omitted. */
+  kind?: UiColumnKind
   /** How the raw value is turned into text; `text` when omitted. */
   format?: ReportCellFormat
   /**
@@ -44,7 +46,7 @@ export interface ReportColumn {
   hint?: string
 }
 
-/** What a screen adds to a schema column: how its cells are formatted, never its caption, alignment or width. */
+/** What a screen adds to a schema column: how its cells are formatted, never its caption, alignment, kind or width. */
 export type ReportColumnExtra = Pick<ReportColumn, 'format' | 'numeric' | 'currencyKey' | 'hint'>
 
 /** The cell formats whose values are numbers. */

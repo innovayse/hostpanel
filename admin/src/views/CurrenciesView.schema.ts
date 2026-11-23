@@ -10,7 +10,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind, SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, SkeletonTable } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind } from '@/utils/ui/table'
 
 /** The exchange rate provider card: its title, its description and the caption of the row that holds the select. */
 export const CURRENCY_PROVIDER_PART: CardsSkeletonPart = {
@@ -26,8 +26,8 @@ export const CURRENCIES_TABLE: SkeletonTable = {
     { key: 'format', label: 'currencies.table.format', align: 'left' },
     { key: 'decimals', label: 'currencies.table.decimals', numeric: true },
     { key: 'rateToBase', label: 'currencies.table.rateToBase', numeric: true },
-    { key: 'base', label: 'currencies.table.base', align: 'left' },
-    { key: 'enabled', label: 'currencies.table.enabled', align: 'left', size: UiColumnSize.Compact },
+    { key: 'base', label: 'currencies.table.base', align: 'left', kind: UiColumnKind.Status },
+    { key: 'enabled', label: 'currencies.table.enabled', align: 'left', kind: UiColumnKind.Status },
     { key: 'actions', label: 'currencies.table.actions', actions: true },
   ],
 }

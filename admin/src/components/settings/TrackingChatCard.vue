@@ -26,6 +26,8 @@ import { ChatProvider } from '@/types/chatprovider'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
 import { ANALYTICS_ID_MAX_LENGTH, CHAT_SETTING_MAX_LENGTH } from '@/lib/limits'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -101,7 +103,7 @@ const tokenTestids: Record<SettingLanguage, string> = {
 
     <!-- Live chat -->
     <SettingsSubsection :title="t('settings.trackingChat.chat.title')">
-      <UiStack v-if="provider.setting.value" gap="xs">
+      <UiStack v-if="provider.setting.value" :gap="UiGap.Xs">
         <UiField :label="t('settings.trackingChat.provider.label')">
           <template #default="{ id }">
             <UiSelect
@@ -139,7 +141,7 @@ const tokenTestids: Record<SettingLanguage, string> = {
             :setting-key="TOKEN_KEYS[locale]"
             :env-name="SettingEnv[TOKEN_KEYS[locale]]"
           />
-          <UiStack v-else gap="xs">
+          <UiStack v-else :gap="UiGap.Xs">
             <UiInput
               v-model="token.drafts[locale].value.value"
               :placeholder="tokenPlaceholders[locale]"
@@ -150,7 +152,7 @@ const tokenTestids: Record<SettingLanguage, string> = {
           </UiStack>
         </template>
       </UiLocalizedField>
-      <UiText tone="muted" size="sm" class="col-span-full">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="col-span-full">
         {{ t('settings.trackingChat.chat.hint') }}
       </UiText>
     </SettingsSubsection>

@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
     <div class="border-b border-gray-200 dark:border-white/10">
-      <nav class="-mb-px flex space-x-8 overflow-x-auto" role="tablist" :aria-label="ariaLabel ?? $t('ui.tabs')">
+      <nav ref="tablist" class="-mb-px flex space-x-8 overflow-x-auto" :class="fadeClass" role="tablist" :aria-label="ariaLabel ?? $t('ui.tabs')">
         <button
           v-for="tab in tabs"
           :key="tab.value"
@@ -29,8 +29,11 @@
 <script setup lang="ts">
 /**
  * UiTabs: a tab bar with an optional panel slot that receives the active tab value. The bar scrolls sideways when
- * the tabs do not fit the width, so none is cut off on a phone.
+ * the tabs do not fit the width, so none is cut off on a phone: the side that still hides tabs fades, and the active tab is
+ * scrolled into view on first draw, when the selection changes and when the bar or a tab changes size.
  */
+
+import { useScrollEdges } from '~/composables/useScrollEdges'
 
 /** One tab. */
 interface Tab {
@@ -57,6 +60,29 @@ interface Props {
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
   ariaLabel: undefined,
+})
+
+/** The scrolling tab list, watched for the sides that hide tabs and searched for the active tab. */
+const tablist = ref<HTMLElement | null>(null)
+
+/**
+ * Scrolls the active tab to the middle of the bar. Only the bar scrolls (`inline`), never the page (`block: 'nearest'`);
+ * with no active tab nothing moves.
+ */
+const revealActive = (): void => {
+  tablist.value?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
+}
+
+/** The fade of the sides of the bar that hide tabs. */
+const { fadeClass } = useScrollEdges(tablist, revealActive)
+
+/** Brings the active tab into view on first draw. */
+onMounted(revealActive)
+
+/** Brings a newly active tab into view once its `aria-selected` is on the page. */
+watch(() => props.modelValue, async () => {
+  await nextTick()
+  revealActive()
 })
 
 /** Emits the component raises. */

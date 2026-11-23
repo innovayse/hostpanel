@@ -54,9 +54,9 @@
               gap="md"
               class="mt-4"
             >
-              <UiButton size="lg" data-testid="error-go-back" @click="handleGoBack">
+              <UiButton variant="primary" size="lg" data-testid="error-go-back" @click="handleGoBack">
                 <ArrowLeft :size="20" :stroke-width="2" class="mr-2" />
-                {{ t('error.goBack') }}
+                {{ t('common.back') }}
               </UiButton>
               <UiButton
                 :to="localePath(SITE_HOME_PATH)"
@@ -65,7 +65,7 @@
                 data-testid="error-go-home"
               >
                 <Home :size="20" :stroke-width="2" class="mr-2" />
-                {{ t('error.goHome') }}
+                {{ t('common.home') }}
               </UiButton>
             </UiStack>
           </UiStack>
@@ -79,7 +79,7 @@
           :class="revealDelay(400)"
         >
           {{ t('error.helpText') }}
-          <UiLink :to="localePath(SITE_CONTACT_PATH)" testid="error-contact">
+          <UiLink tone="primary" :to="localePath(SITE_CONTACT_PATH)" testid="error-contact">
             {{ t('error.contactUs') }}
           </UiLink>
         </UiText>

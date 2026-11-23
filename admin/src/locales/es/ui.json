@@ -45,20 +45,15 @@
   },
   "uiFieldSelector": {
     "fields": "Campos",
-    "selectedCount": "{count} de {total} campos",
-    "clearAll": "Limpiar todo"
+    "selectedCount": "{count} de {total} campos"
   },
   "uiFilterTrigger": {
     "filters": "Filtros",
-    "title": "Filtros",
-    "apply": "Aplicar",
-    "reset": "Borrar",
-    "cancel": "Cancelar"
+    "title": "Filtros"
   },
   "uiFilterChips": {
     "label": "Filtros activos",
-    "remove": "Quitar filtro {label}: {value}",
-    "clearAll": "Borrar todo"
+    "remove": "Quitar filtro {label}: {value}"
   },
   "uiSelect": {
     "choose": "Elige una opción",
@@ -71,14 +66,9 @@
     "countryCode": "Código de país"
   },
   "selectCountry": "Seleccionar país",
-  "dialog": {
-    "close": "Cerrar",
-    "confirm": "Confirmar"
-  },
   "pagination": {
     "navigation": "Paginación",
     "previous": "Anterior",
-    "next": "Siguiente",
     "page": "Página",
     "range": "{from} a {to} de {total}",
     "pageOf": "Página {page} de {count}",
@@ -108,11 +98,7 @@
   },
   "input": {
     "showPassword": "Mostrar contraseña",
-    "hidePassword": "Ocultar contraseña",
-    "clearSearch": "Borrar"
-  },
-  "errorState": {
-    "retry": "Reintentar"
+    "hidePassword": "Ocultar contraseña"
   },
   "uiLocalizedField": {
     "emptyTab": "Sin completar",

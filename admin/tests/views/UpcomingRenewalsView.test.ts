@@ -2,7 +2,7 @@
  * Tests for UpcomingRenewalsView: it lists the services, domains and claimed lines the API returns, asks for
  * another window from the tabs, switches auto-renew, raises a client invoice by hand, releases a claim only
  * after the confirmation, keeps generate and release disabled while an action runs, and on a refused load shows
- * the error with Retry.
+ * the error with Retry. Every action outcome, a result or a refusal, is a toast.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -11,17 +11,15 @@ import { createPinia, setActivePinia } from 'pinia'
 import UpcomingRenewalsView from '@/views/UpcomingRenewalsView.vue'
 import { useRenewalsStore } from '@/stores/renewals'
 import {
-  RENEWALS_CLAIMS_CARD,
   RENEWALS_CLAIMS_TABLE,
-  RENEWALS_DOMAINS_CARD,
   RENEWALS_DOMAINS_TABLE,
-  RENEWALS_SERVICES_CARD,
   RENEWALS_SERVICES_TABLE,
   RENEWALS_WINDOW_TABS_PART,
 } from '@/views/UpcomingRenewalsView.schema'
 import { mountRouted } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** An empty page. */
 const emptyPage = { items: [], pageNumber: 1, pageSize: 20, totalCount: 0, totalPages: 0 }
@@ -75,23 +73,24 @@ describe('UpcomingRenewalsView', () => {
     expect(wrapper.get('[data-testid="renewals-domains-table"]').text()).toContain('example.test')
     expect(wrapper.get('[data-testid="renewals-claim-invoice-11"]').attributes('href')).toBe('/billing/5')
     expect(wrapper.get('[data-testid="renewals-claims-table"]').text()).toContain('example.test renewal')
-    expect(wrapper.get('[data-testid="renewals-claims-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.get('[data-testid="renewals-claims-table"]').findAll('th').find((header) => header.text() === 'Invoice line')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
-  it('draws the window tabs and the three cards with the columns of its schema', async () => {
+  it('draws the window tabs and the three tables with the columns of its schema, each under its heading', async () => {
     stubRoutes(lists)
     const wrapper = await mountView()
 
     for (const tab of RENEWALS_WINDOW_TABS_PART.tabs) {
       expect(wrapper.find(`[data-testid="renewals-window-${tab.key}"]`).exists()).toBe(true)
     }
-    for (const [card, testid, table] of [
-      [RENEWALS_SERVICES_CARD, 'renewals-services-table', RENEWALS_SERVICES_TABLE],
-      [RENEWALS_DOMAINS_CARD, 'renewals-domains-table', RENEWALS_DOMAINS_TABLE],
-      [RENEWALS_CLAIMS_CARD, 'renewals-claims-table', RENEWALS_CLAIMS_TABLE],
+    for (const [testid, table] of [
+      ['renewals-services-table', RENEWALS_SERVICES_TABLE],
+      ['renewals-domains-table', RENEWALS_DOMAINS_TABLE],
+      ['renewals-claims-table', RENEWALS_CLAIMS_TABLE],
     ] as const) {
-      expect(wrapper.get(`[data-testid="ui-detail-card-${card}"] [data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
+      expect(wrapper.get(`[data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
     }
+    expect(wrapper.text()).toContain('Domain renewals waiting for staff')
   })
 
   it('shows the empty states', async () => {
@@ -130,7 +129,7 @@ describe('UpcomingRenewalsView', () => {
     expect(JSON.parse(String(((put as unknown[])[1] as RequestInit).body))).toEqual({ value: false })
   })
 
-  it('raises the invoices of a client and says how many', async () => {
+  it('raises the invoices of a client and toasts how many', async () => {
     const mock = stubRoutes({ ...lists, 'POST /api/billing/client/9/renewal-invoices': () => json(1) })
     const wrapper = await mountView()
 
@@ -138,17 +137,17 @@ describe('UpcomingRenewalsView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(call => String(call[0]) === '/api/billing/client/9/renewal-invoices')).toBe(true)
-    expect(wrapper.get('[data-testid="renewals-notice"]').text()).toContain('Renewal invoices raised: 1.')
+    expect(toastMessages()).toEqual(['Renewal invoices raised: 1.'])
   })
 
-  it('says so when nothing is due', async () => {
+  it('toasts so when nothing is due', async () => {
     stubRoutes({ ...lists, 'POST /api/billing/client/10/renewal-invoices': () => json(0) })
     const wrapper = await mountView()
 
     await wrapper.get('[data-testid="renewals-domain-generate-7"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="renewals-notice"]').text()).toContain('Nothing to invoice yet.')
+    expect(toastMessages().join(' ')).toContain('Nothing to invoice yet.')
   })
 
   it('releases a claim only after the confirmation', async () => {
@@ -170,6 +169,7 @@ describe('UpcomingRenewalsView', () => {
     await flushPromises()
 
     expect(released()).toBe(true)
+    expect(toastMessages()).toEqual(['The claim was released. The next renewal run will try it again.'])
   })
 
   it('disables generate and release while an action is running, and enables them again after', async () => {
@@ -221,17 +221,17 @@ describe('UpcomingRenewalsView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="renewals-service-auto-renew-4"]').attributes('aria-checked')).toBe('true')
-    expect(wrapper.get('[data-testid="renewals-action-error"]').text()).toContain('The registrar refused.')
+    expect(toastMessages()).toEqual(['The registrar refused.'])
   })
 
-  it('shows the API sentence of a refused action', async () => {
+  it('toasts the API sentence of a refused action', async () => {
     stubRoutes({ ...lists, 'POST /api/billing/client/9/renewal-invoices': () => problem('This client account is suspended.', 403) })
     const wrapper = await mountView()
 
     await wrapper.get('[data-testid="renewals-service-generate-4"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="renewals-action-error"]').text()).toContain('This client account is suspended.')
+    expect(toastMessages()).toEqual(['This client account is suspended.'])
   })
 
   it('shows the error with Retry when a load is refused', async () => {

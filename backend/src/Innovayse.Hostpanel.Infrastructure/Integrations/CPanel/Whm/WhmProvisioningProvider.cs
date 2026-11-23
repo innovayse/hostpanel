@@ -262,6 +262,17 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
         _logger.LogInformation("cPanel account {User} was already on the package.", req.ProvisioningRef);
     }
 
+    /// <summary>Answers that the host's own cPanel provider cannot read one account: that read comes from a panel plugin.</summary>
+    /// <param name="req">The service and the account reference; not used.</param>
+    /// <param name="ct">Cancellation token; not used.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="DomainRuleException">Always thrown with <see cref="HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED"/>.</exception>
+    public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct)
+    {
+        throw new DomainRuleException(
+            HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The built in cPanel provider does not read a single account.");
+    }
+
     /// <summary>Stops a call that names an account WHM could never hold, before WHM is asked.</summary>
     /// <param name="provisioningRef">The account's username as stored.</param>
     /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.CPANEL_USERNAME_INVALID"/> when the value is blank or not a username.</exception>

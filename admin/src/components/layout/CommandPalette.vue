@@ -10,23 +10,27 @@
  * the highlighted one, Escape closes. On a phone it fills the screen. The shell mounts it once; this
  * component registers the global shortcut itself and removes it when it goes away.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import UiCommandDialog from '@/components/ui/UiCommandDialog.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiMark from '@/components/ui/UiMark.vue'
+import UiOption from '@/components/ui/UiOption.vue'
+import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import UiTransition from '@/components/ui/UiTransition.vue'
 import { buildPaletteEntries, filterPaletteEntries, PaletteGroup, splitLabel } from '@/lib/commandPalette'
 import type { PaletteEntry } from '@/lib/commandPalette'
 import { Icon } from '@/lib/icons'
 import { useNavSections } from '@/composables/useNavSections'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
-import { FLOATING_PANEL_CLASSES } from '@/utils/ui/floating'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiBreakpoint, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import { Key } from '@/utils/ui/keys'
-import { useModalSurface } from '@/utils/ui/modalSurface'
-import { UiTransitionKind } from '@/utils/ui/transition'
 
 /** A group of entries as listed: its heading and the entries under it. */
 interface PaletteSection {
@@ -55,12 +59,6 @@ const query = ref('')
 
 /** Index of the highlighted entry in the flat list. */
 const activeIndex = ref(0)
-
-/** The palette panel, for focus handling. */
-const panel = ref<HTMLElement | null>(null)
-
-/** The option elements by flat index, to scroll the highlighted one into view. */
-const optionElements = new Map<number, HTMLElement>()
 
 /** Every entry the palette can open. */
 const allEntries = computed<PaletteEntry[]>(() =>
@@ -117,20 +115,6 @@ const optionId = (index: number): string => `${baseId}-option-${index}`
 const activeOptionId = computed<string | undefined>(() => (flatEntries.value.length === 0 ? undefined : optionId(activeIndex.value)))
 
 /**
- * Stores or forgets the element of one option, kept to scroll the highlighted option into view.
- *
- * @param index - The option's flat index.
- * @param element - The element, or null when it is removed.
- */
-const setOptionElement = (index: number, element: unknown): void => {
-  if (element instanceof HTMLElement) {
-    optionElements.set(index, element)
-  } else {
-    optionElements.delete(index)
-  }
-}
-
-/**
  * The heading of a group.
  *
  * @param group - The group.
@@ -166,11 +150,8 @@ const close = (): void => {
   palette.close()
 }
 
-/** Keyboard handling shared with the other modal surfaces: Escape closes, Tab stays inside. */
-const { onKeydown: surfaceKeydown, focusIn } = useModalSurface(panel, () => palette.isOpen, close)
-
 /**
- * Arrow keys move the highlight and Enter opens it; every other key goes to the shared modal handling.
+ * Arrow keys move the highlight and Enter opens it; Escape and Tab are the dialog surface's.
  *
  * @param event - The keystroke that reached the panel.
  */
@@ -186,9 +167,7 @@ const onKeydown = (event: KeyboardEvent): void => {
     if (entry !== undefined) {
       void choose(entry)
     }
-    return
   }
-  surfaceKeydown(event)
 }
 
 /**
@@ -216,12 +195,6 @@ watch(() => palette.isOpen, (open) => {
   }
 })
 
-// The highlighted option stays visible while the arrow keys walk a long list.
-watch(activeIndex, async (index) => {
-  await nextTick()
-  optionElements.get(index)?.scrollIntoView?.({ block: 'nearest' })
-})
-
 onMounted(() => {
   window.addEventListener('keydown', onShortcut)
 })
@@ -232,118 +205,111 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Teleport to="body">
-    <UiTransition :kind="UiTransitionKind.Dialog" @after-enter="focusIn">
-      <div
-        v-if="palette.isOpen"
-        data-testid="command-palette-backdrop"
-        class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm sm:px-4 sm:pt-[12vh]"
-        @click.self="close"
-      >
-        <div
-          ref="panel"
-          data-testid="command-palette"
-          role="dialog"
-          aria-modal="true"
+  <UiCommandDialog
+    :open="palette.isOpen"
+    :label="t('commandPalette.title')"
+    data-testid="command-palette"
+    @close="close"
+    @keydown="onKeydown"
+  >
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.None" class="shrink-0 gap-2 border-b border-border-subtle p-3">
+      <UiStack :gap="UiGap.None" class="relative min-w-0 flex-1">
+        <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" class="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center">
+          <UiIcon :markup="Icon.Search" />
+        </UiText>
+        <UiInput
+          v-model="query"
+          class="pl-9"
+          data-testid="command-palette-input"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="true"
+          :aria-controls="`${baseId}-list`"
+          :aria-activedescendant="activeOptionId"
           :aria-label="t('commandPalette.title')"
-          tabindex="-1"
-          :class="FLOATING_PANEL_CLASSES"
-          class="flex h-dvh w-full flex-col overflow-hidden outline-none sm:h-auto sm:max-h-[70dvh] sm:max-w-xl sm:rounded-panel"
-          @keydown="onKeydown"
+          :placeholder="t('commandPalette.placeholder')"
+          autocomplete="off"
+        />
+      </UiStack>
+      <UiIconButton
+        :label="t('shared.close')"
+        :variant="UiButtonVariant.Ghost"
+        :size="UiSize.Sm"
+        class="sm:hidden"
+        data-testid="command-palette-close"
+        @click="close"
+      >
+        <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
+      </UiIconButton>
+    </UiStack>
+
+    <UiStack
+      :id="`${baseId}-list`"
+      :gap="UiGap.None"
+      role="listbox"
+      :aria-label="t('commandPalette.title')"
+      data-testid="command-palette-list"
+      class="min-h-0 flex-1 overflow-y-auto p-2"
+    >
+      <UiStack
+        v-if="flatEntries.length === 0"
+        :gap="UiGap.None"
+        role="status"
+        data-testid="command-palette-empty"
+        class="px-3 py-10 text-center"
+      >
+        <UiText :tone="UiTextTone.Muted">
+          {{ t('commandPalette.empty', { query: query.trim() }) }}
+        </UiText>
+      </UiStack>
+      <UiStack
+        v-for="(section, sectionIndex) in sections"
+        :key="section.group"
+        role="group"
+        :aria-labelledby="`${baseId}-group-${section.group}`"
+        :data-testid="`command-palette-group-${section.group}`"
+        :gap="UiGap.None"
+        class="pb-1"
+      >
+        <UiText
+          :id="`${baseId}-group-${section.group}`"
+          :tone="UiTextTone.Muted"
+          class="px-3 pb-1 pt-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em]"
         >
-          <div class="flex shrink-0 items-center gap-2 border-b border-border-subtle p-3">
-            <div class="relative min-w-0 flex-1">
-              <span class="pointer-events-none absolute left-3 top-1/2 flex -translate-y-1/2 items-center text-text-muted">
-                <UiIcon :markup="Icon.Search" />
-              </span>
-              <UiInput
-                v-model="query"
-                class="pl-9"
-                data-testid="command-palette-input"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded="true"
-                :aria-controls="`${baseId}-list`"
-                :aria-activedescendant="activeOptionId"
-                :aria-label="t('commandPalette.title')"
-                :placeholder="t('commandPalette.placeholder')"
-                autocomplete="off"
-              />
-            </div>
-            <UiIconButton
-              :label="t('commandPalette.close')"
-              size="sm"
-              class="sm:hidden"
-              data-testid="command-palette-close"
-              @click="close"
-            >
-              <UiIcon :markup="Icon.Close" size="sm" />
-            </UiIconButton>
-          </div>
+          {{ groupLabel(section.group) }}
+        </UiText>
+        <UiOption
+          v-for="(entry, entryIndex) in section.entries"
+          :id="optionId(flatIndex(sectionIndex, entryIndex))"
+          :key="`${section.group}:${entry.to}`"
+          :active="flatIndex(sectionIndex, entryIndex) === activeIndex"
+          :data-testid="`command-palette-option-${flatIndex(sectionIndex, entryIndex)}`"
+          @select="choose(entry)"
+          @hover="activeIndex = flatIndex(sectionIndex, entryIndex)"
+        >
+          <UiIcon :markup="entry.icon" class="text-text-muted" />
+          <UiText :as="UiTextTag.Span" :tone="UiTextTone.Plain" class="min-w-0 flex-1 truncate">
+            <template v-for="part in splitLabel(entry.label, query)" :key="part.start">
+              <UiMark v-if="part.match">{{ part.text }}</UiMark>
+              <template v-else>{{ part.text }}</template>
+            </template>
+          </UiText>
+          <UiText v-if="entry.hint !== ''" :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="shrink-0">{{ entry.hint }}</UiText>
+        </UiOption>
+      </UiStack>
+    </UiStack>
 
-          <div
-            :id="`${baseId}-list`"
-            role="listbox"
-            :aria-label="t('commandPalette.title')"
-            data-testid="command-palette-list"
-            class="min-h-0 flex-1 overflow-y-auto p-2"
-          >
-            <div
-              v-if="flatEntries.length === 0"
-              role="status"
-              data-testid="command-palette-empty"
-              class="px-3 py-10 text-center"
-            >
-              <UiText tone="muted">
-                {{ t('commandPalette.empty', { query: query.trim() }) }}
-              </UiText>
-            </div>
-            <div
-              v-for="(section, sectionIndex) in sections"
-              :key="section.group"
-              role="group"
-              :aria-labelledby="`${baseId}-group-${section.group}`"
-              :data-testid="`command-palette-group-${section.group}`"
-              class="pb-1"
-            >
-              <div
-                :id="`${baseId}-group-${section.group}`"
-                class="px-3 pb-1 pt-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-text-muted"
-              >
-                {{ groupLabel(section.group) }}
-              </div>
-              <div
-                v-for="(entry, entryIndex) in section.entries"
-                :id="optionId(flatIndex(sectionIndex, entryIndex))"
-                :key="`${section.group}:${entry.to}`"
-                :ref="(element) => setOptionElement(flatIndex(sectionIndex, entryIndex), element)"
-                role="option"
-                :aria-selected="flatIndex(sectionIndex, entryIndex) === activeIndex"
-                :data-testid="`command-palette-option-${flatIndex(sectionIndex, entryIndex)}`"
-                class="flex cursor-pointer items-center gap-3 rounded-control px-3 py-2 text-sm text-text-secondary transition-colors"
-                :class="flatIndex(sectionIndex, entryIndex) === activeIndex ? 'bg-surface-hover text-text-primary' : ''"
-                @click="choose(entry)"
-                @mousemove="activeIndex = flatIndex(sectionIndex, entryIndex)"
-              >
-                <UiIcon :markup="entry.icon" class="text-text-muted" />
-                <span class="min-w-0 flex-1 truncate">
-                  <template v-for="part in splitLabel(entry.label, query)" :key="part.start">
-                    <mark v-if="part.match" class="bg-transparent font-semibold text-text-accent">{{ part.text }}</mark>
-                    <template v-else>{{ part.text }}</template>
-                  </template>
-                </span>
-                <span v-if="entry.hint !== ''" class="shrink-0 text-xs text-text-muted">{{ entry.hint }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="hidden shrink-0 items-center gap-4 border-t border-border-subtle px-4 py-2 text-xs text-text-muted sm:flex" data-testid="command-palette-footer">
-            <span>{{ t('commandPalette.hintNavigate') }}</span>
-            <span>{{ t('commandPalette.hintOpen') }}</span>
-            <span>{{ t('commandPalette.hintClose') }}</span>
-          </div>
-        </div>
-      </div>
-    </UiTransition>
-  </Teleport>
+    <UiStack
+      :direction="UiDirection.Row"
+      :align="UiAlignItems.Center"
+      :gap="UiGap.None"
+      :visible-from="UiBreakpoint.Sm"
+      class="shrink-0 gap-4 border-t border-border-subtle px-4 py-2"
+      data-testid="command-palette-footer"
+    >
+      <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('commandPalette.hintNavigate') }}</UiText>
+      <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('commandPalette.hintOpen') }}</UiText>
+      <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('commandPalette.hintClose') }}</UiText>
+    </UiStack>
+  </UiCommandDialog>
 </template>

@@ -1,14 +1,12 @@
 {
   "configure": {
     "title": "Konfigurieren",
-    "back": "Zurück zu den Produkten",
     "notFound": "Produkt nicht gefunden.",
     "includedFeatures": "Enthaltene Funktionen",
     "chooseBillingCycle": "Abrechnungszeitraum wählen",
     "orderSummary": "Bestellübersicht",
     "setupFees": "Einrichtungsgebühren",
     "totalDueToday": "Heute fällig",
-    "continue": "Weiter",
     "haveQuestions": "Fragen? Kontaktieren Sie unser Vertriebsteam.",
     "clickHere": "Hier klicken"
   }

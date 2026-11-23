@@ -8,6 +8,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDateTimeCompact } from '@/lib/format'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -21,7 +22,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiText tone="muted" size="xs" class="text-right" data-testid="report-timestamp">
+  <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="text-right" data-testid="report-timestamp">
     {{ t('reports.reportTimestamp.reportGeneratedOnTimestamp', { timestamp }) }}
   </UiText>
 </template>

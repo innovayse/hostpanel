@@ -11,7 +11,7 @@ import { ref, computed, onMounted, provide, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useClientTicketsStore } from '@/stores/clientTickets'
 import { formatDate, formatDateTimeCompact } from '@/lib/format'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
@@ -29,18 +29,19 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonVariant, UiButtonType } from '@/utils/ui/button'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiAlignItems, UiJustify, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone, UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
 import { CONVERSATION_CARD, REPLY_CARD, SETTINGS_CARD } from '@/views/ClientTicketDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 
 const { t } = useI18n()
 
@@ -125,10 +126,7 @@ const populateForm = (): void => {
 }
 
 /** The outcome line of the last change. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** True while the delete is in flight. */
 const deleting = ref(false)
@@ -150,7 +148,6 @@ const load = async (): Promise<void> => {
  * @returns True when the change was accepted.
  */
 const runChange = async (change: () => Promise<boolean>, successKey: string): Promise<boolean> => {
-  feedback.clear()
   const ok = await change()
   if (ok) {
     feedback.show(t(successKey), false)
@@ -217,7 +214,6 @@ const handleReply = async (): Promise<void> => {
  * @returns Promise that resolves when deletion completes.
  */
 const handleDelete = async (): Promise<void> => {
-  feedback.clear()
   deleting.value = true
   const ok = await store.deleteTicket(ticketId.value)
   deleting.value = false
@@ -276,12 +272,11 @@ onMounted(() => {
         </UiBadge>
       </UiPageHeader>
 
-      <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-ticket-feedback" />
 
-      <UiCard padding="md">
+      <UiCard :padding="UiCardPadding.Md" container>
         <UiStack>
-          <UiHeading :level="2" variant="card">{{ t(SETTINGS_CARD.title) }}</UiHeading>
-          <UiGrid :columns="4">
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t(SETTINGS_CARD.title) }}</UiHeading>
+          <UiGrid :columns="4" container>
             <UiField :label="t('shared.department')">
               <UiErrorState
                 v-if="store.departmentsError !== null"
@@ -305,24 +300,24 @@ onMounted(() => {
               </UiText>
             </UiField>
           </UiGrid>
-          <UiStack direction="row">
+          <UiStack :direction="UiDirection.Row">
             <UiButton :action="UiActionKind.Save"
-              type="button"
+              :type="UiButtonType.Button"
               :variant="UiButtonVariant.Primary"
               :loading="store.loading"
               :disabled="!store.currentTicket"
               data-testid="client-ticket-save"
               @click="handleSaveChanges"
             >
-              {{ t('shared.saveChanges') }}
+              {{ t('shared.save') }}
             </UiButton>
           </UiStack>
         </UiStack>
       </UiCard>
 
-      <UiCard padding="md">
+      <UiCard :padding="UiCardPadding.Md">
         <UiStack>
-          <UiHeading :level="2" variant="card">{{ t(REPLY_CARD.title) }}</UiHeading>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t(REPLY_CARD.title) }}</UiHeading>
           <UiField :label="t('shared.message')">
             <template #default="{ id }">
               <UiTextarea
@@ -334,33 +329,33 @@ onMounted(() => {
               />
             </template>
           </UiField>
-          <UiStack direction="row">
+          <UiStack :direction="UiDirection.Row">
             <UiButton :action="UiActionKind.Send"
-              type="button"
+              :type="UiButtonType.Button"
               :variant="UiButtonVariant.Primary"
               :loading="store.loading"
               :disabled="replyIncomplete || !store.currentTicket"
               data-testid="client-ticket-reply"
               @click="handleReply"
             >
-              {{ t('clients.clientTicketDetail.reply') }}
+              {{ t('shared.reply') }}
             </UiButton>
           </UiStack>
         </UiStack>
       </UiCard>
 
-      <UiCard padding="md">
+      <UiCard :padding="UiCardPadding.Md">
         <UiStack data-testid="client-ticket-thread">
-          <UiHeading :level="2" variant="card">{{ t(CONVERSATION_CARD.title) }}</UiHeading>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t(CONVERSATION_CARD.title) }}</UiHeading>
 
           <template v-if="!store.currentTicket">
             <UiChatBubble :side="UiChatBubbleSide.Other" loading data-testid="client-ticket-message-loading" />
             <UiChatBubble :side="UiChatBubbleSide.Own" loading data-testid="client-ticket-message-loading" />
           </template>
 
-          <UiCard v-else padding="sm">
-            <UiStack gap="sm">
-              <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
+          <UiCard v-else :padding="UiCardPadding.Sm">
+            <UiStack :gap="UiGap.Sm">
+              <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
                 <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Sm">{{ t('shared.client') }}</UiText>
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ formatDateTimeCompact(store.currentTicket.createdAt) }}</UiText>
               </UiStack>
@@ -368,10 +363,10 @@ onMounted(() => {
             </UiStack>
           </UiCard>
 
-          <UiCard v-for="reply in store.currentTicket?.replies ?? []" :key="reply.id" padding="sm">
-            <UiStack gap="sm">
-              <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-                <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
+          <UiCard v-for="reply in store.currentTicket?.replies ?? []" :key="reply.id" :padding="UiCardPadding.Sm">
+            <UiStack :gap="UiGap.Sm">
+              <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
+                <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
                   <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Sm">{{ orUnknown(reply.authorName) }}</UiText>
                   <UiBadge v-if="reply.isStaffReply" :tone="UiTone.Primary" small>
                     {{ t('clients.clientTicketDetail.staff') }}
@@ -392,12 +387,12 @@ onMounted(() => {
 
     <UiDialog
       v-if="showDeleteModal"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientTicketDetail.deleteTicket')"
       :message="t('clients.clientTicketDetail.confirmDeleteTicket', { id: ticketId })"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="handleDelete"
       @close="dismissDelete"
     />

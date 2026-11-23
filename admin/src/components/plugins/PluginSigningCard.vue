@@ -22,6 +22,10 @@ import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { PluginSettingKey, SettingToggle } from '@/types/setting'
 import type { Setting, SettingSave } from '@/types/setting'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -45,27 +49,27 @@ const enabled = useSettingSwitch(draft)
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-signing">
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="section">{{ t('plugins.pluginSigning.title') }}</UiHeading>
-      <UiText tone="secondary" size="md">{{ t('plugins.pluginSigning.description') }}</UiText>
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-signing">
+    <UiStack :gap="UiGap.Sm">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('plugins.pluginSigning.title') }}</UiHeading>
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('plugins.pluginSigning.description') }}</UiText>
 
-      <UiAlert variant="warning" data-testid="plugin-signing-warning">
+      <UiAlert :variant="UiTone.Warning" data-testid="plugin-signing-warning">
         {{ t('plugins.pluginSigning.warning') }}
       </UiAlert>
 
-      <UiAlert v-if="!draft.setting.value" variant="warning" data-testid="plugin-signing-not-seeded">
+      <UiAlert v-if="!draft.setting.value" :variant="UiTone.Warning" data-testid="plugin-signing-not-seeded">
         {{ t('plugins.pluginSigning.notSeeded', { key: PluginSettingKey.AllowUnsigned }) }}
       </UiAlert>
       <template v-else>
-        <UiAlert v-if="enabled" variant="danger" data-testid="plugin-signing-active">
+        <UiAlert v-if="enabled" :variant="UiTone.Danger" data-testid="plugin-signing-active">
           {{ t('plugins.pluginSigning.active') }}
         </UiAlert>
-        <UiStack direction="row" align="center" wrap>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
           <UiToggle v-model="enabled" data-testid="plugin-allow-unsigned" />
-          <UiStack gap="xs" class="min-w-56 flex-1">
-            <UiText tone="primary" size="md">{{ t('plugins.pluginSigning.label') }}</UiText>
-            <UiText tone="muted" size="sm">{{ t('plugins.pluginSigning.hint') }}</UiText>
+          <UiStack :gap="UiGap.Xs" class="min-w-56 flex-1">
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('plugins.pluginSigning.label') }}</UiText>
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('plugins.pluginSigning.hint') }}</UiText>
           </UiStack>
           <SettingSaveButton
             :dirty="draft.dirty.value"

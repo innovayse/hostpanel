@@ -72,6 +72,24 @@ describe('UiCard', () => {
     expect(mount(UiCard, { slots: { default: 'Body text' } }).find('[data-testid="ui-card-footer"]').exists()).toBe(false)
   })
 
+  it('wraps the body in an inline-size container only when asked, never making the card itself one', () => {
+    const plain = mount(UiCard, { slots: { default: 'Body text' } })
+    const container = mount(UiCard, { props: { container: true }, slots: { header: '<h3>Title</h3>', default: 'Body text', footer: 'Pager' } })
+
+    expect(plain.find('[data-testid="ui-card-body"]').exists()).toBe(false)
+    expect(container.classes()).not.toContain('@container')
+    expect(container.get('[data-testid="ui-card-body"]').classes()).toContain('@container')
+    expect(container.get('[data-testid="ui-card-body"]').text()).toBe('Body text')
+    expect(container.get('[data-testid="ui-card-body"]').text()).not.toContain('Title')
+  })
+
+  it('draws the placeholder lines, not the container body, while loading', () => {
+    const wrapper = mount(UiCard, { props: { container: true, loading: true }, slots: { default: 'Body text' } })
+
+    expect(wrapper.find('[data-testid="ui-card-body"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-card-skeleton"]').exists()).toBe(true)
+  })
+
   it('moves to the denser frosted surface when elevated', () => {
     const wrapper = mount(UiCard, { props: { elevated: true } })
 

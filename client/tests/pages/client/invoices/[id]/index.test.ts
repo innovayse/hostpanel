@@ -250,7 +250,8 @@ describe('invoice page', () => {
     await waitUntil(() => expect(downloads).toHaveLength(1))
     await flushPromises()
 
-    expect(button.text()).toContain('client.invoices.downloadPdf')
+    expect(button.text()).toContain('common.pdf')
+    expect(button.attributes('title')).toBe('client.invoices.downloadPdf')
     expect(requestsTo(stub.requests, PATHS.pdf).map(request => request.method)).toEqual(['GET'])
     expect(downloads[0]?.fileName).toBe('invoice-41.pdf')
     expect(await downloads[0]?.blob.text()).toBe('%PDF-')

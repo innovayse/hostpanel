@@ -1,6 +1,10 @@
 <template>
-  <div
-    class="relative flex min-h-dvh items-center justify-center overflow-hidden bg-gray-50 px-4 py-16 dark:bg-ui-surface"
+  <UiStack
+    direction="row"
+    align="center"
+    justify="center"
+    gap="none"
+    class="relative min-h-dvh overflow-hidden bg-gray-50 px-4 py-16 dark:bg-ui-surface"
     data-testid="auth-shell"
   >
     <UiBackdrop variant="aurora" />
@@ -9,22 +13,22 @@
     <LayoutDemoBanner class="absolute inset-x-0 top-0 z-20" />
 
     <!-- Auth card width: an intrinsically small card, not page layout. -->
-    <div class="relative z-10 w-full max-w-md">
-      <div class="mb-8 text-center">
+    <UiStack gap="none" class="relative z-10 w-full max-w-md">
+      <UiStack align="center" gap="none" class="mb-8 text-center">
         <ClientAuthLogo v-if="showLogo" />
         <UiHeading v-if="title" :level="1" size="section" data-testid="auth-shell-title">{{ title }}</UiHeading>
         <UiText v-if="subtitle" tone="muted" size="sm" class="mt-1" data-testid="auth-shell-subtitle">{{ subtitle }}</UiText>
-      </div>
+      </UiStack>
 
       <UiCard padding="xl">
         <slot />
       </UiCard>
 
-      <div v-if="$slots.footer" class="mt-6 text-center">
+      <UiStack v-if="$slots.footer" align="center" gap="none" class="mt-6 text-center">
         <slot name="footer" />
-      </div>
-    </div>
-  </div>
+      </UiStack>
+    </UiStack>
+  </UiStack>
 </template>
 
 <script setup lang="ts">

@@ -6,7 +6,7 @@
       "headline2": "for every website.",
       "subtitle": "Pick the hosting, domain, SSL and server plans your site needs, with clear prices and support that answers.",
       "cta": {
-        "viewProducts": "View Products",
+        "viewProducts": "View products",
         "comparePlans": "Compare hosting plans"
       },
       "trustBadges": {
@@ -20,7 +20,6 @@
     },
     "pricing": {
       "title": "Choose Your Plan",
-      "trial": "Start Free Trial",
       "cycles": {
         "monthly": "Monthly",
         "quarterly": "Quarterly",
@@ -40,8 +39,8 @@
       "save": "Save {percent}%",
       "more": "+{count} more",
       "cta": {
-        "viewDemo": "View Demo",
-        "learnMore": "Learn More"
+        "viewDemo": "View demo",
+        "learnMore": "Learn more"
       }
     },
     "help": {

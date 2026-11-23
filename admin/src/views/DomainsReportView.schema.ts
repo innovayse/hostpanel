@@ -7,6 +7,7 @@ import { REPORT_FIELDS_KEY } from '@/lib/reportsSchema'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
+import { UiColumnKind } from '@/utils/ui/table'
 
 /** What the domains report is made of. */
 const schema: ReportSkeletonSchema = {
@@ -21,11 +22,11 @@ const schema: ReportSkeletonSchema = {
   ],
   table: {
     columns: [
-      { key: 'id', label: 'shared.id' },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName' },
       { key: 'domainName', label: 'shared.domainName' },
-      { key: 'dates.expiry', label: 'shared.expiryDate' },
-      { key: 'status', label: 'shared.status' },
+      { key: 'dates.expiry', label: 'shared.expiryDate', kind: UiColumnKind.Date },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status },
     ],
     pagination: true,
   },

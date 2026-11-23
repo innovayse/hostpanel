@@ -30,7 +30,7 @@
       "requiresAuth": true,
       "shell": true
     },
-    "component": "AppLayout.vue",
+    "component": "MainLayout.vue",
     "children": [
       {
         "path": "",

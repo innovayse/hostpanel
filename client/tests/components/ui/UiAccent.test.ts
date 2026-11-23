@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiAccent from '~/components/ui/UiAccent.vue'
+import { UiAccentTag } from '~/utils/ui/enums'
 
 describe('UiAccent', () => {
   it('writes a hex colour as the accent property and renders its slot', () => {
@@ -37,6 +38,6 @@ describe('UiAccent', () => {
   })
 
   it('renders the requested tag', () => {
-    expect(mountWithKit(UiAccent, { props: { as: 'li', color: '#fff' } }).element.tagName).toBe('LI')
+    expect(mountWithKit(UiAccent, { props: { as: UiAccentTag.Li, color: '#fff' } }).element.tagName).toBe('LI')
   })
 })

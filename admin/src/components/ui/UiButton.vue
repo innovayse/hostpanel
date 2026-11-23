@@ -3,12 +3,15 @@
  * Button with a named look.
  *
  * `variant` picks the look (primary gradient, secondary, ghost, danger, link) and `size` the
- * padding; both read theme tokens so the button follows light/dark. The default `plain` look adds
- * no colours, which keeps screens that still pass their own classes unchanged. `loading` shows a
+ * padding; both read theme tokens so the button follows light/dark. A button with no `variant` is a
+ * `secondary` button, so it is never raw. `loading` shows a
  * spinner beside the label (the label stays), marks the button busy and blocks clicks; `block` stretches it to the container.
  * An action names its kind with `action` (`UiActionKind`, drawn from the one map in `utils/ui/actions`) or passes its own
  * `icon` (an `Icon` entry); the icon sits before the label and gives way to the spinner while `loading`. The `link` look
  * is the text look of a link inside prose; a link-look button that acts may still name its action.
+ * `hint` is the full phrase of an action whose visible label is shortened because the icon already says the
+ * word (`PDF` for "Download PDF"): it becomes the accessible name (`aria-label`) and the native tooltip (`title`).
+ * The hint must contain the visible text (WCAG label in name), so a voice user saying the label still hits the button.
  * `data-testid` and listeners fall through to the native `<button>`.
  */
 import { computed } from 'vue'
@@ -22,9 +25,9 @@ import type { UiSize } from '@/utils/ui/size'
 
 /** Props for UiButton. */
 const props = withDefaults(defineProps<{
-  /** Visual look of the button. */
+  /** Visual look of the button; `secondary` when omitted. */
   variant?: UiButtonVariant
-  /** Padding and type size; ignored by the `plain` look. */
+  /** Padding and type size. */
   size?: UiSize
   /** Native button type; omitted so a button inside a form keeps the browser default. */
   type?: UiButtonType
@@ -40,8 +43,10 @@ const props = withDefaults(defineProps<{
   icon?: string
   /** Draws a button-like look as a pill (fully rounded ends), whatever its size. */
   pill?: boolean
+  /** Full phrase for a shortened visible label; sets `aria-label` and `title`, and must contain the visible text. */
+  hint?: string
 }>(), {
-  variant: UiButtonVariant.Plain,
+  variant: UiButtonVariant.Secondary,
   size: 'md',
   type: undefined,
   loading: false,
@@ -50,6 +55,7 @@ const props = withDefaults(defineProps<{
   action: undefined,
   icon: undefined,
   pill: false,
+  hint: undefined,
 })
 
 /** Markup of the icon drawn before the label; undefined for a button that names neither an action nor an icon. */
@@ -58,9 +64,6 @@ const glyph = computed<string | undefined>(() => resolveActionIcon(props.icon, p
 /** Class list for the chosen look and size; the link look keeps the type scale but has no padding. */
 const classes = computed<string[]>(() => {
   const width = props.block ? 'w-full' : ''
-  if (props.variant === UiButtonVariant.Plain) {
-    return [width]
-  }
   const sizing = props.variant === UiButtonVariant.Link ? buttonLinkSizeClasses[props.size] : buttonSizeClasses[props.size]
   return [buttonBaseClasses, buttonVariantClasses[props.variant], sizing, buttonRadiusClasses(props.variant, props.size, props.pill), width]
 })
@@ -71,6 +74,8 @@ const classes = computed<string[]>(() => {
     :type="type"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
+    :aria-label="hint"
+    :title="hint"
     :class="classes"
   >
     <span v-if="loading" :class="buttonSpinnerClasses" aria-hidden="true" data-testid="ui-button-spinner" />

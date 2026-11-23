@@ -3,7 +3,7 @@
     <!-- Outside the card, which would clip a badge sitting on its edge. -->
     <UiText
       v-if="popular"
-      as="span"
+      :as="UiTextTag.Span"
       size="xs"
       tone="inherit"
       weight="semibold"
@@ -35,7 +35,7 @@
 
       <UiStack direction="row" wrap align="end" gap="xs" class="mt-5">
         <UiText
-          as="span"
+          :as="UiTextTag.Span"
           size="inherit"
           tone="inherit"
           weight="bold"
@@ -46,7 +46,7 @@
         </UiText>
         <UiText
           v-if="price"
-          as="span"
+          :as="UiTextTag.Span"
           size="sm"
           tone="muted"
           weight="medium"
@@ -71,7 +71,7 @@
           class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300 [.tpl-classic_&]:text-classic-ink"
         >
           <Check :size="16" :stroke-width="2.5" :class="[ACCENT_CLASSES.text, 'mt-0.5 flex-shrink-0']" />
-          <UiText as="span" size="inherit" tone="inherit" class="min-w-0 break-words">{{ feature }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="min-w-0 break-words">{{ feature }}</UiText>
         </UiListItem>
         <UiListItem
           v-if="hiddenCount > 0"
@@ -103,7 +103,7 @@
           :data-testid="`product-trial-${plan.id}`"
           @click="emit('trial', plan)"
         >
-          {{ $t('products.pricing.trial') }}
+          {{ $t('trial.cta') }}
         </UiButton>
       </UiStack>
     </UiCard>
@@ -126,7 +126,7 @@ import { PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { ProductPlan } from '~/types/productplan'
 import { ACCENT_CLASSES } from '~/utils/ui/accent'
-import { UiButtonVariant, UiHeadingLevel } from '~/utils/ui/enums'
+import { UiButtonVariant, UiHeadingLevel, UiTextTag } from '~/utils/ui/enums'
 import { yearlySavingPercent } from '~/utils/yearlySaving'
 
 /** Props of ProductPlanCard. */

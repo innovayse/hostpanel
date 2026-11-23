@@ -28,8 +28,8 @@ describe('ClientCreditHistoryTable', () => {
   it('says nothing has moved the balance when there are no lines', () => {
     const wrapper = mountClient(HistoryTable, { props: { entries: [], currency: 'USD' } })
 
-    expect(wrapper.find('[data-testid="credit-history-empty"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="credit-history-table"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').text()).toContain('client.credit.history.empty')
+    expect(wrapper.findAll('[data-testid^="credit-entry-"]')).toHaveLength(0)
   })
 
   it('lists one row per movement, in the order the backend sent them', () => {

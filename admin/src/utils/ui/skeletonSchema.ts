@@ -11,7 +11,7 @@
 import type { ChartKind, UiChartHeight } from '@/utils/ui/chart'
 import type { UiGridColumns, UiSplitRatio } from '@/utils/ui/layout'
 import type { ReportAction, ReportNote } from '@/utils/ui/reportParts'
-import type { UiCardRole, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
+import type { UiCardRole, UiColumnKind, UiColumnSize, UiColumnWidth, UiHideBelow } from '@/utils/ui/table'
 
 /** Closed set of the screen shapes a skeleton can have; the discriminant of {@link SkeletonSchema}. */
 export const SkeletonKind = {
@@ -118,6 +118,10 @@ export interface SkeletonColumn {
   align?: 'left' | 'center' | 'right'
   /** Width of the column as its header sets it; the table default when omitted. */
   size?: UiColumnSize
+  /** Kind of data the column holds, which sets its width when `size` is omitted; free text when omitted. */
+  kind?: UiColumnKind
+  /** Width of a `Fixed` column. */
+  width?: UiColumnWidth
   /** Breakpoint below which the column is hidden, in the real header and in the skeleton alike. */
   hideBelow?: UiHideBelow
   /** What the column is on a card (below `sm`); the table default when omitted. */

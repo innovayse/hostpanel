@@ -15,8 +15,8 @@
       >
         <UiStack gap="xs" align="center">
           <UiTile size="lg" :icon="ICONS[stat.key]" class="bg-tile-mint text-white" />
-          <UiText as="span" size="inherit" tone="inherit" weight="bold" class="font-display text-[clamp(26px,3vw,34px)] text-tx" :data-testid="`performance-value-${stat.key}`">{{ stat.value }}</UiText>
-          <UiText as="span" size="inherit" tone="inherit" class="text-[14px] text-mut">{{ t(`aurora.performance.${stat.key}`) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="font-display text-[clamp(26px,3vw,34px)] text-tx" :data-testid="`performance-value-${stat.key}`">{{ stat.value }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[14px] text-mut">{{ t(`aurora.performance.${stat.key}`) }}</UiText>
         </UiStack>
       </UiCard>
     </UiBalancedGrid>
@@ -35,6 +35,7 @@ import { PerformanceStatKey } from '~/constants/performanceStatKey'
 import { usePerformanceStats } from '~/composables/usePerformanceStats'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import UiStack from '~/components/ui/UiStack.vue'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

@@ -3,7 +3,8 @@
     v-if="url"
     :href="url"
     external
-    class="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary"
+    :variant="UiButtonVariant.Link"
+    :size="UiSize.Sm"
     data-testid="page-help-link"
   >{{ t('common.help') }}</UiLink>
 </template>
@@ -15,6 +16,8 @@
  */
 import { useI18n } from 'vue-i18n'
 import UiLink from '@/components/ui/UiLink.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiSize } from '@/utils/ui/size'
 
 defineProps<{
   /** Full URL of the documentation guide, or null to hide the link. */

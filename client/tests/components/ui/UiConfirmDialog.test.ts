@@ -85,4 +85,11 @@ describe('UiConfirmDialog', () => {
     expect(custom.find('[data-testid="ui-confirm-confirm"]').text()).toBe('Yes, delete')
     expect(custom.find('[data-testid="ui-confirm-cancel"]').text()).toBe('Keep')
   })
+
+  it('stays a centred card on a phone instead of a full-screen sheet', () => {
+    const wrapper = mountDialog()
+
+    expect(wrapper.find('[role="dialog"]').classes()).toContain('rounded-xl')
+    expect(wrapper.find('[role="dialog"]').classes()).not.toContain('h-dvh')
+  })
 })

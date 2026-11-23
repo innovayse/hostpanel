@@ -294,7 +294,7 @@ describe('ReportPage', () => {
       expect(wrapper.get('[data-testid="report-stat-total"]').text()).toContain('$10')
       expect(wrapper.find('[data-testid="report-chart"]').exists()).toBe(true)
       expect(wrapper.findAll('th').map(header => header.text())).toEqual(['Name', 'Amount'])
-      expect(wrapper.findAll('th')[0]?.classes()).toContain('w-full')
+      expect(wrapper.findAll('th')[0]?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0']))
       expect(wrapper.get('[data-testid="report-table"]').text()).toContain('Acme')
       expect(wrapper.find('[data-testid="report-pager-next"]').exists()).toBe(true)
       expect(wrapper.get('[data-testid="report-note"]').text()).toContain('USD')

@@ -7,7 +7,7 @@
  * placeholder, and nothing in it is a link or takes focus.
  */
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
-import { sidebarEntryClasses, sidebarListClasses, sidebarRailWidthClass, sidebarShellClasses } from '@/utils/ui/sidebar'
+import { sidebarEntryClasses, sidebarListClasses, sidebarRailSurfaceClasses, sidebarRailWidthClass, sidebarShellClasses } from '@/utils/ui/sidebar'
 
 /** One entry of the rail. */
 interface UiSidebarSkeletonEntry {
@@ -25,7 +25,7 @@ defineProps<{
 </script>
 
 <template>
-  <div :class="[sidebarShellClasses, sidebarRailWidthClass]" data-testid="ui-sidebar-skeleton">
+  <div :class="[sidebarShellClasses, sidebarRailSurfaceClasses, sidebarRailWidthClass]" data-testid="ui-sidebar-skeleton">
     <div :class="sidebarListClasses">
       <div
         v-for="entry in entries"

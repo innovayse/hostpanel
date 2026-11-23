@@ -438,6 +438,97 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_ACCOUNT_NOT_FOUND);
     }
 
+    /// <summary>
+    /// Reading one account hands the plugin the stored server and the service and reference, and maps the panel's answer onto the host's
+    /// own state: the status, the domain, the package and the address.
+    /// </summary>
+    /// <param name="panelStatus">The status the panel reports.</param>
+    /// <param name="expected">The host's own status.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(PanelAccountStatus.Active, HostedAccountStatus.Active)]
+    [InlineData(PanelAccountStatus.Suspended, HostedAccountStatus.Suspended)]
+    public async Task GetAccount_Reported_IsMappedAndTheContextCarriesTheReferenceAsync(PanelAccountStatus panelStatus, HostedAccountStatus expected)
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakeAccountPanelPlugin));
+        harness.Script.Account = ValueResult<PanelAccount, PanelRefusalReason>.Done(
+            new PanelAccount("acct-7", "example.com", panelStatus, "Basic", null) { IpAddress = "203.0.113.20" });
+
+        var state = await harness.Provider().GetAccountAsync(new AccountStateOrder(7, "acct-7"), CancellationToken.None);
+
+        state.Should().Be(new HostedAccountState(expected, "example.com", "Basic", "203.0.113.20"));
+        var context = harness.Script.Received.Should().ContainSingle().Which.Should().BeOfType<PanelAccountContext>().Which;
+        context.Service.Should().Be(new PanelService(7, "acct-7"));
+        context.Server.ServerId.Should().Be(harness.Server.Id);
+        context.Server.Password.Should().Be(PanelPluginHarness.ServerPassword);
+    }
+
+    /// <summary>A field the panel does not report stays unreported, so the sync can say it cannot compare it.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task GetAccount_NothingElseReported_LeavesTheFieldsNullAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakeAccountPanelPlugin));
+        harness.Script.Account = ValueResult<PanelAccount, PanelRefusalReason>.Done(
+            new PanelAccount("acct-7", null, PanelAccountStatus.Active, null, null));
+
+        var state = await harness.Provider().GetAccountAsync(new AccountStateOrder(7, "acct-7"), CancellationToken.None);
+
+        state.Should().Be(new HostedAccountState(HostedAccountStatus.Active, null, null, null));
+    }
+
+    /// <summary>A plugin that does not declare the single account read is not supported and is never called.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task GetAccount_WithoutTheCapability_IsNotSupportedAndNotAskedAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakeLoginlessPanelPlugin));
+
+        var act = () => harness.Provider().GetAccountAsync(new AccountStateOrder(7, "acct-7"), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED);
+        harness.Script.Received.Should().BeEmpty();
+    }
+
+    /// <summary>An account the panel does not have, a read it cannot do and a refusal each answer their own code.</summary>
+    /// <param name="outcome">How the plugin answers.</param>
+    /// <param name="code">The code the host answers.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(PanelOperationOutcome.NotFound, HostpanelErrorCodes.PANEL_ACCOUNT_NOT_FOUND)]
+    [InlineData(PanelOperationOutcome.NotSupported, HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED)]
+    [InlineData(PanelOperationOutcome.Refused, HostpanelErrorCodes.PANEL_ACCESS_DENIED)]
+    public async Task GetAccount_NotAnAccount_IsRefusedWithItsCodeAsync(PanelOperationOutcome outcome, string code)
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakeAccountPanelPlugin));
+        harness.Script.Account = outcome switch
+        {
+            PanelOperationOutcome.NotFound => ValueResult<PanelAccount, PanelRefusalReason>.NotFound(),
+            PanelOperationOutcome.NotSupported => ValueResult<PanelAccount, PanelRefusalReason>.NotSupported(),
+            _ => ValueResult<PanelAccount, PanelRefusalReason>.Refused(PanelRefusalReason.AccessDenied),
+        };
+
+        var act = () => harness.Provider().GetAccountAsync(new AccountStateOrder(7, "acct-7"), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(code);
+    }
+
+    /// <summary>A plugin that throws is a call failure whose text never reaches the caller, and a switched off plugin is unavailable.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task GetAccount_ThrowingOrOffPlugin_IsAFailureWithoutPluginTextAsync()
+    {
+        using var throwing = await PanelPluginHarness.CreateAsync(factory, typeof(FakeAccountPanelPlugin));
+        throwing.Script.Throw = new InvalidOperationException("plugin internal text");
+        using var off = await PanelPluginHarness.CreateAsync(factory, typeof(FakeAccountPanelPlugin), enabled: false);
+
+        var thrown = () => throwing.Provider().GetAccountAsync(new AccountStateOrder(7, "acct-7"), CancellationToken.None);
+        var unavailable = () => off.Provider().GetAccountAsync(new AccountStateOrder(7, "acct-7"), CancellationToken.None);
+
+        (await thrown.Should().ThrowAsync<PanelPluginCallException>()).Which.Message.Should().NotContain("plugin internal text");
+        (await unavailable.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
+    }
+
     /// <summary>Builds the order a service is provisioned with: service 7, client 3.</summary>
     /// <returns>The order.</returns>
     private static ProvisionAccountOrder Order()

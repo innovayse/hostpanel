@@ -13,6 +13,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { requestsOf, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Mounts the list and waits for its first load.
@@ -250,7 +251,7 @@ describe('InvoicesListView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoices-feedback"]').text()).toBe('The invoice has payments.')
+    expect(toastMessages()).toContain('The invoice has payments.')
     expect(wrapper.find('[data-testid="billing-invoices-error"]').exists()).toBe(false)
   })
 
@@ -290,7 +291,7 @@ describe('InvoicesListView', () => {
     await wrapper.get('[data-testid="billing-invoices-bulk-paid"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoices-feedback"]').text()).toBe('One invoice is locked.')
+    expect(toastMessages()).toContain('One invoice is locked.')
   })
 
   it('reloads the list from the Retry of a refused load', async () => {

@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
 
 /** The clients list. */
 const schema: ListSkeletonSchema = {
@@ -20,14 +20,14 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', hideBelow: UiHideBelow.Md, size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', hideBelow: UiHideBelow.Md, kind: UiColumnKind.Id },
       { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
       { key: 'email', label: 'shared.email', hideBelow: UiHideBelow.Lg, cardRole: UiCardRole.Subtitle },
       { key: 'company', label: 'shared.company', hideBelow: UiHideBelow.Xl },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, size: UiColumnSize.Compact },
+      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
       { key: 'group', label: 'clients.clientGroups.group', hideBelow: UiHideBelow.Xl },
-      { key: 'twoFactor', label: 'clients.clientsList.2fa', hideBelow: UiHideBelow.Xl, size: UiColumnSize.Compact },
-      { key: 'joined', label: 'clients.clientsList.joined', hideBelow: UiHideBelow.Lg, size: UiColumnSize.Compact },
+      { key: 'twoFactor', label: 'clients.clientsList.2fa', hideBelow: UiHideBelow.Xl, kind: UiColumnKind.Status },
+      { key: 'joined', label: 'clients.clientsList.joined', hideBelow: UiHideBelow.Lg, kind: UiColumnKind.Date },
       { key: 'actions', actions: true },
     ],
   },

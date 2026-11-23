@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The email campaigns list. */
 const schema: ListSkeletonSchema = {
@@ -18,9 +18,9 @@ const schema: ListSkeletonSchema = {
     pagination: true,
     columns: [
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
-      { key: 'scheduledAt', label: 'emailCampaigns.list.scheduledAt' },
-      { key: 'sentAt', label: 'emailCampaigns.list.sentAt' },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
+      { key: 'scheduledAt', label: 'emailCampaigns.list.scheduledAt', kind: UiColumnKind.Date },
+      { key: 'sentAt', label: 'emailCampaigns.list.sentAt', kind: UiColumnKind.Date },
       { key: 'delivery', label: 'emailCampaigns.list.delivery' },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],

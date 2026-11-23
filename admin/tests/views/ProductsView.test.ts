@@ -13,6 +13,7 @@ import { callOf, invalid, json, problem } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted, mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
 
@@ -171,6 +172,26 @@ describe('ProductsView', () => {
     expect(post.body).toEqual({ name: 'Cloud', description: null, allowedPaymentMethods: ['bank_transfer'] })
   })
 
+  it('toasts the API sentence when a product group save is refused and keeps the form open', async () => {
+    stubRouteTable({
+      ...routes,
+      'GET /payment-methods': () => json([{ module: 'bank_transfer', displayName: 'Bank transfer' }]),
+      'POST /products/groups': () => problem('That group name is taken.', 409),
+    })
+    const { wrapper } = await mountScreen(ProductsView)
+
+    await wrapper.get('[data-testid="products-groups"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="product-groups-add"]').trigger('click')
+    await wrapper.get('[data-testid="product-group-form-name"]').setValue('Cloud')
+    await wrapper.get('[data-testid="product-group-form"]').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(toastMessages()).toEqual(['That group name is taken.'])
+    })
+    expect(wrapper.find('[data-testid="product-group-form"]').exists()).toBe(true)
+  })
+
   it('edits a product group through PUT with its current methods ticked', async () => {
     const mock = stubRouteTable({
       ...routes,
@@ -276,7 +297,7 @@ describe('ProductsView', () => {
     expect(wrapper.text()).toContain('Out of range.')
   })
 
-  it('shows the API sentence next to the save button when a save is refused', async () => {
+  it('toasts the API sentence when a save is refused and keeps the dialog open', async () => {
     stubRouteTable({ ...routes, 'POST /products': () => problem('That slug is taken.', 400) })
     const { wrapper } = await mountScreen(ProductsView)
 
@@ -286,7 +307,7 @@ describe('ProductsView', () => {
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="product-form-error"]').text()).toBe('That slug is taken.')
+      expect(toastMessages()).toEqual(['That slug is taken.'])
     })
     expect(wrapper.find('[data-testid="product-form"]').exists()).toBe(true)
   })
@@ -416,7 +437,7 @@ describe('ProductsView list', () => {
 
     expect(router.currentRoute.value.query).toEqual({ page: '2' })
     expect(requestsOf(mock).filter((request) => request.startsWith('GET /admin/products?')).at(-1)).toBe('GET /admin/products?page=2&pageSize=20')
-    expect(wrapper.text()).toContain('Products: 45')
+    expect(wrapper.get('[data-testid="products-pagination-range"]').text()).toBe('21 to 40 of 45')
   })
 
   it('says so when no product matches the filters and offers to clear them', async () => {

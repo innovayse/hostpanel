@@ -387,7 +387,7 @@ describe('RoutedView on a hard load', () => {
     const { wrapper, router } = mountColdLoad(() => session)
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="page-loading"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="home"]').exists()).toBe(false)
 
     answer()
@@ -395,7 +395,7 @@ describe('RoutedView on a hard load', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="home"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="page-loading"]').exists()).toBe(false)
   })
 
   it('ends in the load error, not in the loader, when the first navigation throws', async () => {
@@ -405,13 +405,13 @@ describe('RoutedView on a hard load', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="view-load-error"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="page-loading"]').exists()).toBe(false)
   })
 
   it('never draws the loader once the router has a screen', async () => {
     const { wrapper } = await mountRouted(heldLoader(screen('slow')).load)
 
-    expect(wrapper.find('[data-testid="app-loading"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="page-loading"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="home"]').exists()).toBe(true)
   })
 })

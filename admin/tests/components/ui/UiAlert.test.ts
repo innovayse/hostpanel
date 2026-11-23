@@ -1,9 +1,10 @@
 /**
- * Unit tests for UiAlert: tone colours, the legacy error alias and live-region roles.
+ * Unit tests for UiAlert: tone colours, the danger tone and live-region roles.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import { UiTone } from '@/utils/ui/tone'
 
 describe('UiAlert', () => {
   it('renders the message', () => {
@@ -19,8 +20,8 @@ describe('UiAlert', () => {
     expect(wrapper.attributes('role')).toBe('alert')
   })
 
-  it('treats error as the danger tone', () => {
-    const wrapper = mount(UiAlert, { props: { variant: 'error' } })
+  it('paints the danger tone red and announces it assertively', () => {
+    const wrapper = mount(UiAlert, { props: { variant: UiTone.Danger } })
 
     expect(wrapper.classes()).toContain('text-status-red')
     expect(wrapper.attributes('role')).toBe('alert')
@@ -42,5 +43,9 @@ describe('UiAlert', () => {
 
   it('keeps data-testid', () => {
     expect(mount(UiAlert, { attrs: { 'data-testid': 'probe' } }).attributes('data-testid')).toBe('probe')
+  })
+
+  it('breaks a long unbroken word instead of widening the row', () => {
+    expect(mount(UiAlert).get('[data-testid="ui-alert-body"]').classes()).toEqual(expect.arrayContaining(['min-w-0', 'break-words']))
   })
 })

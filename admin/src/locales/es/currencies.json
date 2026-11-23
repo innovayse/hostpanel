@@ -32,14 +32,11 @@
   "empty": "No hay monedas configuradas todavía. Agrega tu primera moneda para comenzar.",
   "makeBaseModal": {
     "title": "Establecer moneda base",
-    "message": "¿Establecer {code} como moneda base? Las tasas de todas las demás monedas se reexpresan con respecto a la nueva base.",
-    "confirmLabel": "Establecer como base"
+    "message": "¿Establecer {code} como moneda base? Las tasas de todas las demás monedas se reexpresan con respecto a la nueva base."
   },
   "pricesPicker": {
     "title": "Actualizar precios de productos",
-    "description": "Elige qué monedas no base recalcular a partir de los precios base.",
-    "cancel": "Cancelar",
-    "continue": "Continuar"
+    "description": "Elige qué monedas no base recalcular a partir de los precios base."
   },
   "pricesConfirm": {
     "title": "Sobrescribir precios de productos",
@@ -55,7 +52,6 @@
   },
   "form": {
     "editTitle": "Editar moneda",
-    "addTitle": "Agregar moneda",
     "code": {
       "label": "Código ISO",
       "placeholder": "ej. USD"
@@ -80,9 +76,6 @@
       "label": "Habilitada",
       "baseHint": "La moneda base siempre está habilitada.",
       "hint": "Si los pagadores pueden ser facturados en esta moneda"
-    },
-    "cancel": "Cancelar",
-    "save": "Guardar cambios",
-    "add": "Agregar moneda"
+    }
   }
 }

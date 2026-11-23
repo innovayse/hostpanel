@@ -24,7 +24,6 @@ const ALWAYS_ALLOWED = [/^max-w-\[75ch\]$/, /^max-w-full$/, /^max-w-none$/]
  * images are intrinsically narrow and are not page layout.
  */
 const ALLOWED_BY_FILE: Record<string, string[]> = {
-  'components/cart/CartContent.vue': ['max-w-[60%]'],
   'components/client/AuthLogo.vue': ['max-w-[200px]'],
   'components/client/AuthShell.vue': ['max-w-md'],
   'components/client/layout/Sidebar.vue': ['max-w-[85vw]'],
@@ -40,6 +39,8 @@ const ALLOWED_BY_FILE: Record<string, string[]> = {
   'components/ui/UiDrawer.vue': ['max-w-xs', 'max-w-md', 'max-w-lg', 'max-w-2xl'],
   'components/ui/UiEmptyState.vue': ['max-w-sm'],
   'components/ui/UiLogoWallItem.vue': ['max-w-[13rem]'],
+  // A popover panel is bound to the viewport, not the page: on a phone it must never overflow the screen edge.
+  'components/ui/UiPhoneCountryPicker.vue': ['max-w-[calc(100vw-2rem)]'],
   'components/ui/UiTooltip.vue': ['max-w-[calc(100vw-2rem)]'],
   'pages/client/domains/transfer.vue': ['max-w-lg'],
   'pages/client/order-success.vue': ['max-w-md'],

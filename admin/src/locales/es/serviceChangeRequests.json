@@ -12,7 +12,6 @@
   "proration": "Prorrateo",
   "invoice": "Factura n.º {id}",
   "note": "Nota",
-  "totalCount": "Solicitudes: {totalCount}",
   "empty": "No se encontraron solicitudes de cambio de plan",
   "approve": "Aprobar",
   "reject": "Rechazar",

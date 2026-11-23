@@ -55,7 +55,7 @@
 
     <!-- Pinned footer; the button submits the body's form through its `form` attribute, so Enter in the code still submits. -->
     <template #footer>
-      <UiButton type="submit" form="two-factor-form" :loading="tfaSaving" data-testid="account-2fa-submit">
+      <UiButton variant="primary" type="submit" form="two-factor-form" :loading="tfaSaving" data-testid="account-2fa-submit">
         <ShieldCheck v-if="!tfaSaving" :size="15" :stroke-width="2" class="mr-1.5" />
         {{ submitLabel }}
       </UiButton>
@@ -121,7 +121,7 @@ const currentPassword = ref('')
 const isEnable = computed<boolean>(() => props.mode === TwoFactorMode.Enable)
 
 /** The submit button's text for the direction. */
-const submitLabel = computed<string>(() => (isEnable.value ? t('client.twoFactor.confirmEnable') : t('client.twoFactor.confirmDisable')))
+const submitLabel = computed<string>(() => (isEnable.value ? t('client.twoFactor.enable') : t('client.twoFactor.disable')))
 
 // Every opening starts from an empty code and no stale refusal.
 watch(() => props.modelValue, (open) => {

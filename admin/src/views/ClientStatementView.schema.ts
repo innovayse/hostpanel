@@ -6,7 +6,7 @@
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the client statement is made of. */
 const schema: ReportSkeletonSchema = {
@@ -21,7 +21,7 @@ const schema: ReportSkeletonSchema = {
   table: {
     columns: [
       { key: 'type', label: 'shared.type', size: UiColumnSize.Compact },
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
       { key: 'currency', label: 'shared.currency', size: UiColumnSize.Compact },
       { key: 'debit', label: 'reports.clientStatement.debit', align: UiAlign.Right },

@@ -1,13 +1,6 @@
 <template>
   <UiStack gap="lg">
-    <UiPageHeader :title="$t('client.tickets.title')" :description="$t('client.tickets.subtitle')" :icon="MessageSquare" class="!mb-0">
-      <template #actions>
-        <UiButton :to="CLIENT_TICKET_NEW_PATH" variant="outline" data-testid="tickets-open-new">
-          <Plus :size="16" :stroke-width="2" class="mr-2" />
-          {{ $t('client.tickets.openNew') }}
-        </UiButton>
-      </template>
-    </UiPageHeader>
+    <UiPageHeader :title="$t('client.tickets.title')" :description="$t('client.tickets.subtitle')" :icon="MessageSquare" :actions="headerActions" class="!mb-0" />
 
     <UiTabs v-model="activeTab" :tabs="tabs" />
 
@@ -24,7 +17,7 @@
     <UiAlert v-else-if="store.ticketsError" variant="error" data-testid="tickets-error">{{ store.ticketsError }}</UiAlert>
 
     <UiEmptyState v-else-if="!filteredTickets.length" :icon="MessageSquare" :title="$t('client.tickets.empty')">
-      <UiButton :to="CLIENT_TICKET_NEW_PATH" data-testid="tickets-open-cta">{{ $t('client.tickets.openCta') }}</UiButton>
+      <UiButton variant="primary" :to="CLIENT_TICKET_NEW_PATH" data-testid="tickets-open-cta">{{ $t('client.tickets.create') }}</UiButton>
     </UiEmptyState>
 
     <UiStack v-else gap="sm" data-testid="tickets-list">
@@ -42,6 +35,7 @@ import { CLIENT_TICKET_NEW_PATH } from '~/constants/clientRoutes'
 import { MessageSquare, Plus } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { ListFilter } from '~/types/listfilter'
+import type { UiHeaderAction } from '~/types/uiheaderaction'
 import { isTicketOpen } from '~/utils/ticketOpen'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -56,6 +50,11 @@ await useAsyncData('client-tickets', () => store.fetchTickets(true))
 
 /** The active filter tab, a `ListFilter` value (a string so the tab bar can v-model it). */
 const activeTab = ref<string>(ListFilter.All)
+
+/** The header's one action: opening a ticket. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { key: 'open-new', label: t('client.tickets.create'), icon: Plus, to: CLIENT_TICKET_NEW_PATH, primary: true, testid: 'tickets-open-new' },
+])
 
 /** The filter tabs. */
 const tabs = computed(() => [

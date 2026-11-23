@@ -5,7 +5,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The contacts tab. */
 const schema: ListSkeletonSchema = {
@@ -16,7 +16,7 @@ const schema: ListSkeletonSchema = {
       { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
       { key: 'email', label: 'shared.email' },
       { key: 'phone', label: 'shared.phone' },
-      { key: 'type', label: 'shared.type', size: UiColumnSize.Compact },
+      { key: 'type', label: 'shared.type', kind: UiColumnKind.Status },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

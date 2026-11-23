@@ -40,7 +40,7 @@ const politeness = computed<(typeof LivePoliteness)[keyof typeof LivePoliteness]
 
 /** Classes of the region: the alert look while a sentence is shown, nothing otherwise. */
 const classes = computed<string[]>(() =>
-  visible.value ? ['border rounded-card px-5 py-3 text-sm', toneAlertClasses[props.tone]] : [],
+  visible.value ? ['border rounded-card px-5 py-3 text-sm break-words', toneAlertClasses[props.tone]] : [],
 )
 </script>
 

@@ -11,7 +11,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useBillingStore } from '@/stores/billing'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useFilterDateRange } from '@/composables/useFilterDateRange'
 import { InvoiceFilterKey, useInvoiceFilters } from '@/composables/useInvoiceFilters'
 import { useListQuery } from '@/composables/useListQuery'
@@ -26,6 +26,7 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
@@ -41,11 +42,8 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -54,11 +52,12 @@ import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientInvoicesView.schema'
 import type { Invoice, InvoiceBulkAction, InvoiceItemInput } from '@/types/invoice'
-import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
-import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant, UiLabelVariant } from '@/utils/ui/text'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoicePath } from '@/lib/routes'
@@ -137,10 +136,7 @@ const creating = ref(false)
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last action. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** True while a bulk action or a delete is in flight. */
 const processing = ref(false)
@@ -177,7 +173,6 @@ const fetchInvoices = async (): Promise<void> => {
  * @returns Promise that resolves when the action and the reload finish.
  */
 const runBulk = async (action: InvoiceBulkAction): Promise<void> => {
-  feedback.clear()
   const ok = await store.bulkAction([...selection.ids.value], action)
   report(ok, 'clients.clientInvoices.bulkActionDone')
   if (ok) {
@@ -225,7 +220,6 @@ const removeNewItem = (index: number): void => {
  * @returns Promise that resolves when created.
  */
 const handleCreate = async (): Promise<void> => {
-  feedback.clear()
   creating.value = true
   const id = await store.createInvoice(Number(clientId.value), newDueDate.value, newItems.value.map(({ description, unitPrice, quantity }) => ({ description, unitPrice, quantity })), newIsDraft.value)
   creating.value = false
@@ -263,7 +257,6 @@ const executeDelete = async (): Promise<void> => {
   if (!deleteTargetId.value) {
     return
   }
-  feedback.clear()
   processing.value = true
   const ok = await store.deleteInvoice(deleteTargetId.value)
   processing.value = false
@@ -349,7 +342,7 @@ list.loadOnChange(fetchInvoices)
 
 <template>
   <UiStack>
-    <UiSectionHeader :level="1" variant="card">
+    <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('shared.invoices') }}
       <template #actions>
         <UiButton :action="UiActionKind.Add"
@@ -364,11 +357,11 @@ list.loadOnChange(fetchInvoices)
     </UiSectionHeader>
 
     <UiCollapse :open="showCreateForm">
-      <UiCard padding="md" data-testid="invoice-create-form">
+      <UiCard :padding="UiCardPadding.Md" container data-testid="invoice-create-form">
         <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('clients.clientInvoices.newInvoice') }}</UiHeading>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('clients.clientInvoices.newInvoice') }}</UiHeading>
 
-          <UiGrid :columns="2">
+          <UiGrid :columns="2" container>
             <UiField :label="t('shared.dueDate')">
               <UiDatePicker v-model="newDueDate" :direction="UiDatePickerDirection.Future" :placeholder="t('clients.clientInvoices.selectDueDate')" />
             </UiField>
@@ -383,12 +376,12 @@ list.loadOnChange(fetchInvoices)
           </UiGrid>
 
           <UiField :label="t('shared.lineItems')">
-            <UiStack gap="sm">
+            <UiStack :gap="UiGap.Sm">
               <UiStack
                 v-for="(item, idx) in newItems"
                 :key="item.key"
-                direction="row"
-                gap="sm"
+                :direction="UiDirection.Row"
+                :gap="UiGap.Sm"
                 :align="UiAlignItems.Center"
               >
                 <UiInput
@@ -412,7 +405,8 @@ list.loadOnChange(fetchInvoices)
                 />
                 <UiIconButton
                   v-if="newItems.length > 1"
-                  :label="t('shared.delete')"
+                  :label="t('shared.remove')"
+                  :variant="UiButtonVariant.Ghost"
                   :size="UiSize.Sm"
                   :data-testid="`invoice-item-remove-${idx}`"
                   @click="removeNewItem(idx)"
@@ -420,7 +414,7 @@ list.loadOnChange(fetchInvoices)
                   <UiIcon :markup="TRASH_ICON" />
                 </UiIconButton>
               </UiStack>
-              <UiStack direction="row">
+              <UiStack :direction="UiDirection.Row">
                 <UiButton
                   type="button"
                   :variant="UiButtonVariant.Link"
@@ -433,7 +427,7 @@ list.loadOnChange(fetchInvoices)
             </UiStack>
           </UiField>
 
-          <UiStack direction="row" :justify="UiJustify.End" gap="sm">
+          <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :gap="UiGap.Sm">
             <UiButton :action="UiActionKind.Cancel"
               type="button"
               :variant="UiButtonVariant.Secondary"
@@ -449,7 +443,7 @@ list.loadOnChange(fetchInvoices)
               data-testid="invoice-create-submit"
               @click="handleCreate"
             >
-              {{ t('clients.clientInvoices.createInvoice2') }}
+              {{ t('clients.clientInvoices.createInvoice') }}
             </UiButton>
           </UiStack>
         </UiStack>
@@ -476,7 +470,6 @@ list.loadOnChange(fetchInvoices)
       />
     </UiListToolbar>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-invoices-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -487,71 +480,56 @@ list.loadOnChange(fetchInvoices)
     />
 
     <template v-else>
-      <UiCard class="overflow-x-auto">
-        <UiTable
-          :density="UiTableDensity.Comfortable"
-          :loading="initialLoading"
-          :empty="!initialLoading && store.clientInvoices.length === 0"
-          :selection="selection"
-          select-all-testid="client-invoices-select-all"
-          data-testid="client-invoices-table"
-        >
-          <UiSchemaTableHead :columns="schema.table.columns" />
-          <UiTableBody divided>
-            <UiTableRow
-              v-for="invoice in store.clientInvoices"
-              :key="invoice.id"
-              hoverable
-              :row-id="invoice.id"
-              :select-testid="`client-invoices-select-${invoice.id}`"
-            >
-              <UiTableCell muted>#{{ invoice.id }}</UiTableCell>
-              <UiTableCell muted>{{ formatDate(invoice.invoiceDate) }}</UiTableCell>
-              <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
-              <UiTableCell muted>{{ invoice.paidAt ? formatDate(invoice.paidAt) : '-' }}</UiTableCell>
-              <UiTableCell numeric>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
-              <UiTableCell muted>{{ invoice.paymentMethod || '-' }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ invoice.status }}</UiBadge>
-              </UiTableCell>
-              <UiTableCell actions>
-                <UiRowActions :actions="invoiceActions(invoice)" :testid="`client-invoices-actions-${invoice.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-          <template #empty>
-            <UiEmptyState :title="t('shared.noInvoicesFound')" />
-          </template>
-        </UiTable>
-        <UiStack
-          v-if="initialLoading || store.clientInvoicesTotal > pageSize"
-          direction="row"
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
-        >
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-            {{ t('clients.clientInvoices.clientinvoicestotalInvoiceValue', { clientInvoicesTotal: store.clientInvoicesTotal }) }}
-          </UiText>
-          <UiPagination
-            :page="list.page.value"
-            :total="store.clientInvoicesTotal"
-            :page-size="pageSize"
-            :loading="initialLoading"
-            testid="client-invoices-pagination"
-            @update:page="list.setPage"
-          />
-        </UiStack>
-      </UiCard>
+      <UiDataTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        :empty="!initialLoading && store.clientInvoices.length === 0"
+        :selection="selection"
+        select-all-testid="client-invoices-select-all"
+        :page="list.page.value"
+        :total="store.clientInvoicesTotal"
+        :page-size="pageSize"
+        pagination-testid="client-invoices-pagination"
+        data-testid="client-invoices-table"
+        @update:page="list.setPage"
+      >
+        <UiSchemaTableHead :columns="schema.table.columns" />
+        <UiTableBody>
+          <UiTableRow
+            v-for="invoice in store.clientInvoices"
+            :key="invoice.id"
+            hoverable
+            :row-id="invoice.id"
+            :select-testid="`client-invoices-select-${invoice.id}`"
+          >
+            <UiTableCell muted>#{{ invoice.id }}</UiTableCell>
+            <UiTableCell muted>{{ formatDate(invoice.invoiceDate) }}</UiTableCell>
+            <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
+            <UiTableCell muted>{{ invoice.paidAt ? formatDate(invoice.paidAt) : '-' }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
+            <UiTableCell muted>{{ invoice.paymentMethod || '-' }}</UiTableCell>
+            <UiTableCell>
+              <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ invoice.status }}</UiBadge>
+            </UiTableCell>
+            <UiTableCell actions>
+              <UiRowActions :actions="invoiceActions(invoice)" :testid="`client-invoices-actions-${invoice.id}`" />
+            </UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+        <template #empty>
+          <UiEmptyState :title="t('shared.noInvoicesFound')" />
+        </template>
+      </UiDataTable>
     </template>
 
     <UiDialog
       v-if="showDeleteModal"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientInvoices.deleteInvoice')"
       :message="t('clients.clientInvoices.confirmDeleteInvoice', { id: deleteTargetId })"
       :confirm-label="t('shared.delete')"
       :loading="processing"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="executeDelete"
       @close="dismissDelete"
     />

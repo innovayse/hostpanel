@@ -4,7 +4,7 @@
  * `UiDetailCards`): see, set or clear the link between the client and an account in
  * another system. The operator types the system name and the account id; Save sends both,
  * Clear (after a confirmation, shown only while a link exists) removes it. The API is the only validator: its sentence
- * for a refused call (a conflict with another client included) shows under the buttons and its
+ * for a refused call (a conflict with another client included) is toasted by the screen and its
  * per-field messages (the `fieldErrors` prop) show under their inputs, and go away, through
  * `clearFieldError`, as soon as the operator changes that field.
  */
@@ -16,11 +16,12 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { ExternalAccountField } from '@/types/client'
 import type { ClientExternalAccount, SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiDirection } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -33,23 +34,17 @@ const props = withDefaults(defineProps<{
   linked?: ClientExternalAccount | null
   /** Whether a save or clear is in flight. */
   saving?: boolean
-  /** The API's sentence for the last refused save or clear, null when none. */
-  error?: string | null
   /** The API's per-field messages of the last refused save, keyed by camelCase field name. */
   fieldErrors?: Record<string, string>
-  /** Outcome line of the last successful save or clear, null when none. */
-  notice?: string | null
 }>(), {
   linked: null,
   saving: false,
-  error: null,
   /**
    * Default for the field errors.
    *
    * @returns A new empty map, so instances never share one.
    */
   fieldErrors: () => ({}),
-  notice: null,
 })
 
 const emit = defineEmits<{
@@ -69,12 +64,6 @@ const accountId = defineModel<string>('accountId', { default: '' })
 
 /** Whether the confirmation before clearing is open. */
 const confirmingClear = ref(false)
-
-/** Tone of the status line: danger for a refusal, success for the outcome of a write. */
-const statusTone = computed<UiTone>(() => (props.error ? UiTone.Danger : UiTone.Success))
-
-/** The sentence under the buttons: the API's refusal wins over the last outcome. */
-const statusMessage = computed<string | null>(() => props.error ?? props.notice)
 
 /** Whether both inputs are blank; clearing has its own confirmed button, so Save needs a value. */
 const bothBlank = computed<boolean>(() => provider.value.trim() === '' && accountId.value.trim() === '')
@@ -159,9 +148,9 @@ useFieldErrorClear(
         />
       </template>
     </UiField>
-    <UiStack direction="row">
+    <UiStack :direction="UiDirection.Row">
       <UiButton :action="UiActionKind.Save"
-        type="button"
+        :type="UiButtonType.Button"
         :variant="UiButtonVariant.Primary"
         :loading="saving"
         :disabled="bothBlank"
@@ -170,24 +159,23 @@ useFieldErrorClear(
       >
         {{ t('shared.save') }}
       </UiButton>
-      <UiButton :action="UiActionKind.Clear"
+      <UiButton :action="UiActionKind.Remove"
         v-if="linked"
-        type="button"
+        :type="UiButtonType.Button"
         :variant="UiButtonVariant.Secondary"
         :disabled="saving"
         data-testid="client-external-account-clear"
         @click="confirmingClear = true"
       >
-        {{ t('clients.externalAccount.clear') }}
+        {{ t('clients.externalAccount.remove') }}
       </UiButton>
     </UiStack>
-    <UiStatusMessage :message="statusMessage" :tone="statusTone" data-testid="client-external-account-status" />
     <UiDialog
       v-if="confirmingClear"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.externalAccount.clearConfirmTitle')"
       :message="t('clients.externalAccount.clearConfirmMessage')"
-      :confirm-label="t('clients.externalAccount.clear')"
+      :confirm-label="t('shared.remove')"
       :tone="UiTone.Danger"
       data-testid="client-external-account-confirm"
       @confirm="handleConfirmClear"

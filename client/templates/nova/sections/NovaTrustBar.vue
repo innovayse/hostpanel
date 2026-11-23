@@ -1,5 +1,5 @@
 <template>
-  <section :aria-label="t('nova.trust.performance')" class="border-b border-nova-border bg-nova-surface">
+  <UiText :as="UiTextTag.Section" size="inherit" tone="inherit" :aria-label="t('nova.trust.performance')" class="border-b border-nova-border bg-nova-surface">
     <UiContainer class="py-2">
       <UiTrustBar
         :items="entries"
@@ -8,7 +8,7 @@
         chip-class="bg-nova-brand/10 text-nova-brand"
       />
     </UiContainer>
-  </section>
+  </UiText>
 </template>
 
 <script setup lang="ts">
@@ -23,6 +23,7 @@
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { TRUST_ITEMS } from '~/templates/nova/content'
 import { useVisibleFeatures } from '~/templates/nova/features'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

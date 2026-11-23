@@ -6,7 +6,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The client domains tab. */
 const schema: ListSkeletonSchema = {
@@ -14,12 +14,12 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'name', label: 'shared.domainName', size: UiColumnSize.Grow },
       { key: 'registrar', label: 'shared.registrar' },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
-      { key: 'expiresAt', label: 'shared.expiryDate', size: UiColumnSize.Compact },
-      { key: 'autoRenew', label: 'shared.autoRenew', size: UiColumnSize.Compact },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
+      { key: 'expiresAt', label: 'shared.expiryDate', kind: UiColumnKind.Date },
+      { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
     ],
   },
 }

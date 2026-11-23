@@ -89,7 +89,7 @@ test('the module and state filters are sent to the API, shown as chips and remov
 
   await expect(page).toHaveURL(/module=hestiacp/)
   await expect(page).toHaveURL(/state=offline/)
-  await expect(page.getByTestId('filter-chip-module')).toContainText('hestiacp')
+  await expect(page.getByTestId('filter-chip-module')).toContainText('Hestia Control Panel')
   await expect(page.getByTestId('filter-chip-state')).toContainText('Offline')
   await expect(page.getByTestId('server-row-1')).toHaveCount(0)
   await expect(page.getByTestId('server-row-2')).toBeVisible()

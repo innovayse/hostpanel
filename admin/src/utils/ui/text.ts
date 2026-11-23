@@ -10,6 +10,7 @@ import type { UiSize } from '@/utils/ui/size'
 export const UiTextTag = {
   P: 'p',
   Span: 'span',
+  Time: 'time',
 } as const
 
 /** One of the text elements. */

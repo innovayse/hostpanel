@@ -62,6 +62,17 @@ describe('UiDetailCard', () => {
     expect(wrapper.findAll('[data-testid="ui-form-actions"] [data-testid="ui-skeleton-bar"]')).toHaveLength(2)
   })
 
+  it('makes the body an inline-size container and counts the columns of its field and tile placeholders by the card width', () => {
+    const wrapper = mountCard({ key: 'profile', title: 'shared.name', fields: 4, tiles: 2 }, true)
+    const card = wrapper.get('[data-testid="ui-detail-card-profile"]')
+    const tiles = wrapper.get('[data-testid="ui-detail-tiles"]')
+
+    expect(card.find('[class~="@container"]').exists()).toBe(true)
+    expect(tiles.classes()).toContain('@lg:grid-cols-2')
+    expect(tiles.classes()).not.toContain('md:grid-cols-2')
+    expect(card.findAll('.grid')[0]?.classes()).toContain('@lg:grid-cols-2')
+  })
+
   it('draws the lines as full width bars with the last one shorter, as wrapped text is', () => {
     const bars = mountCard({ key: 'profile', lines: 3 }, true).findAll('[data-testid="ui-skeleton-bar"]')
 

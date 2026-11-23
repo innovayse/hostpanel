@@ -2,10 +2,8 @@
   "servicesList": {
     "services": "Servicios",
     "viewAndManageAllClient": "Ver y gestionar todos los servicios alojados de los clientes",
-    "totalcountServiceValue": "Servicios: {totalCount}",
     "noServicesFound": "No se encontraron servicios",
     "searchServices": "Buscar por dominio, producto o ID",
-    "noServicesMatchYourFilters": "Ningún servicio coincide con tus filtros",
-    "clearFilters": "Borrar filtros"
+    "noServicesMatchYourFilters": "Ningún servicio coincide con tus filtros"
   }
 }

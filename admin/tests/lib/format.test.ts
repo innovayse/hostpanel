@@ -99,6 +99,11 @@ describe('formatRelativeFromNow', () => {
     expect(formatRelativeFromNow(new Date(NOW + 60000).toISOString(), 'en', NOW)).toBe('now')
   })
 
+  it('words the span in Armenian for the hy locale', () => {
+    expect(formatRelativeFromNow(ago(23 * 3600), 'hy', NOW)).toMatch(/[Ա-֏]/)
+    expect(formatRelativeFromNow(ago(23 * 3600), 'hy', NOW)).not.toContain('hours')
+  })
+
   it('words the span in the requested locale', () => {
     expect(formatRelativeFromNow(ago(5 * 60), 'ru', NOW)).toContain('5')
     expect(formatRelativeFromNow(ago(5 * 60), 'ru', NOW)).not.toBe('5 minutes ago')

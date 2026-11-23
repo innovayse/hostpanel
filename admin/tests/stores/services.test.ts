@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { translate } from '@/lib/translate'
 import { useServicesStore } from '@/stores/services'
-import { BillingCycle, ServiceStatus } from '@/types/service'
+import { BillingCycle, PanelSyncField, PanelSyncOutcome, ServiceStatus } from '@/types/service'
 import { json, problem, stubFetch, stubOffline, callOf, invalid } from '../helpers/fetch'
 
 describe('servicesStore', () => {
@@ -159,6 +159,35 @@ describe('servicesStore', () => {
     stubFetch(problem('Panel unreachable.', 502))
     expect(await store.terminate(4, 'Admin terminated')).toBe(false)
     expect(store.actionError).toBe('Panel unreachable.')
+  })
+
+  it('syncWithPanel keeps what the sync did, and clearSyncResult forgets it', async () => {
+    const answer = {
+      fields: [
+        { field: PanelSyncField.Package, outcome: PanelSyncOutcome.Applied, panelValue: 'legacy' },
+        { field: PanelSyncField.Domain, outcome: PanelSyncOutcome.Unsupported, panelValue: 'moved.example' },
+      ],
+    }
+    const mock = stubFetch(json(answer))
+    const store = useServicesStore()
+
+    expect(await store.syncWithPanel(4, true)).toBe(true)
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/services/4/sync-panel', method: 'POST', body: { pushPassword: true } })
+    expect(store.syncResult).toEqual(answer)
+
+    store.clearSyncResult()
+    expect(store.syncResult).toBeNull()
+  })
+
+  it('syncWithPanel reports a refusal through actionError and keeps no result', async () => {
+    const store = useServicesStore()
+    stubFetch(json({ fields: [] }))
+    await store.syncWithPanel(4, false)
+
+    stubFetch(problem('The panel could not be read.', 502))
+    expect(await store.syncWithPanel(4, false)).toBe(false)
+    expect(store.actionError).toBe('The panel could not be read.')
+    expect(store.syncResult).toBeNull()
   })
 
   it('fetchPanelLoginUrl returns the url, null when refused', async () => {

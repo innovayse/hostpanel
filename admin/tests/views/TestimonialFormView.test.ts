@@ -130,7 +130,7 @@ describe('TestimonialFormView', () => {
 
     expect((wrapper.get('[data-testid="testimonial-form-name"]').element as HTMLInputElement).value).toBe('Ann')
     expect((wrapper.get('[data-testid="testimonial-form-quote"]').element as HTMLTextAreaElement).value).toBe('Great')
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save')
     await wrapper.get('[data-testid="testimonial-form-tab-ru"]').trigger('click')
     expect((wrapper.get('[data-testid="testimonial-form-quote"]').element as HTMLTextAreaElement).value).toBe('Отлично')
 

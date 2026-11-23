@@ -16,8 +16,8 @@
       >
         <UiStack gap="sm">
           <UiTile size="lg" :icon="ICONS[feature]" class="bg-tile-lilac text-white" />
-          <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ t(`aurora.security.${feature}Title`) }}</UiText>
-          <UiText as="span" size="inherit" tone="inherit" class="text-[15px] leading-relaxed text-mut">{{ t(`aurora.security.${feature}Body`) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ t(`aurora.security.${feature}Title`) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[15px] leading-relaxed text-mut">{{ t(`aurora.security.${feature}Body`) }}</UiText>
         </UiStack>
       </UiCard>
     </UiBalancedGrid>
@@ -35,6 +35,7 @@ import { SecurityFeatureKey } from '~/constants/securityFeatureKey'
 import { useSecurityFeatures } from '~/composables/useSecurityFeatures'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import UiStack from '~/components/ui/UiStack.vue'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

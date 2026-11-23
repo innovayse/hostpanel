@@ -5,24 +5,23 @@
  * Shows the slides in a table ordered by sort order, with drag-and-drop reordering through
  * vuedraggable, audience and status badges, and navigation to the dedicated create and edit pages.
  * A refused load offers a retry; a delete (confirmed first in a danger prompt) or a reorder shows its
- * outcome (success, or the API's sentence) above the header.
+ * outcome (success, or the API's sentence) as a toast.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
+import { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import schema from '@/views/SlidesView.schema'
@@ -30,9 +29,13 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useSlidesStore } from '@/stores/slides'
 import type { Slide } from '@/types/slide'
 import { SlideAudience } from '@/types/slideaudience'
+import { UiAlignItems, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -47,7 +50,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('settings.slides.addSlide'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'slides-add', to: createRoute },
+  { label: t('settings.slideForm.createSlide'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'slides-add', to: createRoute },
 ])
 
 /** Slides store: the list, the loading flag and the refusal sentences. */
@@ -84,19 +87,8 @@ const syncLocal = (): void => {
   localSlides.value = [...store.slides].sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-/** Locale key of the success sentence of the last delete or reorder, null when there is none to show. */
-const successKey = ref<string | null>(null)
-
-/** The outcome line: the API's refusal first, else the success sentence, else nothing. */
-const outcomeMessage = computed<string | null>(() => {
-  if (store.actionError) {
-    return store.actionError
-  }
-  return successKey.value === null ? null : t(successKey.value)
-})
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const outcomeTone = computed<UiTone>(() => (store.actionError ? UiTone.Danger : UiTone.Success))
+/** Toasts how a delete or a reorder ended. */
+const feedback = useOutcomeToast()
 
 /**
  * Loads the slides and syncs the draggable list.
@@ -157,14 +149,15 @@ const confirmDelete = async (): Promise<void> => {
   if (!target) {
     return
   }
-  successKey.value = null
   deleting.value = true
   const deleted = await store.deleteSlide(target.id)
   syncLocal()
   deleting.value = false
   deleteTarget.value = null
   if (deleted) {
-    successKey.value = 'shared.recordDeleted'
+    feedback.show(t('shared.recordDeleted'), false)
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -177,7 +170,6 @@ const dismissDelete = (): void => {
 
 /** Called after a drag ends: saves the new sort order to the backend. */
 const onDragEnd = async (): Promise<void> => {
-  successKey.value = null
   savingOrder.value = true
   const items = localSlides.value.map((slide, index) => ({
     id: slide.id,
@@ -187,7 +179,9 @@ const onDragEnd = async (): Promise<void> => {
   syncLocal()
   savingOrder.value = false
   if (saved) {
-    successKey.value = 'storefront.list.orderSaved'
+    feedback.show(t('storefront.list.orderSaved'), false)
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -232,91 +226,93 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
    */
   const onDelete = (): void => handleDelete(slide)
   return [
-    { label: t('settings.slides.editSlide'), icon: Icon.Edit, testid: `slide-edit-${slide.id}`, to: editPath(AppRoute.SettingsSlides, slide.id) },
-    { label: t('settings.slides.deleteSlide'), icon: Icon.Trash, testid: `slide-delete-${slide.id}`, onSelect: onDelete, danger: true },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `slide-edit-${slide.id}`, to: editPath(AppRoute.SettingsSlides, slide.id) },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `slide-delete-${slide.id}`, onSelect: onDelete, danger: true },
   ]
 }
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="slides-view">
-    <UiStatusMessage :message="outcomeMessage" :tone="outcomeTone" class="mb-4" data-testid="slides-action-error" />
-
+  <UiStack :gap="UiGap.None" data-testid="slides-view">
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
     <UiErrorState v-if="store.error" :message="store.error" testid="slides-error" @retry="loadSlides" />
 
-    <UiCard v-else clip>
-      <UiTable :empty-text="t('settings.slides.noSlidesFoundAddYour')" :density="UiTableDensity.Comfortable" :empty="localSlides.length === 0" :loading="store.loading || savingOrder">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiSortableRows
-          v-if="!store.loading && !savingOrder"
-          v-model="localSlides"
-          item-key="id"
-          @end="onDragEnd"
-        >
-          <template #item="{ element: slide }">
-            <UiTableRow hoverable :data-testid="`slide-row-${slide.id}`">
-              <!-- Drag handle -->
-              <UiTableCell>
-                <UiStack align="center" justify="center" gap="none" class="drag-handle h-6 w-6 cursor-grab text-text-muted active:cursor-grabbing">
-                  <UiIcon :markup="Icon.Grip" size="sm" />
-                </UiStack>
-              </UiTableCell>
+    <UiDataTable
+      v-else
+      :empty-text="t('settings.slides.noSlidesFoundAddYour')"
+      :density="UiTableDensity.Comfortable"
+      :empty="localSlides.length === 0"
+      :loading="store.loading || savingOrder"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiSortableRows
+        v-if="!store.loading && !savingOrder"
+        v-model="localSlides"
+        item-key="id"
+        @end="onDragEnd"
+      >
+        <template #item="{ element: slide }">
+          <UiTableRow hoverable :data-testid="`slide-row-${slide.id}`">
+            <!-- Drag handle -->
+            <UiTableCell>
+              <UiStack :align="UiAlignItems.Center" :justify="UiJustify.Center" :gap="UiGap.None" class="drag-handle h-6 w-6 cursor-grab text-text-muted active:cursor-grabbing">
+                <UiIcon :markup="Icon.Grip" :size="UiSize.Sm" />
+              </UiStack>
+            </UiTableCell>
 
-              <!-- Thumbnail -->
-              <UiTableCell>
-                <UiImage
-                  :src="slide.imageUrl ? storefrontAssetUrl(slide.imageUrl) : undefined"
-                  :alt="slide.translations[0]?.title ?? t('settings.slides.slide')"
-                  fit="cover"
-                  rounded="md"
-                  class="h-10 w-10 border border-border"
-                  fallback
-                />
-              </UiTableCell>
+            <!-- Thumbnail -->
+            <UiTableCell>
+              <UiImage
+                :src="slide.imageUrl ? storefrontAssetUrl(slide.imageUrl) : undefined"
+                :alt="slide.translations[0]?.title ?? t('settings.slides.slide')"
+                :fit="UiImageFit.Cover"
+                :rounded="UiImageRounded.Md"
+                :size="UiImageSize.Thumb"
+                fallback
+              />
+            </UiTableCell>
 
-              <!-- Title -->
-              <UiTableCell>
-                <UiText tone="primary" size="lg" class="font-medium">{{ slide.translations[0]?.title ?? EMPTY_VALUE }}</UiText>
-                <UiText v-if="slide.translations[0]?.tagline" tone="muted" size="xs">
-                  {{ slide.translations[0].tagline }}
-                </UiText>
-              </UiTableCell>
+            <!-- Title -->
+            <UiTableCell>
+              <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-medium">{{ slide.translations[0]?.title ?? EMPTY_VALUE }}</UiText>
+              <UiText v-if="slide.translations[0]?.tagline" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">
+                {{ slide.translations[0].tagline }}
+              </UiText>
+            </UiTableCell>
 
-              <!-- Audience -->
-              <UiTableCell>
-                <UiBadge :tone="audienceTone(slide.targetAudience)" small>
-                  {{ audienceLabel(slide.targetAudience) }}
-                </UiBadge>
-              </UiTableCell>
+            <!-- Audience -->
+            <UiTableCell>
+              <UiBadge :tone="audienceTone(slide.targetAudience)" small>
+                {{ audienceLabel(slide.targetAudience) }}
+              </UiBadge>
+            </UiTableCell>
 
-              <!-- Active -->
-              <UiTableCell>
-                <UiStatusIcon
-                  :state="slide.isActive"
-                  :on-icon="Icon.CheckCircle"
-                  :off-icon="Icon.Close"
-                  :on-label="t('shared.active')"
-                  :off-label="t('shared.inactive')"
-                />
-              </UiTableCell>
+            <!-- Active -->
+            <UiTableCell>
+              <UiStatusIcon
+                :state="slide.isActive"
+                :on-icon="Icon.CheckCircle"
+                :off-icon="Icon.Close"
+                :on-label="t('shared.active')"
+                :off-label="t('shared.inactive')"
+              />
+            </UiTableCell>
 
-              <!-- Date range -->
-              <UiTableCell muted>
-                {{ formatDateRange(slide.visibleFrom, slide.visibleUntil) }}
-              </UiTableCell>
+            <!-- Date range -->
+            <UiTableCell muted>
+              {{ formatDateRange(slide.visibleFrom, slide.visibleUntil) }}
+            </UiTableCell>
 
-              <!-- Actions -->
-              <UiTableCell actions>
-                <UiRowActions :actions="slideActions(slide)" :testid="`slide-actions-${slide.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </template>
-        </UiSortableRows>
-      </UiTable>
-    </UiCard>
+            <!-- Actions -->
+            <UiTableCell actions>
+              <UiRowActions :actions="slideActions(slide)" :testid="`slide-actions-${slide.id}`" />
+            </UiTableCell>
+          </UiTableRow>
+        </template>
+      </UiSortableRows>
+    </UiDataTable>
 
     <!-- Delete confirmation -->
     <UiDialog

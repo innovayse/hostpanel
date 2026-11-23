@@ -646,6 +646,16 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Records the IP address the panel reports for the service's hosting account. It writes the same address staff can
+    /// correct by hand in <see cref="RecordHostingAccount"/>, and nothing else of the account.
+    /// </summary>
+    /// <param name="ipAddress">The address, in text form, as it is to be shown.</param>
+    public void RecordAssignedIp(string? ipAddress)
+    {
+        DedicatedIp = ipAddress;
+    }
+
+    /// <summary>
     /// Switches the automatic billing of the service on or off without touching the rest of its automation
     /// settings (the suspension hold and the end-of-cycle termination).
     /// </summary>

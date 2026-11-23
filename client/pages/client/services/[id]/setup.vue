@@ -11,7 +11,7 @@
       :title="$t('client.setup.errorTitle')"
       :description="$t('client.setup.errorDesc')"
     >
-      <UiButton :to="CLIENT_SERVICES_PATH" variant="subtle" data-testid="setup-back-to-services">{{ $t('client.setup.backToServices') }}</UiButton>
+      <UiButton :to="CLIENT_SERVICES_PATH" variant="subtle" data-testid="setup-back-to-services">{{ $t('client.services.backTo') }}</UiButton>
     </ClientServicesSetupStatePanel>
 
     <ClientServicesSetupStatePanel
@@ -21,7 +21,7 @@
       :title="$t('client.setup.alreadyActive')"
       :description="$t('client.setup.alreadyActiveDesc')"
     >
-      <UiButton :to="clientServicePath(service.id)" data-testid="setup-go-manage">{{ $t('client.setup.goToManage') }}</UiButton>
+      <UiButton variant="primary" :to="clientServicePath(service.id)" data-testid="setup-go-manage">{{ $t('common.manage') }}</UiButton>
     </ClientServicesSetupStatePanel>
 
     <ClientServicesSetupWizard v-else :service="service" :service-id="serviceId" />

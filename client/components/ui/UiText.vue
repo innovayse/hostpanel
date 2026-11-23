@@ -12,12 +12,12 @@
  * subtle, danger and so on), never a literal, so light and dark stay consistent.
  */
 import { computed } from 'vue'
-import { UiTextSize, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
+import { UiTextSize, UiTextTag, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
 
 /** Props of UiText. */
 interface Props {
   /** Tag to render. */
-  as?: string
+  as?: `${UiTextTag}`
   /** Type size. */
   size?: `${UiTextSize}`
   /** Colour role. */
@@ -30,7 +30,7 @@ interface Props {
 
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
-  as: 'p',
+  as: UiTextTag.P,
   size: UiTextSize.Md,
   tone: UiTextTone.Default,
   weight: UiTextWeight.Normal,

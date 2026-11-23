@@ -5,9 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientSummaryView from '@/views/ClientSummaryView.vue'
-import schema, { SUMMARY_DOMAINS_TABLE, SUMMARY_QUOTES_TABLE, SUMMARY_SERVICES_TABLE } from '@/views/ClientSummaryView.schema'
-import { partsOf } from '@/utils/ui/skeletonParts'
-import { SkeletonPartKind } from '@/utils/ui/skeletonSchema'
+import { SUMMARY_CARDS_PART, SUMMARY_DOMAINS_TABLE, SUMMARY_QUOTES_TABLE, SUMMARY_SERVICES_TABLE } from '@/views/ClientSummaryView.schema'
 import { useClientsStore } from '@/stores/clients'
 import { mountClientView } from '../helpers/clientViews'
 import { createTestI18n } from '../helpers/i18n'
@@ -22,6 +20,7 @@ import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 import { ClientVatStatus } from '@/types/clientvat'
 import type { ClientVat } from '@/types/clientvat'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** A client's tax ID with the last completed check of it, as the detail endpoint carries them. */
 interface ClientVatCase {
@@ -130,8 +129,8 @@ const mountSummary = async () => {
   return wrapper
 }
 
-/** Every card of the schema, the information cards and the cards of the three tables. */
-const schemaCards = partsOf(schema).flatMap((part) => (part.kind === SkeletonPartKind.Cards ? part.columns.flat() : []))
+/** Every information card of the schema; the three tables are tables of their own, not cards. */
+const schemaCards = SUMMARY_CARDS_PART.columns.flat()
 
 /** The English catalogue, to read the titles the schema names. */
 const english = createTestI18n()
@@ -196,7 +195,7 @@ describe('ClientSummaryView', () => {
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['VAT number checked.'])
   })
 
-  it('shows the API sentence when the service gave no verdict and keeps the status', async () => {
+  it('toasts the API sentence when the service gave no verdict and keeps the status', async () => {
     const valid = { status: ClientVatStatus.Valid, checkedAt: '2026-11-10T09:30:00Z', name: 'Acme GmbH', address: null }
     stubRoutes({
       ...summaryRoutes(
@@ -211,7 +210,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-vat-check"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-vat-feedback"]').text()).toBe('The VAT number service is not answering right now.')
+    expect(toastMessages()).toContain('The VAT number service is not answering right now.')
     expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
   })
 
@@ -250,6 +249,21 @@ describe('ClientSummaryView', () => {
     ] as const) {
       expect(wrapper.get(`[data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
     }
+  })
+
+  it('titles the services, domains and quotes tables in their card header, with a link to the whole list', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    for (const [testid, title] of [
+      ['client-summary-services', 'Products/Services'],
+      ['client-summary-domains', 'Domains'],
+      ['client-summary-quotes', 'Current Quotes'],
+    ] as const) {
+      const card = wrapper.get(`[data-testid="${testid}"]`).element.closest('.overflow-clip')
+      expect(card?.textContent).toContain(title)
+    }
+    expect(wrapper.find('[data-testid="client-summary-services-all"]').exists()).toBe(true)
   })
 
   it('mounts without throwing', async () => {
@@ -324,7 +338,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-summary-notes-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-summary-notes-feedback"]').text()).toBe('Notes are too long.')
+    expect(toastMessages()).toContain('Notes are too long.')
   })
 
   it('links the external account and reports it inside its card', async () => {
@@ -340,7 +354,7 @@ describe('ClientSummaryView', () => {
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['External account link saved.'])
   })
 
-  it('shows the conflict sentence of the API when another client holds the pair', async () => {
+  it('toasts the conflict sentence of the API when another client holds the pair', async () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), () => problem('Already linked to another client.', 409)))
     const wrapper = await mountSummary()
 
@@ -349,7 +363,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-external-account-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('Already linked to another client.')
+    expect(toastMessages()).toContain('Already linked to another client.')
   })
 
   it('fills the card from the link the client holds', async () => {
@@ -361,7 +375,7 @@ describe('ClientSummaryView', () => {
     expect(wrapper.get('[data-testid="client-external-account-current"]').text()).toBe('Linked to crm, account acct-9.')
   })
 
-  it('offers no Clear link while the client has no link', async () => {
+  it('offers no Remove link while the client has no link', async () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
     const wrapper = await mountSummary()
 

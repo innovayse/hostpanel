@@ -107,4 +107,10 @@ describe('OtpInput', () => {
     expect(document.activeElement).toBe(wrapper.find('[data-testid="otp-input-2"]').element)
     wrapper.unmount()
   })
+
+  it('shrinks its cells on a phone so six of them fit a 360px screen', () => {
+    const cell = mountWithKit(OtpInput, { props: { modelValue: '' } }).find('input')
+
+    expect(cell.classes()).toEqual(expect.arrayContaining(['w-10', 'sm:w-12']))
+  })
 })

@@ -12,7 +12,6 @@
   "proration": "Proration",
   "invoice": "Invoice #{id}",
   "note": "Note",
-  "totalCount": "Requests: {totalCount}",
   "empty": "No plan change requests found",
   "approve": "Approve",
   "reject": "Reject",

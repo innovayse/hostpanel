@@ -11,22 +11,19 @@ import { useI18n } from 'vue-i18n'
 import QuoteFilterFields from '@/components/billing/QuoteFilterFields.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import schema from '@/views/QuotesListView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useListQuery } from '@/composables/useListQuery'
 import { QuoteFilterKey, useQuoteFilters } from '@/composables/useQuoteFilters'
@@ -40,13 +37,14 @@ import type { QuoteFilters } from '@/types/quote'
 import { AppRoute, quotePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiGap } from '@/utils/ui/layout'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('billing.quotesList.createQuote'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-quotes-create', to: AppRoute.BillingQuotesAdd },
+  { label: t('billing.addQuote.createQuote'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-quotes-create', to: AppRoute.BillingQuotesAdd },
 ])
 
 /** The filter fields kept in the address: the quote filters every quote list has, and the client this list adds. */
@@ -118,7 +116,7 @@ onMounted(loadClients)
       @remove="remove"
       @clear="clearAll"
     >
-      <UiStack gap="md">
+      <UiStack :gap="UiGap.Md">
         <UiField :label="t('shared.client')">
           <UiClientSelect
             v-model="draft.clientId"
@@ -142,46 +140,37 @@ onMounted(loadClients)
       @retry="load"
     />
 
-    <UiText tone="muted" size="md" data-testid="billing-quotes-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
-
-    <UiCard>
-      <UiTable
-        :loading="store.loading && store.quotes.length === 0"
-        :empty="!store.loading && store.quotes.length === 0"
-        data-testid="billing-quotes-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="quote in store.quotes" :key="quote.id" hoverable>
-            <UiTableCell muted>
-              <UiLink :to="quotePath(quote.id)" variant="link" :data-testid="`billing-quote-open-${quote.id}`">
-                {{ quote.id }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>{{ quote.clientName }}</UiTableCell>
-            <UiTableCell>{{ quote.subject }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="quoteStageTone(quote.stage)">{{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-        <template #empty>
-          <UiEmptyState :title="t('billing.quotesList.noQuotesFound')" data-testid="billing-quotes-empty" />
-        </template>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      :loading="store.loading && store.quotes.length === 0"
+      :empty="!store.loading && store.quotes.length === 0"
       :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
-      testid="billing-quotes-pagination"
+      pagination-testid="billing-quotes-pagination"
+      data-testid="billing-quotes-table"
       @update:page="setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="quote in store.quotes" :key="quote.id" hoverable>
+          <UiTableCell muted>
+            <UiLink :to="quotePath(quote.id)" :variant="UiButtonVariant.Link" :data-testid="`billing-quote-open-${quote.id}`">
+              {{ quote.id }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>{{ quote.clientName }}</UiTableCell>
+          <UiTableCell>{{ quote.subject }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="quoteStageTone(quote.stage)">{{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState :title="t('billing.quotesList.noQuotesFound')" data-testid="billing-quotes-empty" />
+      </template>
+    </UiDataTable>
   </UiStack>
 </template>

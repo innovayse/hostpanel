@@ -39,6 +39,8 @@ import { UiTone } from '@/utils/ui/tone'
 import schema, { QUOTE_GENERAL_PART, QUOTE_NOTES_PART } from '@/views/QuoteDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
@@ -59,7 +61,7 @@ const headerActions = computed<UiHeaderAction[]>(() => [
   ...(isNew.value
     ? []
     : [
-      { label: t('billing.quoteDetail.duplicate'), icon: actionIcons[UiActionKind.Copy], variant: UiButtonVariant.Secondary, testid: 'billing-quote-duplicate', disabled: store.loading, onSelect: duplicate },
+      { label: t('billing.actions.duplicate'), icon: actionIcons[UiActionKind.Copy], variant: UiButtonVariant.Secondary, testid: 'billing-quote-duplicate', disabled: store.loading, onSelect: duplicate },
       { label: t('billing.quoteDetail.convertToInvoice'), icon: actionIcons[UiActionKind.Next], variant: UiButtonVariant.Secondary, testid: 'billing-quote-convert', disabled: store.loading, onSelect: openConvert },
       { label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Danger, testid: 'billing-quote-delete', disabled: store.loading, onSelect: openDelete },
     ]),
@@ -254,17 +256,17 @@ onMounted(() => {
         <UiBadge v-if="!isNew && !initialLoading" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
       </UiPageHeader>
 
-      <UiAlert v-if="store.successMessage" variant="success" data-testid="billing-quote-success">
+      <UiAlert v-if="store.successMessage" :variant="UiTone.Success" data-testid="billing-quote-success">
         {{ store.successMessage }}
       </UiAlert>
-      <UiAlert v-if="errorText" variant="error" data-testid="billing-quote-error">
+      <UiAlert v-if="errorText" :variant="UiTone.Danger" data-testid="billing-quote-error">
         {{ errorText }}
       </UiAlert>
 
       <!-- The three blocks of the schema: placeholders while a stored quote is read, their bodies after -->
       <UiDetailCards :columns="QUOTE_GENERAL_PART.columns" :loading="initialLoading">
         <template #card-general>
-          <UiGrid :columns="2">
+          <UiGrid :columns="2" container>
             <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">
               <template #default="{ id, invalid }">
                 <UiInput
@@ -281,7 +283,7 @@ onMounted(() => {
               <UiSelect v-model="stage" :options="QUOTE_STAGE_OPTIONS" :placeholder="t('billing.quoteDetail.selectStage')" />
             </UiField>
             <UiField v-if="!isNew" :label="t('billing.quoteDetail.dateCreated')">
-              <UiText tone="secondary" size="md" data-testid="billing-quote-created">
+              <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" data-testid="billing-quote-created">
                 {{ store.currentQuote ? formatDate(store.currentQuote.dateCreated) : '' }}
               </UiText>
             </UiField>
@@ -329,7 +331,7 @@ onMounted(() => {
     </template>
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="deleteOpen"
       :title="t('billing.quoteDetail.deleteQuote')"
       :message="t('billing.quoteDetail.deleteMessage', { id: quoteId })"
@@ -341,13 +343,13 @@ onMounted(() => {
     />
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="convertOpen"
       :title="t('billing.quoteDetail.convertToInvoice')"
       :message="t('billing.quoteDetail.convertMessage', { id: quoteId })"
       :confirm-label="t('billing.quoteDetail.convert')"
       :loading="store.loading"
-      tone="primary"
+      :tone="UiTone.Primary"
       @confirm="convert"
       @close="convertOpen = false"
     />

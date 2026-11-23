@@ -4,9 +4,9 @@
     "filterLabel": "Filter by topic",
     "title": "Frequently Asked Questions",
     "subtitle": "Find answers to common questions about hosting, domains, billing and your account",
-    "viewAll": "View All FAQs",
+    "viewAll": "View all FAQs",
     "noResults": "No questions found in this category.",
-    "backToAll": "Back to All FAQs",
+    "backToAll": "Back to all FAQs",
     "categories": {
       "all": "All",
       "general": "General",
@@ -14,8 +14,7 @@
     },
     "cta": {
       "title": "Still have questions?",
-      "description": "Can't find the answer you're looking for? Please chat with our friendly team.",
-      "button": "Get in Touch"
+      "description": "Can't find the answer you're looking for? Please chat with our friendly team."
     }
   }
 }

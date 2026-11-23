@@ -6,7 +6,7 @@
         <UiStack gap="none">
           <UiStack direction="row" align="center" gap="xs" class="mb-4 inline-flex self-start rounded-md bg-classic-brand-soft px-3 py-1">
             <ShieldCheck :size="14" class="text-classic-brand" />
-            <UiText as="span" size="xs" tone="inherit" weight="semibold" class="uppercase tracking-wider text-classic-brand">{{ $t('checkout.secureCheckout') }}</UiText>
+            <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="uppercase tracking-wider text-classic-brand">{{ $t('checkout.secureCheckout') }}</UiText>
           </UiStack>
           <UiHeading :level="UiHeadingLevel.H1" size="title" class="mb-3 !font-semibold !text-classic-ink">
             {{ $t('checkout.title') }}
@@ -193,7 +193,7 @@
           </UiStack>
 
           <!-- Right column: summary. A light panel with a solid brand rule, readable in both modes. -->
-          <UiStack as="aside" gap="lg" class="sticky top-24 lg:col-span-5">
+          <UiStack :as="UiStackTag.Aside" gap="lg" class="sticky top-24 lg:col-span-5">
             <UiCard
               padding="none"
               tone="bare"
@@ -240,7 +240,7 @@
 
               <UiStack direction="row" align="center" justify="between" gap="none" class="mb-6">
                 <UiText tone="inherit" weight="medium" class="text-classic-muted">{{ $t('cart.total') }}</UiText>
-                <UiText as="span" tone="inherit" weight="bold" class="text-2xl text-classic-ink" data-testid="checkout-total">{{ totalLabel }}</UiText>
+                <UiText :as="UiTextTag.Span" tone="inherit" weight="bold" class="text-2xl text-classic-ink" data-testid="checkout-total">{{ totalLabel }}</UiText>
               </UiStack>
 
               <!-- Error box -->
@@ -281,7 +281,7 @@
                   <UiText size="sm" weight="semibold">{{ $t('checkout.needHelp') }}</UiText>
                   <UiText size="xs" tone="inherit" class="text-classic-muted">{{ $t('checkout.supportAlways') }}</UiText>
                 </UiStack>
-                <UiLink :to="localePath(SITE_CONTACT_PATH)" :underline="false" class="ml-auto text-xs font-semibold" data-testid="checkout-contact">
+                <UiLink :to="localePath(SITE_CONTACT_PATH)" tone="primary" :underline="false" class="ml-auto text-xs font-semibold" data-testid="checkout-contact">
                   {{ $t('checkout.contactUs') }}
                 </UiLink>
               </UiStack>
@@ -311,7 +311,7 @@ import {
   Lock, ShieldCheck, Info, Receipt, HelpCircle
 } from 'lucide-vue-next'
 import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
-import { UiHeadingLevel } from '~/utils/ui/enums'
+import { UiHeadingLevel, UiStackTag, UiTextTag } from '~/utils/ui/enums'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
 import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 

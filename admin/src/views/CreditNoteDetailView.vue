@@ -13,6 +13,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import CreditNoteStatusBadge from '@/components/billing/CreditNoteStatusBadge.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -20,15 +21,14 @@ import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatDateTime } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
@@ -36,6 +36,10 @@ import { useCreditNotesStore } from '@/stores/creditNotes'
 import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { saveBlob } from '@/utils/saveBlob'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import schema from '@/views/CreditNoteDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
@@ -45,7 +49,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('billing.creditNotes.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-credit-note-download', disabled: note.value === null, onSelect: downloadPdf },
+  { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-credit-note-download', disabled: note.value === null, onSelect: downloadPdf },
   ...(canVoid.value ? [{ label: t('billing.creditNotes.voidButton'), icon: actionIcons[UiActionKind.Remove], variant: UiButtonVariant.Danger, testid: 'billing-credit-note-void', onSelect: askVoid }] : []),
 ])
 
@@ -67,6 +71,9 @@ const note = computed(() => store.detail?.note ?? null)
 /** The lines on screen. */
 const items = computed(() => store.detail?.items ?? [])
 
+/** The cards of the facts: the schema's cards without the lines card, which is a table of its own below them. */
+const detailColumns = schema.columns.map((column) => column.filter((card) => card.key !== 'items'))
+
 /** The columns of the lines table, taken from the schema's lines card: the one source of their captions, widths and alignment. */
 const itemColumns = schema.columns.flat().find((card) => card.key === 'items')?.table?.columns ?? []
 
@@ -74,10 +81,7 @@ const itemColumns = schema.columns.flat().find((card) => card.key === 'items')?.
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last action. */
-const feedback = useResultBanner()
-
-/** Sentence of a failed PDF download, shown beside its button; null while there is none. */
-const pdfError = ref<string | null>(null)
+const feedback = useOutcomeToast()
 
 /** True while the void prompt is open. */
 const voiding = ref(false)
@@ -103,12 +107,11 @@ const load = async (): Promise<void> => {
   loadError.value = store.error
 }
 
-/** Downloads the note's PDF and saves it; a refusal is shown beside the button. */
+/** Downloads the note's PDF and saves it; a refusal is toasted with the API's own sentence. */
 const downloadPdf = async (): Promise<void> => {
-  pdfError.value = null
   const file = await store.downloadPdf(noteId.value)
   if (file === null) {
-    pdfError.value = store.error
+    feedback.show(store.error ?? t('errors.noAnswer'), true)
     return
   }
   saveBlob(file.blob, file.fileName ?? `credit-note-${noteId.value}.pdf`)
@@ -134,7 +137,6 @@ const confirmVoid = async (): Promise<void> => {
     voidReasonError.value = t('billing.creditNotes.voidReasonRequired')
     return
   }
-  feedback.clear()
   saving.value = true
   const voided = await store.voidNote(noteId.value, voidReason.value.trim())
   saving.value = false
@@ -158,23 +160,21 @@ onMounted(load)
       >
       </UiPageHeader>
 
-      <UiStatusMessage :message="pdfError" :tone="UiTone.Danger" data-testid="billing-credit-note-download-feedback" />
-      <UiStatusMessage :message="feedback.message.value" :tone="feedback.isError.value ? UiTone.Danger : UiTone.Success" data-testid="billing-credit-note-feedback" />
-      <UiAlert v-if="refundPaidOut" variant="info" data-testid="billing-credit-note-refund-blocked">
+      <UiAlert v-if="refundPaidOut" :variant="UiTone.Info" data-testid="billing-credit-note-refund-blocked">
         {{ t('billing.creditNotes.voidRefundBlocked') }}
       </UiAlert>
 
-      <UiDetailCards :columns="schema.columns" :loading="note === null">
+      <UiDetailCards :columns="detailColumns" :loading="note === null">
         <template #card-details>
-          <UiStack v-if="note !== null" gap="sm">
+          <UiStack v-if="note !== null" :gap="UiGap.Sm">
             <UiText data-testid="billing-credit-note-status"><CreditNoteStatusBadge :status="note.status" /></UiText>
             <UiText>
               {{ t('billing.creditNotes.invoice') }}:
-              <UiLink :to="invoicePath(note.invoiceId)" variant="link" data-testid="billing-credit-note-invoice">#{{ note.invoiceId }}</UiLink>
+              <UiLink :to="invoicePath(note.invoiceId)" :variant="UiButtonVariant.Link" data-testid="billing-credit-note-invoice">#{{ note.invoiceId }}</UiLink>
             </UiText>
             <UiText>
               {{ t('billing.creditNotes.client') }}:
-              <UiLink :to="clientPath(note.clientId)" variant="link">{{ note.clientName }}</UiLink>
+              <UiLink :to="clientPath(note.clientId)" :variant="UiButtonVariant.Link">{{ note.clientName }}</UiLink>
             </UiText>
             <UiText>{{ t('billing.creditNotes.methodLabel') }}: {{ t(`billing.creditNotes.method.${note.method}`) }}</UiText>
             <UiText v-if="note.refundReference">{{ t('billing.creditNotes.refundReference') }}: {{ note.refundReference }}</UiText>
@@ -186,35 +186,41 @@ onMounted(load)
             </UiText>
           </UiStack>
         </template>
-
-        <template #card-items>
-          <template v-if="note !== null">
-            <UiTable :empty-text="t('billing.creditNotes.empty')" :empty="items.length === 0" data-testid="billing-credit-note-items">
-              <UiSchemaTableHead :columns="itemColumns" />
-              <UiTableBody divided>
-                <UiTableRow v-for="item in items" :key="item.id">
-                  <UiTableCell>{{ item.description }}</UiTableCell>
-                  <UiTableCell numeric>{{ item.quantity }}</UiTableCell>
-                  <UiTableCell numeric>{{ formatPlainAmount(item.unitPrice, note.currency) }}</UiTableCell>
-                  <UiTableCell numeric>{{ formatPlainAmount(item.amount, note.currency) }}</UiTableCell>
-                </UiTableRow>
-              </UiTableBody>
-            </UiTable>
-            <UiStack gap="xs" data-testid="billing-credit-note-totals">
-              <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(note.subTotal, note.currency) }}</UiText>
-              <UiText>{{ t('billing.creditNotes.taxAt', { rate: note.taxRate }) }}: {{ formatPlainAmount(note.tax, note.currency) }}</UiText>
-              <UiText tone="primary" data-testid="billing-credit-note-total">
-                {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(note.total, note.currency) }}
-              </UiText>
-            </UiStack>
-          </template>
-        </template>
       </UiDetailCards>
+
+      <UiDataTable
+        :empty-text="t('billing.creditNotes.empty')"
+        :loading="note === null"
+        :empty="note !== null && items.length === 0"
+        data-testid="billing-credit-note-items"
+      >
+        <UiSchemaTableHead :columns="itemColumns" />
+        <UiTableBody>
+          <template v-if="note !== null">
+            <UiTableRow v-for="item in items" :key="item.id">
+              <UiTableCell>{{ item.description }}</UiTableCell>
+              <UiTableCell numeric>{{ item.quantity }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.unitPrice, note.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.amount, note.currency) }}</UiTableCell>
+            </UiTableRow>
+          </template>
+        </UiTableBody>
+      </UiDataTable>
+
+      <UiCard v-if="note !== null" :padding="UiCardPadding.Md">
+        <UiStack :gap="UiGap.Xs" data-testid="billing-credit-note-totals">
+          <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(note.subTotal, note.currency) }}</UiText>
+          <UiText>{{ t('billing.creditNotes.taxAt', { rate: note.taxRate }) }}: {{ formatPlainAmount(note.tax, note.currency) }}</UiText>
+          <UiText :tone="UiTextTone.Primary" data-testid="billing-credit-note-total">
+            {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(note.total, note.currency) }}
+          </UiText>
+        </UiStack>
+      </UiCard>
     </template>
 
     <UiDialog
       v-if="voiding && note !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('billing.creditNotes.voidTitle')"
       :message="t('billing.creditNotes.voidMessage', { number: note.number ?? `#${note.id}` })"
       :confirm-label="t('billing.creditNotes.voidButton')"

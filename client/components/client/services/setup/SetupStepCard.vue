@@ -2,7 +2,7 @@
   <UiCard padding="xl">
     <UiStack direction="row" align="center" class="mb-8">
       <UiTile :icon="icon" :tone="tone" size="xl" />
-      <UiStack gap="none">
+      <UiStack gap="none" class="min-w-0">
         <UiHeading :level="2" size="subsection">{{ title }}</UiHeading>
         <UiText size="sm" tone="subtle">{{ subtitle }}</UiText>
       </UiStack>

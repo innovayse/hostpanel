@@ -13,14 +13,15 @@
  * It exists because `UiText` always sets a text colour, and a text colour would paint over the
  * clipped gradient.
  */
+import { UiGradientTextTag } from '~/utils/ui/enums'
 
 /** Props of UiGradientText. */
 interface Props {
   /** Tag to render; a span by default so the text can sit inside a line. */
-  as?: string
+  as?: `${UiGradientTextTag}`
 }
 
 withDefaults(defineProps<Props>(), {
-  as: 'span',
+  as: UiGradientTextTag.Span,
 })
 </script>

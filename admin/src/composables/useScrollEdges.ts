@@ -22,9 +22,10 @@ export interface ScrollEdges {
  * that only overflows after fonts or tabs load still shows its edge. Left to right layout is assumed.
  *
  * @param element - The scrolling element, null until it is mounted.
+ * @param onResize - Called after each re-measure caused by a size change (not by scrolling), for a strip that keeps something in view.
  * @returns The two side flags and the fade class that draws them.
  */
-export const useScrollEdges = (element: Ref<HTMLElement | null>): ScrollEdges => {
+export const useScrollEdges = (element: Ref<HTMLElement | null>, onResize?: () => void): ScrollEdges => {
   /** Whether content is hidden before the visible part. */
   const hasBefore = ref(false)
 
@@ -60,7 +61,10 @@ export const useScrollEdges = (element: Ref<HTMLElement | null>): ScrollEdges =>
       return
     }
     next.addEventListener('scroll', measure, { passive: true })
-    observer = new ResizeObserver(measure)
+    observer = new ResizeObserver(() => {
+      measure()
+      onResize?.()
+    })
     observer.observe(next)
     Array.from(next.children).forEach((child) => {
       observer?.observe(child)

@@ -61,13 +61,16 @@ export const serverLoadPercent = (server: ServerCapacitySource): number | null =
  * Formats the account usage of a server.
  *
  * @param server - The server.
- * @returns `count / max`, `count`, or a dash when unknown.
+ * @returns `count / max`, `count / Unlimited` for a server with no limit, a dash when the count is unknown, or just "Unlimited"
+ * when it is neither known nor limited.
  */
 export const serverAccountsLabel = (server: ServerCapacitySource): string => {
+  const max = server.limits.maxAccounts
+  const limit = max === null ? translate('servers.serverForm.unlimited') : String(max)
   if (server.accountsCount === null) {
-    return EMPTY_VALUE
+    return max === null ? limit : EMPTY_VALUE
   }
-  return server.limits.maxAccounts === null ? `${server.accountsCount}` : `${server.accountsCount} / ${server.limits.maxAccounts}`
+  return `${server.accountsCount} / ${limit}`
 }
 
 /** The facts a server card shows beside its name, in display order. */
@@ -97,8 +100,8 @@ export interface ServerFact {
   icon: string
   /** Translated caption. */
   label: string
-  /** Translated, formatted value. */
-  value: string
+  /** Translated, formatted values, one per line; a single-valued fact has one. */
+  values: string[]
 }
 
 /** Locale key of the caption of each server fact. */
@@ -123,6 +126,14 @@ export const serverNameServerHosts = (server: Pick<ServerDto, 'nameServers'>): s
 }
 
 /**
+ * The value list of a single-valued fact.
+ *
+ * @param value - The value, or null/empty when the server has no data for the fact.
+ * @returns One value, or none.
+ */
+const valuesOf = (value: string | null): string[] => (value ? [value] : [])
+
+/**
  * The facts a server card shows: group, datacenter, services and their monthly revenue, how the API is reached and the
  * nameservers. A fact the server has no data for is left out, never filled with a made-up value.
  *
@@ -131,21 +142,21 @@ export const serverNameServerHosts = (server: Pick<ServerDto, 'nameServers'>): s
  */
 export const serverFacts = (server: ServerDto): ServerFact[] => {
   const nameServers = serverNameServerHosts(server)
-  const facts: [ServerFactKey, string, string | null][] = [
-    [ServerFactKey.Group, Icon.Folder, server.serverGroupName],
-    [ServerFactKey.Datacenter, Icon.Rack, server.hosting.datacenter],
-    [ServerFactKey.Services, Icon.Box, server.usage ? String(server.usage.activeServices) : null],
+  const facts: [ServerFactKey, string, string[]][] = [
+    [ServerFactKey.Group, Icon.Folder, valuesOf(server.serverGroupName)],
+    [ServerFactKey.Datacenter, Icon.Rack, valuesOf(server.hosting.datacenter)],
+    [ServerFactKey.Services, Icon.Box, valuesOf(server.usage ? String(server.usage.activeServices) : null)],
     [
       ServerFactKey.Revenue,
       Icon.Dollar,
-      server.usage ? translate('servers.servers.perMonth', { amount: formatPlainAmount(server.usage.monthlyRevenue, server.usage.currency) }) : null,
+      valuesOf(server.usage ? translate('servers.servers.perMonth', { amount: formatPlainAmount(server.usage.monthlyRevenue, server.usage.currency) }) : null),
     ],
     [
       ServerFactKey.Connection,
       server.endpoint.useSSL ? Icon.ShieldCheck : Icon.ShieldOff,
-      translate(server.endpoint.useSSL ? 'servers.servers.connectionHttps' : 'servers.servers.connectionHttp'),
+      [translate(server.endpoint.useSSL ? 'servers.servers.connectionHttps' : 'servers.servers.connectionHttp')],
     ],
-    [ServerFactKey.NameServers, Icon.Globe, nameServers.length > 0 ? nameServers.join(', ') : null],
+    [ServerFactKey.NameServers, Icon.Globe, nameServers],
   ]
-  return facts.flatMap(([key, icon, value]) => (value ? [{ key, icon, label: translate(SERVER_FACT_LABEL_KEYS[key]), value }] : []))
+  return facts.flatMap(([key, icon, values]) => (values.length > 0 ? [{ key, icon, label: translate(SERVER_FACT_LABEL_KEYS[key]), values }] : []))
 }

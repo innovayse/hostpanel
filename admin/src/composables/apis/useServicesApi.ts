@@ -19,6 +19,8 @@ import {
   type ServiceNotesPayload,
   ServiceSection,
   type ServiceStatusPayload,
+  type ServiceSyncPayload,
+  type ServiceSyncResult,
   type ServiceTerminationDatePayload,
 } from '@/types/service'
 import { ApiPath } from '@/lib/apiPaths'
@@ -169,6 +171,17 @@ export const useServicesApi = () => {
     request<void>(`${ApiPath.Provisioning}/${id}/change-package`, { method: HttpMethod.Post, body: JSON.stringify({ newPackage }) })
 
   /**
+   * Reconciles a provisioned service with its hosting panel: the platform's status and package are applied to the
+   * panel (the password too when asked) and the panel's IP address is recorded on the service.
+   *
+   * @param id - Service id.
+   * @param payload - Whether the stored password is also set on the panel.
+   * @returns What was done about each field.
+   */
+  const syncServiceWithPanel = (id: number | string, payload: ServiceSyncPayload): Promise<ServiceSyncResult> =>
+    request<ServiceSyncResult>(`${ApiPath.AdminServices}/${id}/sync-panel`, { method: HttpMethod.Post, body: JSON.stringify(payload) })
+
+  /**
    * Suspends a service.
    *
    * @param id - Service id.
@@ -209,6 +222,6 @@ export const useServicesApi = () => {
   return {
     addExistingService, listServices, getService, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes,
     changeStatus, correctTerminationDate, getPanelLoginUrl,
-    provisionService, changePassword, changePackage, suspendService, unsuspendService, terminateService,
+    provisionService, changePassword, changePackage, syncServiceWithPanel, suspendService, unsuspendService, terminateService,
   }
 }

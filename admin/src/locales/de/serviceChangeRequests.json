@@ -12,7 +12,6 @@
   "proration": "Anteilige Berechnung",
   "invoice": "Rechnung #{id}",
   "note": "Notiz",
-  "totalCount": "Anfragen: {totalCount}",
   "empty": "Keine Tarifwechsel-Anfragen gefunden",
   "approve": "Genehmigen",
   "reject": "Ablehnen",

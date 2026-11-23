@@ -11,6 +11,7 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import { formatShare } from '@/lib/format'
 import type { EmailCampaignStats } from '@/types/emailcampaign'
+import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t, locale } = useI18n()
@@ -32,7 +33,7 @@ const clickRateText = computed<string>(() => formatShare(props.stats.clickRate, 
 </script>
 
 <template>
-  <UiGrid :columns="3" gap="md" data-testid="email-campaign-stats">
+  <UiGrid :columns="3" :gap="UiGap.Md" data-testid="email-campaign-stats">
     <UiStatTile :label="t('emailCampaigns.stats.total')" :value="stats.total" data-testid="email-campaign-stat-total" />
     <UiStatTile :label="t('emailCampaigns.stats.pending')" :value="stats.pending" data-testid="email-campaign-stat-pending" />
     <UiStatTile :label="t('emailCampaigns.stats.sent')" :value="stats.sent" :tone="UiTone.Success" data-testid="email-campaign-stat-sent" />

@@ -10,7 +10,15 @@ describe('UiBadge', () => {
     const wrapper = mount(UiBadge, { slots: { default: 'Active' } })
 
     expect(wrapper.text()).toBe('Active')
-    expect(wrapper.classes()).toContain('rounded-pill')
+    expect(wrapper.classes()).toContain('rounded-2xl')
+  })
+
+  it('wraps a long label inside its box instead of running out of it', () => {
+    const classes = mount(UiBadge, { slots: { default: 'A very long sentence' } }).classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full', 'whitespace-normal', 'break-words']))
+    expect(classes).not.toContain('whitespace-nowrap')
+    expect(classes).not.toContain('rounded-pill')
   })
 
   it('takes its colours from the tone', () => {

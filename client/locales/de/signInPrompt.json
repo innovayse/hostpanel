@@ -1,7 +1,5 @@
 {
   "signInPrompt": {
-    "message": "Sie sind nicht angemeldet. Melden Sie sich an, um Ihre Services, Rechnungen und Tickets zu sehen.",
-    "signIn": "Anmelden",
-    "dismiss": "Nicht jetzt"
+    "message": "Sie sind nicht angemeldet. Melden Sie sich an, um Ihre Services, Rechnungen und Tickets zu sehen."
   }
 }

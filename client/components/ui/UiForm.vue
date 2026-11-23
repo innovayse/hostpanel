@@ -42,7 +42,7 @@
     </div>
 
     <!-- Actions row -->
-    <div v-if="$slots.actions" class="flex gap-3 justify-end mt-6">
+    <div v-if="$slots.actions" class="flex flex-wrap justify-end gap-3 mt-6">
       <slot name="actions" />
     </div>
   </form>

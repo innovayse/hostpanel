@@ -64,7 +64,7 @@
       </UiStack>
 
       <template #actions>
-        <UiButton type="submit" :loading="inviting" data-testid="account-invite-submit">
+        <UiButton variant="primary" type="submit" :loading="inviting" data-testid="account-invite-submit">
           <Send v-if="!inviting" :size="15" :stroke-width="2" class="mr-1.5" />
           {{ $t('client.users.sendInvite') }}
         </UiButton>

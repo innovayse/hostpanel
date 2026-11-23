@@ -13,8 +13,12 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import type { PaymentMethodOption, ProductGroup } from '@/types/product'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 const { t } = useI18n()
 
@@ -52,27 +56,28 @@ const allowedLabel = (group: ProductGroup): string => {
 </script>
 
 <template>
-  <UiDialog :title="t('settings.productGroups.title')" size="md" @close="emit('close')">
+  <UiDialog :title="t('settings.productGroups.title')" :size="UiDialogSize.Md" @close="emit('close')">
     <UiStack data-testid="product-groups-dialog">
-      <UiText v-if="groups.length === 0" tone="muted" size="sm" data-testid="product-groups-empty">
+      <UiText v-if="groups.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="product-groups-empty">
         {{ t('settings.productGroups.empty') }}
       </UiText>
       <UiStack
         v-for="group in groups"
         :key="group.id"
-        direction="row"
-        align="center"
-        justify="between"
+        :direction="UiDirection.Row"
+        :align="UiAlignItems.Center"
+        :justify="UiJustify.Between"
         :data-testid="`product-group-${group.id}`"
       >
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ group.name }}</UiText>
-          <UiText tone="muted" size="sm">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ group.name }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
             {{ t('settings.productGroups.products', { count: group.productCount }) }} · {{ allowedLabel(group) }}
           </UiText>
         </UiStack>
         <UiIconButton
           :label="t('settings.productGroups.edit')"
+          :variant="UiButtonVariant.Ghost"
           :size="UiSize.Sm"
           :data-testid="`product-group-edit-${group.id}`"
           @click="emit('edit', group)"
@@ -80,8 +85,8 @@ const allowedLabel = (group: ProductGroup): string => {
           <UiIcon :markup="Icon.Edit" :size="UiSize.Sm" />
         </UiIconButton>
       </UiStack>
-      <UiButton :action="UiActionKind.Add" variant="secondary" data-testid="product-groups-add" @click="emit('add')">
-        {{ t('settings.productGroups.add') }}
+      <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" data-testid="product-groups-add" @click="emit('add')">
+        {{ t('settings.productGroups.create') }}
       </UiButton>
     </UiStack>
   </UiDialog>

@@ -17,8 +17,9 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems } from '@/utils/ui/layout'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -128,20 +129,20 @@ onBeforeUnmount(() => {
 <template>
   <UiStack
     v-if="modelValue"
-    direction="row"
+    :direction="UiDirection.Row"
     :align="UiAlignItems.Center"
-    gap="sm"
+    :gap="UiGap.Sm"
     :data-testid="`${testid}-selected`"
   >
     <UiBadge :tone="UiTone.Primary">{{ initials(modelValue) }}</UiBadge>
-    <UiStack gap="none" class="flex-1">
+    <UiStack :gap="UiGap.None" class="flex-1">
       <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">
         {{ modelValue.firstName }} {{ modelValue.lastName }}
       </UiText>
       <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ modelValue.email }}</UiText>
     </UiStack>
     <UiIconButton
-      :label="t('shared.cancel')"
+      :label="t('shared.clear')"
       :size="UiSize.Sm"
       :data-testid="`${testid}-clear`"
       @click="clear"
@@ -150,11 +151,11 @@ onBeforeUnmount(() => {
     </UiIconButton>
   </UiStack>
 
-  <UiStack v-else gap="sm">
+  <UiStack v-else :gap="UiGap.Sm">
     <UiInput
       :id="inputId"
       v-model="term"
-      type="text"
+      :type="UiInputType.Text"
       :invalid="invalid"
       :placeholder="t('shared.searchByNameOrEmail')"
       :data-testid="`${testid}-search`"
@@ -163,22 +164,22 @@ onBeforeUnmount(() => {
     <!-- Rows of the shape of a hit (initials badge, then the name line), so the list does not jump when the hits arrive -->
     <UiStack
       v-if="loading"
-      gap="xs"
+      :gap="UiGap.Xs"
       role="status"
       aria-busy="true"
       :aria-label="t('ui.loading')"
       :data-testid="`${testid}-loading`"
     >
-      <UiStack v-for="row in LOADING_ROWS" :key="row" direction="row" :align="UiAlignItems.Center" gap="sm" aria-hidden="true">
+      <UiStack v-for="row in LOADING_ROWS" :key="row" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" aria-hidden="true">
         <UiSkeletonBar class="size-8 shrink-0 rounded-full" />
         <UiSkeletonBar class="h-4 flex-1 rounded-md" />
       </UiStack>
     </UiStack>
-    <UiStack v-else-if="results.length > 0" gap="xs">
+    <UiStack v-else-if="results.length > 0" :gap="UiGap.Xs">
       <UiButton
         v-for="user in results"
         :key="user.id"
-        type="button"
+        :type="UiButtonType.Button"
         :variant="UiButtonVariant.Ghost"
         block
         :data-testid="`${testid}-result-${user.id}`"

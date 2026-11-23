@@ -6,7 +6,8 @@
  * and a row of buttons. The screen puts the real body in the default slot; while `loading` the title, the row captions
  * and the table header captions are real page text, the values are bars and the slot is not drawn, so the screen and its
  * skeleton are one card. A card with `tabs` is a bare tab strip with no card around it: real tabs in the slot, the schema's
- * captions (not clickable) while `loading`. `UiDetailCards` lays the cards out.
+ * captions (not clickable) while `loading`. The body is an `@container`, so a grid in the slot or in the skeleton that is
+ * given `container` counts its columns by the width of the card, not of the screen. `UiDetailCards` lays the cards out.
  */
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -59,7 +60,7 @@ const lineWidthsOf = (count: number): string[] => Array.from({ length: count }, 
     <slot v-else />
   </div>
   <UiCard v-else padding="md" :aria-busy="loading ? 'true' : undefined" :data-testid="`ui-detail-card-${card.key}`">
-    <UiStack gap="md">
+    <UiStack gap="md" class="@container">
       <UiHeading v-if="card.title" :level="2" variant="card">
         {{ t(card.title) }}
       </UiHeading>
@@ -77,13 +78,13 @@ const lineWidthsOf = (count: number): string[] => Array.from({ length: count }, 
           </UiText>
           <UiSkeletonBar class="h-4 w-2/3 rounded-md" aria-hidden="true" />
         </UiStack>
-        <UiGrid v-if="card.fields" :columns="2" gap="md">
+        <UiGrid v-if="card.fields" :columns="2" gap="md" container>
           <UiField v-for="n in card.fields" :key="n" loading />
         </UiGrid>
         <UiStack v-if="card.lines" gap="xs" aria-hidden="true">
           <UiSkeletonBar v-for="(width, n) in lineWidthsOf(card.lines)" :key="n" class="h-3.5 rounded-md" :class="width" />
         </UiStack>
-        <UiGrid v-if="card.tiles" :columns="3" gap="md" data-testid="ui-detail-tiles">
+        <UiGrid v-if="card.tiles" :columns="3" gap="md" container data-testid="ui-detail-tiles">
           <UiCard v-for="n in card.tiles" :key="n" padding="md" aria-hidden="true">
             <UiStack gap="sm">
               <UiSkeletonBar class="h-5 w-40 max-w-full rounded-md" />

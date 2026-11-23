@@ -93,7 +93,7 @@ describe('credit page', () => {
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 
     expect(wrapper.get('[data-testid="credit-add-funds"]').attributes('href')).toBe(CLIENT_CREDIT_ADD_PATH)
-    expect(wrapper.find('[data-testid="credit-history-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(true)
   })
 
   it('shows no pagination when the whole history fits one page', async () => {

@@ -97,4 +97,10 @@ describe('focus rings', () => {
   it('offsets the filled-button ring from the theme surface, not plain white', () => {
     expect(FOCUS_RING_OFFSET).toContain('focus-visible:ring-offset-ui-surface')
   })
+
+  it('gives the small control and button a 44px height on a phone and 36px from sm', () => {
+    expect(CONTROL_SIZE_CLASSES[UiSize.Sm]).toContain('min-h-11')
+    expect(CONTROL_SIZE_CLASSES[UiSize.Sm]).toContain('sm:min-h-9')
+    expect(BUTTON_SIZE_CLASSES[UiSize.Sm]).toBe(CONTROL_SIZE_CLASSES[UiSize.Sm])
+  })
 })

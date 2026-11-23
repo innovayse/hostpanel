@@ -7,7 +7,6 @@
     "creditRemoved": "Crédito retirado de la factura.",
     "confirmRemoveCreditTitle": "¿Quitar crédito?",
     "confirmRemoveCreditMessage": "¿Quitar {amount} de crédito de la factura #{id}?",
-    "removeCredit": "Quitar crédito",
     "topUpNoCredit": "Esta es una factura de recarga de crédito. No se puede aplicar crédito a ella: está pagada en su totalidad, y su monto se agrega al saldo de crédito del cliente una vez que se paga."
   },
   "invoiceNotesTab": {
@@ -21,7 +20,6 @@
   "invoicePaymentTab": {
     "publishTheInvoiceBeforeAdding": "Publica la factura antes de agregar pagos.",
     "invoiceIsCancelledPleaseMark": "Factura Cancelada: Marca como Impaga primero para aplicar un pago.",
-    "addPayment": "Agregar pago",
     "gatewayReference": "Referencia de pasarela",
     "paymentAdded": "Pago registrado."
   },
@@ -54,7 +52,6 @@
     "invoiceAmount": "Monto de la factura",
     "paymentMethod": "Método de pago:",
     "publish": "Publicar",
-    "markPaid": "Marcar como pagada",
     "published": "Factura publicada.",
     "cancelled": "Factura cancelada.",
     "markedPaid": "Factura marcada como pagada.",
@@ -74,7 +71,6 @@
     "createQuote": "Crear cotización",
     "createANewQuoteFor": "Crear una nueva cotización para un cliente",
     "generalInformation": "Información general",
-    "deleteRow": "Eliminar fila",
     "proposalText": "Texto de propuesta",
     "displayedAtTheTopOf": "(Mostrado en la parte superior de la Cotización)",
     "enterProposalText": "Ingresa el texto de la propuesta...",
@@ -91,7 +87,7 @@
     "dead": "Muerto"
   },
   "addTransaction": {
-    "addTransaction": "Agregar transacción",
+    "createTransaction": "Crear transacción",
     "recordANewPaymentTransaction": "Registrar una nueva transacción de pago",
     "relatedClient": "Cliente relacionado",
     "whatIsThisTransactionFor": "¿Para qué es esta transacción?",
@@ -105,16 +101,15 @@
     "billableItems": "Elementos facturables",
     "manageUninvoicedAndRecurringCharges": "Gestionar cargos no facturados y recurrentes",
     "searchItems": "Buscar por descripción o ID",
-    "lengthRecordsFound": "{length} registros encontrados",
     "invoiced": "Facturado",
     "typeOneTime": "Una vez",
     "typeRecurring": "Recurrente",
     "noItemsFound": "No se encontraron elementos.",
     "noItemsMatchYourFilters": "Ningún concepto facturable coincide con tus filtros.",
-    "clearFilters": "Borrar filtros",
     "deleteItems": "Eliminar elementos facturables",
     "deleteItemsMessage": "¿Eliminar {count} elemento facturable seleccionado? Esta acción no se puede deshacer. | ¿Eliminar {count} elementos facturables seleccionados? Esta acción no se puede deshacer.",
-    "itemsDeleted": "Elementos facturables eliminados."
+    "itemsDeleted": "Elementos facturables eliminados.",
+    "create": "Crear ítem facturable"
   },
   "disputes": {
     "listDisputes": "Listar disputas",
@@ -124,8 +119,7 @@
   },
   "editTransaction": {
     "editTransaction": "Editar transacción",
-    "updatePaymentTransactionDetails": "Actualizar detalles de la transacción de pago",
-    "updateTransaction": "Actualizar transacción"
+    "updatePaymentTransactionDetails": "Actualizar detalles de la transacción de pago"
   },
   "gatewayLog": {
     "gatewayTransactionLog": "Registro de transacciones de pasarela",
@@ -175,7 +169,6 @@
     "reference": "Referencia",
     "requested": "Elegido",
     "empty": "No hay transferencias bancarias esperando.",
-    "confirm": "Confirmar",
     "reject": "Rechazar",
     "confirmTitle": "Confirmar transferencia bancaria",
     "confirmMessage": "¿Confirmar que {amount} llegó para la factura #{id} (referencia {reference})? La factura se marcará como pagada.",
@@ -218,22 +211,14 @@
     "tabCredit": "Crédito",
     "tabRefund": "Reembolso",
     "tabCreditNotes": "Notas de crédito",
-    "tabFulfilment": "Cumplimiento",
-    "downloadPdf": "Descargar PDF"
+    "tabFulfilment": "Cumplimiento"
   },
   "invoicesList": {
     "manageBillingInvoices": "Gestionar facturas de facturación",
     "due": "Pendiente",
     "summaryHint": "{count} factura en esta página | {count} facturas en esta página",
     "dateRefunded": "Fecha de reembolso",
-    "totalcountRecordsFoundShowingValue": "{totalCount} registros encontrados, mostrando {value} a {value2}",
-    "markPaid": "Marcar como pagada",
-    "markUnpaid": "Marcar como impaga",
     "duplicateInvoice": "Duplicar factura",
-    "bulkPaid": "Pagado",
-    "bulkUnpaid": "Sin pagar",
-    "bulkCancelled": "Cancelado",
-    "bulkDuplicate": "Duplicado",
     "collections": "Cobros",
     "paymentPending": "Pago pendiente",
     "searchInvoices": "Buscar por número de factura o método de pago",
@@ -259,11 +244,9 @@
     "quoteSubject": "Asunto de la cotización",
     "selectStage": "Seleccionar etapa",
     "dateCreated": "Fecha de creación",
-    "duplicate": "Duplicar",
     "convertToInvoice": "Convertir a factura",
     "unitPrice": "Precio unitario",
     "discount": "Descuento %",
-    "addItem": "Agregar elemento",
     "proposalText": "Texto de propuesta",
     "proposalTextVisibleToThe": "Texto de propuesta visible para el cliente...",
     "customerNotes": "Notas del cliente",
@@ -279,7 +262,6 @@
   },
   "quotesList": {
     "customerQuotesAndProposals": "Cotizaciones y propuestas de clientes",
-    "createQuote": "Crear cotización",
     "validityPeriod": "Período de validez",
     "created": "Creado",
     "noQuotesFound": "No se encontraron cotizaciones.",
@@ -289,7 +271,6 @@
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Transacciones y registros de pago",
-    "addTransaction": "Agregar transacción",
     "show": "Mostrar",
     "netRevenueUsd": "Ingresos netos (USD)",
     "totalIncome": "Ingresos totales",
@@ -315,7 +296,6 @@
     "attempts": "Intentos",
     "lastError": "Último error",
     "when": "Completado / próximo intento",
-    "retry": "Reintentar",
     "empty": "No hay registros de cumplimiento para esta factura.",
     "statusPending": "Pendiente",
     "statusProcessing": "Procesando",
@@ -343,7 +323,6 @@
     "lines": "Líneas acreditadas",
     "useInvoiceLines": "Usar las líneas de la factura",
     "addLine": "Agregar una línea",
-    "removeLine": "Eliminar",
     "descriptionPlaceholder": "Qué se acredita",
     "pricePlaceholder": "Precio",
     "quantityPlaceholder": "Cantidad",
@@ -382,7 +361,6 @@
       "Voided": "Anulada"
     },
     "detailTitle": "Nota de crédito {number}",
-    "downloadPdf": "Descargar PDF",
     "voidButton": "Anular nota de crédito",
     "voidTitle": "Anular nota de crédito",
     "voidMessage": "¿Anular nota de crédito {number}? Conserva su número y permanece en el registro. El crédito de cuenta que otorgó se descuenta del saldo del cliente, y la factura puede acreditarse nuevamente.",
@@ -395,5 +373,13 @@
     "quantity": "Cantidad",
     "unitPrice": "Precio unitario",
     "amount": "Monto"
+  },
+  "actions": {
+    "addItem": "Agregar ítem",
+    "duplicate": "Duplicar",
+    "markPaid": "Marcar como pagada",
+    "markUnpaid": "Marcar como no pagada",
+    "markCancelled": "Marcar como cancelada",
+    "downloadPdf": "Descargar PDF"
   }
 }

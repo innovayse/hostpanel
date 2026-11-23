@@ -3,7 +3,8 @@
     "verifyYourEmail": "E-Mail-Adresse bestätigen",
     "pleaseCheckYourInboxAnd": "Bitte prüfen Sie Ihren Posteingang und klicken Sie auf den Bestätigungslink, um Ihr Admin-Konto zu aktivieren. Das Admin-Panel können Sie erst nutzen, wenn Ihre E-Mail-Adresse bestätigt ist.",
     "didnTReceiveTheEmail": "Keine E-Mail erhalten? Prüfen Sie Ihren Spam-Ordner.",
-    "resend": "E-Mail erneut senden",
+    "resend": "Erneut senden",
+    "resendTitle": "E-Mail erneut senden",
     "resent": "Bestätigungs-E-Mail gesendet."
   },
   "collapseSidebar": "Seitenleiste einklappen",
@@ -22,10 +23,7 @@
     "es": "Español"
   },
   "theme": {
-    "label": "Design",
-    "light": "Hell",
-    "dark": "Dunkel",
-    "system": "System"
+    "label": "Dunkles Design"
   },
   "version": {
     "label": "Hostpanel {version}"
@@ -33,10 +31,8 @@
   "releaseUpdate": {
     "title": "Hostpanel {version} verfügbar",
     "releaseNotes": "Versionshinweise",
-    "copy": "Upgrade-Befehl kopieren",
-    "copied": "Kopiert!"
+    "copy": "Upgrade-Befehl kopieren"
   },
-  "newClient": "Neuer Kunde",
   "breadcrumb": {
     "label": "Navigationspfad",
     "hidden": "Ausgeblendete Seiten anzeigen",

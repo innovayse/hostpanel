@@ -31,13 +31,11 @@
       "status": "Վճարում",
       "paid": "Վճարված է",
       "amount": "Գումար",
-      "setupService": "Կարգավորել ծառայությունը",
       "viewInvoices": "Դիտել հաշիվները",
       "domain": "Դոմեյն",
       "action": "Գործողություն",
       "registration": "Գրանցում",
-      "transfer": "Տրանսֆեր",
-      "manageDomain": "Կառավարել դոմեյնը"
+      "transfer": "Տրանսֆեր"
     },
     "secureCheckout": "Անվտանգ վճարում",
     "identifyPrompt": "Ինչպե՞ս նույնականացնել ձեզ",

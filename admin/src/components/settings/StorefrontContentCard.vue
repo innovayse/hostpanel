@@ -27,6 +27,7 @@ import type { Setting } from '@/types/setting'
 import { SHORT_TEXT_MAX_LENGTH } from '@/lib/limits'
 import { isValidSettingValue, SettingFieldRule } from '@/lib/settingValidation'
 import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -282,7 +283,7 @@ const localizedOf = (group: StorefrontGroup): LocalizedStorefrontField[] => LOCA
             :setting-key="field.keys[locale]"
             :env-name="SettingEnv[field.keys[locale]]"
           />
-          <UiStack v-else gap="xs">
+          <UiStack v-else :gap="UiGap.Xs">
             <UiInput
               v-model="field.localized.drafts[locale].value.value"
               :placeholder="t(field.hintKey)"

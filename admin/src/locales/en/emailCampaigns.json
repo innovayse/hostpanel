@@ -1,7 +1,7 @@
 {
   "list": {
     "subtitle": "Write a mail once and send it to the clients you pick",
-    "add": "New campaign",
+    "create": "Create campaign",
     "scheduledAt": "Scheduled for",
     "sentAt": "Sent",
     "delivery": "Delivery",
@@ -11,8 +11,6 @@
     "emptyDescription": "Create a campaign to send a mail to a group of clients.",
     "searchPlaceholder": "Search by subject",
     "noMatches": "No campaigns match your filters",
-    "clearFilters": "Clear filters",
-    "totalCount": "Campaigns: {totalCount}",
     "deleteTitle": "Delete campaign",
     "deleteMessage": "Are you sure you want to delete this draft campaign? This cannot be undone."
   },
@@ -45,7 +43,6 @@
   "daysPlaceholder": "Days",
   "daysSuffix": "days ahead",
   "daysAgoSuffix": "days or more",
-  "removeSegment": "Remove",
   "stats": {
     "total": "Recipients",
     "pending": "Pending",
@@ -76,13 +73,10 @@
     "bodyPlaceholder": "Write the mail as HTML",
     "audience": "Recipients",
     "audienceHint": "A client who matches any of the rules receives the mail once.",
-    "addSegment": "Add a rule",
+    "addSegment": "Add rule",
     "audienceCount": "Matching clients: {count}",
     "audienceIncomplete": "Finish every rule to see how many clients match.",
     "saveDraft": "Save draft",
-    "preview": "Preview",
-    "schedule": "Schedule",
-    "sendNow": "Send now",
     "cancelSchedule": "Cancel schedule",
     "sendNowTitle": "Send the campaign now",
     "sendNowMessage": "The campaign is saved and sent to every matching client at once. This cannot be undone.",

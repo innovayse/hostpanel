@@ -9,8 +9,7 @@
  */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ServerModule, moduleLabel } from '@/types/server'
-import { ServerModuleSource } from '@/types/serverenums'
+import { ServerModule, moduleLabel, moduleOptionLabel } from '@/types/server'
 import type { ServerDto, ServerModuleOptionDto, ServerPayload } from '@/types/server'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import StoredSecretState from '@/components/servers/StoredSecretState.vue'
@@ -31,6 +30,12 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -136,7 +141,7 @@ interface ServerFormState {
 const moduleSelectOptions = computed(() => {
   const options = props.moduleOptions.map(option => ({
     value: option.id,
-    label: option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id),
+    label: moduleOptionLabel(option),
   }))
   const stored = props.server?.module
   if (stored && !options.some(option => option.value.toLowerCase() === stored.toLowerCase())) {
@@ -285,18 +290,18 @@ const handleSubmit = (): void => {
 <template>
   <UiDialog
     :title="props.server ? t('servers.serverForm.editServer') : t('servers.serverForm.addNewServer')"
-    size="lg"
+    :size="UiDialogSize.Lg"
     @close="emit('close')"
   >
-    <UiStack gap="md">
-      <UiAlert v-if="props.error" variant="error" data-testid="server-form-error">{{ props.error }}</UiAlert>
+    <UiStack :gap="UiGap.Md">
+      <UiAlert v-if="props.error" :variant="UiTone.Danger" data-testid="server-form-error">{{ props.error }}</UiAlert>
 
       <UiTabs v-model="tab" :items="tabItems" />
 
       <UiForm stacked @submit.prevent="handleSubmit">
         <!-- General tab -->
         <template v-if="tab === ServerFormTab.General">
-          <UiGrid :columns="2" gap="sm">
+          <UiGrid :columns="2" :gap="UiGap.Sm" container>
             <UiField
               :label="t('shared.name')"
               :hint="t('servers.serverForm.aFriendlyLabelShownIn')"
@@ -307,7 +312,7 @@ const handleSubmit = (): void => {
                 <UiInput
                   :id="id"
                   v-model="form.name"
-                  type="text"
+                  :type="UiInputType.Text"
                   :invalid="invalid"
                   :aria-describedby="describedby"
                   :placeholder="t('servers.serverForm.myProductionServer')"
@@ -325,7 +330,7 @@ const handleSubmit = (): void => {
                 <UiInput
                   :id="id"
                   v-model="form.hostname"
-                  type="text"
+                  :type="UiInputType.Text"
                   :invalid="invalid"
                   :aria-describedby="describedby"
                   :placeholder="t('servers.serverForm.hostnamePlaceholder')"
@@ -353,13 +358,13 @@ const handleSubmit = (): void => {
             </template>
           </UiField>
 
-          <UiGrid :columns="2" gap="sm">
+          <UiGrid :columns="2" :gap="UiGap.Sm" container>
             <UiField :label="t('shared.ipAddress')" :error="props.fieldErrors['endpoint.ipAddress']">
               <template #default="{ id, invalid }">
                 <UiInput
                   :id="id"
                   v-model="form.ipAddress"
-                  type="text"
+                  :type="UiInputType.Text"
                   :invalid="invalid"
                   :placeholder="t('servers.serverForm.ipPlaceholder')"
                   data-testid="server-form-ip"
@@ -393,13 +398,13 @@ const handleSubmit = (): void => {
             </template>
           </UiField>
 
-          <UiGrid :columns="2" gap="sm">
+          <UiGrid :columns="2" :gap="UiGap.Sm" container>
             <UiField :label="t('servers.serverForm.datacenterNoc')" :error="props.fieldErrors['hosting.datacenter']">
               <template #default="{ id, invalid }">
                 <UiInput
                   :id="id"
                   v-model="form.datacenter"
-                  type="text"
+                  :type="UiInputType.Text"
                   :invalid="invalid"
                   :placeholder="t('servers.serverForm.hetznerOvh')"
                   data-testid="server-form-datacenter"
@@ -430,7 +435,7 @@ const handleSubmit = (): void => {
               <UiInput
                 :id="id"
                 v-model="form.serverStatusAddress"
-                type="text"
+                :type="UiInputType.Text"
                 :invalid="invalid"
                 :aria-describedby="describedby"
                 :placeholder="t('servers.serverForm.statusPlaceholder')"
@@ -439,12 +444,12 @@ const handleSubmit = (): void => {
             </template>
           </UiField>
 
-          <UiStack direction="row" gap="lg" wrap>
-            <UiLabel variant="inline">
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg" wrap>
+            <UiLabel :variant="UiLabelVariant.Inline">
               <UiToggle v-model="form.isDefault" data-testid="server-form-default" />
               {{ t('servers.serverForm.defaultServer') }}
             </UiLabel>
-            <UiLabel variant="inline">
+            <UiLabel :variant="UiLabelVariant.Inline">
               <UiToggle v-model="form.isDisabled" data-testid="server-form-disabled" />
               {{ t('servers.serverForm.disableThisServer') }}
             </UiLabel>
@@ -453,19 +458,19 @@ const handleSubmit = (): void => {
 
         <!-- Nameservers tab -->
         <template v-else-if="tab === ServerFormTab.Nameservers">
-          <UiText tone="muted" size="sm">{{ t('servers.serverForm.enterNameserversThatWillBe') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('servers.serverForm.enterNameserversThatWillBe') }}</UiText>
 
-          <UiGrid v-for="row in nameserverRows" :key="row.index" :columns="2" gap="sm">
+          <UiGrid v-for="row in nameserverRows" :key="row.index" :columns="2" :gap="UiGap.Sm" container>
             <UiInput
               v-model="form.nameservers[row.hostKey]"
-              type="text"
+              :type="UiInputType.Text"
               :label="t('servers.serverForm.labelNameserver', { label: row.label })"
               :placeholder="t('servers.serverForm.nsHostPlaceholder', { n: row.index })"
               :data-testid="`server-form-ns${row.index}-host`"
             />
             <UiInput
               v-model="form.nameservers[row.ipKey]"
-              type="text"
+              :type="UiInputType.Text"
               :label="`${row.label} ${t('servers.serverForm.ip')}`"
               :placeholder="t('servers.serverForm.nsIpPlaceholder')"
               :data-testid="`server-form-ns${row.index}-ip`"
@@ -489,7 +494,7 @@ const handleSubmit = (): void => {
               <UiInput
                 :id="id"
                 v-model="form.username"
-                type="text"
+                :type="UiInputType.Text"
                 :invalid="invalid"
                 :aria-describedby="describedby"
                 :placeholder="t('servers.serverForm.usernamePlaceholder')"
@@ -498,17 +503,17 @@ const handleSubmit = (): void => {
             </template>
           </UiField>
 
-          <UiGrid :columns="2" gap="sm">
+          <UiGrid :columns="2" :gap="UiGap.Sm" container>
             <UiField
               :label="t('servers.serverForm.passwordValue', { value: props.server ? t('servers.serverForm.blankKeep') : '' })"
               :error="props.fieldErrors['credentials.password']"
             >
               <template #default="{ id, invalid }">
-                <UiStack gap="xs">
+                <UiStack :gap="UiGap.Xs">
                   <UiInput
                     :id="id"
                     v-model="form.password"
-                    type="password"
+                    :type="UiInputType.Password"
                     :invalid="invalid"
                     :placeholder="t('servers.serverForm.secretPlaceholder')"
                     data-testid="server-form-password"
@@ -529,11 +534,11 @@ const handleSubmit = (): void => {
               :error="props.fieldErrors['credentials.apiToken']"
             >
               <template #default="{ id, invalid }">
-                <UiStack gap="xs">
+                <UiStack :gap="UiGap.Xs">
                   <UiInput
                     :id="id"
                     v-model="form.apiToken"
-                    type="password"
+                    :type="UiInputType.Password"
                     :invalid="invalid"
                     :placeholder="t('servers.serverForm.secretPlaceholder')"
                     data-testid="server-form-api-token"
@@ -557,7 +562,7 @@ const handleSubmit = (): void => {
             :error="props.fieldErrors['credentials.accessHash']"
           >
             <template #default="{ id, invalid, describedby }">
-              <UiStack gap="xs">
+              <UiStack :gap="UiGap.Xs">
                 <UiTextarea
                   :id="id"
                   v-model="form.accessHash"
@@ -580,12 +585,12 @@ const handleSubmit = (): void => {
             </template>
           </UiField>
 
-          <UiLabel variant="inline">
+          <UiLabel :variant="UiLabelVariant.Inline">
             <UiToggle v-model="form.useSSL" data-testid="server-form-ssl" />
             {{ t('servers.serverForm.useSslForConnections') }}
           </UiLabel>
 
-          <UiLabel variant="inline">
+          <UiLabel :variant="UiLabelVariant.Inline">
             <UiToggle
               v-model="form.acceptsSelfSignedCertificate"
               :disabled="!form.useSSL"
@@ -598,17 +603,17 @@ const handleSubmit = (): void => {
     </UiStack>
 
     <template #footer>
-      <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="server-form-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="server-form-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
       <UiButton :action="UiActionKind.Save"
-        type="button"
-        variant="primary"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Primary"
         :loading="props.saving"
         data-testid="server-form-save"
         @click="handleSubmit"
       >
-        {{ props.server ? t('shared.saveChanges') : t('servers.serverForm.addServer') }}
+        {{ props.server ? t('shared.save') : t('servers.servers.createServer') }}
       </UiButton>
     </template>
   </UiDialog>

@@ -21,7 +21,7 @@ describe('RestartBanner', () => {
 
     expect(wrapper.get('[data-testid="plugins-restart"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="plugins-restart"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.text()).toContain('Restart Server')
+    expect(wrapper.text()).toContain('Restart')
   })
 
   it('spreads text and button across the alert and wraps on a narrow screen', () => {

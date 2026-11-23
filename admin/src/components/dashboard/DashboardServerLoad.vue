@@ -13,7 +13,9 @@ import UiProgress from '@/components/ui/UiProgress.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { serverLoadPercent } from '@/lib/servers'
 import type { ServerOptionDto } from '@/types/server'
-import { UiCardRadius } from '@/utils/ui/card'
+import { UiCardPadding, UiCardRadius } from '@/utils/ui/card'
+import { UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant } from '@/utils/ui/text'
 
 /** One bar of the card. */
 interface ServerLoadRow {
@@ -46,9 +48,9 @@ const rows = computed<ServerLoadRow[]>(() =>
 </script>
 
 <template>
-  <UiCard padding="none" :radius="UiCardRadius.Panel" class="p-5.5" data-testid="dashboard-server-load">
-    <UiStack gap="md">
-      <UiHeading :level="2" variant="card">{{ t('dashboard.serverLoad.title') }}</UiHeading>
+  <UiCard :padding="UiCardPadding.None" :radius="UiCardRadius.Panel" class="p-5.5" data-testid="dashboard-server-load">
+    <UiStack :gap="UiGap.Md">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('dashboard.serverLoad.title') }}</UiHeading>
       <UiProgress v-if="loading && rows.length === 0" :value="0" :label="t('dashboard.serverLoad.title')" loading />
       <UiEmptyState
         v-else-if="rows.length === 0"

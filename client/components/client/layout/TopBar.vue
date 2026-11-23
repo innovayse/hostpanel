@@ -1,36 +1,41 @@
 <template>
   <!-- One header for mobile and desktop, so the widget mount ids exist once -->
-  <header
-    class="z-30 flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-ui-surface px-4 py-3 dark:border-white/10 lg:px-8 lg:py-4"
+  <UiStack
+    :as="UiStackTag.Header"
+    direction="row"
+    align="center"
+    justify="between"
+    gap="none"
+    class="z-30 flex-shrink-0 border-b border-gray-200 bg-ui-surface px-4 py-3 dark:border-white/10 lg:px-8 lg:py-4"
     data-testid="client-topbar"
   >
     <!-- Left: the brand, the same lockup the storefront header draws, at every width -->
-    <div class="mr-3 min-w-0">
+    <UiStack gap="none" class="mr-3 min-w-0">
       <UiLink :to="SITE_HOME_PATH" tone="inherit" :underline="false" testid="client-topbar-brand" class="flex items-center gap-2">
         <LogoLockup img-class="h-8 w-auto object-contain" mark-class="h-8 w-8" name-class="text-lg font-bold" />
       </UiLink>
-    </div>
+    </UiStack>
 
     <!-- Right: welcome text on desktop, then the controls -->
-    <div class="flex min-w-0 flex-shrink-0 items-center gap-2 lg:gap-3">
-      <UiText as="span" size="sm" tone="muted" truncate class="hidden lg:block">
+    <UiStack direction="row" align="center" gap="xs" class="min-w-0 flex-shrink-0 lg:gap-3">
+      <UiText :as="UiTextTag.Span" size="sm" tone="muted" truncate class="hidden lg:block">
         {{ $t('client.nav.welcomeBack') }}
-        <UiText as="span" size="sm" weight="medium" data-testid="client-topbar-name">{{ fullName }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" weight="medium" data-testid="client-topbar-name">{{ fullName }}</UiText>
       </UiText>
       <!-- Desktop only: theme toggle, language switcher, app launcher -->
-      <div class="hidden items-center gap-3 lg:flex">
+      <UiStack direction="row" align="center" gap="sm" class="hidden lg:flex">
         <UiThemeToggle />
         <UiLanguageSwitcher />
         <!-- data-user hands the signed-in person to the widget so its launcher appends
              ?authuser= to every tile from the first paint, instead of only after its own
              profile round-trip. The widget reads it from either mount; this is the one
              present at every width. -->
-        <div v-if="widgetEnabled" id="inno-launcher-mount" :data-user="widgetUser" />
-      </div>
+        <UiStack v-if="widgetEnabled" id="inno-launcher-mount" gap="none" :data-user="widgetUser" />
+      </UiStack>
       <!-- Account control: always visible, mobile needs account switching too. The platform widget
            fills the mount where the shell serves it; everywhere else the local menu is drawn, so
            the header is never left without an avatar. -->
-      <div v-if="widgetEnabled" id="inno-account-mount" :data-user="widgetUser" />
+      <UiStack v-if="widgetEnabled" id="inno-account-mount" gap="none" :data-user="widgetUser" />
       <ClientLayoutAccountMenu
         v-else
         :first-name="firstName"
@@ -48,8 +53,8 @@
         testid="client-menu-toggle"
         @click="$emit('toggleSidebar')"
       />
-    </div>
-  </header>
+    </UiStack>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -62,6 +67,7 @@ import { SITE_HOME_PATH } from '~/constants/siteRoutes'
 import type { ClientNavItem } from '~/types/clientnavitem'
 import LogoLockup from '~/components/LogoLockup.vue'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ClientLayoutTopBar. */
 interface Props {

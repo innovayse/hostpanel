@@ -25,7 +25,7 @@ import type { MigrationJob, MigrationLogEntry } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
-import { CancellationStatus, CancellationType, ServiceStatus } from '@/types/service'
+import { CancellationStatus, CancellationType, PanelSyncOutcome, ServiceStatus } from '@/types/service'
 import { ServiceChangeStatus, ServiceChangeType } from '@/types/servicechangerequest'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 
@@ -73,6 +73,14 @@ const ORDER_ITEM_TONES: Record<OrderItemStatus, UiTone> = {
   [OrderItemStatus.Pending]: UiTone.Warning,
   [OrderItemStatus.Active]: UiTone.Success,
   [OrderItemStatus.Cancelled]: UiTone.Danger,
+}
+
+/** Badge tone of what the panel sync did about one field. */
+const PANEL_SYNC_TONES: Record<PanelSyncOutcome, UiTone> = {
+  [PanelSyncOutcome.InSync]: UiTone.Success,
+  [PanelSyncOutcome.Applied]: UiTone.Primary,
+  [PanelSyncOutcome.Failed]: UiTone.Danger,
+  [PanelSyncOutcome.Unsupported]: UiTone.Neutral,
 }
 
 /** Badge tone of each service status. */
@@ -228,6 +236,14 @@ export const orderLineFulfilmentTone = (state: OrderItemFulfilmentState): UiTone
  * @returns The kit tone.
  */
 export const serviceStatusTone = (status: ServiceStatus): UiTone => toneOf(SERVICE_TONES, status)
+
+/**
+ * Tone of what the panel sync did about one field of a hosting account.
+ *
+ * @param outcome - The outcome as sent by the API.
+ * @returns The kit tone; danger for a change that failed.
+ */
+export const panelSyncOutcomeTone = (outcome: PanelSyncOutcome): UiTone => toneOf(PANEL_SYNC_TONES, outcome)
 
 /**
  * Tone of a domain status badge.

@@ -14,14 +14,13 @@
  * A refused load shows the API's sentence with a retry; the outcome of an add, save or remove
  * (success, or the API's sentence) shows above the list; removing a line is confirmed first.
  */
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
-import { UiDialogVariant } from '@/utils/ui/dialog'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -35,6 +34,11 @@ import { useProductFeaturesStore } from '@/stores/productFeatures'
 import type { Product } from '@/types/product'
 import type { ProductFeature } from '@/types/productfeature'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -80,10 +84,7 @@ const loadFailed = ref(false)
 const removeTarget = ref<ProductFeature | null>(null)
 
 /** The outcome line of the last add, save or remove. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Shows the outcome of a change: the success sentence, or the API's refusal.
@@ -117,7 +118,6 @@ const add = async (): Promise<void> => {
   if (!newLabel.value.trim() || !newValue.value.trim()) {
     return
   }
-  feedback.clear()
   adding.value = true
   const added = await store.addFeature(props.product.id, newLabel.value.trim(), newValue.value.trim(), features.value.length)
   report(added, 'shared.recordCreated')
@@ -138,7 +138,6 @@ const save = async (feature: ProductFeature): Promise<void> => {
   if (!feature.label.trim() || !feature.value.trim()) {
     return
   }
-  feedback.clear()
   busyId.value = feature.id
   const saved = await store.saveFeature(feature)
   report(saved, 'shared.changesSavedSuccessfully')
@@ -154,7 +153,6 @@ const remove = async (): Promise<void> => {
   if (feature === null) {
     return
   }
-  feedback.clear()
   busyId.value = feature.id
   const removed = await store.removeFeature(feature.id)
   busyId.value = null
@@ -174,12 +172,11 @@ const dismissRemove = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="t('settings.productFeatures.specification')" size="lg" @close="emit('close')">
-    <UiText tone="secondary" size="md">
+  <UiDialog :title="t('settings.productFeatures.specification')" :size="UiDialogSize.Lg" @close="emit('close')">
+    <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
       {{ t('settings.productFeatures.shownInTheStorefrontS') }} {{ product.name }}.
     </UiText>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="product-features-error" />
 
     <UiErrorState
       v-if="loadFailed && !loading"
@@ -190,8 +187,8 @@ const dismissRemove = (): void => {
 
     <template v-else>
       <!-- Placeholder rows with the shape of the real lines while they load -->
-      <UiStack v-if="loading" gap="sm" aria-busy="true" data-testid="product-features-skeleton">
-        <UiStack v-for="row in SKELETON_ROWS" :key="row" direction="row" align="center" gap="sm" aria-hidden="true">
+      <UiStack v-if="loading" :gap="UiGap.Sm" aria-busy="true" data-testid="product-features-skeleton">
+        <UiStack v-for="row in SKELETON_ROWS" :key="row" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" aria-hidden="true">
           <UiSkeletonBar class="h-8 w-1/3 rounded-control" />
           <UiSkeletonBar class="h-8 flex-1 rounded-control" />
           <UiSkeletonBar class="h-8 w-16 rounded-control" />
@@ -205,12 +202,12 @@ const dismissRemove = (): void => {
         data-testid="product-features-empty"
       />
 
-      <UiStack v-else gap="sm" data-testid="product-features-list">
-        <UiStack v-for="feature in features" :key="feature.id" direction="row" align="center" gap="sm">
+      <UiStack v-else :gap="UiGap.Sm" data-testid="product-features-list">
+        <UiStack v-for="feature in features" :key="feature.id" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
           <UiInput
             v-model="feature.label"
-            type="text"
-            size="sm"
+            :type="UiInputType.Text"
+            :size="UiSize.Sm"
             :placeholder="t('settings.productFeatures.disk')"
             :data-testid="`product-feature-label-${feature.id}`"
             class="w-1/3"
@@ -218,17 +215,17 @@ const dismissRemove = (): void => {
           />
           <UiInput
             v-model="feature.value"
-            type="text"
-            size="sm"
+            :type="UiInputType.Text"
+            :size="UiSize.Sm"
             :placeholder="t('settings.productFeatures.10Gb')"
             :data-testid="`product-feature-value-${feature.id}`"
             class="flex-1"
             @keyup.enter="save(feature)"
           />
           <UiButton :action="UiActionKind.Save"
-            type="button"
-            variant="secondary"
-            size="sm"
+            :type="UiButtonType.Button"
+            :variant="UiButtonVariant.Secondary"
+            :size="UiSize.Sm"
             :disabled="busyId === feature.id"
             :data-testid="`product-feature-save-${feature.id}`"
             @click="save(feature)"
@@ -237,21 +234,22 @@ const dismissRemove = (): void => {
           </UiButton>
           <UiIconButton
             :label="t('settings.productFeatures.removeLine')"
-            size="sm"
+            :variant="UiButtonVariant.Danger"
+            :size="UiSize.Sm"
             :disabled="busyId === feature.id"
             :data-testid="`product-feature-remove-${feature.id}`"
             @click="removeTarget = feature"
           >
-            <UiIcon :markup="Icon.Trash" size="sm" />
+            <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
           </UiIconButton>
         </UiStack>
       </UiStack>
 
-      <UiStack direction="row" align="center" gap="sm" class="border-t border-border pt-4">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="border-t border-border pt-4">
         <UiInput
           v-model="newLabel"
-          type="text"
-          size="sm"
+          :type="UiInputType.Text"
+          :size="UiSize.Sm"
           :placeholder="t('settings.productFeatures.feature')"
           :disabled="loading"
           data-testid="product-feature-new-label"
@@ -260,8 +258,8 @@ const dismissRemove = (): void => {
         />
         <UiInput
           v-model="newValue"
-          type="text"
-          size="sm"
+          :type="UiInputType.Text"
+          :size="UiSize.Sm"
           :placeholder="t('shared.value')"
           :disabled="loading"
           data-testid="product-feature-new-value"
@@ -269,19 +267,19 @@ const dismissRemove = (): void => {
           @keyup.enter="add"
         />
         <UiButton :action="UiActionKind.Add"
-          type="button"
-          variant="primary"
-          size="sm"
+          :type="UiButtonType.Button"
+          :variant="UiButtonVariant.Primary"
+          :size="UiSize.Sm"
           :loading="adding"
           :disabled="loading || !newLabel.trim() || !newValue.trim()"
           data-testid="product-feature-add"
           @click="add"
         >
-          {{ t('settings.productFeatures.add') }}
+          {{ t('shared.add') }}
         </UiButton>
       </UiStack>
 
-      <UiText tone="muted" size="sm">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
         {{ t('settings.productFeatures.plansLineUpByFeature') }}
       </UiText>
     </template>
@@ -291,7 +289,7 @@ const dismissRemove = (): void => {
       :variant="UiDialogVariant.Confirm"
       :title="t('settings.productFeatures.confirmRemoveTitle')"
       :message="t('settings.productFeatures.confirmRemoveMessage', { label: removeTarget?.label ?? '' })"
-      :confirm-label="t('settings.productFeatures.removeLine')"
+      :confirm-label="t('shared.remove')"
       :loading="busyId !== null"
       :tone="UiTone.Danger"
       @confirm="remove"

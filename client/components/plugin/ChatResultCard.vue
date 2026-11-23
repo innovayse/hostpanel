@@ -1,8 +1,8 @@
 <template>
   <UiToneCard :tone="pluginUiTone(result.tone)" data-testid="plugin-chat-result">
     <UiStack :gap="UiGap.Xs">
-      <UiText v-if="result.title" as="p" :weight="UiTextWeight.Semibold" data-testid="plugin-chat-result-title">{{ result.title }}</UiText>
-      <UiText v-if="result.text" as="p" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-chat-result-text">{{ result.text }}</UiText>
+      <UiText v-if="result.title" :as="UiTextTag.P" :weight="UiTextWeight.Semibold" data-testid="plugin-chat-result-title">{{ result.title }}</UiText>
+      <UiText v-if="result.text" :as="UiTextTag.P" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-chat-result-text">{{ result.text }}</UiText>
       <PluginChatCardActions
         v-if="result.actions.length || result.details.length"
         :result="result"
@@ -11,8 +11,8 @@
         @resend="emit('resend')"
         @toggle-details="open = !open"
       />
-      <UiStack v-if="open" as="ul" :gap="UiGap.Xs" data-testid="plugin-chat-result-details">
-        <UiText v-for="line in result.details" :key="line" as="li" :size="UiTextSize.Xs" :tone="UiTextTone.Muted">{{ line }}</UiText>
+      <UiStack v-if="open" :as="UiStackTag.Ul" :gap="UiGap.Xs" data-testid="plugin-chat-result-details">
+        <UiText v-for="line in result.details" :key="line" :as="UiTextTag.Li" :size="UiTextSize.Xs" :tone="UiTextTone.Muted">{{ line }}</UiText>
       </UiStack>
     </UiStack>
   </UiToneCard>
@@ -23,7 +23,7 @@
  * PluginChatResultCard. One result card of a plugin's reply: a tone edge, a title and a sentence, the card's actions,
  * and the detail lines behind a switch the card keeps open or closed itself.
  */
-import { UiGap, UiTextSize, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
+import { UiGap, UiStackTag, UiTextSize, UiTextTag, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
 import type { PluginChatResult } from '~/types/pluginchatresult'
 import { pluginUiTone } from '~/utils/plugins'
 

@@ -20,7 +20,6 @@
     },
     "pricing": {
       "title": "Choisissez votre offre",
-      "trial": "Démarrer l'essai gratuit",
       "cycles": {
         "monthly": "Mensuel",
         "quarterly": "Trimestriel",

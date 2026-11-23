@@ -36,7 +36,8 @@ describe('UiCard', () => {
   it.each([
     [UiCardPadding.Sm, 'p-4'],
     [UiCardPadding.Md, 'p-5'],
-    [UiCardPadding.Xl, 'p-8'],
+    [UiCardPadding.Xl, 'p-6'],
+    [UiCardPadding.Xl, 'sm:p-8'],
   ])('maps padding %s to %s', (padding, expected) => {
     const wrapper = mountWithKit(UiCard, { props: { padding } })
 

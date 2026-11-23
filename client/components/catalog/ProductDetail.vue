@@ -48,7 +48,7 @@
               class="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300 [.tpl-classic_&]:text-classic-ink"
             >
               <CheckCircle :size="18" :stroke-width="2" :class="[ACCENT_CLASSES.text, 'mt-0.5 flex-shrink-0']" />
-              <UiText as="span" size="inherit" tone="inherit" class="min-w-0 break-words">{{ feature }}</UiText>
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="min-w-0 break-words">{{ feature }}</UiText>
             </UiListItem>
           </UiList>
         </UiContainer>
@@ -121,7 +121,7 @@
             </UiHeading>
             <UiText size="lg" tone="muted" class="mb-8 max-w-[75ch] [.tpl-classic_&]:text-classic-muted">{{ $t('products.help.subtitle') }}</UiText>
             <UiStack direction="row" wrap justify="center" gap="md">
-              <UiButton :to="compareHref" size="lg" data-testid="product-compare-link">{{ $t('products.help.compare') }}</UiButton>
+              <UiButton :to="compareHref" :variant="UiButtonVariant.Primary" size="lg" data-testid="product-compare-link">{{ $t('products.help.compare') }}</UiButton>
               <UiButton :to="localePath(SITE_CONTACT_PATH)" :variant="UiButtonVariant.Outline" size="lg" data-testid="product-contact">
                 {{ $t('products.help.contact') }}
               </UiButton>
@@ -157,7 +157,7 @@ import { isComparable } from '~/utils/comparisonRows'
 import { recommendedPlanId } from '~/utils/productFamilies'
 import { revealDelay } from '~/utils/reveal'
 import { ACCENT_CLASSES } from '~/utils/ui/accent'
-import { UiButtonVariant, UiHeadingLevel } from '~/utils/ui/enums'
+import { UiButtonVariant, UiHeadingLevel, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ProductDetail. */
 interface Props {

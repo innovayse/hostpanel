@@ -4,6 +4,7 @@
     "pleaseCheckYourInboxAnd": "Revisa tu bandeja de entrada y haz clic en el enlace de verificación para activar tu cuenta de administración. No podrás usar el panel de administración hasta que verifiques tu correo electrónico.",
     "didnTReceiveTheEmail": "¿No recibiste el correo electrónico? Revisa tu carpeta de correo no deseado.",
     "resend": "Reenviar el correo electrónico",
+    "resendTitle": "Reenviar el correo",
     "resent": "Correo electrónico de verificación enviado."
   },
   "collapseSidebar": "Contraer barra lateral",
@@ -30,10 +31,7 @@
     "es": "Español"
   },
   "theme": {
-    "label": "Tema",
-    "light": "Claro",
-    "dark": "Oscuro",
-    "system": "Sistema"
+    "label": "Tema"
   },
   "version": {
     "label": "Hostpanel {version}"
@@ -41,8 +39,6 @@
   "releaseUpdate": {
     "title": "Hostpanel {version} disponible",
     "releaseNotes": "Notas de la versión",
-    "copy": "Copiar comando de actualización",
-    "copied": "¡Copiado!"
-  },
-  "newClient": "Nuevo cliente"
+    "copy": "Copiar comando de actualización"
+  }
 }

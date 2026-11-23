@@ -1,5 +1,5 @@
 <template>
-  <section v-if="testimonials.length" class="py-14 md:py-20 bg-classic-surface border-y border-classic-border" data-testid="sections-testimonials">
+  <UiSection v-if="testimonials.length" :contained="false" padding="lg" class="bg-classic-surface border-y border-classic-border" data-testid="sections-testimonials">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-10"
@@ -9,7 +9,7 @@
       />
 
       <!-- Carousel -->
-      <div class="relative">
+      <UiStack gap="none" class="relative">
         <ClientOnly>
           <Swiper
             :modules="modules"
@@ -43,33 +43,33 @@
                     <UiStack align="center" justify="center" gap="none" class="h-10 w-10 shrink-0 rounded-full bg-classic-brand-soft text-xs font-bold text-classic-brand">
                       {{ getInitials(testimonial.name) }}
                     </UiStack>
-                    <div>
-                      <div class="font-semibold text-classic-ink">{{ testimonial.name }}</div>
-                      <div v-if="testimonial.role" class="text-xs text-classic-muted">{{ testimonial.role }}</div>
-                      <div v-if="testimonial.company" class="text-xs text-classic-muted">{{ testimonial.company }}</div>
-                    </div>
+                    <UiStack gap="none">
+                      <UiText tone="inherit" weight="semibold" class="text-classic-ink">{{ testimonial.name }}</UiText>
+                      <UiText v-if="testimonial.role" tone="inherit" size="xs" class="text-classic-muted">{{ testimonial.role }}</UiText>
+                      <UiText v-if="testimonial.company" tone="inherit" size="xs" class="text-classic-muted">{{ testimonial.company }}</UiText>
+                    </UiStack>
                   </UiStack>
                 </UiStack>
               </ClassicCard>
             </SwiperSlide>
           </Swiper>
-          <div v-if="testimonials.length > 1" class="mt-4 flex justify-center">
+          <UiStack v-if="testimonials.length > 1" align="center" gap="none" class="mt-4">
             <UiCarouselDots :count="testimonials.length" :active="active" @select="select" />
-          </div>
+          </UiStack>
           <!-- The carousel only exists in the browser; the server render carries every quote as plain text. -->
           <template #fallback>
-            <UiStack as="ul" gap="none" class="sr-only" data-testid="testimonials-fallback">
-              <li v-for="testimonial in testimonials" :key="testimonial.id">
-                <UiText as="span">"{{ testimonial.quote }}" - {{ testimonial.name }}</UiText>
-              </li>
+            <UiStack :as="UiStackTag.Ul" gap="none" class="sr-only" data-testid="testimonials-fallback">
+              <UiListItem v-for="testimonial in testimonials" :key="testimonial.id">
+                <UiText :as="UiTextTag.Span">"{{ testimonial.quote }}" - {{ testimonial.name }}</UiText>
+              </UiListItem>
             </UiStack>
           </template>
         </ClientOnly>
 
         <UiText size="sm" tone="inherit" class="text-center mt-6 text-classic-muted">{{ $t('testimonials.hint') }}</UiText>
-      </div>
+      </UiStack>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">
@@ -88,6 +88,7 @@ import 'swiper/css'
 import { useCarouselDots } from '~/composables/useCarouselDots'
 import { useStorefrontStore } from '~/stores/storefront'
 import { getInitials } from '~/utils/design'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Swiper modules the carousel uses. */
 const modules = [Autoplay]

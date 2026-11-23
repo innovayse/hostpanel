@@ -10,7 +10,7 @@
       <UiStack v-if="hasControls" direction="row" gap="xs" :class="controlsClass" data-testid="testimonials-arrows">
         <UiButton
           variant="bare"
-          :aria-label="t('aurora.testimonials.prev')"
+          :aria-label="t('common.previous')"
           data-testid="testimonials-prev"
           class="h-10 w-10 rounded-full border border-line2 text-tx hover:border-ac1 hover:text-ac1"
           @click="go(-1)"
@@ -19,7 +19,7 @@
         </UiButton>
         <UiButton
           variant="bare"
-          :aria-label="t('aurora.testimonials.next')"
+          :aria-label="t('common.next')"
           data-testid="testimonials-next"
           class="h-10 w-10 rounded-full border border-line2 text-tx hover:border-ac1 hover:text-ac1"
           @click="go(1)"
@@ -70,7 +70,7 @@
             />
           </UiStack>
 
-          <UiText as="blockquote" size="inherit" tone="inherit" class="mt-3 text-sm leading-relaxed text-tx">
+          <UiText :as="UiTextTag.Blockquote" size="inherit" tone="inherit" class="mt-3 text-sm leading-relaxed text-tx">
             {{ item.quote }}
           </UiText>
 
@@ -90,10 +90,10 @@
             </UiTile>
             <UiStack gap="none" class="min-w-0">
               <UiStack direction="row" wrap align="center" gap="xs">
-                <UiText as="span" size="sm" tone="inherit" weight="semibold" class="text-tx">{{ item.name }}</UiText>
+                <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="semibold" class="text-tx">{{ item.name }}</UiText>
                 <UiText
                   v-if="item.date"
-                  as="time"
+                  :as="UiTextTag.Time"
                   size="xs"
                   tone="inherit"
                   :datetime="item.publishedAt"
@@ -103,7 +103,7 @@
                   {{ item.date }}
                 </UiText>
               </UiStack>
-              <UiText v-if="item.attribution" as="span" size="xs" tone="inherit" class="text-mut">{{ item.attribution }}</UiText>
+              <UiText v-if="item.attribution" :as="UiTextTag.Span" size="xs" tone="inherit" class="text-mut">{{ item.attribution }}</UiText>
             </UiStack>
           </UiStack>
         </UiCard>
@@ -142,6 +142,7 @@ import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typograph
 import { useStorefrontStore } from '~/stores/storefront'
 import { formatTestimonialDate } from '~/utils/testimonialDate'
 import type { Testimonial } from '~/types/testimonial'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** A quote prepared for its card. */
 interface TestimonialSlide extends Testimonial {

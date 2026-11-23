@@ -2,6 +2,9 @@
   "ui": {
     "selectPlaceholder": "Select an option",
     "noOptions": "No options available",
+    "pageHeader": {
+      "actions": "Page actions"
+    },
     "theme": {
       "switchDark": "Switch to dark mode",
       "switchLight": "Switch to light mode"
@@ -38,11 +41,36 @@
     "previous": "Previous",
     "home": "Home",
     "products": "Products",
-    "backToProducts": "Back to Products",
+    "backToProducts": "Back to products",
     "goToSlide": "Go to slide {n}",
     "scrollHorizontal": "Scroll to explore",
     "retry": "Retry",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "remove": "Remove",
+    "view": "View",
+    "back": "Back",
+    "continue": "Continue",
+    "copy": "Copy",
+    "copied": "Copied",
+    "send": "Send",
+    "refresh": "Refresh",
+    "apply": "Apply",
+    "clear": "Clear",
+    "reply": "Reply",
+    "select": "Select",
+    "details": "Details",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "pdf": "PDF",
+    "learnMore": "Learn more",
+    "pay": "Pay",
+    "manage": "Manage",
+    "getStarted": "Get started",
+    "contactUs": "Contact us"
   },
   "fallback": {
     "unknown": "Unknown"

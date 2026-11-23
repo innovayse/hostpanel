@@ -40,4 +40,18 @@ describe('UiText', () => {
   it('takes the accent colour', () => {
     expect(mount(UiText, { props: { tone: 'accent' } }).classes()).toContain('text-text-accent')
   })
+
+  it('cuts a long line with an ellipsis when truncating, instead of wrapping it', () => {
+    const wrapper = mount(UiText, { props: { truncate: true } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['min-w-0', 'truncate']))
+    expect(wrapper.classes()).not.toContain('break-words')
+  })
+
+  it('draws a moment as a time element and passes its datetime through', () => {
+    const wrapper = mount(UiText, { props: { as: 'time' }, attrs: { datetime: '2026-01-01T10:00:00.000Z' }, slots: { default: '10:00' } })
+
+    expect(wrapper.element.tagName).toBe('TIME')
+    expect(wrapper.attributes('datetime')).toBe('2026-01-01T10:00:00.000Z')
+  })
 })

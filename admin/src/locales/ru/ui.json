@@ -45,20 +45,15 @@
   },
   "uiFieldSelector": {
     "fields": "Поля",
-    "selectedCount": "{count} из {total} полей",
-    "clearAll": "Снять все"
+    "selectedCount": "{count} из {total} полей"
   },
   "uiFilterTrigger": {
     "filters": "Фильтры",
-    "title": "Фильтры",
-    "apply": "Применить",
-    "reset": "Очистить",
-    "cancel": "Отмена"
+    "title": "Фильтры"
   },
   "uiFilterChips": {
     "label": "Активные фильтры",
-    "remove": "Убрать фильтр {label}: {value}",
-    "clearAll": "Очистить все"
+    "remove": "Убрать фильтр {label}: {value}"
   },
   "uiSelect": {
     "choose": "Выберите значение",
@@ -71,14 +66,9 @@
     "countryCode": "Код страны"
   },
   "selectCountry": "Выберите страну",
-  "dialog": {
-    "close": "Закрыть",
-    "confirm": "Подтвердить"
-  },
   "pagination": {
     "navigation": "Постраничная навигация",
-    "previous": "Назад",
-    "next": "Далее",
+    "previous": "Предыдущая",
     "page": "Страница",
     "range": "{from} - {to} из {total}",
     "pageOf": "Страница {page} из {count}",
@@ -108,11 +98,7 @@
   },
   "input": {
     "showPassword": "Показать пароль",
-    "hidePassword": "Скрыть пароль",
-    "clearSearch": "Очистить"
-  },
-  "errorState": {
-    "retry": "Повторить"
+    "hidePassword": "Скрыть пароль"
   },
   "uiLocalizedField": {
     "emptyTab": "Не заполнено",

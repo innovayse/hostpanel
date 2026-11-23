@@ -12,7 +12,9 @@
  * attribute is produced, because the value is data that no stylesheet can know in advance.
  */
 import { defineComponent, h } from 'vue'
+import type { PropType } from 'vue'
 import { ACCENT_INK_VARIABLE, ACCENT_VARIABLE, accentInk, isAccentColor } from '~/utils/ui/accent'
+import { UiAccentTag } from '~/utils/ui/enums'
 
 export default defineComponent({
   name: 'UiAccent',
@@ -20,7 +22,7 @@ export default defineComponent({
     /** The colour as a hex string, e.g. `#0ea5e9`. */
     color: { type: String, default: undefined },
     /** Tag of the wrapper element. */
-    as: { type: String, default: 'div' },
+    as: { type: String as PropType<`${UiAccentTag}`>, default: UiAccentTag.Div },
   },
   setup(props, { slots }) {
     return () => h(

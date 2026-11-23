@@ -425,6 +425,7 @@ if (call.Host is IPluginHostPaymentApi payment)
 | `provisioningPanel` | միայն `Provisioning` |  | `IProvisioningPanelPlugin` |
 | `provisioningPanelLogin` | միայն `Provisioning` | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
 | `provisioningPanelPackages` | միայն `Provisioning` | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `provisioningPanelAccount` | միայն `Provisioning` | `provisioningPanel` | `IProvisioningPanelAccountPlugin` |
 | `virtualServer` | միայն `Provisioning` |  | `IVirtualServerPlugin` |
 | `virtualServerList` | միայն `Provisioning` |  | `IVirtualServerListPlugin` |
 | `virtualServerSnapshots` | միայն `Provisioning` | `virtualServer` | `IVirtualServerSnapshotPlugin` |
@@ -518,8 +519,11 @@ fulfilment պլագինը, որը հայտարարում է `endpoints`՝ առա
 | `ListAccountsAsync`, `GetUsageAsync` | սկավառակի օգտագործման հաշվետվությունը. հաշիվները էջ առ էջ, ապա յուրաքանչյուրի օգտագործումը |
 | `TestConnectionAsync` | «Ստուգել կապը» սերվերի վրա և հաշիվների քանակի պարբերական համաժամեցումը |
 | `GetLoginDetailsAsync` | հաշվի մուտքի տվյալները, միայն երբ հայտարարված է `provisioningPanelLogin`. առանց դրա սերվերը պատասխանում է, որ գործողությունը չի աջակցվում |
+| `GetAccountAsync` | ծառայության համաժամեցումը վահանակի հետ և ընթերցումը հաշիվ ստեղծելուց հետո. մեկ հաշիվ իր հղումով, միայն երբ հայտարարված է `provisioningPanelAccount`. առանց դրա սերվերը պատասխանում է, որ գործողությունը չի աջակցվում |
 
 `provisioningPanelPackages`-ը ընդունվում է, բայց `ListPackagesAsync`-ը սերվերը դեռ չի կանչում։
+
+**Մեկ հաշվի ընթերցում։** Plugin-ը, որը նաև իրականացնում է `IProvisioningPanelAccountPlugin`-ը և հայտարարում է `provisioningPanelAccount`-ը, թույլ է տալիս սերվերին կարդալ մեկ հաշիվ իր `ProvisioningRef`-ով. կարգավիճակը, դոմենը, փաթեթը և, եթե վահանակը հայտնում է, `IpAddress`-ը (IPv4 կամ IPv6 հասցե տեքստային տեսքով, մնացածը անտեսվում է)։ Դաշտը, որը վահանակը թողել է `null`, ցուցադրվում է որպես չհայտնված։ Սերվերը կարդում է հաշիվը ստեղծելուց անմիջապես հետո՝ IP հասցեն ծառայությանը գրանցելու համար, և երբ աշխատակիցը ծառայության վրա սեղմում է **Համաժամեցնել վահանակի հետ**։ Ընթերցումը վահանակում ոչինչ չի փոխում։ Համաժամեցումը աղբյուր է համարում հարթակը. վերը նշված գործողություններով այն խնդրում է վահանակին կասեցնել կամ վերսկսել հաշիվը ծառայությանը համապատասխան և փաթեթը փոխել ապրանքի փաթեթով, պահված գաղտնաբառը սահմանում է միայն եթե աշխատակիցը նշել է վանդակը, և գրանցում է վահանակի հայտնած IP հասցեն։ Դոմենը միայն ցուցադրվում է և երբեք չի փոխվում։ Առանց այս հնարավորության համաժամեցումը պատասխանում է `PANEL_OPERATION_NOT_SUPPORTED`, իսկ հաշիվ ստեղծելուց հետո անհաջող ընթերցումը միայն գրանցվում է մատյանում, և ծառայությունը տրամադրվում է։
 
 **Ինչ պլագին է սպասարկում սերվերը.** Սերվերի մոդուլի նույնացուցիչը համեմատվում է յուրաքանչյուր պլագինի `serverModules`-ի հետ՝ առանց
 մեծատառի ու փոքրատառի տարբերության, ուստի `DirectAdmin` պահված սերվերը սպասարկում է `directadmin` հայտարարած պլագինը։ Պահվածից ոչինչ չի

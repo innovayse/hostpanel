@@ -19,6 +19,7 @@ import { BillingCycle, ServiceChangeReason, ServiceSection, ServiceStatus } from
 import { formatDate, toDateInputValue } from '@/lib/format'
 import type { ServiceListItem } from '@/types/service'
 import PluginSlot from '@/components/plugins/PluginSlot.vue'
+import ServicePanelSyncDialog from '@/components/services/ServicePanelSyncDialog.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -233,6 +234,9 @@ const newPackage = ref('')
 
 /** Whether the suspend confirmation modal is visible. */
 const showSuspendModal = ref(false)
+
+/** Whether the "Sync with panel" dialog is visible: the confirmation first, then what the sync did. */
+const showSyncDialog = ref(false)
 
 /** The irreversible change waiting for confirmation, null when the prompt is closed. */
 const dangerConfirm = ref<DangerAction | null>(null)
@@ -642,6 +646,29 @@ const handleChangePackage = async (): Promise<void> => {
 }
 
 /**
+ * Opens the "Sync with panel" dialog on its confirmation, forgetting what an earlier sync did.
+ *
+ * @returns Nothing.
+ */
+const openSyncDialog = (): void => {
+  store.clearSyncResult()
+  showSyncDialog.value = true
+}
+
+/**
+ * Reconciles the service with its hosting panel and re-fetches the detail, so the assigned IP address shows what the
+ * panel reported. The dialog stays open on the per-field result; a refused sync closes it and shows its sentence.
+ *
+ * @param pushPassword - Whether the stored password is also set on the panel.
+ * @returns Promise that resolves when the sync completes.
+ */
+const handleSync = async (pushPassword: boolean): Promise<void> => {
+  if (!(await runCommand(() => store.syncWithPanel(serviceId.value, pushPassword), 'clients.clientServiceDetail.syncedWithPanel'))) {
+    showSyncDialog.value = false
+  }
+}
+
+/**
  * Suspends the service via the API and re-fetches the detail.
  *
  * @returns Promise that resolves when the action completes.
@@ -979,6 +1006,19 @@ onMounted(() => {
                   {{ t('clients.clientServiceDetail.terminate') }}
                 </UiButton>
               </template>
+
+              <UiButton
+                v-if="service?.status === ServiceStatus.Active || service?.status === ServiceStatus.Suspended"
+                :action="UiActionKind.Refresh"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                :disabled="!service.account.provisioningRef"
+                data-testid="client-service-sync-panel"
+                @click="openSyncDialog"
+              >
+                {{ t('clients.clientServiceDetail.syncWithPanel') }}
+              </UiButton>
             </UiStack>
           </template>
         </UiDetailCards>
@@ -1217,6 +1257,14 @@ onMounted(() => {
           </UiButton>
         </template>
       </UiDialog>
+
+      <ServicePanelSyncDialog
+        v-if="showSyncDialog"
+        :loading="commandLoading"
+        :result="store.syncResult"
+        @confirm="handleSync"
+        @close="showSyncDialog = false"
+      />
 
       <UiDialog
         v-if="showSuspendModal"

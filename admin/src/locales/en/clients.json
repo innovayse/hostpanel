@@ -301,7 +301,7 @@
     "order": "Order #",
     "server": "Server",
     "provisioningRef": "Provisioning Ref",
-    "dedicatedIp": "Dedicated IP",
+    "dedicatedIp": "Assigned IP",
     "moduleCommands": "Module Commands",
     "serviceTerminated": "Service Terminated",
     "terminate": "Terminate",
@@ -340,7 +340,27 @@
     "packageChanged": "Package changed.",
     "suspended": "Service suspended.",
     "unsuspended": "Service unsuspended.",
-    "terminated": "Service terminated."
+    "terminated": "Service terminated.",
+    "syncWithPanel": "Sync with panel",
+    "syncIntro": "The account is read from the panel once and brought in step with this service. The status and the package of this service are applied to the panel, and the IP address the panel reports is recorded here.",
+    "syncNotChanged": "The domain and the username are never changed on the panel; a difference is only reported.",
+    "syncPushPassword": "Also set the panel password",
+    "syncPushPasswordHint": "Sets the password stored on this service on the panel. A panel never reports its passwords, so this is done only when you ask.",
+    "syncedWithPanel": "Service synced with the panel.",
+    "syncPanelValue": "Panel: {value}",
+    "syncField": {
+      "status": "Status",
+      "package": "Package",
+      "domain": "Domain",
+      "password": "Password",
+      "ipAddress": "IP address"
+    },
+    "syncOutcome": {
+      "inSync": "In step",
+      "applied": "Applied",
+      "failed": "Failed",
+      "unsupported": "Cannot be reconciled"
+    }
   },
   "clientServicesList": {
     "nextDue": "Next Due",

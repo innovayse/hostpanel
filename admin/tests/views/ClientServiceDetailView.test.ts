@@ -14,7 +14,7 @@ import { useToastStore } from '@/stores/toast'
 import { UiTone } from '@/utils/ui/tone'
 import ClientServiceDetailView from '@/views/ClientServiceDetailView.vue'
 import schema, { BILLING_COLUMNS, NOTES_COLUMNS } from '@/views/ClientServiceDetailView.schema'
-import { BillingCycle, ServiceStatus, type ServiceDetail } from '@/types/service'
+import { BillingCycle, PanelSyncField, PanelSyncOutcome, ServiceStatus, type ServiceDetail, type ServiceSyncResult } from '@/types/service'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -436,6 +436,100 @@ describe('ClientServiceDetailView', () => {
     expect(putsOf(mock)).toEqual([
       expect.objectContaining({ url: '/api/services/9/termination-date', body: { terminatedAt: '2030-06-01' } }),
     ])
+  })
+
+  it('offers the panel sync on a live service that has an account, and on no other', async () => {
+    const { wrapper: active } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+    const { wrapper: suspended } = await mountLoaded({ ...detail, status: ServiceStatus.Suspended })
+    const { wrapper: terminated } = await mountLoaded(detail)
+    const { wrapper: pending } = await mountLoaded({ ...detail, status: ServiceStatus.Pending })
+    const { wrapper: unprovisioned } = await mountLoaded({
+      ...detail,
+      status: ServiceStatus.Active,
+      account: { ...detail.account, provisioningRef: null },
+    })
+
+    expect(active.get('[data-testid="client-service-sync-panel"]').attributes('disabled')).toBeUndefined()
+    expect(suspended.find('[data-testid="client-service-sync-panel"]').exists()).toBe(true)
+    expect(terminated.find('[data-testid="client-service-sync-panel"]').exists()).toBe(false)
+    expect(pending.find('[data-testid="client-service-sync-panel"]').exists()).toBe(false)
+    expect(unprovisioned.get('[data-testid="client-service-sync-panel"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('confirms the panel sync first, and sends nothing until it is confirmed', async () => {
+    const { wrapper, mock } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+
+    await wrapper.get('[data-testid="client-service-sync-panel"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="client-service-sync-dialog"]').exists()).toBe(true)
+    expect(mock.mock.calls.some(([url]) => String(url).includes('sync-panel'))).toBe(false)
+  })
+
+  it('syncs without the password by default, shows what was done and refreshes the assigned address', async () => {
+    const active: ServiceDetail = { ...detail, status: ServiceStatus.Active, account: { ...detail.account } }
+    const answer: ServiceSyncResult = {
+      fields: [
+        { field: PanelSyncField.Status, outcome: PanelSyncOutcome.InSync, panelValue: 'Active' },
+        { field: PanelSyncField.IpAddress, outcome: PanelSyncOutcome.Applied, panelValue: '203.0.113.9' },
+      ],
+    }
+    const { wrapper, mock } = await mountLoaded(active, undefined, {
+      'POST /api/admin/services/9/sync-panel': () => {
+        active.account.dedicatedIp = '203.0.113.9'
+        return json(answer)
+      },
+    })
+
+    await wrapper.get('[data-testid="client-service-sync-panel"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="client-service-sync-confirm"]').trigger('click')
+    await flushPromises()
+
+    const sync = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.url === '/api/admin/services/9/sync-panel')
+    expect(sync).toMatchObject({ method: 'POST', body: { pushPassword: false } })
+    expect(wrapper.get('[data-testid="client-service-sync-outcome-IpAddress"]').text()).toBe('Applied')
+    expect((wrapper.get('[data-testid="client-service-dedicated-ip"]').element as HTMLInputElement).value).toBe('203.0.113.9')
+    expect(toastMessages()).toEqual(['Service synced with the panel.'])
+
+    await wrapper.get('[data-testid="client-service-sync-close"]').trigger('click')
+    expect(wrapper.find('[data-testid="client-service-sync-dialog"]').exists()).toBe(false)
+  })
+
+  it('sends the password choice when the box is ticked', async () => {
+    const { wrapper, mock } = await mountLoaded({ ...detail, status: ServiceStatus.Suspended }, undefined, {
+      'POST /api/admin/services/9/sync-panel': () => json({ fields: [] }),
+    })
+
+    await wrapper.get('[data-testid="client-service-sync-panel"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="client-service-sync-push-password"]').trigger('click')
+    await wrapper.get('[data-testid="client-service-sync-confirm"]').trigger('click')
+    await flushPromises()
+
+    const sync = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.url === '/api/admin/services/9/sync-panel')
+    expect(sync).toMatchObject({ body: { pushPassword: true } })
+  })
+
+  it('closes the dialog and shows the sentence when the panel cannot be read', async () => {
+    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active }, undefined, {
+      'POST /api/admin/services/9/sync-panel': () => problem('The hosting account could not be read from the control panel.', 502),
+    })
+
+    await wrapper.get('[data-testid="client-service-sync-panel"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="client-service-sync-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="client-service-sync-dialog"]').exists()).toBe(false)
+    expect(toastMessages()).toEqual(['The hosting account could not be read from the control panel.'])
+  })
+
+  it('labels the address as assigned, not dedicated', async () => {
+    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+
+    expect(wrapper.text()).toContain('Assigned IP')
+    expect(wrapper.text()).not.toContain('Dedicated IP')
   })
 
   it('returns to the services of its client with the back pill', async () => {

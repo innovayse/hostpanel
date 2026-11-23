@@ -107,10 +107,18 @@ internal sealed class PanelPluginHarness : IDisposable
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var pluginId = PluginActivationTestSeeds.NewId("panel");
         var module = serverModule ?? $"mod-{Guid.NewGuid():N}";
-        string[] capabilities = typeof(IProvisioningPanelLoginPlugin).IsAssignableFrom(implementation)
-            ? [PluginCapabilities.ProvisioningPanel, PluginCapabilities.ProvisioningPanelLogin]
-            : [PluginCapabilities.ProvisioningPanel];
-        var registry = PluginActivationTestSeeds.Registry(Plugin(pluginId, implementation, [module], capabilities));
+        var capabilities = new List<string> { PluginCapabilities.ProvisioningPanel };
+        if (typeof(IProvisioningPanelLoginPlugin).IsAssignableFrom(implementation))
+        {
+            capabilities.Add(PluginCapabilities.ProvisioningPanelLogin);
+        }
+
+        if (typeof(IProvisioningPanelAccountPlugin).IsAssignableFrom(implementation))
+        {
+            capabilities.Add(PluginCapabilities.ProvisioningPanelAccount);
+        }
+
+        var registry = PluginActivationTestSeeds.Registry(Plugin(pluginId, implementation, [module], [.. capabilities]));
         if (enabled)
         {
             await PluginActivationTestSeeds.EnableAsync(db, pluginId);

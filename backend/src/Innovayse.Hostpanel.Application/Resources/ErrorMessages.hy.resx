@@ -411,6 +411,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց փոխել հոսթինգի փաթեթը։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
+<data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Չհաջողվեց կարդալ հոսթինգի հաշիվը կառավարման վահանակից։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
+  </data>
 <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց կասեցնել ծառայությունը հոսթինգի սերվերի վրա։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>

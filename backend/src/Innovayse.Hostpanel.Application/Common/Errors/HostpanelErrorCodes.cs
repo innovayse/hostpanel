@@ -792,6 +792,9 @@ public static class HostpanelErrorCodes
     /// <summary>The provisioning provider rejected the package change (502).</summary>
     public const string SERVICE_PACKAGE_UPSTREAM_FAILED = "SERVICE_PACKAGE_UPSTREAM_FAILED";
 
+    /// <summary>The control panel could not be read for the service's hosting account (502).</summary>
+    public const string SERVICE_PANEL_SYNC_UPSTREAM_FAILED = "SERVICE_PANEL_SYNC_UPSTREAM_FAILED";
+
     /// <summary>The provisioning provider rejected the suspension (502).</summary>
     public const string SERVICE_SUSPEND_UPSTREAM_FAILED = "SERVICE_SUSPEND_UPSTREAM_FAILED";
 

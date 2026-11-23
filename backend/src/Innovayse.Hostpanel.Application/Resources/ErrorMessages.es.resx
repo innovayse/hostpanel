@@ -411,6 +411,9 @@
   <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo cambiar el paquete de hosting. Inténtelo de nuevo o contacte con soporte.</value>
   </data>
+  <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo leer la cuenta de hosting en el panel de control. Inténtelo de nuevo o contacte con soporte.</value>
+  </data>
   <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo suspender el servicio en el servidor de hosting. Inténtelo de nuevo o contacte con soporte.</value>
   </data>

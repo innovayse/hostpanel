@@ -35,6 +35,27 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
         agent.KeysOf("web").Keys.Should().BeEquivalentTo(keys.Select(k => k.KeyId), "the same keys come back, under the same ids");
     }
 
+    /// <summary>A key limited to some sources comes back with the same sources, never open to every address.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Unsuspension_PutsAKeyBackWithTheSourcesItWasIssuedWithAsync()
+    {
+        string[] sources = ["203.0.113.7", "198.51.100.0/24"];
+        var scenario = await SshTestSeeds.OwnerWithServiceAsync(factory, "ssh-restore-from");
+        var keyId = await SeedInstalledKeyAsync(scenario, sources);
+        await SshTestSeeds.ChangeServiceQuietlyAsync(
+            factory, scenario.ServiceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
+        (await InvokeAsync(new SuspendServiceSshKeysCommand(scenario.ServiceId))).IsSuccess.Should().BeTrue();
+        await SshTestSeeds.ChangeServiceQuietlyAsync(
+            factory, scenario.ServiceId, s => s.Unsuspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
+        var agent = SshTestSeeds.Agents(factory).AgentFor(scenario.ServerId);
+
+        (await InvokeAsync(new RestoreServiceSshKeysCommand(scenario.ServiceId))).IsSuccess.Should().BeTrue();
+
+        (await KeysAsync(scenario.ServiceId)).Single().SyncState.Should().Be(SshKeySyncState.Installed);
+        agent.AllowedFromOf(keyId).Should().Equal(sources);
+    }
+
     /// <summary>An unconfirmed restore is a failed install, with the reason.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -114,6 +135,23 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
             factory, scenario.ServiceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
         (await InvokeAsync(new SuspendServiceSshKeysCommand(scenario.ServiceId))).IsSuccess.Should().BeTrue();
         return scenario;
+    }
+
+    /// <summary>Records an installed key with sources on the scenario's service, as a plugin's issue would have left it.</summary>
+    /// <param name="scenario">The owner and service.</param>
+    /// <param name="sources">The sources the key was issued with.</param>
+    /// <returns>The key's public id.</returns>
+    private async Task<Guid> SeedInstalledKeyAsync(SshOwnerScenario scenario, string[] sources)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var key = SshKey.Create(
+            scenario.ServiceId, scenario.ServerId, "web", "deploy", "ssh-ed25519 AAAA", $"SHA256:{Guid.NewGuid():N}",
+            issuedToPluginId: null, allowedFrom: sources);
+        key.MarkInstalled();
+        context.SshKeys.Add(key);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return key.KeyId;
     }
 
     /// <summary>Dispatches a command through the real bus, in a fresh scope.</summary>

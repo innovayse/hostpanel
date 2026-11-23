@@ -7,14 +7,14 @@
       "installed": ["ensure-website", "remove-website", "ensure-database", "remove-database"],
       "php_versions_output": ["8.3", "8.1", "8.2"],
       "helper": null,
-      "response": {"v": 1, "ok": true, "agent_version": "1.7.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website", "ensure-database", "remove-database"], "php_versions": ["8.1", "8.2", "8.3"], "php_cli": {}}
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website", "ensure-database", "remove-database"], "php_versions": ["8.1", "8.2", "8.3"], "php_cli": {}}
     },
     {
       "name": "a server without helpers reports no ops and no php versions",
       "request": {"v": 1, "op": "ping"},
       "installed": [],
       "helper": null,
-      "response": {"v": 1, "ok": true, "agent_version": "1.7.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": [], "php_cli": {}}
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": [], "php_cli": {}}
     },
     {
       "name": "the php versions come with the CLI of each one",
@@ -22,7 +22,7 @@
       "installed": ["ensure-website", "remove-website"],
       "php_versions_output": ["8.3\t/usr/bin/php8.3", "8.2\t/opt/remi/php82/root/usr/bin/php"],
       "helper": null,
-      "response": {"v": 1, "ok": true, "agent_version": "1.7.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website"], "php_versions": ["8.2", "8.3"], "php_cli": {"8.2": "/opt/remi/php82/root/usr/bin/php", "8.3": "/usr/bin/php8.3"}}
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website"], "php_versions": ["8.2", "8.3"], "php_cli": {"8.2": "/opt/remi/php82/root/usr/bin/php", "8.3": "/usr/bin/php8.3"}}
     },
     {
       "name": "only the ops the capabilities helper lists are reported",
@@ -30,7 +30,7 @@
       "installed": ["ensure-website", "remove-website", "ensure-database", "remove-database"],
       "capabilities_output": ["ensure-website", "remove-website"],
       "helper": null,
-      "response": {"v": 1, "ok": true, "agent_version": "1.7.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website"], "php_versions": [], "php_cli": {}}
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": ["ensure-website", "remove-website"], "php_versions": [], "php_cli": {}}
     },
     {
       "name": "a server whose web server cannot be told reports no ops",
@@ -38,7 +38,23 @@
       "installed": ["ensure-website", "remove-website"],
       "capabilities_output": [],
       "helper": null,
-      "response": {"v": 1, "ok": true, "agent_version": "1.7.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": [], "php_cli": {}}
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": [], "php_cli": {}}
+    },
+    {
+      "name": "the server host key is reported without its comment",
+      "request": {"v": 1, "op": "ping"},
+      "host_key_file": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ root@server",
+      "installed": [],
+      "helper": null,
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": [], "php_cli": {}, "host_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ"}
+    },
+    {
+      "name": "a host key file that is not one ED25519 key reports none",
+      "request": {"v": 1, "op": "ping"},
+      "host_key_file": "ssh-rsa AAAAB3NzaC1yc2E= root@server",
+      "installed": [],
+      "helper": null,
+      "response": {"v": 1, "ok": true, "agent_version": "1.8.0", "provider": "generic-linux", "binding": "", "capabilities": [], "php_versions": [], "php_cli": {}}
     }
   ]
 }

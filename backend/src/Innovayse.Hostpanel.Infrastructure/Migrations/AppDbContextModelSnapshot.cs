@@ -4654,6 +4654,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.PrimitiveCollection<string[]>("AllowedFrom")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
                     b.Property<int>("ClientServiceId")
                         .HasColumnType("integer");
 

@@ -173,6 +173,7 @@
         "keysTitle": "Ваши ключи ({count}/{max})",
         "noKeys": "SSH-ключей пока нет. Добавьте открытый ключ ниже, чтобы входить без пароля.",
         "addedOn": "Добавлен {date}",
+        "allowedFrom": "Только с {sources}",
         "addTitle": "Добавить ключ",
         "publicKey": "Открытый ключ (ED25519)",
         "publicKeyPlaceholder": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… you{'@'}laptop",

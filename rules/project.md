@@ -253,7 +253,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.15.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.16.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -1298,6 +1298,18 @@ docker/                              compose set (shared·dev·prod·platform), 
       SSH key ...`). **The private key is never stored, logged or put in an exception**: it exists only in the returned
       `PluginSshAccess`; the tests assert no column of the database and no log line contains it. `HostKeyFingerprint` is
       the agent's pinned fingerprint only when the customer-facing SSH address is the agent's own.
+    - **Sources and the host key (#1424, SDK 3.16.0).** `PluginHostApi` also implements the optional
+      `IPluginHostSshSourceApi.IssueSshAccessAsync(serviceId, label, allowedFrom)`; the two argument overload is the same call with
+      an empty list, so one `PluginSshAccessService.IssueAsync` serves both. `allowedFrom` is checked right after the declared
+      access and before anything is read, by `SshAllowedFromRules` (Domain `Ssh`, the one copy of the rule the agent applies:
+      1 to 16 distinct plain IPv4 or IPv6 addresses or CIDR networks with zero host bits, no host name, wildcard or negation),
+      and a bad list is `InvalidRequest`; an empty list is an open key. `SshKey.AllowedFrom` (a `text[]` column `SshKeys.AllowedFrom`,
+      empty for a key the client adds) is set once by `SshKey.Create` and re-sent by `SshKeyRevoker.RestoreOnPinnedServerAsync`, so a
+      suspended key never comes back open. `ISshKeyProvider.AddKeyAsync(account, keyId, publicKey, allowedFrom, ct)` returns an
+      `SshKeyReceipt(HostKey)`; the adapter sends `from` only for a non-empty list (an agent older than 1.6.0 still takes a key
+      without one and answers no `host_key`). `SshKeyInstaller` hands the receipt back as `SshKeyInstallation` and the service puts
+      `HostKey` on `PluginSshAccess` (null when the agent sent none); `SshAgentInfo.HostKey` carries it from `ping`. The client's
+      `SshKeyDto` lists `allowedFrom` and the portal shows it. The agent's `ping` and `add` golden vectors pin both sides.
   - **The server connection of a client's service (#1357).** `PluginHostApi` also implements the SDK 3.11.0 optional
     `IPluginHostServiceConnectionApi.ResolveServiceConnectionAsync(serviceId)` and only hands the `PluginCallBinding` to the
     Application's `Services/Common/PluginServiceConnectionService`, which asks the one `PluginHostingGate` in its fixed order:

@@ -173,6 +173,7 @@
         "keysTitle": "Sus claves ({count}/{max})",
         "noKeys": "Aún no hay claves SSH. Añada su clave pública a continuación para iniciar sesión sin contraseña.",
         "addedOn": "Añadida el {date}",
+        "allowedFrom": "Solo desde {sources}",
         "addTitle": "Añadir una clave",
         "publicKey": "Clave pública (ED25519)",
         "publicKeyPlaceholder": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… you{'@'}laptop",

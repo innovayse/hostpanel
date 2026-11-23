@@ -21,7 +21,8 @@ using Microsoft.EntityFrameworkCore;
  * than the portal would; (2) the service is the bound client's; (3) its product is bound to the plugin; (4) SSH is
  * available on it; (5) it has room for another key; (6) the caller's SSH issue budget (the portal's ssh-keys tier, per
  * plugin and client, fail closed); and only then (7) the key pair is generated and the agent called. A foreign service and
- * a missing one answer NotFound alike. Revoke asks (1) and (2) and the key's owner, and is allowed on an inactive service:
+ * a missing one answer NotFound alike. A list of allowed sources (SshAllowedFromRules) is checked right after (1) and answers
+ * InvalidRequest, so a malformed list reveals nothing about the service. Revoke asks (1) and (2) and the key's owner, and is allowed on an inactive service:
  * taking access away never depends on the service being usable.
  *
  * The private key exists only in the returned PluginSshAccess: it is never stored, never put in a log template or an
@@ -95,16 +96,29 @@ public sealed class PluginSshAccessService
     /// <param name="binding">The call: plugin, area and the client it acts for.</param>
     /// <param name="serviceId">The service the plugin asks about.</param>
     /// <param name="label">What the key is for, shown to the client; trimmed, 1 to <see cref="SshLimits.MaxLabelLength"/> characters.</param>
+    /// <param name="allowedFrom">
+    /// The addresses and CIDR networks the key may be used from (<see cref="SshAllowedFromRules"/>), or an empty list for a
+    /// key that works from anywhere.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The access, or <c>NotAllowed</c>, <c>NotFound</c>, <c>Unavailable</c>, <c>LimitReached</c>, <c>ServerUnavailable</c>.</returns>
+    /// <returns>
+    /// The access, or <c>NotAllowed</c>, <c>InvalidRequest</c> (a source is not an address or a network, or there are too
+    /// many), <c>NotFound</c>, <c>Unavailable</c>, <c>LimitReached</c>, <c>ServerUnavailable</c>.
+    /// </returns>
     /// <exception cref="InvalidOperationException">The identity generator wrote a public key that does not parse (a host fault).</exception>
     public async Task<PluginHostOutcome<PluginSshAccess>> IssueAsync(
-        PluginCallBinding binding, int serviceId, string label, CancellationToken ct)
+        PluginCallBinding binding, int serviceId, string label, IReadOnlyList<string> allowedFrom, CancellationToken ct)
     {
         var trimmed = label.Trim();
         if (!_gate.Declares(binding, PluginHostAccess.Ssh) || trimmed.Length is 0 or > SshLimits.MaxLabelLength)
         {
             return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.NotAllowed);
+        }
+
+        // Asked right after the declared access and before anything is read: a malformed list reveals nothing.
+        if (allowedFrom.Count > 0 && !SshAllowedFromRules.IsValidList(allowedFrom))
+        {
+            return PluginHostOutcome<PluginSshAccess>.Refused(PluginHostAccessFailure.InvalidRequest);
         }
 
         var context = await ResolveOwnedAsync(binding, serviceId, ct);
@@ -154,11 +168,13 @@ public sealed class PluginSshAccessService
             throw new InvalidOperationException("The SSH identity generator produced an unparsable public key.");
         }
 
-        var installed = await _installer.InstallAsync(context, trimmed, publicKey, binding.PluginId, ct);
-        if (installed.IsFailure || installed.Value is not { } key)
+        var installed = await _installer.InstallAsync(context, trimmed, publicKey, binding.PluginId, allowedFrom, ct);
+        if (installed.IsFailure || installed.Value is not { } installation)
         {
             return PluginHostOutcome<PluginSshAccess>.Refused(FailureFor(installed.ErrorCode));
         }
+
+        var key = installation.Key;
 
         // A removal that committed while the key was being installed may already have run its revoke pass, which then
         // could not see this key. Asked once more after the install: a plugin that is gone has the key taken back here,
@@ -187,7 +203,12 @@ public sealed class PluginSshAccessService
             account.Username,
             context.Service.Domain,
             identity.PrivateKey,
-            samePoint ? agent.AgentHostKeyFingerprint : null));
+            samePoint ? agent.AgentHostKeyFingerprint : null)
+        {
+            // What the agent read from its host key file: the operator points that file at the key of the sshd the
+            // customer connects to, so the plugin can pin it from the first connection.
+            HostKey = installation.HostKey,
+        });
     }
 
     /// <summary>

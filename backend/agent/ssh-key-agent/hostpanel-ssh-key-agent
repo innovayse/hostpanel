@@ -18,7 +18,9 @@ Contract version 1 (see README.md beside this file for the full specification):
     {"v": 1, "op": "ping"}
     {"v": 1, "op": "status", "account": "<user>"}
     {"v": 1, "op": "list",   "account": "<user>"}
-    {"v": 1, "op": "add",    "account": "<user>", "key_id": "<uuid>", "public_key": "ssh-ed25519 AAAA..."}
+    {"v": 1, "op": "add",    "account": "<user>", "key_id": "<uuid>", "public_key": "ssh-ed25519 AAAA...",
+     "from": ["203.0.113.7", "198.51.100.0/24"]}         (1.8.0+, from optional: the key then only works from those
+                                                          addresses; the answer carries host_key)
     {"v": 1, "op": "revoke", "account": "<user>", "key_id": "<uuid>"}
     {"v": 1, "op": "remove-jail", "account": "<user>"}   (1.4.0+: only once the account itself is deleted)
     {"v": 1, "op": "ensure-website", "account": "<user>", "hostname": "<host>", "docroot": "<relative dir>",
@@ -28,6 +30,8 @@ Contract version 1 (see README.md beside this file for the full specification):
     {"v": 1, "op": "remove-website", "account": "<user>", "hostname": "<host>"}                    (1.5.0+)
     {"v": 1, "op": "ensure-database", "account": "<user>", "label": "<label>"}                     (1.5.0+)
     {"v": 1, "op": "remove-database", "account": "<user>", "label": "<label>"}                     (1.5.0+)
+
+A ping and an add also answer host_key (1.8.0+), the public host key line of host_key_file, when the server has one.
 
 Every response is {"v": 1, "ok": true, ...} or {"v": 1, "ok": false, "error": "<code>"}.
 
@@ -54,6 +58,7 @@ import fcntl
 import fnmatch
 import grp
 import hashlib
+import ipaddress
 import json
 import os
 import pwd
@@ -69,7 +74,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.7.0"
+AGENT_VERSION = "1.8.0"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -81,6 +86,13 @@ TAG_PREFIX = "hostpanel:"
 ACCOUNT_RE = re.compile(r"^[a-z_][a-z0-9_-]{0,31}$")
 KEY_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 ED25519_LINE_RE = re.compile(r"^ssh-ed25519 ([A-Za-z0-9+/]{68}(?:==|=)?)(?: [^\r\n]*)?$")
+# 1.8.0: the sources a key may be used from. IPv4 is plain dotted decimal, IPv6 is hexadecimal groups only (no embedded
+# IPv4, no zone), the prefix has no leading zero, and the characters can never close the option's quotes.
+MAX_FROM_ENTRIES = 16
+IPV4_RE = re.compile(r"^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$")
+IPV6_RE = re.compile(r"^[0-9A-Fa-f:]{2,39}$")
+PREFIX_RE = re.compile(r"^(?:0|[1-9][0-9]{0,2})$")
+FROM_OPTION_RE = re.compile(r'^from="([0-9A-Fa-f:./,]+)"$')
 # 1.5.0 ops: validated fields. A segment never starts with a dot, so ".." , ".ssh" and ".conf" cannot be written.
 DOCROOT_RE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}(?:/[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}){0,5}$")
 LABEL_RE = re.compile(r"^[a-z][a-z0-9]{0,14}$")
@@ -123,6 +135,9 @@ DEFAULTS = {
     # Directory of the provider helpers behind ensure-website, remove-website, ensure-database and
     # remove-database (1.5.0+). A helper that is not there makes its op answer not_supported.
     "helper_dir": "/usr/local/libexec/hostpanel-ssh-key-agent",
+    # The public host key this server presents, reported by ping and add (1.8.0+) so HostPanel can show it to the customer.
+    # An empty value or a file that is missing or not exactly one ED25519 key line reports no host key.
+    "host_key_file": "/etc/ssh/ssh_host_ed25519_key.pub",
 }
 
 # Replaced by the tests; every jail command goes through it.
@@ -182,6 +197,7 @@ def load_config(path=CONFIG_PATH):
         "jail_extras": [x.strip() for x in section["jail_extras"].split(",") if x.strip()],
         "systemd_unit_dir": section["systemd_unit_dir"].strip(),
         "helper_dir": section["helper_dir"].strip(),
+        "host_key_file": section["host_key_file"].strip(),
     }
 
 
@@ -224,14 +240,74 @@ def fingerprint_of_line(line):
     return None
 
 
-def managed_key_id(line):
-    """The key id of a line this agent wrote, or None for any other line."""
+def is_source(value):
+    """True for a plain IPv4 or IPv6 address or a CIDR network whose host bits are zero, in the shape the agent accepts."""
+    if not isinstance(value, str):
+        return False
+    address, separator, prefix = value.partition("/")
+    if separator and not PREFIX_RE.fullmatch(prefix):
+        return False
+    try:
+        if IPV4_RE.fullmatch(address):
+            return ipaddress.IPv4Network(value, strict=True) is not None
+        if IPV6_RE.fullmatch(address) and address.count(":") >= 2:
+            return ipaddress.IPv6Network(value, strict=True) is not None
+    except ValueError:
+        return False
+    return False
+
+
+def is_source_list(value):
+    """True for a non-empty list of at most MAX_FROM_ENTRIES distinct sources (compared without case)."""
+    return (isinstance(value, list) and 0 < len(value) <= MAX_FROM_ENTRIES and all(is_source(item) for item in value)
+            and len({item.lower() for item in value}) == len(value))
+
+
+def split_managed_line(line):
+    """
+    Splits a line this agent wrote into (key_id, sources), sources being the list of its from option or None without
+    one; (None, None) for any other line.
+    """
     parts = line.split()
+    sources = None
+    if len(parts) == 4:
+        option = FROM_OPTION_RE.match(parts[0])
+        if not option:
+            return None, None
+        sources = option.group(1).split(",")
+        parts = parts[1:]
     if len(parts) == 3 and parts[0] == "ssh-ed25519" and parts[2].startswith(TAG_PREFIX):
         key_id = parts[2][len(TAG_PREFIX):]
         if KEY_ID_RE.match(key_id):
-            return key_id
-    return None
+            return key_id, sources
+    return None, None
+
+
+def managed_key_id(line):
+    """The key id of a line this agent wrote (with or without a from option), or None for any other line."""
+    return split_managed_line(line)[0]
+
+
+def host_key(config):
+    """
+    The public ED25519 host key line (type and key, no comment) of host_key_file, or None when none is configured or the
+    file is missing, unreadable or not exactly one such key. Read by the root parent, never by the account's child.
+    """
+    path = config.get("host_key_file", "")
+    if not path:
+        return None
+    try:
+        with open(path, "r", encoding="ascii") as handle:
+            content = handle.read(4096)
+    except (OSError, ValueError):
+        return None
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    if len(lines) != 1:
+        return None
+    try:
+        return "ssh-ed25519 " + parse_ed25519(lines[0])[0]
+    except AgentError:
+        return None
 
 
 # --------------------------------------------------------------------------- account checks
@@ -455,22 +531,27 @@ def perform(request, account, config):
             raise AgentError(account.get("reason") or "ssh_disabled")
         blob_b64, fingerprint = parse_ed25519(request["public_key"])
         key_id = request["key_id"]
+        sources = request.get("from")
         ssh_fd = _open_ssh_dir(account["home"], create=True)
         try:
             lines = _read_lines(ssh_fd)
             for line in lines:
                 stripped = line.strip()
-                existing_id = managed_key_id(stripped)
+                existing_id, existing_sources = split_managed_line(stripped)
                 if fingerprint_of_line(stripped) == fingerprint:
-                    if existing_id == key_id:
-                        return {"key_id": key_id, "fingerprint": fingerprint, "changed": False}
-                    raise AgentError("duplicate_key")
+                    if existing_id != key_id:
+                        raise AgentError("duplicate_key")
+                    # The same key id with another source list is a different request, never a silent change.
+                    if existing_sources != sources:
+                        raise AgentError("key_id_conflict")
+                    return {"key_id": key_id, "fingerprint": fingerprint, "changed": False}
                 if existing_id == key_id:
                     raise AgentError("key_id_conflict")
             managed, _ = _summarise(lines)
             if len(managed) >= config["max_keys"]:
                 raise AgentError("too_many_keys")
-            lines.append("ssh-ed25519 %s %s%s" % (blob_b64, TAG_PREFIX, key_id))
+            option = 'from="%s" ' % ",".join(sources) if sources else ""
+            lines.append("%sssh-ed25519 %s %s%s" % (option, blob_b64, TAG_PREFIX, key_id))
             _write_lines(ssh_fd, lines)
         finally:
             os.close(ssh_fd)
@@ -739,6 +820,7 @@ REQUIRED_FIELDS = {
 
 # Fields an op accepts but does not need.
 OPTIONAL_FIELDS = {
+    "add": {"from"},
     "ensure-website": {"php", "link_root"},
 }
 
@@ -758,6 +840,7 @@ FIELD_VALIDATORS = {
     "docroot": lambda value: isinstance(value, str) and len(value) <= 200 and ".." not in value
                              and DOCROOT_RE.fullmatch(value) is not None,
     "link_root": lambda value: isinstance(value, bool),
+    "from": is_source_list,
 }
 
 
@@ -1026,6 +1109,13 @@ def audit(config, request, outcome):
         pass
 
 
+def _put_host_key(response, config):
+    """Adds host_key to a response when the server has a readable host key."""
+    key = host_key(config)
+    if key:
+        response["host_key"] = key
+
+
 def handle(raw, config):
     """Full request lifecycle. Returns the response dict; never raises."""
     request = None
@@ -1038,10 +1128,12 @@ def handle(raw, config):
             return response
         if request["op"] == "ping":
             installs = php_installs(config)
-            return {"v": CONTRACT_VERSION, "ok": True, "agent_version": AGENT_VERSION,
+            pong = {"v": CONTRACT_VERSION, "ok": True, "agent_version": AGENT_VERSION,
                     "provider": config.get("provider", "generic-linux"), "binding": config.get("binding", ""),
                     "capabilities": capabilities(config), "php_versions": [version for version, _ in installs],
                     "php_cli": {version: cli for version, cli in installs if cli}}
+            _put_host_key(pong, config)
+            return pong
         account = resolve_account(request["account"], config)
         os.makedirs(config["lock_dir"], mode=0o700, exist_ok=True)
         lock_fd = os.open(os.path.join(config["lock_dir"], account["name"] + ".lock"),
@@ -1069,6 +1161,8 @@ def handle(raw, config):
         audit(config, request, "ok")
         response = {"v": CONTRACT_VERSION, "ok": True}
         response.update(result)
+        if request["op"] == "add":
+            _put_host_key(response, config)
         return response
     except AgentError as exc:
         audit(config, request, exc.code)

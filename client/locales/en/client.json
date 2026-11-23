@@ -173,6 +173,7 @@
         "keysTitle": "Your keys ({count}/{max})",
         "noKeys": "No SSH keys yet. Add your public key below to log in without a password.",
         "addedOn": "Added {date}",
+        "allowedFrom": "Only from {sources}",
         "addTitle": "Add a key",
         "publicKey": "Public key (ED25519)",
         "publicKeyPlaceholder": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… you{'@'}laptop",

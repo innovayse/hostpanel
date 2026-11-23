@@ -31,14 +31,18 @@ internal static class AgentContractVectors
 
     /// <summary>The indexes of one operation's vectors as theory rows, so a theory runs one vector per row.</summary>
     /// <param name="op">The operation.</param>
-    /// <returns>One row per case.</returns>
-    public static TheoryData<int> Rows(string op)
+    /// <param name="include">Tells which cases get a row; every case when omitted.</param>
+    /// <returns>One row per included case.</returns>
+    public static TheoryData<int> Rows(string op, Func<AgentContractCase, bool>? include = null)
     {
         var rows = new TheoryData<int>();
         var cases = Load(op);
         for (var index = 0; index < cases.Count; index++)
         {
-            rows.Add(index);
+            if (include is null || include(cases[index]))
+            {
+                rows.Add(index);
+            }
         }
 
         return rows;

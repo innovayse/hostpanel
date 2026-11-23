@@ -175,6 +175,7 @@
         "keysTitle": "Ձեր բանալիները ({count}/{max})",
         "noKeys": "SSH բանալիներ դեռ չկան։ Ավելացրեք ձեր հանրային բանալին ստորև՝ առանց գաղտնաբառի մուտք գործելու համար։",
         "addedOn": "Ավելացվել է {date}",
+        "allowedFrom": "Միայն {sources} հասցեներից",
         "addTitle": "Ավելացնել բանալի",
         "publicKey": "Հանրային բանալի (ED25519)",
         "publicKeyPlaceholder": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… you{'@'}laptop",

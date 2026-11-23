@@ -173,6 +173,7 @@
         "keysTitle": "Vos clés ({count}/{max})",
         "noKeys": "Aucune clé SSH pour le moment. Ajoutez votre clé publique ci-dessous pour vous connecter sans mot de passe.",
         "addedOn": "Ajoutée le {date}",
+        "allowedFrom": "Uniquement depuis {sources}",
         "addTitle": "Ajouter une clé",
         "publicKey": "Clé publique (ED25519)",
         "publicKeyPlaceholder": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA… vous{'@'}ordinateur",

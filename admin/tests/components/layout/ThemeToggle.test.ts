@@ -3,16 +3,18 @@
  * that switches straight to the other theme and remembers it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import ThemeToggle from '@/components/layout/ThemeToggle.vue'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
 import { Icon } from '@/lib/icons'
 import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
+import { useThemeStore } from '@/stores/theme'
 import { AdminTheme } from '@/types/admintheme'
 
 /**
- * Mounts the toggle on a page whose system scheme is the given one.
+ * Mounts the toggle on a page whose system scheme is the given one, with the theme applied the way the app root does at start.
  *
  * @param systemLight - Whether the operating system prefers light.
  * @returns The mounted toggle.
@@ -22,6 +24,9 @@ const mountToggle = async (systemLight: boolean) => {
   stubSchemeQuery(systemLight)
   stubRoutes({})
   const { wrapper } = await mountScreen(ThemeToggle, {}, '/dashboard')
+  // The root component applies the stored or system theme once at start; a mounted toggle alone does not.
+  useThemeStore().init()
+  await nextTick()
   return wrapper
 }
 

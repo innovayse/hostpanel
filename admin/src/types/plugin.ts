@@ -1,3 +1,5 @@
+import type { ServerOptionDto } from '@/types/server'
+
 /** Closed set of plugin types a manifest declares; the strings are the API's enum names. */
 export const PluginType = {
   /** Hosting and server provisioning through a hosting panel. */

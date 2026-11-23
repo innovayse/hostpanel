@@ -11,6 +11,12 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// <summary>Seeds servers with SSH settings and services assigned to them, for the SSH key use cases.</summary>
 public static class SshTestSeeds
 {
+    /// <summary>The module id of the servers the SSH tests seed: a neutral id no plugin serves in the shared host.</summary>
+    public const string AgentModule = "examplepanel7";
+
+    /// <summary>The agent profile the fake key factory answers for <see cref="AgentModule"/>: the host's own default profile.</summary>
+    public const string BuiltInProfile = "generic-linux";
+
     /// <summary>The fake agents behind every server in the shared host.</summary>
     /// <param name="factory">The shared host.</param>
     /// <returns>The fake factory the host resolves.</returns>
@@ -42,7 +48,7 @@ public static class SshTestSeeds
         IntegrationTestFactory factory,
         string hostname,
         int port,
-        string module = ServerModules.Cwp7,
+        string module = AgentModule,
         bool enabled = true,
         ServerCredentials? credentials = null)
     {
@@ -63,7 +69,7 @@ public static class SshTestSeeds
     /// <param name="hostname">Customer-facing hostname.</param>
     /// <param name="module">Control panel module.</param>
     /// <returns>The server id.</returns>
-    public static async Task<int> SeedBareServerAsync(IntegrationTestFactory factory, string hostname, string module = ServerModules.Cwp7)
+    public static async Task<int> SeedBareServerAsync(IntegrationTestFactory factory, string hostname, string module = AgentModule)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

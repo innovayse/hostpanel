@@ -28,15 +28,15 @@ public sealed class GetMySshAccessTests(IntegrationTestFactory factory) : IClass
     public async Task OwnedService_IsAvailableWithItsOwnServerHostnameAndPortAsync()
     {
         var (http, clientId, _, _) = await SshTestSeeds.OwnerWithServiceAsync(factory, "ssh-access-ok");
-        var serverB = await SshTestSeeds.SeedServerAsync(factory, "cwp-b.example.test", 2222);
+        var serverB = await SshTestSeeds.SeedServerAsync(factory, "agent-b.example.test", 2222);
         var serviceB = await SshTestSeeds.SeedServiceAsync(factory, clientId, serverB, "web");
 
         var access = await AccessAsync(http, serviceB);
 
         access.GetProperty("state").GetString().Should().Be("Available");
-        access.GetProperty("hostname").GetString().Should().Be("cwp-b.example.test");
+        access.GetProperty("hostname").GetString().Should().Be("agent-b.example.test");
         access.GetProperty("port").GetInt32().Should().Be(2222);
-        access.GetProperty("connectCommand").GetString().Should().Be("ssh -p 2222 web@cwp-b.example.test");
+        access.GetProperty("connectCommand").GetString().Should().Be("ssh -p 2222 web@agent-b.example.test");
     }
 
     /// <summary>Another client's service answers 404 and the server is never asked.</summary>

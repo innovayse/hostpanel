@@ -2,16 +2,14 @@ using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 
 /// <summary>
 /// Default <see cref="ISshKeyProviderFactory"/>. A server is served by the agent-backed provider when the plugin that serves its
-/// module names an <c>sshAgentProfile</c> in its manifest. The one transitional exception is the profile the host still ships
-/// for a legacy module id (<see cref="ServerModules.Cwp7"/>): it applies only while no plugin supplies a profile for the module,
-/// and goes when that profile does. Every other module answers unsupported.
+/// module names an <c>sshAgentProfile</c> in its manifest; every other module answers unsupported. Nothing here names a module or a
+/// profile: the plugin's manifest is the only source of both.
 /// </summary>
 /// <remarks>
 /// Public, like every adapter the container registers: the SSH settings and setup queries take it, and
@@ -20,12 +18,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 /// </remarks>
 public sealed class SshKeyProviderFactory : ISshKeyProviderFactory
 {
-    /// <summary>
-    /// Transitional: the profile the host still embeds for a legacy module id, used only when no plugin supplies a profile for the
-    /// module. Removed together with the embedded profile once its plugin ships it.
-    /// </summary>
-    private const string TransitionalLegacyProfile = "cwp";
-
     /// <summary>The agent transport.</summary>
     private readonly SshAgentTransport _transport;
 
@@ -53,16 +45,12 @@ public sealed class SshKeyProviderFactory : ISshKeyProviderFactory
     public string? AgentProfileFor(string module)
     {
         var match = _resolver.Find(module, PluginCapabilities.ProvisioningPanel);
-        if (match.Outcome == ServerModulePluginOutcome.Served)
+        if (match.Outcome != ServerModulePluginOutcome.Served)
         {
-            var shipped = _plugins.GetLoadedManifests().FirstOrDefault(manifest => manifest.Id == match.PluginId)?.SshAgentProfile;
-            if (shipped is not null)
-            {
-                return shipped;
-            }
+            return null;
         }
 
-        return ServerModules.Same(module, ServerModules.Cwp7) ? TransitionalLegacyProfile : null;
+        return _plugins.GetLoadedManifests().FirstOrDefault(manifest => manifest.Id == match.PluginId)?.SshAgentProfile;
     }
 
     /// <inheritdoc/>

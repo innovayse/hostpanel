@@ -71,27 +71,6 @@ public sealed class SshAgentBundlesTests
         fresh.Sha256.Should().Be(first.Sha256);
     }
 
-    /// <summary>A plugin that ships the id of a built in profile replaces the built in profile file: the plugin's bytes win, once.</summary>
-    [Fact]
-    public void For_APluginProfileWithABuiltInId_ReplacesTheBuiltInFile()
-    {
-        var bundles = SshAgentTestSeeds.Bundles(SshAgentTestSeeds.Plugin("panel-plugin", "cwp", "[agent]\nprovider = cwp\nmax_keys = 3\n"));
-
-        var entries = Entries(bundles.For("cwp")!.Content.ToArray());
-
-        Encoding.UTF8.GetString(entries["profiles/cwp.conf"].Bytes).Should().Be("[agent]\nprovider = cwp\nmax_keys = 3\n");
-        Encoding.UTF8.GetString(Entries(bundles.BuiltIn.Content.ToArray())["profiles/cwp.conf"].Bytes).Should().NotContain("max_keys = 3");
-    }
-
-    /// <summary>A profile the agent embeds is the built in bundle while no plugin ships one with that id.</summary>
-    [Fact]
-    public void For_AnEmbeddedProfileNoPluginShips_IsTheBuiltInBundle()
-    {
-        var bundles = SshAgentTestSeeds.Bundles();
-
-        bundles.For("cwp").Should().BeSameAs(bundles.BuiltIn);
-    }
-
     /// <summary>Reads every entry of a bundle by its path below the single root folder.</summary>
     /// <param name="content">The <c>.tar.gz</c> bytes.</param>
     /// <returns>The entries by path, each with its bytes and mode.</returns>

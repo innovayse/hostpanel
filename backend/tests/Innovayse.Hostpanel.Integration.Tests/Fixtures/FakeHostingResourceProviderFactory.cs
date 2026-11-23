@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -25,6 +24,6 @@ public sealed class FakeHostingResourceProviderFactory : IHostingResourceProvide
     /// <inheritdoc/>
     public IHostingResourceProvider? CreateFor(ServerSshTargetDto target)
     {
-        return target.Module is ServerModules.Cwp7 ? AgentFor(target.ServerId) : null;
+        return target.Module is SshTestSeeds.AgentModule ? AgentFor(target.ServerId) : null;
     }
 }

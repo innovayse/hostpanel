@@ -15,7 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 internal static class SshAgentTestSeeds
 {
     /// <summary>The module the plugin of <see cref="Plugin"/> serves.</summary>
-    public const string Module = "examplepanel7";
+    public const string Module = SshTestSeeds.AgentModule;
 
     /// <summary>The profile id the plugin of <see cref="Plugin"/> ships.</summary>
     public const string ProfileId = "examplepanel";

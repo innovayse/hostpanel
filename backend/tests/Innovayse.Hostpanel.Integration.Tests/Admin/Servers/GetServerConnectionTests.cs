@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerConnection;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -23,7 +22,7 @@ public sealed class GetServerConnectionTests(IntegrationTestFactory factory) : I
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.Id.Should().Be(serverId);
-        result.Value.Module.Should().Be(ServerModules.Cwp7);
+        result.Value.Module.Should().Be(SshTestSeeds.AgentModule);
         result.Value.Hostname.Should().NotBeNullOrWhiteSpace();
     }
 

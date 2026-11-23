@@ -15,14 +15,6 @@ public sealed class ServerModulesTests
         ServerModules.Known.Should().Equal("CPanel");
     }
 
-    /// <summary>The legacy id is spelled as stored rows hold it and is not offered.</summary>
-    [Fact]
-    public void LegacyConstant_IsTheStoredSpelling_AndIsNotKnown()
-    {
-        ServerModules.Cwp7.Should().Be("Cwp7");
-        ServerModules.Known.Should().NotContain(ServerModules.Cwp7);
-    }
-
     /// <summary>Ids match ignoring case, so a row stored as <c>HestiaCP</c> and a plugin that declares <c>hestiacp</c> are one module.</summary>
     /// <param name="a">The first id.</param>
     /// <param name="b">The second id.</param>

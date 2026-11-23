@@ -1,10 +1,9 @@
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
 /// <summary>
-/// The SSH key agent installer bundles this HostPanel build can hand out: the one with the agent and its built in profiles,
-/// and, for each profile a loaded plugin ships, the same files plus that plugin's profile and helpers. A file a plugin ships
-/// wins over a built in file at the same path, so a plugin's profile replaces a built in one with the same id; the built in
-/// default profile is the host's own and no plugin can take it.
+/// The SSH key agent installer bundles this HostPanel build can hand out: the one with the agent and its built in profile,
+/// and, for each profile a loaded plugin ships, the same files plus that plugin's profile and helpers. A plugin's profile can
+/// never replace the built in one.
 /// </summary>
 public interface ISshAgentBundles
 {
@@ -12,7 +11,7 @@ public interface ISshAgentBundles
     public ISshAgentBundle BuiltIn { get; }
 
     /// <summary>Finds the bundle for a profile id.</summary>
-    /// <param name="profile">The profile id: a built in one, or the one a loaded plugin names in its manifest; matched exactly.</param>
-    /// <returns>The bundle; <see langword="null"/> when the id is neither built in nor shipped by a loaded plugin.</returns>
+    /// <param name="profile">The profile id: the built in one, or the one a loaded plugin names in its manifest; matched exactly.</param>
+    /// <returns>The bundle; <see langword="null"/> when no loaded plugin ships a profile with that id.</returns>
     public ISshAgentBundle? For(string profile);
 }

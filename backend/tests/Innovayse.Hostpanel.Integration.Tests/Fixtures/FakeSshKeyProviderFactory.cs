@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -24,7 +23,7 @@ public sealed class FakeSshKeyProviderFactory : ISshKeyProviderFactory
     public bool Supports(string module) => AgentProfileFor(module) is not null;
 
     /// <inheritdoc/>
-    public string? AgentProfileFor(string module) => module is ServerModules.Cwp7 ? "cwp" : null;
+    public string? AgentProfileFor(string module) => module is SshTestSeeds.AgentModule ? SshTestSeeds.BuiltInProfile : null;
 
     /// <inheritdoc/>
     public ISshKeyProvider? CreateFor(ServerSshTargetDto target) =>

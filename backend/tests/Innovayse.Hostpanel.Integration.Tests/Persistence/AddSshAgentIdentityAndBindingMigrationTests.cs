@@ -135,7 +135,7 @@ public sealed class AddSshAgentIdentityAndBindingMigrationTests
             connection,
             """
             INSERT INTO "Servers" ("Name", "Hostname", "Module", "Username", "UseSSL", "IsDefault", "IsDisabled", "MonthlyCost", "CreatedAt")
-            VALUES ('existing', 'existing.example.test', 'Cwp7', 'root', true, false, false, 0, @now) RETURNING "Id"
+            VALUES ('existing', 'existing.example.test', 'examplepanel7', 'root', true, false, false, 0, @now) RETURNING "Id"
             """,
             ("now", now));
 

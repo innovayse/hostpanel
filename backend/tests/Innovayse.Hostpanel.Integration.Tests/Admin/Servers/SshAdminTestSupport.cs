@@ -26,7 +26,7 @@ internal static class SshAdminTestSupport
     public static object Body(bool enabled, string? privateKey = "TEST-PRIVATE-KEY-MATERIAL", string? host = null) => new
     {
         isEnabled = enabled,
-        sshHostname = "cwp1.example.test",
+        sshHostname = "agent1.example.test",
         sshPort = 2222,
         agentHost = host ?? $"agent-{Guid.NewGuid():N}.internal.test",
         agentPort = 22,

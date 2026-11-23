@@ -45,32 +45,6 @@ public sealed class SshKeyProviderFactoryProfileTests
         factory.AgentProfileFor(ServerModules.CPanel).Should().BeNull();
     }
 
-    /// <summary>Transitional: the legacy module id keeps its embedded profile while no plugin supplies one.</summary>
-    [Fact]
-    public void TheLegacyModuleWithoutAPlugin_KeepsItsEmbeddedProfile()
-    {
-        var factory = SshAgentTestSeeds.KeyFactory();
-
-        factory.AgentProfileFor(ServerModules.Cwp7).Should().Be("cwp");
-        factory.AgentProfileFor(ServerModules.Cwp7.ToLowerInvariant()).Should().Be("cwp");
-    }
-
-    /// <summary>Transitional: a plugin that serves the legacy module and names a profile wins over the embedded one.</summary>
-    [Fact]
-    public void TheLegacyModuleServedByAPluginWithAProfile_UsesThePluginsProfile()
-    {
-        var plugin = PanelPluginHarness.Plugin(
-            "panel-plugin",
-            typeof(FakePanelPlugin),
-            [ServerModules.Cwp7],
-            [PluginCapabilities.ProvisioningPanel],
-            SshAgentTestSeeds.ProfileId,
-            SshAgentTestSeeds.Profile("panel-plugin", SshAgentTestSeeds.ProfileId, "[agent]\nprovider = examplepanel\n"));
-        var factory = SshAgentTestSeeds.KeyFactory(plugin);
-
-        factory.AgentProfileFor(ServerModules.Cwp7).Should().Be(SshAgentTestSeeds.ProfileId);
-    }
-
     /// <summary>An agent provider is built for a module with a profile and none for a module without one.</summary>
     [Fact]
     public void CreateFor_BuildsAProviderOnlyForAModuleWithAProfile()

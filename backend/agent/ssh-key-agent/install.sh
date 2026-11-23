@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installs, upgrades or checks hostpanel-ssh-key-agent on ONE managed server. Run as root there.
 #
-#   ./install.sh [--provider generic-linux|cwp] [--binding UUID] [--config FILE] [--dry-run] "<public key>"
+#   ./install.sh [--provider PROFILE] [--binding UUID] [--config FILE] [--dry-run] "<public key>"
 #   ./install.sh --check
 #
 #   --provider P   profile to install (profiles/P.conf) and its provider helper, if any.

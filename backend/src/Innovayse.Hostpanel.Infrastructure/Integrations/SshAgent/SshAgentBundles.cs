@@ -44,9 +44,6 @@ public sealed partial class SshAgentBundles : ISshAgentBundles
     /// <summary>The files every bundle holds.</summary>
     private readonly IReadOnlyList<SshAgentFile> _builtInFiles;
 
-    /// <summary>The ids of the profiles the embedded files carry, which the built in bundle installs.</summary>
-    private readonly IReadOnlyList<string> _builtInProfiles;
-
     /// <summary>The bundles already packed for a plugin's profile, by profile id.</summary>
     private readonly ConcurrentDictionary<string, ISshAgentBundle> _packed = new(StringComparer.Ordinal);
 
@@ -63,10 +60,6 @@ public sealed partial class SshAgentBundles : ISshAgentBundles
 
         var agent = _builtInFiles.Single(f => f.Path == AgentFile);
         _version = VersionPattern().Match(System.Text.Encoding.UTF8.GetString(agent.Bytes)).Groups[1].Value;
-        _builtInProfiles = _builtInFiles
-            .Where(f => f.Path.StartsWith(ProfileFolder, StringComparison.Ordinal) && f.Path.EndsWith(ProfileExtension, StringComparison.Ordinal))
-            .Select(f => f.Path[ProfileFolder.Length..^ProfileExtension.Length])
-            .ToList();
         BuiltIn = new SshAgentBundle(_version, _builtInFiles);
     }
 
@@ -82,33 +75,20 @@ public sealed partial class SshAgentBundles : ISshAgentBundles
         }
 
         var shipped = _plugins.FindAgentProfile(profile);
-        if (shipped is null)
-        {
-            // Transitional: a profile the embedded files carry is installed from them while no plugin ships one of that id.
-            return _builtInProfiles.Contains(profile, StringComparer.Ordinal) ? BuiltIn : null;
-        }
-
-        return _packed.GetOrAdd(profile, _ => Pack(shipped));
+        return shipped is null ? null : _packed.GetOrAdd(profile, _ => Pack(shipped));
     }
 
-    /// <summary>
-    /// Packs the built in files with a plugin's profile and helpers on top: a file the plugin ships replaces the embedded file at
-    /// the same path, so the plugin's profile wins over a built in one with the same id.
-    /// </summary>
+    /// <summary>Packs the built in files with a plugin's profile and helpers on top.</summary>
     /// <param name="shipped">The profile the plugin ships, checked at load.</param>
     /// <returns>The bundle that installs the plugin's profile.</returns>
     private SshAgentBundle Pack(PluginAgentProfileDto shipped)
     {
-        var files = _builtInFiles.ToDictionary(f => f.Path, StringComparer.Ordinal);
-        files[$"{ProfileFolder}{shipped.ProfileId}{ProfileExtension}"] = new SshAgentFile(
-            $"{ProfileFolder}{shipped.ProfileId}{ProfileExtension}", shipped.Profile);
-        foreach (var helper in shipped.Helpers)
+        var files = new List<SshAgentFile>(_builtInFiles)
         {
-            var path = $"{HelperFolder}{shipped.ProfileId}/{helper.Key}";
-            files[path] = new SshAgentFile(path, helper.Value);
-        }
-
-        return new SshAgentBundle(_version, files.Values);
+            new($"{ProfileFolder}{shipped.ProfileId}{ProfileExtension}", shipped.Profile),
+        };
+        files.AddRange(shipped.Helpers.Select(helper => new SshAgentFile($"{HelperFolder}{shipped.ProfileId}/{helper.Key}", helper.Value)));
+        return new SshAgentBundle(_version, files);
     }
 
     /// <summary>Reads one embedded file.</summary>

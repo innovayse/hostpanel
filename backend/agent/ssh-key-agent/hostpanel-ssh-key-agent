@@ -114,7 +114,7 @@ DEFAULTS = {
     "jail_shell": "/bin/bash",
     # Copied into every jail with jk_cp (binaries with their libraries) when the jail lacks an entry
     # or the host copy changed, so a jail built before an entry was added gets it on the next key,
-    # and an entry already in place costs no copy. A bare jailkit tree on CWP lacks
+    # and an entry already in place costs no copy. A bare jailkit tree lacks
     # uname, which a login profile script calls, and /etc/profile.d/colorls.sh, where `ll` is defined.
     "jail_extras": "/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS",
     "systemd_unit_dir": "/etc/systemd/system",
@@ -235,7 +235,7 @@ def managed_key_id(line):
 def _is_locked(name, getspnam):
     """
     True when the account's password is locked (`usermod -L` prefixes the hash with `!`, which is
-    how CWP suspends an account). `!!`/`*` alone mean "no password set" and are not a lock.
+    how a hosting panel suspends an account). `!!`/`*` alone mean "no password set" and are not a lock.
     """
     if getspnam is None:
         return False

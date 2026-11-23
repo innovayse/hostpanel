@@ -244,12 +244,12 @@ public sealed class AgentHostingResourceProviderTests
         var transport = new SshAgentTransport(
             new OutboundConnector(Options.Create(new OutboundNetworkOptions()), Options.Create(new PanelNetworkOptions())),
             NullLogger<SshAgentTransport>.Instance);
-        var factory = new HostingResourceProviderFactory(SshAgentTestSeeds.KeyFactory(), transport);
+        var factory = new HostingResourceProviderFactory(SshAgentTestSeeds.KeyFactory(SshAgentTestSeeds.Plugin("panel-plugin")), transport);
 
-        Assert.IsType<AgentHostingResourceProvider>(factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: true))));
+        Assert.IsType<AgentHostingResourceProvider>(factory.CreateFor(Target(SshAgentTestSeeds.Module, Agent(isComplete: true))));
         Assert.Null(factory.CreateFor(Target(ServerModules.CPanel, Agent(isComplete: true))));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, null)));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: false))));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(SshAgentTestSeeds.Module, null)));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(SshAgentTestSeeds.Module, Agent(isComplete: false))));
     }
 
     /// <summary>

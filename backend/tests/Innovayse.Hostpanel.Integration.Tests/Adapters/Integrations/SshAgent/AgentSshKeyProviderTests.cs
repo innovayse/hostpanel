@@ -69,10 +69,10 @@ public sealed class AgentSshKeyProviderTests
     public async Task Ping_ReadsVersionProviderAndBinding_AndToleratesOldAgentsAsync()
     {
         var binding = Guid.NewGuid();
-        var current = new AgentSshKeyProvider(Endpoint, new RecordingTransport($$"""{"v":1,"ok":true,"agent_version":"1.1.0","provider":"cwp","binding":"{{binding}}"}""").SendAsync);
+        var current = new AgentSshKeyProvider(Endpoint, new RecordingTransport($$"""{"v":1,"ok":true,"agent_version":"1.1.0","provider":"examplepanel","binding":"{{binding}}"}""").SendAsync);
         var old = new AgentSshKeyProvider(Endpoint, new RecordingTransport("""{"v":1,"ok":true,"agent_version":"1.0.0"}""").SendAsync);
 
-        Assert.Equal(new SshAgentInfo("1.1.0", "cwp", binding), await current.PingAsync(default));
+        Assert.Equal(new SshAgentInfo("1.1.0", "examplepanel", binding), await current.PingAsync(default));
         Assert.Equal(new SshAgentInfo("1.0.0", null, null), await old.PingAsync(default));
     }
 
@@ -131,12 +131,12 @@ public sealed class AgentSshKeyProviderTests
     [Fact]
     public void Factory_OnlyTheAgentModuleSupported_AndSettingsMustBeComplete()
     {
-        var factory = SshAgentTestSeeds.KeyFactory();
+        var factory = SshAgentTestSeeds.KeyFactory(SshAgentTestSeeds.Plugin("panel-plugin"));
 
-        Assert.IsType<AgentSshKeyProvider>(factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: true))));
+        Assert.IsType<AgentSshKeyProvider>(factory.CreateFor(Target(SshAgentTestSeeds.Module, Agent(isComplete: true))));
         Assert.Null(factory.CreateFor(Target(ServerModules.CPanel, Agent(isComplete: true))));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, null)));
-        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: false))));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(SshAgentTestSeeds.Module, null)));
+        Assert.Throws<InvalidOperationException>(() => factory.CreateFor(Target(SshAgentTestSeeds.Module, Agent(isComplete: false))));
     }
 
     /// <summary>Builds the SSH target of server 7 for the given module.</summary>

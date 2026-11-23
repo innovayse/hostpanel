@@ -223,14 +223,14 @@ class BoundaryTests(AgentTestCase):
         self.assertEqual(self.call(op="ping")["php_versions"], [])
 
     def test_ping_reports_provider_and_binding(self):
-        self.config["provider"] = "cwp"
+        self.config["provider"] = "examplepanel"
         self.config["binding"] = KEY_ID_A
         pong = self.call(op="ping")
-        self.assertEqual((pong["provider"], pong["binding"]), ("cwp", KEY_ID_A))
+        self.assertEqual((pong["provider"], pong["binding"]), ("examplepanel", KEY_ID_A))
 
     def test_profiles_load_and_bad_binding_refused(self):
         root = os.path.join(os.path.dirname(__file__), "..", "profiles")
-        for name in ("generic-linux.conf", "cwp.conf"):
+        for name in sorted(os.listdir(root)):
             loaded = agent.load_config(os.path.join(root, name))
             self.assertEqual(loaded["binding"], "")
         broken = os.path.join(self.tmp.name, "broken.conf")

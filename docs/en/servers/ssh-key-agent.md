@@ -20,7 +20,7 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
 
 The `restrict` directive removes PTY, port forwarding and user rc; the forced command ignores whatever the client asks to run; sudo allows only that exact path with no arguments. Requests travel on stdin as a JSON document; the agent never executes a shell or takes a path from the request.
 
-**Supported server modules:** a server is supported when the hosting panel plugin that serves its module ships an SSH agent profile (see [SSH agent profile of a hosting panel plugin](../developers/write-a-plugin.md#ssh-agent-profile)). All other server types show "SSH key management not available" to clients. Until the plugin that serves the legacy CWP7 module ships its own profile, the host still installs the profile it embeds for that module (`cwp`).
+**Supported server modules:** a server is supported when the hosting panel plugin that serves its module ships an SSH agent profile (see [SSH agent profile of a hosting panel plugin](../developers/write-a-plugin.md#ssh-agent-profile)). All other server types show "SSH key management not available" to clients.
 
 ## Set up SSH on a server
 
@@ -141,7 +141,7 @@ For disaster recovery, **Advanced** lets you paste an existing private key inste
 The installer writes the base configuration from the chosen profile. An administrator can edit it directly on the server. The defaults below are the profile values written by the installer; the agent's own built-in defaults differ (for example `max_keys` is 50 built-in, 20 in both profiles; `deny_accounts` and `account_check_command` are profile-specific).
 
 <SettingTable :settings="[
-  { name: 'provider', type: 'string', default: 'cwp / generic-linux', description: 'Agent profile name. Set by the installer; reported on ping.' },
+  { name: 'provider', type: 'string', default: 'profile id / generic-linux', description: 'Agent profile name. Set by the installer; reported on ping.' },
   { name: 'binding', type: 'string', default: '', description: 'UUID of the Hostpanel server record. Set by the installer; checked on Test agent.' },
   { name: 'min_uid', type: 'number', default: '1000', description: 'Minimum numeric uid a customer account must have. System accounts below this value are always refused.' },
   { name: 'home_root', type: 'string', default: '/home', description: 'Expected parent of every customer home directory. An account whose passwd home is not directly under this path is refused.' },
@@ -149,7 +149,7 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'max_keys', type: 'number', default: '20 (profiles); 50 (built-in)', description: 'Maximum number of managed keys per account. Attempts to add beyond this return too_many_keys.' },
   { name: 'audit_log', type: 'string', default: '/var/log/hostpanel-ssh-key-agent.log', description: 'Root-only file where every add and revoke is recorded with fingerprint (never key material).' },
   { name: 'lock_dir', type: 'string', default: '/run/hostpanel-ssh-key-agent', description: 'Directory for per-account lock files that serialise concurrent operations on the same account.' },
-  { name: 'account_check_command', type: 'string', default: 'set by cwp profile; empty in generic-linux', description: 'Absolute path of a root-owned helper run as helper <account>. Exit 0 = panel account exists, 1 = not found, anything else = fault.' },
+  { name: 'account_check_command', type: 'string', default: 'set by the panel profile; empty in generic-linux', description: 'Absolute path of a root-owned helper run as helper <account>. Exit 0 = panel account exists, 1 = not found, anything else = fault.' },
   { name: 'check_shadow_lock', type: 'boolean', default: 'true', description: 'A locked password (usermod -L) makes the account account_suspended. !! or * alone is not treated as a lock.' },
   { name: 'ssh_group', type: 'string', default: '', description: 'If set, only members of this group may receive keys. Leave empty when jail_enrol is on.' },
   { name: 'eligible_list', type: 'string', default: '', description: 'Path to a root-owned file, one account per line, that acts as an SSH opt-in list. The file must not be group- or world-writable.' },
@@ -165,7 +165,7 @@ The installer writes the base configuration from the chosen profile. An administ
 
 ## Websites and databases
 
-Agent 1.5.0 can give a hosting account a website and databases on request. It runs one root-owned helper per operation from `helper_dir`; the CWP profile ships all four, so nothing needs configuring on a CWP server. A server without a helper answers `not_supported`, and the ping answer lists the operations that are available (`capabilities`) and the PHP versions the server offers (`php_versions`, for example `["8.1", "8.2", "8.3"]`, empty when the server has no `php-versions` helper).
+Agent 1.5.0 can give a hosting account a website and databases on request. It runs one root-owned helper per operation from `helper_dir`; a panel profile ships the helpers it supports, so nothing needs configuring on a server whose plugin ships them. A server without a helper answers `not_supported`, and the ping answer lists the operations that are available (`capabilities`) and the PHP versions the server offers (`php_versions`, for example `["8.1", "8.2", "8.3"]`, empty when the server has no `php-versions` helper).
 
 | Operation | Request fields | Success answer |
 |-----------|----------------|----------------|

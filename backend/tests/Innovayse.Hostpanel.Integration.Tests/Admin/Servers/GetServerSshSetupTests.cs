@@ -21,7 +21,7 @@ public sealed class GetServerSshSetupTests(IntegrationTestFactory factory) : ICl
 
         var setup = await admin.GetFromJsonAsync<JsonElement>($"/api/admin/servers/{serverId}/ssh-setup");
 
-        setup.GetProperty("profile").GetString().Should().Be("cwp");
+        setup.GetProperty("profile").GetString().Should().Be(SshTestSeeds.BuiltInProfile);
         setup.GetProperty("agentUsername").GetString().Should().Be("hpsshkeys");
         setup.GetProperty("bundleVersion").GetString().Should().MatchRegex(@"^\d+\.\d+\.\d+$");
         var bytes = await factory.CreateClient().GetByteArrayAsync(setup.GetProperty("bundlePath").GetString());

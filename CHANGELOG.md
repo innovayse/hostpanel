@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The client portal is available in French (#888). The language switcher shows the French flag, a client can choose French as their language in the profile, and search engines are given the French pages as alternates of every page. The legal texts stay in English for now. E-mails and credit note PDFs for a French client are still in English, they follow in a separate change.
+- A hosting panel plugin can ship its own SSH key agent profile (#1410). The plugin names it in `sshAgentProfile` and carries `agent/profile.conf` and the helpers in `agent/helpers/`; the host checks them at install and at load with the plugin packaging package (SDK 3.15.0), builds an installer bundle for the profile and installs it for the servers of the modules the plugin serves, so a new panel needs no change in the host. The bundle is `GET /api/public/ssh-agent/bundle.tar.gz?profile=<id>`, and the one for an unknown profile answers 404 `SSH_AGENT_PROFILE_NOT_FOUND`. The profile the host still embeds for the legacy CWP module is used only while no plugin supplies one and is transitional.
+- A hosting panel plugin can declare the `provisioningPanelAccount` capability (SDK 3.15.0), which needs `provisioningPanel`, so such a plugin is no longer refused at install.
 - The admin panel is available in Spanish (#887). The language menu offers Spanish, and every screen, label and message is translated.
 
 ### Removed

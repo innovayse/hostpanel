@@ -107,6 +107,12 @@ public sealed class PluginRegistry : IPluginRegistry
         => _plugins.GetValueOrDefault(pluginId)?.Icon;
 
     /// <inheritdoc/>
+    public PluginAgentProfileDto? FindAgentProfile(string profileId)
+        => _plugins.Values
+            .Select(plugin => plugin.AgentProfile)
+            .FirstOrDefault(profile => profile is not null && string.Equals(profile.ProfileId, profileId, StringComparison.Ordinal));
+
+    /// <inheritdoc/>
     public IReadOnlyCollection<RefusedPlugin> GetRefusedPlugins()
         => _refused.Values.ToList();
 }

@@ -468,7 +468,7 @@ public static class DependencyInjection
         // first contact, and the agent files the admin panel hands out for installation.
         services.AddSingleton<ISshIdentityGenerator, SshIdentityGenerator>();
         services.AddSingleton<ISshHostKeyScanner, SshHostKeyScanner>();
-        services.AddSingleton<ISshAgentBundle, EmbeddedSshAgentBundle>();
+        services.AddSingleton<ISshAgentBundles, SshAgentBundles>();
 
         // Billing services
         services.AddScoped<IPayerCurrencyResolver, PayerCurrencyResolver>();

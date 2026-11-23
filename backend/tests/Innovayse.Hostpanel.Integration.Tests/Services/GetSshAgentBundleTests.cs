@@ -50,9 +50,7 @@ public sealed class GetSshAgentBundleTests(IntegrationTestFactory factory) : ICl
     public async Task Bundle_OfAPluginsProfile_HoldsTheProfileAndItsHelpersAsync()
     {
         var registry = new FakePluginRegistry();
-        registry.AddAgentProfile(SshAgentTestSeeds.Profile("panel-plugin", SshAgentTestSeeds.ProfileId, "[agent]
-provider = examplepanel
-"));
+        registry.AddAgentProfile(SshAgentTestSeeds.Profile("panel-plugin", SshAgentTestSeeds.ProfileId, "[agent]\nprovider = examplepanel\n"));
         var http = HostOver(registry).CreateClient();
 
         var response = await http.GetAsync($"/api/public/ssh-agent/bundle.tar.gz?profile={SshAgentTestSeeds.ProfileId}");

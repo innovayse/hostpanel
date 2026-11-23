@@ -13,6 +13,7 @@ import type {
   PluginRegistryItemDto,
   PluginRegistryPageDto,
   PluginRegistryQuery,
+  PluginServersDto,
   PluginSlotWidgetBindingDto,
   RegistryInstanceDto,
   RegistryPluginDetailsDto,
@@ -91,6 +92,15 @@ export const usePluginsApi = () => {
    */
   const listSlotWidgets = (pluginId: string): Promise<PluginSlotWidgetBindingDto[]> =>
     request<PluginSlotWidgetBindingDto[]>(`${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/slot-widgets`)
+
+  /**
+   * Lists the servers one loaded panel plugin serves: the ones stored on a server module its manifest declares.
+   *
+   * @param pluginId - Plugin id as declared in plugin.json.
+   * @returns The plugin's modules and its servers; both empty for a plugin that serves no server module.
+   */
+  const listPluginServers = (pluginId: string): Promise<PluginServersDto> =>
+    request<PluginServersDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/servers`)
 
   /**
    * Saves the products one slot widget is bound to.
@@ -192,7 +202,7 @@ export const usePluginsApi = () => {
     request<void>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/licence`, { method: HttpMethod.Delete })
 
   return {
-    listPlugins, inspectPlugin, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
+    listPlugins, inspectPlugin, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, listPluginServers, saveSlotWidgetProducts,
     browseRegistry, listRegistryUpdates, installFromRegistry, getRegistryInstance, retryRegistryInstance, getRegistryDetails, saveLicenceKey, removeLicenceKey,
   }
 }

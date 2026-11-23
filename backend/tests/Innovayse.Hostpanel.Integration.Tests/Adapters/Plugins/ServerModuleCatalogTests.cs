@@ -67,6 +67,31 @@ public sealed class ServerModuleCatalogTests
         catalog.Canonical("nobody", "RetiredPanel").Should().BeNull();
     }
 
+    /// <summary>A plugin's modules are the ones its own manifest declares, in its spelling, and another plugin's never come with them.</summary>
+    [Fact]
+    public void ModulesOf_AnswersTheModulesTheNamedPluginDeclares()
+    {
+        var hestia = PanelPluginHarness.Plugin("hestia", Implementation, ["HestiaCP", "hestia-eu"], [PluginCapabilities.ProvisioningPanel]);
+        var other = PanelPluginHarness.Plugin("other", Implementation, ["othercp"], [PluginCapabilities.ProvisioningPanel]);
+        var catalog = new ServerModuleCatalog(PluginActivationTestSeeds.Registry(hestia, other));
+
+        catalog.ModulesOf("hestia").Should().Equal("HestiaCP", "hestia-eu");
+        catalog.ModulesOf("other").Should().Equal("othercp");
+    }
+
+    /// <summary>A plugin that is not loaded, one with another id spelling and one that declares no provisioning capability serve no module.</summary>
+    [Fact]
+    public void ModulesOf_IsEmptyForAPluginThatServesNoServerModule()
+    {
+        var plain = PanelPluginHarness.Plugin("plain", Implementation, ["stray"], []);
+        var panel = PanelPluginHarness.Plugin("hestia", Implementation, ["hestiacp"], [PluginCapabilities.ProvisioningPanel]);
+        var catalog = new ServerModuleCatalog(PluginActivationTestSeeds.Registry(plain, panel));
+
+        catalog.ModulesOf("plain").Should().BeEmpty();
+        catalog.ModulesOf("missing").Should().BeEmpty();
+        catalog.ModulesOf("HESTIA").Should().BeEmpty();
+    }
+
     /// <summary>A plugin that declares no provisioning capability contributes no module, even when its manifest lists some.</summary>
     [Fact]
     public void List_IgnoresAPluginWithoutAProvisioningCapability()

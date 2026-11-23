@@ -264,6 +264,14 @@ export interface PluginSlotWidgetBindingDto {
   isBound: boolean
 }
 
+/** The servers a panel plugin serves (GET /api/admin/plugins/{pluginId}/servers). */
+export interface PluginServersDto {
+  /** The server modules the plugin declares; empty for a plugin that serves none. */
+  modules: string[]
+  /** The servers stored on one of those modules, by name; empty when none is. */
+  servers: ServerOptionDto[]
+}
+
 /** Body of PUT /api/admin/plugins/{pluginId}/slot-widgets/{slotId}/{widgetId}: the new binding of one widget. */
 export interface SavePluginSlotWidgetProductsBody {
   /** Product ids to bind the widget to; empty clears the operator binding. */

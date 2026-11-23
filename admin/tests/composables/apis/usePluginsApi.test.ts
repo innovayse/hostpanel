@@ -91,6 +91,7 @@ describe('usePluginsApi', () => {
     await api.installFromRegistry('a#b', { version: '1.0.0', allowDowngrade: false })
     await api.saveLicenceKey('a b', { key: 'k' })
     await api.listSlotWidgets('p/q')
+    await api.listPluginServers('p/q')
     await api.saveSlotWidgetProducts('p/q', 's/1', 'w 2', { productIds: [] })
 
     expect(callOf(mock, 0).url).toBe('/api/admin/plugins/a%2Fb%20c')
@@ -98,7 +99,8 @@ describe('usePluginsApi', () => {
     expect(callOf(mock, 2).url).toBe('/api/admin/plugins/registry/a%23b/install')
     expect(callOf(mock, 3).url).toBe('/api/admin/plugins/registry/a%20b/licence')
     expect(callOf(mock, 4).url).toBe('/api/admin/plugins/p%2Fq/slot-widgets')
-    expect(callOf(mock, 5).url).toBe('/api/admin/plugins/p%2Fq/slot-widgets/s%2F1/w%202')
+    expect(callOf(mock, 5).url).toBe('/api/admin/plugins/p%2Fq/servers')
+    expect(callOf(mock, 6).url).toBe('/api/admin/plugins/p%2Fq/slot-widgets/s%2F1/w%202')
   })
 })
 

@@ -316,6 +316,48 @@ describe('pluginsStore.fetchSlotWidgetsFor', () => {
   })
 })
 
+/** What the server answers for a panel plugin that serves one module and has one server. */
+const served = {
+  modules: ['examplepanel'],
+  servers: [{ id: 7, name: 'Frankfurt 1', hostname: 'fra1.example.test', ipAddress: null, isOnline: true, lastTestedAt: '2026-01-02T10:00:00Z', accountsCount: 4, limits: { maxAccounts: null, isDefault: false, isDisabled: false } }],
+}
+
+describe('pluginsStore.fetchServersFor', () => {
+  it('keeps the modules and the servers of that plugin', async () => {
+    const mock = stubFetch(json(served))
+    const store = usePluginsStore()
+
+    await store.fetchServersFor('acme')
+    expect(store.pluginServers).toEqual({ acme: served })
+    expect(store.pluginServersError['acme']).toBeNull()
+    expect(store.pluginServersLoading['acme']).toBe(false)
+    expect(String(mock.mock.calls[0]?.[0])).toBe('/api/admin/plugins/acme/servers')
+  })
+
+  it('keeps the API sentence for that plugin only when the servers are refused', async () => {
+    stubFetch(problem('Servers unavailable.', 503))
+    const store = usePluginsStore()
+
+    await store.fetchServersFor('acme')
+    expect(store.pluginServersError['acme']).toBe('Servers unavailable.')
+    expect(store.pluginServersError['other']).toBeUndefined()
+    expect(store.pluginServers['acme']).toBeUndefined()
+    expect(store.pluginServersLoading['acme']).toBe(false)
+  })
+
+  it('clears an earlier refusal when a reload succeeds, and keeps the servers of another plugin', async () => {
+    stubFetch(problem('Servers unavailable.', 503), json(served), json({ modules: [], servers: [] }))
+    const store = usePluginsStore()
+
+    await store.fetchServersFor('acme')
+    await store.fetchServersFor('acme')
+    await store.fetchServersFor('beta')
+    expect(store.pluginServersError['acme']).toBeNull()
+    expect(Object.keys(store.pluginServers)).toEqual(['acme', 'beta'])
+    expect(store.pluginServers['beta']).toEqual({ modules: [], servers: [] })
+  })
+})
+
 describe('pluginsStore.saveSlotWidgetProducts', () => {
   it('puts the ids on the widget route, then reloads the widgets', async () => {
     const mock = stubFetch(json({ ...widget, productIds: [3, 4] }), json([{ ...widget, productIds: [3, 4] }]), json([]))

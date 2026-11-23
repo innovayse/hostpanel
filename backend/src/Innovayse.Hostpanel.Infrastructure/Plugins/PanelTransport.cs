@@ -20,8 +20,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// <para>
 /// <see cref="CreateClient(PanelServerConnection)"/> honours the operator's per server setting "accept a self signed
 /// certificate" (<see cref="Server.AcceptsSelfSignedCertificate"/>). The setting is read from the stored
-/// server, never from the connection the plugin passes, and the client it allows trusts a certificate only for that stored
-/// host name: the check is made on the name of the connection being secured, so the same client reaching any other host
+/// server, never from the connection the plugin passes, and the client it allows trusts a certificate only for the host the stored
+/// server is dialled at (its API address, or its host name when none is set): the check is made on the name of the connection being secured, so the same client reaching any other host
 /// still refuses a certificate that does not validate. The host keeps no panel port, so the allowance is the host name
 /// and not a port of it. The certificate is never trusted for another server, for a client from
 /// <see cref="CreateClient()"/> or for the process.
@@ -90,20 +90,22 @@ public sealed class PanelTransport : IPanelTransport
     }
 
     /// <summary>
-    /// Reads the host name the operator trusts for a server, or nothing when the server does not accept a self signed
+    /// Reads the host the operator trusts for a server (the one its API is dialled at), or nothing when the server does not accept a self signed
     /// certificate or does not exist. It is synchronous because the SDK member is: the answer is one indexed row. It runs on a
     /// data context of its own, so it can never collide with an operation running on the caller's context.
     /// </summary>
     /// <param name="serverId">The id of the stored server.</param>
-    /// <returns>The stored host name, or <see langword="null"/> when no certificate is trusted for the server.</returns>
+    /// <returns>The stored API host, or <see langword="null"/> when no certificate is trusted for the server.</returns>
     private string? ReadTrustedHost(int serverId)
     {
         using var scope = _scopes.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        return db.Servers.AsNoTracking()
+        // Only the two address columns leave the database: the row also holds the encrypted credentials, which this read never needs.
+        var addresses = db.Servers.AsNoTracking()
             .Where(s => s.Id == serverId && s.AcceptsSelfSignedCertificate)
-            .Select(s => s.Hostname)
+            .Select(s => new { s.Hostname, s.ApiHost })
             .FirstOrDefault();
+        return addresses is null ? null : Server.ResolveApiEndpointHost(addresses.Hostname, addresses.ApiHost);
     }
 
     /// <summary>
@@ -113,7 +115,7 @@ public sealed class PanelTransport : IPanelTransport
     /// </summary>
     /// <param name="sender">The stream being secured, which names the host it was opened for.</param>
     /// <param name="errors">What the platform found wrong with the certificate.</param>
-    /// <param name="trustedHost">The host name the operator trusts, as stored on the server.</param>
+    /// <param name="trustedHost">The host the operator trusts, as the stored server is dialled at.</param>
     /// <returns><see langword="true"/> when the connection may go on.</returns>
     private static bool IsAccepted(object sender, SslPolicyErrors errors, string trustedHost)
     {

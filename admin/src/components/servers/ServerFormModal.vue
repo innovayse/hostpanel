@@ -92,6 +92,8 @@ interface ServerFormState {
   name: string
   /** Hostname or IP used for API access. */
   hostname: string
+  /** Address the panel's API is dialled at instead of the hostname; blank keeps the hostname. */
+  apiHost: string
   /** Primary public IP address. */
   ipAddress: string
   /** Additional assigned IPs, one per line. */
@@ -173,6 +175,7 @@ const nameserverRows = computed<{ index: number; label: string; hostKey: Nameser
 const initialForm = (s: ServerDto | null): ServerFormState => ({
   name: s?.name ?? '',
   hostname: s?.endpoint.hostname ?? '',
+  apiHost: s?.endpoint.apiHost ?? '',
   ipAddress: s?.endpoint.ipAddress ?? '',
   assignedIpAddresses: s?.endpoint.assignedIpAddresses ?? '',
   monthlyCost: s?.hosting.monthlyCost ?? 0,
@@ -240,6 +243,7 @@ const handleSubmit = (): void => {
     name: form.name,
     endpoint: {
       hostname: form.hostname,
+      apiHost: orNull(form.apiHost),
       ipAddress: orNull(form.ipAddress),
       assignedIpAddresses: orNull(form.assignedIpAddresses),
       useSSL: form.useSSL,
@@ -335,6 +339,24 @@ const handleSubmit = (): void => {
               </template>
             </UiField>
           </UiGrid>
+
+          <UiField
+            :label="t('servers.serverForm.apiHost')"
+            :hint="t('servers.serverForm.apiHostHint')"
+            :error="props.fieldErrors['endpoint.apiHost']"
+          >
+            <template #default="{ id, invalid, describedby }">
+              <UiInput
+                :id="id"
+                v-model="form.apiHost"
+                type="text"
+                :invalid="invalid"
+                :aria-describedby="describedby"
+                :placeholder="t('servers.serverForm.apiHostPlaceholder')"
+                data-testid="server-form-api-host"
+              />
+            </template>
+          </UiField>
 
           <UiGrid :columns="2" :gap="UiGap.Sm" container>
             <UiField :label="t('shared.ipAddress')" :error="props.fieldErrors['endpoint.ipAddress']">

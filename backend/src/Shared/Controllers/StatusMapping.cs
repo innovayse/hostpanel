@@ -174,6 +174,13 @@ public static class StatusMapping
             // deployment's state rather than the caller's (503).
             "REGISTRAR_DOMAIN_UNAVAILABLE" => new(409, "Conflict"),
             "REGISTRAR_INSUFFICIENT_FUNDS" => new(503, "Service Unavailable"),
+            // Exact rows: the registrar's refusal of what the plugin was asked, each a state or a
+            // meaning the registrar rejects rather than a malformed request (409 and 422), and the
+            // operator's own credentials the registrar turned down (503, as an empty balance is).
+            "REGISTRAR_TLD_NOT_SUPPORTED" or "REGISTRAR_TRANSFER_NOT_ALLOWED" => new(409, "Conflict"),
+            "REGISTRAR_EPP_CODE_INVALID" or "REGISTRAR_NAMESERVER_INVALID" or "REGISTRAR_DNS_RECORD_INVALID"
+                => new(422, "Unprocessable Content"),
+            "REGISTRAR_ACCESS_DENIED" => new(503, "Service Unavailable"),
             // Exact row: the body parsed but moves no money, a meaning that is wrong rather than a
             // malformed request.
             "TRANSACTION_AMOUNT_REQUIRED" => new(422, "Unprocessable Content"),

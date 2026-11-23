@@ -33,8 +33,8 @@ describe('serversStore', () => {
     const mock = stubFetch(json({ items: [{ id: 1 }], pageNumber: 2, pageSize: 20, totalCount: 21, totalPages: 2 }))
     const store = useServersStore()
 
-    expect(await store.fetchServers(2, { search: ' host ', module: ServerModule.DirectAdmin, state: ServerState.Offline })).toBe(true)
-    expect(urlOf(mock)).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=DirectAdmin&state=offline')
+    expect(await store.fetchServers(2, { search: ' host ', module: 'hestiacp', state: ServerState.Offline })).toBe(true)
+    expect(urlOf(mock)).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=hestiacp&state=offline')
     expect(store.servers).toEqual([{ id: 1 }])
     expect(store.totalCount).toBe(21)
     expect(store.loading).toBe(false)
@@ -56,12 +56,12 @@ describe('serversStore', () => {
     const mock = stubFetch(json([{ id: 1, name: 'host1' }]))
     const store = useServersStore()
 
-    const pending = store.fetchServerOptions(ServerModule.DirectAdmin)
+    const pending = store.fetchServerOptions(ServerModule.CPanel)
     expect(store.optionsLoading).toBe(true)
     expect(store.loading).toBe(false)
     await pending
     expect(store.optionsLoading).toBe(false)
-    expect(urlOf(mock)).toBe('/api/admin/servers/options?module=DirectAdmin')
+    expect(urlOf(mock)).toBe('/api/admin/servers/options?module=CPanel')
     expect(store.serverOptions).toEqual([{ id: 1, name: 'host1' }])
 
     const every = stubFetch(json([]))

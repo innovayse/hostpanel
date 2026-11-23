@@ -4,32 +4,16 @@
     "fieldAccountName": "Kontoinhaber",
     "fieldInstructions": "Zahlungshinweise"
   },
-  "namecheap": {
-    "shortDescription": "Domains über die Reseller-API von Namecheap registrieren und verwalten.",
-    "fieldApiKey": "API-Schlüssel",
-    "fieldClientIp": "Freigegebene Client-IP",
-    "fieldApiUsername": "API-Benutzername"
-  },
-  "nameam": {
-    "shortDescription": "Registrieren und verwalten Sie .am-Domains über die Name.am-Registrar-API.",
-    "fieldEmail": "Konto-E-Mail",
-    "fieldPassword": "Kontopasswort",
-    "fieldApiUrl": "API-URL",
-    "fieldTest_mode": "Testmodus"
-  },
-  "resellerclub": {
-    "shortDescription": "Domainregistrierungen über die Reseller-Plattform von ResellerClub verwalten.",
-    "fieldResellerId": "Reseller-ID"
-  },
-  "enom": {
-    "shortDescription": "Verbindung zu eNom für Domainregistrierung und DNS-Verwaltung herstellen.",
-    "fieldAccountId": "Konto-ID"
-  },
   "cpanel": {
     "shortDescription": "Hosting-Konten über die cPanel-WHM-Server-API bereitstellen und verwalten.",
     "fieldHost": "WHM-Host",
     "fieldPort": "Port",
     "fieldApiToken": "API-Token"
+  },
+  "cwp": {
+    "shortDescription": "Hosting-Konten auf CentOS-Web-Panel-Servern verwalten.",
+    "fieldHost": "CWP-Host",
+    "fieldApiKey": "API-Schlüssel"
   },
   "smtp": {
     "shortDescription": "Den E-Mail-Versand über Ihren SMTP-Mailserver konfigurieren.",
@@ -39,6 +23,7 @@
   },
   "maxmind": {
     "shortDescription": "Betrügerische Bestellungen mit dem GeoIP-Risiko-Scoring von MaxMind erkennen.",
-    "fieldLicenseKey": "Lizenzschlüssel"
+    "fieldLicenseKey": "Lizenzschlüssel",
+    "fieldAccountId": "Konto-ID"
   }
 }

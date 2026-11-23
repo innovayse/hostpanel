@@ -33,7 +33,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
     /// Read-only, so no caller can change the process-wide list; test doubles reference it rather
     /// than copy it.
     /// </summary>
-    public static IReadOnlyList<string> BuiltModules { get; } = Array.AsReadOnly<string>([ServerModules.CPanel]);
+    public static IReadOnlyList<string> BuiltModules { get; } = ServerModules.Known;
 
     /// <summary>Factory for creating HTTP clients for provider API calls.</summary>
     private readonly IHttpClientFactory _httpClientFactory;
@@ -183,7 +183,9 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
 
         var options = _options.Value;
 #pragma warning disable CS0618 // Legacy HostingPanel contract (HostingPanelAddress, which the cPanel path uses), obsolete since SDK 3.1.0; stays until a cPanel plugin exists.
-        var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelWhmPort), server.Username, server.ApiToken);
+        // WHM is dialled at ApiEndpointHost (the hostname unless the server carries an ApiHost); the
+        // user panel URL stays on the hostname, since it is handed to clients.
+        var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.ApiEndpointHost, options.CPanelWhmPort), server.Username, server.ApiToken);
         var panelUrl = HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelUserPort);
 #pragma warning restore CS0618
         var client = new WhmApiClient(

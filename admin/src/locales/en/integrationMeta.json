@@ -4,32 +4,16 @@
     "fieldAccountName": "Account Name",
     "fieldInstructions": "Payment Instructions"
   },
-  "namecheap": {
-    "shortDescription": "Register and manage domains through Namecheap's reseller API.",
-    "fieldApiKey": "API Key",
-    "fieldClientIp": "Whitelisted Client IP",
-    "fieldApiUsername": "API Username"
-  },
-  "nameam": {
-    "shortDescription": "Register and manage .am domains through the Name.am registrar API.",
-    "fieldEmail": "Account Email",
-    "fieldPassword": "Account Password",
-    "fieldApiUrl": "API URL",
-    "fieldTest_mode": "Test Mode"
-  },
-  "resellerclub": {
-    "shortDescription": "Manage domain registrations via ResellerClub's reseller platform.",
-    "fieldResellerId": "Reseller ID"
-  },
-  "enom": {
-    "shortDescription": "Connect to eNom for domain registration and DNS management.",
-    "fieldAccountId": "Account ID"
-  },
   "cpanel": {
     "shortDescription": "Provision and manage hosting accounts via cPanel WHM server API.",
     "fieldHost": "WHM Host",
     "fieldPort": "Port",
     "fieldApiToken": "API Token"
+  },
+  "cwp": {
+    "shortDescription": "Manage hosting accounts on CentOS Web Panel servers.",
+    "fieldHost": "CWP Host",
+    "fieldApiKey": "API Key"
   },
   "smtp": {
     "shortDescription": "Configure outgoing email delivery via your SMTP mail server.",
@@ -39,6 +23,7 @@
   },
   "maxmind": {
     "shortDescription": "Detect fraudulent orders with MaxMind's GeoIP risk scoring.",
-    "fieldLicenseKey": "License Key"
+    "fieldLicenseKey": "License Key",
+    "fieldAccountId": "Account ID"
   }
 }

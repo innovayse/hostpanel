@@ -383,7 +383,7 @@
     <value>El estado debe ser uno de: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>El registrador debe ser uno de: NameAm, Namecheap.</value>
+    <value>El registrador debe ser un plugin de registrador instalado.</value>
   </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>La página debe ser 1 o mayor.</value>
@@ -1089,6 +1089,12 @@
   </data>
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Limite el nombre de host a {0} caracteres.</value>
+  </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Introduce un nombre de host o una dirección IP, sin esquema, ruta, puerto ni espacios.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>A esta dirección nunca se conecta: se rechazan las direcciones de loopback, link-local y de metadatos de la nube.</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>El nombre de usuario es obligatorio.</value>

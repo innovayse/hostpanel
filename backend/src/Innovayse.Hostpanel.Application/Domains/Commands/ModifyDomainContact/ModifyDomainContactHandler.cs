@@ -68,7 +68,7 @@ public sealed class ModifyDomainContactHandler
             cmd.FirstName, cmd.LastName, cmd.Organization, cmd.Email, cmd.Phone,
             cmd.Address1, cmd.Address2, cmd.City, cmd.State, cmd.PostalCode, cmd.Country);
         var registrar = await _registrars.ResolveAsync(domain, ct);
-        var result = await registrar.ModifyContactDetailsAsync(new DomainContactChange(domain.Name, contact), ct);
+        var result = await registrar.ModifyContactDetailsAsync(new DomainContactChange(domain.ToRef(), contact), ct);
         if (!result.Success)
         {
             _logger.LogWarning(

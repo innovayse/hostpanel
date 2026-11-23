@@ -81,20 +81,22 @@ internal static class ServersTestSeeds
     /// <param name="clearAccessHash">Whether to ask for the stored access hash to be removed.</param>
     /// <param name="ipAddress">The server's IP address, or null to record none.</param>
     /// <param name="acceptsSelfSignedCertificate">Whether the operator trusts the server's self signed certificate.</param>
+    /// <param name="apiHost">The address the panel's API is dialled at, or null to send none.</param>
     /// <returns>The body.</returns>
     public static object ServerBody(
         string name,
         string? hostname = null,
-        string module = ServerModules.Cwp7,
+        string module = ServerModules.CPanel,
         string? accessHash = null,
         bool isDefault = false,
         decimal monthlyCost = 0m,
         bool clearAccessHash = false,
         string? ipAddress = null,
-        bool acceptsSelfSignedCertificate = false) => new
+        bool acceptsSelfSignedCertificate = false,
+        string? apiHost = null) => new
     {
         name,
-        endpoint = new ServerEndpointDto(hostname ?? $"{name}.example.com", ipAddress, null, true, acceptsSelfSignedCertificate),
+        endpoint = new ServerEndpointDto(hostname ?? $"{name}.example.com", ipAddress, null, true, acceptsSelfSignedCertificate, apiHost),
         module,
         username = "root",
         credentials = new ServerCredentials(null, null, accessHash),
@@ -103,6 +105,36 @@ internal static class ServersTestSeeds
         nameServers = ServerNameServers.None,
         clears = new ServerCredentialClears(false, false, clearAccessHash),
     };
+
+    /// <summary>Saves a server straight through the data context, the way a row stored with a plugin's module id looks.</summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <param name="name">The server's display name.</param>
+    /// <param name="hostname">The API hostname.</param>
+    /// <param name="module">The control panel module.</param>
+    /// <param name="credentials">The credentials the server stores, or <see langword="null"/> for an access hash only.</param>
+    /// <returns>The saved server.</returns>
+    public static async Task<Server> AddServerAsync(
+        IHostpanelDbContext context, string name, string hostname, string module, ServerCredentials? credentials = null)
+    {
+        var server = Server.Create(new ServerDetails(
+            name, hostname, null, null, module, "root", credentials ?? new ServerCredentials(null, null, "hash"), true, null,
+            false, false, 0m, null, null, ServerNameServers.None, false), TestMoments.Seeded);
+        context.Servers.Add(server);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return server;
+    }
+
+    /// <summary>Seeds a server on any module, bypassing the module catalog the create route checks, and returns its id.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="name">The server's display name.</param>
+    /// <param name="module">The control panel module.</param>
+    /// <returns>The new server's id.</returns>
+    public static async Task<int> SeedServerAsync(IntegrationTestFactory factory, string name, string module)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return (await AddServerAsync(context, name, $"{name}.example.com", module)).Id;
+    }
 
     /// <summary>Creates a server with a fresh name and returns its assigned id.</summary>
     /// <param name="client">Authenticated admin client.</param>
@@ -114,7 +146,7 @@ internal static class ServersTestSeeds
     public static async Task<int> CreateServerAsync(
         HttpClient client,
         string name,
-        string module = ServerModules.Cwp7,
+        string module = ServerModules.CPanel,
         string? hostname = null,
         string? ipAddress = null)
     {

@@ -19,20 +19,20 @@ public sealed class ServerModulePluginResolverTests
     [Fact]
     public void Find_MatchesTheModuleIgnoringCase()
     {
-        var plugin = PanelPluginHarness.Plugin("directadmin-plugin", Implementation, ["directadmin"], [PluginCapabilities.ProvisioningPanel]);
+        var plugin = PanelPluginHarness.Plugin("hestia-plugin", Implementation, ["hestiacp"], [PluginCapabilities.ProvisioningPanel]);
         var resolver = ResolverOver(plugin);
 
-        var match = resolver.Find("DirectAdmin", PluginCapabilities.ProvisioningPanel);
+        var match = resolver.Find("HestiaCP", PluginCapabilities.ProvisioningPanel);
 
         match.Outcome.Should().Be(ServerModulePluginOutcome.Served);
-        match.PluginId.Should().Be("directadmin-plugin");
+        match.PluginId.Should().Be("hestia-plugin");
     }
 
     /// <summary>A module no installed plugin declares is not served, so the host's own provider, if any, handles it.</summary>
     [Fact]
     public void Find_ModuleNobodyDeclares_IsNotServed()
     {
-        var resolver = ResolverOver(PanelPluginHarness.Plugin("a", Implementation, ["directadmin"], [PluginCapabilities.ProvisioningPanel]));
+        var resolver = ResolverOver(PanelPluginHarness.Plugin("a", Implementation, ["hestiacp"], [PluginCapabilities.ProvisioningPanel]));
 
         var match = resolver.Find("cpanel", PluginCapabilities.ProvisioningPanel);
 
@@ -44,10 +44,10 @@ public sealed class ServerModulePluginResolverTests
     [Fact]
     public void Find_PluginWithoutTheCapability_IsNotServed()
     {
-        var resolver = ResolverOver(PanelPluginHarness.Plugin("vm", Implementation, ["directadmin"], [PluginCapabilities.VirtualServer]));
+        var resolver = ResolverOver(PanelPluginHarness.Plugin("vm", Implementation, ["hestiacp"], [PluginCapabilities.VirtualServer]));
 
-        resolver.Find("directadmin", PluginCapabilities.ProvisioningPanel).Outcome.Should().Be(ServerModulePluginOutcome.NotServed);
-        resolver.Find("directadmin", PluginCapabilities.VirtualServer).Outcome.Should().Be(ServerModulePluginOutcome.Served);
+        resolver.Find("hestiacp", PluginCapabilities.ProvisioningPanel).Outcome.Should().Be(ServerModulePluginOutcome.NotServed);
+        resolver.Find("hestiacp", PluginCapabilities.VirtualServer).Outcome.Should().Be(ServerModulePluginOutcome.Served);
     }
 
     /// <summary>Two plugins declaring one module are a conflict: neither is chosen.</summary>
@@ -55,10 +55,10 @@ public sealed class ServerModulePluginResolverTests
     public void Find_TwoPluginsDeclaringTheModule_IsAConflict()
     {
         var resolver = ResolverOver(
-            PanelPluginHarness.Plugin("one", Implementation, ["directadmin"], [PluginCapabilities.ProvisioningPanel]),
-            PanelPluginHarness.Plugin("two", Implementation, ["DIRECTADMIN"], [PluginCapabilities.ProvisioningPanel]));
+            PanelPluginHarness.Plugin("one", Implementation, ["hestiacp"], [PluginCapabilities.ProvisioningPanel]),
+            PanelPluginHarness.Plugin("two", Implementation, ["HESTIACP"], [PluginCapabilities.ProvisioningPanel]));
 
-        var match = resolver.Find("directadmin", PluginCapabilities.ProvisioningPanel);
+        var match = resolver.Find("hestiacp", PluginCapabilities.ProvisioningPanel);
 
         match.Outcome.Should().Be(ServerModulePluginOutcome.Conflict);
         match.PluginId.Should().BeNull();

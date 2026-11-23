@@ -53,7 +53,7 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 
 | Field | Notes |
 |-------|-------|
-| Module | Control panel type: cPanel and the types of the installed panel plugins, with the older entries (DirectAdmin, CentOS Web Panel, CWP7, Lukittu, Virtualmin, HyperVm) |
+| Module | Control panel type: cPanel and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
 | Username | API username |
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |
@@ -122,6 +122,8 @@ Deleting a group that products still provision into is refused (`SERVER_GROUP_IN
 
 ## Private network routes
 
-When a server's control panel API is reachable only over a VPN or private network, set `PANEL_HOST_ADDRESSES` in the deployment environment as `hostname=address` pairs (comma-separated, e.g. `panel1.example.com=10.77.0.1`). Hostpanel dials the private address but keeps the hostname for the request and TLS certificate check, so customer-facing links and certificate checks are unchanged.
+When a server's control panel API is reachable only over a VPN or private network, fill in **API address** on the server itself (Servers, edit the server, General), for example `10.77.0.1`. Hostpanel then dials that address for API calls, and hands it to a hosting panel plugin as the host name of its connection, while the hostname keeps building the control panel and webmail links shown to clients. When the server accepts a self signed certificate, that is the address whose certificate is accepted. Leave it empty and the API is dialled at the hostname, as before.
+
+An administrator sets this per server in the admin panel, so adding a server behind a VPN needs no change to the deployment. A deployment that would rather pin the routes in its environment can still use `PANEL_HOST_ADDRESSES` as `hostname=address` pairs (comma-separated, e.g. `srv4.example.com=10.77.0.1`); it dials the private address but keeps the hostname for the request and TLS certificate check.
 
 See [Configuration reference](/operators/configuration) for the full list of environment settings.

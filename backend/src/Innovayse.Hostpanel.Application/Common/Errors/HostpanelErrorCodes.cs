@@ -467,6 +467,24 @@ public static class HostpanelErrorCodes
     /// <summary>The registrant contact is missing a detail the registrar requires, so nothing was bought (422).</summary>
     public const string REGISTRAR_CONTACT_VALIDATION_FAILED = "REGISTRAR_CONTACT_VALIDATION_FAILED";
 
+    /// <summary>The registrar does not sell this domain extension (409).</summary>
+    public const string REGISTRAR_TLD_NOT_SUPPORTED = "REGISTRAR_TLD_NOT_SUPPORTED";
+
+    /// <summary>The registrar rejected the transfer authorization code (422).</summary>
+    public const string REGISTRAR_EPP_CODE_INVALID = "REGISTRAR_EPP_CODE_INVALID";
+
+    /// <summary>The registrar does not allow this domain to be transferred (409).</summary>
+    public const string REGISTRAR_TRANSFER_NOT_ALLOWED = "REGISTRAR_TRANSFER_NOT_ALLOWED";
+
+    /// <summary>The registrar rejected the nameservers (422).</summary>
+    public const string REGISTRAR_NAMESERVER_INVALID = "REGISTRAR_NAMESERVER_INVALID";
+
+    /// <summary>The registrar rejected the DNS record (422).</summary>
+    public const string REGISTRAR_DNS_RECORD_INVALID = "REGISTRAR_DNS_RECORD_INVALID";
+
+    /// <summary>The registrar did not accept the saved account credentials, which is the operator's to fix and not the caller's (503).</summary>
+    public const string REGISTRAR_ACCESS_DENIED = "REGISTRAR_ACCESS_DENIED";
+
     // Support: knowledge base and content
 
     /// <summary>The id names no knowledge base article (404).</summary>

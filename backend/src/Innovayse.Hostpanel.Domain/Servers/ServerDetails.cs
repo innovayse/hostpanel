@@ -20,6 +20,11 @@ namespace Innovayse.Hostpanel.Domain.Servers;
 /// <param name="ServerStatusAddress">URL to the server status page folder.</param>
 /// <param name="NameServers">Nameservers the server's accounts are delegated to.</param>
 /// <param name="AcceptsSelfSignedCertificate">Whether the operator trusts the self signed certificate of the server's API; off unless set, and only possible with SSL.</param>
+/// <param name="ApiHost">
+/// Address the control panel's API is dialled at when it is not reachable at <paramref name="Hostname"/>,
+/// such as a panel whose API port only answers on a private or VPN address. Null or blank keeps the
+/// hostname. <paramref name="Hostname"/> still builds the client-facing panel and webmail URLs.
+/// </param>
 public record ServerDetails(
     string Name,
     string Hostname,
@@ -36,4 +41,5 @@ public record ServerDetails(
     string? Datacenter,
     string? ServerStatusAddress,
     ServerNameServers NameServers,
-    bool AcceptsSelfSignedCertificate);
+    bool AcceptsSelfSignedCertificate,
+    string? ApiHost = null);

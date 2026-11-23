@@ -14,7 +14,7 @@ public sealed class PanelServerConnectionExtensionsTests
 {
     /// <summary>A server access with every member filled.</summary>
     private static readonly PluginServerAccess Access = new(
-        new ServerConnectionDto(7, "node-1", ServerModules.Cwp7, "panel.example.test", "203.0.113.9", "the-hash", "root", "the-token", UseSsl: true),
+        new ServerConnectionDto(7, "node-1", ServerModules.CPanel, "panel.example.test", "203.0.113.9", "the-hash", "root", "the-token", UseSsl: true),
         Password: "the-password");
 
     /// <summary>Every member is carried over, and the two the host does not store are null.</summary>

@@ -42,9 +42,6 @@ public static class HttpBackstopTimeouts
     /// </summary>
     public static readonly TimeSpan ExchangeRate = TimeSpan.FromSeconds(20);
 
-    /// <summary>Domain registrar clients (Name.am and Namecheap).</summary>
-    public static readonly TimeSpan Registrar = TimeSpan.FromSeconds(30);
-
     /// <summary>The VAT number registers (the EU service and the UK authority); above the profile's 25 seconds in total.</summary>
     public static readonly TimeSpan VatRegister = TimeSpan.FromSeconds(30);
 }

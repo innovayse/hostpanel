@@ -21,10 +21,6 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.MaxMind;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
-using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
-using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm.Settings;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram.Settings;
@@ -40,7 +36,6 @@ using Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
-using Innovayse.Hostpanel.Infrastructure.Registrar;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Settings;
@@ -770,52 +765,9 @@ public static class DependencyInjection
             .AddReadOnlyResilience(o => o.Migration);
 
         // Domains
-        services.AddScoped<IRegistrarProvider, NameAmRegistrarProvider>();
-        services.AddScoped<IRegistrarProviderFactory, RegistrarProviderFactory>();
         services.AddScoped<RegistrarProviderResolver>();
         services.AddScoped<RegistrantContactReader>();
         services.AddScoped<RenewalSettingsReader>();
-        services.AddScoped<NameAmRegistrarProvider>();
-        services.AddScoped<IIntegrationConnectionProbe, NameAmConnectionProbe>();
-        services.AddScoped<NamecheapRegistrarProvider>();
-        // One access token per Name.am connection for the whole process: the client itself is
-        // created per request and could not keep it.
-        services.AddSingleton<NameAmTokenStore>();
-        // Reads and purchases on the same client, so the predicate has to tell them apart rather
-        // than the client being retried wholesale. GET and PUT are repeated, Name.am's PUT is a
-        // whole-resource update of nameservers, contacts or the lock, and POST only for the
-        // availability check and the login, never for /client/carts/purchase, which registers,
-        // transfers or renews a domain and bills for it.
-        services.AddHttpClient<NameAmClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Registrar;
-        })
-            .AddOutboundAddressGuard()
-            .AddNameAmResilience();
-        services.AddOptions<NameAmOptions>()
-            .Bind(configuration.GetSection(NameAmOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{NameAmOptions.SectionName} is partly configured: Email and Password must either "
-                    + "both be set or the whole section left unset.")
-            .ValidateOnStart();
-
-        // Every Namecheap call is a GET to the same URL, so the method says nothing and the
-        // operation is the Command query parameter, which ranges from namecheap.domains.check
-        // to namecheap.domains.create on the same verb. The predicate reads that parameter and
-        // repeats only the lookups; anything it does not recognise counts as a write.
-        services.AddHttpClient<NamecheapClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Registrar;
-        })
-            .AddNamecheapResilience();
-        services.AddOptions<NamecheapOptions>()
-            .Bind(configuration.GetSection(NamecheapOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{NamecheapOptions.SectionName} is partly configured: ApiUser, ApiKey and ApiUrl "
-                    + "must either all be set or the whole section left unset.")
-            .ValidateOnStart();
 
         // Plugins: the build's own folder first (its plugins cannot be removed or shadowed), then
         // the upload folder. The options are read here as well as bound, because the loader runs
@@ -914,6 +866,11 @@ public static class DependencyInjection
 
         // A plugin's IPluginStatus, through the same activation gates, bounded by PluginApi:StatusTimeoutSeconds.
         services.AddScoped<IPluginStatusProbe, PluginStatusProbe>();
+
+        // Registrars are plugins: the factory turns a module (a plugin id) into the one adapter that calls the plugin, and the
+        // catalogue answers from the manifests which registrars are installed and what each offers.
+        services.AddScoped<IRegistrarProviderFactory, PluginRegistrarProviderFactory>();
+        services.AddScoped<IRegistrarModuleCatalogue, RegistrarModuleCatalogue>();
 
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one

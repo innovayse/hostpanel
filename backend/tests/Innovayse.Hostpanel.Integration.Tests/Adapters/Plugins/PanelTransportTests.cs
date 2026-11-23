@@ -200,6 +200,27 @@ public sealed class PanelTransportTests(IntegrationTestFactory factory) : IClass
         stored.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// <summary>
+    /// A server with an API address trusts the certificate of that address, which is the host the plugin dials, and not of its
+    /// host name, which only builds the links shown to clients.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ServerClient_WithAnApiHost_TrustsTheApiHostAndNotTheHostnameAsync()
+    {
+        await using var panel = await SelfSignedHttpsServer.StartAsync(PanelHost);
+        using var scope = factory.Services.CreateScope();
+        var serverId = await SeedServerAsync(scope, OtherHost, acceptsSelfSigned: true, apiHost: PanelHost);
+        await using var provider = BuildProvider();
+        using var http = provider.GetRequiredService<IPanelTransport>().CreateClient(Connection(serverId, PanelHost));
+
+        using var viaApiHost = await http.GetAsync($"https://{PanelHost}:{panel.Port}/");
+        var viaHostname = () => http.GetAsync($"https://{OtherHost}:{panel.Port}/");
+
+        viaApiHost.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await viaHostname.Should().ThrowAsync<HttpRequestException>()).Which.InnerException.Should().BeOfType<AuthenticationException>();
+    }
+
     /// <summary>Trusting one server's certificate does not trust it for the next client built for a server that is not allowed.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -234,14 +255,15 @@ public sealed class PanelTransportTests(IntegrationTestFactory factory) : IClass
     /// <param name="scope">The scope whose data context saves the server.</param>
     /// <param name="hostname">The host name of the server.</param>
     /// <param name="acceptsSelfSigned">Whether the operator trusts the server's self signed certificate.</param>
+    /// <param name="apiHost">The address the server's API is dialled at, or <see langword="null"/> for its host name.</param>
     /// <returns>The id of the new server.</returns>
-    private static async Task<int> SeedServerAsync(IServiceScope scope, string hostname, bool acceptsSelfSigned)
+    private static async Task<int> SeedServerAsync(IServiceScope scope, string hostname, bool acceptsSelfSigned, string? apiHost = null)
     {
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(
             new ServerDetails(
-                $"transport-{Guid.NewGuid():N}", hostname, null, null, ServerModules.Cwp7, "root", ServerCredentials.None, true, null,
-                false, false, 0m, null, null, ServerNameServers.None, acceptsSelfSigned),
+                $"transport-{Guid.NewGuid():N}", hostname, null, null, ServerModules.CPanel, "root", ServerCredentials.None, true, null,
+                false, false, 0m, null, null, ServerNameServers.None, acceptsSelfSigned, apiHost),
             TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);

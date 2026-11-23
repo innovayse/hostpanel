@@ -6,15 +6,11 @@ import { translate } from '@/lib/translate'
 import { ServerModuleSource } from '@/types/serverenums'
 
 /**
- * The control panel module ids the host itself knows, spelled as a server stores them. A server's module is an open id:
- * it can also be one an installed panel plugin declares, which the module list the API answers names.
+ * The control panel module ids the host provisions itself (cPanel only), spelled as a server stores them. A server's module
+ * is an open id: it can also be one an installed panel plugin declares, which the module list the API answers names.
  */
 export const ServerModule = {
   CPanel: 'CPanel',
-  DirectAdmin: 'DirectAdmin',
-  Lukittu: 'Lukittu',
-  Virtualmin: 'Virtualmin',
-  HyperVm: 'HyperVm',
 } as const
 
 /** An id the host itself knows. */
@@ -66,6 +62,12 @@ export interface ServerEndpoint {
   useSSL: boolean
   /** Whether the self signed certificate of the server's API is trusted, for this server's host name only. */
   acceptsSelfSignedCertificate: boolean
+  /**
+   * Address the panel's API is dialled at when it does not answer at the hostname, a panel whose
+   * API port is reachable only on a private or VPN address, for example. Null or blank keeps the
+   * hostname; the hostname still builds the client-facing panel and webmail URLs.
+   */
+  apiHost: string | null
 }
 
 /** Account capacity of a server and whether it takes new accounts. */
@@ -292,10 +294,6 @@ export interface ServerGroupPayload {
 /** Human-readable labels for each module the host itself knows. */
 export const MODULE_LABELS: Record<ServerModule, string> = {
   CPanel: 'cPanel / WHM',
-  DirectAdmin: 'DirectAdmin',
-  Lukittu: 'Lukittu',
-  Virtualmin: 'Virtualmin',
-  HyperVm: 'HyperVM',
 }
 
 /**

@@ -15,6 +15,14 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// <summary>Gets the hostname or IP address used to connect to the server API.</summary>
     public string Hostname { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets the address the control panel's API is dialled at when it does not answer at
+    /// <see cref="Hostname"/>, such as a panel whose API port is only reachable on a private or VPN
+    /// address. Null or blank keeps the hostname. This never affects the
+    /// client-facing panel and webmail URLs, which are always built from <see cref="Hostname"/>.
+    /// </summary>
+    public string? ApiHost { get; private set; }
+
     /// <summary>Gets the primary IP address of the server, or null if not set.</summary>
     public string? IpAddress { get; private set; }
 
@@ -110,6 +118,12 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// <summary>Gets the account count reported by the server on last test, or null if unknown.</summary>
     public int? AccountsCount { get; private set; }
 
+    /// <summary>
+    /// Gets the host the control panel's API is dialled at: <see cref="ApiHost"/> when one is set,
+    /// otherwise <see cref="Hostname"/>. Use this for API calls, never for a URL shown to a client.
+    /// </summary>
+    public string ApiEndpointHost => ResolveApiEndpointHost(Hostname, ApiHost);
+
     /// <summary>Gets whether an API password is stored.</summary>
     public bool HasPassword => !string.IsNullOrEmpty(Password);
 
@@ -127,6 +141,18 @@ public sealed class Server : BaseEntity, IAggregateRoot
     private Server(int id)
     {
         Id = id;
+    }
+
+    /// <summary>
+    /// The one rule for the host a control panel's API is dialled at: the API address when one is set, otherwise the host name.
+    /// A server entity and the connection details built from it both answer through it.
+    /// </summary>
+    /// <param name="hostname">The server's host name.</param>
+    /// <param name="apiHost">The server's API address, or <see langword="null"/> or blank when it has none.</param>
+    /// <returns>The host to dial for API calls, never a URL shown to a client.</returns>
+    public static string ResolveApiEndpointHost(string hostname, string? apiHost)
+    {
+        return string.IsNullOrWhiteSpace(apiHost) ? hostname : apiHost;
     }
 
     /// <summary>
@@ -211,6 +237,7 @@ public sealed class Server : BaseEntity, IAggregateRoot
 
         Name = d.Name;
         Hostname = d.Hostname;
+        ApiHost = string.IsNullOrWhiteSpace(d.ApiHost) ? null : d.ApiHost.Trim();
         IpAddress = d.IpAddress;
         AssignedIpAddresses = d.AssignedIpAddresses;
         Module = d.Module;

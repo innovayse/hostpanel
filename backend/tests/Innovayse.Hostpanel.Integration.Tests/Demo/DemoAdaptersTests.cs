@@ -52,9 +52,9 @@ public sealed class DemoAdaptersTests
         first.Success.Should().BeTrue();
         first.RegistrarRef.Should().Be("DEMO-example.com").And.Be(second.RegistrarRef);
         first.ExpiresAt.Should().BeAfter(TestMoments.Seeded);
-        (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Should().BeTrue();
-        (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Should().BeFalse();
-        (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Should().HaveCount(3);
+        (await registrar.CheckAvailabilityAsync("free-name.com", CancellationToken.None)).Value.Should().BeTrue();
+        (await registrar.CheckAvailabilityAsync("taken-name.com", CancellationToken.None)).Value.Should().BeFalse();
+        (await registrar.GetDnsRecordsAsync(new DomainRef("example.com", "DEMO-example.com"), CancellationToken.None)).Value.Should().HaveCount(3);
     }
 
     /// <summary>Provisioning succeeds, derives the reference from the account and returns usable credentials.</summary>

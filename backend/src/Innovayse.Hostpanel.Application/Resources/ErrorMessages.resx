@@ -1117,6 +1117,24 @@
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>The registrant contact details are incomplete, so the registrar cannot be sent the order.</value>
   </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>The registrar does not sell this domain extension.</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>The registrar rejected the transfer authorization code.</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>The registrar does not allow this domain to be transferred right now.</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>The registrar rejected the nameservers.</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>The registrar rejected the DNS record.</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>The registrar did not accept the saved account credentials. Contact the administrator.</value>
+  </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>A transaction must have an incoming or outgoing amount.</value>
   </data>

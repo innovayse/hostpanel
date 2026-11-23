@@ -10,7 +10,7 @@
  * of an import, sync or delete (success, or the API's sentence) shows in the result line and reloads the page the
  * address names; a refused load offers a retry.
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -39,7 +39,8 @@ import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useListQuery } from '@/composables/useListQuery'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
-import { ENABLED_FILTER_OPTIONS, REGISTRAR_MODULE_OPTIONS } from '@/lib/constants'
+import { useRegistrarModuleOptions } from '@/composables/useRegistrarModuleOptions'
+import { ENABLED_FILTER_OPTIONS } from '@/lib/constants'
 import { enabledOfFilter } from '@/lib/enabledFilter'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -48,7 +49,6 @@ import { formatMarginPercent, formatTldPrice, marginPercentTone } from '@/lib/tl
 import { statusLabel } from '@/lib/tones'
 import { useTldConfigsStore } from '@/stores/tldConfigs'
 import { EnabledFilter } from '@/types/enabledfilter'
-import { RegistrarModule } from '@/types/registrarmodule'
 import type { TldConfigListFilters, TldConfigListItem } from '@/types/tldconfig'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
@@ -82,7 +82,7 @@ const banner = useOutcomeToast()
 const { guideUrl } = useDocsGuide()
 
 /** The filters, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
+const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, stepBackWhenEmpty, enumOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
 /** Whether an import operation is in progress. */
@@ -97,20 +97,17 @@ const deleteTarget = ref<TldConfigListItem | null>(null)
 /** Whether a delete operation is in progress. */
 const deleting = ref(false)
 
-/** Badge tone of each registrar module. */
-const PROVIDER_TONES: Record<RegistrarModule, UiTone> = {
-  [RegistrarModule.NameAm]: UiTone.Info,
-  [RegistrarModule.Namecheap]: UiTone.Warning,
-}
+/** The installed registrar plugins a TLD can be sourced from, and the name of a stored module. */
+const { options: registrarModuleOptions, load: loadRegistrars, labelOf: registrarLabel } = useRegistrarModuleOptions()
 
 /** Registrar filter options; the empty value means any. */
-const registrarOptions = computed(() => [{ value: '', label: t('shared.any') }, ...REGISTRAR_MODULE_OPTIONS])
+const registrarOptions = computed(() => [{ value: '', label: t('shared.any') }, ...registrarModuleOptions.value])
 
 /** Enabled-state filter options; the empty value means any. */
 const enabledOptions = computed(() => [{ value: '', label: t('shared.any') }, ...ENABLED_FILTER_OPTIONS])
 
-/** The registrar in the address as a registrar module, undefined when none is set or the value is not one. */
-const registrarOfAddress = enumOf(FilterKey.Registrar, RegistrarModule)
+/** The registrar in the address (a plugin id), undefined when none is set. */
+const registrarOfAddress = computed<string | undefined>(() => applied.value[FilterKey.Registrar] || undefined)
 
 /** The enabled state in the address as a filter choice, undefined when none is set or the value is not one. */
 const enabledOfAddress = enumOf(FilterKey.Enabled, EnabledFilter)
@@ -127,7 +124,7 @@ const chips = chipsOf(() => [
   {
     key: FilterKey.Registrar,
     label: t('shared.registrar'),
-    value: registrarOfAddress.value === undefined ? undefined : statusLabel(REGISTRAR_MODULE_OPTIONS, registrarOfAddress.value),
+    value: registrarOfAddress.value === undefined ? undefined : registrarLabel(registrarOfAddress.value),
   },
   {
     key: FilterKey.Enabled,
@@ -145,6 +142,9 @@ const load = (): Promise<boolean> => store.fetchAll(page.value, filters.value)
 
 // Every change of a filter, the search or the page loads the list the address names.
 loadOnChange(load)
+
+// The registrar filter and the import menu list the installed registrar plugins.
+onMounted(loadRegistrars)
 
 /** Whether the current page has any TLD to list. */
 const hasRows = computed<boolean>(() => store.configs.length > 0)
@@ -224,14 +224,6 @@ const handleSync = async (): Promise<void> => {
 }
 
 /**
- * Badge tone of a registrar module; a module this build does not know reads as neutral.
- *
- * @param module - Registrar module name as the API sent it.
- * @returns The kit tone.
- */
-const providerTone = (module: string): UiTone => PROVIDER_TONES[module as RegistrarModule] ?? UiTone.Neutral
-
-/**
  * Describes when a TLD was last synced, in the active language.
  *
  * @param iso - ISO 8601 timestamp, or null when it never was.
@@ -267,7 +259,7 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
         <!-- Import from a provider: choosing one starts the import -->
         <UiSelect
           model-value=""
-          :options="REGISTRAR_MODULE_OPTIONS"
+          :options="registrarModuleOptions"
           :placeholder="t('settings.tldConfigs.import')"
           :disabled="importing"
           data-testid="tld-configs-import"
@@ -349,8 +341,8 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
           >
             <UiTableCell strong>.{{ item.tld }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="providerTone(item.registrarModule)" small>
-                {{ statusLabel(REGISTRAR_MODULE_OPTIONS, item.registrarModule) }}
+              <UiBadge :tone="UiTone.Neutral" small>
+                {{ registrarLabel(item.registrarModule) }}
               </UiBadge>
             </UiTableCell>
             <UiTableCell>

@@ -1,4 +1,4 @@
-using FluentValidation;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -15,10 +15,10 @@ public sealed class ListTldConfigsValidator : ListQueryValidator<ListTldConfigsQ
     ///     Initializes validator with localization service.
     /// </summary>
     /// <param name="localizer">String localizer for validation messages.</param>
-    public ListTldConfigsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
+    /// <param name="modules">Tells which registrar plugins are installed.</param>
+    public ListTldConfigsValidator(IStringLocalizer<ApplicationValidationMessages> localizer, IRegistrarModuleCatalogue modules)
         : base(localizer)
     {
-        // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a member.
-        RuleFor(x => x.RegistrarModule).IsInEnum().WithMessage(L["DomainListRegistrarInvalid"]);
+        RuleFor(x => x.RegistrarModule).MustBeInstalledRegistrar(modules, L["DomainListRegistrarInvalid"]);
     }
 }

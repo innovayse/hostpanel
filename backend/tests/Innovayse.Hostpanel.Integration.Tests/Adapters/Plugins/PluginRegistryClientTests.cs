@@ -541,7 +541,7 @@ public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : 
         var long300 = new string('n', 300);
         var long3000 = new string('d', 3000);
         var handler = ScriptedHttpMessageHandler.Json(
-            $$"""{"items":[{"id":"acme-pay","name":"  Pay\nPal\u0007  ","description":"{{long3000}}","author":"{{long300}}","category":"Payment","latestVersion":"1.0.0","sdkPackageVersion":"1.0","verified":true,"pricing":"Free"}],"total":1}""");
+            $$"""{"items":[{"id":"acme-pay","name":"  Pay\nPal\u0007  ","description":"{{long3000}}","author":"{{long300}}","category":"Payment","latestVersion":"1.0.0","sdkPackageVersion":"3.1.0","verified":true,"pricing":"Free"}],"total":1}""");
 
         var plugin = (await Client(handler).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items.Single();
 

@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,7 +28,11 @@ public sealed class ImportTldPricingTests(IntegrationTestFactory factory) : ICla
     {
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
-                services.AddSingleton<IRegistrarProviderFactory>(registrars)));
+            {
+                services.AddSingleton<IRegistrarProviderFactory>(registrars);
+                services.AddSingleton<IRegistrarModuleCatalogue>(
+                    new FakeRegistrarModuleCatalogue(installed: [TestRegistrarModules.First]));
+            }));
 
         var token = await factory.GetAdminTokenAsync();
         var client = host.CreateClient();
@@ -54,16 +57,32 @@ public sealed class ImportTldPricingTests(IntegrationTestFactory factory) : ICla
             ],
         };
         var registrars = new FakeRegistrarProviderFactory();
-        registrars.Register(RegistrarModule.NameAm, provider);
+        registrars.Register(TestRegistrarModules.First, provider);
         var admin = await AdminClientWithFakeRegistrarAsync(registrars);
         (await admin.PostAsJsonAsync("/api/admin/tld-configs", body)).StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var response = await admin.PostAsync("/api/admin/tld-configs/import/NameAm", content: null);
+        var response = await admin.PostAsync($"/api/admin/tld-configs/import/{TestRegistrarModules.First}", content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         result.GetProperty("imported").GetInt32().Should().Be(1);
         result.GetProperty("updated").GetInt32().Should().Be(1);
+    }
+
+    /// <summary>A registrar that refuses to list its prices is answered with the mapped code, not a server error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ImportAnswersTheRegistrarsRefusalAsync()
+    {
+        var provider = new FakeTldPricingProvider { PricingFailure = HostpanelErrorCodes.REGISTRAR_ACCESS_DENIED };
+        var registrars = new FakeRegistrarProviderFactory();
+        registrars.Register(TestRegistrarModules.First, provider);
+        var admin = await AdminClientWithFakeRegistrarAsync(registrars);
+
+        var response = await admin.PostAsync($"/api/admin/tld-configs/import/{TestRegistrarModules.First}", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        (await DomainsTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.REGISTRAR_ACCESS_DENIED);
     }
 
     /// <summary>Importing from an unrecognized registrar module answers 400 with <c>TLD_REGISTRAR_MODULE_UNKNOWN</c>.</summary>
@@ -86,7 +105,7 @@ public sealed class ImportTldPricingTests(IntegrationTestFactory factory) : ICla
     {
         var client = factory.CreateClient();
 
-        var response = await client.PostAsync("/api/admin/tld-configs/import/NameAm", content: null);
+        var response = await client.PostAsync($"/api/admin/tld-configs/import/{TestRegistrarModules.First}", content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

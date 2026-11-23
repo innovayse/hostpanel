@@ -100,12 +100,15 @@ public sealed class DomainsController : BaseApiController
     /// <returns>
     /// 201 with a link to the new domain; 409 when it is already registered through this system, or with
     /// <c>REGISTRAR_OPERATION_UNSUPPORTED</c> when the registrar does not offer registration; 404 with
-    /// <c>REGISTRAR_DOMAIN_NOT_FOUND</c> when the registrar does not know the name;
-    /// 502 when the registrar rejects the request; 401 without a session; 403 for a caller who is not staff;
+    /// <c>REGISTRAR_DOMAIN_NOT_FOUND</c> when the registrar does not know the name; 409 also with <c>REGISTRAR_TLD_NOT_SUPPORTED</c>
+    /// when the registrar does not sell the extension; 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c>, <c>REGISTRAR_NAMESERVER_INVALID</c>
+    /// or <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects what it was sent;
+    /// 502 when the registrar rejects the request; 503 also with <c>REGISTRAR_ACCESS_DENIED</c> when the registrar refuses the saved credentials; 401 without a session; 403 for a caller who is not staff;
     /// 400 when the body, query or route fails validation; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
     /// </returns>
     [HttpPost("register")]
     [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -125,11 +128,15 @@ public sealed class DomainsController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with a link to the new domain; 404 with <c>REGISTRAR_DOMAIN_NOT_FOUND</c> when the registrar
-    /// does not know the name; 502 when the registrar rejects the transfer; 401 without a session; 403 for a caller who is not staff;
+    /// does not know the name; 409 also with <c>REGISTRAR_TLD_NOT_SUPPORTED</c> or <c>REGISTRAR_TRANSFER_NOT_ALLOWED</c> when the registrar
+    /// does not sell the extension or does not allow the transfer; 422 with <c>REGISTRAR_EPP_CODE_INVALID</c> or
+    /// <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the authorization code or the contact;
+    /// 502 when the registrar rejects the transfer; 503 also with <c>REGISTRAR_ACCESS_DENIED</c> when the registrar refuses the saved credentials; 401 without a session; 403 for a caller who is not staff;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
     /// </returns>
     [HttpPost("transfer")]
     [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -203,6 +210,9 @@ public sealed class DomainsController : BaseApiController
     /// programmatic cancellation; 502 when the registrar rejects the
     /// cancellation; 401 without a session; 403 for a caller who is not staff;
     /// 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 409 also with <c>REGISTRAR_TRANSFER_NOT_ALLOWED</c> when the registrar does not allow the transfer; 503 also
+    /// with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPost("{id:int}/cancel-transfer")]
     [Authorize(Policy = Policies.Admin)]
@@ -227,6 +237,9 @@ public sealed class DomainsController : BaseApiController
     /// carries no registrar reference; 502 when the registrar rejects the request or returns no
     /// code; 401 without a session; 403 for a caller who is not staff;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 409 also with <c>REGISTRAR_TRANSFER_NOT_ALLOWED</c> when the registrar does not allow the transfer; 503 also
+    /// with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPost("{id:int}/initiate-outgoing-transfer")]
     [Authorize(Policy = Policies.Admin)]
@@ -265,8 +278,11 @@ public sealed class DomainsController : BaseApiController
     /// <param name="name">The fully-qualified domain name to check (e.g. "example.com").</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the name, availability flag and status; 400 <c>VALIDATION_ERROR</c> when no name was
-    /// given. Anonymous: the storefront needs it before sign-in;
+    /// 200 with the name, availability flag and status (not available with the status <c>TldNotSupported</c> when no
+    /// registrar sells the extension); 400 <c>VALIDATION_ERROR</c> when no name was
+    /// given. Anonymous: the storefront needs it before sign-in; 502 when the registrar gives no usable answer;
+    /// 503 with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_NOT_CONFIGURED</c> when the registrar refuses the saved
+    /// credentials or none is set up;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet("check")]
@@ -274,6 +290,8 @@ public sealed class DomainsController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(DomainCheckResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CheckAvailabilityAsync([FromQuery] string name, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<DomainCheckResultDto>>(
@@ -285,8 +303,11 @@ public sealed class DomainsController : BaseApiController
     /// <param name="query">Request body containing the domain name to check.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the name, availability flag and status; 400 <c>VALIDATION_ERROR</c> when no name was given.
-    /// Anonymous: the storefront needs it before sign-in;
+    /// 200 with the name, availability flag and status (not available with the status <c>TldNotSupported</c> when no
+    /// registrar sells the extension); 400 <c>VALIDATION_ERROR</c> when no name was given.
+    /// Anonymous: the storefront needs it before sign-in; 502 when the registrar gives no usable answer;
+    /// 503 with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_NOT_CONFIGURED</c> when the registrar refuses the saved
+    /// credentials or none is set up;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("check")]
@@ -294,6 +315,8 @@ public sealed class DomainsController : BaseApiController
     [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(DomainCheckResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CheckAvailabilityPostAsync(
         [FromBody] CheckDomainAvailabilityQuery query, CancellationToken ct)
     {

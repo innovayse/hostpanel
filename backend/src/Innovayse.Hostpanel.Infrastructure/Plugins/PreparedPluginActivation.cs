@@ -10,5 +10,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// Builds the plugin when <paramref name="Outcome"/> is <see cref="PluginActivationOutcome.Activated"/>; otherwise
 /// <see langword="null"/>. It runs the plugin's constructor and throws what the constructor throws.
 /// </param>
-public sealed record PreparedPluginActivation<TContract>(string PluginId, PluginActivationOutcome Outcome, Func<TContract>? Create)
+/// <param name="Settings">
+/// The settings composed for this plugin alone, keyed by their full path, secrets revealed, which is exactly what
+/// <paramref name="Create"/> hands the plugin; <see langword="null"/> unless <paramref name="Outcome"/> is <see cref="PluginActivationOutcome.Activated"/>. A
+/// caller that needs the plugin's settings (the registrar connection is built from them) reads them here instead of reading
+/// them a second time.
+/// </param>
+public sealed record PreparedPluginActivation<TContract>(
+    string PluginId,
+    PluginActivationOutcome Outcome,
+    Func<TContract>? Create,
+    IReadOnlyDictionary<string, string?>? Settings = null)
     where TContract : class;

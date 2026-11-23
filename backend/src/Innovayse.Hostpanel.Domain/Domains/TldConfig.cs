@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Domain.Domains;
@@ -13,8 +12,8 @@ public sealed class TldConfig : BaseEntity
     /// <summary>Gets the TLD extension without the leading dot (e.g. "am", "com").</summary>
     public string Tld { get; private set; } = string.Empty;
 
-    /// <summary>Gets the registrar module responsible for this TLD.</summary>
-    public RegistrarModule RegistrarModule { get; private set; }
+    /// <summary>Gets the id of the registrar plugin responsible for this TLD.</summary>
+    public string RegistrarModule { get; private set; } = string.Empty;
 
     /// <summary>Gets the ISO 4217 currency code for cost prices (registrar currency).</summary>
     public string Currency { get; private set; } = "AMD";
@@ -83,21 +82,24 @@ public sealed class TldConfig : BaseEntity
     /// Creates a new TLD configuration with the specified settings.
     /// </summary>
     /// <param name="tld">TLD extension without the leading dot (e.g. "am", "com").</param>
-    /// <param name="registrarModule">The registrar module responsible for this TLD.</param>
+    /// <param name="registrarModule">The id of the registrar plugin responsible for this TLD.</param>
     /// <param name="currency">ISO 4217 currency code for cost prices.</param>
     /// <param name="sellCurrency">ISO 4217 currency code for sell prices.</param>
     /// <param name="isEnabled">Whether this TLD is enabled for sale.</param>
     /// <param name="sortOrder">Display sort order (ascending).</param>
     /// <param name="categories">Marketing categories for this TLD.</param>
     /// <returns>A new <see cref="TldConfig"/> instance.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="registrarModule"/> is null or whitespace.</exception>
     public static TldConfig Create(
-        string tld, RegistrarModule registrarModule, string currency, string sellCurrency,
+        string tld, string registrarModule, string currency, string sellCurrency,
         bool isEnabled, int sortOrder, List<string> categories)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrarModule);
+
         return new TldConfig
         {
             Tld = tld.Trim().ToLowerInvariant(),
-            RegistrarModule = registrarModule,
+            RegistrarModule = registrarModule.Trim(),
             Currency = currency,
             SellCurrency = sellCurrency,
             IsEnabled = isEnabled,
@@ -109,17 +111,20 @@ public sealed class TldConfig : BaseEntity
     /// <summary>
     /// Updates the admin-configurable fields of this TLD configuration.
     /// </summary>
-    /// <param name="registrarModule">The registrar module responsible for this TLD.</param>
+    /// <param name="registrarModule">The id of the registrar plugin responsible for this TLD.</param>
     /// <param name="currency">ISO 4217 currency code for cost prices.</param>
     /// <param name="sellCurrency">ISO 4217 currency code for sell prices.</param>
     /// <param name="isEnabled">Whether this TLD is enabled for sale.</param>
     /// <param name="sortOrder">Display sort order (ascending).</param>
     /// <param name="categories">Marketing categories for this TLD.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="registrarModule"/> is null or whitespace.</exception>
     public void Update(
-        RegistrarModule registrarModule, string currency, string sellCurrency,
+        string registrarModule, string currency, string sellCurrency,
         bool isEnabled, int sortOrder, List<string> categories)
     {
-        RegistrarModule = registrarModule;
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrarModule);
+
+        RegistrarModule = registrarModule.Trim();
         Currency = currency;
         SellCurrency = sellCurrency;
         IsEnabled = isEnabled;

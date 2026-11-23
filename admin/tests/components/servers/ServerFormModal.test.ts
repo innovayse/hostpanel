@@ -46,7 +46,7 @@ describe('ServerFormModal', () => {
     await wrapper.get('[data-testid="server-form-username"]').setValue('root')
 
     expect(selectText(wrapper, 'server-form-module')).toBe('cPanel / WHM')
-    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'DirectAdmin', 'hestiacp'])
+    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'hestiacp'])
     await pickOption(wrapper, 'server-form-module', 'Hestia Control Panel')
     await wrapper.get('[data-testid="server-form-save"]').trigger('click')
 
@@ -66,7 +66,7 @@ describe('ServerFormModal', () => {
     const wrapper = mountModal({ server: serverDto({ module: 'RetiredPanel' }) })
     await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
 
-    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'DirectAdmin', 'hestiacp', 'RetiredPanel'])
+    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'hestiacp', 'RetiredPanel'])
     await wrapper.get('[data-testid="server-form-save"]').trigger('click')
 
     expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'RetiredPanel' })
@@ -92,6 +92,25 @@ describe('ServerFormModal', () => {
     })
   })
 
+  it('sends the API address, empty text as null and a filled one as typed', async () => {
+    const wrapper = mountModal()
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ endpoint: { apiHost: null } })
+
+    await wrapper.get('[data-testid="server-form-api-host"]').setValue('10.77.0.1')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[1]?.[0]).toMatchObject({ endpoint: { apiHost: '10.77.0.1' } })
+  })
+
+  it('loads the stored API address of the server being edited', async () => {
+    const wrapper = mountModal({
+      server: serverDto({ endpoint: { hostname: 'host9.example.com', apiHost: '10.77.0.1', ipAddress: null, assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: false } }),
+    })
+
+    expect((wrapper.get('[data-testid="server-form-api-host"]').element as HTMLInputElement).value).toBe('10.77.0.1')
+  })
+
   it('sends the self signed certificate choice, off for a new server and on once the toggle is flipped', async () => {
     const wrapper = mountModal()
     await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
@@ -106,7 +125,7 @@ describe('ServerFormModal', () => {
 
   it('loads the stored self signed certificate choice and drops it when SSL is switched off', async () => {
     const wrapper = mountModal({
-      server: serverDto({ endpoint: { hostname: 'host9.example.com', ipAddress: null, assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: true } }),
+      server: serverDto({ endpoint: { hostname: 'host9.example.com', apiHost: null, ipAddress: null, assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: true } }),
     })
     await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
 

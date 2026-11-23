@@ -103,6 +103,9 @@ public sealed class DomainDnsController : BaseApiController
     /// 204 on success; 400 when fewer than 2 nameservers are given; 404 when the id names no
     /// domain; 502 when the registrar rejects the update; 401 without a session; 403 for a caller who is not staff;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_NAMESERVER_INVALID</c> when the registrar rejects a nameserver; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPut("{id:int}/nameservers")]
     [Authorize(Policy = Policies.Admin)]
@@ -113,6 +116,7 @@ public sealed class DomainDnsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateNameserversAsync(
         int id, [FromBody] UpdateNameserversCommand command, CancellationToken ct)
@@ -129,6 +133,9 @@ public sealed class DomainDnsController : BaseApiController
     /// 201 with a link to the domain; 400 when a field is refused; 404 when the id names no
     /// domain; 502 when the registrar rejects the addition; 401 without a session; 403 for a caller who is not staff;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects the record; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPost("{id:int}/dns")]
     [Authorize(Policy = Policies.Admin)]
@@ -139,6 +146,7 @@ public sealed class DomainDnsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> AddDnsRecordAsync(
         int id, [FromBody] AddDnsRecordCommand command, CancellationToken ct)
@@ -156,6 +164,9 @@ public sealed class DomainDnsController : BaseApiController
     /// 204 on success; 400 when a field is refused; 404 when the domain or record id names
     /// nothing; 502 when the registrar rejects the update; 401 without a session; 403 for a caller who is not staff;
     /// 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects the record; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPut("{id:int}/dns/{recordId:int}")]
     [Authorize(Policy = Policies.Admin)]
@@ -166,6 +177,7 @@ public sealed class DomainDnsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UpdateDnsRecordAsync(
         int id, int recordId, [FromBody] UpdateDnsRecordCommand command, CancellationToken ct)
@@ -227,6 +239,9 @@ public sealed class DomainDnsController : BaseApiController
     /// 204 on success; 404 when the id names no domain; 502 when the registrar rejects the
     /// update; 401 without a session; 403 for a caller who is not staff;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the contact; 503 also with
+    /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
+    /// credentials or the balance is short.
     /// </returns>
     [HttpPost("{id:int}/modify-contact")]
     [Authorize(Policy = Policies.Admin)]
@@ -237,6 +252,7 @@ public sealed class DomainDnsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ModifyContactAsync(
         int id, [FromBody] ModifyDomainContactCommand command, CancellationToken ct)

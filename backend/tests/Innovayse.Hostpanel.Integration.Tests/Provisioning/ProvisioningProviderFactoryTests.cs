@@ -70,7 +70,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     {
         var factory = BuildFactory(new StubHttpClientFactory(whm), new ProvisioningOptions());
 
-        var act = () => factory.CreateFor(ServerRow("hash", ServerModules.DirectAdmin));
+        var act = () => factory.CreateFor(ServerRow("hash", TestPanelModules.Second));
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
     }
@@ -141,6 +141,21 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
         await provider.UnsuspendAsync(new UnsuspendAccountOrder(7, "testuser"), CancellationToken.None);
 
         http.RequestedUris.Should().ContainSingle().Which.Port.Should().Be(2999);
+    }
+
+    /// <summary>A cPanel server with an API address has WHM dialled at that address, not at its host name.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task CreateFor_DialsTheApiHost_WhenTheServerHasOneAsync()
+    {
+        var http = new StubHttpClientFactory(whm);
+        whm.Enqueue("""{"metadata":{"result":1,"reason":"OK"}}""");
+        var server = new ServerConnectionDto(1, "srv", ServerModules.CPanel, "panel.example.test", null, null, "root", "whm-token", ApiHost: "10.77.0.1");
+        var provider = BuildFactory(http, new ProvisioningOptions()).CreateFor(server);
+
+        await provider.UnsuspendAsync(new UnsuspendAccountOrder(7, "testuser"), CancellationToken.None);
+
+        http.RequestedUris.Should().ContainSingle().Which.Host.Should().Be("10.77.0.1");
     }
 
     /// <summary>A server saved in a different case still gets the built in cPanel provider: modules compare ignoring case.</summary>

@@ -5,7 +5,6 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useTldConfigsApi } from '@/composables/apis/useTldConfigsApi'
-import { RegistrarModule } from '@/types/registrarmodule'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
@@ -17,11 +16,11 @@ describe('useTldConfigsApi', () => {
     const mock = stubFetch(json({ items: [] }))
     const api = useTldConfigsApi()
 
-    await api.listTldConfigs({ page: 2, pageSize: 20, search: 'com', registrarModule: RegistrarModule.NameAm, enabled: true })
+    await api.listTldConfigs({ page: 2, pageSize: 20, search: 'com', registrarModule: 'registrar-one', enabled: true })
     await api.listTldConfigs({ page: 1, pageSize: 20 })
     await api.getTldConfig(5)
     expect(callOf(mock, 0)).toMatchObject({
-      url: '/api/admin/tld-configs?page=2&pageSize=20&search=com&registrarModule=NameAm&enabled=true',
+      url: '/api/admin/tld-configs?page=2&pageSize=20&search=com&registrarModule=registrar-one&enabled=true',
       method: 'GET',
     })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/tld-configs?page=1&pageSize=20', method: 'GET' })
@@ -49,9 +48,9 @@ describe('useTldConfigsApi', () => {
     const mock = stubFetch(json({ imported: 3 }))
     const api = useTldConfigsApi()
 
-    expect(await api.importTldConfigs('Namecheap')).toEqual({ imported: 3 })
+    expect(await api.importTldConfigs('registrar-two')).toEqual({ imported: 3 })
     await api.syncTldPrices()
-    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/tld-configs/import/Namecheap', method: 'POST' })
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/tld-configs/import/registrar-two', method: 'POST' })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/tld-configs/sync', method: 'POST' })
   })
 

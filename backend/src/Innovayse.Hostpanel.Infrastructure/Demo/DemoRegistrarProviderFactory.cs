@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 
@@ -7,15 +6,18 @@ namespace Innovayse.Hostpanel.Infrastructure.Demo;
 public sealed class DemoRegistrarProviderFactory : IRegistrarProviderFactory
 {
     /// <summary>The one fake registrar every module resolves to.</summary>
-    private readonly IRegistrarProvider _provider;
+    private readonly DemoRegistrarProvider _provider;
 
     /// <summary>Creates the factory.</summary>
     /// <param name="provider">The one fake registrar every module resolves to.</param>
-    public DemoRegistrarProviderFactory(IRegistrarProvider provider)
+    public DemoRegistrarProviderFactory(DemoRegistrarProvider provider)
     {
         _provider = provider;
     }
 
     /// <inheritdoc/>
-    public IRegistrarProvider GetProvider(RegistrarModule module) => _provider;
+    public Task<IRegistrarProvider> GetProviderAsync(string? module, CancellationToken ct)
+    {
+        return Task.FromResult<IRegistrarProvider>(_provider);
+    }
 }

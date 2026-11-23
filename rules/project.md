@@ -178,15 +178,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   `AddCPanelWhmHttpClient`, which the tests resolve too. It does not trust what WHM sends back: a
   single sign-on address is passed on only as an https address on the server's own host (`WhmInputRules`),
   a username or domain is checked before WHM is called, and a reply is capped at `WhmApiClient.MaxResponseBytes`.
-- **"Test Connection" runs a live probe where a provider has one.** `IIntegrationConnectionProbe`
-  (a port in `Application/Common/Interfaces/`, keyed by integration slug) is implemented per
-  integration in `Infrastructure/Integrations/<Provider>/` (today `NameAmConnectionProbe`, which
-  logs in with the saved credentials) and every implementation is registered in
-  `DependencyInjection`; `TestIntegrationConnectionHandler` picks the one whose `Slug` matches once
-  every required field is stored. A probe failure is logged and answered with a fixed sentence,
-  the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
-  API URL and test mode saved on the admin Integrations page over the bound options
-  (`IsConfiguredAsync`), so the page configures what requests use.
+- **"Test Connection" asks the plugin.** There is no host-side probe port: a built-in integration is checked for its required
+  fields, and a plugin is asked through `IPluginStatusProbe` (below). A registrar plugin is tested through its own
+  `IRegistrarOperationsPlugin.TestConnectionAsync`, with the connection built from its saved settings, and its answer is reported
+  as healthy (`Connected`) or unavailable (anything else), worded by the host.
 - **VAT numbers are checked through one port, and the reverse charge is decided in one place (#1144).** `IVatNumberChecker`
   (`Application/Common/Interfaces/`) takes a `VatNumberLookup` (country, number without prefix) and answers a `VatNumberCheck`
   (`VatCheckOutcome` valid, invalid or unavailable, plus the registered name and address); `Infrastructure/Vat/VatNumberChecker`
@@ -271,6 +266,28 @@ docker/                              compose set (shared·dev·prod·platform), 
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
   classes a plugin derives from live in the `Hostpanel.Sdk.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
   `*Lookup` or `*Session`; never `*Request`. `SdkContractTests` pins every namespace.
+- **Registrar plugins (#1352).** A registrar is the plugin whose id a TLD (`TldConfigs.RegistrarModule`) or a domain
+  (`Domains.RegistrarModule`) names; the column is a string of up to 64 characters (the plugin id limit), the enum is gone, and
+  there is no built-in registrar. A stored value is matched to a plugin id **without regard to letter case** (rows written by older
+  versions keep their case; there is no backfill): `PluginRegistryExtensions.FindRegistrar` is the one place that rule lives, the
+  two list filters compare in lower case, and `TldConfig` stores the id as the plugin declares it
+  (`IRegistrarModuleCatalogue.FindId`, from the manifests, no plugin code). `RegistrarProviderResolver` is the one place that
+  chooses a registrar (the module stored on a domain, else its TLD's, else none); `IRegistrarProviderFactory.GetProviderAsync`
+  turns the module into `PluginRegistrarProvider`, the one adapter that calls the registrar operations of `IRegistrarOperationsPlugin` (an architecture test
+  pins it; `PluginStatusProbe` also calls its `TestConnectionAsync` for Test Connection, with the connection built the same way), and a module without a usable plugin (not installed, not a registrar, switched off, a required setting missing, migration
+  pending, no `registrarOperations`, or no module at all) resolves to `UnavailableRegistrarProvider`, which refuses with
+  `REGISTRAR_NOT_CONFIGURED`. The connection is built from the plugin's saved settings by their `connectionRole`
+  (`RegistrarConnectionBuilder`, reading `PreparedPluginActivation.Configuration`, the very values the plugin receives). An optional
+  contract (DNS management, email forwarding, WHOIS) is reached only when the manifest declares the capability and the class
+  implements it; the other six optional capabilities are accepted but not called. `RegistrarRefusalMap` is the one table from the
+  SDK's outcome and refusal reason to the host's `REGISTRAR_*` code; the plugin's own text is never read. A premium name is
+  reported as not available, a CAA record is left out of a zone read, a read the plugin refuses (availability, TLD prices, the DNS zone) is a failed
+  `Result` carrying the mapped code (never an exception; availability answers a TLD no registrar sells as not available with the status `TldNotSupported`),
+  a domain order that succeeded but still requires polling answers `REGISTRAR_DOMAIN_NOT_ACTIVE` to the status sync, a renewal the registrar accepted (done, already
+  applied or still pending with `RequiresPolling`) marks the domain renewed, because nothing follows a pending renewal up and an unchanged expiry would invite
+  a second paid renewal (the `CurrentExpiresAt` idempotency stops a double charge on retry), and a renewal carries the expiry the host held
+  (`DomainRenewalOrder.CurrentExpiresAt`). The domain DTOs carry `RegistrarCapabilitiesDto`, so both frontends hide the actions a
+  registrar does not offer. A registrar plugin's release must add the `connectionRole` settings before the host that calls it.
 - **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
   fulfilment (`IFulfilmentPlugin`), hosted (`IHostedPlugin`) and app (`IPluginEndpoints`). Every plugin becomes an instance in
@@ -297,7 +314,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   and the capability it needs. The manifest validator (`Validate`: known, once, right type, companion declared), the loader (the
   `endpoints` promise, refused at load as `PLUGIN_ENDPOINTS_NOT_IMPLEMENTED`) and `PluginActivator` (`FirstUnimplemented`) all ask it, and
   `PluginCapabilityRulesTests` fails on a name the SDK adds that the table lacks. Accepting a name only means the plugin loads and is listed;
-  the panel contract is called (#1353, "Panel plugins" below), and the registrar and virtual server contracts are not called yet, which is what #1352 and #1354 add. A plugin that declares any
+  the panel contract is called (#1353, "Panel plugins" below) and the registrar contract by `PluginRegistrarProvider` and, for Test Connection, `PluginStatusProbe` (#1352, "Registrar plugins"); the virtual server contracts are not called yet, which is what #1354 adds. A plugin that declares any
   capability whose interface derives from `IProvisioningPlugin` (`PluginCapabilityRules.DeclaresProvisioning`) must list valid `serverModules`
   (the SDK's `PluginServerModules.Validate`) and any other plugin must list none (`PLUGIN_MANIFEST_SERVER_MODULES_INVALID`,
   `PluginManifestRule.ServerModulesInvalid`); a registrar plugin's `connectionRole` settings are checked by the packaging package's
@@ -317,10 +334,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
-- **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain holds the built in
-  spellings `CPanel`, `DirectAdmin`, `Centos`, `Cwp7`, `Lukittu`, `Virtualmin` and `HyperVm`, and `ServerModules.Same` is the one
-  comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and a server stored as `DirectAdmin` is served by a plugin
-  that declares `directadmin`. `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
+- **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain: `Known` is the one module the host provisions itself, `CPanel`, so it is the only
+  one offered without a panel plugin, `Centos` and `Cwp7` stay as legacy ids the host still names (the connection test of a stored `Centos` server, the SSH agent profile of
+  `Cwp7`) and are not offered, and `ServerModules.Same` is the one comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and
+  a server stored under an older id is served by a plugin that declares it, whatever the case, and stays valid when edited (`IServerModuleCatalog.Canonical` takes the stored id). `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
   the module id and a capability name, `Served`, `NotServed` or `Conflict`) is the one reader of the plugins' `serverModules` for calls, and
   `IServerModuleCatalog` (`ServerModuleCatalog`) the one for the admin side: `GET /api/admin/servers/modules` feeds the server form and the
   module filter, and `CreateServer` and `UpdateServer` store the catalog's spelling or answer `SERVER_MODULE_UNKNOWN`. Two plugins declaring one
@@ -2027,7 +2044,7 @@ feature does not exist is not kept. The decisions:
   slices with `Paginate`. The admin list screens bind search, filters and page to the address through
   `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference. The domain list
   (`ListDomainsQuery`, the one list behind the admin Domains screen; the old Domain Registrations screen was the same
-  data and now redirects to it) is on it with a name search and `Status` and `RegistrarModule` enum filters; a domain with
+  data and now redirects to it) is on it with a name search, a `Status` enum filter and a `RegistrarModule` plugin id filter (any letter case, compared in lower case, never validated against the installed plugins); a domain with
   no registrar module recorded is left out when a registrar is chosen.
   The two ticket lists (`ListTicketsQuery`, the staff list, and `ListClientTicketsQuery`, the tickets tab of a client) are on it
   with a subject search and the shared `ITicketListFilters` (`Status`, `Priority`, `DepartmentId`), validated once by
@@ -2055,8 +2072,8 @@ feature does not exist is not kept. The decisions:
   `Category` enum filter; its search is bounded at 100 characters (`PluginRegistrySearchTooLong`), narrower than the shared 200, because that is what the registry accepts, so the
   validator keeps that one extra rule beside the shared ones. The Installed tab's list (`ListPluginsQuery`) is the documented exception: it is not paged and is
   filtered in the browser, because it is the inventory of the plugin folder that other code reads whole (the update badges, the registry cards' installed state, the restart banner).
-  The Settings lists are on it too. The TLD list (`ListTldConfigsQuery`, Settings, TLD Pricing) searches the TLD with `Search` and takes the `RegistrarModule` enum
-  filter (the existing `DomainListRegistrarInvalid` sentence is generic and is reused) and an `Enabled` switch, ordered by sort order, TLD and id; its margin is still worked out
+  The Settings lists are on it too. The TLD list (`ListTldConfigsQuery`, Settings, TLD Pricing) searches the TLD with `Search` and takes the `RegistrarModule` plugin id
+  filter (any letter case, compared in lower case, never validated against the installed plugins) and an `Enabled` switch, ordered by sort order, TLD and id; its margin is still worked out
   in the mapper from the one-year prices. The TLD list had no other caller (the portal and the order flow read prices through `GetTldPricingQuery` and `GetTldRenewPriceQuery`), so no unpaged
   variant exists. The email campaign list (`ListEmailCampaignsQuery`) searches the subject and takes a `CampaignStatus` filter (`CampaignListStatusInvalid`), newest first; the delivery
   counters are read in one grouped query for the ids of the page only. The tax rule list (`ListTaxRulesQuery`) searches the name, country and region and takes an `Enabled` switch,
@@ -2100,7 +2117,7 @@ feature does not exist is not kept. The decisions:
   template per kind of mail, edited in place. Integrations are the catalogue of providers the panel ships or has installed, grouped by category and bounded by that catalogue.
   The Installed plugins tab is the one documented above.
   The server option lookup (`ListServerOptionsQuery`, `GET /api/admin/servers/options`) is a documented picker: the group form, the add existing service dialog, the service
-  detail, the CWP 7 integration (which asks for its own module) and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
+  detail and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
   rows (name, host name, address, state, account count and capacity, no credential or hosting detail), ordered by name; `ServerOptionDto` extends `ServerBriefDto` (the id, name, host name and address other modules show next to a service), so those four facts are declared once, and it keeps the host name and address flat like the brief, where `ServerDto` nests them in `endpoint` with the SSL flag and assigned addresses a picker has no use for, while the Servers screen reads the paged `ListServersQuery`.
   The unpaged product read (`GetProductsQuery`, `GET /api/products`) is the same kind of picker for the screens that choose a product, and the Products screen reads the paged
   `ListProductsQuery`. Knowledge base categories (`ListKbCategories`) are a short
@@ -2516,7 +2533,7 @@ Its own nginx exists for a standalone install.
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
 - **Settings bind into a sealed `*Options` class naming its own `SectionName`**,
-  `BillingOptions`, `NamecheapOptions`, `NameAmOptions`, each
+  `BillingOptions`, `PluginApiOptions`, each
   in an `Options/` folder inside the feature or integration that owns it.
 
 ## Storefront content: in the database, not in the code

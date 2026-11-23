@@ -30,12 +30,11 @@ import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useFormDirty } from '@/composables/useFormDirty'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
-import { REGISTRAR_MODULE_OPTIONS } from '@/lib/constants'
+import { useRegistrarModuleOptions } from '@/composables/useRegistrarModuleOptions'
 import { CURRENCY_CODES, currencyLabel, currencySymbol } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
 import { emptyPriceMap, fromApiMap, toNonZeroMap } from '@/lib/tldPricing'
 import { useTldConfigsStore } from '@/stores/tldConfigs'
-import { RegistrarModule } from '@/types/registrarmodule'
 import type { CreateTldConfigPayload, UpdateTldConfigPayload } from '@/types/tldconfig'
 import { AppRoute } from '@/lib/routes'
 import schema from '@/views/TldConfigFormView.schema'
@@ -81,8 +80,11 @@ const loadError = ref<string | null>(null)
 /** TLD input value (e.g. "com"). */
 const tld = ref('')
 
-/** Selected registrar module. */
-const registrarModule = ref<string>(RegistrarModule.NameAm)
+/** The installed registrar plugins a TLD can be sourced from. */
+const { options: registrarOptions, load: loadRegistrars, idOf: registrarId } = useRegistrarModuleOptions()
+
+/** Selected registrar module (a plugin id); a new TLD starts on the first installed registrar once the list has loaded. */
+const registrarModule = ref<string>('')
 
 /** Cost currency code. */
 const currency = ref<string>(CurrencyCode.Amd)
@@ -152,7 +154,7 @@ const loadConfig = async (): Promise<void> => {
   }
 
   tld.value = config.tld
-  registrarModule.value = config.registrarModule
+  registrarModule.value = registrarId(config.registrarModule)
   currency.value = config.currency
   sellCurrency.value = config.sellCurrency
   isEnabled.value = config.isEnabled
@@ -171,8 +173,11 @@ const loadConfig = async (): Promise<void> => {
 }
 
 onMounted(async () => {
+  await loadRegistrars()
   if (isEditMode.value) {
     await loadConfig()
+  } else if (registrarModule.value === '') {
+    registrarModule.value = registrarOptions.value[0]?.value ?? ''
   }
 })
 
@@ -278,7 +283,7 @@ const handleCancel = (): void => {
       <template #field-registrarModule>
         <UiSelect
           v-model="registrarModule"
-          :options="REGISTRAR_MODULE_OPTIONS"
+          :options="registrarOptions"
           :placeholder="t('settings.tldConfigForm.registrarProvider')"
           data-testid="tld-config-form-provider"
         />

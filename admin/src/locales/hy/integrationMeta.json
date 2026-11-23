@@ -4,32 +4,16 @@
     "fieldAccountName": "Հաշվի տիրոջ անուն",
     "fieldInstructions": "Վճարման հրահանգներ"
   },
-  "namecheap": {
-    "shortDescription": "Գրանցեք և կառավարեք դոմեյններ Namecheap-ի ռեսելլերային API-ի միջոցով։",
-    "fieldApiKey": "API բանալի",
-    "fieldClientIp": "Սպիտակ ցուցակում գտնվող հաճախորդի IP",
-    "fieldApiUsername": "API օգտանուն"
-  },
-  "nameam": {
-    "shortDescription": "Գրանցեք և կառավարեք .am դոմեյններ Name.am գրանցողի API-ի միջոցով։",
-    "fieldEmail": "Հաշվի էլ. փոստ",
-    "fieldPassword": "Հաշվի գաղտնաբառ",
-    "fieldApiUrl": "API URL",
-    "fieldTest_mode": "Փորձնական ռեժիմ"
-  },
-  "resellerclub": {
-    "shortDescription": "Կառավարեք դոմեյնների գրանցումը ResellerClub ռեսելլերային հարթակի միջոցով։",
-    "fieldResellerId": "Ռեսելլերի ID"
-  },
-  "enom": {
-    "shortDescription": "Միացեք eNom-ին՝ դոմեյնների գրանցման և DNS կառավարման համար։",
-    "fieldAccountId": "Հաշվի ID"
-  },
   "cpanel": {
     "shortDescription": "Ստեղծեք հոսթինգ հաշիվներ և կառավարեք դրանք cPanel WHM սերվերի API-ի միջոցով։",
     "fieldHost": "WHM հոսթ",
     "fieldPort": "Պորտ",
     "fieldApiToken": "API թոքեն"
+  },
+  "cwp": {
+    "shortDescription": "Կառավարեք հոսթինգ հաշիվները CentOS Web Panel սերվերների վրա։",
+    "fieldHost": "CWP հոսթ",
+    "fieldApiKey": "API բանալի"
   },
   "smtp": {
     "shortDescription": "Կարգավորեք ելքային նամակների առաքումը ձեր SMTP սերվերի միջոցով։",
@@ -39,6 +23,7 @@
   },
   "maxmind": {
     "shortDescription": "Հայտնաբերեք խարդախ պատվերները MaxMind-ի GeoIP ռիսկերի գնահատմամբ։",
-    "fieldLicenseKey": "Լիցենզիայի բանալի"
+    "fieldLicenseKey": "Լիցենզիայի բանալի",
+    "fieldAccountId": "Հաշվի ID"
   }
 }

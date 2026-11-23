@@ -30,7 +30,7 @@ public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClas
                 Hostname: "brief.example.test",
                 IpAddress: "192.0.2.10",
                 AssignedIpAddresses: null,
-                Module: ServerModules.Cwp7,
+                Module: ServerModules.CPanel,
                 Username: "api",
                 Credentials: new ServerCredentials("secret", null, null),
                 UseSSL: true,

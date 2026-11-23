@@ -383,7 +383,7 @@
     <value>Status must be one of: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Registrar must be one of: NameAm, Namecheap.</value>
+    <value>Registrar must be an installed registrar plugin.</value>
   </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Kind must be one of: Standard, Reduced.</value>
@@ -1095,6 +1095,12 @@
   </data>
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Keep the hostname within {0} characters.</value>
+  </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Enter a host name or an IP address, without a scheme, path, port or spaces.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>This address is never dialled: loopback, link-local and cloud metadata addresses are refused.</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>A username is required.</value>

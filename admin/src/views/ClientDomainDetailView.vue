@@ -640,7 +640,7 @@ onBeforeUnmount(() => {
         <UiDetailCards v-else :columns="MANAGEMENT_COLUMNS" :loading="!domain">
           <template #card-tools>
             <UiStack v-if="domain">
-              <UiLabel :variant="UiLabelVariant.Inline">
+              <UiLabel v-if="domain.capabilities.dnsManagement" :variant="UiLabelVariant.Inline">
                 <UiToggle
                   :model-value="domain.features.dnsManagement"
                   data-testid="client-domain-toggle-dns"
@@ -648,7 +648,7 @@ onBeforeUnmount(() => {
                 />
                 {{ t('clients.clientDomainDetail.dnsManagement') }}
               </UiLabel>
-              <UiLabel :variant="UiLabelVariant.Inline">
+              <UiLabel v-if="domain.capabilities.emailForwarding" :variant="UiLabelVariant.Inline">
                 <UiToggle
                   :model-value="domain.features.emailForwarding"
                   data-testid="client-domain-toggle-forwarding"
@@ -696,14 +696,14 @@ onBeforeUnmount(() => {
 
       <template v-if="domain && tab === DomainTab.Management">
         <EmailForwardingTable
-          v-if="domain.features.emailForwarding"
+          v-if="domain.capabilities.emailForwarding && domain.features.emailForwarding"
           :domain-id="Number(domainId)"
           :rules="domain.emailForwardingRules"
           @refresh="fetchDomain"
         />
 
         <DnsRecordsTable
-          v-if="domain.features.dnsManagement"
+          v-if="domain.capabilities.dnsManagement && domain.features.dnsManagement"
           :domain-id="Number(domainId)"
           :records="domain.dnsRecords"
           @refresh="fetchDomain"

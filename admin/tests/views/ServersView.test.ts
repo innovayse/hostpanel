@@ -78,15 +78,15 @@ describe('ServersView', () => {
   it('restores the search, the module, the state and the page from the address and sends them together', async () => {
     const mock = stubRoutes({
       'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
-      'GET /api/admin/servers?': () => json(page([serverDto({ id: 2, name: 'host2', module: 'DirectAdmin', isOnline: false })], 45)),
+      'GET /api/admin/servers?': () => json(page([serverDto({ id: 2, name: 'host2', module: 'hestiacp', isOnline: false })], 45)),
       'GET /api/admin/server-groups': () => json([]),
     })
-    const { wrapper } = await mountServers(`${PATH}?search=host&module=DirectAdmin&state=offline&page=2`)
+    const { wrapper } = await mountServers(`${PATH}?search=host&module=hestiacp&state=offline&page=2`)
 
-    expect(listUrls(mock)[0]).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=DirectAdmin&state=offline')
+    expect(listUrls(mock)[0]).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=hestiacp&state=offline')
     expect(wrapper.find('[data-testid="server-row-2"]').exists()).toBe(true)
     expect((wrapper.get('[data-testid="servers-search"]').element as HTMLInputElement).value).toBe('host')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('DirectAdmin')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Offline')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
@@ -126,11 +126,11 @@ describe('ServersView', () => {
     })
     const { wrapper, router } = await mountServers()
 
-    await applyListFilter(wrapper, { 'servers-filter-module': 'DirectAdmin', 'servers-filter-state': 'untested' })
+    await applyListFilter(wrapper, { 'servers-filter-module': 'hestiacp', 'servers-filter-state': 'untested' })
 
-    expect(router.currentRoute.value.query).toEqual({ module: 'DirectAdmin', state: 'untested' })
-    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=DirectAdmin&state=untested')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('DirectAdmin')
+    expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp', state: 'untested' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp&state=untested')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Not tested')
   })
 
@@ -156,13 +156,13 @@ describe('ServersView', () => {
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
     })
-    const { wrapper, router } = await mountServers(`${PATH}?state=offline&module=DirectAdmin`)
+    const { wrapper, router } = await mountServers(`${PATH}?state=offline&module=hestiacp`)
 
     await wrapper.get('[data-testid="filter-chip-remove-state"]').trigger('click')
     await flushPromises()
 
-    expect(router.currentRoute.value.query).toEqual({ module: 'DirectAdmin' })
-    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=DirectAdmin')
+    expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp' })
+    expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp')
   })
 
   it('keeps the chosen page in the address and reads it', async () => {
@@ -186,7 +186,7 @@ describe('ServersView', () => {
       'GET /api/admin/servers?': () => json(page([])),
       'GET /api/admin/server-groups': () => json([]),
     })
-    const { wrapper } = await mountServers(`${PATH}?module=DirectAdmin`)
+    const { wrapper } = await mountServers(`${PATH}?module=hestiacp`)
 
     expect(wrapper.find('[data-testid="servers-no-matches"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="servers-empty"]').exists()).toBe(false)

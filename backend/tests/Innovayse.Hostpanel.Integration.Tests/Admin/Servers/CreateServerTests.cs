@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Innovayse.Hostpanel.Application.Admin.Servers.Commands.CreateServer;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -57,6 +58,57 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
             .GetProperty("acceptsSelfSignedCertificate").GetBoolean().Should().BeTrue();
     }
 
+    /// <summary>The API address is stored and listed as sent, and a blank one is stored as none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ApiHost_IsStoredAndListed_AndBlankIsStoredAsNoneAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+        var routed = $"Server-{Guid.NewGuid():N}";
+        var blank = $"Server-{Guid.NewGuid():N}";
+
+        (await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody(routed, apiHost: " 10.77.0.1 "))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody(blank, apiHost: "  "))).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var routedEndpoint = (await ServersTestSeeds.SearchServersAsync(client, routed)).Single().GetProperty("endpoint");
+        routedEndpoint.GetProperty("apiHost").GetString().Should().Be("10.77.0.1");
+        routedEndpoint.GetProperty("hostname").GetString().Should().Be($"{routed}.example.com");
+        (await ServersTestSeeds.SearchServersAsync(client, blank)).Single().GetProperty("endpoint")
+            .GetProperty("apiHost").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>An API address longer than a host name may be is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ApiHost_TooLong_IsRefusedByTheValidatorAsync()
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody($"Server-{Guid.NewGuid():N}", apiHost: new string('a', 501)));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+    }
+
+    /// <summary>An API address that is not a host name or an IP address, or that is never dialled, is refused by the validator.</summary>
+    /// <param name="apiHost">The API address sent.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("https://10.77.0.1/")]
+    [InlineData("10.77.0.1:2087")]
+    [InlineData("user@panel.example.com")]
+    [InlineData("169.254.169.254")]
+    [InlineData("fe80::1")]
+    public async Task ApiHost_NotAHostOrNeverDialled_IsRefusedByTheValidatorAsync(string apiHost)
+    {
+        var client = await ServersTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.PostAsJsonAsync("/api/admin/servers", ServersTestSeeds.ServerBody($"Server-{Guid.NewGuid():N}", apiHost: apiHost));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ServersTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+    }
+
     /// <summary>A body that does not mention the choice (an older script) creates a server that trusts nothing extra.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -68,7 +120,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         {
             name,
             endpoint = new { hostname = $"{name}.example.com", ipAddress = (string?)null, assignedIpAddresses = (string?)null, useSSL = true },
-            module = ServerModules.Cwp7,
+            module = ServerModules.CPanel,
             username = "root",
             credentials = new { },
             limits = new { isDefault = false, isDisabled = false },
@@ -88,8 +140,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("cpanel", ServerModules.CPanel)]
-    [InlineData("DIRECTADMIN", ServerModules.DirectAdmin)]
-    [InlineData(ServerModules.Cwp7, ServerModules.Cwp7)]
+    [InlineData("CPANEL", ServerModules.CPanel)]
     public async Task Module_BuiltInId_IsStoredInTheBuiltInSpellingAsync(string sent, string stored)
     {
         var client = await ServersTestSeeds.AdminClientAsync(factory);
@@ -186,7 +237,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
         var response = await client.PostAsJsonAsync("/api/admin/servers", new
         {
             name = "Missing-groups",
-            module = ServerModules.Cwp7,
+            module = ServerModules.CPanel,
             username = "root",
         });
 

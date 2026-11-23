@@ -58,53 +58,6 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'instructions', get label() { return translate('integrationMeta.bankTransfer.fieldInstructions') }, type: IntegrationFieldType.Textarea },
     ],
   },
-  namecheap: {
-    slug: 'namecheap',
-    color: 'bg-amber-600',
-    logo: logoUrl('namecheap.svg'),
-    get shortDescription() { return translate('integrationMeta.namecheap.shortDescription') },
-    category: 'registrars',
-    fields: [
-      { key: 'apiKey', get label() { return translate('integrationMeta.namecheap.fieldApiKey') }, type: IntegrationFieldType.Password },
-      { key: 'apiUsername', get label() { return translate('integrationMeta.namecheap.fieldApiUsername') }, type: IntegrationFieldType.Text },
-      { key: 'clientIp', get label() { return translate('integrationMeta.namecheap.fieldClientIp') }, type: IntegrationFieldType.Text },
-    ],
-  },
-  nameam: {
-    slug: 'nameam',
-    color: 'bg-blue-800',
-    logo: logoUrl('nameam.svg'),
-    get shortDescription() { return translate('integrationMeta.nameam.shortDescription') },
-    category: 'registrars',
-    fields: [
-      { key: 'email', get label() { return translate('integrationMeta.nameam.fieldEmail') }, type: IntegrationFieldType.Text },
-      { key: 'password', get label() { return translate('integrationMeta.nameam.fieldPassword') }, type: IntegrationFieldType.Password },
-      { key: 'apiUrl', get label() { return translate('integrationMeta.nameam.fieldApiUrl') }, type: IntegrationFieldType.Text },
-      { key: 'test_mode', get label() { return translate('integrationMeta.nameam.fieldTest_mode') }, type: IntegrationFieldType.Toggle },
-    ],
-  },
-  resellerclub: {
-    slug: 'resellerclub',
-    color: 'bg-sky-500',
-    logo: logoUrl('resellerclub.svg'),
-    get shortDescription() { return translate('integrationMeta.resellerclub.shortDescription') },
-    category: 'registrars',
-    fields: [
-      { key: 'resellerId', get label() { return translate('integrationMeta.resellerclub.fieldResellerId') }, type: IntegrationFieldType.Text },
-      { key: 'apiKey', get label() { return translate('integrationMeta.namecheap.fieldApiKey') }, type: IntegrationFieldType.Password },
-    ],
-  },
-  enom: {
-    slug: 'enom',
-    color: 'bg-violet-700',
-    logo: logoUrl('enom.svg'),
-    get shortDescription() { return translate('integrationMeta.enom.shortDescription') },
-    category: 'registrars',
-    fields: [
-      { key: 'accountId', get label() { return translate('integrationMeta.enom.fieldAccountId') }, type: IntegrationFieldType.Text },
-      { key: 'apiKey', get label() { return translate('integrationMeta.namecheap.fieldApiKey') }, type: IntegrationFieldType.Password },
-    ],
-  },
   cpanel: {
     slug: 'cpanel',
     color: 'bg-orange-600',
@@ -116,6 +69,18 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'port', get label() { return translate('integrationMeta.cpanel.fieldPort') }, type: IntegrationFieldType.Text },
       { key: 'username', get label() { return translate('shared.username') }, type: IntegrationFieldType.Text },
       { key: 'apiToken', get label() { return translate('integrationMeta.cpanel.fieldApiToken') }, type: IntegrationFieldType.Password },
+    ],
+  },
+  cwp: {
+    slug: 'cwp',
+    color: 'bg-sky-700',
+    logo: logoUrl('cwp.svg'),
+    get shortDescription() { return translate('integrationMeta.cwp.shortDescription') },
+    category: 'provisioning',
+    fields: [
+      { key: 'host', get label() { return translate('integrationMeta.cwp.fieldHost') }, type: IntegrationFieldType.Text },
+      { key: 'port', get label() { return translate('integrationMeta.cpanel.fieldPort') }, type: IntegrationFieldType.Text },
+      { key: 'api_key', get label() { return translate('integrationMeta.cwp.fieldApiKey') }, type: IntegrationFieldType.Password },
     ],
   },
   smtp: {
@@ -140,7 +105,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
     get shortDescription() { return translate('integrationMeta.maxmind.shortDescription') },
     category: 'fraud',
     fields: [
-      { key: 'accountId', get label() { return translate('integrationMeta.enom.fieldAccountId') }, type: IntegrationFieldType.Text },
+      { key: 'accountId', get label() { return translate('integrationMeta.maxmind.fieldAccountId') }, type: IntegrationFieldType.Text },
       { key: 'licenseKey', get label() { return translate('integrationMeta.maxmind.fieldLicenseKey') }, type: IntegrationFieldType.Password },
     ],
   },

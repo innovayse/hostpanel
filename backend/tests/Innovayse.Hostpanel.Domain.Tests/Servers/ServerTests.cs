@@ -49,6 +49,48 @@ public sealed class ServerTests
         server.AcceptsSelfSignedCertificate.Should().BeFalse();
     }
 
+    /// <summary>A server dials its host name unless an API address is set, and a blank or padded address is stored as none or trimmed.</summary>
+    [Fact]
+    public void ApiHost_OverridesTheHostnameOnlyWhenFilled_AndIsTrimmed()
+    {
+        Server.Create(Details("web-1"), Now).ApiEndpointHost.Should().Be("web-1.example.test");
+
+        var blank = Server.Create(Details("web-1") with { ApiHost = "   " }, Now);
+        blank.ApiHost.Should().BeNull();
+        blank.ApiEndpointHost.Should().Be("web-1.example.test");
+
+        var padded = Server.Create(Details("web-1") with { ApiHost = " 10.77.0.1 " }, Now);
+        padded.ApiHost.Should().Be("10.77.0.1");
+        padded.ApiEndpointHost.Should().Be("10.77.0.1");
+        padded.Hostname.Should().Be("web-1.example.test", "the host name still builds the links shown to clients");
+    }
+
+    /// <summary>The one rule for the host an API is dialled at: the API address when it holds text, the host name otherwise.</summary>
+    /// <param name="apiHost">The API address given.</param>
+    /// <param name="expected">The host that is dialled.</param>
+    [Theory]
+    [InlineData(null, "web-1.example.test")]
+    [InlineData("", "web-1.example.test")]
+    [InlineData("  ", "web-1.example.test")]
+    [InlineData("10.77.0.1", "10.77.0.1")]
+    public void ResolveApiEndpointHost_PrefersTheApiHostOnlyWhenItHoldsText(string? apiHost, string expected)
+    {
+        Server.ResolveApiEndpointHost("web-1.example.test", apiHost).Should().Be(expected);
+    }
+
+    /// <summary>A reconfiguration sets the API address from its details, so the operator can fill it in and clear it again.</summary>
+    [Fact]
+    public void Reconfigure_SetsAndClearsTheApiHost()
+    {
+        var server = Server.Create(Details("web-1"), Now);
+
+        server.Reconfigure(Details("web-1") with { ApiHost = "10.77.0.1" }, ServerCredentialClears.None);
+        server.ApiHost.Should().Be("10.77.0.1");
+
+        server.Reconfigure(Details("web-1"), ServerCredentialClears.None);
+        server.ApiHost.Should().BeNull();
+    }
+
     /// <summary>A server without SSL cannot accept a self signed certificate, on create and on reconfigure, and keeps its stored choice.</summary>
     [Fact]
     public void SelfSignedCertificate_WithoutSsl_IsRefused()

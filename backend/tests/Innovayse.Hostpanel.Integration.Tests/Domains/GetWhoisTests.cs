@@ -1,6 +1,11 @@
 using System.Net;
+using System.Net.Http.Headers;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -26,6 +31,26 @@ public sealed class GetWhoisTests(IntegrationTestFactory factory) : IClassFixtur
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(HostpanelErrorCodes.DOMAIN_WHOIS_NOT_FOUND);
+    }
+
+    /// <summary>
+    /// A registrar that offers no WHOIS lookup answers 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c>, not a "not found" that
+    /// would read as a missing domain.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GetWhois_RegistrarWithoutWhois_Returns409WithOperationUnsupportedAsync()
+    {
+        var host = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.AddSingleton<IRegistrarModuleCatalogue>(
+                new FakeRegistrarModuleCatalogue(new RegistrarCapabilitiesDto(true, true, false)))));
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+
+        var response = await client.GetAsync("/api/domains/whois?name=nowhere.test");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(HostpanelErrorCodes.REGISTRAR_OPERATION_UNSUPPORTED);
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>

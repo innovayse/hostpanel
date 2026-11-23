@@ -827,14 +827,14 @@ public sealed class DevDataSeeder
 
         (string Name, decimal Price, int ExpiresInDays, bool AutoRenew, bool WhoisPrivacy, string Registrar)[] domainDefs =
         [
-            ("example.test",       12.99m, 365,  true,  true,  "Namecheap"),
-            ("example.com",        12.99m, 180,  true,  false, "Namecheap"),
-            ("example.net",        11.99m, 90,   true,  true,  "Name.am"),
-            ("developer-lab.test", 39.99m, 270,  false, false, "Namecheap"),
-            ("manager-hub.test",   12.99m, 400,  true,  true,  "Namecheap"),
-            ("example.org",        10.99m, 10,   true,  false, "Name.am"),
-            ("reseller-pro.test",  12.99m, 500,  true,  true,  "Namecheap"),
-            ("owner-site.test",     8.99m, 60,   false, false, "Name.am"),
+            ("example.test",       12.99m, 365,  true,  true,  "Example Registrar"),
+            ("example.com",        12.99m, 180,  true,  false, "Example Registrar"),
+            ("example.net",        11.99m, 90,   true,  true,  "Local Registrar"),
+            ("developer-lab.test", 39.99m, 270,  false, false, "Example Registrar"),
+            ("manager-hub.test",   12.99m, 400,  true,  true,  "Example Registrar"),
+            ("example.org",        10.99m, 10,   true,  false, "Local Registrar"),
+            ("reseller-pro.test",  12.99m, 500,  true,  true,  "Example Registrar"),
+            ("owner-site.test",     8.99m, 60,   false, false, "Local Registrar"),
         ];
 
         for (var i = 0; i < domainDefs.Length; i++)
@@ -892,14 +892,14 @@ public sealed class DevDataSeeder
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("VPS US-01", "vps01.example.test", "172.16.0.10", null,
-                ServerModules.Virtualmin, "admin", new ServerCredentials("changeme", null, null),
+                ServerModules.CPanel, "admin", new ServerCredentials("changeme", null, null),
                 true, 100, true, false, 350m, "US-East DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
                 AcceptsSelfSignedCertificate: false),
 
             new ServerDetails("Dedicated US-01", "dedicated01.example.test", "203.0.113.10", null,
-                ServerModules.DirectAdmin, "admin", new ServerCredentials("changeme", null, null),
+                ServerModules.CPanel, "admin", new ServerCredentials("changeme", null, null),
                 true, 50, false, false, 800m, "US-West DC", null,
                 new ServerNameServers(
                     "ns1.example.test", "192.168.1.1", "ns2.example.test", "192.168.1.2", null, null, null, null, null, null),
@@ -949,7 +949,6 @@ public sealed class DevDataSeeder
             ("billing.payment_gateway",   "bank_transfer",                 "Default payment gateway"),
             ("support.ticket_auto_close", "14",                              "Days after last reply before a ticket is auto-closed"),
             ("support.department_default", "1",                               "Default department ID for new tickets"),
-            ("domain.registrar_default",  "Namecheap",                       "Default domain registrar module"),
             ("domain.ns1",                "ns1.example.test",               "Primary nameserver"),
             ("domain.ns2",                "ns2.example.test",               "Secondary nameserver"),
             ("mail.from_address",         "noreply@example.test",           "From address used for outgoing emails"),

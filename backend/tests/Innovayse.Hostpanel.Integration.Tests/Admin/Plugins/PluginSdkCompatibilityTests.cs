@@ -4,10 +4,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 
 /// <summary>
 /// <see cref="PluginSdkCompatibility"/>, the one answer the upload, the registry install, the loader and the update
-/// check
-/// share to "can this host load a plugin built on that SDK": a newer SDK is refused, an equal or older one and one that
-/// is
-/// not stated pass, a stated value that is not a version is not stated. No container or database.
+/// check share to "can this host load a plugin built on that SDK": a newer SDK is refused, an equal or older one and
+/// one that is not stated pass, a stated value that is not a version is not stated. No container or database.
 /// </summary>
 public sealed class PluginSdkCompatibilityTests
 {

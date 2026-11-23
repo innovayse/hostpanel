@@ -58,7 +58,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
         await context.SaveChangesAsync(CancellationToken.None);
 
         var selector = scope.ServiceProvider.GetRequiredService<IServerSelector>();
-        (await selector.SelectAsync([ServerModules.Cwp7], CancellationToken.None)).Should().BeNull(
+        (await selector.SelectAsync([ServerModules.CPanel], CancellationToken.None)).Should().BeNull(
             "the test host registers no server, so this refusal is genuine and not a stale fixture");
 
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
@@ -167,7 +167,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
             Hostname: $"{label}.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModules.Cwp7,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, "hash"),
             UseSSL: true,

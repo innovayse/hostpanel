@@ -1117,6 +1117,24 @@
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>Դոմենի սեփականատիրոջ կոնտակտային տվյալները թերի են, ուստի պատվերը չի կարող ուղարկվել ռեգիստրատորին։</value>
   </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>Ռեգիստրատորը չի վաճառում այս դոմենի ընդլայնումը։</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>Ռեգիստրատորը մերժեց տեղափոխման թույլտվության կոդը։</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>Ռեգիստրատորն այս պահին չի թույլատրում այս դոմենի տեղափոխումը։</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>Ռեգիստրատորը մերժեց անվանային սերվերները։</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>Ռեգիստրատորը մերժեց DNS գրառումը։</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>Ռեգիստրատորը չընդունեց պահպանված հաշվի տվյալները։ Դիմեք ադմինիստրատորին։</value>
+  </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>Գործարքը պետք է ունենա մուտքային կամ ելքային գումար։</value>
   </data>

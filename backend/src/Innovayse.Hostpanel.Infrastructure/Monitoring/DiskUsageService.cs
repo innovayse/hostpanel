@@ -18,17 +18,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Monitoring;
 
 /// <summary>
 /// Disk usage service. Returns cached stats from the database.
-/// UpdateNowAsync polls every cPanel server and every server a panel plugin serves, and upserts the cache; every other
-/// hosting server and every server that cannot be polled is answered as a failure instead of being left out silently.
+/// UpdateNowAsync polls every cPanel server and every server a panel plugin serves, and upserts the cache; a server that
+/// cannot be polled is answered as a failure instead of being left out silently. A server of any other module is no part of the report.
 /// </summary>
 public sealed class DiskUsageService : IDiskUsageService
 {
-    /// <summary>Modules whose servers host client accounts; a server of any other module (licensing, VPS) is not part of this report.</summary>
-    private static readonly string[] HostingPanelModules =
-    [
-        ServerModules.CPanel, ServerModules.DirectAdmin, ServerModules.Centos, ServerModules.Cwp7, ServerModules.Virtualmin,
-    ];
-
     /// <summary>The database the servers are read from and the cached figures are written to.</summary>
     private readonly AppDbContext _db;
 
@@ -80,8 +74,8 @@ public sealed class DiskUsageService : IDiskUsageService
     /// <inheritdoc/>
     public async Task<DiskUsageDto> UpdateNowAsync(CancellationToken ct)
     {
-        // Load every enabled hosting server, the host's own panels and the ones a plugin serves; those whose panel cannot
-        // report usage are answered as failures below. Filtered after loading: which plugin serves a module is not in SQL.
+        // Load every enabled hosting server, the host's own panels and the ones a plugin serves; one whose panel cannot
+        // be polled is answered as a failure below. Filtered after loading: which plugin serves a module is not in SQL.
         var servers = (await _db.Servers.Where(s => !s.IsDisabled).ToListAsync(ct))
             .Where(IsHostingServer)
             .ToList();
@@ -109,12 +103,6 @@ public sealed class DiskUsageService : IDiskUsageService
         foreach (var server in servers)
         {
             var match = _resolver.Find(server.Module, PluginCapabilities.ProvisioningPanel);
-            if (match.Outcome is ServerModulePluginOutcome.NotServed && !ServerModules.Same(server.Module, ServerModules.CPanel))
-            {
-                failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.UnsupportedModule));
-                continue;
-            }
-
             try
             {
                 var accounts = await ReadAccountsAsync(server, match, ct);
@@ -149,7 +137,7 @@ public sealed class DiskUsageService : IDiskUsageService
     /// <returns><see langword="true"/> when the server is part of the disk usage report.</returns>
     private bool IsHostingServer(Server server)
     {
-        return HostingPanelModules.Any(module => ServerModules.Same(module, server.Module))
+        return ServerModules.Known.Any(module => ServerModules.Same(module, server.Module))
             || _resolver.Find(server.Module, PluginCapabilities.ProvisioningPanel).Outcome is not ServerModulePluginOutcome.NotServed;
     }
 
@@ -172,11 +160,11 @@ public sealed class DiskUsageService : IDiskUsageService
         CpanelWhmApi api;
         if (!string.IsNullOrEmpty(server.ApiToken))
         {
-            api = CpanelWhmApi.Create(server.Hostname, server.Username, server.ApiToken, _httpFactory);
+            api = CpanelWhmApi.Create(server.ApiEndpointHost, server.Username, server.ApiToken, _httpFactory);
         }
         else if (!string.IsNullOrEmpty(server.AccessHash))
         {
-            api = CpanelWhmApi.CreateWithHash(server.Hostname, server.Username, server.AccessHash, _httpFactory);
+            api = CpanelWhmApi.CreateWithHash(server.ApiEndpointHost, server.Username, server.AccessHash, _httpFactory);
         }
         else
         {

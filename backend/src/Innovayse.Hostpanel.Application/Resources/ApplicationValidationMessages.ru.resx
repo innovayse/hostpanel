@@ -383,7 +383,7 @@
     <value>Статус должен быть одним из: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Регистратор должен быть одним из: NameAm, Namecheap.</value>
+    <value>Регистратор должен быть установленным плагином регистратора.</value>
   </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Вид ставки должен быть одним из: Standard, Reduced.</value>
@@ -1095,6 +1095,12 @@
   </data>
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Имя хоста не должно превышать {0} символов.</value>
+  </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Укажите имя хоста или IP-адрес без схемы, пути, порта и пробелов.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>К этому адресу подключение невозможно: адреса loopback, link-local и облачных метаданных не допускаются.</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Требуется указать имя пользователя.</value>

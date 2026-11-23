@@ -8,7 +8,7 @@
  * name, client, registrar, registration period, status, renewal dates, renewal price and the auto-renew flag. A domain
  * name opens its detail page under the owning client. Reads `stores/domains`; a refused load shows `store.error`.
  */
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -32,14 +32,14 @@ import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/DomainsListView.schema'
 import { Icon } from '@/lib/icons'
-import { DOMAIN_STATUS_OPTIONS, REGISTRAR_MODULE_OPTIONS } from '@/lib/constants'
+import { useRegistrarModuleOptions } from '@/composables/useRegistrarModuleOptions'
+import { DOMAIN_STATUS_OPTIONS } from '@/lib/constants'
 import { EMPTY_VALUE, formatDate } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { useDomainsStore } from '@/stores/domains'
 import { DomainStatus } from '@/types/domain'
 import type { DomainListFilters, DomainRegistration } from '@/types/domain'
-import { RegistrarModule } from '@/types/registrarmodule'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
@@ -62,20 +62,23 @@ const store = useDomainsStore()
 const { yearsLabel } = useFallbackLabels()
 
 /** The filters, the search text and the page of the list, kept in the address. */
-const { draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
+const { applied, draft, search, appliedSearch, page, activeCount, apply, reset, cancel, remove, clearAll, setPage, narrowed, loadOnChange, enumOf, chipsOf }
   = useListQuery(Object.values(FilterKey))
 
 /** Status filter options; the empty value means any. */
 const statusOptions = computed(() => [{ value: '', label: t('shared.any') }, ...DOMAIN_STATUS_OPTIONS])
 
+/** The installed registrar plugins a domain can be filtered by, and the name of a stored module. */
+const { options: registrarModuleOptions, load: loadRegistrars, labelOf: registrarLabel } = useRegistrarModuleOptions()
+
 /** Registrar filter options; the empty value means any. */
-const registrarOptions = computed(() => [{ value: '', label: t('shared.any') }, ...REGISTRAR_MODULE_OPTIONS])
+const registrarOptions = computed(() => [{ value: '', label: t('shared.any') }, ...registrarModuleOptions.value])
 
 /** The status in the address as a domain status, undefined when none is set or the value is not one. */
 const statusOfAddress = enumOf(FilterKey.Status, DomainStatus)
 
-/** The registrar in the address as a registrar module, undefined when none is set or the value is not one. */
-const registrarOfAddress = enumOf(FilterKey.RegistrarModule, RegistrarModule)
+/** The registrar in the address (a plugin id), undefined when none is set. */
+const registrarOfAddress = computed<string | undefined>(() => applied.value[FilterKey.RegistrarModule] || undefined)
 
 /** What the address narrows the list by, as the store sends it to the API. */
 const filters = computed<DomainListFilters>(() => ({
@@ -94,7 +97,7 @@ const chips = chipsOf(() => [
   {
     key: FilterKey.RegistrarModule,
     label: t('shared.registrar'),
-    value: registrarOfAddress.value === undefined ? undefined : statusLabel(REGISTRAR_MODULE_OPTIONS, registrarOfAddress.value),
+    value: registrarOfAddress.value === undefined ? undefined : registrarLabel(registrarOfAddress.value),
   },
 ])
 
@@ -107,6 +110,9 @@ const load = (): Promise<boolean> => store.fetchAll(page.value, filters.value)
 
 // Every change of a filter, the search or the page loads the list the address names.
 loadOnChange(load)
+
+// The registrar filter lists the installed registrar plugins.
+onMounted(loadRegistrars)
 
 /** Whether the current page has any domain to list. */
 const hasRows = computed<boolean>(() => store.domains.length > 0)

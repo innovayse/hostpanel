@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -70,16 +71,16 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
         => Task.FromResult(new RegistrarResult(true, change.Domain.RegistrarRef, null, null));
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct)
-        => Task.FromResult<IReadOnlyList<DnsRecord>>([]);
+    public Task<Result<IReadOnlyList<DnsRecord>>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct)
+        => Task.FromResult(Result<IReadOnlyList<DnsRecord>>.Success([]));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> AddDnsRecordAsync(DnsRecordChange change, CancellationToken ct)
         => Task.FromResult(new RegistrarResult(true, change.Domain.RegistrarRef, null, null));
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, change.Domain.RegistrarRef, null, null));
+    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordUpdate update, CancellationToken ct)
+        => Task.FromResult(new RegistrarResult(true, update.Domain.RegistrarRef, null, null));
 
     /// <inheritdoc/>
     public Task<RegistrarResult> DeleteDnsRecordAsync(DnsRecordRemoval removal, CancellationToken ct)
@@ -98,9 +99,9 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
         "1 Registry St", null, "Springfield", "Springfield", "00100", "US");
 
     /// <inheritdoc/>
-    public Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct)
+    public Task<DomainContact?> GetContactDetailsAsync(DomainRef domain, CancellationToken ct)
         => Task.FromResult<DomainContact?>(
-            domainName.EndsWith(NoContactSuffix, StringComparison.OrdinalIgnoreCase) ? null : StubContact);
+            domain.Name.EndsWith(NoContactSuffix, StringComparison.OrdinalIgnoreCase) ? null : StubContact);
 
     /// <inheritdoc/>
     public Task<RegistrarResult> SetEmailForwardingAsync(DomainFeatureToggle toggle, CancellationToken ct)
@@ -123,8 +124,8 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
         => Task.FromResult(new RegistrarResult(true, "STUB-REF", null, null));
 
     /// <inheritdoc/>
-    public Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct)
-        => Task.FromResult(true);
+    public Task<Result<bool>> CheckAvailabilityAsync(string domainName, CancellationToken ct)
+        => Task.FromResult(Result<bool>.Success(true));
 
     /// <inheritdoc/>
     public Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct)
@@ -134,10 +135,10 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
     }
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, domainName, _time.GetUtcNow().AddYears(1), null));
+    public Task<RegistrarResult> CheckDomainActiveAsync(DomainRef domain, CancellationToken ct)
+        => Task.FromResult(new RegistrarResult(true, domain.Name, _time.GetUtcNow().AddYears(1), null));
 
     /// <inheritdoc/>
-    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct)
-        => Task.FromResult<IReadOnlyList<TldPricing>>([]);
+    public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct)
+        => Task.FromResult(Result<IReadOnlyList<TldPricing>>.Success([]));
 }

@@ -86,7 +86,7 @@ public sealed class RenewDomainHandler
             return Result.FailureCode(HostpanelErrorCodes.DOMAIN_RENEW_NOT_ALLOWED);
         }
 
-        var request = new DomainRenewalOrder(domain.Name, domain.RegistrarRef, cmd.Years);
+        var request = new DomainRenewalOrder(domain.Name, domain.RegistrarRef, cmd.Years, domain.ExpiresAt);
         var registrar = await _registrars.ResolveAsync(domain, ct);
         var result = await registrar.RenewAsync(request, ct);
 

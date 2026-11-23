@@ -11,8 +11,9 @@ public static class DomainMappingExtensions
 {
     /// <summary>Maps a domain, with its already-loaded child collections, to its full DTO.</summary>
     /// <param name="domain">The domain; its nameservers, DNS records, forwarding rules and reminders must be loaded.</param>
+    /// <param name="capabilities">The optional operations the registrar that holds the domain offers.</param>
     /// <returns>The mapped DTO.</returns>
-    public static DomainDto ToDto(this RegisteredDomain domain)
+    public static DomainDto ToDto(this RegisteredDomain domain, RegistrarCapabilitiesDto capabilities)
     {
         ArgumentNullException.ThrowIfNull(domain);
 
@@ -44,13 +45,15 @@ public static class DomainMappingExtensions
             domain.EmailForwardingRules.Select(ToEmailForwardingRuleDto).ToList(),
             domain.Reminders
                 .Select(r => new DomainReminderDto(r.Id, r.ReminderType, r.SentTo, r.SentAt))
-                .ToList());
+                .ToList(),
+            capabilities);
     }
 
     /// <summary>Maps a domain to the client's own <see cref="MyDomainDto"/>.</summary>
     /// <param name="domain">The domain; its nameservers, DNS records and forwarding rules must be loaded.</param>
+    /// <param name="capabilities">The optional operations the registrar that holds the domain offers.</param>
     /// <returns>The mapped DTO.</returns>
-    public static MyDomainDto ToMyDto(this RegisteredDomain domain)
+    public static MyDomainDto ToMyDto(this RegisteredDomain domain, RegistrarCapabilitiesDto capabilities)
     {
         ArgumentNullException.ThrowIfNull(domain);
 
@@ -74,7 +77,8 @@ public static class DomainMappingExtensions
                 domain.EmailForwarding,
                 domain.Nameservers.Select(ToNameserverDto).ToList(),
                 domain.DnsRecords.Select(ToDnsRecordDto).ToList(),
-                domain.EmailForwardingRules.Select(ToEmailForwardingRuleDto).ToList()));
+                domain.EmailForwardingRules.Select(ToEmailForwardingRuleDto).ToList(),
+                capabilities));
     }
 
     /// <summary>Maps one nameserver to <see cref="NameserverDto"/>.</summary>

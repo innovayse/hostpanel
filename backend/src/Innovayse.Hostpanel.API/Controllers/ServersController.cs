@@ -80,7 +80,7 @@ public sealed class ServersController : BaseApiController
 
     /// <summary>
     /// Every configured provisioning server as a lean option, by name, optionally filtered by module: the picker the group
-    /// form, the add existing service dialog, the service detail, the CWP 7 integration and the dashboard read whole.
+    /// form, the add existing service dialog, the service detail and the dashboard read whole.
     /// </summary>
     /// <param name="query">The optional module filter.</param>
     /// <param name="ct">Cancellation token.</param>

@@ -3,7 +3,6 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Servers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
@@ -31,7 +30,7 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
 
     /// <summary>The servers one seeded mix holds, by the role each plays in the tests.</summary>
     /// <param name="Token">The text every seeded name and host name carries, so a search scopes a request to this mix.</param>
-    /// <param name="Online">A DirectAdmin server whose last test succeeded; first by name.</param>
+    /// <param name="Online">A second test panel server whose last test succeeded; first by name.</param>
     /// <param name="Offline">A second panel server whose last test failed; second by name.</param>
     /// <param name="Untested">A second panel server nobody has tested; last by name.</param>
     private sealed record ServerMix(string Token, int Online, int Offline, int Untested);
@@ -117,19 +116,17 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
         var mix = await SeedMixAsync();
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
 
-        var (directadmin, directadminCount) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=DirectAdmin");
-        var (cwp7, cwp7Count) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=Cwp7");
-        var (cpanel, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=CPanel");
+        var (second, secondCount) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module={TestPanelModules.Second}");
+        var (cpanel, cpanelCount) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=CPanel");
 
-        directadmin.Should().Equal(mix.Online);
-        directadminCount.Should().Be(1);
-        cwp7.Should().Equal(mix.Offline, mix.Untested);
-        cwp7Count.Should().Be(2);
-        cpanel.Should().BeEmpty();
+        second.Should().Equal(mix.Online);
+        secondCount.Should().Be(1);
+        cpanel.Should().Equal(mix.Offline, mix.Untested);
+        cpanelCount.Should().Be(2);
     }
 
     /// <summary>
-    /// The module filter matches ignoring case, so the id a plugin declares in lower case finds the servers stored in the older
+    /// The module filter matches ignoring case, so the id a plugin declares in another case finds the servers stored in the older
     /// spelling, and a well formed id no server runs lists nothing instead of being refused.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -139,10 +136,10 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
         var mix = await SeedMixAsync();
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
 
-        var (directadmin, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=directadmin");
+        var (second, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module={TestPanelModules.Second.ToUpperInvariant()}");
         var (unused, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=nonsense");
 
-        directadmin.Should().Equal(mix.Online);
+        second.Should().Equal(mix.Online);
         unused.Should().BeEmpty();
     }
 
@@ -157,7 +154,7 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
         var (online, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&state=Online");
         var (offline, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&state=offline");
         var (untested, untestedCount) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&state=Untested");
-        var (both, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=Cwp7&state=Untested");
+        var (both, _) = await PagedListReads.ReadIdsAsync(admin, $"{Route}?page=1&pageSize=100&search={mix.Token}&module=CPanel&state=Untested");
 
         online.Should().Equal(mix.Online);
         offline.Should().Equal(mix.Offline);
@@ -298,13 +295,13 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    /// <summary>Seeds an online DirectAdmin server, an offline and an untested Cwp7 module server, named so they sort in that order.</summary>
+    /// <summary>Seeds an online server of the second test panel, an offline and an untested cPanel server, named so they sort in that order.</summary>
     /// <returns>The mix.</returns>
     private async Task<ServerMix> SeedMixAsync()
     {
         var admin = await ServersTestSeeds.AdminClientAsync(factory);
         var token = PagedListReads.UniqueToken();
-        var online = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-a", ServerModules.DirectAdmin);
+        var online = await ServersTestSeeds.SeedServerAsync(factory, $"{token}-a", TestPanelModules.Second);
         var offline = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-b");
         var untested = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-c");
         await ServersTestSeeds.RecordConnectionTestAsync(factory, online, isOnline: true, accountsCount: 4);

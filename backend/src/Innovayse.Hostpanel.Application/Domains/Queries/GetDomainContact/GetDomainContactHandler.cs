@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
+using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,7 @@ public sealed class GetDomainContactHandler
         }
 
         var registrar = await _registrars.ResolveAsync(domain, ct);
-        var contact = await registrar.GetContactDetailsAsync(domain.Name, ct);
+        var contact = await registrar.GetContactDetailsAsync(domain.ToRef(), ct);
         if (contact is null)
         {
             return Result.Failure<DomainContactDto>(

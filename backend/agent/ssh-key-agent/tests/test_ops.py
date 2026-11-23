@@ -3,7 +3,8 @@ Unit tests for the 1.5.0 ops of hostpanel-ssh-key-agent: ensure-website, remove-
 remove-database. Run: python3 -m unittest discover -s ssh-key-agent/tests
 
 The agent side (validation, exit code mapping, RESULT schema, audit) runs against stand-in helpers, so no root and no
-real web server or database is needed.
+real web server or database is needed. This module also holds the stand-in server tree (HP_ROOT) and the fake tools that
+test_generic_linux reuses.
 """
 
 import glob
@@ -21,6 +22,31 @@ WEBSITE_REMOVE = dict(op="remove-website", account="alice", hostname="app.exampl
 DB = dict(op="ensure-database", account="alice", label="shop")
 DB_REMOVE = dict(op="remove-database", account="alice", label="shop")
 
+FAKE_LOGGER = """#!/bin/sh
+echo "$(basename "$0") $*" >> "$HP_ROOT/calls.log"
+"""
+FAKE_OPENSSL = """#!/bin/sh
+echo %s
+""" % PASSWORD
+# Knows just the statements the helpers send: the two existence checks and create/drop.
+FAKE_MYSQL = r"""#!/bin/sh
+echo "mysql $*" >> "$HP_ROOT/calls.log"
+sql="$* $(cat)"
+state="$HP_ROOT/mysql"
+case "$sql" in
+  *"information_schema.SCHEMATA"*)
+    name=$(echo "$sql" | sed -n "s/.*SCHEMA_NAME='\([a-z0-9_]*\)'.*/\1/p"); [ -e "$state/db.$name" ] && echo 1 || echo 0 ;;
+  *"FROM mysql.user"*)
+    name=$(echo "$sql" | sed -n "s/.*User='\([a-z0-9_]*\)'.*/\1/p"); [ -e "$state/user.$name" ] && echo 1 || echo 0 ;;
+  *"CREATE DATABASE"*)
+    if [ -e "$HP_ROOT/fail-create" ]; then exit 1; fi
+    name=$(echo "$sql" | sed -n 's/.*CREATE DATABASE `\([a-z0-9_]*\)`.*/\1/p'); touch "$state/db.$name" "$state/user.$name" ;;
+  *"DROP DATABASE"*)
+    name=$(echo "$sql" | sed -n 's/.*DROP DATABASE IF EXISTS `\([a-z0-9_]*\)`.*/\1/p'); rm -f "$state/db.$name" "$state/user.$name" ;;
+esac
+exit 0
+"""
+
 
 def write_executable(path, body):
     """Writes a script and makes it executable."""
@@ -31,12 +57,23 @@ def write_executable(path, body):
 
 
 class OpsTestCase(AgentTestCase):
-    """The account tree of AgentTestCase plus a helper directory for stand-in helpers."""
+    """The account tree of AgentTestCase plus a stand-in server around it, reachable through HP_ROOT."""
 
     def setUp(self):
         super().setUp()
+        self.root = self.tmp.name
+        self.vhosts = os.path.join(self.root, "usr/local/apache/conf.d/vhosts")
+        self.pool = os.path.join(self.root, "opt/alt/php-fpm83/usr/etc/php-fpm.d/users/alice.conf")
+        self.registry = os.path.join(self.root, "var/lib/hostpanel-ssh-key-agent/alice")
+        self.log = os.path.join(self.root, "calls.log")
         self.helper_dir = os.path.join(self.tmp.name, "libexec")
         self.config["helper_dir"] = self.helper_dir
+        self._jail_env = agent.JAIL_ENV
+        agent.JAIL_ENV = dict(self._jail_env, HP_ROOT=self.root)
+
+    def tearDown(self):
+        agent.JAIL_ENV = self._jail_env
+        super().tearDown()
 
     def install_stub(self, op, exit_code=0, out=""):
         """A stand-in helper that records its arguments, prints `out` and exits with `exit_code`."""
@@ -45,11 +82,21 @@ class OpsTestCase(AgentTestCase):
                          "#!/bin/sh\necho \"$@\" > '%s'\ncat <<'EOF'\n%s\nEOF\nexit %d\n" % (args_file, out, exit_code))
         return args_file
 
+    def calls(self):
+        """The recorded fake tool calls, empty when there were none."""
+        if not os.path.exists(self.log):
+            return ""
+        return self.read(self.log)
+
     @staticmethod
     def read(path):
         """The text of a file."""
         with open(path) as handle:
             return handle.read()
+
+    def touch(self, name):
+        """Creates a marker file the fake tools react to (fail-apache, fail-fpm, fail-create) or a fake MySQL object."""
+        open(os.path.join(self.root, name), "w").close()
 
     def audit_lines(self):
         """The audit log entries written so far."""

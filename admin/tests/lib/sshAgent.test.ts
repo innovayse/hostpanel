@@ -7,12 +7,12 @@
 import { describe, expect, it } from 'vitest'
 import { buildInstallCommand, buildNetworkLines, shellQuote } from '@/lib/sshAgent'
 import type { ServerSshSetupDto } from '@/types/serverssh'
-import { SshAgentProfile } from '@/types/sshenums'
+import { SSH_AGENT_PROFILE } from '../helpers/serverFixtures'
 
 /** A complete setup. */
 const SETUP: ServerSshSetupDto = {
   serverId: 4,
-  profile: SshAgentProfile.Cwp,
+  profile: SSH_AGENT_PROFILE,
   publicKey: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6EJIHRxsxge2aZnl+clPBfoX0nmvD7FfHXM2QQ3+3b hostpanel-server-4',
   binding: '11111111-1111-4111-8111-111111111111',
   agentUsername: 'hpsshkeys',
@@ -34,7 +34,7 @@ describe('buildInstallCommand', () => {
     expect(steps[3]).toBe(`curl -fsSL --proto '=https' -o "$D/agent.tgz" 'https://panel.example.com/api/public/ssh-agent/bundle.tar.gz'`)
     expect(steps[4]).toBe(`echo "${'a'.repeat(64)}  $D/agent.tgz" | sha256sum -c -`)
     expect(steps.findIndex((s) => s.includes('sha256sum'))).toBeLessThan(steps.findIndex((s) => s.startsWith('tar ')))
-    expect(steps[6]).toBe(`"$D/install.sh" --provider 'cwp' --binding '${SETUP.binding}' '${SETUP.publicKey}'`)
+    expect(steps[6]).toBe(`"$D/install.sh" --provider '${SSH_AGENT_PROFILE}' --binding '${SETUP.binding}' '${SETUP.publicKey}'`)
     expect(command).not.toContain('PRIVATE')
   })
 

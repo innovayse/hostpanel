@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Provisioning;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Extensions;
 using Innovayse.Hostpanel.Application.Common.Settings;
@@ -135,8 +136,11 @@ internal sealed class PanelPluginHarness : IDisposable
     /// <param name="implementation">The CLR type that answers.</param>
     /// <param name="modules">The <c>serverModules</c> the manifest lists.</param>
     /// <param name="capabilities">The capabilities the manifest lists.</param>
+    /// <param name="sshAgentProfile">The <c>sshAgentProfile</c> the manifest names, or <see langword="null"/> for none.</param>
+    /// <param name="agentProfile">The checked profile the plugin ships, as the loader registers it, or <see langword="null"/>.</param>
     /// <returns>The loaded plugin.</returns>
-    public static LoadedPlugin Plugin(string id, Type implementation, string[] modules, string[] capabilities)
+    public static LoadedPlugin Plugin(
+        string id, Type implementation, string[] modules, string[] capabilities, string? sshAgentProfile = null, PluginAgentProfileDto? agentProfile = null)
     {
         var template = PluginActivationTestSeeds.Plugin(id, PluginType.Provisioning, implementation);
         var manifest = new PluginManifest
@@ -152,9 +156,10 @@ internal sealed class PanelPluginHarness : IDisposable
             SdkVersion = template.Manifest.SdkVersion,
             Capabilities = capabilities,
             ServerModules = modules,
+            SshAgentProfile = sshAgentProfile,
         };
 
-        return new LoadedPlugin(manifest, implementation, PluginViewDocuments.None);
+        return new LoadedPlugin(manifest, implementation, PluginViewDocuments.None, null, agentProfile);
     }
 
     /// <summary>Resolves a service from the scope the harness's database context and the plugin's services come from.</summary>

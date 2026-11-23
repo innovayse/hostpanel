@@ -39,6 +39,8 @@ internal static class PluginCapabilityRules
                 typeof(IProvisioningPanelLoginPlugin), PluginType.Provisioning, PluginCapabilities.ProvisioningPanel),
             [PluginCapabilities.ProvisioningPanelPackages] = new(
                 typeof(IProvisioningPanelPackagesPlugin), PluginType.Provisioning, PluginCapabilities.ProvisioningPanel),
+            [PluginCapabilities.ProvisioningPanelAccount] = new(
+                typeof(IProvisioningPanelAccountPlugin), PluginType.Provisioning, PluginCapabilities.ProvisioningPanel),
             [PluginCapabilities.VirtualServer] = new(typeof(IVirtualServerPlugin), PluginType.Provisioning, null),
             [PluginCapabilities.VirtualServerList] = new(typeof(IVirtualServerListPlugin), PluginType.Provisioning, null),
             [PluginCapabilities.VirtualServerSnapshots] = new(

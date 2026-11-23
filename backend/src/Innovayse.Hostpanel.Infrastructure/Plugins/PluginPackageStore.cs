@@ -449,6 +449,14 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return RuleBroken(id, sha256, violation);
         }
 
+        // The agent profile and its helpers, when the manifest names one: refused here like the icon, and only warned about
+        // at load (PluginLoader), so a rule added after a plugin was installed never takes it out of production.
+        violation = PluginAgentReader.Read(contentDir, manifest).Violation;
+        if (violation is not null)
+        {
+            return RuleBroken(id, sha256, violation);
+        }
+
         // The signature covers the unpacked files, so it is checked here, after the archive is unpacked and before the move into place.
         var check = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger, upload.RequireSignature);
         var signature = check.Refusal;

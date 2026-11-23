@@ -48,11 +48,3 @@ export enum SshProviderFailure {
   /** The agent that answered was installed for another server record (its binding differs). */
   BindingMismatch = 'BindingMismatch',
 }
-
-/** The agent profile a server runs: whose account rules the agent applies. */
-export enum SshAgentProfile {
-  /** Accounts of the CWP control panel. */
-  Cwp = 'cwp',
-  /** Plain Linux accounts, no control panel. */
-  GenericLinux = 'generic-linux',
-}

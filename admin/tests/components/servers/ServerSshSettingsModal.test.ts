@@ -9,11 +9,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import ServerSshSettingsModal from '@/components/servers/ServerSshSettingsModal.vue'
-import { SshAgentProfile, SshProviderFailure } from '@/types/sshenums'
+import { SshProviderFailure } from '@/types/sshenums'
 import { callOf, invalid, json, problem, stubFetch } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubDocsUrl } from '../../helpers/runtimeConfig'
-import { serverSshSettingsDto, serverSshSetupDto } from '../../helpers/serverFixtures'
+import { SSH_AGENT_PROFILE, serverSshSettingsDto, serverSshSetupDto } from '../../helpers/serverFixtures'
 
 /** Settings as the API answers them. */
 const SETTINGS = serverSshSettingsDto({ serverId: 4 })
@@ -88,7 +88,7 @@ describe('ServerSshSettingsModal', () => {
     const command = wrapper.get('[data-testid="server-ssh-install-command"]').text()
     expect(command).toContain('sha256sum -c -')
     expect(command).toContain('b'.repeat(64))
-    expect(command).toContain(`--provider '${SshAgentProfile.Cwp}' --binding '${SETUP_WITH_KEY.binding}'`)
+    expect(command).toContain(`--provider '${SSH_AGENT_PROFILE}' --binding '${SETUP_WITH_KEY.binding}'`)
     expect(command).not.toContain('PRIVATE')
     expect(wrapper.get('[data-testid="server-ssh-generate"]').text()).toBe('Rotate')
   })
@@ -147,7 +147,7 @@ describe('ServerSshSettingsModal', () => {
     stubFetch(
       json(SETTINGS),
       json(SETUP),
-      json({ isHealthy: true, agentVersion: '1.1.0', error: null, provider: SshAgentProfile.Cwp }),
+      json({ isHealthy: true, agentVersion: '1.1.0', error: null, provider: SSH_AGENT_PROFILE }),
       json({ ...SETTINGS, isHealthy: true }),
     )
     const wrapper = await mountDialog()
@@ -156,7 +156,7 @@ describe('ServerSshSettingsModal', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="server-ssh-health"]').text()).toBe('Agent reachable')
-    expect(wrapper.get('[data-testid="server-ssh-agent-version"]').text()).toBe('Agent 1.1.0 (cwp)')
+    expect(wrapper.get('[data-testid="server-ssh-agent-version"]').text()).toBe(`Agent 1.1.0 (${SSH_AGENT_PROFILE})`)
   })
 
   it('shows the version alone when the agent sent no profile', async () => {
@@ -173,7 +173,7 @@ describe('ServerSshSettingsModal', () => {
     stubFetch(
       json(SETTINGS),
       json(SETUP),
-      json({ isHealthy: false, agentVersion: '1.1.0', error: SshProviderFailure.BindingMismatch, provider: SshAgentProfile.Cwp }),
+      json({ isHealthy: false, agentVersion: '1.1.0', error: SshProviderFailure.BindingMismatch, provider: SSH_AGENT_PROFILE }),
       json({ ...SETTINGS, isHealthy: false }),
     )
     const wrapper = await mountDialog()

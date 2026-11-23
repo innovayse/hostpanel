@@ -6,7 +6,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 /// origin, so the command always downloads from the HostPanel the administrator is signed in to.
 /// </summary>
 /// <param name="ServerId">The server.</param>
-/// <param name="Profile">Agent profile for the server's module (<c>cwp</c>), null when unsupported.</param>
+/// <param name="Profile">Agent profile id the plugin serving the server's module ships, null when the module is unsupported or its profile is not available.</param>
 /// <param name="PublicKey">The management public key to install, null until an identity is generated.</param>
 /// <param name="Binding">The id the installer binds the agent to.</param>
 /// <param name="AgentUsername">The management user the installer creates.</param>

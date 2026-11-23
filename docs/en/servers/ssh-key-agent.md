@@ -20,7 +20,7 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
 
 The `restrict` directive removes PTY, port forwarding and user rc; the forced command ignores whatever the client asks to run; sudo allows only that exact path with no arguments. Requests travel on stdin as a JSON document; the agent never executes a shell or takes a path from the request.
 
-**Supported server modules:** only CWP7 maps to an agent profile (`cwp`). All other server types show "SSH key management not available" to clients.
+**Supported server modules:** a server is supported when the hosting panel plugin that serves its module ships an SSH agent profile (see [SSH agent profile of a hosting panel plugin](../developers/write-a-plugin.md#ssh-agent-profile)). All other server types show "SSH key management not available" to clients. Until the plugin that serves the legacy CWP7 module ships its own profile, the host still installs the profile it embeds for that module (`cwp`).
 
 ## Set up SSH on a server
 
@@ -62,7 +62,7 @@ The installer accepts these flags:
 
 | Flag | Effect |
 |------|--------|
-| `--provider <profile>` | Agent profile: `cwp` for CWP7, `generic-linux` for plain Linux |
+| `--provider <profile>` | Agent profile: the id the plugin that serves the server's module ships (the SSH dialog fills it in), or `generic-linux` for plain Linux |
 | `--binding <id>` | Ties this installation to the Hostpanel server record |
 | `--config <file>` | Use a custom config file instead of the profile's default (advanced) |
 | `--dry-run` | Preview what would be installed without making any changes |
@@ -162,6 +162,21 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' },
   { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' }
 ]" />
+
+## Jail extras hold only public trust material
+
+A jail is a customer's own environment, so `jail_extras` may list only public files. The agent refuses an entry that is, or contains, private key material. It walks every entry and everything below it, follows symlinks, and treats a path as private when:
+
+- one of its components is named `private` (such as `/etc/pki/tls/private`), or
+- its file name matches `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks` (the match ignores case).
+
+Public halves such as `*.pub`, `*.crt` and `fullchain.pem` are fine. An entry that does not exist on the server is skipped, as it is when copying.
+
+When an entry is refused, the agent does not enrol the account: the call fails with `internal_error` before anything is built, and the message names the entry. `install.sh --check` (the agent's `--check-config`) warns about such an entry and prints the safe trust paths. It exits with 1 for an unsafe entry, and with 2 when the configuration cannot be read, which `install.sh` reports as a failed check.
+
+For outgoing TLS in a jail (git, curl) list the certificate directories, never their parent `/etc/pki/tls`, which holds the `private` directory:
+
+    jail_extras = /usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS,/etc/pki/tls/certs,/etc/pki/ca-trust/extracted,/etc/ssl/certs
 
 ## Websites and databases
 

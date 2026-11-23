@@ -9,7 +9,7 @@ using Renci.SshNet;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.SshAgent;
 
-/// <summary>The setup adapters: key generation, the bundle and the host key scanner.</summary>
+/// <summary>The setup adapters: key generation and the host key scanner (the bundles have their own tests).</summary>
 public sealed class SshAgentSetupAdapterTests
 {
     /// <summary>Each generated pair is new, loads as an ED25519 key, and its comment is stripped to safe characters.</summary>
@@ -27,18 +27,6 @@ public sealed class SshAgentSetupAdapterTests
         using var keyFile = new PrivateKeyFile(new MemoryStream(Encoding.UTF8.GetBytes(a.PrivateKey)));
         keyFile.Key.ToString().Should().Be("ssh-ed25519");
         a.PublicKey.Split(' ')[1].Should().Be(Convert.ToBase64String(((Renci.SshNet.Security.KeyHostAlgorithm)keyFile.HostKeyAlgorithms.First()).Data));
-    }
-
-    /// <summary>Two bundles built from the same files are byte-identical and carry the agent version.</summary>
-    [Fact]
-    public void Bundle_IsDeterministicAndVersioned()
-    {
-        var first = new EmbeddedSshAgentBundle();
-        var second = new EmbeddedSshAgentBundle();
-
-        first.Sha256.Should().Be(second.Sha256).And.MatchRegex("^[0-9a-f]{64}$");
-        first.Version.Should().MatchRegex(@"^\d+\.\d+\.\d+$");
-        first.Profiles.Should().BeEquivalentTo(["cwp", "generic-linux"]);
     }
 
     /// <summary>Nothing listening: the connection is refused, so the port or a rejecting firewall is at fault.</summary>

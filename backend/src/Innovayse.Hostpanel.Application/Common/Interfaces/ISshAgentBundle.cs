@@ -1,9 +1,9 @@
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
 /// <summary>
-/// The SSH key agent installer bundle this HostPanel build ships: agent, installer, uninstaller,
-/// provider profiles and helpers, as one deterministic <c>.tar.gz</c>. Its SHA256 is shown to the
-/// administrator so the one-command installer verifies what it downloaded.
+/// One SSH key agent installer bundle: the agent, installer, uninstaller, profiles and helpers one profile needs, as one
+/// deterministic <c>.tar.gz</c>. Its SHA256 is shown to the administrator so the one-command installer verifies what it
+/// downloaded.
 /// </summary>
 public interface ISshAgentBundle
 {
@@ -15,7 +15,4 @@ public interface ISshAgentBundle
 
     /// <summary>Gets the bundle bytes.</summary>
     public ReadOnlyMemory<byte> Content { get; }
-
-    /// <summary>Gets the provider profiles the bundle can install (e.g. <c>cwp</c>, <c>generic-linux</c>).</summary>
-    public IReadOnlyList<string> Profiles { get; }
 }

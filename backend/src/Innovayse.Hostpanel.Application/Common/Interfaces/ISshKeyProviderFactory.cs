@@ -16,7 +16,7 @@ public interface ISshKeyProviderFactory
     public bool Supports(string module);
 
     /// <summary>
-    /// The agent profile a supported module installs (<c>cwp</c> for the v7 hosting panel), used to
+    /// The agent profile a supported module installs: the id the plugin that serves the module names in its manifest, used to
     /// build the installer command. Null for an unsupported module.
     /// </summary>
     /// <param name="module">The server module.</param>

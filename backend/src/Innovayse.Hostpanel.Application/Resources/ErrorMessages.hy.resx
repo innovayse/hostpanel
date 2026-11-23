@@ -1648,4 +1648,22 @@
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Կառավարման վահանակը մերժեց պահված մուտքի տվյալները։</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի sshAgentProfile-ը պետք է լինի պրոֆիլի նույնացուցիչ՝ փոքրատառ բառեր՝ կապված մեկական գծիկով, առավելագույնը 32 նիշ, և չպետք է լինի generic-linux։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>sshAgentProfile կարող է նշել միայն այն պլագինը, որը հայտարարում է provisioningPanel հնարավորությունը։</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>Մանիֆեստում նշված է sshAgentProfile, բայց փաթեթում agent/profile.conf ֆայլը չկա։</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>Փաթեթի SSH բանալիների գործակալի պրոֆիլը անթույլատրելի է։ Մանրամասները ցուցադրված են կողքին։</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>Փաթեթի SSH բանալիների գործակալի պրոֆիլի օգնական ծրագիրը անթույլատրելի է, կամ փաթեթում դրանք չափազանց շատ են։ Մանրամասները ցուցադրված են կողքին։</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Տեղադրված ոչ մի պլագին չի տրամադրում SSH բանալիների գործակալի այս պրոֆիլը։</value>
+  </data>
 </root>

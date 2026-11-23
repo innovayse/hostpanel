@@ -1647,4 +1647,22 @@
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>El panel de control rechazó las credenciales guardadas.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>El sshAgentProfile del manifiesto debe ser un identificador de perfil de palabras en minúsculas unidas por guiones sencillos, de 32 caracteres como máximo, y no puede ser generic-linux.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>Solo un complemento que declara la capacidad provisioningPanel puede indicar un sshAgentProfile.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>El manifiesto indica un sshAgentProfile, pero el paquete no tiene el archivo agent/profile.conf.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>El perfil del agente de claves SSH del paquete no es válido. El detalle se muestra junto a él.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>Un programa auxiliar del perfil del agente de claves SSH del paquete no es válido, o el paquete trae demasiados. El detalle se muestra junto a él.</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Ningún complemento instalado aporta este perfil del agente de claves SSH.</value>
+  </data>
 </root>

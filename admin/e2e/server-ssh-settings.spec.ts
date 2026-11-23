@@ -5,9 +5,9 @@
  * a failure explained in words, and an agent bound to another server.
  */
 import { HttpMethod } from '../src/types/http'
-import { SshAgentProfile, SshProviderFailure } from '../src/types/sshenums'
+import { SshProviderFailure } from '../src/types/sshenums'
 import { expect, test } from '@playwright/test'
-import { hostServer, hostServerSsh, hostServerSshSetup, serverPage, serverModules } from './fixtures/servers'
+import { SSH_AGENT_PROFILE, hostServer, hostServerSsh, hostServerSshSetup, serverPage, serverModules } from './fixtures/servers'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../src/types/serverssh'
 import { json, stubApi } from './support/stubApi'
 
@@ -123,7 +123,7 @@ test('a test against an agent installed for another server explains the mismatch
         isHealthy: false,
         agentVersion: '1.1.0',
         error: SshProviderFailure.BindingMismatch,
-        provider: SshAgentProfile.Cwp,
+        provider: SSH_AGENT_PROFILE,
       }),
     ],
   })

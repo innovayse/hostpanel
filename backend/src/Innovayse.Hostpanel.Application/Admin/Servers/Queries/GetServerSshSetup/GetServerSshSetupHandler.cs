@@ -18,8 +18,8 @@ public sealed class GetServerSshSetupHandler
     /// <summary>Provider factory, for the agent profile.</summary>
     private readonly ISshKeyProviderFactory _factory;
 
-    /// <summary>The bundle this build ships.</summary>
-    private readonly ISshAgentBundle _bundle;
+    /// <summary>The bundles this build ships.</summary>
+    private readonly ISshAgentBundles _bundles;
 
     /// <summary>How managed servers see this HostPanel.</summary>
     private readonly SshAgentOptions _network;
@@ -27,13 +27,13 @@ public sealed class GetServerSshSetupHandler
     /// <summary>Initialises the handler.</summary>
     /// <param name="context">Data context.</param>
     /// <param name="factory">Provider factory, for the agent profile.</param>
-    /// <param name="bundle">The bundle this build ships.</param>
+    /// <param name="bundles">The bundles this build ships.</param>
     /// <param name="network">How managed servers see this HostPanel.</param>
-    public GetServerSshSetupHandler(IHostpanelDbContext context, ISshKeyProviderFactory factory, ISshAgentBundle bundle, IOptions<SshAgentOptions> network)
+    public GetServerSshSetupHandler(IHostpanelDbContext context, ISshKeyProviderFactory factory, ISshAgentBundles bundles, IOptions<SshAgentOptions> network)
     {
         _context = context;
         _factory = factory;
-        _bundle = bundle;
+        _bundles = bundles;
         _network = network.Value;
     }
 
@@ -50,6 +50,6 @@ public sealed class GetServerSshSetupHandler
         }
 
         var settings = await _context.ServerSshSettings.AsNoTracking().FirstOrDefaultAsync(s => s.ServerId == server.Id, ct);
-        return Result<ServerSshSetupDto>.Success(settings.ToSetupDto(server.Id, _factory.AgentProfileFor(server.Module), _bundle, _network));
+        return Result<ServerSshSetupDto>.Success(settings.ToSetupDto(server.Id, _factory.AgentProfileFor(server.Module), _bundles, _network));
     }
 }

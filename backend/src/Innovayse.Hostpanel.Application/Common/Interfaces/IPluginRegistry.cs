@@ -42,4 +42,11 @@ public interface IPluginRegistry
     /// <param name="pluginId">The plugin identifier as declared in <c>plugin.json</c>.</param>
     /// <returns>The icon; <see langword="null"/> when the plugin is not loaded or declares none.</returns>
     public PluginIconDto? GetIcon(string pluginId);
+
+    /// <summary>
+    /// Returns the SSH key agent profile a loaded plugin ships, as it was checked at load, found by the profile id.
+    /// </summary>
+    /// <param name="profileId">The profile id a manifest names in <c>sshAgentProfile</c>; matched exactly.</param>
+    /// <returns>The profile; <see langword="null"/> when no loaded plugin ships one with that id.</returns>
+    public PluginAgentProfileDto? FindAgentProfile(string profileId);
 }

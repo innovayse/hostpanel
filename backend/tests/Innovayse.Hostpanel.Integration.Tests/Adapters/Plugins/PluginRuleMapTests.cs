@@ -2,6 +2,8 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using PackageAgentRule = Hostpanel.Sdk.Packaging.Enums.PluginAgentRule;
+using PackageAgentViolation = Hostpanel.Sdk.Packaging.Agent.PluginAgentViolation;
 using PackageArchiveRule = Hostpanel.Sdk.Packaging.Enums.PluginArchiveRule;
 using PackageIconRule = Hostpanel.Sdk.Packaging.Enums.PluginIconRule;
 using PackageManifestRule = Hostpanel.Sdk.Packaging.Enums.PluginManifestRule;
@@ -68,6 +70,56 @@ public sealed class PluginRuleMapTests
         }
     }
 
+    /// <summary>Every agent rule of the package becomes one of the host's three agent manifest rules, each with an error code.</summary>
+    /// <param name="rule">The package's agent rule.</param>
+    [Theory]
+    [MemberData(nameof(AgentRules))]
+    public void EveryAgentRule_MapsToAHostAgentRuleWithACode(PackageAgentRule rule)
+    {
+        var host = PluginRuleMap.ToHost(rule);
+
+        host.Should().BeOneOf(
+            PluginManifestRule.SshAgentProfileMissing, PluginManifestRule.SshAgentProfileFileInvalid, PluginManifestRule.SshAgentHelperInvalid);
+        PluginPackageErrors.CodeFor(host).Should().StartWith("PLUGIN_SSH_AGENT_");
+    }
+
+    /// <summary>The missing profile, the profile file problems and the helper problems keep to their own host rule.</summary>
+    /// <param name="rule">The package's agent rule.</param>
+    /// <param name="expected">The host rule.</param>
+    [Theory]
+    [InlineData(PackageAgentRule.ProfileMissing, PluginManifestRule.SshAgentProfileMissing)]
+    [InlineData(PackageAgentRule.ProfileInvalid, PluginManifestRule.SshAgentProfileFileInvalid)]
+    [InlineData(PackageAgentRule.KeyNotAllowed, PluginManifestRule.SshAgentProfileFileInvalid)]
+    [InlineData(PackageAgentRule.ProviderMismatch, PluginManifestRule.SshAgentProfileFileInvalid)]
+    [InlineData(PackageAgentRule.BindingNotEmpty, PluginManifestRule.SshAgentProfileFileInvalid)]
+    [InlineData(PackageAgentRule.PathOutsideHelperDirectory, PluginManifestRule.SshAgentProfileFileInvalid)]
+    [InlineData(PackageAgentRule.LinkNotAllowed, PluginManifestRule.SshAgentProfileFileInvalid)]
+    [InlineData(PackageAgentRule.HelperInvalid, PluginManifestRule.SshAgentHelperInvalid)]
+    [InlineData(PackageAgentRule.TooManyHelpers, PluginManifestRule.SshAgentHelperInvalid)]
+    public void EachAgentRule_MapsToItsHostRule(PackageAgentRule rule, PluginManifestRule expected)
+    {
+        PluginRuleMap.ToHost(rule).Should().Be(expected);
+    }
+
+    /// <summary>An agent rule value the package does not define is refused, not passed through.</summary>
+    [Fact]
+    public void AnUndefinedAgentRule_IsRefused()
+    {
+        var map = () => PluginRuleMap.ToHost((PackageAgentRule)9999);
+
+        map.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    /// <summary>An agent violation keeps its detail and takes the host's rule.</summary>
+    [Fact]
+    public void AnAgentViolation_KeepsItsDetailAndTakesTheHostRule()
+    {
+        var host = PluginRuleMap.ToHost(new PackageAgentViolation(PackageAgentRule.KeyNotAllowed, "the profile sets 'x'"));
+
+        host.Rule.Should().Be(PluginManifestRule.SshAgentProfileFileInvalid);
+        host.Detail.Should().Be("the profile sets 'x'");
+    }
+
     /// <summary>The package's archive rules become the outcome an install is refused with: too large for the limits, unsafe for a traversal, unwritable for a clash of names.</summary>
     /// <param name="rule">The package's archive rule.</param>
     /// <param name="expected">The refusing outcome.</param>
@@ -118,6 +170,19 @@ public sealed class PluginRuleMapTests
         {
             PluginPackageErrors.CodeFor(rule).Should().StartWith("PLUGIN_");
         }
+    }
+
+    /// <summary>The package's agent rules, one per theory case.</summary>
+    /// <returns>One row per value of <see cref="PackageAgentRule"/>.</returns>
+    public static TheoryData<PackageAgentRule> AgentRules()
+    {
+        var data = new TheoryData<PackageAgentRule>();
+        foreach (var rule in Enum.GetValues<PackageAgentRule>())
+        {
+            data.Add(rule);
+        }
+
+        return data;
     }
 
     /// <summary>The package's manifest rules, one per theory case.</summary>

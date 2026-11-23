@@ -4,7 +4,7 @@
  * lines shown for the agent port. The agent's private key is write-only: it is sent, never read back.
  */
 
-import type { SshAgentProfile, SshProviderFailure } from '@/types/sshenums'
+import type { SshProviderFailure } from '@/types/sshenums'
 
 /** A server's SSH key management settings. */
 export interface ServerSshSettingsDto {
@@ -70,16 +70,16 @@ export interface SshAgentTestResultDto {
   agentVersion: string | null
   /** Why the check failed, when it did; `BindingMismatch` when the agent was installed for another server. */
   error: SshProviderFailure | null
-  /** The profile the agent runs, when it answered. */
-  provider: SshAgentProfile | null
+  /** The profile id the agent runs, when it answered: the id a plugin ships, or the host's default. */
+  provider: string | null
 }
 
 /** What the admin panel needs to build the one-command installer for a server. */
 export interface ServerSshSetupDto {
   /** The server. */
   serverId: number
-  /** Agent profile for the server's module, null when the module is unsupported. */
-  profile: SshAgentProfile | null
+  /** Agent profile id for the server's module (the id its plugin ships), null when the module is unsupported or has no profile to install. */
+  profile: string | null
   /** The management public key to install, null until an identity is generated. */
   publicKey: string | null
   /** The id the installer binds the agent to, null until an identity is generated. */

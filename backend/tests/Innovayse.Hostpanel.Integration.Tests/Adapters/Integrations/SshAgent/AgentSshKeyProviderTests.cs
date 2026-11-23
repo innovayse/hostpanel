@@ -3,10 +3,6 @@ using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
-using Innovayse.Hostpanel.Infrastructure.Security;
-using Innovayse.Hostpanel.Infrastructure.Security.Settings;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.SshAgent;
 
@@ -135,9 +131,7 @@ public sealed class AgentSshKeyProviderTests
     [Fact]
     public void Factory_OnlyTheAgentModuleSupported_AndSettingsMustBeComplete()
     {
-        var factory = new SshKeyProviderFactory(new SshAgentTransport(
-            new OutboundConnector(Options.Create(new OutboundNetworkOptions()), Options.Create(new PanelNetworkOptions())),
-            NullLogger<SshAgentTransport>.Instance));
+        var factory = SshAgentTestSeeds.KeyFactory();
 
         Assert.IsType<AgentSshKeyProvider>(factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: true))));
         Assert.Null(factory.CreateFor(Target(ServerModules.CPanel, Agent(isComplete: true))));

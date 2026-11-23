@@ -215,4 +215,26 @@ public enum PluginManifestRule
     /// the entry point; the plugin's detail carries the load error.
     /// </summary>
     AssemblyLoadFailed = 52,
+
+    /// <summary>
+    /// The <c>sshAgentProfile</c> is not a well formed profile id or is the profile id the host keeps for its own default
+    /// profile.
+    /// </summary>
+    SshAgentProfileInvalid = 53,
+
+    /// <summary>The <c>sshAgentProfile</c> is set on a plugin that does not declare the <c>provisioningPanel</c> capability.</summary>
+    SshAgentProfileNotAllowed = 54,
+
+    /// <summary>The manifest names an <c>sshAgentProfile</c> but the package has no profile file.</summary>
+    SshAgentProfileMissing = 55,
+
+    /// <summary>
+    /// The profile file of the package cannot be used: it is too large, not a regular file, not text in the agent's
+    /// configuration format, sets a key the agent does not define, names another <c>provider</c> than the manifest, sets a
+    /// <c>binding</c>, points outside the agent's helper folder, or sits behind a link.
+    /// </summary>
+    SshAgentProfileFileInvalid = 56,
+
+    /// <summary>A helper of the package has a name that is not allowed, is not a regular file or is too large, or there are too many helpers.</summary>
+    SshAgentHelperInvalid = 57,
 }

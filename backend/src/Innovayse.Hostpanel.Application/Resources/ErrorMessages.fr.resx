@@ -1648,4 +1648,22 @@
 <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Le panneau de contrôle a refusé les identifiants enregistrés.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Le sshAgentProfile du manifeste doit être un identifiant de profil fait de mots en minuscules reliés par des tirets simples, de 32 caractères au plus, et ne peut pas être generic-linux.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>Seul un plugin qui déclare la capacité provisioningPanel peut indiquer un sshAgentProfile.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>Le manifeste indique un sshAgentProfile, mais le paquet ne contient pas le fichier agent/profile.conf.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>Le profil de l'agent de clés SSH du paquet n'est pas valide. Le détail est affiché à côté.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>Un programme auxiliaire du profil de l'agent de clés SSH du paquet n'est pas valide, ou le paquet en contient trop. Le détail est affiché à côté.</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Aucun plugin installé ne fournit ce profil de l'agent de clés SSH.</value>
+  </data>
 </root>

@@ -30,16 +30,18 @@ public sealed class PublicSshAgentController : BaseApiController
         _bus = bus;
     }
 
-    /// <summary>Downloads the agent bundle this HostPanel build ships.</summary>
+    /// <summary>Downloads an agent bundle this HostPanel build ships: the built in profile alone, or with the profile a plugin ships.</summary>
+    /// <param name="query">The profile to install; omitted for the built in profile only.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 with the <c>.tar.gz</c>; 429 when the rate limit is hit.</returns>
+    /// <returns>200 with the <c>.tar.gz</c>; 404 when no loaded plugin ships the profile; 429 when the rate limit is hit.</returns>
     [HttpGet("bundle.tar.gz")]
     [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.Upstream)]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetBundleAsync(CancellationToken ct)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetBundleAsync([FromQuery] GetSshAgentBundleQuery query, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<FileDownloadDto>>(new GetSshAgentBundleQuery(), ct);
+        var outcome = await _bus.InvokeAsync<Result<FileDownloadDto>>(query, ct);
         return FileResult(outcome);
     }
 }

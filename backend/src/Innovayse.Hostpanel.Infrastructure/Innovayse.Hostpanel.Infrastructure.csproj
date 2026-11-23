@@ -83,7 +83,7 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
-    <!-- The SSH key agent bundle (EmbeddedSshAgentBundle): everything an administrator installs on a
+    <!-- The SSH key agent bundle (SshAgentBundles): everything an administrator installs on a
          server, tests and caches excluded. Logical names keep the relative layout. -->
     <EmbeddedResource Include="..\..\agent\ssh-key-agent\**\*"
                       Exclude="..\..\agent\ssh-key-agent\tests\**;..\..\agent\ssh-key-agent\**\__pycache__\**"

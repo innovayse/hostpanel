@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Innovayse.Hostpanel.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261123050230_AddFreeTrialServices")]
+    [Migration("20261123125740_AddFreeTrialServices")]
     partial class AddFreeTrialServices
     {
         /// <inheritdoc />
@@ -4186,9 +4186,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("ServiceId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -4335,9 +4332,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
-
-                    b.Property<DateTimeOffset?>("TrialPaymentDueAt")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TrialReminderDays")
                         .HasColumnType("text");

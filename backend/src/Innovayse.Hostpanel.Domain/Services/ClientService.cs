@@ -46,9 +46,6 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <summary>Gets the UTC moment the trial ends, or <see langword="null"/> when it is not a trial.</summary>
     public DateTimeOffset? TrialEndsAt { get; private set; }
 
-    /// <summary>Gets the UTC moment the first invoice of a converted trial must be paid by, or <see langword="null"/> when none is owed.</summary>
-    public DateTimeOffset? TrialPaymentDueAt { get; private set; }
-
     /// <summary>Gets whether the trial turns into a paid service at its end.</summary>
     public bool TrialAutoConvert { get; private set; }
 
@@ -305,7 +302,7 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <param name="now">The moment to count from (UTC), read by the caller.</param>
     /// <returns>
     /// The days left, or <see langword="null"/> when the service is not a trial or its trial is not
-    /// <see cref="Enums.TrialStatus.Active"/> (awaiting payment, converted or terminated).
+    /// <see cref="Enums.TrialStatus.Active"/> (no other status exists yet).
     /// </returns>
     public int? TrialDaysLeft(DateTimeOffset now)
     {

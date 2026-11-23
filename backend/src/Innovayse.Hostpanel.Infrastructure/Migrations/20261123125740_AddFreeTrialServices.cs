@@ -32,12 +32,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: 0);
 
-            migrationBuilder.AddColumn<DateTimeOffset>(
-                name: "TrialPaymentDueAt",
-                table: "ClientServices",
-                type: "timestamp with time zone",
-                nullable: true);
-
             migrationBuilder.AddColumn<string>(
                 name: "TrialReminderDays",
                 table: "ClientServices",
@@ -59,7 +53,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     ClientId = table.Column<int>(type: "integer", nullable: false),
                     ProductId = table.Column<int>(type: "integer", nullable: false),
-                    ServiceId = table.Column<int>(type: "integer", nullable: true),
                     StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -99,10 +92,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
             migrationBuilder.DropColumn(
                 name: "TrialGracePeriodDays",
-                table: "ClientServices");
-
-            migrationBuilder.DropColumn(
-                name: "TrialPaymentDueAt",
                 table: "ClientServices");
 
             migrationBuilder.DropColumn(

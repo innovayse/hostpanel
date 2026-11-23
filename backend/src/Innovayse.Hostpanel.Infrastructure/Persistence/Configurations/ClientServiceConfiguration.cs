@@ -57,7 +57,6 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(30);
         builder.Property(x => x.TrialStatus).HasConversion<string>().HasMaxLength(30);
         builder.Property(x => x.TrialEndsAt);
-        builder.Property(x => x.TrialPaymentDueAt);
         builder.Property(x => x.TrialAutoConvert).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.TrialGracePeriodDays).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.TrialReminderDays);

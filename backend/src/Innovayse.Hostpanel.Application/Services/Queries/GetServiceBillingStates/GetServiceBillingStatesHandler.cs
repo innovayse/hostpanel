@@ -34,7 +34,7 @@ public sealed class GetServiceBillingStatesHandler
             .Where(s => query.ServiceIds.Contains(s.Id))
             .OrderBy(s => s.Id)
             .Select(s => new ServiceBillingStateDto(s.Id, s.Status, s.SuspensionSource, s.OverrideAutoSuspend, s.SuspendUntil, s.AutoRenew,
-                s.TrialStatus == TrialStatus.Active || s.TrialStatus == TrialStatus.AwaitingPayment))
+                s.TrialStatus == TrialStatus.Active))
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<ServiceBillingStateDto>>.Success(states);

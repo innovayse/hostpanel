@@ -14,10 +14,10 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class AddFreeTrialServicesMigrationTests
 {
     /// <summary>The migration before the one under test.</summary>
-    private const string PreviousMigration = "20261122120000_AddServerApiHost";
+    private const string PreviousMigration = "20261123061243_MoveCwpServersToPlugin";
 
     /// <summary>The migration under test.</summary>
-    private const string TargetMigration = "20261123050230_AddFreeTrialServices";
+    private const string TargetMigration = "20261123125740_AddFreeTrialServices";
 
     /// <summary>Up creates the table and the columns.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
@@ -30,7 +30,7 @@ public sealed class AddFreeTrialServicesMigrationTests
         {
             await MigrateAsync(connectionString, TargetMigration);
 
-            (await CountColumnsAsync(connectionString, "ClientProductTrials")).Should().Be(5);
+            (await CountColumnsAsync(connectionString, "ClientProductTrials")).Should().Be(4);
             (await CountColumnsAsync(connectionString, "ClientServices", TrialColumns)).Should().Be(TrialColumns.Length);
         }
         finally
@@ -78,7 +78,6 @@ public sealed class AddFreeTrialServicesMigrationTests
 
             service.TrialStatus.Should().BeNull();
             service.TrialEndsAt.Should().BeNull();
-            service.TrialPaymentDueAt.Should().BeNull();
             service.TrialAutoConvert.Should().BeFalse();
             service.TrialGracePeriodDays.Should().Be(0);
             service.TrialReminderDays.Should().BeNull();
@@ -91,7 +90,7 @@ public sealed class AddFreeTrialServicesMigrationTests
 
     /// <summary>The trial columns of <c>ClientServices</c>.</summary>
     private static readonly string[] TrialColumns =
-        ["TrialStatus", "TrialEndsAt", "TrialPaymentDueAt", "TrialAutoConvert", "TrialGracePeriodDays", "TrialReminderDays"];
+        ["TrialStatus", "TrialEndsAt", "TrialAutoConvert", "TrialGracePeriodDays", "TrialReminderDays"];
 
     /// <summary>Opens a context over the database.</summary>
     /// <param name="connectionString">The connection string.</param>

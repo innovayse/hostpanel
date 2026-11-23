@@ -50,9 +50,8 @@ public sealed class OrderServiceTrialTests(IntegrationTestFactory factory) : ICl
         service.TrialStatus.Should().Be(TrialStatus.Active);
         service.TrialEndsAt.Should().BeOnOrAfter(before.AddDays(Trial.Days));
         service.TrialEndsAt.Should().BeOnOrBefore(DateTimeOffset.UtcNow.AddDays(Trial.Days));
-        var row = await context.ClientProductTrials.AsNoTracking()
-            .SingleAsync(t => t.ClientId == clientId && t.ProductId == productId, CancellationToken.None);
-        row.ServiceId.Should().Be(service.Id);
+        (await context.ClientProductTrials.AsNoTracking()
+            .CountAsync(t => t.ClientId == clientId && t.ProductId == productId, CancellationToken.None)).Should().Be(1);
     }
 
     /// <summary>A client gets one trial of a product: a second trial order is refused and creates no second service.</summary>
@@ -153,9 +152,8 @@ public sealed class OrderServiceTrialTests(IntegrationTestFactory factory) : ICl
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             (await context.ClientServices.AsNoTracking()
                 .CountAsync(s => s.ClientId == clientId && s.ProductId == productId, CancellationToken.None)).Should().Be(1);
-            var row = await context.ClientProductTrials.AsNoTracking()
-                .SingleAsync(t => t.ClientId == clientId && t.ProductId == productId, CancellationToken.None);
-            row.ServiceId.Should().Be(results.Single(r => r.IsSuccess).Value);
+            (await context.ClientProductTrials.AsNoTracking()
+                .CountAsync(t => t.ClientId == clientId && t.ProductId == productId, CancellationToken.None)).Should().Be(1);
         }
     }
 
@@ -241,9 +239,8 @@ public sealed class OrderServiceTrialTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await context.ClientServices.AsNoTracking().CountAsync(s => s.ClientId == clientId, CancellationToken.None)).Should().Be(0);
-        var row = await context.ClientProductTrials.AsNoTracking()
-            .SingleAsync(t => t.ClientId == clientId && t.ProductId == productId, CancellationToken.None);
-        row.ServiceId.Should().BeNull();
+        (await context.ClientProductTrials.AsNoTracking()
+            .CountAsync(t => t.ClientId == clientId && t.ProductId == productId, CancellationToken.None)).Should().Be(1);
     }
 
     /// <summary>An ordinary order writes no trial record and leaves the service's trial status unset.</summary>

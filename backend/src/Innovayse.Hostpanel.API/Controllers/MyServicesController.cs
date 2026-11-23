@@ -129,7 +129,7 @@ public sealed class MyServicesController : BaseApiController
     /// user lacks <c>PlaceNewOrders</c>, or with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c>; 404 with
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> or <c>PRODUCT_NOT_FOUND</c>; 409 with <c>PRODUCT_TRIAL_NOT_AVAILABLE</c> when the product
     /// offers no trial, <c>ORDER_TRIAL_ALREADY_USED</c> when the client already had it, or <c>ORDER_PRODUCT_SOLD_OUT</c> or
-    /// <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's limits refuse it.
+    /// <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the product's limits refuse it; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("trial")]
     [Authorize(Policy = Policies.Client)]

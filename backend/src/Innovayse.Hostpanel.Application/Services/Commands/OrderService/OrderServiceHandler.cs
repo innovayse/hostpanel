@@ -178,13 +178,6 @@ public sealed class OrderServiceHandler
             return Result<int>.FailureCode(HostpanelErrorCodes.ORDER_TRIAL_ALREADY_USED);
         }
 
-        if (trialRecord is not null)
-        {
-            // The service's id exists only after the first save; the record is linked to it in the same transaction.
-            trialRecord.AttachService(service.Id);
-            await _context.SaveChangesAsync(ct);
-        }
-
         if (transaction is not null)
         {
             await transaction.CommitAsync(ct);

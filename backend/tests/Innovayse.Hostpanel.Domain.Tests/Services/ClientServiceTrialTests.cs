@@ -142,19 +142,4 @@ public sealed class ClientServiceTrialTests
         service.TrialDaysLeft(Now.AddDays(14)).Should().Be(0);
         service.TrialDaysLeft(Now.AddDays(30)).Should().Be(0);
     }
-
-    /// <summary>Only an Active trial has days left: a trial awaiting payment, converted or terminated shows none.</summary>
-    /// <param name="status">The trial status.</param>
-    [Theory]
-    [InlineData(TrialStatus.AwaitingPayment)]
-    [InlineData(TrialStatus.ConvertedToPaid)]
-    [InlineData(TrialStatus.Terminated)]
-    public void TrialDaysLeft_OfANonActiveTrial_IsNull(TrialStatus status)
-    {
-        var service = ClientService.Create(1, 2, BillingCycle.Monthly, Now);
-        service.StartTrial(Rules, Now);
-        typeof(ClientService).GetProperty(nameof(ClientService.TrialStatus))!.SetValue(service, status);
-
-        service.TrialDaysLeft(Now).Should().BeNull();
-    }
 }

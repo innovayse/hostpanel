@@ -21,10 +21,8 @@ public sealed class ClientProductTrialConfiguration : IEntityTypeConfiguration<C
         builder.Property(x => x.ProductId).IsRequired();
         builder.Property(x => x.StartedAt).IsRequired();
 
-        // No foreign key on ServiceId: the record outlives its service, so a client cannot get the trial again by
-        // having the service removed.
-        builder.Property(x => x.ServiceId);
-
+        // No foreign key to the service: the record outlives it, so a client cannot get the trial again by having the
+        // service removed.
         // One trial of a product per client, ever; the database refuses a second one.
         builder.HasIndex(x => new { x.ClientId, x.ProductId })
             .IsUnique()

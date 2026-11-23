@@ -315,9 +315,9 @@ onMounted(loadClients)
             <UiText class="truncate">{{ invoice.clientName }}</UiText>
           </UiTableCell>
           <UiTableCell muted hide-below="md">{{ formatDate(invoice.createdAt) }}</UiTableCell>
-          <UiTableCell muted hide-below="xl">{{ formatDate(invoice.dueDate) }}</UiTableCell>
+          <UiTableCell muted hide-below="2xl">{{ formatDate(invoice.dueDate) }}</UiTableCell>
           <UiTableCell numeric hide-below="sm">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
-          <UiTableCell muted hide-below="xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell muted hide-below="2xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
             <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
           </UiTableCell>

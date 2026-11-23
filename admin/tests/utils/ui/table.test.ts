@@ -16,6 +16,7 @@ import {
   truncatesColumn,
   growControlClasses,
   headerDensityClasses,
+  hideBelowClasses,
   UiAlign,
   UiCardRole,
   UiColumnKind,
@@ -27,6 +28,11 @@ import {
 } from '@/utils/ui/table'
 
 describe('table vocabulary', () => {
+  it('hides a secondary column below its breakpoint with literal classes, the widest breakpoint included', () => {
+    expect(hideBelowClasses[UiHideBelow.Xl]).toBe('hidden xl:table-cell')
+    expect(hideBelowClasses[UiHideBelow.TwoXl]).toBe('hidden 2xl:table-cell')
+  })
+
   it('maps every alignment to its logical text- class, so right-to-left layouts mirror', () => {
     expect(alignClasses[UiAlign.Left]).toBe('text-start')
     expect(alignClasses[UiAlign.Center]).toBe('text-center')

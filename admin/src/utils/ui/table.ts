@@ -28,6 +28,7 @@ export const UiHideBelow = {
   Md: 'md',
   Lg: 'lg',
   Xl: 'xl',
+  TwoXl: '2xl',
 } as const
 
 /** One of the breakpoints. */
@@ -39,6 +40,7 @@ export const hideBelowClasses: Record<UiHideBelow, string> = {
   md: 'hidden md:table-cell',
   lg: 'hidden lg:table-cell',
   xl: 'hidden xl:table-cell',
+  '2xl': 'hidden 2xl:table-cell',
 }
 
 /** Closed set of sort directions of a sortable column. */

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { APP_LOCALES } from '~/constants/appLocales'
+import type { AppLocale } from '~/types/applocale'
 import {
   DASHBOARD_ROWS,
   GUARANTEE_CARDS,
@@ -20,7 +22,7 @@ import {
 } from '~/templates/nova/content'
 
 /** The locales the portal ships; plugins/i18n.ts loads every one of them. */
-const LOCALES = ['en', 'ru', 'hy', 'fr'] as const
+const LOCALES = APP_LOCALES
 
 /**
  * Reads one locale's nova module.
@@ -54,7 +56,7 @@ const flatten = (value: unknown, prefix = ''): string[] => {
 /** The flattened key set of each locale's Nova messages. */
 const messages = Object.fromEntries(
   LOCALES.map(locale => [locale, new Set(flatten(load(locale)))]),
-) as Record<(typeof LOCALES)[number], Set<string>>
+) as Record<AppLocale, Set<string>>
 
 /** Every i18n key `content.ts` asks the components to render. */
 const referenced = [

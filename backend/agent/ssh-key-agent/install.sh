@@ -77,11 +77,11 @@ if [[ $CHECK -eq 1 ]]; then
   pong="$(echo '{"v":1,"op":"ping"}' | sudo -u "$MGMT_USER" sudo -n "$AGENT_DST" 2>&1 || true)"
   [[ "$pong" == *'"ok": true'* ]] && say OK "self-test: $pong" || say FAIL "self-test: $pong"
   rc=0
-  unsafe="$("$AGENT_DST" --check-config 2>/dev/null)" || rc=$?
+  problems="$("$AGENT_DST" --check-config 2>/dev/null)" || rc=$?
   case $rc in
-    0) say OK "jail_extras hold no private key material" ;;
-    1) say WARN "${unsafe//$'\n'/; }" ;;
-    *) say WARN "could not check jail_extras (agent exit $rc); run $AGENT_DST --check-config to see why" ;;
+    0) say OK "jail extras hold no private key material and every configured jail section exists" ;;
+    1) say WARN "${problems//$'\n'/; }" ;;
+    *) say WARN "could not check the jail configuration (agent exit $rc); run $AGENT_DST --check-config to see why" ;;
   esac
   for f in /etc/ssh/ssh_host_ed25519_key.pub; do [[ -f $f ]] && say INFO "host key $(ssh-keygen -lf "$f" -E sha256 | awk '{print $2}')"; done
   penalty_note

@@ -412,6 +412,53 @@ hp_drop_pool() {
   hp_say "pool of php $1 removed"
 }
 
+# ----------------------------------------------------------------------------- SELinux
+# hp_selinux_enforcing: true when SELinux is on and enforcing. The websites the helpers write are not labelled for it
+# (the web server may not read a customer's home, nor a pool's socket), so ensure-website refuses until that is handled.
+hp_selinux_enforcing() {
+  [ -x "$SBIN/getenforce" ] && [ "$("$SBIN/getenforce" 2>/dev/null)" = Enforcing ]
+}
+
+# ----------------------------------------------------------------------------- jail contents
+# hp_logical <path>: the logical path (without HP_ROOT) of a file path; false when it lies outside HP_ROOT.
+hp_logical() {
+  [[ "$1" == "$ROOT"/* ]] || return 1
+  printf '%s\n' "${1#"$ROOT"}"
+}
+
+# hp_tool_path <name>: the logical absolute path `command -v` finds for a tool in the standard directories; false when
+# the tool is not installed.
+hp_tool_path() {
+  local found
+  found="$(PATH="$ROOT/usr/local/bin:$ROOT/usr/bin:$ROOT/bin:$ROOT/usr/sbin:$ROOT/sbin" command -v -- "$1" 2>/dev/null)" || return 1
+  hp_logical "$found"
+}
+
+# hp_php_dirs <cli>: the directories a PHP CLI reads at start: its ini directory, its directory of additional ini files
+# (and the directories the symlinks in it lead to, which is where Debian keeps the module files) and its extension
+# directory, as logical paths. Asked of the CLI itself so every layout (sury, Remi, AppStream) answers the same way;
+# `-n` keeps it from loading anything.
+hp_php_dirs() {
+  local ini="" scan="" ext="" dir link target
+  {
+    read -r ini
+    read -r scan
+    read -r ext
+  } < <("$ROOT$1" -n -r 'echo PHP_CONFIG_FILE_PATH, "\n", PHP_CONFIG_FILE_SCAN_DIR, "\n", PHP_EXTENSION_DIR, "\n";' </dev/null 2>/dev/null) || true
+  for dir in "$ini" "$scan" "$ext"; do
+    if [[ "$dir" =~ ^/[A-Za-z0-9._+/-]+$ ]] && [ -d "$ROOT$dir" ]; then
+      printf '%s\n' "$dir"
+    fi
+  done
+  if [[ "$scan" =~ ^/[A-Za-z0-9._+/-]+$ ]]; then
+    for link in "$ROOT$scan"/*.ini; do
+      if [ -L "$link" ] && target="$(readlink -f -- "$link")" && target="$(hp_logical "$target")"; then
+        printf '%s\n' "${target%/*}"
+      fi
+    done
+  fi
+}
+
 # ----------------------------------------------------------------------------- databases
 # At most this many databases per account.
 MAX_DATABASES=10

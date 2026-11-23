@@ -21,8 +21,8 @@ import UiText from '@/components/ui/UiText.vue'
 import ServerFacts from '@/components/servers/ServerFacts.vue'
 import { EMPTY_VALUE, formatDateTime, formatRelativeFromNow } from '@/lib/format'
 import { SERVER_STATE_KEYS, SERVER_STATE_TONES, serverAccountsLabel, serverLoadPercent, serverState } from '@/lib/servers'
-import { moduleNameOf } from '@/types/server'
-import type { ServerDto, ServerModuleOptionDto, ServerTestOutcome } from '@/types/server'
+import { moduleLabel } from '@/types/server'
+import type { ServerDto, ServerTestOutcome } from '@/types/server'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTextTag } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -36,20 +36,12 @@ const { t, locale } = useI18n()
 /** Props for ServerCard. */
 const props = withDefaults(defineProps<{
   /** The server to show; null while the list is still loading. */
-  /** The modules the API declares, so the card names the server's module as its plugin does. */
-  moduleOptions?: ServerModuleOptionDto[]
   server?: ServerDto | null
   /** Row actions of the server. */
   actions?: UiMenuAction[]
   /** True while a connection test is running for the server. */
   testing?: boolean
   /** Outcome of the last connection test, or null when there is none. */
-  /**
-   * Default for `moduleOptions`.
-   *
-   * @returns No declared modules: the card falls back to the host's label of the module.
-   */
-  moduleOptions: () => [],
   testOutcome?: ServerTestOutcome | null
 }>(), {
   server: null,
@@ -57,9 +49,6 @@ const props = withDefaults(defineProps<{
    * Default for `actions`.
    *
    * @returns No row actions.
-/** The name of the server's module; empty while loading. */
-const moduleName = computed<string>(() => (props.server === null ? '' : moduleNameOf(props.server.module, props.moduleOptions)))
-
    */
   actions: () => [],
   testing: false,
@@ -83,16 +72,16 @@ const state = computed<{ tone: UiTone; key: string } | null>(() => {
 </script>
 
 <template>
-  <UiCard :padding="UiCardPadding.Md" class="flex h-full flex-col" :aria-busy="loading ? 'true' : undefined" :data-testid="server ? `server-row-${server.id}` : 'server-card-loading'">
-    <UiStack :gap="UiGap.Md" class="flex-1">
-      <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Start" :gap="UiGap.Sm">
-        <UiStack :gap="UiGap.Xs" class="min-w-0">
-          <UiText v-if="server" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-semibold" :data-testid="`servers-module-${server.module}`">{{ moduleName }}</UiText>
+  <UiCard padding="md" :aria-busy="loading ? 'true' : undefined" :data-testid="server ? `server-row-${server.id}` : 'server-card-loading'">
+    <UiStack gap="md">
+      <UiStack direction="row" justify="between" align="start" gap="sm">
+        <UiStack gap="xs" class="min-w-0">
+          <UiText v-if="server" tone="muted" size="xs" class="font-semibold" :data-testid="`servers-module-${server.module}`">{{ moduleLabel(server.module) }}</UiText>
           <UiSkeletonBar v-else class="h-3 w-16 rounded" aria-hidden="true" />
-          <UiStack v-if="server" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
-            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="min-w-0 break-words font-medium">{{ server.name }}</UiText>
-            <UiTooltip v-if="server.limits.isDefault" :text="t('servers.servers.defaultHint', { module: moduleName })">
-              <UiBadge :tone="UiTone.Warning" small data-testid="server-default-badge">{{ t('servers.servers.default') }}</UiBadge>
+          <UiStack v-if="server" direction="row" align="center" gap="sm" wrap>
+            <UiText tone="primary" size="lg" class="min-w-0 break-words font-medium">{{ server.name }}</UiText>
+            <UiTooltip v-if="server.limits.isDefault" :text="t('servers.servers.defaultHint', { module: moduleLabel(server.module) })">
+              <UiBadge tone="warning" small data-testid="server-default-badge">{{ t('servers.servers.default') }}</UiBadge>
             </UiTooltip>
             <UiTooltip v-if="server.limits.isDisabled" :text="t('servers.servers.disabledHint')">
               <UiBadge tone="neutral" small data-testid="server-disabled-badge">{{ t('servers.servers.disabled') }}</UiBadge>

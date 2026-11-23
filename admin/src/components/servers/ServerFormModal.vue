@@ -9,7 +9,8 @@
  */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ServerModule, moduleLabel, moduleOptionLabel } from '@/types/server'
+import { ServerModule, moduleLabel } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
 import type { ServerDto, ServerModuleOptionDto, ServerPayload } from '@/types/server'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import StoredSecretState from '@/components/servers/StoredSecretState.vue'
@@ -135,7 +136,7 @@ interface ServerFormState {
 const moduleSelectOptions = computed(() => {
   const options = props.moduleOptions.map(option => ({
     value: option.id,
-    label: moduleOptionLabel(option),
+    label: option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id),
   }))
   const stored = props.server?.module
   if (stored && !options.some(option => option.value.toLowerCase() === stored.toLowerCase())) {

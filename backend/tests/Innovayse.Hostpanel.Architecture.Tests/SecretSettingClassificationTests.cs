@@ -41,54 +41,29 @@ public sealed class SecretSettingClassificationTests
     }
 
     /// <summary>
-    /// Every setting a shipped plugin manifest declares as secret, in <c>settings</c> or in the legacy <c>fields</c>,
-    /// is in the registry too, and no plain setting is. A settings-only plugin is covered like a fields-only one.
+    /// Every setting a plugin manifest declares as secret, in <c>settings</c> or in the legacy <c>fields</c>, is in the
+    /// registry too, and no plain setting is. A settings-only plugin is covered like a fields-only one. The host ships
+    /// no plugin, so the manifests are written here, in the two shapes a plugin may use.
     /// </summary>
-    [Fact]
-    public void ShippedPluginManifests_SecretSettings_AreInTheRegistry()
+    /// <param name="manifestJson">A <c>plugin.json</c> that lists its fields in one of the two shapes.</param>
+    [Theory]
+    [InlineData("""{ "fields": [ { "key": "host", "label": "Host", "type": "text" }, { "key": "api_key", "label": "Key", "type": "secret" } ] }""")]
+    [InlineData("""{ "settings": [ { "key": "host", "label": "Host", "type": "text" }, { "key": "api_key", "label": "Key", "type": "secret" } ] }""")]
+    public void PluginManifests_SecretSettings_AreInTheRegistry(string manifestJson)
     {
-        var manifests = Directory.GetFiles(SourceRoot(), "plugin.json", SearchOption.AllDirectories)
-            .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                && !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .ToList();
+        var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson, JsonOptions)!;
 
-        manifests.Should().NotBeEmpty();
-        foreach (var path in manifests)
+        // Same union the runtime classifier reads: GetSettings() hides the legacy fields once settings exist.
+        var settings = manifest.GetSettings().Concat(manifest.Fields.Select(PluginSetting.FromField)).ToList();
+
+        settings.Should().NotBeEmpty();
+        foreach (var setting in settings)
         {
-            var manifest = JsonSerializer.Deserialize<PluginManifest>(File.ReadAllText(path), JsonOptions)!;
-
-            // Same union the runtime classifier reads: GetSettings() hides the legacy fields once settings exist.
-            var settings = manifest.GetSettings().Concat(manifest.Fields.Select(PluginSetting.FromField)).ToList();
-
-            settings.Should().NotBeEmpty("{0} declares no settings", path);
-            foreach (var setting in settings)
-            {
-                SecretSettingKeys.IntegrationSecretFields.Contains(setting.Key).Should().Be(
-                    setting.IsSecret(),
-                    "{0} declares '{1}' as '{2}'",
-                    path,
-                    setting.Key,
-                    setting.Type);
-            }
+            SecretSettingKeys.IntegrationSecretFields.Contains(setting.Key).Should().Be(
+                setting.IsSecret(),
+                "'{0}' is declared as '{1}'",
+                setting.Key,
+                setting.Type);
         }
-    }
-
-    /// <summary>Finds <c>backend/src</c> by walking up from the test binaries.</summary>
-    /// <returns>The absolute path of the source root.</returns>
-    private static string SourceRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            var candidate = Path.Combine(directory.FullName, "src", "Hostpanel.Sdk");
-            if (Directory.Exists(candidate))
-            {
-                return Path.Combine(directory.FullName, "src");
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new InvalidOperationException("backend/src was not found above the test binaries.");
     }
 }

@@ -221,10 +221,12 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
+        var before = await SnapshotAsync("smtp", "Host", "host");
+
         var response = await SaveAsync(client, "smtp", new() { ["Host"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("smtp", "Host", "host");
+        (await SnapshotAsync("smtp", "Host", "host")).Should().Equal(before, "a refused save writes nothing");
     }
 
     /// <summary>An undeclared field in ClearFields is refused the same way.</summary>
@@ -234,10 +236,12 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
+        var before = await SnapshotAsync("smtp", "host", "Host");
+
         var response = await SaveAsync(client, "smtp", new() { ["host"] = "42" }, ["Host"]);
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("smtp", "host");
+        (await SnapshotAsync("smtp", "host", "Host")).Should().Equal(before, "a refused save writes nothing");
     }
 
     /// <summary>A valid field next to an undeclared one writes nothing at all.</summary>
@@ -247,10 +251,12 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
 
+        var before = await SnapshotAsync("smtp", "host", "bogus");
+
         var response = await SaveAsync(client, "smtp", new() { ["host"] = "7", ["bogus"] = "x" });
 
         await AdminTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.INTEGRATION_FIELD_UNKNOWN);
-        await AssertNothingStoredAsync("smtp", "host", "bogus");
+        (await SnapshotAsync("smtp", "host", "bogus")).Should().Equal(before, "a refused save writes nothing");
     }
 
     /// <summary>A valid field next to an invalid value writes nothing at all.</summary>

@@ -9,7 +9,6 @@ import type { UiMenuAction } from '@/utils/ui/menu'
 import { serverDto } from '../../helpers/serverFixtures'
 import { mountWithApp } from '../../helpers/mount'
 import { formatDateTime } from '@/lib/format'
-import { ServerModuleSource } from '@/types/serverenums'
 import { Icon } from '@/lib/icons'
 
 /** Two row actions, so the card draws its menu trigger. */
@@ -25,17 +24,6 @@ describe('ServerCard', () => {
     expect(wrapper.get('[data-testid="ui-progress-value"]').text()).toBe('12 / 100')
     expect(wrapper.get('[data-testid="server-state-1"]').text()).toBe('Online')
     expect(wrapper.find('[data-testid="server-actions-1"]').exists()).toBe(true)
-  it('names the module by the plugin that declares it, not by its id', () => {
-    const wrapper = mountWithApp(ServerCard, {
-      props: {
-        server: serverDto({ module: 'ExamplePanel' }),
-        moduleOptions: [{ id: 'ExamplePanel', name: 'Example Panel', source: ServerModuleSource.Plugin }],
-      },
-    })
-
-    expect(wrapper.get('[data-testid="servers-module-ExamplePanel"]').text()).toBe('Example Panel')
-  })
-
   })
 
   it('draws the facts of the server in a compact grid', () => {

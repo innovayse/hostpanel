@@ -1,0 +1,150 @@
+{
+  "title": "Complemento",
+  "tabs": {
+    "label": "Secciones de complementos",
+    "overview": "Resumen",
+    "versions": "Versiones",
+    "licence": "Licencia",
+    "changes": "Cambios",
+    "settings": "Ajustes"
+  },
+  "notFoundTitle": "Complemento no encontrado",
+  "notFoundDescription": "Este complemento no está instalado en este servidor.",
+  "verified": "Verificado",
+  "pricing": {
+    "Free": "Gratis",
+    "Paid": "Pagado",
+    "Private": "Privado"
+  },
+  "byAuthor": "por {author}",
+  "installedVersion": "Instalado {version}",
+  "staged": "Versión {version} preparada; se aplica tras reiniciar",
+  "updateAvailable": "Actualización disponible: {version}",
+  "updateTo": "Actualizar a {version}",
+  "links": {
+    "heading": "Enlaces",
+    "documentation": "Documentación",
+    "support": "Soporte",
+    "repository": "Repositorio de origen",
+    "buy": "Comprar una licencia",
+    "licence": "Licencia: {licence}"
+  },
+  "licence": {
+    "heading": "Clave de licencia",
+    "saved": "Clave guardada",
+    "missing": "No hay ninguna clave guardada",
+    "description": "Este complemento necesita una clave de licencia. La clave es de solo escritura: se guarda en este servidor y nunca se vuelve a mostrar.",
+    "label": "Clave de licencia",
+    "placeholder": "Pega la clave de licencia",
+    "save": "Guardar clave",
+    "remove": "Quitar clave",
+    "needed": "Guarda una clave de licencia antes de instalar este complemento."
+  },
+  "versions": {
+    "heading": "Versiones",
+    "emptyTitle": "No hay versiones listadas",
+    "emptyDescription": "El registro no lista ninguna versión de este complemento.",
+    "status": {
+      "Published": "Publicado",
+      "Deprecated": "Obsoleto",
+      "Yanked": "Retirado"
+    },
+    "installed": "Instalado",
+    "staged": "Preparado",
+    "latest": "Lo más reciente",
+    "compatible": "Se ejecuta en este host",
+    "incompatible": "No se ejecuta en este host",
+    "action": {
+      "fresh": "Instalar",
+      "current": "Instalado",
+      "newer": "Actualizar",
+      "older": "Bajar de plan"
+    },
+    "published": "Publicado el {date}",
+    "hostRange": "Versiones del host {min} a {max}",
+    "hostMin": "Versión del host {min} o posterior",
+    "hostMax": "Versión del host {max} o anterior",
+    "hostAny": "Se ejecuta en cualquier versión del host",
+    "sdk": "Creado con el SDK {version}",
+    "reason": "Motivo: {reason}",
+    "noReason": {
+      "Deprecated": "El editor marcó esta versión como obsoleta.",
+      "Yanked": "El editor retiró esta versión; no se puede instalar."
+    },
+    "replacement": "Usa la versión {version} en su lugar.",
+    "changelog": "Notas de la versión",
+    "noChangelog": "Sin notas de la versión.",
+    "permissions": "Permisos",
+    "noPermissions": "No solicita ningún permiso."
+  },
+  "overview": {
+    "details": "Detalles",
+    "installation": "Instalación",
+    "compatibility": "Compatibilidad",
+    "permissions": "Permisos",
+    "noDescription": "El complemento no incluye descripción.",
+    "notGiven": "No indicado",
+    "notRecorded": "No registrado",
+    "notUpdated": "No actualizado desde su instalación",
+    "author": "Autor",
+    "type": "Tipo",
+    "category": "Categoría",
+    "id": "ID del complemento",
+    "types": {
+      "provisioning": "Provisión de alojamiento",
+      "payment": "Pasarela de pago",
+      "registrar": "Registrador de dominios",
+      "identity": "Inicio de sesión e identidad del cliente",
+      "fulfilment": "Suministro de productos digitales",
+      "hosted": "Servicio en segundo plano",
+      "app": "Aplicación con páginas propias"
+    },
+    "state": {
+      "label": "Estado",
+      "running": "Cargado y en ejecución",
+      "afterRestart": "Se carga tras el próximo reinicio",
+      "refused": "Rechazado al iniciar",
+      "loadFailed": "No se pudo cargar al iniciar"
+    },
+    "sourceLabel": "Origen",
+    "source": {
+      "BuiltIn": "Se incluye con el servidor",
+      "Uploaded": "Archivo de paquete subido",
+      "Registry": "Registro de complementos"
+    },
+    "installedAt": "Instalado",
+    "updatedAt": "Última actualización",
+    "installedBy": "Instalado por",
+    "signerLabel": "Firmado por",
+    "signer": {
+      "Unsigned": "Sin firmar",
+      "VerifiedPublisher": "Un editor verificado",
+      "OwnKey": "Tu propia clave"
+    },
+    "signerKey": "Clave de firma",
+    "size": "Tamaño del paquete",
+    "sha256": "SHA-256 del paquete",
+    "installedVersion": "Versión instalada",
+    "stagedVersion": "Versión preparada",
+    "hostVersions": "Versiones del servidor",
+    "sdkVersion": "SDK de plugins"
+  },
+  "confirm": {
+    "installTitle": "¿Instalar esta versión?",
+    "installMessage": "¿Instalar la versión {version} de {name}? El cambio se aplica tras reiniciar el servidor.",
+    "downgradeTitle": "¿Instalar una versión anterior?",
+    "downgradeMessage": "La versión {version} de {name} es anterior a la instalada {installed}. Una versión anterior puede carecer de correcciones y no leer los datos que escribió la más reciente. El cambio se aplica tras reiniciar el servidor. ¿Instalarla de todos modos?"
+  },
+  "feedback": {
+    "licenceSaved": "La clave de licencia se ha guardado.",
+    "licenceRemoved": "La clave de licencia se ha eliminado."
+  },
+  "changes": {
+    "heading": "Qué cambia de {from} a {to}",
+    "headingFresh": "Notas de la versión de {version}"
+  },
+  "settings": {
+    "emptyTitle": "Sin ajustes",
+    "emptyDescription": "Este complemento no tiene ajustes que cambiar."
+  }
+}

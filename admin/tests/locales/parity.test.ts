@@ -1,5 +1,5 @@
 /**
- * Locale parity for the admin panel: `en`, `ru`, `hy` and `de` must carry exactly the same keys,
+ * Locale parity for the admin panel: `en`, `ru`, `hy`, `de` and `es` must carry exactly the same keys,
  * every value must be a non-empty string, and the `{placeholders}` of a sentence must be the
  * same in every language, so a translation can never silently drop a value the code passes.
  */
@@ -7,8 +7,8 @@
 import { describe, expect, it } from 'vitest'
 import { messages } from '@/locales/messages'
 
-/** The three catalogues under test (every area merged), keyed by locale code. */
-const CATALOGUES = { en: messages.en, ru: messages.ru, hy: messages.hy, de: messages.de } as const
+/** The catalogues under test (every area merged), keyed by locale code. */
+const CATALOGUES = { en: messages.en, ru: messages.ru, hy: messages.hy, de: messages.de, es: messages.es } as const
 
 /**
  * Flattens a nested message tree into dotted keys.
@@ -46,10 +46,11 @@ const FLAT = {
   ru: flatten(CATALOGUES.ru),
   hy: flatten(CATALOGUES.hy),
   de: flatten(CATALOGUES.de),
+  es: flatten(CATALOGUES.es),
 }
 
 describe('admin locale parity', () => {
-  it.each(['ru', 'hy', 'de'] as const)('%s has exactly the keys of en', (locale) => {
+  it.each(['ru', 'hy', 'de', 'es'] as const)('%s has exactly the keys of en', (locale) => {
     const reference = Object.keys(FLAT.en).sort()
     const actual = Object.keys(FLAT[locale]).sort()
 
@@ -65,7 +66,7 @@ describe('admin locale parity', () => {
     expect(bad).toEqual([])
   })
 
-  it.each(['ru', 'hy', 'de'] as const)('%s keeps the placeholders of en', (locale) => {
+  it.each(['ru', 'hy', 'de', 'es'] as const)('%s keeps the placeholders of en', (locale) => {
     const mismatched = Object.entries(FLAT.en)
       .filter(([key, value]) => {
         const other = FLAT[locale][key]

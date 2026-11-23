@@ -67,7 +67,7 @@ public sealed class SshKeyLimitRaceTests(PluginHostAccessFixture fixture) : ICla
         Domain.Ssh.SshPublicKey.TryParse(SshTestSeeds.Key(252), out var publicKey, out _).Should().BeTrue();
 
         var installed = await installer.InstallAsync(
-            (await resolver.ResolveAsync(owner.ServiceId, CancellationToken.None))!, "after race", publicKey!, null,
+            (await resolver.ResolveAsync(owner.ServiceId, CancellationToken.None))!, "after race", publicKey!, null, [],
             CancellationToken.None);
 
         race.Fired.Should().BeTrue("the competing key must have been committed for the retry to run");

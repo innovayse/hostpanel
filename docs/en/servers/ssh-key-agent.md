@@ -160,7 +160,8 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Login shell set when a customer is enrolled into the jail.' },
   { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Extra paths copied into each jail with jk_cp when the jail lacks one or its host copy changed (missing in the jail, another size, or newer). Paths missing on the host are skipped, and an entry already in place is not copied again. An entry that is or contains (symlinks followed) private key material is refused and install.sh --check warns: a private directory, or a file named *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx or *.jks; for outgoing TLS list /etc/pki/tls/certs, /etc/pki/ca-trust/extracted and /etc/ssl/certs, never /etc/pki/tls. Includes dircolors and shell profile entries needed by bash login; rsync, tar, gzip and unzip let CI/CD deploy sites over SSH.' },
   { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' },
-  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' }
+  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' },
+  { name: 'web_server', type: 'string', default: '(empty)', description: 'apache or nginx. Read by the generic-linux website helpers. Empty means the one that is running; set it when both or neither is running, or the website operations are refused. Agent 1.6.0 and later.' }
 ]" />
 
 ## Jail extras hold only public trust material
@@ -197,6 +198,18 @@ Agent 1.5.0 can give a hosting account a website and databases on request. It ru
 The helpers are idempotent, keep a root-owned record of what they created, and `remove-*` only touches that: a website or database that someone else made is refused with `site_not_owned`. Every file they edit is backed up first, Apache and php-fpm configuration is tested before a graceful reload, and a failed test restores the files. The database password is generated on the server, sent back only in the answer that created the database, and never written to any log; if it is lost, remove the database and create it again.
 
 Errors added in 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `php_version_unsupported`, `website_failed`, `database_failed`, `database_limit`. The full request and answer shapes are in the agent's `README.md`.
+
+### Plain Linux servers (`generic-linux`)
+
+Agent 1.6.0 ships website helpers for the `generic-linux` profile, so a server with no hosting panel can host websites too (`install.sh --provider generic-linux` puts them in `helper_dir`). They need Debian, Ubuntu, RHEL or AlmaLinux with Apache or nginx and, for PHP, php-fpm.
+
+- **Web server.** The one that is running. When both or neither run, the website operations are refused and the ping answer lists none until `web_server` in `agent.conf` is set to `apache` or `nginx`. Virtual hosts are written to `/etc/apache2/sites-available/hp-<hostname>.conf` (Debian Apache, enabled with `a2ensite`, `proxy_fcgi` enabled with `a2enmod`), `/etc/httpd/conf.d/hp-<hostname>.conf` (RHEL Apache) or `/etc/nginx/conf.d/hp-<hostname>.conf` (nginx), and tested with `apache2ctl -t`, `httpd -t` or `nginx -t` before a reload.
+- **PHP.** Debian and Ubuntu with the sury packages, RHEL with Remi, and the RHEL AppStream are recognised. A version is offered when its php-fpm, pool directory and command line binary are all there. The ping answer lists them in `php_versions` and gives the command line binary of each in `php_cli` (for example `{"8.3": "/usr/bin/php8.3"}`); the `ensure-website` answer carries `php_cli` too, so a deploy can run the right PHP.
+- **Pools.** One php-fpm pool per account and PHP version (`hp-<account>.conf`), shared by the account's websites on that version and removed with the last of them.
+- **Document root.** The home gets `o+x` and missing directories are created owned by the account with mode 755. With `link_root` the last path component is never created, the deploy links it. nginx passes the resolved path (`$realpath_root`) to PHP; behind Apache the pool revalidates OPcache and the realpath cache on every request.
+- **What it may touch.** A website whose hostname is registered to another account answers `site_not_owned`; a virtual host or pool that the agent did not write answers `website_conflict` and is never changed. `remove-website` only removes what the agent registered in `/var/lib/hostpanel-ssh-key-agent/<account>/`. There are no database operations on these servers.
+
+`/usr/local/libexec/hostpanel-ssh-key-agent/detect` prints what the helpers found on a server.
 
 ## Keys over a service's life
 

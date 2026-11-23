@@ -1,0 +1,268 @@
+#!/usr/bin/env bash
+# What: makes ONE website of ONE account of a plain Linux server serve its document root (agent op ensure-website).
+#       The web server is the running one of Apache and nginx (see hp_detect_web). The virtual host is written to
+#       hp-<hostname>.conf in that server's own layout. Missing document root directories are created owned by the
+#       account (mode 755) and the home gets o+x so the web server can enter it. With a php version the account gets
+#       one php-fpm pool per version (hp-<account>.conf, socket hp-<account>-<NN>.sock) and the vhost hands .php
+#       files to it. With link_root the last path component is left to the deploys that make the symlink; behind
+#       nginx the vhost passes $realpath_root, behind Apache the pool revalidates OPcache and the realpath cache on
+#       every request. A hostname registered to another account is refused, a vhost or pool this helper did not write
+#       is a conflict. Idempotent. Every edited file is copied first; both configurations are tested before a reload
+#       and everything is restored when a test fails.
+# Usage (root, called by hostpanel-ssh-key-agent): ensure-website <account> <hostname> <docroot> <php|""> <link_root 0|1>
+# Exit: 0 done, 2 bad arguments, 3 not the account's (hostname or docroot), 4 conflict (a vhost or pool the agent did
+#       not write), 5 php version not installed, other = failed. Prints one
+#       `RESULT {"changed":true|false[,"php_cli":"/abs/php"]}` line; php_cli is there when a php version was asked for.
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+[ $# -eq 5 ] || hp_die "$EXIT_BAD_ARGS" "usage: ensure-website <account> <hostname> <docroot> <php or empty> <link_root 0|1>"
+HOSTN="$2"; DOCROOT="$3"; PHP="$4"; LINK="$5"
+hp_require_account "$1"
+[[ "$HOSTN" =~ $HOSTNAME_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad hostname"
+[[ "$DOCROOT" =~ $DOCROOT_RE ]] && [[ "$DOCROOT" != *..* ]] || hp_die "$EXIT_BAD_ARGS" "bad docroot"
+[ -z "$PHP" ] || [[ "$PHP" =~ $PHP_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad php version"
+[[ "$LINK" =~ ^[01]$ ]] || hp_die "$EXIT_BAD_ARGS" "bad link_root"
+[ "$LINK" = 0 ] || [ -n "$PHP" ] || hp_die "$EXIT_BAD_ARGS" "link_root needs a php version"
+
+hp_detect_web
+
+# The document root resolves inside the home and never into .ssh (a symlink cannot lead out either).
+HOME_REAL="$(realpath -- "$HOME_DIR")"
+TARGET="$(realpath -m -- "$HOME_DIR/$DOCROOT")"
+case "$TARGET" in
+  "$HOME_REAL"/.ssh|"$HOME_REAL"/.ssh/*) hp_die "$EXIT_BAD_ARGS" "docroot not allowed" ;;
+  "$HOME_REAL"/*) ;;
+  *) hp_die "$EXIT_BAD_ARGS" "docroot outside the home" ;;
+esac
+DOCROOT_L="$HOME_L/$DOCROOT"
+
+NN=""; SOCK=""; POOL=""
+if [ -n "$PHP" ]; then
+  hp_php_select "$PHP" || hp_die "$EXIT_PHP_UNSUPPORTED" "php $PHP is not installed"
+  NN="${PHP/./}"
+  SOCK="$RUN_DIR/hp-$ACCOUNT-$NN.sock"
+  POOL="$(hp_pool_file)"
+fi
+
+# Refuse before changing anything: the hostname is registered to nobody or to this account, and the files it would
+# write are ours or not there.
+OWNER="$(hp_site_owner "$HOSTN")"
+[ -z "$OWNER" ] || [ "$OWNER" = "$ACCOUNT" ] || hp_die "$EXIT_NOT_OWNED" "$HOSTN belongs to another account"
+VHOST="$(hp_vhost_file "$HOSTN")"
+[ ! -e "$VHOST" ] || hp_is_managed "$VHOST" || hp_die "$EXIT_CONFLICT" "$(basename "$VHOST") was not written by the agent"
+[ -z "$POOL" ] || [ ! -e "$POOL" ] || hp_is_managed "$POOL" || hp_die "$EXIT_CONFLICT" "$(basename "$POOL") was not written by the agent"
+
+hp_guard
+CHANGED=0; VHOST_CHANGED=0; POOL_CHANGED=0
+
+# 0. A website moved to another php version (or off php) no longer needs its old pool, unless a sibling does.
+PREV_PHP="$(hp_reg_get website "$HOSTN" php)"
+if [ "$PREV_PHP" != "$PHP" ]; then
+  hp_drop_pool "$PREV_PHP" "$HOSTN"
+  if [ "${#DROPPED_SERVICES[@]}" -gt 0 ]; then
+    CHANGED=1
+  fi
+  if [ -n "$PHP" ]; then
+    hp_php_select "$PHP"
+  fi
+fi
+
+# 1. The home is enterable by the web server; missing document root directories belong to the account. With link_root
+#    the last component is left to the deploys that make the symlink, never created as a directory.
+HOME_MODE="$(stat -c '%a' "$HOME_REAL")"
+if [ $(( 8#$HOME_MODE & 1 )) -eq 0 ]; then
+  chmod o+x "$HOME_REAL"
+  CHANGED=1
+  hp_say "home made enterable"
+fi
+DOCROOT_CREATED="$(hp_reg_get website "$HOSTN" docroot_created)"; DOCROOT_CREATED="${DOCROOT_CREATED:-0}"
+OWNER_IDS="$(stat -c '%u:%g' "$HOME_REAL")"
+IFS=/ read -r -a PARTS <<< "${TARGET#"$HOME_REAL"/}"
+CUR="$HOME_REAL"
+for i in "${!PARTS[@]}"; do
+  CUR="$CUR/${PARTS[$i]}"
+  [ ! -e "$CUR" ] && [ ! -L "$CUR" ] || continue
+  if [ "$LINK" = 1 ] && [ "$i" -eq $(( ${#PARTS[@]} - 1 )) ]; then
+    continue
+  fi
+  mkdir -- "$CUR"
+  hp_track_dir "$CUR"
+  "$BIN/chown" -h "$OWNER_IDS" "$CUR"
+  chmod 755 "$CUR"
+  if [ "$i" -eq $(( ${#PARTS[@]} - 1 )) ]; then
+    DOCROOT_CREATED=1
+  fi
+  CHANGED=1
+  hp_say "created ${PARTS[$i]}"
+done
+
+# 2. The account's php-fpm pool for this version. Behind Apache the pool revalidates OPcache and the realpath cache on
+#    every request when any website of the account at this version has link_root (nginx resolves the link itself
+#    with $realpath_root), so a symlink switch shows at once.
+if [ -n "$PHP" ]; then
+  LINK_LINES=0
+  if hp_is_apache && { [ "$LINK" = 1 ] || [ "$(hp_sites_using "$HOSTN" "$PHP" 1)" != 0 ]; }; then
+    LINK_LINES=1
+  fi
+  {
+    cat <<POOL
+$POOL_MARKER
+[hp-$ACCOUNT-$NN]
+user = $ACCOUNT
+group = $ACCOUNT
+listen = $SOCK
+listen.owner = $WEB_USER
+listen.group = $WEB_USER
+listen.mode = 0660
+pm = ondemand
+pm.max_children = 4
+pm.max_requests = 4000
+pm.process_idle_timeout = 15s
+catch_workers_output = yes
+POOL
+    if [ "$LINK_LINES" = 1 ]; then
+      printf '%s\n' 'php_admin_value[opcache.validate_timestamps] = 1' 'php_admin_value[opcache.revalidate_freq] = 0' \
+        'php_admin_value[opcache.revalidate_path] = 1' 'php_admin_value[realpath_cache_size] = 0'
+    fi
+  } > "$WORK/pool"
+  if hp_replace "$WORK/pool" "$POOL"; then
+    POOL_CHANGED=1; CHANGED=1
+    hp_say "pool written"
+  fi
+fi
+
+# 3. The virtual host, in the layout of the detected web server.
+if hp_is_apache; then
+  {
+    cat <<VHOST
+$MARKER
+<VirtualHost *:80>
+	ServerName $HOSTN
+	DocumentRoot $DOCROOT_L
+	DirectoryIndex index.php index.html
+	<Directory "$DOCROOT_L">
+		AllowOverride All
+		Options -Indexes +FollowSymLinks
+		Require all granted
+	</Directory>
+VHOST
+    if [ -n "$SOCK" ]; then
+      cat <<VHOST
+	<FilesMatch \.php\$>
+		SetHandler "proxy:unix:$SOCK|fcgi://localhost"
+	</FilesMatch>
+VHOST
+    fi
+    echo "</VirtualHost>"
+  } > "$WORK/vhost"
+else
+  {
+    cat <<VHOST
+$MARKER
+server {
+	listen 80;
+	listen [::]:80;
+	server_name $HOSTN;
+	root $DOCROOT_L;
+	index index.php index.html;
+	location ~ /\.(?!well-known) {
+		deny all;
+	}
+VHOST
+    if [ -n "$SOCK" ]; then
+      cat <<VHOST
+	location / {
+		try_files \$uri \$uri/ /index.php?\$query_string;
+	}
+	location ~ \.php\$ {
+		try_files \$uri =404;
+		fastcgi_pass unix:$SOCK;
+		fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
+		fastcgi_param DOCUMENT_ROOT \$realpath_root;
+		fastcgi_param QUERY_STRING \$query_string;
+		fastcgi_param REQUEST_METHOD \$request_method;
+		fastcgi_param CONTENT_TYPE \$content_type;
+		fastcgi_param CONTENT_LENGTH \$content_length;
+		fastcgi_param SCRIPT_NAME \$fastcgi_script_name;
+		fastcgi_param REQUEST_URI \$request_uri;
+		fastcgi_param DOCUMENT_URI \$document_uri;
+		fastcgi_param SERVER_PROTOCOL \$server_protocol;
+		fastcgi_param REQUEST_SCHEME \$scheme;
+		fastcgi_param HTTPS \$https if_not_empty;
+		fastcgi_param GATEWAY_INTERFACE CGI/1.1;
+		fastcgi_param SERVER_SOFTWARE nginx/\$nginx_version;
+		fastcgi_param REMOTE_ADDR \$remote_addr;
+		fastcgi_param REMOTE_PORT \$remote_port;
+		fastcgi_param SERVER_ADDR \$server_addr;
+		fastcgi_param SERVER_PORT \$server_port;
+		fastcgi_param SERVER_NAME \$server_name;
+		fastcgi_param REDIRECT_STATUS 200;
+	}
+VHOST
+    else
+      cat <<VHOST
+	location / {
+		try_files \$uri \$uri/ =404;
+	}
+VHOST
+    fi
+    echo "}"
+  } > "$WORK/vhost"
+fi
+if hp_replace "$WORK/vhost" "$VHOST"; then
+  chmod 644 "$VHOST"
+  VHOST_CHANGED=1; CHANGED=1
+  hp_say "vhost $(basename "$VHOST") written"
+fi
+
+# 4. Debian Apache keeps a site in sites-available and enables it with a link; php needs mod proxy_fcgi.
+if [ "$WEB_UNIT" = apache2 ]; then
+  ENABLED="$ENABLED_DIR/hp-$HOSTN.conf"
+  if [ ! -e "$ENABLED" ] && [ ! -L "$ENABLED" ]; then
+    hp_backup "$ENABLED"
+    "$SBIN/a2ensite" "hp-$HOSTN" >/dev/null
+    VHOST_CHANGED=1; CHANGED=1
+    hp_say "site enabled"
+  fi
+  if [ -n "$PHP" ] && [ ! -e "$ROOT/etc/apache2/mods-enabled/proxy_fcgi.load" ]; then
+    "$SBIN/a2enmod" proxy_fcgi >/dev/null
+    VHOST_CHANGED=1; CHANGED=1
+    hp_say "proxy_fcgi enabled"
+  fi
+fi
+
+# 5. Both configurations must pass before anything is reloaded; a failure restores every edited file.
+if [ "$VHOST_CHANGED" = 1 ] && ! hp_web_test; then
+  hp_die 1 "$WEB_UNIT configuration test failed, restored"
+fi
+if [ "$POOL_CHANGED" = 1 ] && ! hp_fpm_test; then
+  hp_die 1 "php-fpm $PHP test failed, restored"
+fi
+DIRTY=0
+hp_reg_write website "$HOSTN" "docroot=$DOCROOT" "php=$PHP" "link_root=$LINK" "docroot_created=$DOCROOT_CREATED"
+for service in "${DROPPED_SERVICES[@]}"; do
+  "$BIN/systemctl" reload "$service"
+  hp_say "$service reloaded"
+done
+if [ "$POOL_CHANGED" = 1 ]; then
+  "$BIN/systemctl" reload "$FPM_SERVICE"
+  hp_say "$FPM_SERVICE reloaded"
+fi
+if [ "$VHOST_CHANGED" = 1 ]; then
+  "$BIN/systemctl" reload "$WEB_UNIT"
+  hp_say "$WEB_UNIT reloaded"
+fi
+
+if [ "$CHANGED" = 1 ]; then
+  CHANGED_JSON=true
+else
+  CHANGED_JSON=false
+fi
+if [ -n "$PHP" ]; then
+  hp_result "{\"changed\":$CHANGED_JSON,\"php_cli\":\"$PHP_CLI\"}"
+else
+  hp_result "{\"changed\":$CHANGED_JSON}"
+fi

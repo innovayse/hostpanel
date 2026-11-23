@@ -158,6 +158,26 @@ class OpsRefusalTests(OpsTestCase):
         self.install_stub("php-versions", exit_code=1, out="8.3")
         self.assertEqual(self.call(op="ping")["php_versions"], [])
 
+    def test_ping_lists_the_cli_of_each_php_version_the_helper_names(self):
+        self.install_stub("php-versions", out="8.4\t/usr/bin/php8.4\n8.2\t/opt/remi/php82/root/usr/bin/php\n8.3\n8.5\trelative/php\n8.6\t/bad path\n")
+        ping = self.call(op="ping")
+        self.assertEqual(ping["php_versions"], ["8.2", "8.3", "8.4"])
+        self.assertEqual(ping["php_cli"], {"8.2": "/opt/remi/php82/root/usr/bin/php", "8.4": "/usr/bin/php8.4"})
+
+    def test_ping_has_an_empty_cli_map_without_a_php_versions_helper(self):
+        self.assertEqual(self.call(op="ping")["php_cli"], {})
+
+    def test_ping_narrows_the_ops_with_a_helper_to_the_ones_the_capabilities_helper_lists(self):
+        for op in ("ensure-website", "remove-website", "ensure-database"):
+            self.install_stub(op)
+        self.install_stub("capabilities", out="ensure-website\nremove-website\nremove-database\nbogus\n")
+        self.assertEqual(self.call(op="ping")["capabilities"], ["ensure-website", "remove-website"])
+
+    def test_ping_offers_no_op_when_the_capabilities_helper_fails(self):
+        self.install_stub("ensure-website")
+        self.install_stub("capabilities", exit_code=1, out="ensure-website")
+        self.assertEqual(self.call(op="ping")["capabilities"], [])
+
     def test_a_relative_helper_dir_is_a_broken_config(self):
         self.config["helper_dir"] = "libexec"
         self.assertEqual(self.call(**DB)["error"], "internal_error")
@@ -232,6 +252,25 @@ class HelperResultTests(OpsTestCase):
         self.assertEqual(self.call(**SITE), {"v": 1, "ok": True, "changed": True})
         self.install_stub("remove-database", out='RESULT {"changed":false}')
         self.assertEqual(self.call(**DB_REMOVE), {"v": 1, "ok": True, "changed": False})
+
+    def test_the_php_cli_of_an_ensure_website_answer_is_relayed_when_it_is_an_absolute_path(self):
+        self.install_stub("ensure-website", out='RESULT {"changed":false,"php_cli":"/usr/bin/php8.3"}')
+        self.assertEqual(self.call(**SITE), {"v": 1, "ok": True, "changed": False, "php_cli": "/usr/bin/php8.3"})
+
+    def test_a_malformed_php_cli_fails_the_op(self):
+        for cli in ('"php"', '"relative/php"', '"/bad path"', '"/a\nb"', "7", "null", '""'):
+            self.install_stub("ensure-website", out='RESULT {"changed":true,"php_cli":%s}' % cli)
+            self.assertEqual(self.call(**SITE)["error"], "website_failed", cli)
+        self.install_stub("ensure-website", out='RESULT {"changed":true,"php_cli":"/usr/bin/php","x":1}')
+        self.assertEqual(self.call(**SITE)["error"], "website_failed")
+
+    def test_php_cli_is_refused_without_a_php_version_and_on_other_ops(self):
+        self.install_stub("ensure-website", out='RESULT {"changed":true,"php_cli":"/usr/bin/php"}')
+        request = dict(SITE)
+        del request["php"], request["link_root"]
+        self.assertEqual(self.call(**request)["error"], "website_failed")
+        self.install_stub("remove-website", out='RESULT {"changed":true,"php_cli":"/usr/bin/php"}')
+        self.assertEqual(self.call(**WEBSITE_REMOVE)["error"], "website_failed")
 
     def test_malformed_results_fail_the_op(self):
         website_bad = ["", "no result here", 'RESULT {"changed":true}\nRESULT {"changed":true}', "RESULT not json",
@@ -548,6 +587,8 @@ class ContractVectorTests(OpsTestCase):
                         self.install_stub(op)
                     if "php_versions_output" in case:
                         self.install_stub("php-versions", out="\n".join(case["php_versions_output"]))
+                    if "capabilities_output" in case:
+                        self.install_stub("capabilities", out="\n".join(case["capabilities_output"]))
                     if case["helper"] is not None:
                         self.install_stub(case["request"]["op"], case["helper"]["exit"],
                                           "RESULT " + json.dumps(case["helper"]["result"]))

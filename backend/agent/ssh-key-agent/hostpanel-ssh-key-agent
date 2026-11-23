@@ -23,7 +23,8 @@ Contract version 1 (see README.md beside this file for the full specification):
     {"v": 1, "op": "remove-jail", "account": "<user>"}   (1.4.0+: only once the account itself is deleted)
     {"v": 1, "op": "ensure-website", "account": "<user>", "hostname": "<host>", "docroot": "<relative dir>",
      "php": "8.3", "link_root": true}                    (1.5.0+, php and link_root optional; needs a helper; php is one of
-                                                          ping's php_versions)
+                                                          ping's php_versions; 1.6.0+: the answer carries php_cli
+                                                          when php was asked for and the helper names the CLI)
     {"v": 1, "op": "remove-website", "account": "<user>", "hostname": "<host>"}                    (1.5.0+)
     {"v": 1, "op": "ensure-database", "account": "<user>", "label": "<label>"}                     (1.5.0+)
     {"v": 1, "op": "remove-database", "account": "<user>", "label": "<label>"}                     (1.5.0+)
@@ -68,7 +69,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.5.0"
+AGENT_VERSION = "1.6.0"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -84,6 +85,7 @@ ED25519_LINE_RE = re.compile(r"^ssh-ed25519 ([A-Za-z0-9+/]{68}(?:==|=)?)(?: [^\r
 DOCROOT_RE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}(?:/[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}){0,5}$")
 LABEL_RE = re.compile(r"^[a-z][a-z0-9]{0,14}$")
 PHP_VERSION_RE = re.compile(r"^[0-9]\.[0-9]{1,2}$")
+PHP_CLI_RE = re.compile(r"^/[A-Za-z0-9._+/-]{1,200}$")
 DB_PASSWORD_RE = re.compile(r"^[0-9a-f]{40}$")
 RESULT_PREFIX = "RESULT "
 DISABLED_SHELLS = {"/sbin/nologin", "/usr/sbin/nologin", "/bin/false", "/usr/bin/false", ""}
@@ -789,8 +791,11 @@ HELPER_OPS = {
     "remove-database": {"failure": "database_failed", "exits": {3: "site_not_owned"}},
 }
 OPS_HELPER_TIMEOUT_SECONDS = 50
-# The provider helper that lists the php versions this server offers: one "N.N" per line on stdout, no arguments.
+# The provider helper that lists the php versions this server offers: one "N.N" or "N.N<TAB>/abs/cli" per line on
+# stdout, no arguments.
 PHP_VERSIONS_HELPER = "php-versions"
+# The optional provider helper that lists the ops this server can really do right now, one per line (1.6.0+).
+CAPABILITIES_HELPER = "capabilities"
 
 
 def helper_path(op, config):
@@ -802,30 +807,54 @@ def helper_path(op, config):
     return path if os.path.isfile(path) and os.access(path, os.X_OK) else None
 
 
-def capabilities(config):
-    """The 1.5.0 ops this server can run, reported by ping so HostPanel only asks for what exists."""
-    return [op for op in HELPER_OPS if helper_path(op, config)]
-
-
-def php_versions(config):
+def _helper_lines(name, config):
     """
-    The php versions this server offers, sorted, as reported by ping and accepted by ensure-website.
-
-    Taken from the provider's `php-versions` helper so the agent knows nothing about the panel underneath. A server
-    without the helper, or one whose helper fails, offers none; only well-formed versions are kept.
+    The stdout lines of a provider's read-only listing helper (no arguments), or None when this server does not ship
+    it or it fails. Only well-formed lines are interpreted by the callers.
     """
-    helper = helper_path(PHP_VERSIONS_HELPER, config)
+    helper = helper_path(name, config)
     if helper is None:
-        return []
+        return None
     try:
         done = subprocess.run([helper], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               env=dict(JAIL_ENV), timeout=OPS_HELPER_TIMEOUT_SECONDS, check=False, text=True)
     except (OSError, subprocess.SubprocessError):
-        return []
+        return None
     if done.returncode != 0:
-        return []
-    versions = {line for line in (done.stdout or "").splitlines() if PHP_VERSION_RE.fullmatch(line)}
-    return sorted(versions, key=lambda version: tuple(int(part) for part in version.split(".")))
+        return None
+    return (done.stdout or "").splitlines()
+
+
+def capabilities(config):
+    """
+    The 1.5.0 ops this server can run, reported by ping so HostPanel only asks for what exists.
+
+    An op needs its helper. A provider that also ships a `capabilities` helper narrows that to the ops the server can
+    really do right now (its web server is running, for example); a helper that fails means none.
+    """
+    ops = [op for op in HELPER_OPS if helper_path(op, config)]
+    if helper_path(CAPABILITIES_HELPER, config) is None:
+        return ops
+    listed = _helper_lines(CAPABILITIES_HELPER, config) or []
+    return [op for op in ops if op in listed]
+
+
+def php_installs(config):
+    """
+    The php versions this server offers, oldest first, each with the absolute path of its CLI (None when the provider
+    does not name one), as reported by ping and accepted by ensure-website.
+
+    Taken from the provider's `php-versions` helper so the agent knows nothing about the panel underneath: one
+    `N.N` or `N.N<TAB>/abs/cli` per line. A server without the helper, or one whose helper fails, offers none; only
+    well-formed lines are kept.
+    """
+    installs = {}
+    for line in _helper_lines(PHP_VERSIONS_HELPER, config) or []:
+        version, _, cli = line.partition("\t")
+        if not PHP_VERSION_RE.fullmatch(version) or (cli and not PHP_CLI_RE.fullmatch(cli)):
+            continue
+        installs.setdefault(version, cli or None)
+    return sorted(installs.items(), key=lambda item: tuple(int(part) for part in item[0].split(".")))
 
 
 def _helper_args(request):
@@ -843,6 +872,12 @@ def _is_valid_result(request, body):
     """The schema of a helper's RESULT: exactly the documented keys, with the documented types and values."""
     if not isinstance(body, dict):
         return False
+    if request["op"] == "ensure-website" and "php_cli" in body:
+        # 1.6.0: the CLI of the php version the site runs, an absolute path, only when a version was asked for.
+        cli = body["php_cli"]
+        if "php" not in request or not isinstance(cli, str) or PHP_CLI_RE.fullmatch(cli) is None:
+            return False
+        body = {key: value for key, value in body.items() if key != "php_cli"}
     if request["op"] != "ensure-database":
         return set(body) == {"changed"} and isinstance(body["changed"], bool)
     created = body.get("created")
@@ -980,9 +1015,11 @@ def handle(raw, config):
             response.update(remove_jail_of_deleted_account(request["account"], config))
             return response
         if request["op"] == "ping":
+            installs = php_installs(config)
             return {"v": CONTRACT_VERSION, "ok": True, "agent_version": AGENT_VERSION,
                     "provider": config.get("provider", "generic-linux"), "binding": config.get("binding", ""),
-                    "capabilities": capabilities(config), "php_versions": php_versions(config)}
+                    "capabilities": capabilities(config), "php_versions": [version for version, _ in installs],
+                    "php_cli": {version: cli for version, cli in installs if cli}}
         account = resolve_account(request["account"], config)
         os.makedirs(config["lock_dir"], mode=0o700, exist_ok=True)
         lock_fd = os.open(os.path.join(config["lock_dir"], account["name"] + ".lock"),

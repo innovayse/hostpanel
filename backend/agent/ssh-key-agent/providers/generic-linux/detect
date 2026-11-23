@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# What: shows what the helpers found on this server, for an administrator: the web server and its virtual host
+#       directory, the user it runs as, and every PHP version with its CLI. Read only; says why when the web server
+#       cannot be told (two running, none running).
+# Usage (root, by hand): detect
+# Exit: 0 always unless the arguments are wrong (2).
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+[ $# -eq 0 ] || hp_die "$EXIT_BAD_ARGS" "usage: detect"
+(
+  hp_detect_web
+  printf 'web_server=%s\nweb_user=%s\nvhost_dir=%s\n' "$WEB_UNIT" "$WEB_USER" "${VHOST_DIR#"$ROOT"}"
+) || echo "web_server=unknown"
+hp_php_versions | while IFS=$'\t' read -r version cli; do
+  printf 'php=%s %s\n' "$version" "$cli"
+done

@@ -301,7 +301,7 @@
     "order": "Bestellung Nr.",
     "server": "Server",
     "provisioningRef": "Provisionierungs-Referenz",
-    "dedicatedIp": "Dedizierte IP",
+    "dedicatedIp": "Zugewiesene IP",
     "moduleCommands": "Modulbefehle",
     "serviceTerminated": "Service beendet",
     "terminate": "Beenden",
@@ -340,7 +340,27 @@
     "packageChanged": "Paket geändert.",
     "suspended": "Service gesperrt.",
     "unsuspended": "Service entsperrt.",
-    "terminated": "Service beendet."
+    "terminated": "Service beendet.",
+    "syncWithPanel": "Mit Panel abgleichen",
+    "syncIntro": "Das Konto wird einmal aus dem Panel gelesen und mit diesem Service in Einklang gebracht. Status und Paket dieses Services werden auf das Panel angewendet, und die vom Panel gemeldete IP-Adresse wird hier gespeichert.",
+    "syncNotChanged": "Domain und Benutzername werden im Panel nie geändert, eine Abweichung wird nur angezeigt.",
+    "syncPushPassword": "Auch das Panel-Passwort setzen",
+    "syncPushPasswordHint": "Setzt das in diesem Service gespeicherte Passwort im Panel. Ein Panel meldet seine Passwörter nie, deshalb geschieht das nur auf Ihren Wunsch.",
+    "syncedWithPanel": "Service mit dem Panel abgeglichen.",
+    "syncPanelValue": "Panel: {value}",
+    "syncField": {
+      "status": "Status",
+      "package": "Paket",
+      "domain": "Domain",
+      "password": "Passwort",
+      "ipAddress": "IP-Adresse"
+    },
+    "syncOutcome": {
+      "inSync": "Übereinstimmend",
+      "applied": "Angewendet",
+      "failed": "Fehlgeschlagen",
+      "unsupported": "Nicht abgleichbar"
+    }
   },
   "clientServicesList": {
     "nextDue": "Nächste Fälligkeit",

@@ -14,6 +14,7 @@ public sealed class PanelPluginPortTests
     private static readonly Type[] PanelContracts =
     [
         typeof(IProvisioningPanelPlugin), typeof(IProvisioningPanelLoginPlugin), typeof(IProvisioningPanelPackagesPlugin),
+        typeof(IProvisioningPanelAccountPlugin),
     ];
 
     /// <summary>The namespaces whose types may name a panel contract: the plugin runtime and the provisioning adapters built on it.</summary>

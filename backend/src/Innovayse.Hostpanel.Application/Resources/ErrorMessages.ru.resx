@@ -411,6 +411,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось изменить тарифный план хостинга. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
+<data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Не удалось прочитать хостинг-аккаунт на панели управления. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
+  </data>
 <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось приостановить услугу на сервере хостинга. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>

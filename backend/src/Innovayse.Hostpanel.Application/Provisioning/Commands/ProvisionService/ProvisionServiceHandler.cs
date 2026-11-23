@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
+using Innovayse.Hostpanel.Application.Provisioning.Commands.RefreshServiceFromPanel;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
@@ -223,7 +224,36 @@ public sealed class ProvisionServiceHandler
         service.ActivateOn(server.Id, result.ProvisioningRef, now, now);
 
         await _context.SaveChangesAsync(ct);
+
+        await RefreshAssignedIpAsync(service.Id, ct);
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Reads the account just created back from its panel so the service shows the IP address it is served on. The service is already
+    /// active and saved, so a panel that cannot say (a provider that cannot read one account, a refusal, an outage) is logged and
+    /// leaves the provisioning a success: the address can be refreshed later from the service.
+    /// </summary>
+    /// <param name="serviceId">The service that was just activated.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the panel was asked.</returns>
+    private async Task RefreshAssignedIpAsync(int serviceId, CancellationToken ct)
+    {
+        try
+        {
+            var refreshed = await _bus.InvokeAsync<Result>(new RefreshServiceFromPanelCommand(serviceId), ct);
+            if (refreshed.IsFailure)
+            {
+                _logger.LogInformation(
+                    "Service {ServiceId} was provisioned but its account could not be read back from the panel: {ErrorCode}.",
+                    serviceId, refreshed.ErrorCode);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Nothing the read-back does may undo a provisioning that already succeeded and was saved.
+            _logger.LogWarning(ex, "Service {ServiceId} was provisioned but reading its account back from the panel failed.", serviceId);
+        }
     }
 
     /// <summary>Generates a cryptographically random password for the new hosting account.</summary>

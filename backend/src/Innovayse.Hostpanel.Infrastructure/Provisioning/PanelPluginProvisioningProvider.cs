@@ -250,6 +250,38 @@ public sealed class PanelPluginProvisioningProvider : IProvisioningProvider
             ct);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin does not declare the single account read, with
+    /// <c>PANEL_ACCOUNT_NOT_FOUND</c> when the panel holds no such account, with the panel's refusal code when it refuses, and with
+    /// <c>SERVICE_PANEL_SYNC_UPSTREAM_FAILED</c> when it answers success without an account.
+    /// </exception>
+    public async Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(req);
+
+        if (!_caller.Declares(_pluginId, PluginCapabilities.ProvisioningPanelAccount))
+        {
+            throw new DomainRuleException(
+                HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The panel plugin does not declare the single account read.");
+        }
+
+        var result = await RunOnPanelAsync<IProvisioningPanelAccountPlugin, ValueResult<PanelAccount, PanelRefusalReason>>(
+            nameof(IProvisioningPanelAccountPlugin.GetAccountAsync),
+            (plugin, server, token) => plugin.GetAccountAsync(
+                new PanelAccountContext(server, new PanelService(req.ServiceId, req.ProvisioningRef)), token),
+            ct);
+
+        result.Outcome.EnsureDone(result.Reason);
+        if (result.Value is not { } account)
+        {
+            throw new DomainRuleException(
+                HostpanelErrorCodes.SERVICE_PANEL_SYNC_UPSTREAM_FAILED, "The panel plugin answered success without an account.");
+        }
+
+        return new HostedAccountState(account.Status.ToHostedAccountStatus(), account.Domain, account.PackageName, account.IpAddress);
+    }
+
     /// <summary>
     /// Runs one call on the plugin. The server's stored password is read only once the plugin is resolved, available and inside its
     /// time limit, so a plugin that is off, missing or broken never costs a read of it and never sees it.

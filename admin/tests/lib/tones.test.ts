@@ -29,6 +29,7 @@ import {
   orderLineFulfilmentTone,
   paymentClaimStatusTone,
   orderStatusTone,
+  panelSyncOutcomeTone,
   quoteStageTone,
   reportStatusTone,
   serviceStatusTone,
@@ -49,7 +50,7 @@ import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
-import { CancellationStatus, CancellationType, ServiceStatus } from '@/types/service'
+import { CancellationStatus, CancellationType, PanelSyncOutcome, ServiceStatus } from '@/types/service'
 import { ServiceChangeStatus, ServiceChangeType } from '@/types/servicechangerequest'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import { UiTone } from '@/utils/ui/tone'
@@ -84,6 +85,13 @@ describe('lifecycle status tones', () => {
     expect(serviceStatusTone(ServiceStatus.Pending)).toBe(UiTone.Primary)
     expect(serviceStatusTone(ServiceStatus.Suspended)).toBe(UiTone.Warning)
     expect(serviceStatusTone(ServiceStatus.Terminated)).toBe(UiTone.Neutral)
+  })
+
+  it('colours each panel sync outcome', () => {
+    expect(panelSyncOutcomeTone(PanelSyncOutcome.InSync)).toBe(UiTone.Success)
+    expect(panelSyncOutcomeTone(PanelSyncOutcome.Applied)).toBe(UiTone.Primary)
+    expect(panelSyncOutcomeTone(PanelSyncOutcome.Failed)).toBe(UiTone.Danger)
+    expect(panelSyncOutcomeTone(PanelSyncOutcome.Unsupported)).toBe(UiTone.Neutral)
   })
 
   it('colours each domain status', () => {

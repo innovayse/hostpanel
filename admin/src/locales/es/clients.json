@@ -301,7 +301,7 @@
     "order": "Orden #",
     "server": "Servidor",
     "provisioningRef": "Referencia de aprovisionamiento",
-    "dedicatedIp": "IP dedicada",
+    "dedicatedIp": "IP asignada",
     "moduleCommands": "Comandos del módulo",
     "serviceTerminated": "Servicio terminado",
     "terminate": "Terminar",
@@ -340,7 +340,27 @@
     "packageChanged": "Paquete cambiado.",
     "suspended": "Servicio suspendido.",
     "unsuspended": "Servicio reactivado.",
-    "terminated": "Servicio terminado."
+    "terminated": "Servicio terminado.",
+    "syncWithPanel": "Sincronizar con el panel",
+    "syncIntro": "La cuenta se lee una vez del panel y se pone en línea con este servicio. El estado y el paquete de este servicio se aplican al panel, y la dirección IP que informa el panel se registra aquí.",
+    "syncNotChanged": "El dominio y el nombre de usuario nunca se cambian en el panel; una diferencia solo se informa.",
+    "syncPushPassword": "Establecer también la contraseña del panel",
+    "syncPushPasswordHint": "Establece en el panel la contraseña guardada en este servicio. Un panel nunca informa sus contraseñas, por eso solo se hace cuando usted lo pide.",
+    "syncedWithPanel": "Servicio sincronizado con el panel.",
+    "syncPanelValue": "Panel: {value}",
+    "syncField": {
+      "status": "Estado",
+      "package": "Paquete",
+      "domain": "Dominio",
+      "password": "Contraseña",
+      "ipAddress": "Dirección IP"
+    },
+    "syncOutcome": {
+      "inSync": "Coincide",
+      "applied": "Aplicado",
+      "failed": "Falló",
+      "unsupported": "No se puede conciliar"
+    }
   },
   "clientServicesList": {
     "nextDue": "Próximo vencimiento",

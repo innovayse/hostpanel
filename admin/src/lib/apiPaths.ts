@@ -55,6 +55,8 @@ export enum ApiPath {
   AdminServerGroups = '/admin/server-groups',
   /** `/admin/servers` collection and its members. */
   AdminServers = '/admin/servers',
+  /** `/admin/services` the staff routes of one service that the plain `/services` collection does not hold. */
+  AdminServices = '/admin/services',
   /** `/admin/servers/options` the unpaged lean server lookup the pickers and the dashboard read. */
   AdminServerOptions = '/admin/servers/options',
   AdminServerModules = '/admin/servers/modules',

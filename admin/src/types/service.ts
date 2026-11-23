@@ -247,6 +247,54 @@ export interface ProvisioningReasonPayload {
   reason: string
 }
 
+/** Body of the panel sync command. */
+export interface ServiceSyncPayload {
+  /** Whether the password stored on the service is also set on the panel. */
+  pushPassword: boolean
+}
+
+/** A part of a hosting account that the panel sync compares between the platform and the panel. */
+export enum PanelSyncField {
+  /** Whether the account is active or suspended. */
+  Status = 'Status',
+  /** The hosting package the account is on. */
+  Package = 'Package',
+  /** The account's primary domain. */
+  Domain = 'Domain',
+  /** The account's password, pushed only when the admin asks. */
+  Password = 'Password',
+  /** The IP address the account is served on. */
+  IpAddress = 'IpAddress',
+}
+
+/** What the panel sync did about one field. */
+export enum PanelSyncOutcome {
+  /** The platform and the panel already agreed. */
+  InSync = 'InSync',
+  /** The field differed and was brought in step. */
+  Applied = 'Applied',
+  /** The field differed and applying it failed. */
+  Failed = 'Failed',
+  /** The field cannot be reconciled: the panel does not report it or nothing in the platform changes it. */
+  Unsupported = 'Unsupported',
+}
+
+/** What the panel sync did about one field of a hosting account. */
+export interface ServiceSyncField {
+  /** The field compared. */
+  field: PanelSyncField
+  /** What the sync did about it. */
+  outcome: PanelSyncOutcome
+  /** What the panel reported for the field, null when it reported nothing; never the password. */
+  panelValue: string | null
+}
+
+/** The result of reconciling a service's hosting account with its panel, as the API answers it. */
+export interface ServiceSyncResult {
+  /** One entry for each field the sync compared. */
+  fields: ServiceSyncField[]
+}
+
 /** Reasons the admin records when it suspends or terminates a service from the service page. */
 export enum ServiceChangeReason {
   /** Recorded on a suspension. */

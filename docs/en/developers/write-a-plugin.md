@@ -517,8 +517,11 @@ screens behave the same whoever drives the panel.
 | `ListAccountsAsync`, `GetUsageAsync` | the disk usage report: the accounts page by page, then each account's usage |
 | `TestConnectionAsync` | Test Connection on a server and the periodic account count sync |
 | `GetLoginDetailsAsync` | the account's login details, only when `provisioningPanelLogin` is declared; without it the host answers that the action is not supported |
+| `GetAccountAsync` | the service's panel sync and the read after an account is created: one account by its reference, only when `provisioningPanelAccount` is declared; without it the host answers that the action is not supported |
 
 `provisioningPanelPackages` is accepted, and the host does not call `ListPackagesAsync` yet.
+
+**Reading one account.** A plugin that also implements `IProvisioningPanelAccountPlugin` and declares `provisioningPanelAccount` lets the host read one account by its `ProvisioningRef`: its status, domain, package and, when the panel says it, `IpAddress` (an IPv4 or IPv6 address in text form; anything else is ignored). A field the panel leaves `null` is shown as not reported. The host reads the account right after it creates one, to record the IP address on the service, and when staff press **Sync with panel** on a service. The read never changes the panel. A sync takes the platform as the source of truth: through the operations above it asks the panel to suspend or unsuspend the account to match the service and to change the package to the product's package, sets the stored password only when staff tick the box, and records the IP address the panel reports. The domain is reported and never changed. Without the capability a sync answers `PANEL_OPERATION_NOT_SUPPORTED`, and after an account is created the failed read is only logged, so provisioning still succeeds.
 
 **Which plugin serves a server.** The server's module id is compared with each plugin's `serverModules` ignoring case, so a server
 saved as `DirectAdmin` is served by a plugin that declares `directadmin`. Nothing stored is rewritten: the service keeps its server and its

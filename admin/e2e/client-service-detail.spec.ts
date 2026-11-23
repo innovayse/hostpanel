@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { activeServiceDetail, terminatedServiceDetail } from './fixtures/services'
-import { ServiceSection, ServiceStatus, type ServiceDetail } from '../src/types/service'
+import { PanelSyncField, PanelSyncOutcome, ServiceSection, ServiceStatus, type ServiceDetail } from '../src/types/service'
 import { fieldOf, toastWith } from './support/locators'
 import { json, stubApi, type RecordedCall, type StubApi, type StubRoute } from './support/stubApi'
 
@@ -189,4 +189,31 @@ test('a refused termination date correction toasts the API sentence and no succe
   await expect(toastWith(page, sentence)).toBeVisible()
   await expect(page.getByTestId('ui-toast').filter({ hasText: 'Changes saved successfully.' })).toHaveCount(0)
   expect(sectionSaves(api)).toHaveLength(1)
+})
+
+test('syncing a service with its panel asks first, sends the password choice and lists what was done', async ({ page }) => {
+  const provisioned: ServiceDetail = { ...activeServiceDetail, account: { ...activeServiceDetail.account, provisioningRef: 'acct1' } }
+  const syncPath = `/api/admin/services/${provisioned.id}/sync-panel`
+  const api = await stubServicePage(page, provisioned, [
+    json(HttpMethod.Post, syncPath, {
+      fields: [
+        { field: PanelSyncField.Status, outcome: PanelSyncOutcome.InSync, panelValue: 'Active' },
+        { field: PanelSyncField.Package, outcome: PanelSyncOutcome.Applied, panelValue: 'legacy' },
+        { field: PanelSyncField.IpAddress, outcome: PanelSyncOutcome.Applied, panelValue: '203.0.113.9' },
+      ],
+    }),
+  ])
+
+  await page.goto(pageUrl)
+  await page.getByTestId('client-service-sync-panel').click()
+  expect(api.calls.filter((call) => call.path === syncPath)).toHaveLength(0)
+
+  await page.getByTestId('client-service-sync-push-password').click()
+  await page.getByTestId('client-service-sync-confirm').click()
+
+  await expect(page.getByTestId('client-service-sync-outcome-Package')).toHaveText('Applied')
+  await expect(page.getByTestId('client-service-sync-outcome-Status')).toHaveText('In step')
+  const syncs = api.calls.filter((call) => call.path === syncPath)
+  expect(syncs).toHaveLength(1)
+  expect(syncs[0]?.body).toEqual({ pushPassword: true })
 })

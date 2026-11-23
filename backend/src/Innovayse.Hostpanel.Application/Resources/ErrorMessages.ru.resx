@@ -1654,4 +1654,22 @@
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Панель управления отклонила сохранённые данные доступа.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Значение sshAgentProfile в манифесте должно быть идентификатором профиля из слов в нижнем регистре, соединённых одиночными дефисами, не длиннее 32 символов, и не должно быть generic-linux.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>Указать sshAgentProfile может только плагин, объявляющий возможность provisioningPanel.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>В манифесте указан sshAgentProfile, но в пакете нет файла agent/profile.conf.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>Профиль SSH-агента ключей в пакете недопустим. Подробности показаны рядом.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>Вспомогательная программа профиля SSH-агента ключей в пакете недопустима, или в пакете их слишком много. Подробности показаны рядом.</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Ни один установленный плагин не поставляет этот профиль SSH-агента ключей.</value>
+  </data>
 </root>

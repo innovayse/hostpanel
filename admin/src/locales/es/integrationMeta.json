@@ -1,0 +1,24 @@
+{
+  "bankTransfer": {
+    "shortDescription": "Permite a los clientes pagar mediante transferencia bancaria directa con tus datos bancarios.",
+    "fieldAccountName": "Nombre de la cuenta",
+    "fieldInstructions": "Instrucciones de pago"
+  },
+  "cpanel": {
+    "shortDescription": "Aprovisionar y gestionar cuentas de hosting a través de la API del servidor cPanel WHM.",
+    "fieldHost": "Host de WHM",
+    "fieldPort": "Puerto",
+    "fieldApiToken": "Token de API"
+  },
+  "smtp": {
+    "shortDescription": "Configurar la entrega de correo electrónico saliente a través de tu servidor SMTP.",
+    "fieldHost": "Host SMTP",
+    "fieldFromAddress": "Dirección desde",
+    "fieldEncryption": "Cifrado"
+  },
+  "maxmind": {
+    "shortDescription": "Detectar pedidos fraudulentos con la puntuación de riesgo GeoIP de MaxMind.",
+    "fieldLicenseKey": "Clave de licencia",
+    "fieldAccountId": "ID de cuenta"
+  }
+}

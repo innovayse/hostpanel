@@ -71,7 +71,7 @@ const installAutoImports = (): void => {
     t: (key: string) => key,
     te: () => false,
     locale: vue.ref('en'),
-    locales: vue.ref([{ code: 'en', name: 'English' }, { code: 'ru', name: 'Russian' }, { code: 'hy', name: 'Armenian' }, { code: 'de', name: 'German' }, { code: 'es', name: 'Spanish' }]),
+    locales: vue.ref([{ code: 'en', name: 'English' }, { code: 'ru', name: 'Russian' }, { code: 'hy', name: 'Armenian' }, { code: 'de', name: 'German' }, { code: 'es', name: 'Spanish' }, { code: 'fr', name: 'French' }]),
   }))
 
   /** `useRoute` stand-in: an empty route. */

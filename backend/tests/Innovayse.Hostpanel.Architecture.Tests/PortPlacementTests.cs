@@ -43,9 +43,7 @@ public sealed class PortPlacementTests
 
     /// <summary>
     /// Every class implementing a port is an adapter in Infrastructure, or a request-scoped adapter
-    /// under the API listed in <see cref="RequestScopedAdapters"/>. The legacy CWP provider project is not
-    /// scanned: Infrastructure links it directly, so it is an Infrastructure adapter in its own assembly
-    /// (rules/project.md).
+    /// under the API listed in <see cref="RequestScopedAdapters"/>.
     /// </summary>
     [Fact]
     public void PortImplementations_LiveInInfrastructure()
@@ -55,7 +53,7 @@ public sealed class PortPlacementTests
         var offenders = new[]
             {
                 Layers.Application, Layers.Shared, Layers.Api,
-                Layers.Sdk, Layers.ProviderCwp,
+                Layers.Sdk,
             }
             .SelectMany(Layers.AuthoredTypesOf)
             .Where(type => type.IsClass && !type.IsAbstract && !RequestScopedAdapters.ContainsKey(type))

@@ -9,7 +9,7 @@ description: Every check CI runs and how to run them locally.
 
 Every pull request must pass:
 
-1. Backend tests: domain, integration, architecture and plugin
+1. Backend tests: domain, integration and architecture
 2. Admin panel: lint, typecheck, unit tests, end-to-end tests
 3. Client portal: lint, typecheck, unit tests
 
@@ -21,7 +21,7 @@ Run all backend tests inside the API container (from the `docker/` directory):
 ./scripts/manage.sh test
 ```
 
-Five test projects:
+Three test projects:
 
 **`Innovayse.Hostpanel.Domain.Tests`**: unit tests for domain logic.
 
@@ -37,8 +37,6 @@ Five test projects:
 | `ResourceCoverageTests` | Every error code has a sentence in `ErrorMessages.resx` |
 
 `ModelDiffBaselineTests` lives in `Integration.Tests/Persistence` and checks that the EF model matches the latest migration.
-
-**`Innovayse.CWP.Tests`**, **`Innovayse.Inecobank.Tests`**: tests for the bundled plugins.
 
 ## Admin panel
 

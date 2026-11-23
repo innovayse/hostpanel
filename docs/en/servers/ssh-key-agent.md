@@ -20,7 +20,7 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
 
 The `restrict` directive removes PTY, port forwarding and user rc; the forced command ignores whatever the client asks to run; sudo allows only that exact path with no arguments. Requests travel on stdin as a JSON document; the agent never executes a shell or takes a path from the request.
 
-**Supported server modules:** only CWP7 maps to an agent profile (`cwp`). All other server types show "SSH key management not available" to clients.
+**Supported server modules:** a server is supported when the hosting panel plugin that serves its module ships an SSH agent profile (see [SSH agent profile of a hosting panel plugin](../developers/write-a-plugin.md#ssh-agent-profile)). All other server types show "SSH key management not available" to clients. Until the plugin that serves the legacy CWP7 module ships its own profile, the host still installs the profile it embeds for that module (`cwp`).
 
 ## Set up SSH on a server
 
@@ -62,7 +62,7 @@ The installer accepts these flags:
 
 | Flag | Effect |
 |------|--------|
-| `--provider <profile>` | Agent profile: `cwp` for CWP7, `generic-linux` for plain Linux |
+| `--provider <profile>` | Agent profile: the id the plugin that serves the server's module ships (the SSH dialog fills it in), or `generic-linux` for plain Linux |
 | `--binding <id>` | Ties this installation to the Hostpanel server record |
 | `--config <file>` | Use a custom config file instead of the profile's default (advanced) |
 | `--dry-run` | Preview what would be installed without making any changes |

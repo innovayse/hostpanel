@@ -145,6 +145,14 @@ describe('live-chat plugin', () => {
     expect(scripts()[0]!.innerHTML).toContain('German')
   })
 
+  it('names the language of a French visitor on the conversation', async () => {
+    configureChat()
+    locale.value = 'fr'
+    await loadPlugin()
+
+    expect(scripts()[0]!.innerHTML).toContain('French')
+  })
+
   it('prefers the per-locale token over the default one', async () => {
     configureChat()
     settings[PortalSettingKey.ChatWebsiteTokenRu] = 'tok-ru'

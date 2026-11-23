@@ -6,7 +6,6 @@ import type { PaginatedList } from '../../src/types/paginatedlist'
 import type { ServerDto, ServerModuleOptionDto, TestConnectionResultDto } from '../../src/types/server'
 import { ServerModuleSource } from '../../src/types/serverenums'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '../../src/types/serverssh'
-import { SshAgentProfile } from '../../src/types/sshenums'
 
 /** The control panel modules the server form and the module filter offer: the host's own and one a plugin declares. */
 export const serverModules: ServerModuleOptionDto[] = [
@@ -80,9 +79,9 @@ export const hostServerSsh: ServerSshSettingsDto = {
   serverId: hostServer.id,
   isSupported: true,
   isEnabled: false,
-  sshHostname: 'cwp1.example.test',
+  sshHostname: 'host1.example.test',
   sshPort: 2222,
-  agentHost: 'cwp1.internal.test',
+  agentHost: 'host1.internal.test',
   agentPort: 22,
   agentUsername: 'hpsshkeys',
   hasAgentPrivateKey: true,
@@ -93,10 +92,13 @@ export const hostServerSsh: ServerSshSettingsDto = {
   lastHealthCheckAt: null,
 }
 
+/** The agent profile id the e2e servers install: the id a panel plugin ships. */
+export const SSH_AGENT_PROFILE = 'examplepanel'
+
 /** Agent installer setup of {@link hostServer} before any identity exists, with no source address configured. */
 export const hostServerSshSetup: ServerSshSetupDto = {
   serverId: hostServer.id,
-  profile: SshAgentProfile.Cwp,
+  profile: SSH_AGENT_PROFILE,
   publicKey: null,
   binding: null,
   agentUsername: 'hpsshkeys',

@@ -148,7 +148,7 @@ describe('useSeo', () => {
     ['hy', 'hy_AM'],
     ['de', 'de_DE'],
     ['es', 'es_ES'],
-    ['fr', 'en_US'],
+    ['fr', 'fr_FR'],
   ])('maps the %s language to the %s Open Graph locale', async (locale, expected) => {
     await stubRuntime(locale)
 
@@ -179,7 +179,7 @@ describe('useSeo', () => {
     const links = headSet().link
     expect(links[0]).toEqual({ rel: 'canonical', href: `${BASE}/hosting` })
     expect(links.filter((link) => link.rel === 'alternate').map((link) => link.hreflang)).toEqual(
-      expect.arrayContaining(['en', 'ru', 'hy', 'de', 'es', 'x-default']),
+      expect.arrayContaining(['en', 'ru', 'hy', 'de', 'es', 'fr', 'x-default']),
     )
   })
 })

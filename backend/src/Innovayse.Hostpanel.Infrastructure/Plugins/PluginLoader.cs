@@ -252,8 +252,11 @@ public static class PluginLoader
                     manifest.Id, advisory.Rule, advisory.Detail);
             }
 
+            // Read last, like the advisories above, so a plugin skipped by an earlier check never gets a warning about its agent files.
+            var agentProfile = ReadAgentProfile(registry, manifest, pluginDir, logger);
+
             RegisterPluginType(services, manifest, pluginType, logger);
-            registry.Register(new LoadedPlugin(manifest, pluginType, views.Views, icon.Icon));
+            registry.Register(new LoadedPlugin(manifest, pluginType, views.Views, icon.Icon, agentProfile));
 
             if (manifest.ShowInIntegrations)
             {
@@ -282,6 +285,38 @@ public static class PluginLoader
         services.AddSingleton(registry);
         services.AddSingleton<IPluginRegistry>(registry);
         services.AddSingleton<IPluginIntegrationRegistry>(integrationRegistry);
+    }
+
+    /// <summary>
+    /// Reads the SSH key agent profile a plugin's manifest names. A rule added after the plugin was installed does not take
+    /// it away (it was accepted once and may be running payments): a refused profile, or an id another loaded plugin already
+    /// ships, is only warned about and the plugin loads without a profile; an upload of a new version is refused at install.
+    /// </summary>
+    /// <param name="registry">The registry the loader fills, asked whether the profile id is already taken.</param>
+    /// <param name="manifest">The plugin's manifest.</param>
+    /// <param name="pluginDir">The plugin folder.</param>
+    /// <param name="logger">Records the warning.</param>
+    /// <returns>The checked profile, or <see langword="null"/> when the plugin ships none or its profile is not usable.</returns>
+    internal static PluginAgentProfileDto? ReadAgentProfile(PluginRegistry registry, PluginManifest manifest, string pluginDir, ILogger logger)
+    {
+        var agent = PluginAgentReader.Read(pluginDir, manifest);
+        if (agent.Violation is not null)
+        {
+            logger.LogWarning(
+                "Plugin {Id} breaks agent rule {Rule}: {Detail}. It stays loaded without its agent profile; a new upload would be refused.",
+                manifest.Id, agent.Violation.Rule, agent.Violation.Detail);
+            return null;
+        }
+
+        if (agent.Profile is not null && registry.FindAgentProfile(agent.Profile.ProfileId) is { } taken)
+        {
+            logger.LogWarning(
+                "Plugin {Id} names the agent profile {Profile}, which plugin {OtherId} already ships. It stays loaded without its agent profile.",
+                manifest.Id, agent.Profile.ProfileId, taken.PluginId);
+            return null;
+        }
+
+        return agent.Profile;
     }
 
     /// <summary>

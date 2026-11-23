@@ -645,4 +645,22 @@
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Das Bedienfeld hat die gespeicherten Zugangsdaten abgelehnt.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Das sshAgentProfile im Manifest muss eine Profil-ID aus Kleinbuchstaben-Wörtern sein, die durch einzelne Bindestriche verbunden sind, höchstens 32 Zeichen lang, und darf nicht generic-linux lauten.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>Nur ein Plugin, das die Fähigkeit provisioningPanel deklariert, kann ein sshAgentProfile angeben.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>Das Manifest nennt ein sshAgentProfile, aber das Paket enthält keine Datei agent/profile.conf.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>Das SSH-Schlüssel-Agent-Profil im Paket ist ungültig. Details sehen Sie daneben.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>Ein Hilfsprogramm des SSH-Schlüssel-Agent-Profils im Paket ist ungültig, oder das Paket enthält zu viele. Details sehen Sie daneben.</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Kein installiertes Plugin liefert dieses SSH-Schlüssel-Agent-Profil.</value>
+  </data>
 </root>

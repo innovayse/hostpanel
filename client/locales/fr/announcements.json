@@ -1,0 +1,17 @@
+{
+  "announcements": {
+    "badge": "Actualités et nouveautés",
+    "title": "Annonces",
+    "subtitle": "Restez informé des dernières actualités, mises à jour et offres spéciales.",
+    "allMonths": "Tous",
+    "filterLabel": "Filtrer par mois",
+    "readMore": "Lire la suite",
+    "empty": "Aucune annonce pour le moment.",
+    "signInRequired": "Connectez-vous pour lire les annonces",
+    "signInRequiredDesc": "Les annonces sont réservées aux clients connectés.",
+    "signIn": "Se connecter",
+    "errorDesc": "Veuillez réessayer plus tard.",
+    "backToList": "Retour aux annonces",
+    "published": "Publié le"
+  }
+}

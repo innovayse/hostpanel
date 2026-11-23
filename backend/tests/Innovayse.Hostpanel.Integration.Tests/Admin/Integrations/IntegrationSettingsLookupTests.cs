@@ -6,9 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 
 /// <summary>
-/// <see cref="IntegrationSettingsLookup"/> and <see cref="IntegrationSettingQueries"/>, the two
-/// readers of stored integration settings that the list, detail, connection-test and server-info
-/// use cases share, run against the real PostgreSQL host.
+/// <see cref="IntegrationSettingsLookup"/>, the reader of stored integration settings that the list,
+/// detail and connection-test use cases share, run against the real PostgreSQL host.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -80,41 +79,5 @@ public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factor
 
         settings.HasValue(mine, "host").Should().BeTrue();
         settings.HasValue(other, "host").Should().BeFalse();
-    }
-
-    /// <summary>The single-value reader returns the stored value, or null when nothing is stored.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task GetIntegrationValueAsync_ReturnsTheStoredValueOrNullAsync()
-    {
-        var slug = $"lookup-{Guid.NewGuid():N}";
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        Seed(context, slug, "host", "single.example.test");
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var cipher = scope.ServiceProvider.GetRequiredService<ISecretSettingCipher>();
-        var stored = await context.GetIntegrationValueAsync(cipher, slug, "host", CancellationToken.None);
-        var missing = await context.GetIntegrationValueAsync(cipher, slug, "port", CancellationToken.None);
-
-        stored.Should().Be("single.example.test");
-        missing.Should().BeNull();
-    }
-
-    /// <summary>A secret stored encrypted is returned as the plain value the operator entered.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task GetIntegrationValueAsync_DecryptsAProtectedSecretAsync()
-    {
-        var slug = $"lookup-{Guid.NewGuid():N}";
-        using var scope = factory.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var cipher = scope.ServiceProvider.GetRequiredService<ISecretSettingCipher>();
-        Seed(context, slug, IntegrationSettingKeys.ApiKeyField, cipher.Protect("panel-api-key"));
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        var stored = await context.GetIntegrationValueAsync(cipher, slug, IntegrationSettingKeys.ApiKeyField, CancellationToken.None);
-
-        stored.Should().Be("panel-api-key");
     }
 }

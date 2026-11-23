@@ -12,13 +12,14 @@
  * @module server/routes/robots.txt
  */
 
+import { APP_LOCALES, DEFAULT_APP_LOCALE } from '~/constants/appLocales'
 import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
 
 /** Areas that belong to a signed-in visitor and must not be crawled, before the locale prefix. */
 const PRIVATE_AREAS = ['client', 'cart', 'checkout', 'order'] as const
 
 /** Locale URL prefixes the private areas also live under (the default language has none). */
-const LOCALE_PREFIXES = ['', '/ru', '/hy'] as const
+const LOCALE_PREFIXES = ['', ...APP_LOCALES.filter(locale => locale !== DEFAULT_APP_LOCALE).map(locale => `/${locale}`)]
 
 /** Static assets that stay crawlable, so pages render fully for the crawler. */
 const ASSET_EXTENSIONS = [

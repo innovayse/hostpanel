@@ -30,6 +30,18 @@ public sealed class IntegrationCatalogueTests
         IntegrationCatalogue.TryGetTestable("example-gateway", out _).Should().BeFalse();
     }
 
+    /// <summary>A hosting panel is a plugin, never a catalogue entry: neither Control Web Panel nor Plesk is a built-in integration.</summary>
+    /// <param name="slug">The slug of a hosting panel that is served by a plugin.</param>
+    [Theory]
+    [InlineData("cwp")]
+    [InlineData("plesk")]
+    public void HostingPanelPluginSlug_IsNotACatalogueEntry(string slug)
+    {
+        IntegrationCatalogue.All.Keys.Should().NotContain(slug);
+        IntegrationCatalogue.TryGet(slug, out _).Should().BeFalse();
+        IntegrationCatalogue.TryGetTestable(slug, out _).Should().BeFalse();
+    }
+
     /// <summary>An unknown slug is found by neither lookup.</summary>
     [Fact]
     public void UnknownSlugIsNotFound()

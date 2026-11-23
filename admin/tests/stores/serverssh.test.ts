@@ -7,17 +7,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useServerSshStore } from '@/stores/serverssh'
 import type { ServerSshSetupDto } from '@/types/serverssh'
-import { SshAgentProfile, SshProviderFailure } from '@/types/sshenums'
+import { SshProviderFailure } from '@/types/sshenums'
 import { callOf, invalid, json, problem, stubFetch } from '../helpers/fetch'
+import { SSH_AGENT_PROFILE } from '../helpers/serverFixtures'
 
 /** Settings as the API answers them. */
 const SETTINGS = {
   serverId: 4,
   isSupported: true,
   isEnabled: true,
-  sshHostname: 'cwp1.example.test',
+  sshHostname: 'host1.example.test',
   sshPort: 2222,
-  agentHost: 'cwp1.internal.test',
+  agentHost: 'host1.internal.test',
   agentPort: 22,
   agentUsername: 'hpsshkeys',
   hasAgentPrivateKey: true,
@@ -31,7 +32,7 @@ const SETTINGS = {
 /** Installer setup before an identity exists. */
 const SETUP: ServerSshSetupDto = {
   serverId: 4,
-  profile: SshAgentProfile.Cwp,
+  profile: SSH_AGENT_PROFILE,
   publicKey: null,
   binding: null,
   agentUsername: 'hpsshkeys',
@@ -117,7 +118,7 @@ describe('serverSshStore', () => {
     const store = useServerSshStore()
 
     await store.loadAll(4)
-    expect(store.setup?.profile).toBe(SshAgentProfile.Cwp)
+    expect(store.setup?.profile).toBe(SSH_AGENT_PROFILE)
     expect(await store.generateIdentity(4)).toBe(true)
     expect(callOf(mock, 2).url).toContain('/api/admin/servers/4/ssh-identity')
     expect(store.setup?.binding).toBe(generated.binding)

@@ -1,0 +1,44 @@
+{
+  "hosting": {
+    "badge": "Offres d'hébergement web",
+    "title": "Un hébergement web",
+    "titleHighlight": "rapide et fiable",
+    "subtitle": "Choisissez l'offre d'hébergement idéale pour votre site. Stockage SSD, SSL gratuit, support inclus.",
+    "recommended": "Recommandé",
+    "getStarted": "Commencer",
+    "addToCart": "Ajouter au panier",
+    "inCart": "Dans le panier",
+    "orderNow": "Commander",
+    "custom": "Sur mesure",
+    "loadError": "Impossible de charger les offres d'hébergement. Veuillez réessayer plus tard.",
+    "planNotFound": "Offre introuvable.",
+    "viewAllPlans": "Voir toutes les offres",
+    "backToPlans": "Retour aux offres d'hébergement",
+    "billingCycles": "Cycles de facturation",
+    "includedFeatures": "Fonctionnalités incluses",
+    "cycles": {
+      "monthly": "Mensuel",
+      "quarterly": "Trimestriel",
+      "semiannually": "6 mois",
+      "annually": "Annuel",
+      "biennially": "2 ans",
+      "triennially": "3 ans",
+      "free": "Gratuit"
+    },
+    "comparison": {
+      "title": "Comparer les offres",
+      "subtitle": "Choisissez les fonctionnalités qui correspondent le mieux à vos besoins.",
+      "notIncluded": "Non inclus",
+      "feature": "Fonctionnalité"
+    },
+    "customContact": "Contactez-nous pour des solutions sur mesure",
+    "getStartedForFree": "Commencer gratuitement",
+    "foreverFree": "Gratuit pour toujours",
+    "viewAllFeatures": "Voir toutes les fonctionnalités",
+    "premiumSolutions": "Solutions d'hébergement premium",
+    "enterpriseSolutions": "Solutions pour agences et entreprises",
+    "agencyBadge": "Performances maximales",
+    "select": "Sélectionner",
+    "free": "Gratuit"
+  }
+}

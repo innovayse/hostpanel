@@ -62,7 +62,7 @@ public sealed partial class NoVendorNamesTests
     /// this repository, so its text names no class of the host, no layer of its architecture and no repository.
     /// </summary>
     /// <returns>The compiled expression.</returns>
-    [GeneratedRegex(@"ProvisioningProviderFactory|ServerConnectionTester|GetHostingPanelServerInfoHandler|CwpApiClient|PluginActivator|PluginLoader|PluginRegistry|HostedPluginRunner|PluginManifestReader|Innovayse\.Hostpanel|(Application|Infrastructure|Domain|API) layer|this repository", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"ProvisioningProviderFactory|ServerConnectionTester|PanelPluginCaller|ServerModulePluginResolver|PluginActivator|PluginLoader|PluginRegistry|HostedPluginRunner|PluginManifestReader|Innovayse\.Hostpanel|(Application|Infrastructure|Domain|API) layer|this repository", RegexOptions.IgnoreCase)]
     private static partial Regex HostInternalName();
 
     /// <summary>
@@ -120,14 +120,14 @@ public sealed partial class NoVendorNamesTests
     [Fact]
     public void HostInternalName_MatchesHostNamesOnly()
     {
-        HostInternalName().IsMatch("see CwpApiClient and ProvisioningProviderFactory").Should().BeTrue();
+        HostInternalName().IsMatch("see PanelPluginCaller and ProvisioningProviderFactory").Should().BeTrue();
         HostInternalName().IsMatch("the Application layer applies the fallback").Should().BeTrue();
         HostInternalName().IsMatch("every other consumer in this repository").Should().BeTrue();
         HostInternalName().IsMatch("the host applies the fallback to a hosting panel client").Should().BeFalse();
 
         // The scan reads comments, so a name planted in a doc comment is found by it.
         ReadableText()
-            .Matches("/// <c>CwpApiClient</c>\npublic sealed class Planted;")
+            .Matches("/// <c>PanelPluginCaller</c>\npublic sealed class Planted;")
             .Any(match => match.Groups["text"].Success && HostInternalName().IsMatch(match.Groups["text"].Value))
             .Should().BeTrue();
     }

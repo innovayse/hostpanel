@@ -658,6 +658,9 @@ public static class HostpanelErrorCodes
     /// <summary>The server's control panel module has no SSH key implementation (400).</summary>
     public const string SSH_MODULE_NOT_SUPPORTED = "SSH_MODULE_NOT_SUPPORTED";
 
+    /// <summary>No loaded plugin ships the SSH key agent profile the installer bundle was asked for (404).</summary>
+    public const string SSH_AGENT_PROFILE_NOT_FOUND = "SSH_AGENT_PROFILE_NOT_FOUND";
+
     /// <summary>The server's SSH settings lack a value an enabled configuration or an agent call needs (400).</summary>
     public const string SSH_SETTINGS_INCOMPLETE = "SSH_SETTINGS_INCOMPLETE";
 
@@ -959,6 +962,21 @@ public static class HostpanelErrorCodes
 
     /// <summary>The manifest agentProfile is not one of the SSH key agent profiles the SDK defines (400).</summary>
     public const string PLUGIN_MANIFEST_AGENT_PROFILE_INVALID = "PLUGIN_MANIFEST_AGENT_PROFILE_INVALID";
+
+    /// <summary>The manifest sshAgentProfile is not a well formed profile id, or is the id the host keeps for its own default profile (400).</summary>
+    public const string PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID = "PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID";
+
+    /// <summary>The manifest sshAgentProfile is set on a plugin that does not declare the provisioningPanel capability (400).</summary>
+    public const string PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED = "PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED";
+
+    /// <summary>The manifest names an sshAgentProfile but the package has no profile file (400).</summary>
+    public const string PLUGIN_SSH_AGENT_PROFILE_MISSING = "PLUGIN_SSH_AGENT_PROFILE_MISSING";
+
+    /// <summary>The SSH key agent profile file of the package cannot be used: size, format, a key the agent does not define, another provider than the manifest names, a binding, a path outside the helper folder or a link (400).</summary>
+    public const string PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID = "PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID";
+
+    /// <summary>A helper of the SSH key agent profile has a name that is not allowed, is not a regular file or is too large, or the package carries too many helpers (400).</summary>
+    public const string PLUGIN_SSH_AGENT_HELPER_INVALID = "PLUGIN_SSH_AGENT_HELPER_INVALID";
 
     /// <summary>The manifest serverModules list is missing or badly formed on a plugin with a provisioningPanel or virtualServer capability, or present on one without (400).</summary>
     public const string PLUGIN_MANIFEST_SERVER_MODULES_INVALID = "PLUGIN_MANIFEST_SERVER_MODULES_INVALID";

@@ -12,13 +12,15 @@ import { checkI18n, declaredKeys, flattenKeys, type Catalogues } from '../../scr
  * @param ru - Russian keys.
  * @param hy - Armenian keys.
  * @param de - German keys; the English keys when left out, so a case about the other languages stays about them.
+ * @param es - Spanish keys; the English keys when left out, for the same reason.
  * @returns The catalogues.
  */
-const make = (en: string[], ru: string[], hy: string[], de: string[] = en): Catalogues => ({
+const make = (en: string[], ru: string[], hy: string[], de: string[] = en, es: string[] = en): Catalogues => ({
   en: new Set(en),
   ru: new Set(ru),
   hy: new Set(hy),
   de: new Set(de),
+  es: new Set(es),
 })
 
 describe('flattenKeys', () => {
@@ -40,6 +42,15 @@ describe('checkI18n', () => {
     })
     expect(problems).toContain('missing in ru: a.x')
     expect(problems).toContain('extra in ru (absent from en): a.y')
+  })
+
+  it('reports a key missing in es and an extra key in es', () => {
+    const problems = checkI18n({
+      catalogues: make(['a.x'], ['a.x'], ['a.x'], ['a.x'], ['a.y']),
+      source: "t('a.x') t('a.y')",
+    })
+    expect(problems).toContain('missing in es: a.x')
+    expect(problems).toContain('extra in es (absent from en): a.y')
   })
 
   it('reports an unused key', () => {

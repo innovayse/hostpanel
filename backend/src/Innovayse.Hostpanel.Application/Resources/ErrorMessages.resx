@@ -1654,4 +1654,22 @@
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>The control panel refused the saved credentials.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>The sshAgentProfile in the manifest must be a profile id of lower case words joined by single hyphens, at most 32 characters, and must not be generic-linux.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>Only a plugin that declares the provisioningPanel capability can name an sshAgentProfile.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>The manifest names an sshAgentProfile but the package has no agent/profile.conf.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>The SSH key agent profile in the package is not valid. See the detail shown with it.</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>A helper of the SSH key agent profile in the package is not valid, or the package carries too many helpers. See the detail shown with it.</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>No installed plugin ships this SSH key agent profile.</value>
+  </data>
 </root>

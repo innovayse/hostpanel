@@ -32,7 +32,7 @@ const MENU: readonly Omit<ClientMenuItem, 'label'>[] = [
 /**
  * Builds the widget menu in one language.
  *
- * @param language - The reader's language code (`en`, `ru` or `hy`); unsupported reads as English.
+ * @param language - The reader's language code (`en`, `ru`, `hy`, `de`, `es` or `fr`); unsupported reads as English.
  * @returns The quick links in display order, each with its localized `label`, key, address and icon.
  */
 export const buildClientMenu = (language: string): ClientMenuItem[] => MENU.map(item => ({

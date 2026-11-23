@@ -244,7 +244,7 @@ public sealed class AgentHostingResourceProviderTests
         var transport = new SshAgentTransport(
             new OutboundConnector(Options.Create(new OutboundNetworkOptions()), Options.Create(new PanelNetworkOptions())),
             NullLogger<SshAgentTransport>.Instance);
-        var factory = new HostingResourceProviderFactory(new SshKeyProviderFactory(transport), transport);
+        var factory = new HostingResourceProviderFactory(SshAgentTestSeeds.KeyFactory(), transport);
 
         Assert.IsType<AgentHostingResourceProvider>(factory.CreateFor(Target(ServerModules.Cwp7, Agent(isComplete: true))));
         Assert.Null(factory.CreateFor(Target(ServerModules.CPanel, Agent(isComplete: true))));

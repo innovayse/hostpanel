@@ -44,7 +44,7 @@ describe('buildSeoLinks', () => {
 
     expect(links[0]).toEqual({ rel: 'canonical', href: `${BASE}/ru/hosting` })
     expect(links.flatMap((link) => (link.rel === 'alternate' ? [link.hreflang] : [])))
-      .toEqual([AppLocale.En, AppLocale.Ru, AppLocale.Hy, AppLocale.De, AppLocale.Es, HREFLANG_DEFAULT])
+      .toEqual([AppLocale.En, AppLocale.Ru, AppLocale.Hy, AppLocale.De, AppLocale.Es, AppLocale.Fr, HREFLANG_DEFAULT])
   })
 
   it('points x-default at the default language', () => {

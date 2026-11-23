@@ -13,5 +13,7 @@ export enum AppLocale {
   /** German. */
   De = 'de',
   /** Spanish. */
-  Es = 'es'
+  Es = 'es',
+  /** French. */
+  Fr = 'fr'
 }

@@ -13,12 +13,6 @@ public static class IntegrationSlugs
     /// <summary>The cPanel WHM provisioning module.</summary>
     public const string Cpanel = "cpanel";
 
-    /// <summary>The CentOS Web Panel provisioning module.</summary>
-    public const string Cwp = "cwp";
-
-    /// <summary>The plugin id the hosting-panel server-info read side keys its CentOS Web Panel settings by.</summary>
-    public const string InnovayseCwp = "innovayse-cwp";
-
     /// <summary>The SMTP mail server.</summary>
     public const string Smtp = "smtp";
 

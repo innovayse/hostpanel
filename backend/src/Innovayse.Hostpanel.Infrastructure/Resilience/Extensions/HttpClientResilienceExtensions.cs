@@ -31,7 +31,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
 /// <para>
 /// <b>The HTTP method is not a usable idempotency signal in this codebase</b>, which is why
 /// there is no shared method-based predicate. WHM performs every operation,
-/// including account creation, over GET; CWP performs every
+/// including account creation, over GET; a panel plugin may perform every
 /// operation, including the read ones, over POST with the verb in a form field; and the
 /// payment gateways post a status lookup, a payment registration and a refund to the
 /// same host over the same verb. A predicate copied from a service whose API is RESTful would
@@ -161,7 +161,7 @@ public static class HttpClientResilienceExtensions
     /// <remarks>
     /// The right shape for anything that provisions, charges, or spends a one-time code, and for
     /// any client whose safe and unsafe operations cannot be told apart from the request. That
-    /// covers the two-factor endpoints, WHM, both CWP panels, Telegram, and the factory's
+    /// covers the two-factor endpoints, WHM, Telegram, and the factory's
     /// unnamed client. The timeout alone is most of the value: it is what stops one slow third
     /// party from holding request threads.
     /// </remarks>

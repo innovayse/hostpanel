@@ -458,30 +458,6 @@ public sealed class PluginManifestValidatorTests : IDisposable
         AppDomain.CurrentDomain.GetAssemblies().Should().NotContain(a => a.GetName().Name == "Fixture.Plugin");
     }
 
-    /// <summary>Every manifest the build ships passes the rules at load.</summary>
-    /// <param name="project">The shipped provider project folder name.</param>
-    [Theory]
-    [InlineData("Innovayse.Providers.CWP")]
-    public void TryRead_ShippedManifest_Loads(string project)
-    {
-        var manifestPath = ShippedManifestPath(project);
-
-        var manifest = new PluginManifestReader(new CapturingLogger<PluginManifestReader>()).TryRead(manifestPath);
-
-        manifest.Should().NotBeNull();
-    }
-
-    /// <summary>A shipped plugin's real compiled assembly, built against the SDK project, passes the SDK major check.</summary>
-    [Fact]
-    public void ValidateSdkReference_ShippedPluginAssembly_Passes()
-    {
-        var shipped = Path.Combine(AppContext.BaseDirectory, "Innovayse.Providers.CWP.dll");
-        File.Exists(shipped).Should().BeTrue("the test project references the CWP provider");
-        File.Copy(shipped, Path.Combine(_folder, "Innovayse.Providers.CWP.dll"));
-
-        PluginManifestValidator.ValidateSdkReference(_folder).Should().BeNull();
-    }
-
     /// <summary>A refused plugin is skipped at load with a log line naming its id and the rule.</summary>
     [Fact]
     public void TryRead_BrokenRule_SkipsThePluginAndLogsItsIdAndTheRule()
@@ -514,23 +490,6 @@ public sealed class PluginManifestValidatorTests : IDisposable
 
         logger.Messages.Should().ContainSingle().Which
             .Should().Contain("old-plugin").And.Contain(nameof(PluginManifestRule.SdkAssemblyOutdated)).And.Contain("rebuild");
-    }
-
-    /// <summary>Finds a shipped provider's <c>plugin.json</c> in the source tree above the test output.</summary>
-    /// <param name="project">The provider project folder name.</param>
-    /// <returns>The absolute path of the manifest.</returns>
-    private static string ShippedManifestPath(string project)
-    {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-        {
-            var candidate = Path.Combine(dir.FullName, "src", project, "plugin.json");
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new FileNotFoundException($"The manifest of {project} was not found above {AppContext.BaseDirectory}.");
     }
 
     /// <summary>A client page may ask for the workspace layout or the standard one, or for none.</summary>

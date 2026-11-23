@@ -10,11 +10,6 @@
     "fieldPort": "Port",
     "fieldApiToken": "API-Token"
   },
-  "cwp": {
-    "shortDescription": "Hosting-Konten auf CentOS-Web-Panel-Servern verwalten.",
-    "fieldHost": "CWP-Host",
-    "fieldApiKey": "API-Schlüssel"
-  },
   "smtp": {
     "shortDescription": "Den E-Mail-Versand über Ihren SMTP-Mailserver konfigurieren.",
     "fieldHost": "SMTP-Host",

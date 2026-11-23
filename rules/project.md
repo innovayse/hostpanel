@@ -1341,10 +1341,13 @@ docker/                              compose set (shared·dev·prod·platform), 
     search every column and log line). Removal drops only the plugin's own record (`NotFound` otherwise), is idempotent, and
     marks `RemoveFailed` when the server does not confirm. The server side is `IHostingResourceProvider`
     (`Infrastructure/Integrations/SshAgent/AgentHostingResourceProvider`, agent contract `ensure-website`, `remove-website`,
-    `ensure-database`, `remove-database`, `ping.capabilities` and `ping.php_versions`); its factory asks
+    `ensure-database`, `remove-database`, `ping.capabilities`, `ping.php_versions` and (agent 1.6.0) `ping.php_cli`); its factory asks
     `ISshKeyProviderFactory.Supports`, so the module-to-agent mapping exists once, and the adapter tests run the agent's
     golden vectors (`backend/agent/ssh-key-agent/tests/contract`, linked into the test output). When a service is terminated
     `RemoveHostingResourcesOnServiceTerminatedHandler` marks its resources `Removed` with no server call.
+    The agent's built in `generic-linux` profile (`backend/agent/ssh-key-agent/providers/generic-linux`, agent 1.6.0, #1422) ships the website and PHP
+    helpers (`detect`, `capabilities`, `php-versions`, `ensure-website`, `remove-website`) for plain Debian, Ubuntu, RHEL and AlmaLinux servers
+    with Apache or nginx; its tests are `tests/test_generic_linux.py` and the golden vectors. HostPanel has no server module for it yet.
   - **Reading a gateway order from a callback (#1356, SDK 3.11.0).** `PluginHostApi` also implements the optional
     `IPluginHostPaymentApi.RequestOrderReadAsync` and only hands the call's `PluginCallBinding` to the Application's
     `Billing/Common/PluginOrderReadService` (no adapter takes `IMessageBus`, `PluginHostingGateTests`). The service ignores,

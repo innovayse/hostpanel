@@ -160,7 +160,8 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Оболочка входа, задаваемая при включении клиента в jail.' },
   { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Дополнительные пути, копируемые в каждый jail через jk_cp, когда их нет в jail или копия на сервере изменилась (нет в jail, другой размер или более новая). Пути, которых нет на сервере, пропускаются, а уже скопированные не копируются повторно. Запись, которая является закрытым ключевым материалом или содержит его (с учётом символических ссылок), отклоняется, а install.sh --check выводит предупреждение: каталог private либо файл *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx или *.jks; для исходящего TLS укажите /etc/pki/tls/certs, /etc/pki/ca-trust/extracted и /etc/ssl/certs, но никогда не /etc/pki/tls. Включает dircolors и записи профиля оболочки, необходимые для входа в bash; rsync, tar, gzip и unzip позволяют CI/CD развёртывать сайты по SSH.' },
   { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Каталог, в который для каждой включённой учётной записи записывается юнит systemd с bind-монтированием домашнего каталога.' },
-  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Каталог вспомогательных программ провайдера, стоящих за операциями с сайтами и базами данных (ensure-website, remove-website, ensure-database, remove-database). Операция без своей вспомогательной программы отвечает not_supported. Агент версии 1.5.0 и новее.' }
+  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Каталог вспомогательных программ провайдера, стоящих за операциями с сайтами и базами данных (ensure-website, remove-website, ensure-database, remove-database). Операция без своей вспомогательной программы отвечает not_supported. Агент версии 1.5.0 и новее.' },
+  { name: 'web_server', type: 'string', default: '(пусто)', description: 'apache или nginx. Читается вспомогательными программами сайтов профиля generic-linux. Пусто значит тот, который запущен; задайте, если запущены оба или ни один, иначе операции с сайтами отклоняются. Агент версии 1.6.0 и новее.' }
 ]" />
 
 ## В jail попадает только открытый материал доверия {#jail-extras}
@@ -197,6 +198,18 @@ Jail является личной средой клиента, поэтому �
 Вспомогательные программы идемпотентны, ведут принадлежащую root запись о том, что создали, а `remove-*` трогает только это: сайт или база данных, созданные кем-то другим, отклоняются с `site_not_owned`. Каждый изменяемый файл предварительно копируется в резервную копию, конфигурация Apache и php-fpm проверяется перед плавной перезагрузкой, а неудачная проверка восстанавливает файлы. Пароль базы данных генерируется на сервере, возвращается только в ответе, создавшем базу, и никогда не попадает в журналы; если он утерян, удалите базу данных и создайте её заново.
 
 Ошибки, добавленные в 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `php_version_unsupported`, `website_failed`, `database_failed`, `database_limit`. Полные формы запросов и ответов приведены в `README.md` агента.
+
+### Обычные серверы Linux (`generic-linux`)
+
+Агент 1.6.0 поставляет вспомогательные программы для сайтов в профиле `generic-linux`, поэтому сайты можно размещать и на сервере без панели хостинга (`install.sh --provider generic-linux` кладёт их в `helper_dir`). Нужны Debian, Ubuntu, RHEL или AlmaLinux с Apache или nginx и, для PHP, php-fpm.
+
+- **Веб-сервер.** Тот, который запущен. Если запущены оба или ни один, операции с сайтами отклоняются, а ответ ping ничего не перечисляет, пока в `agent.conf` не задан `web_server`: `apache` или `nginx`. Виртуальные хосты пишутся в `/etc/apache2/sites-available/hp-<hostname>.conf` (Apache на Debian, включается через `a2ensite`, `proxy_fcgi` через `a2enmod`), `/etc/httpd/conf.d/hp-<hostname>.conf` (Apache на RHEL) или `/etc/nginx/conf.d/hp-<hostname>.conf` (nginx) и перед перезагрузкой проверяются командой `apache2ctl -t`, `httpd -t` или `nginx -t`.
+- **PHP.** Распознаются Debian и Ubuntu с пакетами sury, RHEL с Remi и AppStream RHEL. Версия предлагается, когда есть её php-fpm, каталог пулов и консольный бинарник. Ответ ping перечисляет их в `php_versions` и даёт консольный бинарник каждой в `php_cli` (например `{"8.3": "/usr/bin/php8.3"}`); ответ `ensure-website` тоже содержит `php_cli`, так что деплой запускает нужный PHP.
+- **Пулы.** Один пул php-fpm на учётную запись и версию PHP (`hp-<account>.conf`), общий для её сайтов на этой версии и удаляемый вместе с последним из них.
+- **Корень сайта.** Домашний каталог получает `o+x`, недостающие каталоги создаются во владении учётной записи с правами 755. С `link_root` последний компонент пути не создаётся, ссылку делает деплой. nginx передаёт PHP разрешённый путь (`$realpath_root`); за Apache пул перепроверяет OPcache и кэш realpath при каждом запросе.
+- **Что можно трогать.** Сайт, чьё имя зарегистрировано за другой учётной записью, получает `site_not_owned`; виртуальный хост или пул, которые агент не писал, получают `website_conflict` и никогда не меняются. `remove-website` удаляет только то, что агент записал в `/var/lib/hostpanel-ssh-key-agent/<account>/`. Операций с базами данных на таких серверах нет.
+
+`/usr/local/libexec/hostpanel-ssh-key-agent/detect` выводит то, что вспомогательные программы нашли на сервере.
 
 ## Ключи в течение жизни услуги {#keys-over-a-service-s-life}
 

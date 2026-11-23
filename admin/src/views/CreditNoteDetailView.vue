@@ -83,9 +83,6 @@ const loadError = ref<string | null>(null)
 /** The outcome line of the last action. */
 const feedback = useOutcomeToast()
 
-/** Sentence of a failed PDF download, shown beside its button; null while there is none. */
-const pdfError = ref<string | null>(null)
-
 /** True while the void prompt is open. */
 const voiding = ref(false)
 
@@ -110,12 +107,11 @@ const load = async (): Promise<void> => {
   loadError.value = store.error
 }
 
-/** Downloads the note's PDF and saves it; a refusal is shown beside the button. */
+/** Downloads the note's PDF and saves it; a refusal is toasted with the API's own sentence. */
 const downloadPdf = async (): Promise<void> => {
-  pdfError.value = null
   const file = await store.downloadPdf(noteId.value)
   if (file === null) {
-    pdfError.value = store.error
+    feedback.show(store.error ?? t('errors.noAnswer'), true)
     return
   }
   saveBlob(file.blob, file.fileName ?? `credit-note-${noteId.value}.pdf`)

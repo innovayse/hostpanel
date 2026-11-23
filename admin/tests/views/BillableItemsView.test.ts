@@ -113,9 +113,9 @@ describe('BillableItemsView', () => {
     const wrapper = await mountList()
 
     const headers = wrapper.findAll('[data-testid="billing-billable-items-table"] thead th')
-    expect(headers.filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
-    expect(headers.find((header) => header.text() === 'Description')?.classes()).toContain('w-full')
-    expect(headers.find((header) => header.text() === 'Invoiced')?.classes()).toContain('w-px')
+    expect(headers.find((header) => header.text() === 'Description')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
+    expect(headers.find((header) => header.text() === 'Invoiced')?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
+    expect(headers.find((header) => header.text() === 'Invoiced')?.classes()).not.toContain('max-w-0')
   })
 
   it('draws the headers of the schema columns, in order', async () => {

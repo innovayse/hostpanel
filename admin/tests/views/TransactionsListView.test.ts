@@ -117,7 +117,7 @@ describe('TransactionsListView', () => {
     expect(wrapper.get('[data-testid="billing-transactions-total-in"]').text()).toContain('120.00 EUR')
     expect(wrapper.get('[data-testid="billing-transactions-balance"]').text()).toContain('96.50 EUR')
     expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(2)
-    expect(wrapper.get('[data-testid="billing-transactions-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.get('[data-testid="billing-transactions-table"]').findAll('th').find((header) => header.text() === 'Description')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('opens the edit page from the row actions menu', async () => {

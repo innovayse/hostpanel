@@ -5,8 +5,8 @@
  * Lists the migration jobs (history) in a column a third wide that scrolls inside, beside the selected job's progress card, the one-time setup
  * instructions of a pending job and the import report of a finished one, and opens a dialog that
  * creates a job. Jobs, polling, and every refusal sentence belong to the migration store. Deleting
- * a job is confirmed first; creating and deleting report their outcome (success, or the API's
- * sentence) next to the action, and a refused history load shows the sentence with a Retry.
+ * a job is confirmed first; creating and deleting toast their outcome (success, or the API's
+ * sentence), and a refused history load shows the sentence with a Retry.
  */
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -37,7 +37,6 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { API_BASE } from '@/lib/apiPaths'
 import { COPIED_VISIBLE_MS } from '@/lib/limits'
@@ -119,9 +118,6 @@ const deleting = ref(false)
 /** The sentence of the last refused history load, shown with Retry; null when it loaded. */
 const loadError = ref<string | null>(null)
 
-/** The sentence of the last refused create, shown inside the dialog; null when none. */
-const createError = ref<string | null>(null)
-
 /** The outcome line of the last create or delete. */
 const feedback = useOutcomeToast()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
@@ -188,7 +184,6 @@ const toggleAll = (): void => {
 
 /** Creates the job from the dialog, then selects it and follows its progress. */
 const handleCreateJob = async (): Promise<void> => {
-  createError.value = null
   creatingJob.value = true
   const job = await store.createJob({
     label: newJobLabel.value || undefined,
@@ -204,14 +199,13 @@ const handleCreateJob = async (): Promise<void> => {
     showNewJobModal.value = false
     feedback.show(t('migration.migration.migrationCreated'), false)
   } else {
-    createError.value = store.error ?? t('errors.noAnswer')
+    feedback.show(store.error ?? t('errors.noAnswer'), true)
   }
 }
 
-/** Closes the new-job dialog and forgets its last refusal. */
+/** Closes the new-job dialog. */
 const closeNewJob = (): void => {
   showNewJobModal.value = false
-  createError.value = null
 }
 
 /**
@@ -436,8 +430,6 @@ onUnmounted(() => {
       @close="closeNewJob"
     >
       <UiStack :gap="UiGap.Md">
-        <UiStatusMessage :message="createError" :tone="UiTone.Danger" data-testid="migration-create-error" />
-
         <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('migration.migration.aSecretKeyWillBe') }}</UiText>
 
         <UiField :label="t('migration.migration.sourceUrl')" :hint="t('migration.migration.modulesAddonsInnovayseMigrationApi')" required>

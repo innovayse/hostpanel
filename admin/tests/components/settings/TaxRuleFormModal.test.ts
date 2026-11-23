@@ -28,7 +28,7 @@ describe('TaxRuleFormModal', () => {
     expect(wrapper.get('h2').text()).toBe('Create tax rule')
     expect(valueOf(wrapper, 'tax-rule-form-name')).toBe('')
     expect(valueOf(wrapper, 'tax-rule-form-region')).toBe('')
-    expect(wrapper.get('[data-testid="tax-rule-form-save"]').text()).toBe('Add')
+    expect(wrapper.get('[data-testid="tax-rule-form-save"]').text()).toBe('Create')
   })
 
   it('fills the fields from the edited rule', async () => {

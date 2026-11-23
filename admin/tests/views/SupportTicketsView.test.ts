@@ -114,7 +114,7 @@ describe('SupportTicketsView', () => {
     expect(row.text()).toContain('DNS is down')
     expect(row.text()).toContain('Support')
     expect(row.text()).toContain('Awaiting Reply')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Subject')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('shows the priority of each ticket beside its status', async () => {

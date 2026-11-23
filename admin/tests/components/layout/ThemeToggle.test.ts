@@ -25,6 +25,14 @@ const mountToggle = async (systemLight: boolean) => {
   return wrapper
 }
 
+/**
+ * Outline of an icon: the `d` of its path, which is what the rendered svg carries whatever way its tag is written out.
+ *
+ * @param markup - Stored markup of one path icon.
+ * @returns The path data.
+ */
+const outlineOf = (markup: string): string | undefined => /\sd="([^"]+)"/.exec(markup)?.[1]
+
 describe('ThemeToggle', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -43,11 +51,11 @@ describe('ThemeToggle', () => {
 
   it('shows the moon and is pressed in dark, the sun and not pressed in light', async () => {
     const dark = await mountToggle(false)
-    expect(dark.get('[data-testid="theme-toggle"]').html()).toContain(Icon.Moon)
+    expect(dark.get('[data-testid="theme-toggle"] path').attributes('d')).toBe(outlineOf(Icon.Moon))
 
     const light = await mountToggle(true)
     const button = light.get('[data-testid="theme-toggle"]')
-    expect(button.html()).toContain(Icon.Sun)
+    expect(button.get('path').attributes('d')).toBe(outlineOf(Icon.Sun))
     expect(button.attributes('aria-pressed')).toBe('false')
   })
 
@@ -60,7 +68,7 @@ describe('ThemeToggle', () => {
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(button.attributes('aria-pressed')).toBe('false')
-    expect(button.html()).toContain(Icon.Sun)
+    expect(button.get('path').attributes('d')).toBe(outlineOf(Icon.Sun))
 
     await button.trigger('click')
 

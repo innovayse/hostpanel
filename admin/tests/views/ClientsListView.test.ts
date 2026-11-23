@@ -114,20 +114,20 @@ describe('ClientsListView', () => {
     expect(row.get('circle').attributes('fill')).toBe('#112233')
   })
 
-  it('shows two-factor sign-in as one icon named for assistive technology, in a narrow column', async () => {
+  it('shows two-factor sign-in as one icon named for assistive technology, in a narrow share column', async () => {
     const { wrapper } = await mountGrouped()
 
     const icon = wrapper.get('[data-testid="client-row"] [role="img"]')
     expect(icon.attributes('aria-label')).toMatch(/disabled/i)
     expect(icon.text()).toBe('')
-    expect(wrapper.findAll('th').find((header) => header.text().includes('2FA'))?.classes()).toContain('w-px')
+    expect(wrapper.findAll('th').find((header) => header.text().includes('2FA'))?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
   })
 
   it('lets the name column take the remaining width and clips the card to its rounded corners', async () => {
     const { wrapper } = await mountGrouped()
 
     const nameHeader = wrapper.findAll('th').find((header) => header.text().includes('Name'))
-    expect(nameHeader?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0']))
+    expect(nameHeader?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0']))
     expect(wrapper.get('[data-testid="clients-list-table"]').element.closest('.overflow-clip')).not.toBeNull()
   })
 

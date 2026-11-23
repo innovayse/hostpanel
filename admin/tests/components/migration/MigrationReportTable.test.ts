@@ -57,7 +57,10 @@ describe('MigrationReportTable', () => {
     expect(text).toContain('Import failed')
     expect(text).toContain('Client not found')
     expect(text).not.toContain('ClientNotFound')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('max-w-0'))).toHaveLength(1)
+    // The text columns (type, identifier, reason) share the width and truncate; the status and the time shrink to their content.
+    const headers = wrapper.findAll('th')
+    expect(headers.filter((header) => header.classes().includes('max-w-0'))).toHaveLength(3)
+    expect(headers.filter((header) => header.classes().includes('w-px'))).toHaveLength(2)
     expect(wrapper.get('[data-testid="migration-report-count"]').text()).toContain('3')
   })
 

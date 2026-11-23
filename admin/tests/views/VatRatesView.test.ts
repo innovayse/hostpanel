@@ -97,8 +97,7 @@ describe('VatRatesView', () => {
     const second = wrapper.get('[data-testid="vat-rate-row-2"]').text()
     expect(second).toContain('Reduced')
     expect(second).toContain('7%')
-    expect(wrapper.text()).toContain('VAT rates: 2')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Country')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

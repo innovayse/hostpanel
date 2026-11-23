@@ -182,7 +182,7 @@ describe('ReportTable', () => {
     const [compact, grow] = wrapper.findAll('th')
 
     expect(compact?.classes()).toContain('w-px')
-    expect(grow?.classes()).toContain('w-full')
+    expect(grow?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0']))
   })
 
   it('opens the loading placeholder with a group heading row only for a grouped table', () => {

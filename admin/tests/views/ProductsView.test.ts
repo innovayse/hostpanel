@@ -416,7 +416,7 @@ describe('ProductsView list', () => {
 
     expect(router.currentRoute.value.query).toEqual({ page: '2' })
     expect(requestsOf(mock).filter((request) => request.startsWith('GET /admin/products?')).at(-1)).toBe('GET /admin/products?page=2&pageSize=20')
-    expect(wrapper.text()).toContain('Products: 45')
+    expect(wrapper.get('[data-testid="products-pagination-range"]').text()).toBe('21 to 40 of 45')
   })
 
   it('says so when no product matches the filters and offers to clear them', async () => {

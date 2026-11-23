@@ -1,7 +1,7 @@
 /**
  * Mount tests for InvoiceDetailView: the invoice loads by id into the tabs, the Options tab
  * exists only while managing, each tab reports its own outcome (never the page), the PDF
- * download saves the file or shows its refusal beside the button, and a refused load shows the
+ * download saves the file or toasts its refusal, and a refused load shows the
  * API sentence with Retry.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -195,7 +195,7 @@ describe('InvoiceDetailView', () => {
     expect(button.text()).toBe('PDF')
     expect(saved).toHaveLength(1)
     expect(saved[0]?.fileName).toBe('invoice-1.pdf')
-    expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text()).toBe('')
+    expect(toastMessages()).toEqual([])
   })
 
   it('falls back to a default file name when the API sends none', async () => {
@@ -214,7 +214,7 @@ describe('InvoiceDetailView', () => {
     expect(saved[0]?.fileName).toBe('invoice-1.pdf')
   })
 
-  it('shows a refused PDF download beside its button only, and saves nothing', async () => {
+  it('toasts a refused PDF download and saves nothing', async () => {
     const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () => problem('The invoice has too many lines for a PDF.', 409),
@@ -226,8 +226,7 @@ describe('InvoiceDetailView', () => {
     await wrapper.get('[data-testid="billing-invoice-download"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text())
-      .toBe('The invoice has too many lines for a PDF.')
+    expect(toastMessages()).toEqual(['The invoice has too many lines for a PDF.'])
     expect(saved).toHaveLength(0)
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })

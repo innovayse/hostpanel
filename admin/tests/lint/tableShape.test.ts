@@ -138,13 +138,13 @@ const templateOf = (source: string): string => {
 const RAW_TAG = /<(table|thead|tbody|tfoot|tr|td|th)[\s>/]/g
 
 /** A UiCard whose first child is a UiTable. */
-const CARD_TABLE = /<UiCard(?:[^>"']|"[^"]*"|'[^']*')*>\s*<UiTable/
+const CARD_TABLE = /<UiCard\b(?:[^>"']|"[^"]*"|'[^']*')*>\s*<UiTable\b/
 
 /** One opening tag of a table part with its attributes (group 2). */
-const PART = /<(UiTable|UiTableBody|UiTableRow|UiTableCell)((?:[^>"']|"[^"]*"|'[^']*')*)>/g
+const PART = /<(UiTable|UiTableBody|UiTableRow|UiTableCell)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g
 
 /** A divider or border prop a part no longer takes, or the pointer cursor class. */
-const ROW_STYLE = /(?:^|\s)(?:divided|bordered)(?=\s|$|\/)|class="[^"]*cursor-pointer/
+const ROW_STYLE = /(?:^|\s)(?:divided|bordered)(?=\s|$|\/)|class="[^"]*\bcursor-pointer\b/
 
 /** A click listener among a tag's attributes (not a modifier-only listener such as `.stop` on a cell). */
 const CLICK = /@click(?![\w.])/

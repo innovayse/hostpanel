@@ -181,7 +181,7 @@ describe('UiPhoneInput', () => {
     await wrapper.get(TRIGGER).trigger('click')
 
     // The list's place is written as CSS variables its classes read; any other style attribute would be a flag image or colour.
-    const html = wrapper.html().replace(/ style="(--fp-[a-z]+: [0-9.]+px;? ?)+"/g, '')
+    const html = wrapper.html().replace(/ style="(--fp-[a-z-]+: [0-9.]+px;? ?)+"/g, '')
     expect(html).not.toContain('style=')
     expect(html).not.toContain('http')
   })

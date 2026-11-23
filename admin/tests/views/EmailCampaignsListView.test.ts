@@ -97,7 +97,6 @@ describe('EmailCampaignsListView', () => {
     expect(row).toContain('Maintenance notice')
     expect(row).toContain('Sent')
     expect(row).toContain('36 sent, 1 failed, 3 unsubscribed')
-    expect(wrapper.text()).toContain('Campaigns: 2')
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

@@ -89,13 +89,14 @@ describe('ClientQuotesView', () => {
     expect(wrapper.find('[data-testid="client-quotes-create"]').exists()).toBe(true)
   })
 
-  it('gives the remaining width to the subject column and keeps the id column as narrow as its content', async () => {
+  it('gives the remaining width to the subject column and keeps the id column a one-line narrow share', async () => {
     stubRoutes({ 'GET /api/billing/quotes/client/7': listPage })
     const wrapper = await mountQuotes()
 
     const headers = wrapper.findAll('th')
-    expect(headers[0]?.classes()).toContain('w-px')
-    expect(headers[1]?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0']))
+    expect(headers[0]?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
+    expect(headers[0]?.classes()).not.toContain('max-w-0')
+    expect(headers[1]?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0']))
   })
 
   it('shows the refusal sentence from the API', async () => {

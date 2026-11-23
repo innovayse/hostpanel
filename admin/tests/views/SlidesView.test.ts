@@ -89,7 +89,7 @@ describe('SlidesView', () => {
     expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('Active')
     expect(rows[0]?.text()).toContain('Always')
     expect(rows[1]?.get('[role="img"]').attributes('aria-label')).toBe('Inactive')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Title')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
     expect(rows[1]?.text()).toContain('Authenticated')
   })
 

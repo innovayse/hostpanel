@@ -72,7 +72,7 @@ describe('UpcomingRenewalsView', () => {
     expect(wrapper.get('[data-testid="renewals-domains-table"]').text()).toContain('example.test')
     expect(wrapper.get('[data-testid="renewals-claim-invoice-11"]').attributes('href')).toBe('/billing/5')
     expect(wrapper.get('[data-testid="renewals-claims-table"]').text()).toContain('example.test renewal')
-    expect(wrapper.get('[data-testid="renewals-claims-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.get('[data-testid="renewals-claims-table"]').findAll('th').find((header) => header.text() === 'Invoice line')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('draws the window tabs and the three tables with the columns of its schema, each under its heading', async () => {

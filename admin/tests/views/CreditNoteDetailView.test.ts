@@ -129,7 +129,7 @@ describe('CreditNoteDetailView', () => {
     expect(wrapper.find('[data-testid="billing-credit-note-void"]').exists()).toBe(false)
   })
 
-  it('downloads the PDF and shows a refusal beside the button', async () => {
+  it('downloads the PDF and toasts a refusal', async () => {
     stubRoutes({
       'GET /api/billing/credit-notes/3/pdf': () => problem('The renderer is busy.', 503),
       'GET /api/billing/credit-notes/3': () => json(creditNoteDetailFixture()),

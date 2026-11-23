@@ -67,7 +67,7 @@ describe('UiDetailCard', () => {
     const card = wrapper.get('[data-testid="ui-detail-card-profile"]')
     const tiles = wrapper.get('[data-testid="ui-detail-tiles"]')
 
-    expect(card.find('.@container').exists()).toBe(true)
+    expect(card.find('[class~="@container"]').exists()).toBe(true)
     expect(tiles.classes()).toContain('@lg:grid-cols-2')
     expect(tiles.classes()).not.toContain('md:grid-cols-2')
     expect(card.findAll('.grid')[0]?.classes()).toContain('@lg:grid-cols-2')

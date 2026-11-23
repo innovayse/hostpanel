@@ -99,8 +99,7 @@ describe('TaxRulesView', () => {
     expect(second).toContain('Bavaria')
     expect(second).toContain('7.5%')
     expect(wrapper.get('[data-testid="tax-rule-row-2"] [role="img"]').attributes('aria-label')).toBe('Disabled')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
-    expect(wrapper.text()).toContain('Tax rules: 2')
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Name')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

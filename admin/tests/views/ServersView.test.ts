@@ -86,7 +86,7 @@ describe('ServersView', () => {
     expect(listUrls(mock)[0]).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=hestiacp&state=offline')
     expect(wrapper.find('[data-testid="server-row-2"]').exists()).toBe(true)
     expect((wrapper.get('[data-testid="servers-search"]').element as HTMLInputElement).value).toBe('host')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Hestia Control Panel')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Offline')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
@@ -130,7 +130,7 @@ describe('ServersView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp', state: 'untested' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp&state=untested')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Hestia Control Panel')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Not tested')
   })
 
@@ -146,8 +146,8 @@ describe('ServersView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
-    expect(wrapper.get('[data-testid="servers-module-hestiacp"]').text()).toBe('hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Hestia Control Panel')
+    expect(wrapper.get('[data-testid="servers-module-hestiacp"]').text()).toBe('Hestia Control Panel')
   })
 
   it('removes the state from the address and reloads when its chip is removed', async () => {

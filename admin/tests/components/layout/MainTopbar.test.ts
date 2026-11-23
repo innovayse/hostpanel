@@ -99,7 +99,7 @@ describe('MainTopbar', () => {
     expect(dot.classes()).toEqual(expect.arrayContaining(['rounded-full', 'bg-primary-500']))
     expect(dot.classes()).toContain('sm:hidden')
     const count = wrapper.get('[data-testid="topbar-notification-count"]')
-    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-pill', 'ring-2']))
+    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-2xl', 'ring-2']))
     expect(count.classes()).toContain('max-sm:hidden')
   })
 

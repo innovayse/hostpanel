@@ -59,7 +59,7 @@ describe('VersionLabel', () => {
     await flushPromises()
 
     expect(mock).not.toHaveBeenCalled()
-    expect(wrapper.get('[data-testid="version-label"]').text()).toBe('Hostpanel 1.4.0')
+    expect(wrapper.get('[data-testid="first"]').text()).toBe('Hostpanel 1.4.0')
     expect(wrapper.get('[data-testid="second"]').text()).toBe('Hostpanel 1.4.0')
   })
 })

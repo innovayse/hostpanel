@@ -181,7 +181,7 @@ describe('MigrationView', () => {
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
   })
 
-  it('shows the API sentence inside the dialog when the create is refused', async () => {
+  it('toasts the API sentence when the create is refused', async () => {
     stubRoutes({
       'GET /api/admin/migrations': () => json([]),
       'POST /api/admin/migrations': () => problem('The source address is unreachable.', 400),
@@ -193,7 +193,7 @@ describe('MigrationView', () => {
     await wrapper.get('[data-testid="migration-create"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="migration-create-error"]').text()).toBe('The source address is unreachable.')
+    expect(toastMessages()).toEqual(['The source address is unreachable.'])
     expect(wrapper.find('[data-testid="migration-error"]').exists()).toBe(false)
   })
 

@@ -48,8 +48,8 @@ const facts = computed<ServerFact[]>(() => (props.server === null ? [] : serverF
     <UiStack v-for="fact in facts" :key="fact.key" :direction="UiDirection.Row" :align="UiAlignItems.Start" :gap="UiGap.Sm" :data-testid="`server-fact-${fact.key}`">
       <UiIcon :markup="fact.icon" :size="UiSize.Sm" class="mt-0.5 shrink-0 text-text-muted" />
       <UiStack :gap="UiGap.None" class="min-w-0 flex-1">
-        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="truncate" :title="fact.label">{{ fact.label }}</UiText>
-        <UiText v-for="value in fact.values" :key="value" :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="truncate font-medium" :title="value">{{ value }}</UiText>
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" truncate :title="fact.label">{{ fact.label }}</UiText>
+        <UiText v-for="value in fact.values" :key="value" :tone="UiTextTone.Primary" :size="UiTextSize.Sm" truncate class="font-medium" :title="value">{{ value }}</UiText>
       </UiStack>
     </UiStack>
   </UiGrid>

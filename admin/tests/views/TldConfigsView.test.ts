@@ -124,8 +124,7 @@ describe('TldConfigsView', () => {
     expect(com).toContain('Never')
     expect(wrapper.get('[data-testid="tld-row-net"]').text()).toContain('-5.0%')
     expect(wrapper.get('[data-testid="tld-row-net"] [role="img"]').attributes('aria-label')).toBe('Disabled')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
-    expect(wrapper.text()).toContain('TLDs: 2')
+    expect(wrapper.findAll('th').find((header) => header.text() === 'TLD')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

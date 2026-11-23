@@ -1,0 +1,36 @@
+{
+  "title": "Cambios de plan",
+  "subtitle": "Revisa las solicitudes de subida y bajada de plan y consulta el historial de cambios de plan de un servicio",
+  "filterStatus": "Filtrar por estado",
+  "allStatuses": "Todos los estados",
+  "serviceFilter": "Servicio n.º {id}",
+  "clearServiceFilter": "Mostrar todos los servicios",
+  "history": "Historial de cambios de plan",
+  "viewHistory": "Cambios de plan",
+  "service": "Servicio",
+  "plans": "Cambio de plan",
+  "proration": "Prorrateo",
+  "invoice": "Factura n.º {id}",
+  "note": "Nota",
+  "totalCount": "Solicitudes: {totalCount}",
+  "empty": "No se encontraron solicitudes de cambio de plan",
+  "approve": "Aprobar",
+  "reject": "Rechazar",
+  "approveTitle": "Aprobar cambio de plan",
+  "approveMessage": "¿Aprobar este cambio de plan y aplicarlo al servicio?",
+  "rejectTitle": "Rechazar cambio de plan",
+  "rejectMessage": "¿Rechazar este cambio de plan? El servicio permanece en su plan actual.",
+  "notePlaceholder": "Nota opcional",
+  "approved": "Cambio de plan aprobado.",
+  "rejected": "Cambio de plan rechazado.",
+  "type": {
+    "Upgrade": "Subir de plan",
+    "Downgrade": "Bajar de plan"
+  },
+  "status": {
+    "Pending": "Pendiente",
+    "Approved": "Aprobado",
+    "Completed": "Completado",
+    "Rejected": "Rechazado"
+  }
+}

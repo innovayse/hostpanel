@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The admin panel is available in Spanish (#887). The language menu offers Spanish, and every screen, label and message is translated.
+
 ## [0.9.1] - 2026-11-23
 
 ### Added

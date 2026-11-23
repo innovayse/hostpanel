@@ -619,7 +619,7 @@ if (host is IPluginHostHostingApi hosting)
 | Member | Needs | What it does |
 |--------|-------|--------------|
 | `GetHostingCapabilitiesAsync` | any of `ssh`, `websites`, `databases` | Tells which of the three the service supports, and the PHP versions of its server. A kind the manifest does not declare reads as false. |
-| `EnsureWebsiteAsync` | `websites` | Makes sure the website exists as the specification says. Asking again with the same specification answers the stored website without calling the server; with another one, the server and the record are updated. |
+| `EnsureWebsiteAsync` | `websites` | Makes sure the website exists as the specification says. Asking again with the same specification answers the stored website without calling the server; with another one, the server and the record are updated. The answer's `PhpCliPath` (SDK 3.16.0) is the absolute path of the PHP command line binary of the website's PHP version, so a deploy can run the same PHP as the site; it is null when the website has no PHP or the server did not report the path. A website stored before the host kept the path is set up once more on its next call to learn it. |
 | `RemoveWebsiteAsync` | `websites` | Removes a website this plugin set up. Removing twice is fine. |
 | `EnsureDatabaseAsync` | `databases` | Makes sure a database exists for the label. The password is in the answer to the call that created it and nowhere else: a repeat answers the same database with a null password. |
 | `RemoveDatabaseAsync` | `databases` | Drops a database this plugin created. Removing twice is fine. |

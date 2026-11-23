@@ -68,7 +68,28 @@ public sealed class AgentHostingResourceProviderTests
             vector.Request["php"]?.GetValue<string>(),
             vector.Request["link_root"]?.GetValue<bool>() == true);
 
-        await ExpectAsync(vector, transport, WebsiteFields, () => provider.EnsureWebsiteAsync(order, default));
+        ProvisionedWebsite? website = null;
+
+        await ExpectAsync(vector, transport, WebsiteFields, async () => website = await provider.EnsureWebsiteAsync(order, default));
+
+        if (vector.Response["ok"]!.GetValue<bool>())
+        {
+            Assert.Equal(vector.Response["php_cli"]?.GetValue<string>(), website!.PhpCliPath);
+        }
+    }
+
+    /// <summary>An answer with a blank CLI path, as no path at all, is read as unknown.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task EnsureWebsite_ABlankPhpCli_IsReadAsUnknownAsync()
+    {
+        var transport = new RecordingTransport("""{"v":1,"ok":true,"changed":true,"php_cli":" "}""");
+        var provider = new AgentHostingResourceProvider(Endpoint, transport.SendAsync);
+
+        var website = await provider.EnsureWebsiteAsync(
+            new WebsiteOrder(Account, Guid.NewGuid(), "app.example.com", "sites/app", "8.3", false), default);
+
+        Assert.Null(website.PhpCliPath);
     }
 
     /// <summary>Every <c>remove-website</c> vector.</summary>

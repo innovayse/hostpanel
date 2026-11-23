@@ -269,6 +269,25 @@ public sealed class PluginHostAccessFixture : IAsyncLifetime
         await context.SaveChangesAsync(CancellationToken.None);
     }
 
+    /// <summary>
+    /// Stores one active website of a plugin on a service directly, as a record made before the host kept the PHP CLI
+    /// path looks: it runs PHP and has no path.
+    /// </summary>
+    /// <param name="owner">The service's owner scenario.</param>
+    /// <param name="pluginId">The plugin the website is issued to.</param>
+    /// <param name="spec">The specification the record holds.</param>
+    /// <returns>A task that completes once it is saved.</returns>
+    public async Task SeedWebsiteWithoutPhpCliAsync(SshOwnerScenario owner, string pluginId, PluginWebsiteSpec spec)
+    {
+        using var scope = Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var website = ServiceWebsite.Create(
+            owner.ServiceId, owner.ServerId, "web", pluginId, spec.Hostname, spec.DocumentRoot, spec.PhpVersion, spec.DocumentRootMayBeLink);
+        website.MarkActive();
+        context.ServiceWebsites.Add(website);
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
     /// <summary>Stores <paramref name="count"/> active databases of a plugin on a service directly.</summary>
     /// <param name="owner">The service's owner scenario.</param>
     /// <param name="pluginId">The plugin the databases are issued to.</param>

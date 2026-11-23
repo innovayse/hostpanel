@@ -42,6 +42,12 @@ public sealed class FakeHostingAgent : IHostingResourceProvider
     public HostingCapabilities Capabilities { get; set; } = new(true, true, ["8.2", "8.3"]);
 
     /// <summary>
+    /// Whether a website with a PHP version is answered with the CLI path of that version, as an agent from 1.6.0 on does;
+    /// <see langword="false"/> stands for an older agent that sends none.
+    /// </summary>
+    public bool ReportsPhpCli { get; set; } = true;
+
+    /// <summary>
     /// Runs while a website or database is being set up, after it exists on the server and before the call returns, so a
     /// test can make something happen in that window (a plugin switched off mid-call); <see langword="null"/> for nothing.
     /// </summary>
@@ -81,7 +87,7 @@ public sealed class FakeHostingAgent : IHostingResourceProvider
     }
 
     /// <inheritdoc/>
-    public async Task EnsureWebsiteAsync(WebsiteOrder order, CancellationToken ct)
+    public async Task<ProvisionedWebsite> EnsureWebsiteAsync(WebsiteOrder order, CancellationToken ct)
     {
         Record("ensure-website", order.Account, order.Hostname);
         _websites[(order.Account.Username, order.Hostname)] = order;
@@ -89,6 +95,16 @@ public sealed class FakeHostingAgent : IHostingResourceProvider
         {
             await during();
         }
+
+        return new ProvisionedWebsite(ReportsPhpCli && order.PhpVersion is not null ? PhpCliPathOf(order.PhpVersion) : null);
+    }
+
+    /// <summary>The CLI path this agent reports for a PHP version.</summary>
+    /// <param name="phpVersion">The PHP version, for example <c>8.3</c>.</param>
+    /// <returns>The absolute path of that version's CLI.</returns>
+    public static string PhpCliPathOf(string phpVersion)
+    {
+        return $"/usr/bin/php{phpVersion}";
     }
 
     /// <inheritdoc/>

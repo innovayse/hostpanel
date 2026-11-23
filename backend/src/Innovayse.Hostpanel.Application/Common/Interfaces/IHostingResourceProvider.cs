@@ -20,9 +20,9 @@ public interface IHostingResourceProvider
     /// <summary>Makes sure the website exists as the order says; asking again for the same order changes nothing.</summary>
     /// <param name="order">The website to set up.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the server confirmed the website.</returns>
+    /// <returns>What the server reported once it confirmed the website, among it the PHP CLI path of the website's version.</returns>
     /// <exception cref="SshProviderException">Thrown when the server fails or refuses.</exception>
-    public Task EnsureWebsiteAsync(WebsiteOrder order, CancellationToken ct);
+    public Task<ProvisionedWebsite> EnsureWebsiteAsync(WebsiteOrder order, CancellationToken ct);
 
     /// <summary>Removes a website. Idempotent: removing an absent website succeeds.</summary>
     /// <param name="removal">The website to take down.</param>

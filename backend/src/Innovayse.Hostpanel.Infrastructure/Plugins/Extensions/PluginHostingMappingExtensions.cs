@@ -31,7 +31,10 @@ public static class PluginHostingMappingExtensions
     /// <returns>The SDK's record carrying the same values.</returns>
     public static PluginWebsite ToPlugin(this HostedWebsite website)
     {
-        return new PluginWebsite(website.Id, website.Hostname, website.DocumentRoot, website.DocumentRootPath, website.PhpVersion);
+        return new PluginWebsite(website.Id, website.Hostname, website.DocumentRoot, website.DocumentRootPath, website.PhpVersion)
+        {
+            PhpCliPath = website.PhpCliPath,
+        };
     }
 
     /// <summary>Maps a database the host holds to the record a plugin receives, carrying the password only when the host has one.</summary>

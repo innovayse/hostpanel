@@ -1,0 +1,421 @@
+{
+  "reportTimestamp": {
+    "reportGeneratedOnTimestamp": "Informe generado el {timestamp}"
+  },
+  "agingInvoices": {
+    "agingInvoices": "Facturas vencidas",
+    "aSummaryOfOutstandingInvoices": "Un resumen de facturas pendientes dividido en el período del que están atrasadas",
+    "period": "Período",
+    "curAmount": "{cur} Monto",
+    "buckets": {
+      "Days0To30": "0 - 30",
+      "Days30To60": "30 - 60",
+      "Days60To90": "60 - 90",
+      "Days90To120": "90 - 120",
+      "Over120": "120 +"
+    }
+  },
+  "annualIncome": {
+    "annualIncomeReport": "Informe de ingresos anuales",
+    "totalIncomePerMonthFor": "Ingresos recibidos por mes del año seleccionado: pagos menos reembolsos.",
+    "income": "Ingresos",
+    "totalIncome": "Ingresos totales",
+    "averageMonth": "Media por mes",
+    "bestMonth": "Mejor mes",
+    "tooltips": {
+      "total": "Pagos recibidos en el año, menos reembolsos, en la moneda base.",
+      "average": "Los ingresos del año divididos entre los meses listados.",
+      "best": "El mes con mayores ingresos del año."
+    }
+  },
+  "clientsByCountry": {
+    "clientsByCountry": "Clientes por país",
+    "thisReportShowsTheTotal": "Este informe muestra el número total de servicios activos por país, así como el total de clientes activos únicos por país en la tabla de abajo.",
+    "top10Countries": "Top 10 países",
+    "clearSelection": "Borrar selección",
+    "activeClients": "Clientes activos",
+    "totalClients": "Total de clientes:",
+    "legendNoData": "Sin datos",
+    "legendFewer": "Menos",
+    "legendMore": "Más: hasta {count}"
+  },
+  "clientsReport": {
+    "thisReportCanBeUsed": "Este informe se puede usar para generar una exportación personalizada de clientes aplicando hasta 5 filtros. La exportación CSV está disponible a través del menú Herramientas a la derecha.",
+    "creationDateRange": "Rango de fecha de creación",
+    "totalcountClientSFound": "{totalCount} cliente(s) encontrado(s)",
+    "creditBalance": "Saldo a favor",
+    "noClientsFoundClickFilter": "No se encontraron clientes. Haz clic en Filtro para cargar los resultados."
+  },
+  "clientStatement": {
+    "clientAccountRegisterBalance": "Saldo del registro de cuenta del cliente",
+    "thisReportProvidesAStatement": "Este informe proporciona un estado de cuenta para cuentas de cliente individuales.",
+    "selectClient": "Seleccionar cliente",
+    "previousBalance": "Saldo anterior:",
+    "noEntriesForThisPeriod": "No hay entradas para este período.",
+    "endingBalance": "Saldo final:",
+    "debit": "Débito",
+    "invoicePayment": "Pago de factura - #{id}",
+    "paidHistory": "Factura #{id}, pagada antes de la importación"
+  },
+  "creditsReviewer": {
+    "creditsReviewer": "Revisor de créditos",
+    "thisReportAllowsYouTo": "Este informe te permite revisar todos los créditos emitidos a clientes entre 2 fechas que especifiques.",
+    "allClients": "Todos los clientes",
+    "minAmount": "Monto mín.",
+    "maxAmount": "Monto máx.",
+    "currencySummary": "{currency}: {count} créditos, {amount} en total",
+    "creditId": "ID de crédito",
+    "clientId": "ID de cliente",
+    "noCreditsFoundForThis": "No se encontraron créditos para este período."
+  },
+  "customerRetention": {
+    "averageCustomerRetentionTime": "Tiempo promedio de retención de clientes",
+    "thisReportCalculatesAndProvides": "Este informe calcula y te proporciona el tiempo de vida promedio de productos, servicios, complementos y dominios — es decir, el número de días entre la fecha de registro y la fecha de terminación. Los promedios se muestran por producto y el ciclo de facturación asociado, y se muestran tanto como un número de días como años/meses activos.",
+    "includeActiveProductsServicesAssuming": "Incluir Productos y Servicios Activos (Suponiendo que lo activo terminará en la Próxima Fecha de Vencimiento) en el Cálculo del Tiempo Promedio de Retención",
+    "productCount": "Número de productos",
+    "averageDaysActive": "Días promedio activo",
+    "averageYearsMonthsActive": "Promedio Años/Meses activos",
+    "noDataFound": "No se encontraron datos.",
+    "activeYears": "{count} año | {count} años",
+    "activeMonths": "{count} mes | {count} meses",
+    "activeDays": "{count} día | {count} días"
+  },
+  "dailyPerformance": {
+    "dailyPerformance": "Rendimiento diario",
+    "overviewOfDailyActivityMetrics": "Resumen de métricas de actividad diaria",
+    "noDataFound": "No se encontraron datos.",
+    "completedOrders": "Pedidos completados",
+    "newInvoices": "Facturas nuevas",
+    "paidInvoices": "Facturas pagadas",
+    "openedTickets": "Tickets abiertos",
+    "ticketReplies": "Respuestas de tickets",
+    "cancellationRequests": "Solicitudes de cancelación",
+    "tooltips": {
+      "completedOrders": "Pedidos marcados como completados en los días elegidos.",
+      "paidInvoices": "Facturas pagadas en los días elegidos.",
+      "openedTickets": "Tickets de soporte abiertos en los días elegidos.",
+      "cancellationRequests": "Solicitudes de cancelación enviadas en los días elegidos."
+    }
+  },
+  "directDebit": {
+    "directDebitProcessing": "Procesamiento de débito directo",
+    "thisReportDisplaysAllUnpaid": "Este informe muestra todas las facturas impagas asignadas al método de pago Débito Directo y los detalles de la cuenta bancaria almacenados para sus titulares listos para su procesamiento.",
+    "subtotal": "Subtotal",
+    "tax": "Impuesto",
+    "credit": "Crédito",
+    "bankName": "Nombre del banco",
+    "bankAccountType": "Tipo de cuenta bancaria",
+    "bankCode": "Código del banco",
+    "bankAccountNumber": "Número de cuenta bancaria"
+  },
+  "diskUsage": {
+    "diskSpaceBandwidthUsageSummary": "Resumen de Uso de Espacio en Disco y Ancho de Banda",
+    "thisReportShowsTheDisk": "Este informe muestra las Estadísticas de Uso de Espacio en Disco y Ancho de Banda para cuentas de hosting.",
+    "diskSpaceUsageStatsLast": "Estadísticas de Uso de Espacio en Disco Actualizadas por última vez en {value}",
+    "failuresTitle": "Estos servidores no dieron cifras:",
+    "failure": {
+      "unsupportedModule": "su panel de control todavía no puede informar del uso de disco y ancho de banda.",
+      "missingCredentials": "no hay ningún token de API ni hash de acceso definido.",
+      "unreachable": "el servidor no respondió o rechazó la solicitud."
+    },
+    "updateNow": "Actualizar ahora",
+    "clientNameDomain": "Nombre del cliente / dominio",
+    "diskUsage": "Uso de disco",
+    "diskLimit": "Límite de disco",
+    "used": "% Usado",
+    "bwUsage": "Uso de ancho de banda",
+    "bwLimit": "Límite de ancho de banda",
+    "noAccountsOnThisServer": "No hay cuentas en este servidor.",
+    "noData": "No se encontraron datos. Haz clic en Actualizar Ahora para obtener estadísticas de tus servidores de hosting.",
+    "noDataHint": "Haz clic en Actualizar ahora para obtener las estadísticas de tus servidores de alojamiento."
+  },
+  "domainRenewalEmails": {
+    "domainRenewalReminderEmails": "Correos de recordatorio de renovación de dominios",
+    "thisReportCanBeUsed": "Este informe se puede usar para generar una exportación personalizada de los Correos de Recordatorio de Renovación de Dominios.",
+    "dateSent": "Fecha de envío",
+    "reminder": "Recordatorio",
+    "recipients": "Destinatarios",
+    "sent": "Enviado"
+  },
+  "domainsReport": {
+    "thisReportCanBeUsed": "Este informe se puede usar para generar una exportación personalizada de dominios aplicando hasta 5 filtros. La exportación CSV está disponible a través del menú Herramientas a la derecha.",
+    "registrationDateRange": "Rango de fecha de registro",
+    "nextDueDateRange": "Rango de próxima fecha de vencimiento",
+    "expiryDateRange": "Rango de fecha de expiración",
+    "totalcountDomainSFound": "{totalCount} dominio(s) encontrado(s)",
+    "noDomainsFound": "No se encontraron dominios.",
+    "regType": "Tipo de registro",
+    "userId": "ID de usuario",
+    "orderId": "ID de orden"
+  },
+  "incomeByProduct": {
+    "thisReportGivesABreakdown": "Este informe ofrece un desglose por producto/servicio de los ingresos pagados en un mes determinado."
+  },
+  "incomeForecast": {
+    "incomeForecast": "Pronóstico de ingresos",
+    "cumulativeForecast": "Pronóstico acumulado",
+    "monthly": "Mensual",
+    "quarterly": "Trimestral",
+    "semiAnnual": "Semestral",
+    "annual": "Anual",
+    "incomePerMonthWithTrailingWindows": "Ingresos recibidos por mes, con el trimestre, medio año y año a la fecha rezagados.",
+    "hints": {
+      "monthly": "Ingresos recibidos en este mes.",
+      "quarterly": "Ingresos de este mes y de los dos anteriores.",
+      "semiAnnual": "Ingresos de este mes y de los cinco anteriores.",
+      "annual": "Ingresos de este mes y de los once anteriores.",
+      "total": "Total acumulado de enero a este mes."
+    }
+  },
+  "invoicesReport": {
+    "thisReportCanBeUsed": "Este informe se puede usar para generar una exportación personalizada de facturas aplicando hasta 5 filtros.",
+    "creationDate": "Fecha de creación",
+    "totalcountInvoiceSFound": "{totalCount} factura(s) encontrada(s)",
+    "userId": "ID de usuario"
+  },
+  "monthlyOrders": {
+    "thisReportGivesABreakdown": "Este informe ofrece las unidades ordenadas de cada producto en un mes: una por línea de orden, en órdenes pendientes y aceptadas.",
+    "unitsSold": "Unidades vendidas"
+  },
+  "monthlyTransactions": {
+    "thisReportProvidesASummary": "Este informe ofrece un resumen de transacciones diarias de pago para un mes determinado. La figura de Monto Egreso incluye tanto transacciones de gasto como reembolsos.",
+    "noTransactionsFoundForThis": "No se encontraron transacciones para este mes."
+  },
+  "newCustomers": {
+    "newCustomers": "Nuevos clientes",
+    "monthlyNewSignupsAndOrder": "Actividad mensual de nuevos registros y pedidos",
+    "newSignups": "Nuevos registros",
+    "ordersPlaced": "Pedidos realizados",
+    "ordersCompleted": "Pedidos completados",
+    "conversionRate": "Tasa de conversión",
+    "newSignupsHint": "Cuentas de cliente creadas en el mes.",
+    "ordersPlacedHint": "Pedidos realizados en el mes.",
+    "ordersCompletedHint": "Pedidos realizados en el mes que están completados.",
+    "conversionRateHint": "Pedidos realizados en el mes como porcentaje de los registros del mes."
+  },
+  "productSuspensions": {
+    "productSuspensions": "Suspensiones de productos",
+    "thisReportAllowsYouTo": "Este informe te permite revisar todos los productos suspendidos y las razones especificadas para sus suspensiones.",
+    "serviceId": "ID de servicio",
+    "suspendReason": "Razón de suspensión",
+    "noSuspendedServices": "No hay servicios suspendidos."
+  },
+  "promotions": {
+    "promotions": "Promociones",
+    "thisReportShowsHowOften": "Con qué frecuencia se usa cada código de promoción y qué renuevan los servicios activos asociados.",
+    "code": "Código",
+    "services": "Servicios",
+    "activeServices": "Servicios activos",
+    "monthlyRevenue": "Facturación mensual",
+    "monthlyRevenueHint": "Qué renuevan cada mes los servicios activos con este código, contando un servicio anual como una doceava parte.",
+    "noPromotionCodesUsed": "Ningún código de promoción se usa en ningún servicio."
+  },
+  "salesTax": {
+    "salesTaxLiability": "Responsabilidad de impuesto sobre ventas",
+    "thisReportShowsSalesTax": "Este informe muestra la responsabilidad de impuesto sobre ventas para el período seleccionado.",
+    "currencySummary": "{currency}: {count} facturas, {invoiced} facturado, {tax} responsabilidad de impuesto",
+    "tax": "Impuesto",
+    "credit": "Crédito",
+    "noInvoicesFoundForThis": "No se encontraron facturas para este período.",
+    "thisReportExcludesInvoicesThat": "Este informe excluye las facturas que afectan el saldo de crédito de un cliente ya que este ingreso se contará y reportará cuando se aplique a facturas para productos/servicios."
+  },
+  "serverRevenueForecasts": {
+    "serverRevenueForecasts": "Pronósticos de ingresos de servidor",
+    "thisReportShowsWhatTheActive": "Qué renuevan los servicios activos de cada servidor, al mes y al año.",
+    "server": "Servidor",
+    "hostname": "Nombre de host",
+    "activeServices": "Servicios activos",
+    "monthlyRevenue": "Facturación mensual",
+    "annualRevenue": "Facturación anual",
+    "monthlyRevenueHint": "Qué renuevan cada mes los servicios activos del servidor, contando un servicio anual como una doceava parte.",
+    "annualRevenueHint": "Doce veces la facturación mensual.",
+    "noServers": "Sin servidores."
+  },
+  "servicesReport": {
+    "services": "Servicios",
+    "thisReportCanBeUsed": "Este informe se puede usar para generar una exportación personalizada de servicios aplicando hasta 5 filtros. La exportación CSV está disponible a través del menú Herramientas a la derecha.",
+    "terminationDate": "Fecha de terminación",
+    "totalcountServiceSFound": "{totalCount} servicio(s) encontrado(s)",
+    "noServicesFound": "No se encontraron servicios.",
+    "userId": "ID de usuario",
+    "productId": "ID de producto",
+    "terminatedAt": "Terminado en"
+  },
+  "sslMonitoring": {
+    "sslCertificateMonitoring": "Monitoreo de certificados SSL",
+    "displaysAListOfDomains": "Muestra una lista de dominios con su estado SSL, si está disponible.",
+    "issuer": "Emisor",
+    "expiry": "Vencimiento",
+    "lastUpdate": "Última actualización",
+    "valid": "Válido",
+    "noSsl": "Sin SSL",
+    "groups": {
+      "within30Days": "Caduca en 30 días",
+      "within90Days": "Caduca en 90 días",
+      "within180Days": "Caduca en 180 días",
+      "over180Days": "Caduca en más de 180 días",
+      "noSsl": "No se detectó SSL"
+    },
+    "showInactive": "Mostrar dominios inactivos",
+    "showInactiveHint": "Mostrar también los dominios que no están activos.",
+    "recheck": "Volver a comprobar el estado SSL",
+    "recheckHint": "Comprobar los certificados de nuevo ahora.",
+    "noDomains": "No hay dominios que supervisar.",
+    "summary": "Dominios por grupo de caducidad"
+  },
+  "supportTicketsReport": {
+    "thisReportShowsABreakdown": "Este informe muestra un desglose de los tickets de soporte gestionados por administrador para un mes determinado.",
+    "admin": "Administrador",
+    "averagePerDay": "Media por día",
+    "byDay": "Por día",
+    "totalHint": "Respuestas a tickets que escribió el administrador en el mes.",
+    "averagePerDayHint": "Respuestas del mes divididas entre los días del mes.",
+    "dayReplies": "Día {day}: {count} respuestas | Día {day}: {count} respuesta | Día {day}: {count} respuestas"
+  },
+  "ticketFeedbackComments": {
+    "ticketFeedbackComments": "Comentarios de retroalimentación de tickets",
+    "thisReportAllowsYouTo": "Este informe te permite revisar los comentarios de retroalimentación enviados por clientes.",
+    "staffName": "Nombre del personal",
+    "ticketId": "ID de ticket",
+    "feedbackLeft": "Retroalimentación dejada",
+    "rating": "Calificación",
+    "comments": "Comentarios",
+    "ratingHint": "Valoración en la escala de 1 (peor) a 10 (mejor)."
+  },
+  "ticketFeedbackScores": {
+    "ticketFeedbackScores": "Puntuaciones de retroalimentación de tickets",
+    "thisReportProvidesASummary": "Este informe ofrece un resumen de las puntuaciones recibidas por miembro del personal para un rango de fechas determinado.",
+    "staffName": "Nombre del personal",
+    "totalRatings": "Total de calificaciones",
+    "averageRating": "Calificación promedio",
+    "distribution": "Valoraciones (1 a 10)",
+    "distributionHint": "Cómo se reparten las valoraciones en malas, aceptables y buenas. Pasa el cursor por una parte para ver su recuento.",
+    "totalRatingsHint": "Valoraciones que recibió el miembro del personal en el período.",
+    "averageRatingHint": "Media de todas las valoraciones en la escala de 1 a 10.",
+    "bands": {
+      "poor": "Malo ({from} a {to})",
+      "fair": "Aceptable ({from} a {to})",
+      "good": "Bueno ({from} a {to})"
+    }
+  },
+  "ticketRatingsReviewer": {
+    "supportTicketRatingsReviewer": "Revisor de puntuaciones de tickets de soporte",
+    "thisReportIsShowingAll": "Este informe está mostrando todas las respuestas de ticket con 0 calificadas con 1 entre el rango de fechas seleccionado para revisión.",
+    "rating": "Calificación",
+    "ticket": "Ticket #",
+    "admin": "Administrador",
+    "ratingAtLeast": "{rating}+",
+    "ratingHint": "Valoración en la escala de 1 (peor) a 10 (mejor)."
+  },
+  "ticketTags": {
+    "ticketTagsOverview": "Resumen de etiquetas de tickets",
+    "thisReportProvidesAnOverview": "Este informe ofrece una visión general de las etiquetas de tickets asignadas a tickets para un rango de fechas determinado.",
+    "tag": "Etiqueta",
+    "count": "Conteo",
+    "countHint": "Tickets que llevan la etiqueta en el período."
+  },
+  "topClients": {
+    "top10ClientsByIncome": "Top 10 clientes por ingresos",
+    "thisReportShowsThe10": "Este informe muestra los 10 clientes con el mayor ingreso neto de facturas: pagos menos reembolsos y tarifas. Las recargas de crédito no son ingresos.",
+    "noData": "Sin datos",
+    "leader": "Mejor cliente",
+    "totalIncome": "Ingresos totales",
+    "rankedClients": "Clientes clasificados",
+    "leaderHint": "El cliente con el mayor ingreso neto de la clasificación.",
+    "totalIncomeHint": "Ingreso neto de todos los clientes clasificados juntos, en la moneda base.",
+    "rankedClientsHint": "Cuántos clientes incluye la clasificación, hasta diez."
+  },
+  "transactionsReport": {
+    "thisReportCanBeUsed": "Este informe se puede usar para generar una exportación personalizada de transacciones aplicando hasta 5 filtros.",
+    "totalcountTransactionSFound": "{totalCount} transacción(es) encontrada(s)",
+    "noTransactionsFound": "No se encontraron transacciones.",
+    "userId": "ID de usuario"
+  },
+  "oss": {
+    "ossReport": "Informe OSS (ventanilla única)",
+    "thisReportProvidesTheInformation": "Este informe proporciona la información necesaria para la declaración trimestral de IVA de la ventanilla única (OSS): el valor facturado y el IVA recaudado por Estado miembro de la UE y tipo de IVA. Un reembolso y un abono se descuentan del trimestre en que se hicieron. Consulta con tu autoridad fiscal cómo presentar las cifras.",
+    "selectQuarter": "Seleccionar trimestre",
+    "countryName": "Nombre del país",
+    "countryCode": "Código de país",
+    "vatRate": "Tipo de IVA",
+    "numberOfInvoices": "Número de facturas",
+    "totalValueInvoicedExclVat": "Valor total facturado (sin IVA)",
+    "totalVatCollected": "IVA total recaudado",
+    "totals": "Totales",
+    "ifACountryDoesNot": "* Si un país no aparece en el informe, significa que no se recaudó IVA de clientes de ese país durante el período seleccionado.",
+    "period": "Para el período {from} a {to}"
+  },
+  "titles": {
+    "reports": {
+      "clientStatement": "Estado de cuenta del cliente",
+      "customerRetentionTime": "Tiempo de retención del cliente",
+      "diskUsageSummary": "Resumen de uso de disco",
+      "domainRenewalEmails": "Correos de renovación de dominio",
+      "incomeByProduct": "Ingresos por producto",
+      "monthlyOrders": "Pedidos mensuales",
+      "monthlyTransactions": "Transacciones mensuales",
+      "promotionsUsage": "Uso de promociones",
+      "supportTicketReplies": "Respuestas de tickets de soporte",
+      "ticketRatingsReviewer": "Revisor de calificaciones de tickets",
+      "ticketTags": "Etiquetas de tickets",
+      "oss": "OSS (ventanilla única)"
+    },
+    "incomeByProductFor": "Ingresos por producto para {month} {year}",
+    "salesByProductFor": "Ventas por producto para {month} {year}",
+    "monthlyTransactionsFor": "Informe de transacciones mensuales para {month} {year}",
+    "supportTicketRepliesFor": "Respuestas de tickets de soporte para {month} {year}"
+  },
+  "common": {
+    "years": "{count} a.",
+    "clientCount": "{count} cliente | {count} clientes",
+    "convertedToBaseCurrency": "Los importes están en {currency}, convertidos de cada moneda de factura a las tasas configuradas.",
+    "recurringInBaseCurrency": "Importes recurrentes convertidos a {currency}, los ciclos más largos repartidos entre sus meses."
+  },
+  "menu": {
+    "dailyPerformance": "Diario",
+    "annualIncome": "Ingresos anuales",
+    "incomeForecast": "Previsión",
+    "incomeByProduct": "Por producto",
+    "invoices": "Facturas",
+    "agingInvoices": "Vencido",
+    "monthlyTransactions": "Transacciones / mes",
+    "transactions": "Transacciones",
+    "salesTax": "Impuesto sobre ventas",
+    "oss": "OSS",
+    "directDebit": "Domiciliación bancaria",
+    "creditsReviewer": "Créditos",
+    "clients": "Clientes",
+    "newCustomers": "Clientes nuevos",
+    "topClients": "Mejores clientes",
+    "clientsByCountry": "Por país",
+    "customerRetention": "Retención",
+    "clientStatement": "Extracto",
+    "monthlyOrders": "Pedidos / mes",
+    "services": "Servicios",
+    "productSuspensions": "Suspensiones",
+    "promotions": "Promociones",
+    "domains": "Dominios",
+    "domainRenewalEmails": "Correos de renovación",
+    "sslMonitoring": "Supervisión SSL",
+    "supportTicketReplies": "Respuestas a tickets",
+    "ticketTags": "Etiquetas",
+    "ticketFeedbackScores": "Puntuaciones de valoración",
+    "ticketFeedbackComments": "Comentarios de valoración",
+    "ticketRatingsReviewer": "Valoraciones del revisor",
+    "diskUsage": "Disco",
+    "serverRevenueForecasts": "Facturación por servidor"
+  },
+  "groups": {
+    "overview": "Resumen",
+    "finance": "Finanzas",
+    "clients": "Clientes",
+    "ordersServices": "Pedidos y servicios",
+    "domains": "Dominios",
+    "support": "Soporte",
+    "servers": "Servidores"
+  },
+  "sidebar": {
+    "search": "Buscar informes",
+    "empty": "No se encontraron informes"
+  }
+}

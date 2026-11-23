@@ -1,0 +1,82 @@
+{
+  "cwpBrandHeader": {
+    "centosWebPanel": "CentOS web panel",
+    "provisioningProvider": "Proveedor de aprovisionamiento",
+    "connectionError": "Error de conexión",
+    "unknown": "Desconocido"
+  },
+  "integrationCard": {
+    "plugin": "Complemento",
+    "configure": "Configurar →",
+    "notConfigured": "No configurado"
+  },
+  "categories": {
+    "payments": "Pasarelas de pago",
+    "provisioning": "Paneles de alojamiento",
+    "registrars": "Registradores de dominios",
+    "email": "Correo electrónico / SMTP",
+    "fulfilment": "Cumplimiento",
+    "fraud": "Protección antifraude",
+    "identity": "Identidad",
+    "hosted": "Trabajos en segundo plano"
+  },
+  "categoryMenu": {
+    "payments": "Pagos",
+    "provisioning": "Paneles de alojamiento",
+    "registrars": "Registradores",
+    "email": "Correo electrónico",
+    "fulfilment": "Suministro",
+    "fraud": "Fraude",
+    "identity": "Identidad",
+    "hosted": "Tareas en segundo plano"
+  },
+  "categoryEmpty": {
+    "payments": "Las pasarelas de pago aceptan pagos con tarjeta y por banco para las facturas. Todavía no hay ninguna instalada.",
+    "provisioning": "Los paneles de alojamiento crean y gestionan cuentas de alojamiento en tus servidores. Todavía no hay ninguno instalado.",
+    "registrars": "Los registradores de dominios registran y renuevan los dominios que piden tus clientes. Todavía no hay ninguno instalado.",
+    "email": "Los proveedores de correo entregan el correo que envía el panel. Todavía no hay ninguno instalado.",
+    "fulfilment": "Los complementos de suministro entregan productos digitales cuando se paga una factura. Todavía no hay ninguno instalado.",
+    "fraud": "La protección antifraude analiza el riesgo de los pedidos nuevos. Todavía no hay ninguna instalada.",
+    "identity": "Los complementos de identidad deciden en nombre de qué cliente actúa una persona con sesión iniciada. Todavía no hay ninguno instalado.",
+    "hosted": "Los complementos de tareas en segundo plano ejecutan procesos que se inician y detienen con el servidor. Todavía no hay ninguno instalado."
+  },
+  "integrationStatusSidebar": {
+    "connectionStatus": "Estado de conexión",
+    "connectionOk": "Conexión OK",
+    "connectionFailed": "Conexión fallida",
+    "endpoint": "Punto de conexión",
+    "tested": "Probado",
+    "roundTrip": "Viaje de ida y vuelta",
+    "notTestedYet": "No probado aún",
+    "setupNote": "Nota de configuración"
+  },
+  "integrations": {
+    "lengthIntegrationValue": "Integraciones: {length}",
+    "activecountActive": "· {activeCount} activas",
+    "noIntegrationsInThisCategory": "No hay integraciones en esta categoría",
+    "emptyHint": "Instala un complemento del catálogo o sube un paquete de complemento para añadir uno.",
+    "browsePlugins": "Explorar complementos"
+  },
+  "common": {
+    "never": "Nunca"
+  },
+  "providerStatus": {
+    "notConnected": "No conectado",
+    "statusUnknown": "Estado desconocido",
+    "lastTested": "Última prueba",
+    "cwpVersion": "Versión de CWP"
+  },
+  "integrationConfigForm": {
+    "enterValue": "Ingresa {label}",
+    "chooseValue": "Elige {label}"
+  },
+  "integrationDetail": {
+    "saved": "Configuración guardada."
+  },
+  "connectionState": {
+    "Connected": "Conectado",
+    "Degraded": "Degradado",
+    "Unavailable": "No disponible",
+    "Inactive": "No comprobado"
+  }
+}

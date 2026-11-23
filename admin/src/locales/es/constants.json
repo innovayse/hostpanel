@@ -1,0 +1,70 @@
+{
+  "serviceStatusOptions": {
+    "pending": "Pendiente",
+    "terminated": "Terminado"
+  },
+  "domainStatusOptions": {
+    "pendingRegistration": "Registro pendiente",
+    "pendingTransfer": "Transferencia pendiente",
+    "redemption": "Redención",
+    "transferred": "Transferido"
+  },
+  "paymentMethodOptions": {
+    "bankTransfer": "Transferencia bancaria"
+  },
+  "orderStatusOptions": {
+    "fraud": "Fraude",
+    "incomplete": "Incompleto",
+    "underReview": "Pendiente de revisión"
+  },
+  "ticketFilterOptions": {
+    "flagged": "Marcados"
+  },
+  "recurringPeriodOptions": {
+    "weekly": "Semanal",
+    "monthly": "Mensual",
+    "quarterly": "Trimestral",
+    "annually": "Anual"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Aún no ejecutado",
+    "inProgress": "En ejecución",
+    "fulfilled": "Suministrado",
+    "failed": "Fallido",
+    "refunded": "Reembolsado",
+    "refunding": "Reembolso en curso",
+    "partiallyRefunded": "Parcialmente reembolsado"
+  },
+  "fraudReasonOptions": {
+    "blockedIp": "La dirección IP está bloqueada",
+    "blockedEmailDomain": "El dominio de correo está bloqueado",
+    "blockedCountry": "El país está bloqueado",
+    "disposableEmail": "Dirección de correo desechable",
+    "sharedIpAccounts": "Muchas cuentas desde una misma dirección IP",
+    "orderVelocity": "Demasiados pedidos desde una misma dirección IP",
+    "countryMismatch": "El país de facturación difiere del país de la IP",
+    "providerHighRisk": "El servicio de puntuación lo calificó como riesgo alto",
+    "anonymousIp": "Dirección IP de proxy, VPN o alojamiento"
+  },
+  "fraudDecisionOptions": {
+    "approved": "Aprobado",
+    "review": "Pendiente de revisión",
+    "rejected": "Rechazado",
+    "manualApproved": "Aprobado por el personal",
+    "manualRejected": "Rechazado por el personal"
+  },
+  "fraudCheckKindOptions": {
+    "registration": "Registro",
+    "order": "Pedido"
+  },
+  "blockListTypeOptions": {
+    "ip": "Dirección IP",
+    "cidr": "Rango IP (CIDR)",
+    "emailDomain": "Dominio de correo",
+    "country": "País"
+  },
+  "emailLogOutcomeOptions": {
+    "delivered": "Entregado",
+    "failed": "No entregado"
+  }
+}

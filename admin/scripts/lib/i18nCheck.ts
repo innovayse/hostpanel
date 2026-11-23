@@ -1,10 +1,10 @@
 /**
- * Pure logic of the i18n lint: compares the `en`, `ru`, `hy` and `de` catalogues and the keys the
+ * Pure logic of the i18n lint: compares the `en`, `ru`, `hy`, `de` and `es` catalogues and the keys the
  * source uses. File access is injected so the same code runs from the CLI and from tests.
  */
 
 /** The languages every catalogue ships. */
-export const LANGUAGES = ['en', 'ru', 'hy', 'de'] as const
+export const LANGUAGES = ['en', 'ru', 'hy', 'de', 'es'] as const
 
 /** One of the shipped languages. */
 export type Language = (typeof LANGUAGES)[number]

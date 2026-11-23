@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - The client portal is available in French (#888). The language switcher shows the French flag, a client can choose French as their language in the profile, and search engines are given the French pages as alternates of every page. The legal texts stay in English for now. E-mails and credit note PDFs for a French client are still in English, they follow in a separate change.
+- The admin panel is available in Spanish (#887). The language menu offers Spanish, and every screen, label and message is translated.
 
 ## [0.9.1] - 2026-11-23
 

@@ -1,0 +1,16 @@
+{
+  "save": "Guardar",
+  "signOut": "Cerrar sesión",
+  "admin": "Administración",
+  "notifications": "Notificaciones",
+  "notificationsWithCount": "Notificaciones, {count} nuevas",
+  "viewAllNotifications": "Ver todas las notificaciones",
+  "newCount": "{count} nuevas | {count} nuevas",
+  "noNotifications": "No hay notificaciones",
+  "help": "Ayuda",
+  "roles": {
+    "Admin": "Administración",
+    "Reseller": "Revendedor",
+    "Client": "Cliente"
+  }
+}

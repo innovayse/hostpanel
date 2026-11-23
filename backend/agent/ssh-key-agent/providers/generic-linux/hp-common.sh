@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034 # the variables below are read by the helpers that source this file
-# hp-common.sh: shared by the generic-linux helpers (detect, capabilities, php-versions, ensure-website, remove-website).
-# Sourced, never run. It holds what they all need: the one place that tells which web server and which PHP-FPM layout
-# a plain Linux server has, input validation, the root-owned registry of what the agent created, the backup and
-# restore of edited files, and the one RESULT line the agent parses.
+# hp-common.sh: shared by the generic-linux helpers (detect, capabilities, php-versions, ensure-website, remove-website,
+# ensure-database, remove-database).
+# Sourced, never run. It holds what they all need: the one place that tells which web server, which PHP-FPM layout and
+# which MySQL or MariaDB a plain Linux server has, input validation, the root-owned registry of what the agent created,
+# the backup and restore of edited files, and the one RESULT line the agent parses.
 #
 # Test seam: HP_ROOT prefixes every path and tool below (empty on a real server). The agent never forwards it from a
 # request; it only reaches a helper through the agent's own fixed environment, so a unit test can point the helper at a
@@ -25,12 +26,14 @@ ACCOUNT_RE='^[a-z_][a-z0-9_-]{0,31}$'
 HOSTNAME_RE='^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
 DOCROOT_RE='^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}(/[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}){0,5}$'
 PHP_RE='^[0-9]\.[0-9]{1,2}$'
+LABEL_RE='^[a-z][a-z0-9]{0,14}$'
 
 # Exit codes the agent maps to its stable error codes.
 EXIT_BAD_ARGS=2
 EXIT_NOT_OWNED=3
 EXIT_CONFLICT=4
 EXIT_PHP_UNSUPPORTED=5
+EXIT_LIMIT=6
 
 ACCOUNT=""
 HOME_L=""
@@ -54,6 +57,10 @@ POOL_DIR=""
 FPM_SERVICE=""
 PHP_CLI=""
 RUN_DIR=""
+
+# Set by hp_detect_db.
+DB_CLIENT=""
+DB_UNIT=""
 
 # The php-fpm services whose pool a run removed; they are reloaded once the tests passed.
 DROPPED_SERVICES=()
@@ -254,6 +261,17 @@ hp_reg_write() {
 # hp_reg_remove <kind> <name>
 hp_reg_remove() { rm -f -- "$(hp_reg_path "$1" "$2")"; }
 
+# hp_reg_count <kind>: how many entries of the kind the account has in the registry.
+hp_reg_count() {
+  local count=0 file
+  for file in "$STATE/$ACCOUNT/$1".*; do
+    if [ -f "$file" ]; then
+      count=$((count + 1))
+    fi
+  done
+  echo "$count"
+}
+
 # hp_site_owner <hostname>: the account the hostname is registered to, empty when it is registered to nobody.
 hp_site_owner() {
   local file
@@ -392,4 +410,60 @@ hp_drop_pool() {
   hp_fpm_test || hp_die 1 "php-fpm $1 test failed, restored"
   DROPPED_SERVICES+=("$FPM_SERVICE")
   hp_say "pool of php $1 removed"
+}
+
+# ----------------------------------------------------------------------------- databases
+# At most this many databases per account.
+MAX_DATABASES=10
+
+# hp_detect_db: the one place that knows the server's MySQL or MariaDB. Sets DB_CLIENT (the mariadb client when there is
+# one, else mysql) and DB_UNIT (the first of mysql, mysqld and mariadb that systemd says is running). Refuses (exit 1)
+# when there is no client or no running server.
+hp_detect_db() {
+  local tool unit
+  for tool in mariadb mysql; do
+    if [ -x "$BIN/$tool" ]; then
+      DB_CLIENT="$BIN/$tool"
+      break
+    fi
+  done
+  [ -n "$DB_CLIENT" ] || hp_die 1 "no mariadb or mysql client"
+  for unit in mysql mysqld mariadb; do
+    if hp_unit_active "$unit"; then
+      DB_UNIT="$unit"
+      break
+    fi
+  done
+  [ -n "$DB_UNIT" ] || hp_die 1 "no running mysql, mysqld or mariadb"
+}
+
+# hp_mysql <client args...>: runs the client as the database administrator: root's client file when it exists, else
+# root's socket authentication. A statement that carries a secret is passed on stdin so it never shows in the process
+# list. Needs hp_detect_db first.
+hp_mysql() {
+  local args=(-N -B) conf="$ROOT/root/.my.cnf"
+  if [ -f "$conf" ]; then
+    args=(--defaults-file="$conf" "${args[@]}")
+  fi
+  HOME=/root "$DB_CLIENT" "${args[@]}" "$@"
+}
+
+# hp_db_count <sql>: runs a COUNT(*) query into HP_COUNT; a client failure aborts instead of reading as "none".
+# (A variable, not command substitution: an exit inside $(...) would only leave the subshell.)
+HP_COUNT=0
+hp_db_count() { HP_COUNT="$(hp_mysql -e "$1" </dev/null)" || hp_die 1 "mysql query failed"; }
+
+# hp_db_exists <name>: true when a schema of that exact name exists (validated names only, so no quoting problem).
+hp_db_exists() { hp_db_count "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$1'"; [ "$HP_COUNT" != 0 ]; }
+
+# hp_db_user_exists <name>: true when a database user of that name exists.
+hp_db_user_exists() { hp_db_count "SELECT COUNT(*) FROM mysql.user WHERE User='$1'"; [ "$HP_COUNT" != 0 ]; }
+
+# hp_db_drop <name>: drops the schema and both users (localhost and 127.0.0.1) the helper creates for it.
+hp_db_drop() {
+  hp_mysql <<SQL
+DROP DATABASE IF EXISTS \`$1\`;
+DROP USER IF EXISTS '$1'@'localhost';
+DROP USER IF EXISTS '$1'@'127.0.0.1';
+SQL
 }

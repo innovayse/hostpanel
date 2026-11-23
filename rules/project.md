@@ -1345,9 +1345,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     `ISshKeyProviderFactory.Supports`, so the module-to-agent mapping exists once, and the adapter tests run the agent's
     golden vectors (`backend/agent/ssh-key-agent/tests/contract`, linked into the test output). When a service is terminated
     `RemoveHostingResourcesOnServiceTerminatedHandler` marks its resources `Removed` with no server call.
-    The agent's built in `generic-linux` profile (`backend/agent/ssh-key-agent/providers/generic-linux`, agent 1.6.0, #1422) ships the website and PHP
-    helpers (`detect`, `capabilities`, `php-versions`, `ensure-website`, `remove-website`) for plain Debian, Ubuntu, RHEL and AlmaLinux servers
-    with Apache or nginx; its tests are `tests/test_generic_linux.py` and the golden vectors. HostPanel has no server module for it yet.
+    The agent's built in `generic-linux` profile (`backend/agent/ssh-key-agent/providers/generic-linux`, agent 1.6.0, #1422) ships the website, PHP and database
+    helpers (`detect`, `capabilities`, `php-versions`, `ensure-website`, `remove-website`, `ensure-database`, `remove-database`) for plain Debian, Ubuntu, RHEL and AlmaLinux servers
+    with Apache or nginx and, for databases (#1423), MySQL or MariaDB (client `mariadb` else `mysql`, any running unit of `mysql`, `mysqld`, `mariadb`; the registry entry is written before the create, a drop touches only registered databases, ping lists the database ops only when MySQL or MariaDB is present); its tests are `tests/test_generic_linux.py` and the golden vectors. HostPanel has no server module for it yet.
   - **Reading a gateway order from a callback (#1356, SDK 3.11.0).** `PluginHostApi` also implements the optional
     `IPluginHostPaymentApi.RequestOrderReadAsync` and only hands the call's `PluginCallBinding` to the Application's
     `Billing/Common/PluginOrderReadService` (no adapter takes `IMessageBus`, `PluginHostingGateTests`). The service ignores,

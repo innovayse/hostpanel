@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # What: prints the agent operations this server can really do, one per line (agent: ping `capabilities` is the
 #       operations whose helper is installed AND are listed here). Website operations need exactly one running web
-#       server (Apache or nginx) with its test command, or `web_server` in agent.conf; there are no database operations
-#       on a plain Linux server, so none is ever listed. Read only.
+#       server (Apache or nginx) with its test command, or `web_server` in agent.conf. Database operations need a
+#       mariadb or mysql client and a running mysql, mysqld or mariadb unit. Read only.
 # Usage (root, called by hostpanel-ssh-key-agent): capabilities
 # Exit: 0 always unless the arguments are wrong (2).
 set -euo pipefail
@@ -13,4 +13,7 @@ HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [ $# -eq 0 ] || hp_die "$EXIT_BAD_ARGS" "usage: capabilities"
 if (hp_detect_web) >/dev/null 2>&1; then
   printf '%s\n' ensure-website remove-website
+fi
+if (hp_detect_db) >/dev/null 2>&1; then
+  printf '%s\n' ensure-database remove-database
 fi

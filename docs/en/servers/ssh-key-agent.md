@@ -201,15 +201,16 @@ Errors added in 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `p
 
 ### Plain Linux servers (`generic-linux`)
 
-Agent 1.6.0 ships website helpers for the `generic-linux` profile, so a server with no hosting panel can host websites too (`install.sh --provider generic-linux` puts them in `helper_dir`). They need Debian, Ubuntu, RHEL or AlmaLinux with Apache or nginx and, for PHP, php-fpm.
+Agent 1.6.0 ships website and database helpers for the `generic-linux` profile, so a server with no hosting panel can host websites too (`install.sh --provider generic-linux` puts them in `helper_dir`). They need Debian, Ubuntu, RHEL or AlmaLinux with Apache or nginx and, for PHP, php-fpm.
 
 - **Web server.** The one that is running. When both or neither run, the website operations are refused and the ping answer lists none until `web_server` in `agent.conf` is set to `apache` or `nginx`. Virtual hosts are written to `/etc/apache2/sites-available/hp-<hostname>.conf` (Debian Apache, enabled with `a2ensite`, `proxy_fcgi` enabled with `a2enmod`), `/etc/httpd/conf.d/hp-<hostname>.conf` (RHEL Apache) or `/etc/nginx/conf.d/hp-<hostname>.conf` (nginx), and tested with `apache2ctl -t`, `httpd -t` or `nginx -t` before a reload.
 - **PHP.** Debian and Ubuntu with the sury packages, RHEL with Remi, and the RHEL AppStream are recognised. A version is offered when its php-fpm, pool directory and command line binary are all there. The ping answer lists them in `php_versions` and gives the command line binary of each in `php_cli` (for example `{"8.3": "/usr/bin/php8.3"}`); the `ensure-website` answer carries `php_cli` too, so a deploy can run the right PHP.
 - **Pools.** One php-fpm pool per account and PHP version (`hp-<account>.conf`), shared by the account's websites on that version and removed with the last of them.
 - **Document root.** The home gets `o+x` and missing directories are created owned by the account with mode 755. With `link_root` the last path component is never created, the deploy links it. nginx passes the resolved path (`$realpath_root`) to PHP; behind Apache the pool revalidates OPcache and the realpath cache on every request.
-- **What it may touch.** A website whose hostname is registered to another account answers `site_not_owned`; a virtual host or pool that the agent did not write answers `website_conflict` and is never changed. `remove-website` only removes what the agent registered in `/var/lib/hostpanel-ssh-key-agent/<account>/`. There are no database operations on these servers.
+- **What it may touch.** A website whose hostname is registered to another account answers `site_not_owned`; a virtual host or pool that the agent did not write answers `website_conflict` and is never changed. `remove-website` only removes what the agent registered in `/var/lib/hostpanel-ssh-key-agent/<account>/`. Database operations are offered only when MySQL or MariaDB is there (next item).
+- **Databases.** Offered when a `mariadb` (else `mysql`) client is installed and one of the units `mysql`, `mysqld` or `mariadb` is running; otherwise the ping answer lists no database operation. The helpers act as the database administrator through `/root/.my.cnf` when it exists, else through root's socket authentication. `ensure-database` creates the database and a user `<account>_<label>` for `localhost` and `127.0.0.1` only, at most 10 per account. The password is returned once, by the call that creates the database, and the agent never stores or logs it. The registry entry is written before anything is created, and `remove-database` drops only a database with an entry; any other answers `site_not_owned`.
 
-`/usr/local/libexec/hostpanel-ssh-key-agent/detect` prints what the helpers found on a server.
+`/usr/local/libexec/hostpanel-ssh-key-agent/detect` prints what the helpers found on a server, including the database client and unit.
 
 ## Keys over a service's life
 

@@ -1,10 +1,11 @@
 """
-Tests of the generic-linux provider helpers (detect, capabilities, php-versions, ensure-website, remove-website).
+Tests of the generic-linux provider helpers (detect, capabilities, php-versions, ensure-website, remove-website,
+ensure-database, remove-database).
 Run: python3 -m unittest discover -s ssh-key-agent/tests
 
 The helpers run for real, through the agent, against a stand-in server tree in a temporary directory (HP_ROOT) with
-fake systemctl, web server test commands, a2* tools and php-fpm binaries, so no root and no real server is needed. The
-matrix covers Apache on Debian, Apache on RHEL (Remi), nginx on RHEL (AppStream) and nginx on Debian.
+fake systemctl, web server test commands, a2* tools, php-fpm binaries and a fake mariadb or mysql client, so no root and
+no real server is needed. The matrix covers Apache on Debian, Apache on RHEL (Remi), nginx on RHEL (AppStream) and nginx on Debian.
 """
 
 import os
@@ -12,7 +13,7 @@ import shutil
 import subprocess
 
 import test_ops
-from test_ops import SITE, WEBSITE_REMOVE, write_executable
+from test_ops import DB, DB_REMOVE, FAKE_MYSQL, FAKE_OPENSSL, PASSWORD, SITE, WEBSITE_REMOVE, write_executable
 
 GENERIC_HELPERS = os.path.join(os.path.dirname(__file__), "..", "providers", "generic-linux")
 
@@ -203,6 +204,12 @@ class GenericLinuxCase(test_ops.OpsTestCase):
                         continue
                     found.append(os.path.relpath(os.path.join(directory, name), self.root))
         return sorted(found)
+
+    def run_helper(self, name):
+        """Runs a no-argument helper the way the agent does and returns its output."""
+        done = subprocess.run([os.path.join(self.helper_dir, name)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                              env=dict(test_ops.agent.JAIL_ENV), check=True, text=True)
+        return done.stdout
 
 
 class MatrixTests:
@@ -554,12 +561,6 @@ class DetectionTests(GenericLinuxCase):
         self.activate("apache2")
         self.assertIn("web_server=unknown\n", self.run_helper("detect"))
 
-    def run_helper(self, name):
-        """Runs a no-argument helper the way the agent does and returns its output."""
-        done = subprocess.run([os.path.join(self.helper_dir, name)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                              env=dict(test_ops.agent.JAIL_ENV), check=True, text=True)
-        return done.stdout
-
 
 class HomeRootTests(GenericLinuxCase):
     """The helpers find the account's home under the agent's home_root setting, not under a fixed /home."""
@@ -593,3 +594,143 @@ class HomeRootTests(GenericLinuxCase):
         for value in ("relative", "/a/../b", "/a b"):
             self.set_agent_conf("home_root = %s\n" % value)
             self.assertEqual(self.call(**self.site())["error"], "website_failed", value)
+
+
+class DatabaseTests(GenericLinuxCase):
+    """ensure-database and remove-database against a fake mariadb or mysql client and a fake systemctl."""
+
+    def setUp(self):
+        """A Debian Apache server that also runs MariaDB, with the fake client, openssl and the database state."""
+        super().setUp()
+        self.build(SCENARIOS[0])
+        os.makedirs(os.path.join(self.root, "mysql"))
+        self.install_client("mariadb")
+        write_executable(os.path.join(self.root, "usr/bin/openssl"), FAKE_OPENSSL)
+        self.activate("mariadb")
+
+    def install_client(self, name):
+        """Installs the fake client under a name; its calls are recorded under that name."""
+        write_executable(os.path.join(self.root, "usr/bin", name), FAKE_MYSQL.replace('echo "mysql $*"', 'echo "%s $*"' % name))
+
+    def exists(self, name="alice_shop"):
+        """Whether the fake database server holds the schema."""
+        return os.path.exists(os.path.join(self.root, "mysql", "db." + name))
+
+    def entries(self):
+        """The registry entries of the account."""
+        return os.listdir(self.registry) if os.path.isdir(self.registry) else []
+
+    def test_create_returns_the_password_once_and_is_idempotent(self):
+        created = self.call(**DB)
+        self.assertEqual(created, {"v": 1, "ok": True, "created": True, "database": "alice_shop", "username": "alice_shop",
+                                   "password": PASSWORD})
+        self.assertTrue(self.exists())
+        self.assertEqual(self.entries(), ["database.shop"])
+        again = self.call(**DB)
+        self.assertEqual(again, {"v": 1, "ok": True, "created": False, "database": "alice_shop", "username": "alice_shop"})
+        self.assertEqual(self.entries(), ["database.shop"])
+
+    def test_the_password_is_never_logged_stored_or_put_on_a_command_line(self):
+        self.call(**DB)
+        self.assertNotIn(PASSWORD, self.calls())
+        self.assertNotIn(PASSWORD, self.read(self.config["audit_log"]))
+        for name in self.entries():
+            self.assertNotIn(PASSWORD, self.read(os.path.join(self.registry, name)))
+
+    def test_the_registry_entry_exists_before_the_database_is_created(self):
+        real = os.path.join(self.root, "usr/bin/real-client")
+        os.rename(os.path.join(self.root, "usr/bin/mariadb"), real)
+        marker = os.path.join(self.root, "registered-before-create")
+        entry = os.path.join(self.registry, "database.shop")
+        write_executable(os.path.join(self.root, "usr/bin/mariadb"), "\n".join([
+            "#!/bin/sh",
+            "sql=$(cat)",
+            'case "$sql" in *"CREATE DATABASE"*) if [ -e "%s" ]; then touch "%s"; fi ;; esac' % (entry, marker),
+            'printf "%%s" "$sql" | "%s" "$@"' % real,
+            ""]))
+        self.assertTrue(self.call(**DB)["created"])
+        self.assertTrue(os.path.exists(marker))
+
+    def test_a_database_the_agent_did_not_create_is_refused_and_survives_a_remove(self):
+        self.touch("mysql/db.alice_shop")
+        self.assertEqual(self.call(**DB)["error"], "site_not_owned")
+        self.assertEqual(self.call(**DB_REMOVE)["error"], "site_not_owned")
+        self.assertTrue(self.exists())
+        self.assertEqual(self.entries(), [])
+
+    def test_a_foreign_user_of_that_name_is_refused(self):
+        self.touch("mysql/user.alice_shop")
+        self.assertEqual(self.call(**DB)["error"], "site_not_owned")
+        self.assertEqual(self.call(**DB_REMOVE)["error"], "site_not_owned")
+        self.assertFalse(self.exists())
+        self.assertEqual(self.entries(), [])
+
+    def test_remove_drops_and_forgets_and_is_idempotent(self):
+        self.call(**DB)
+        self.assertEqual(self.call(**DB_REMOVE), {"v": 1, "ok": True, "changed": True})
+        self.assertFalse(self.exists())
+        self.assertEqual(self.entries(), [])
+        self.assertEqual(self.call(**DB_REMOVE), {"v": 1, "ok": True, "changed": False})
+        self.assertTrue(self.call(**DB)["created"])
+
+    def test_an_account_has_at_most_ten_databases(self):
+        for index in range(10):
+            self.assertTrue(self.call(op="ensure-database", account="alice", label="d%d" % index)["created"])
+        self.assertEqual(self.call(op="ensure-database", account="alice", label="extra")["error"], "database_limit")
+        self.assertFalse(self.exists("alice_extra"))
+        self.assertEqual(len(self.entries()), 10)
+        self.assertFalse(self.call(op="ensure-database", account="alice", label="d3")["created"])
+
+    def test_a_failed_creation_leaves_nothing_and_no_registry_entry(self):
+        self.touch("fail-create")
+        self.assertEqual(self.call(**DB)["error"], "database_failed")
+        self.assertFalse(self.exists())
+        self.assertEqual(self.entries(), [])
+        os.unlink(os.path.join(self.root, "fail-create"))
+        self.assertTrue(self.call(**DB)["created"])
+
+    def test_a_bad_label_is_refused(self):
+        for label in ("Shop", "1shop", "shop_x", "a" * 16, ""):
+            self.assertEqual(self.call(op="ensure-database", account="alice", label=label)["error"], "invalid_request", label)
+
+    def test_the_mariadb_client_wins_over_mysql_and_mysql_is_used_alone(self):
+        self.install_client("mysql")
+        self.call(**DB)
+        self.assertIn("mariadb -N -B", self.calls())
+        self.assertNotIn("mysql -N -B", self.calls())
+        os.unlink(os.path.join(self.root, "usr/bin/mariadb"))
+        self.assertEqual(self.call(**DB_REMOVE), {"v": 1, "ok": True, "changed": True})
+        self.assertIn("mysql -N -B", self.calls())
+
+    def test_any_of_the_three_server_units_is_enough(self):
+        for unit in ("mysql", "mysqld", "mariadb"):
+            with self.subTest(unit=unit):
+                shutil.rmtree(os.path.join(self.root, "active"))
+                self.activate(unit)
+                self.assertTrue(self.call(**DB)["created"])
+                self.assertTrue(self.call(**DB_REMOVE)["changed"])
+
+    def test_root_client_file_is_used_when_present_else_socket_authentication(self):
+        self.call(**DB)
+        self.assertNotIn("--defaults-file", self.calls())
+        self.call(**DB_REMOVE)
+        conf = os.path.join(self.root, "root/.my.cnf")
+        os.makedirs(os.path.dirname(conf))
+        open(conf, "w").close()
+        self.call(**DB)
+        self.assertIn("--defaults-file=%s -N -B" % conf, self.calls())
+
+    def test_ping_lists_the_database_ops_only_with_a_client_and_a_running_server(self):
+        self.assertEqual(self.call(op="ping")["capabilities"],
+                         ["ensure-website", "remove-website", "ensure-database", "remove-database"])
+        os.unlink(os.path.join(self.root, "active/mariadb"))
+        self.assertEqual(self.call(op="ping")["capabilities"], ["ensure-website", "remove-website"])
+        self.assertEqual(self.call(**DB)["error"], "database_failed")
+        self.activate("mariadb")
+        os.unlink(os.path.join(self.root, "usr/bin/mariadb"))
+        self.assertEqual(self.call(op="ping")["capabilities"], ["ensure-website", "remove-website"])
+
+    def test_detect_names_the_client_and_unit(self):
+        self.assertIn("database_client=/usr/bin/mariadb\ndatabase_unit=mariadb\n", self.run_helper("detect"))
+        os.unlink(os.path.join(self.root, "active/mariadb"))
+        self.assertIn("database_client=unknown\n", self.run_helper("detect"))

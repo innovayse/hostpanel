@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The client portal is available in French (#888). The language switcher shows the French flag, a client can choose French as their language in the profile, and search engines are given the French pages as alternates of every page. The legal texts stay in English for now. E-mails and credit note PDFs for a French client are still in English, they follow in a separate change.
 - The admin panel is available in Spanish (#887). The language menu offers Spanish, and every screen, label and message is translated.
 
+### Security
+
+- SSH key agent: `jail_extras` can no longer copy private key material into customer jails (#1376). An entry that is, or contains (symlinks followed), a `private` directory or a file named `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks` is refused: enrolment fails with `internal_error` before anything is built, and `install.sh --check` warns and prints the safe trust paths for outgoing TLS (`/etc/pki/tls/certs`, `/etc/pki/ca-trust/extracted`, `/etc/ssl/certs`). The server documentation in English, Russian and Armenian describes the rule and a safe `jail_extras` list.
+
 ### Removed
 
 - The built in Control Web Panel (CWP) support is gone: the `GET /api/admin/integrations/cwp/server-info` endpoint, the `cwp` integration slug and its catalogue entry, the `HttpResilience:Cwp` profile and the built in `Centos` server module are removed, and the CWP plugin replaces them. This is a breaking change: install and switch on the CWP plugin before you upgrade a deployment that has CWP servers; until then those servers answer `PANEL_PLUGIN_UNAVAILABLE`.

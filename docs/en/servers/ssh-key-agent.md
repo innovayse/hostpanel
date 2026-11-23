@@ -163,6 +163,21 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' }
 ]" />
 
+## Jail extras hold only public trust material
+
+A jail is a customer's own environment, so `jail_extras` may list only public files. The agent refuses an entry that is, or contains, private key material. It walks every entry and everything below it, follows symlinks, and treats a path as private when:
+
+- one of its components is named `private` (such as `/etc/pki/tls/private`), or
+- its file name matches `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks` (the match ignores case).
+
+Public halves such as `*.pub`, `*.crt` and `fullchain.pem` are fine. An entry that does not exist on the server is skipped, as it is when copying.
+
+When an entry is refused, the agent does not enrol the account: the call fails with `internal_error` before anything is built, and the message names the entry. `install.sh --check` (the agent's `--check-config`) warns about such an entry and prints the safe trust paths. It exits with 1 for an unsafe entry, and with 2 when the configuration cannot be read, which `install.sh` reports as a failed check.
+
+For outgoing TLS in a jail (git, curl) list the certificate directories, never their parent `/etc/pki/tls`, which holds the `private` directory:
+
+    jail_extras = /usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS,/etc/pki/tls/certs,/etc/pki/ca-trust/extracted,/etc/ssl/certs
+
 ## Websites and databases
 
 Agent 1.5.0 can give a hosting account a website and databases on request. It runs one root-owned helper per operation from `helper_dir`; the CWP profile ships all four, so nothing needs configuring on a CWP server. A server without a helper answers `not_supported`, and the ping answer lists the operations that are available (`capabilities`) and the PHP versions the server offers (`php_versions`, for example `["8.1", "8.2", "8.3"]`, empty when the server has no `php-versions` helper).

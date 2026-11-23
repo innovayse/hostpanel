@@ -57,6 +57,7 @@ export enum ApiPath {
   AdminServers = '/admin/servers',
   /** `/admin/servers/options` the unpaged lean server lookup the pickers and the dashboard read. */
   AdminServerOptions = '/admin/servers/options',
+  AdminServerModules = '/admin/servers/modules',
   /** `/admin/release-status`: installed version and latest GitHub release. */
   AdminReleaseStatus = '/admin/release-status',
   /** `/admin/version`: installed version, readable by every staff role. */

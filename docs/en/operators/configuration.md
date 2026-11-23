@@ -244,6 +244,8 @@ The following settings are set directly on the API service in a compose override
 | `RateLimit__SshKeys__WindowSeconds` | `60` | SSH key window length in seconds |
 | `RateLimit__HostingResources__PermitLimit` | `10` | Limit per window for what a plugin changes on a client's hosting (websites and databases). Counted per plugin and client account |
 | `RateLimit__HostingResources__WindowSeconds` | `60` | Hosting changes window length in seconds |
+| `RateLimit__PluginOrderRead__PermitLimit` | `6` | Limit per window for the reads a payment plugin's callback may ask the host for. Counted per plugin and gateway order |
+| `RateLimit__PluginOrderRead__WindowSeconds` | `60` | Order read window length in seconds |
 | `RateLimit__ConcurrentPermitLimit` | `5` | Maximum concurrent requests from one address |
 | `RateLimit__PluginDefault__PermitLimit` | `120` | Plugin route limit per window, for a route that names no tier. Counted per plugin and per caller (the client account, or the administrator on an admin call) |
 | `RateLimit__PluginDefault__WindowSeconds` | `60` | Plugin default window length in seconds |
@@ -380,7 +382,7 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `Plugins__MaxViewBytes` | `262144` | Maximum size in bytes of one plugin view document (a page or slot `view` file, 256 KiB); a larger file refuses the plugin at load and at install. 1 to 4194304 (4 MiB). |
 | `Plugins__TrustedPackageSha256__0`, `__1` and so on | n/a | SHA-256 hashes of plugin packages to trust unconditionally. Each hash is a separate indexed key. |
 | `PluginApi__MaxBodyBytes` | `1048576` | Largest request body the host reads for a plugin route, in bytes (1 to 67108864). |
-| `PluginApi__CallTimeoutSeconds` | `30` | Seconds the host waits for a plugin route to answer (1 to the ceiling below). Past it the plugin is cancelled through its token and the caller gets `PLUGIN_TIMEOUT` (504). On a streamed reply it covers the wait for the reply and for the first event and the silence between events, never the length of a stream that keeps sending. |
+| `PluginApi__CallTimeoutSeconds` | `30` | Seconds the host waits for a plugin route to answer (1 to the ceiling below). Past it the plugin is cancelled through its token and the caller gets `PLUGIN_TIMEOUT` (504). On a streamed reply it covers the wait for the reply and for the first event and the silence between events, never the length of a stream that keeps sending. A call to a hosting panel plugin is bounded by the same limit and fails closed. |
 | `PluginApi__MaxCallTimeoutSeconds` | `600` | The ceiling for a per route limit (1 to 3600). Every route gets `CallTimeoutSeconds` today; a route will be able to ask for a longer limit, up to this, once the plugin SDK has a field for it. Must be at least `CallTimeoutSeconds`. |
 | `PluginApi__AbandonWaitSeconds` | `5` | Seconds, after the call limit, the host waits for a plugin that ignores its cancellation before it abandons the call (1 to 60). The caller gets `PLUGIN_TIMEOUT` either way. |
 | `PluginApi__MaxAbandonedCallsPerPlugin` | `8` | Most abandoned calls of one plugin that may still be running (1 to 1000). At the limit, new calls to that plugin are refused at once with `PLUGIN_TIMEOUT` until one of them ends. |

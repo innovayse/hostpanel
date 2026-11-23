@@ -8,4 +8,7 @@ public enum DomainAvailabilityStatus
 
     /// <summary>The name is already registered, here or at the registrar.</summary>
     Taken = 1,
+
+    /// <summary>No registrar plugin sells the name's TLD, so it cannot be registered here.</summary>
+    TldNotSupported = 2,
 }

@@ -8,7 +8,8 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import ServerFormModal from '@/components/servers/ServerFormModal.vue'
 import { createTestI18n } from '../../helpers/i18n'
-import { serverDto } from '../../helpers/serverFixtures'
+import { optionValues, pickOption, selectText } from '../../helpers/select'
+import { serverDto, serverModuleOptionDtos } from '../../helpers/serverFixtures'
 
 /**
  * Mounts the dialog with the teleport inlined.
@@ -18,7 +19,7 @@ import { serverDto } from '../../helpers/serverFixtures'
  */
 const mountModal = (props: Record<string, unknown> = {}) =>
   mount(ServerFormModal, {
-    props: { server: null, saving: false, ...props },
+    props: { server: null, saving: false, moduleOptions: serverModuleOptionDtos(), ...props },
     global: { plugins: [createTestI18n()], stubs: { teleport: true } },
   })
 
@@ -37,6 +38,40 @@ describe('ServerFormModal', () => {
     expect(wrapper.find('[data-testid="server-form-ns1-host"]').exists()).toBe(true)
   })
 
+  it('offers the host\'s modules and the ones plugins declare, a plugin one under the plugin\'s name, and saves the id picked', async () => {
+    const wrapper = mountModal()
+    await wrapper.get('[data-testid="server-form-name"]').setValue('host9')
+    await wrapper.get('[data-testid="server-form-hostname"]').setValue('host9.example.com')
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+    await wrapper.get('[data-testid="server-form-username"]').setValue('root')
+
+    expect(selectText(wrapper, 'server-form-module')).toBe('cPanel / WHM')
+    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'hestiacp'])
+    await pickOption(wrapper, 'server-form-module', 'Hestia Control Panel')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'hestiacp' })
+  })
+
+  it('keeps the module a server was saved with, whatever panel it is', async () => {
+    const wrapper = mountModal({ server: serverDto({ module: 'hestiacp' }) })
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'hestiacp' })
+  })
+
+  it('keeps offering the stored module of a server when no plugin serves it any more', async () => {
+    const wrapper = mountModal({ server: serverDto({ module: 'RetiredPanel' }) })
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+
+    expect(optionValues(wrapper, 'server-form-module')).toEqual(['CPanel', 'hestiacp', 'RetiredPanel'])
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'RetiredPanel' })
+  })
+
   it('emits the payload with empty text turned into null', async () => {
     const wrapper = mountModal()
 
@@ -51,10 +86,56 @@ describe('ServerFormModal', () => {
       name: 'host9',
       endpoint: { hostname: 'host9.example.com', ipAddress: null, useSSL: true },
       username: 'root',
-      module: 'Cwp7',
+      module: 'CPanel',
       credentials: { password: null },
       nameServers: { ns1Hostname: null },
     })
+  })
+
+  it('sends the API address, empty text as null and a filled one as typed', async () => {
+    const wrapper = mountModal()
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ endpoint: { apiHost: null } })
+
+    await wrapper.get('[data-testid="server-form-api-host"]').setValue('10.77.0.1')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[1]?.[0]).toMatchObject({ endpoint: { apiHost: '10.77.0.1' } })
+  })
+
+  it('loads the stored API address of the server being edited', async () => {
+    const wrapper = mountModal({
+      server: serverDto({ endpoint: { hostname: 'host9.example.com', apiHost: '10.77.0.1', ipAddress: null, assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: false } }),
+    })
+
+    expect((wrapper.get('[data-testid="server-form-api-host"]').element as HTMLInputElement).value).toBe('10.77.0.1')
+  })
+
+  it('sends the self signed certificate choice, off for a new server and on once the toggle is flipped', async () => {
+    const wrapper = mountModal()
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ endpoint: { acceptsSelfSignedCertificate: false } })
+
+    await wrapper.get('[data-testid="server-form-self-signed"]').trigger('click')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[1]?.[0]).toMatchObject({ endpoint: { acceptsSelfSignedCertificate: true } })
+  })
+
+  it('loads the stored self signed certificate choice and drops it when SSL is switched off', async () => {
+    const wrapper = mountModal({
+      server: serverDto({ endpoint: { hostname: 'host9.example.com', apiHost: null, ipAddress: null, assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: true } }),
+    })
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ endpoint: { acceptsSelfSignedCertificate: true } })
+
+    await wrapper.get('[data-testid="server-form-ssl"]').trigger('click')
+    expect(wrapper.get('[data-testid="server-form-self-signed"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+    expect(wrapper.emitted('saved')?.[1]?.[0]).toMatchObject({ endpoint: { useSSL: false, acceptsSelfSignedCertificate: false } })
   })
 
   it('sends no account cap once the max accounts limit is switched to unlimited', async () => {

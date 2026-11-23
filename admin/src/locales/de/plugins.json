@@ -4,6 +4,7 @@
     "pendingRestart": "Neustart ausstehend",
     "remove": "Entfernen",
     "refused": "Abgelehnt",
+    "loadFailed": "Laden fehlgeschlagen",
     "staged": "Version {version} bereitgestellt, wird nach dem Neustart angewendet",
     "brokenRule": "{id} · verletzte Regel: {rule}",
     "updateAvailable": "Update verfügbar: {version}"
@@ -22,12 +23,14 @@
     "rangeBetween": "Läuft auf Serverversionen {min} bis {max}.",
     "rangeFrom": "Läuft ab Serverversion {min}.",
     "rangeUpTo": "Läuft auf Serverversionen bis {max}.",
+    "sdk": "Mit Plugin-SDK {version} erstellt",
     "incompatible": "Dieses Plugin läuft nicht auf der Version {host} dieses Servers. {range}",
     "install": "Installieren",
     "hostAccess": {
       "ssh": "Befehle im Hosting-Account eines Kunden per SSH ausführen",
       "websites": "Die Websites des Hosting-Services eines Kunden verwalten",
-      "databases": "Die Datenbanken des Hosting-Services eines Kunden verwalten"
+      "databases": "Die Datenbanken des Hosting-Services eines Kunden verwalten",
+      "serviceConnection": "Die Serververbindung eines eigenen Services des Kunden lesen, einschließlich der gespeicherten Panel-Zugangsdaten"
     },
     "capabilities": {
       "endpoints": "Eigene Seiten, Menüs und Widgets zu den Panels hinzufügen",
@@ -174,7 +177,11 @@
     "SlotWidgetDuplicate": "Dieselbe Widget-ID wurde zweimal für einen Slot deklariert.",
     "PluginIdInvalid": "Die Plugin-ID ist ungültig: Verwenden Sie Wörter in Kleinbuchstaben, die durch einzelne Bindestriche verbunden sind.",
     "EndpointsNotDeclared": "Das Plugin deklariert Routen, Seiten oder Slots, ist aber kein App-Plugin und deklariert die Fähigkeit „endpoints“ nicht.",
-    "CapabilityNotAllowed": "Das Plugin deklariert eine Fähigkeit, die dieser Server nicht kennt oder die sein Plugin-Typ nicht tragen kann."
+    "CapabilityNotAllowed": "Das Plugin deklariert eine Fähigkeit, die dieser Server nicht kennt oder die sein Plugin-Typ nicht tragen kann.",
+    "SdkPackageVersionInvalid": "Die sdkPackageVersion im Manifest ist keine gültige Version.",
+    "MinHostVersionBelowSdk": "Die minHostVersion im Manifest fehlt oder ist niedriger als das erste Server-Release mit dem SDK, mit dem das Plugin erstellt wurde.",
+    "SdkNewerThanHost": "Das Plugin wurde mit einem neueren SDK erstellt, als dieser Server mitliefert, und lässt sich hier nicht laden. Aktualisieren Sie den Server oder nutzen Sie eine ältere Version des Plugins.",
+    "AssemblyLoadFailed": "Das Plugin ist installiert, aber seine Assembly konnte nicht geladen werden. Der Ladefehler wird unten angezeigt."
   },
   "pluginSlot": {
     "hide": "Widget ausblenden",

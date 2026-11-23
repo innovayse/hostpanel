@@ -8,7 +8,6 @@
     <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.csproj" />
     <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.Packaging\Hostpanel.Sdk.Packaging.csproj" />
     <ProjectReference Include="..\Innovayse.Providers.CWP\Innovayse.Providers.CWP.csproj" />
-    <ProjectReference Include="..\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(InnovayseSso)' == 'true'">
     <!--

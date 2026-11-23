@@ -2,6 +2,7 @@ using System.Reflection;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Store;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -102,7 +103,9 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             oneKey,
             sp.GetRequiredService<PluginSshAccessService>(),
             sp.GetRequiredService<PluginHostingService>(),
-            sp.GetRequiredService<IClock>());
+            sp.GetRequiredService<IClock>(),
+            sp.GetRequiredService<PluginServiceConnectionService>(),
+            sp.GetRequiredService<PluginOrderReadService>());
 
         var over = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
         var other = callServices.Create(PluginCallBinding.WithoutClient(pluginId));
@@ -163,14 +166,18 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
 
     /// <summary>
     /// The implementations expose exactly their interface's methods; no store method and no host read takes an id or a
-    /// scope, and the only id the host API names is the service of the SSH and hosting members, which the host checks is the
+    /// scope, and the only id the host API names is the service of the SSH, hosting and connection members, which the host checks is the
     /// caller's.
     /// </summary>
     [Fact]
     public void Surface_IsExactlyTheInterfaces_WithNoIdOrScopeParameter()
     {
         PublicMethodNames(typeof(PluginHostApi))
-            .Should().BeEquivalentTo(InterfaceMethodNames(typeof(IPluginHostApi)).Concat(InterfaceMethodNames(typeof(IPluginHostHostingApi))));
+            .Should().BeEquivalentTo(
+                InterfaceMethodNames(typeof(IPluginHostApi))
+                    .Concat(InterfaceMethodNames(typeof(IPluginHostHostingApi)))
+                    .Concat(InterfaceMethodNames(typeof(IPluginHostServiceConnectionApi)))
+                    .Concat(InterfaceMethodNames(typeof(IPluginHostPaymentApi))));
         PublicMethodNames(typeof(PluginStore)).Should()
             .BeEquivalentTo(InterfaceMethodNames(typeof(IPluginStore)).Concat(InterfaceMethodNames(typeof(IPluginStoreAdvanced))));
 
@@ -179,6 +186,8 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
             nameof(IPluginHostApi.IssueSshAccessAsync),
             nameof(IPluginHostApi.RevokeSshAccessAsync),
             .. InterfaceMethodNames(typeof(IPluginHostHostingApi)),
+            .. InterfaceMethodNames(typeof(IPluginHostServiceConnectionApi)),
+            .. InterfaceMethodNames(typeof(IPluginHostPaymentApi)),
         ];
         var parameters = typeof(IPluginHostApi).GetMethods().Where(m => !named.Contains(m.Name))
             .Concat(typeof(IPluginStore).GetMethods()).SelectMany(m => m.GetParameters());

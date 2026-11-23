@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 
@@ -48,17 +49,10 @@ public sealed class InspectPluginPackageHandler
             manifest.HostAccess,
             manifest.Capabilities,
             string.IsNullOrWhiteSpace(manifest.Changelog) ? null : manifest.Changelog,
-            NullIfBlank(manifest.MinHostVersion),
-            NullIfBlank(manifest.MaxHostVersion),
+            manifest.MinHostVersion.NullIfBlank(),
+            manifest.MaxHostVersion.NullIfBlank(),
+            manifest.SdkPackageVersion.NullIfBlank(),
             host,
             PluginHostCompatibility.IsCompatible(host, manifest.MinHostVersion, manifest.MaxHostVersion)));
-    }
-
-    /// <summary>Treats a blank bound as an absent one, the way the compatibility check does.</summary>
-    /// <param name="value">The bound as written.</param>
-    /// <returns>The bound, or <see langword="null"/> when blank.</returns>
-    private static string? NullIfBlank(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 }

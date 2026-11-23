@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -91,7 +92,8 @@ public sealed class ListPluginsHandler
                 install?.Signer,
                 install?.SignerKeyId,
                 install?.PackageSizeBytes,
-                install?.PackageSha256));
+                install?.PackageSha256,
+                refusal is null ? manifest.SdkPackageVersion.NullIfBlank() : null));
         }
 
         var scopeOwners = _context.PluginDataScopes.AsNoTracking().Select(s => s.PluginId);

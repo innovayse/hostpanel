@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Domain.Hosting;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -205,7 +204,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
             Hostname: "srv.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModule.CPanel,
+            Module: ServerModules.CPanel,
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,
@@ -215,7 +214,8 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), TestMoments.Seeded);
+            NameServers: ServerNameServers.None,
+            AcceptsSelfSignedCertificate: false), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 

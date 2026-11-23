@@ -81,10 +81,11 @@ internal sealed class DemoServerSeeder
         {
             var (name, host, ip, max, isDefault, isDisabled, online, cost, datacenter, groupId) = servers[i];
             var server = Server.Create(new ServerDetails(
-                name, host, ip, null, ServerModule.Cwp7, "root", new ServerCredentials("demo-placeholder", null, "demo-placeholder-hash"),
+                name, host, ip, null, ServerModules.CPanel, "root", new ServerCredentials("demo-placeholder", null, "demo-placeholder-hash"),
                 true, max, isDefault, isDisabled, cost, datacenter, null,
                 new ServerNameServers(
-                    PrimaryNameserver, "192.0.2.1", SecondaryNameserver, "192.0.2.2", null, null, null, null, null, null)),
+                    PrimaryNameserver, "192.0.2.1", SecondaryNameserver, "192.0.2.2", null, null, null, null, null, null),
+                AcceptsSelfSignedCertificate: false),
                 _today);
             server.AssignToGroup(groupId);
             // Between a quarter and three quarters full, so an account count never passes the server's own limit.

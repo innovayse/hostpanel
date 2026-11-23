@@ -17,9 +17,10 @@ import { stubRoutes } from '../helpers/routes'
  * Domain 3 of client 7.
  *
  * @param status - The domain status; pending registration by default.
+ * @param capabilities - What the registrar that holds the domain offers; everything by default.
  * @returns The detail answer.
  */
-const domain = (status = 'PendingRegistration') =>
+const domain = (status = 'PendingRegistration', capabilities = { dnsManagement: true, emailForwarding: true, whois: true }) =>
   json({
     id: 3,
     clientId: 7,
@@ -48,6 +49,7 @@ const domain = (status = 'PendingRegistration') =>
     dnsRecords: [],
     emailForwardingRules: [],
     reminders: [],
+    capabilities,
   })
 
 /**
@@ -203,6 +205,17 @@ describe('ClientDomainDetailView', () => {
     await openTab(wrapper, 'management')
     expect(wrapper.find('[data-testid="client-domain-toggle-dns"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="client-domain-admin-notes"]').exists()).toBe(true)
+  })
+
+  it('hides the DNS and forwarding switches the registrar does not offer', async () => {
+    stubRoutes({ 'GET /api/domains/3': () => domain('Active', { dnsManagement: false, emailForwarding: false, whois: false }) })
+    const wrapper = await mountDomain()
+
+    await openTab(wrapper, 'management')
+
+    expect(wrapper.find('[data-testid="client-domain-toggle-dns"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="client-domain-toggle-forwarding"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="client-domain-toggle-id-protection"]').exists()).toBe(true)
   })
 
   it('saves a field of a tab that is not on show with the rest of the form', async () => {

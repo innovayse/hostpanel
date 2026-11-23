@@ -91,11 +91,11 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     public string? Registrar { get; private set; }
 
     /// <summary>
-    /// Gets the registrar module the domain was registered, transferred or imported with; every
+    /// Gets the id of the registrar plugin the domain was registered, transferred or imported with; every
     /// operation on the domain goes to it even after the TLD is configured for another registrar.
     /// Null for a row that predates the column; the TLD's configured registrar answers for it.
     /// </summary>
-    public RegistrarModule? RegistrarModule { get; private set; }
+    public string? RegistrarModule { get; private set; }
 
     /// <summary>Gets the registration period in years.</summary>
     public int RegistrationPeriod { get; private set; } = 1;
@@ -178,7 +178,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="registrar">Name of the registrar module used.</param>
     /// <param name="registrationPeriod">Registration period in years.</param>
     /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
-    /// <param name="registrarModule">The registrar module the registration was placed at.</param>
+    /// <param name="registrarModule">The id of the registrar plugin the registration was placed at.</param>
     /// <param name="orderId">The order whose line registers the domain, or <see langword="null"/> for a registration that is not an order's.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingRegistration"/> state.</returns>
     /// <exception cref="ArgumentException">
@@ -188,7 +188,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
         int clientId, string name, DateTimeOffset registeredAt, DateTimeOffset expiresAt, bool autoRenew, bool whoisPrivacy,
         string priceCurrency, decimal recurringAmount = 0, decimal firstPaymentAmount = 0,
         string? registrar = null, int registrationPeriod = 1, string? paymentMethod = null,
-        RegistrarModule? registrarModule = null, int? orderId = null)
+        string? registrarModule = null, int? orderId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);
@@ -231,14 +231,14 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="autoRenew">Whether the domain renews automatically.</param>
     /// <param name="priceCurrency">ISO 4217 code of the currency the domain is billed in.</param>
     /// <param name="registrar">Name of the source registrar module; null when unknown.</param>
-    /// <param name="registrarModule">The registrar module the domain is managed through here; null when unknown.</param>
+    /// <param name="registrarModule">The id of the registrar plugin the domain is managed through here; null when unknown.</param>
     /// <returns>A new <see cref="RegisteredDomain"/> in <paramref name="status"/> with no pending domain events.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> or <paramref name="priceCurrency"/> is null or whitespace.
     /// </exception>
     public static RegisteredDomain Import(
         int clientId, string name, DomainStatus status, DateTimeOffset registeredAt, DateTimeOffset expiresAt,
-        bool autoRenew, string priceCurrency, string? registrar, RegistrarModule? registrarModule = null)
+        bool autoRenew, string priceCurrency, string? registrar, string? registrarModule = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);
@@ -271,7 +271,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="recurringAmount">Recurring renewal price after transfer.</param>
     /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
     /// <param name="registrationPeriod">Registration period bought with the transfer, in years.</param>
-    /// <param name="registrarModule">The registrar module the transfer was placed at.</param>
+    /// <param name="registrarModule">The id of the registrar plugin the transfer was placed at.</param>
     /// <param name="orderId">The order whose line transfers the domain in, or <see langword="null"/> for a transfer that is not an order's.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingTransfer"/> state.</returns>
     /// <exception cref="ArgumentException">
@@ -280,7 +280,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     public static RegisteredDomain CreateTransfer(
         int clientId, string name, DateTimeOffset registeredAt, string priceCurrency,
         decimal firstPaymentAmount = 0, decimal recurringAmount = 0, string? paymentMethod = null,
-        int registrationPeriod = 1, RegistrarModule? registrarModule = null, int? orderId = null)
+        int registrationPeriod = 1, string? registrarModule = null, int? orderId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);

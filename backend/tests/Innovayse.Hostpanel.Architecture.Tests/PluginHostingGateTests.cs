@@ -46,7 +46,7 @@ public sealed class PluginHostingGateTests
     [Fact]
     public void EveryHostAccessService_TakesTheGate()
     {
-        var services = new[] { typeof(PluginSshAccessService), typeof(PluginHostingService) };
+        var services = new[] { typeof(PluginSshAccessService), typeof(PluginHostingService), typeof(PluginServiceConnectionService) };
 
         services.All(service => TakesAny(service, [typeof(PluginHostingGate)])).Should().BeTrue();
     }
@@ -59,7 +59,23 @@ public sealed class PluginHostingGateTests
             .Where(type => type.Namespace == ServicesNamespace + ".Common" && type.Name.StartsWith("Plugin", StringComparison.Ordinal) && type.Name.EndsWith("Service", StringComparison.Ordinal))
             .Select(type => type.Name);
 
-        found.Should().BeEquivalentTo(nameof(PluginSshAccessService), nameof(PluginHostingService));
+        found.Should().BeEquivalentTo(nameof(PluginSshAccessService), nameof(PluginHostingService), nameof(PluginServiceConnectionService));
+    }
+
+    /// <summary>
+    /// The host API adapters hand the call's binding to an Application service and never dispatch a use case themselves:
+    /// none of them takes the message bus (#1356 added the payment half, which dispatches from its service).
+    /// </summary>
+    [Fact]
+    public void TheHostApiAdapters_NeverTakeTheMessageBus()
+    {
+        var adapters = Layers.AuthoredTypesOf(Layers.Infrastructure)
+            .Where(type => type.Namespace == PluginsNamespace && AdapterNames.Contains(type.Name))
+            .ToList();
+
+        adapters.Should().HaveCount(AdapterNames.Length, "the rule must look at both adapters to mean anything");
+        adapters.Where(type => TakesAny(type, [typeof(Wolverine.IMessageBus)])).Should().BeEmpty(
+            "an adapter never calls a handler: it hands the call's binding to an Application service, which dispatches");
     }
 
     /// <summary>The types a host access is built from: the Application services and the host API adapters.</summary>

@@ -50,6 +50,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="SignerKeyId">The id of the key that signed the latest accepted package; <see langword="null"/> when it is unsigned or not recorded.</param>
 /// <param name="PackageSizeBytes">The size in bytes of the latest accepted archive; <see langword="null"/> when no install was recorded.</param>
 /// <param name="PackageSha256">The lower-case hex SHA-256 of the latest accepted archive; <see langword="null"/> when no install was recorded.</param>
+/// <param name="SdkPackageVersion">
+/// The <c>Hostpanel.Sdk</c> package version the installed package was built on; <see langword="null"/> when its
+/// manifest names none and for a refused or removed row.
+/// </param>
 public sealed record PluginListItemDto(
     string Id,
     string Name,
@@ -78,4 +82,5 @@ public sealed record PluginListItemDto(
     PluginSignerKind? Signer = null,
     string? SignerKeyId = null,
     long? PackageSizeBytes = null,
-    string? PackageSha256 = null);
+    string? PackageSha256 = null,
+    string? SdkPackageVersion = null);

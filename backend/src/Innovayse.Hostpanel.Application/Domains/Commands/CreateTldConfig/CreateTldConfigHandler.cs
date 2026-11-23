@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -21,13 +20,18 @@ public sealed class CreateTldConfigHandler
     /// <summary>Memory cache for invalidating pricing data.</summary>
     private readonly IMemoryCache _cache;
 
+    /// <summary>Tells which registrar plugins are installed.</summary>
+    private readonly IRegistrarModuleCatalogue _modules;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The data context the uniqueness check runs against and the new configuration is persisted through.</param>
     /// <param name="cache">Memory cache for invalidating pricing data.</param>
-    public CreateTldConfigHandler(IHostpanelDbContext context, IMemoryCache cache)
+    /// <param name="modules">Tells which registrar plugins are installed.</param>
+    public CreateTldConfigHandler(IHostpanelDbContext context, IMemoryCache cache, IRegistrarModuleCatalogue modules)
     {
         _context = context;
         _cache = cache;
+        _modules = modules;
     }
 
     /// <summary>
@@ -37,15 +41,14 @@ public sealed class CreateTldConfigHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success with the newly assigned TLD configuration identifier, or
-    /// <c>TLD_REGISTRAR_MODULE_UNKNOWN</c> (400) when the module names no known registrar, or
+    /// <c>TLD_REGISTRAR_MODULE_UNKNOWN</c> (400) when the module names no installed registrar plugin, or
     /// <c>TLD_CONFIG_ALREADY_EXISTS</c> (409) when the extension is already configured.
     /// </returns>
     public async Task<Result<int>> HandleAsync(CreateTldConfigCommand cmd, CancellationToken ct)
     {
-        // TryParse, not Parse: Parse raises ArgumentException, which no handler in the pipeline
-        // classifies, so a misspelled module would come back as an unhandled 500 rather than a
-        // refusal the caller can act on.
-        if (!Enum.TryParse<RegistrarModule>(cmd.RegistrarModule, ignoreCase: true, out var module))
+        // The module is stored as the plugin declares its id, whatever case the caller typed.
+        var module = _modules.FindId(cmd.RegistrarModule);
+        if (module is null)
         {
             return Result<int>.FailureCode(HostpanelErrorCodes.TLD_REGISTRAR_MODULE_UNKNOWN);
         }

@@ -62,6 +62,8 @@ public sealed class UpdateDnsRecordHandler
             return Result.FailureCode(HostpanelErrorCodes.DNS_RECORD_NOT_FOUND);
         }
 
+        // The registrar finds the record by what it holds now, so the record as it stood is kept before the change.
+        var current = domain.DnsRecords.First(r => r.Id == cmd.RecordId!.Value).ToDetached();
         domain.UpdateDnsRecord(cmd.RecordId!.Value, cmd.Value, cmd.Ttl, cmd.Priority);
 
         if (domain.RegistrarRef is not null)
@@ -69,7 +71,7 @@ public sealed class UpdateDnsRecordHandler
             var updated = domain.DnsRecords.First(r => r.Id == cmd.RecordId!.Value);
             var registrar = await _registrars.ResolveAsync(domain, ct);
             var result = await registrar.UpdateDnsRecordAsync(
-                new DnsRecordChange(new DomainRef(domain.Name, domain.RegistrarRef), updated), ct);
+                new DnsRecordUpdate(new DomainRef(domain.Name, domain.RegistrarRef), current, updated), ct);
 
             if (!result.Success)
             {

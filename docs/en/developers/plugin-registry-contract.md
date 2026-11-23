@@ -114,7 +114,7 @@ The ids are those of the plugins the operator installed or uploaded. Answer with
     "downloadUrl": "/v1/plugins/sample-gateway/versions/1.2.0/download",
     "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
     "verified": true,
-    "sdkVersion": "3.1.0",
+    "sdkPackageVersion": "3.1.0",
     "requiresLicence": false,
     "changelog": "Fixes a rounding error."
   }
@@ -187,7 +187,7 @@ Reply: a JSON array of versions, newest first.
 [
   {
     "version": "1.2.0",
-    "sdkVersion": "3.1.0",
+    "sdkPackageVersion": "3.1.0",
     "sizeBytes": 20480,
     "publishedAt": "2026-01-02T03:04:05Z",
     "status": "Published",
@@ -231,7 +231,7 @@ Hostpanel checks every entry, and one entry that is not a plugin (bad id, no nam
 | `category` | Optional. An unknown or missing value is shown as `Other`. |
 | `description` | Optional, kept to 2000 characters. |
 | `publisherName` | Optional (`author` is read too), kept to 200 characters. |
-| `sdkVersion` | Optional, kept to 32 characters, shown as information only. The listing need not carry it. |
+| `sdkPackageVersion` | Optional, kept to 32 characters. The `Hostpanel.Sdk` package version the plugin version was built against, the same value as `sdkPackageVersion` in its `plugin.json`. The host refuses to install a version whose value is newer than the SDK it ships (`PLUGIN_SDK_NEWER_THAN_HOST`) and does not offer it as an update, so a registry may serve it in the listing, the release and every version row. A version without it, or with a value that is not a strict `major.minor.patch`, is not checked. |
 | `iconUrl` | Optional. Absolute or relative to `BaseUrl`. It is kept only when it is on the registry's own origin; any other icon address is dropped. |
 | `verified` | Optional, `false` when absent. Shown as a badge. The trust decision at install time reads `verified` from the release, so serve it in both places. |
 

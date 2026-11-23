@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Domain.Servers.Enums;
-
 namespace Innovayse.Hostpanel.Domain.Servers;
 
 /// <summary>
@@ -10,7 +8,7 @@ namespace Innovayse.Hostpanel.Domain.Servers;
 /// <param name="Hostname">Hostname or IP for API access.</param>
 /// <param name="IpAddress">Primary public IP address.</param>
 /// <param name="AssignedIpAddresses">Additional IPs (one per line).</param>
-/// <param name="Module">Control panel module type.</param>
+/// <param name="Module">Control panel module id; see <see cref="ServerModules"/>.</param>
 /// <param name="Username">API username.</param>
 /// <param name="Credentials">API secrets (null, empty or whitespace members = leave unchanged on update).</param>
 /// <param name="UseSSL">Whether to use SSL when connecting to the API.</param>
@@ -21,12 +19,18 @@ namespace Innovayse.Hostpanel.Domain.Servers;
 /// <param name="Datacenter">Datacenter or NOC provider name.</param>
 /// <param name="ServerStatusAddress">URL to the server status page folder.</param>
 /// <param name="NameServers">Nameservers the server's accounts are delegated to.</param>
+/// <param name="AcceptsSelfSignedCertificate">Whether the operator trusts the self signed certificate of the server's API; off unless set, and only possible with SSL.</param>
+/// <param name="ApiHost">
+/// Address the control panel's API is dialled at when it is not reachable at <paramref name="Hostname"/>,
+/// such as a panel whose API port only answers on a private or VPN address. Null or blank keeps the
+/// hostname. <paramref name="Hostname"/> still builds the client-facing panel and webmail URLs.
+/// </param>
 public record ServerDetails(
     string Name,
     string Hostname,
     string? IpAddress,
     string? AssignedIpAddresses,
-    ServerModule Module,
+    string Module,
     string Username,
     ServerCredentials Credentials,
     bool UseSSL,
@@ -36,4 +40,6 @@ public record ServerDetails(
     decimal MonthlyCost,
     string? Datacenter,
     string? ServerStatusAddress,
-    ServerNameServers NameServers);
+    ServerNameServers NameServers,
+    bool AcceptsSelfSignedCertificate,
+    string? ApiHost = null);

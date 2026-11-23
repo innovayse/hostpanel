@@ -21,7 +21,7 @@ const previewOf = (overrides: Partial<PluginPackagePreviewDto> = {}): PluginPack
   version: '1.1.0',
   author: 'Example',
   description: 'Backups',
-  hostAccess: [PluginHostAccess.Ssh, PluginHostAccess.Websites, PluginHostAccess.Databases],
+  hostAccess: [PluginHostAccess.Ssh, PluginHostAccess.Websites, PluginHostAccess.Databases, PluginHostAccess.ServiceConnection],
   capabilities: [PluginCapability.Endpoints],
   changelog: 'Faster restores.',
   minHostVersion: '1.0.0',
@@ -46,6 +46,7 @@ describe('PluginInstallDialog', () => {
     expect(wrapper.get('[data-testid="plugin-install-access-ssh"]').text()).toContain('over SSH')
     expect(wrapper.get('[data-testid="plugin-install-access-websites"]').text()).toContain('websites')
     expect(wrapper.get('[data-testid="plugin-install-access-databases"]').text()).toContain('databases')
+    expect(wrapper.get('[data-testid="plugin-install-access-serviceConnection"]').text()).toContain('stored panel credentials')
     expect(wrapper.get('[data-testid="plugin-install-capability-endpoints"]').text()).toContain('pages, menus and widgets')
     expect(wrapper.get('[data-testid="plugin-install-changelog"]').text()).toBe('Faster restores.')
     expect(wrapper.get('[data-testid="plugin-install-range"]').text()).toBe('Runs on server versions 1.0.0 to 3.0.0.')
@@ -68,6 +69,11 @@ describe('PluginInstallDialog', () => {
 
     expect(wrapper.emitted('confirm')).toHaveLength(1)
     expect(wrapper.emitted('close')).toHaveLength(1)
+  })
+
+  it('names the plugin SDK version the package was built on, only when the package states one', () => {
+    expect(mountDialog(previewOf({ sdkPackageVersion: '3.11.0' })).get('[data-testid="plugin-install-sdk"]').text()).toBe('Built on plugin SDK 3.11.0')
+    expect(mountDialog(previewOf()).find('[data-testid="plugin-install-sdk"]').exists()).toBe(false)
   })
 
   it('explains an incompatible package and offers no install', () => {

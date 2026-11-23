@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -255,9 +254,10 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var server = Server.Create(
             new ServerDetails(
-                $"protected-{Guid.NewGuid():N}", "server.example.test", null, null, ServerModule.CPanel, "root",
+                $"protected-{Guid.NewGuid():N}", "server.example.test", null, null, ServerModules.CPanel, "root",
                 new ServerCredentials(password, apiToken, accessHash), true, null, false, false, 0m, null, null,
-                ServerNameServers.None),
+                ServerNameServers.None,
+                false),
             TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync();

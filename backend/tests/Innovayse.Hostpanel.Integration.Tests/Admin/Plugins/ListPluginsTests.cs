@@ -156,7 +156,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         {
             ["plugin.json"] = PluginsTestSeeds.ManifestJson(
                 pluginId,
-                ",\"manifestVersion\":2,\"hostAccess\":[\"ssh\"],\"changelog\":\"First release.\",\"minHostVersion\":\"0.1.0\",\"maxHostVersion\":\"99.0.0\""),
+                ",\"manifestVersion\":2,\"hostAccess\":[\"ssh\"],\"changelog\":\"First release.\",\"sdkPackageVersion\":\"3.1.0\",\"minHostVersion\":\"0.4.0\",\"maxHostVersion\":\"99.0.0\""),
         });
 
         try
@@ -169,12 +169,14 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
             var row = list!.Single(p => p.GetProperty("id").GetString() == pluginId);
             row.GetProperty("hostAccess").EnumerateArray().Select(c => c.GetString()).Should().Equal("ssh");
             row.GetProperty("changelog").GetString().Should().Be("First release.");
-            row.GetProperty("minHostVersion").GetString().Should().Be("0.1.0");
+            row.GetProperty("minHostVersion").GetString().Should().Be("0.4.0");
+            row.GetProperty("sdkPackageVersion").GetString().Should().Be("3.1.0");
             row.GetProperty("maxHostVersion").GetString().Should().Be("99.0.0");
             var plain = list!.Single(p => p.GetProperty("id").GetString() == plainId);
             plain.GetProperty("hostAccess").GetArrayLength().Should().Be(0);
             plain.GetProperty("changelog").ValueKind.Should().Be(JsonValueKind.Null);
             plain.GetProperty("minHostVersion").ValueKind.Should().Be(JsonValueKind.Null);
+            plain.GetProperty("sdkPackageVersion").ValueKind.Should().Be(JsonValueKind.Null);
         }
         finally
         {

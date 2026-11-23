@@ -552,9 +552,6 @@
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
     <value>Для этого сервера не задан ключ API или хеш доступа.</value>
   </data>
-<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
-    <value>Проверка соединения не поддерживается для модуля этого сервера.</value>
-  </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
     <value>Такая группа серверов не найдена.</value>
   </data>
@@ -624,6 +621,33 @@
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Профиль agentProfile в манифесте должен быть одним из профилей SSH-агента ключей, которые задаёт SDK, и записан точно.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_SERVER_MODULES_INVALID" xml:space="preserve">
+    <value>Список serverModules в манифесте недопустим: плагин с возможностью provisioningPanel или virtualServer должен перечислить хотя бы один идентификатор модуля сервера (буквы, цифры, дефисы, точки и подчёркивания, до 50 символов, без повторов), а любой другой плагин не должен перечислять ни одного.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR" xml:space="preserve">
+    <value>connectionRole в настройках манифеста разрешён только у плагина регистратора.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE" xml:space="preserve">
+    <value>У двух настроек манифеста одинаковый connectionRole: каждую роль можно назначить только одной настройке.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH" xml:space="preserve">
+    <value>connectionRole в манифесте указан у настройки неподходящего типа: для apiKey нужна настройка secret, для apiUrl настройка url, для testMode настройка boolean.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE" xml:space="preserve">
+    <value>Плагин регистратора, который объявляет connectionRole, должен объявить и accountName, и apiKey.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
+    <value>sdkPackageVersion в манифесте этого плагина не является допустимой версией.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
+    <value>minHostVersion в манифесте этого плагина отсутствует или ниже первого выпуска Hostpanel, в котором есть SDK, на котором собран плагин.</value>
+  </data>
+  <data name="PLUGIN_SDK_NEWER_THAN_HOST" xml:space="preserve">
+    <value>Этот плагин собран на более новом SDK Hostpanel, чем есть на этом сервере, и здесь не загрузится. Обновите Hostpanel или возьмите более старую версию плагина.</value>
+  </data>
+  <data name="PLUGIN_ASSEMBLY_LOAD_FAILED" xml:space="preserve">
+    <value>Плагин установлен, но не загрузился. Ошибка загрузки показана рядом с ним.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>
@@ -667,7 +691,7 @@
     <value>Этот плагин объявляет маршруты, страницы или слоты, но не является плагином-приложением и не объявляет возможность «endpoints».</value>
   </data>
   <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
-    <value>Этот плагин объявляет возможность, которую хост не знает или которая недоступна для его типа плагина.</value>
+    <value>Этот плагин объявляет возможность, которую хост не знает, которая недоступна для его типа плагина или которой нужна другая возможность, не объявленная плагином.</value>
   </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Этот архив содержит запись, которая записала бы файл вне папки плагина, и был отклонён.</value>
@@ -1092,6 +1116,24 @@
   </data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
     <value>Контактные данные владельца домена неполные, поэтому заказ нельзя отправить регистратору.</value>
+  </data>
+  <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
+    <value>Регистратор не продаёт домены в этой зоне.</value>
+  </data>
+  <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
+    <value>Регистратор отклонил код авторизации переноса.</value>
+  </data>
+  <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
+    <value>Регистратор сейчас не разрешает перенос этого домена.</value>
+  </data>
+  <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
+    <value>Регистратор отклонил указанные серверы имён.</value>
+  </data>
+  <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
+    <value>Регистратор отклонил DNS-запись.</value>
+  </data>
+  <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
+    <value>Регистратор не принял сохранённые данные доступа к аккаунту. Обратитесь к администратору.</value>
   </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
     <value>У транзакции должна быть входящая или исходящая сумма.</value>
@@ -1557,5 +1599,53 @@
   </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>Максимальное число активных услуг должно быть 0 или пустым (без ограничений) либо положительным числом.</value>
+  </data>
+  <data name="SERVER_SELF_SIGNED_REQUIRES_SSL" xml:space="preserve">
+    <value>Сервер без SSL не может принимать самоподписанный сертификат. Включите SSL или снимите отметку о самоподписанном сертификате.</value>
+  </data>
+  <data name="SERVER_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Этот тип панели управления недоступен. Сначала установите для него плагин или выберите другой тип.</value>
+  </data>
+  <data name="PANEL_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>Плагин панели управления этого сервера не установлен, выключен, не настроен или не работает. Проверьте его на странице плагинов.</value>
+  </data>
+  <data name="PANEL_PLUGIN_CONFLICT" xml:space="preserve">
+    <value>Тип панели этого сервера обслуживают несколько установленных плагинов. Оставьте только один.</value>
+  </data>
+  <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
+    <value>Эта панель управления не поддерживает запрошенное действие.</value>
+  </data>
+  <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
+    <value>В панели управления нет аккаунта для этой услуги.</value>
+  </data>
+  <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
+    <value>Панель управления не знает тарифный пакет этой услуги.</value>
+  </data>
+  <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Панель управления не принимает это имя пользователя аккаунта.</value>
+  </data>
+  <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Панель управления не принимает это доменное имя.</value>
+  </data>
+  <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
+    <value>Панель управления отклонила пароль. Выберите более надёжный.</value>
+  </data>
+  <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
+    <value>Панель управления достигла своего лимита и не может принять это изменение.</value>
+  </data>
+  <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
+    <value>Панель управления отклонила данные доступа, сохранённые для этого сервера.</value>
+  </data>
+  <data name="PANEL_REFUSED" xml:space="preserve">
+    <value>Панель управления отклонила запрос.</value>
+  </data>
+  <data name="PROVISIONING_PENDING" xml:space="preserve">
+    <value>Хостинг-аккаунт создаётся. Проверьте снова через несколько минут.</value>
+  </data>
+  <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
+    <value>Данные подключения сервера неполны для этой панели управления.</value>
+  </data>
+  <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
+    <value>Панель управления отклонила сохранённые данные доступа.</value>
   </data>
 </root>

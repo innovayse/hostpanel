@@ -1,8 +1,10 @@
 using System.Linq.Expressions;
 using FluentValidation;
 using Hostpanel.Sdk.Plugins.Payment;
+using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -106,6 +108,46 @@ public static class ValidationRuleExtensions
         validator.When(
             savesMethod,
             () => validator.RuleFor(consentTextVersion).MustBeConsentTextVersion(message));
+    }
+
+    /// <summary>
+    /// Requires a registrar filter, when one is given, to name an installed registrar plugin (compared without regard to letter
+    /// case), so a typo is a refusal and not a list that silently comes back empty. An absent filter passes.
+    /// </summary>
+    /// <typeparam name="T">The query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the optional registrar module property.</param>
+    /// <param name="modules">Tells which registrar plugins are installed.</param>
+    /// <param name="message">The localized sentence reported when no installed registrar plugin has the id.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> MustBeInstalledRegistrar<T>(
+        this IRuleBuilder<T, string?> rule, IRegistrarModuleCatalogue modules, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentNullException.ThrowIfNull(modules);
+
+        return rule.Must(module => module is null || modules.FindId(module) is not null).WithMessage(message);
+    }
+
+    /// <summary>
+    /// Requires a server's API address, when one is given, to be a host name or an IP address of at most
+    /// <see cref="ServerApiHostRules.MaxLength"/> characters that the host may dial (see <see cref="ServerApiHostRules"/>). A blank
+    /// address passes: the API is then dialled at the host name. Create and update share this one chain.
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <param name="rule">The rule builder for the optional API address property.</param>
+    /// <param name="tooLongMessage">The localized sentence reported when the address is longer than a host name may be.</param>
+    /// <param name="malformedMessage">The localized sentence reported when the address is not a host name or an IP address.</param>
+    /// <param name="refusedMessage">The localized sentence reported when the address is an IP address that is never dialled.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string?> MustBeAnApiHost<T>(
+        this IRuleBuilder<T, string?> rule, string tooLongMessage, string malformedMessage, string refusedMessage)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule
+            .MaximumLength(ServerApiHostRules.MaxLength).WithMessage(tooLongMessage)
+            .Must(ServerApiHostRules.IsWellFormed).WithMessage(malformedMessage)
+            .Must(ServerApiHostRules.IsDialable).WithMessage(refusedMessage);
     }
 
     /// <summary>Requires a 1-based page number.</summary>

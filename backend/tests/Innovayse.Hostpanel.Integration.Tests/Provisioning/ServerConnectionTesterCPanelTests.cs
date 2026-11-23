@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Servers;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
@@ -23,20 +22,23 @@ public sealed class ServerConnectionTesterCPanelTests
         services.AddLogging(b => b.AddProvider(logs));
         services.AddHttpClient();
         await using var provider = services.BuildServiceProvider();
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the tester still takes the CWP ports.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the tester still takes the CWP client.
+        var plugins = DetachedPanelPlugins.Build();
         var tester = new ServerConnectionTester(
             new FakeHostingPanelApiClient(),
-            new FakeHostingPanelV7ApiClient(),
             provider.GetRequiredService<IHttpClientFactory>(),
             provider.GetRequiredService<ILoggerFactory>(),
             Options.Create(new ProvisioningOptions()),
-            provider.GetRequiredService<ILogger<ServerConnectionTester>>());
+            provider.GetRequiredService<ILogger<ServerConnectionTester>>(),
+            plugins.Resolver,
+            plugins.Caller);
 #pragma warning restore CS0618
         var server = Server.Create(
             new ServerDetails(
-                "bad-host", "bad host", null, null, ServerModule.CPanel, "root",
+                "bad-host", "bad host", null, null, ServerModules.CPanel, "root",
                 new ServerCredentials(null, "secret-token-value", null), true, null, false, false, 0m, null, null,
-                ServerNameServers.None),
+                ServerNameServers.None,
+                false),
             TestMoments.Seeded);
 
         var result = await tester.TestAsync(server, CancellationToken.None);

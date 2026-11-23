@@ -51,8 +51,10 @@ public sealed class PluginCallbacksController : BaseApiController
     /// <param name="path">The path below <c>callback/</c>, matched against the plugin's declared callback routes.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204), or a raw body with the status and media type it
-    /// chose (the acknowledgement a gateway waits for); 400, 409, 422 or any other failure status the
+    /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204), a raw body with the status and media type it
+    /// chose (the acknowledgement a gateway waits for), or a redirect (301, 302, 303, 307 or 308 with a <c>Location</c> and
+    /// no body) to a path on this host or an https address of the client portal or of an origin the plugin's manifest
+    /// declares, which is how a payer returning from a gateway is sent on to the page that shows the result; 400, 409, 422 or any other failure status the
     /// plugin chooses, with <c>plugin.{id}.{code}</c> as the code, which is how a plugin tells the gateway its signature
     /// did not verify; 404 with <c>PLUGIN_ROUTE_NOT_FOUND</c> when the plugin, the route, the method or the plugin's switch
     /// is not there, always the same; 413 with <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over <c>PluginApi:MaxBodyBytes</c>;
@@ -69,6 +71,11 @@ public sealed class PluginCallbacksController : BaseApiController
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status203NonAuthoritative)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status301MovedPermanently)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status303SeeOther)]
+    [ProducesResponseType(StatusCodes.Status307TemporaryRedirect)]
+    [ProducesResponseType(StatusCodes.Status308PermanentRedirect)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]

@@ -9,8 +9,9 @@
  */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { MODULE_LABELS, ServerModule } from '@/types/server'
-import type { ServerDto, ServerPayload } from '@/types/server'
+import { ServerModule, moduleLabel } from '@/types/server'
+import { ServerModuleSource } from '@/types/serverenums'
+import type { ServerDto, ServerModuleOptionDto, ServerPayload } from '@/types/server'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import StoredSecretState from '@/components/servers/StoredSecretState.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -44,6 +45,8 @@ const props = withDefaults(defineProps<{
   error?: string | null
   /** Per-field sentences of the last refused save, keyed by camelCase field name. */
   fieldErrors?: Record<string, string>
+  /** The control panel modules a server can be given, from the API. */
+  moduleOptions: ServerModuleOptionDto[]
 }>(), {
   error: null,
   /**
@@ -84,6 +87,8 @@ interface ServerFormState {
   name: string
   /** Hostname or IP used for API access. */
   hostname: string
+  /** Address the panel's API is dialled at instead of the hostname; blank keeps the hostname. */
+  apiHost: string
   /** Primary public IP address. */
   ipAddress: string
   /** Additional assigned IPs, one per line. */
@@ -100,8 +105,8 @@ interface ServerFormState {
   isDisabled: boolean
   /** Whether this is the default server for the module. */
   isDefault: boolean
-  /** Control panel module type. */
-  module: ServerModule
+  /** Control panel module id. */
+  module: string
   /** API username. */
   username: string
   /** API password (empty keeps the stored one when editing). */
@@ -118,12 +123,27 @@ interface ServerFormState {
   clearAccessHash: boolean
   /** Whether SSL is used for API connections. */
   useSSL: boolean
+  /** Whether the self signed certificate of the server's API is trusted. */
+  acceptsSelfSignedCertificate: boolean
   /** Nameserver hostnames and IPs. */
   nameservers: Record<NameserverKey, string>
 }
 
-/** Module options of the select. */
-const moduleOptions = (Object.keys(MODULE_LABELS) as ServerModule[]).map(k => ({ value: k, label: MODULE_LABELS[k] }))
+/**
+ * Module options of the select: a plugin's module is named by the plugin, the host's own by its label. The module the edited
+ * server is stored with stays offered when no installed plugin serves it any more, so the server can still be edited.
+ */
+const moduleSelectOptions = computed(() => {
+  const options = props.moduleOptions.map(option => ({
+    value: option.id,
+    label: option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id),
+  }))
+  const stored = props.server?.module
+  if (stored && !options.some(option => option.value.toLowerCase() === stored.toLowerCase())) {
+    options.push({ value: stored, label: moduleLabel(stored) })
+  }
+  return options
+})
 
 /** Tabs of the dialog. */
 const tabItems = computed<UiTabItem[]>(() => [
@@ -150,6 +170,7 @@ const nameserverRows = computed<{ index: number; label: string; hostKey: Nameser
 const initialForm = (s: ServerDto | null): ServerFormState => ({
   name: s?.name ?? '',
   hostname: s?.endpoint.hostname ?? '',
+  apiHost: s?.endpoint.apiHost ?? '',
   ipAddress: s?.endpoint.ipAddress ?? '',
   assignedIpAddresses: s?.endpoint.assignedIpAddresses ?? '',
   monthlyCost: s?.hosting.monthlyCost ?? 0,
@@ -158,7 +179,7 @@ const initialForm = (s: ServerDto | null): ServerFormState => ({
   serverStatusAddress: s?.hosting.serverStatusAddress ?? '',
   isDisabled: s?.limits.isDisabled ?? false,
   isDefault: s?.limits.isDefault ?? false,
-  module: s?.module ?? ServerModule.Cwp7,
+  module: s?.module ?? ServerModule.CPanel,
   username: s?.username ?? '',
   password: '',
   apiToken: '',
@@ -167,6 +188,7 @@ const initialForm = (s: ServerDto | null): ServerFormState => ({
   clearApiToken: false,
   clearAccessHash: false,
   useSSL: s?.endpoint.useSSL ?? true,
+  acceptsSelfSignedCertificate: s?.endpoint.acceptsSelfSignedCertificate ?? false,
   nameservers: {
     ns1Hostname: s?.nameServers.ns1Hostname ?? '',
     ns1Ip: s?.nameServers.ns1Ip ?? '',
@@ -216,9 +238,11 @@ const handleSubmit = (): void => {
     name: form.name,
     endpoint: {
       hostname: form.hostname,
+      apiHost: orNull(form.apiHost),
       ipAddress: orNull(form.ipAddress),
       assignedIpAddresses: orNull(form.assignedIpAddresses),
       useSSL: form.useSSL,
+      acceptsSelfSignedCertificate: form.useSSL && form.acceptsSelfSignedCertificate,
     },
     module: form.module,
     username: form.username,
@@ -310,6 +334,24 @@ const handleSubmit = (): void => {
               </template>
             </UiField>
           </UiGrid>
+
+          <UiField
+            :label="t('servers.serverForm.apiHost')"
+            :hint="t('servers.serverForm.apiHostHint')"
+            :error="props.fieldErrors['endpoint.apiHost']"
+          >
+            <template #default="{ id, invalid, describedby }">
+              <UiInput
+                :id="id"
+                v-model="form.apiHost"
+                type="text"
+                :invalid="invalid"
+                :aria-describedby="describedby"
+                :placeholder="t('servers.serverForm.apiHostPlaceholder')"
+                data-testid="server-form-api-host"
+              />
+            </template>
+          </UiField>
 
           <UiGrid :columns="2" gap="sm">
             <UiField :label="t('shared.ipAddress')" :error="props.fieldErrors['endpoint.ipAddress']">
@@ -436,7 +478,7 @@ const handleSubmit = (): void => {
           <UiField :label="t('servers.serverForm.module')" :error="props.fieldErrors.module">
             <UiSelect
               v-model="form.module"
-              :options="moduleOptions"
+              :options="moduleSelectOptions"
               :placeholder="t('servers.serverForm.module')"
               data-testid="server-form-module"
             />
@@ -541,6 +583,15 @@ const handleSubmit = (): void => {
           <UiLabel variant="inline">
             <UiToggle v-model="form.useSSL" data-testid="server-form-ssl" />
             {{ t('servers.serverForm.useSslForConnections') }}
+          </UiLabel>
+
+          <UiLabel variant="inline">
+            <UiToggle
+              v-model="form.acceptsSelfSignedCertificate"
+              :disabled="!form.useSSL"
+              data-testid="server-form-self-signed"
+            />
+            {{ t('servers.serverForm.acceptSelfSignedCertificate') }}
           </UiLabel>
         </template>
       </UiForm>

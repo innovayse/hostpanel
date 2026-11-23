@@ -1,5 +1,12 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -27,6 +34,32 @@ public sealed class GetDomainTests(IntegrationTestFactory factory) : IClassFixtu
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await getResponse.Content.ReadAsStringAsync();
         json.Should().Contain($"\"id\":{domainId}");
+    }
+
+    /// <summary>
+    /// The read carries which optional operations the registrar that holds the domain offers, so a screen can hide the
+    /// actions the registrar does not support.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GetById_CarriesTheCapabilitiesOfTheRegistrarAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var (_, clientId) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "get-domain-capabilities");
+        var domainId = await DomainsTestSeeds.RegisterDomainAsync(admin, clientId);
+        var host = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+            services.AddSingleton<IRegistrarModuleCatalogue>(
+                new FakeRegistrarModuleCatalogue(new RegistrarCapabilitiesDto(true, false, true)))));
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+
+        var response = await client.GetAsync($"/api/domains/{domainId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var capabilities = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("capabilities");
+        capabilities.GetProperty("dnsManagement").GetBoolean().Should().BeTrue();
+        capabilities.GetProperty("emailForwarding").GetBoolean().Should().BeFalse();
+        capabilities.GetProperty("whois").GetBoolean().Should().BeTrue();
     }
 
     /// <summary>An id no domain ever took answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>

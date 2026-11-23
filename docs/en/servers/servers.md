@@ -23,7 +23,7 @@ Type part of a name, host name or IP address in the search box to find a server.
 **DEFAULT** badge marks the default server for its module. When other things are equal, the default server is preferred within its group or module when a server is picked for a new account (see [Fill types](#fill-types)).
 
 <Callout type="note">
-<strong>CWP7</strong>, <strong>Plesk</strong> and <strong>cPanel</strong> provision accounts automatically. cPanel is new and not yet tested against a live WHM server; see <a href="./cpanel">cPanel servers</a>. The other entries in the Module list (DirectAdmin, CentOS, Lukittu, Virtualmin, HyperVm) are stored but do not provision accounts automatically and cannot be tested.
+<strong>cPanel</strong> provisions accounts automatically and is built in; it is new and not yet tested against a live WHM server, see <a href="./cpanel">cPanel servers</a>. Every other panel is provisioned by its plugin: install and switch on the plugin, and its panel types (for example DirectAdmin) appear in the Module list, ready to pick, to test and to provision accounts on. An entry in the list with no plugin behind it (DirectAdmin, CentOS, Lukittu, Virtualmin, HyperVm) is stored but does not provision accounts automatically and cannot be tested. A server that uses a panel type whose plugin is switched off answers that the plugin is not available.
 </Callout>
 
 ## Add a server
@@ -53,11 +53,11 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 
 | Field | Notes |
 |-------|-------|
-| Module | Control panel: cPanel, Plesk, DirectAdmin, CentOS Web Panel, CWP7, Lukittu, Virtualmin, HyperVm |
+| Module | Control panel type: cPanel and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
 | Username | API username |
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |
-| Access Hash | Used by CWP7 and Plesk for API authentication (stored encrypted). cPanel uses Username and API Token instead |
+| Access Hash | Used by some panels for API authentication, as the panel's plugin describes (stored encrypted). cPanel uses Username and API Token instead |
 | Use SSL for connections | Enables HTTPS for API requests. Ignored for cPanel, which is always reached over HTTPS |
 
 When editing, credential fields show **(blank = keep)**. Secrets are stored encrypted with `ENCRYPTION_KEY`. There is no port field; the panel API port is fixed per module.
@@ -75,7 +75,7 @@ Click **Test Connection** on a server row. Hostpanel calls the server's panel AP
 | `SERVER_CONNECTION_UNREACHABLE` | Hostname or IP is wrong, the panel API port is blocked, or the panel is down |
 | `SERVER_CONNECTION_NO_ACCESS_HASH` | No access hash is stored for this server; add one on the Details tab |
 | `SERVER_CONNECTION_NO_API_KEY` | No API key or access hash is stored; add credentials on the Details tab |
-| `SERVER_CONNECTION_MODULE_UNSUPPORTED` | This module has no connection probe; testing is not available for it |
+| `PANEL_PLUGIN_UNAVAILABLE` | No installed plugin serves this module, or the plugin is switched off, not configured or not working; check the Plugins page |
 
 ## Edit and delete a server
 
@@ -122,6 +122,8 @@ Deleting a group that products still provision into is refused (`SERVER_GROUP_IN
 
 ## Private network routes
 
-When a server's control panel API is reachable only over a VPN or private network, set `PANEL_HOST_ADDRESSES` in the deployment environment as `hostname=address` pairs (comma-separated, e.g. `panel1.example.com=10.77.0.1`). Hostpanel dials the private address but keeps the hostname for the request and TLS certificate check, so customer-facing links and certificate checks are unchanged.
+When a server's control panel API is reachable only over a VPN or private network, fill in **API address** on the server itself (Servers, edit the server, General), for example `10.77.0.1`. Hostpanel then dials that address for API calls, and hands it to a hosting panel plugin as the host name of its connection, while the hostname keeps building the control panel and webmail links shown to clients. When the server accepts a self signed certificate, that is the address whose certificate is accepted. Leave it empty and the API is dialled at the hostname, as before.
+
+An administrator sets this per server in the admin panel, so adding a server behind a VPN needs no change to the deployment. A deployment that would rather pin the routes in its environment can still use `PANEL_HOST_ADDRESSES` as `hostname=address` pairs (comma-separated, e.g. `srv4.example.com=10.77.0.1`); it dials the private address but keeps the hostname for the request and TLS certificate check.
 
 See [Configuration reference](/operators/configuration) for the full list of environment settings.

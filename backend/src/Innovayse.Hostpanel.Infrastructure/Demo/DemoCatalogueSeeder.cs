@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -301,7 +300,7 @@ internal sealed class DemoCatalogueSeeder
         foreach (var (tld, currency, register, renew, transfer, categories, enabled) in tlds)
         {
             var costFactor = 0.8m;
-            var config = TldConfig.Create(tld, RegistrarModule.NameAm, currency, currency, enabled, sortOrder, [.. categories]);
+            var config = TldConfig.Create(tld, DemoRegistrarModuleCatalogue.ModuleId, currency, currency, enabled, sortOrder, [.. categories]);
             config.UpdateCostPrices(
                 new Dictionary<int, decimal> { [1] = Math.Round(register * costFactor, 2), [2] = Math.Round(register * costFactor * 2, 2) },
                 new Dictionary<int, decimal> { [1] = Math.Round(transfer * costFactor, 2) },

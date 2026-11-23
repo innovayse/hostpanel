@@ -330,6 +330,65 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>
+    /// A panel that accepted the account and is still creating it answers 503 <c>PROVISIONING_PENDING</c>, a retry signal:
+    /// the service stays Pending with its saved details and nothing is activated; the retry, which the panel then answers as an
+    /// existing account of the service, adopts it and activates the service.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_PanelStillCreatingTheAccount_Returns503PendingAndTheRetryActivatesAsync()
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider { ProvisionAnswer = ProvisioningResult.Pending($"prov{serviceId}") };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PROVISIONING_PENDING);
+        var pending = await ReloadAsync(serviceId);
+        pending.Status.Should().Be(ServiceStatus.Pending);
+        pending.ProvisioningRef.Should().BeNull();
+        pending.Password.Should().NotBeNullOrEmpty();
+
+        provider.ProvisionAnswer = ProvisioningResult.AlreadyExists($"prov{serviceId}", $"prov{serviceId}.example.com");
+        var retry = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        retry.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var stored = await ReloadAsync(serviceId);
+        stored.Status.Should().Be(ServiceStatus.Active);
+        stored.ProvisioningRef.Should().Be($"prov{serviceId}");
+    }
+
+    /// <summary>
+    /// A panel plugin that refuses with a reason the operator can act on answers the panel's own code with its status, and the
+    /// service stays Pending, instead of the generic upstream failure.
+    /// </summary>
+    /// <param name="code">The panel's refusal code.</param>
+    /// <param name="status">The status the code answers.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(HostpanelErrorCodes.PANEL_PACKAGE_UNKNOWN, HttpStatusCode.Conflict)]
+    [InlineData(HostpanelErrorCodes.PANEL_USERNAME_INVALID, HttpStatusCode.Conflict)]
+    [InlineData(HostpanelErrorCodes.PANEL_ACCESS_DENIED, HttpStatusCode.BadGateway)]
+    [InlineData(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE, HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HostpanelErrorCodes.PANEL_PLUGIN_CONFLICT, HttpStatusCode.Conflict)]
+    public async Task Provision_PanelPluginRefusal_AnswersThePanelCodeAndStaysPendingAsync(string code, HttpStatusCode status)
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider { FailWith = new DomainRuleException(code, "the panel refused") };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(status);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(code);
+        (await ReloadAsync(serviceId)).Status.Should().Be(ServiceStatus.Pending);
+    }
+
+    /// <summary>
     /// An unexpected provider failure is still a 502 <c>PROVISIONING_UPSTREAM_FAILED</c>: only the
     /// provider's own unknown-outcome signal changes the answer.
     /// </summary>

@@ -48,6 +48,12 @@ internal static class PluginRuleMap
             PackageManifestRule.ChangelogTooLong => PluginManifestRule.ChangelogTooLong,
             PackageManifestRule.AccountIdLabelInvalid => PluginManifestRule.AccountIdLabelInvalid,
             PackageManifestRule.AgentProfileInvalid => PluginManifestRule.AgentProfileInvalid,
+            PackageManifestRule.ConnectionRoleNotRegistrar => PluginManifestRule.ConnectionRoleNotRegistrar,
+            PackageManifestRule.ConnectionRoleDuplicate => PluginManifestRule.ConnectionRoleDuplicate,
+            PackageManifestRule.ConnectionRoleTypeMismatch => PluginManifestRule.ConnectionRoleTypeMismatch,
+            PackageManifestRule.ConnectionRolesIncomplete => PluginManifestRule.ConnectionRolesIncomplete,
+            PackageManifestRule.SdkPackageVersionInvalid => PluginManifestRule.SdkPackageVersionInvalid,
+            PackageManifestRule.MinHostVersionBelowSdk => PluginManifestRule.MinHostVersionBelowSdk,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this package rule."),
         };
     }

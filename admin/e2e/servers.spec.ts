@@ -5,7 +5,7 @@
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { connectionOk, hostServer, serverPage } from './fixtures/servers'
+import { connectionOk, hostServer, serverPage, serverModules } from './fixtures/servers'
 import type { ServerDto } from '../src/types/server'
 import { json, stubApi } from './support/stubApi'
 
@@ -15,6 +15,7 @@ test('testing a connection shows the panel version on the server row', async ({ 
     routes: [
       json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       json(HttpMethod.Post, `/api/admin/servers/${hostServer.id}/test-connection`, connectionOk),
     ],
   })
@@ -38,6 +39,7 @@ test('deleting a server asks first and then removes it', async ({ page }) => {
     routes: [
       { method: HttpMethod.Get, path: '/api/admin/servers', respond: () => ({ body: serverPage(stored) }) },
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       {
         method: HttpMethod.Delete,
         path: `/api/admin/servers/${hostServer.id}`,
@@ -66,6 +68,7 @@ test('a failed connection test shows the API sentence on the row', async ({ page
     routes: [
       json(HttpMethod.Get, '/api/admin/servers', serverPage([hostServer])),
       json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
       json(HttpMethod.Post, `/api/admin/servers/${hostServer.id}/test-connection`, { type: 'UPSTREAM', title: 'Bad gateway', status: 502, detail: sentence }, 502),
     ],
   })
@@ -80,7 +83,11 @@ test('a failed connection test shows the API sentence on the row', async ({ page
 test('an install without servers offers to add the first one', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
-    routes: [json(HttpMethod.Get, '/api/admin/servers', serverPage([])), json(HttpMethod.Get, '/api/admin/server-groups', [])],
+    routes: [
+      json(HttpMethod.Get, '/api/admin/servers', serverPage([])),
+      json(HttpMethod.Get, '/api/admin/server-groups', []),
+      json(HttpMethod.Get, '/api/admin/servers/modules', serverModules),
+    ],
   })
 
   await page.goto('/servers')

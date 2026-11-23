@@ -86,7 +86,7 @@ public sealed class DomainsImporter : IMigrationEntityImporter
 
         // The source record carries no currency of its own; its amounts are in the client's billing currency.
         var currency = (await _payerCurrency.ForClientAsync(clientId.Value, ct)).Code;
-        var registrar = await _registrars.ResolveForTldAsync(rec.DomainName, ct);
+        var registrarModule = await _registrars.ResolveModuleForTldAsync(rec.DomainName, ct);
         var domain = RegisteredDomain.Import(
             clientId: clientId.Value,
             name: rec.DomainName,
@@ -96,7 +96,7 @@ public sealed class DomainsImporter : IMigrationEntityImporter
             autoRenew: rec.AutoRenew,
             priceCurrency: currency,
             registrar: rec.Registrar,
-            registrarModule: registrar.Module);
+            registrarModule: registrarModule);
 
         domain.Update(
             rec.FirstPaymentAmount, rec.RecurringAmount, rec.PaymentMethod,

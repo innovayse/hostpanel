@@ -16,8 +16,11 @@ namespace Innovayse.Hostpanel.Shared.Infrastructure;
 /// </remarks>
 public sealed class RawReplyResult : IActionResult
 {
-    /// <summary>The policy sent with every reply that is not a page: nothing may load or run, and the reply may not be framed.</summary>
-    private const string InertContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
+    /// <summary>
+    /// The policy sent with every reply that is not a page: nothing may load or run, and the reply may not be framed. Shared
+    /// with <see cref="RedirectReplyResult"/>, whose reply is just as inert.
+    /// </summary>
+    internal const string InertContentSecurityPolicy = "default-src 'none'; frame-ancestors 'none'";
 
     /// <summary>The HTTP status to answer with.</summary>
     private readonly int _status;

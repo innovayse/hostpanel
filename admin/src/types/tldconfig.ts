@@ -2,7 +2,6 @@
  * The TLD price book: one row, its list shape and filters, the payloads that write it, and what an
  * import reports back.
  */
-import type { RegistrarModule } from '@/types/registrarmodule'
 
 /** The prices of one TLD for each action, keyed by period in years (e.g. "1", "2"). */
 export interface TldPriceTable {
@@ -74,8 +73,8 @@ export interface TldConfigListItem {
 export interface TldConfigListFilters {
   /** TLD search term; empty for none. */
   search?: string
-  /** Keep only the TLDs sourced from this registrar module. */
-  registrarModule?: RegistrarModule
+  /** Keep only the TLDs sourced from the registrar plugin with this id (any letter case). */
+  registrarModule?: string
   /** Keep only the TLDs that are on sale (true) or switched off (false). */
   enabled?: boolean
 }

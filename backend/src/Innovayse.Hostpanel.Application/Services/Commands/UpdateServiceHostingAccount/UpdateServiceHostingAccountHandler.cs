@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Admin.Servers.Queries.GetServerConnection;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -84,7 +83,7 @@ public sealed class UpdateServiceHostingAccountHandler
     /// <param name="username">The username staff entered.</param>
     /// <param name="status">The service's status: Pending means the account is still to be created.</param>
     /// <returns><see langword="true"/> when the panel accepts the name.</returns>
-    private bool AcceptsUsername(ServerModule module, string username, ServiceStatus status)
+    private bool AcceptsUsername(string module, string username, ServiceStatus status)
     {
         return status is ServiceStatus.Pending
             ? _panelRules.AcceptsNewUsername(module, username)

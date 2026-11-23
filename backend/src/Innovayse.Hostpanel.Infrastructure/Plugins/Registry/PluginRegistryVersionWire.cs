@@ -2,7 +2,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 
 /// <summary>The registry's JSON for one version in a plugin page or in a plugin's version list.</summary>
 /// <param name="Version">The version.</param>
-/// <param name="SdkVersion">The SDK version it targets.</param>
+/// <param name="SdkPackageVersion">The Hostpanel.Sdk package version it targets.</param>
 /// <param name="SizeBytes">The package size in bytes.</param>
 /// <param name="PublishedAt">When it was published.</param>
 /// <param name="Status">The status name.</param>
@@ -16,7 +16,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="Screenshots">The screenshots.</param>
 internal sealed record PluginRegistryVersionWire(
     string? Version,
-    string? SdkVersion,
+    string? SdkPackageVersion,
     long SizeBytes,
     DateTimeOffset PublishedAt,
     string? Status,

@@ -78,7 +78,7 @@ public class PortalSettingKeysTests
         Assert.False(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.ThemeDefault));
         Assert.True(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.BrandPrimary));
         Assert.True(PortalSettingKeys.AllowsEmpty(PortalSettingKeys.BrandFontBody));
-        Assert.False(PortalSettingKeys.AllowsEmpty("integration:cwp7:hostname"));
+        Assert.False(PortalSettingKeys.AllowsEmpty("integration:example-panel:hostname"));
     }
 
     /// <summary>A fresh install seeds the classic template, spelled as the storefront matches it.</summary>

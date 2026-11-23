@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 
@@ -107,7 +107,7 @@ public sealed class GetMySshAccessTests(IntegrationTestFactory factory) : IClass
     public async Task UnsupportedModule_IsExplicitlyUnsupportedAsync()
     {
         var (http, clientId) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "ssh-access-unsupported");
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, "panel.example.test", 22, ServerModule.CPanel);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, "panel.example.test", 22, ServerModules.CPanel);
         var serviceId = await SshTestSeeds.SeedServiceAsync(factory, clientId, serverId, "web");
 
         var access = await AccessAsync(http, serviceId);

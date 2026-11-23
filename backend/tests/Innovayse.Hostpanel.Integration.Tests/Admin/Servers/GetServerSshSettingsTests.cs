@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
+using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -35,7 +35,7 @@ public sealed class GetServerSshSettingsTests(IntegrationTestFactory factory) : 
         var admin = await SshAdminTestSupport.AdminAsync(factory);
         var created = await admin.PostAsJsonAsync(
             "/api/admin/servers",
-            ServersTestSeeds.ServerBody($"plain-{Guid.NewGuid():N}", hostname: "plain.example.test", module: ServerModule.CPanel));
+            ServersTestSeeds.ServerBody($"plain-{Guid.NewGuid():N}", hostname: "plain.example.test", module: ServerModules.CPanel));
         created.EnsureSuccessStatusCode();
         var serverId = await created.Content.ReadFromJsonAsync<int>();
 

@@ -20,6 +20,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Changelog">The release notes of this version as plain text; <see langword="null"/> when the manifest has none.</param>
 /// <param name="MinHostVersion">The lowest Hostpanel version the plugin runs on; <see langword="null"/> for no lower bound.</param>
 /// <param name="MaxHostVersion">The highest Hostpanel version the plugin runs on; <see langword="null"/> for no upper bound.</param>
+/// <param name="SdkPackageVersion">
+/// The <c>Hostpanel.Sdk</c> package version the plugin was built on; <see langword="null"/> when the manifest names
+/// none.
+/// </param>
 /// <param name="HostVersion">The version of the running Hostpanel build, the one the range is compared with.</param>
 /// <param name="Compatible">Whether the running Hostpanel version is inside the range; an install outside it is refused.</param>
 public sealed record PluginPackagePreviewDto(
@@ -33,5 +37,6 @@ public sealed record PluginPackagePreviewDto(
     string? Changelog,
     string? MinHostVersion,
     string? MaxHostVersion,
+    string? SdkPackageVersion,
     string HostVersion,
     bool Compatible);

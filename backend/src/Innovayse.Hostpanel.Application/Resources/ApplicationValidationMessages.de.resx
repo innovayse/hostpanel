@@ -383,7 +383,7 @@
     <value>Der Status muss einer der folgenden sein: PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Der Registrar muss einer der folgenden sein: NameAm, Namecheap.</value>
+    <value>Der Registrar muss ein installiertes Registrar-Plugin sein.</value>
   </data>
   <data name="EmailLogPageRequired" xml:space="preserve">
     <value>Die Seite muss 1 oder größer sein.</value>
@@ -1090,6 +1090,12 @@
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Der Hostname darf höchstens {0} Zeichen lang sein.</value>
   </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Geben Sie einen Hostnamen oder eine IP-Adresse ein, ohne Schema, Pfad, Port oder Leerzeichen.</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>Diese Adresse wird nie angesprochen: Loopback-, Link-Local- und Cloud-Metadaten-Adressen werden abgelehnt.</value>
+  </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Ein Benutzername ist erforderlich.</value>
   </data>
@@ -1762,8 +1768,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Der Status muss einer der folgenden sein: Draft, Scheduled, Sending, Sent.</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Das Modul muss eines der folgenden sein: CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm.</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Das Modul muss eine ID aus 1 bis 50 Buchstaben, Ziffern, Punkten, Bindestrichen oder Unterstrichen sein.</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>Der Zustand muss einer der folgenden sein: Online, Offline, Untested.</value>
@@ -1791,5 +1797,8 @@
   </data>
   <data name="VatRateListStatusInvalid" xml:space="preserve">
     <value>Der Status muss einer der folgenden sein: Active, Superseded, Upcoming.</value>
+  </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Eine Gateway-Bestellkennung hat 1 bis 255 Zeichen, ohne Leerzeichen am Rand und ohne Steuerzeichen.</value>
   </data>
 </root>

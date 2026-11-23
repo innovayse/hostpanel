@@ -125,7 +125,7 @@ repositories. What is specific to this project is short:
 
 ## Architecture: Clean Architecture, four layers plus a plugin SDK
 
-`backend/Innovayse.Hostpanel.sln`, 15 projects:
+`backend/Innovayse.Hostpanel.sln`, 14 projects:
 
 ```
 backend/src/
@@ -139,7 +139,7 @@ backend/src/
   Innovayse.Hostpanel.Infrastructure/ AppDbContext, migrations, <Capability>/ adapters, Integrations/
   Innovayse.Hostpanel.API/           controllers, Program.cs, composition root
   Hostpanel.Sdk/                     the plugin contract third parties compile against (git submodule, own repository)
-  Innovayse.Providers.CWP/ CWP7/   provisioning providers (payment gateways are external plugins, none ships here)
+  Innovayse.Providers.CWP/         the legacy CWP provisioning provider (payment gateways and hosting panels are external plugins)
 backend/tests/                       Domain, Integration, Architecture, CWP
 client/  admin/                    Nuxt 4 portal, Vite admin SPA, each owns its Dockerfile (backend/Dockerfile too)
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example, see docker/README.md
@@ -164,33 +164,24 @@ docker/                              compose set (shared·dev·prod·platform), 
   Two documented exceptions in `PortPlacementTests`. A request-scoped adapter lives under `API/` and
   sits in the test's allow-list with what it reads (today `API/Identity/HttpCallerAccessToken`, the `Authorization`
   header, behind `ICallerAccessToken`, and `API/Identity/HttpCallerClientMemo`, the request's `HttpContext.Items`, behind
-  `ICallerClientMemo`). `Innovayse.Providers.CWP7` implements
-  `IProvisioningProvider` and is not scanned: it is not a plugin, Infrastructure links it and
-  `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
-  own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
-  no SDK contract it could implement instead.
+  `ICallerClientMemo`). The SDK's `IProvisioningPlugin` is only a marker with no operations; the operations live in
+  `IProvisioningPanelPlugin` (capability `provisioningPanel`), which the host calls (#1353, "Panel plugins" below). The
+  providers the host still builds itself are cPanel and the legacy CWP provider, because no plugin serves them yet.
 - **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
   models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
-  by `ProvisioningProviderFactory`, like the CWP7 and Plesk providers, and not shipped as a plugin. The reason
-  is the same: the SDK has no provisioning contract a plugin could implement (`IProvisioningPlugin` is a marker, and the
-  hosting panel contract it replaces is obsolete), the server form, the connection test, the disk usage report and
-  the single sign-on and credentials screens all reach a panel through the host's own port, and a plugin cannot
-  yet supply those. Moving the provider out is wanted once the SDK carries that contract, and it is tracked in
-  #997; until then the provider stays in Infrastructure, takes its numbers from `ProvisioningOptions`
+  by `ProvisioningProviderFactory` and not shipped as a plugin. The reason is that no cPanel plugin exists yet: the SDK
+  carries the contract and the host calls it (#1353), so every screen that reaches a panel already works for a plugin. Moving the provider
+  out is wanted once a cPanel plugin ships, and it is tracked in #997; until then the provider stays in
+  Infrastructure, takes its numbers from `ProvisioningOptions`
   (`CPanelWhmPort` and `CPanelUserPort`, both checked to be 1 to 65535 at startup by
   `ProvisioningOptionsValidator`), and its HTTP client is registered only through
   `AddCPanelWhmHttpClient`, which the tests resolve too. It does not trust what WHM sends back: a
   single sign-on address is passed on only as an https address on the server's own host (`WhmInputRules`),
   a username or domain is checked before WHM is called, and a reply is capped at `WhmApiClient.MaxResponseBytes`.
-- **"Test Connection" runs a live probe where a provider has one.** `IIntegrationConnectionProbe`
-  (a port in `Application/Common/Interfaces/`, keyed by integration slug) is implemented per
-  integration in `Infrastructure/Integrations/<Provider>/` (today `NameAmConnectionProbe`, which
-  logs in with the saved credentials) and every implementation is registered in
-  `DependencyInjection`; `TestIntegrationConnectionHandler` picks the one whose `Slug` matches once
-  every required field is stored. A probe failure is logged and answered with a fixed sentence,
-  the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
-  API URL and test mode saved on the admin Integrations page over the bound options
-  (`IsConfiguredAsync`), so the page configures what requests use.
+- **"Test Connection" asks the plugin.** There is no host-side probe port: a built-in integration is checked for its required
+  fields, and a plugin is asked through `IPluginStatusProbe` (below). A registrar plugin is tested through its own
+  `IRegistrarOperationsPlugin.TestConnectionAsync`, with the connection built from its saved settings, and its answer is reported
+  as healthy (`Connected`) or unavailable (anything else), worded by the host.
 - **VAT numbers are checked through one port, and the reverse charge is decided in one place (#1144).** `IVatNumberChecker`
   (`Application/Common/Interfaces/`) takes a `VatNumberLookup` (country, number without prefix) and answers a `VatNumberCheck`
   (`VatCheckOutcome` valid, invalid or unavailable, plus the registered name and address); `Infrastructure/Vat/VatNumberChecker`
@@ -263,7 +254,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.10.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.13.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -275,6 +266,28 @@ docker/                              compose set (shared·dev·prod·platform), 
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
   classes a plugin derives from live in the `Hostpanel.Sdk.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
   `*Lookup` or `*Session`; never `*Request`. `SdkContractTests` pins every namespace.
+- **Registrar plugins (#1352).** A registrar is the plugin whose id a TLD (`TldConfigs.RegistrarModule`) or a domain
+  (`Domains.RegistrarModule`) names; the column is a string of up to 64 characters (the plugin id limit), the enum is gone, and
+  there is no built-in registrar. A stored value is matched to a plugin id **without regard to letter case** (rows written by older
+  versions keep their case; there is no backfill): `PluginRegistryExtensions.FindRegistrar` is the one place that rule lives, the
+  two list filters compare in lower case, and `TldConfig` stores the id as the plugin declares it
+  (`IRegistrarModuleCatalogue.FindId`, from the manifests, no plugin code). `RegistrarProviderResolver` is the one place that
+  chooses a registrar (the module stored on a domain, else its TLD's, else none); `IRegistrarProviderFactory.GetProviderAsync`
+  turns the module into `PluginRegistrarProvider`, the one adapter that calls the registrar operations of `IRegistrarOperationsPlugin` (an architecture test
+  pins it; `PluginStatusProbe` also calls its `TestConnectionAsync` for Test Connection, with the connection built the same way), and a module without a usable plugin (not installed, not a registrar, switched off, a required setting missing, migration
+  pending, no `registrarOperations`, or no module at all) resolves to `UnavailableRegistrarProvider`, which refuses with
+  `REGISTRAR_NOT_CONFIGURED`. The connection is built from the plugin's saved settings by their `connectionRole`
+  (`RegistrarConnectionBuilder`, reading `PreparedPluginActivation.Configuration`, the very values the plugin receives). An optional
+  contract (DNS management, email forwarding, WHOIS) is reached only when the manifest declares the capability and the class
+  implements it; the other six optional capabilities are accepted but not called. `RegistrarRefusalMap` is the one table from the
+  SDK's outcome and refusal reason to the host's `REGISTRAR_*` code; the plugin's own text is never read. A premium name is
+  reported as not available, a CAA record is left out of a zone read, a read the plugin refuses (availability, TLD prices, the DNS zone) is a failed
+  `Result` carrying the mapped code (never an exception; availability answers a TLD no registrar sells as not available with the status `TldNotSupported`),
+  a domain order that succeeded but still requires polling answers `REGISTRAR_DOMAIN_NOT_ACTIVE` to the status sync, a renewal the registrar accepted (done, already
+  applied or still pending with `RequiresPolling`) marks the domain renewed, because nothing follows a pending renewal up and an unchanged expiry would invite
+  a second paid renewal (the `CurrentExpiresAt` idempotency stops a double charge on retry), and a renewal carries the expiry the host held
+  (`DomainRenewalOrder.CurrentExpiresAt`). The domain DTOs carry `RegistrarCapabilitiesDto`, so both frontends hide the actions a
+  registrar does not offer. A registrar plugin's release must add the `connectionRole` settings before the host that calls it.
 - **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
   fulfilment (`IFulfilmentPlugin`), hosted (`IHostedPlugin`) and app (`IPluginEndpoints`). Every plugin becomes an instance in
@@ -292,7 +305,21 @@ docker/                              compose set (shared·dev·prod·platform), 
   `showInIntegrations`.
 - **Capabilities (#818).** A manifest may list `capabilities`, names from the SDK's `PluginCapabilities`:
   `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`), `paymentReturn` (a payment plugin only, the class also implements `IPaymentReturnPlugin`) and `endpoints`
-  (any type, the class also implements `IPluginEndpoints`). A **serving plugin** is an app plugin or a plugin of any
+  (any type, the class also implements `IPluginEndpoints`). Since SDK 3.11.0 the host knows every name `PluginCapabilities` defines:
+  `tax` (any type, `ITaxPlugin`), `provisioningPanel`, `provisioningPanelLogin` and `provisioningPanelPackages` (a provisioning plugin; the last
+  two need `provisioningPanel`), `virtualServer`, `virtualServerList`, `virtualServerSnapshots`, `virtualServerBackups`,
+  `virtualServerFirewall` and `virtualServerConsole` (a provisioning plugin; the last three and snapshots need `virtualServer`) and the ten
+  registrar names (`registrarOperations` and the nine optional ones, a registrar plugin). **`PluginCapabilityRules`
+  (`Infrastructure/Plugins`) is the one table**: per name the SDK interface the class must implement, the one plugin type that may carry it
+  and the capability it needs. The manifest validator (`Validate`: known, once, right type, companion declared), the loader (the
+  `endpoints` promise, refused at load as `PLUGIN_ENDPOINTS_NOT_IMPLEMENTED`) and `PluginActivator` (`FirstUnimplemented`) all ask it, and
+  `PluginCapabilityRulesTests` fails on a name the SDK adds that the table lacks. Accepting a name only means the plugin loads and is listed;
+  the panel contract is called (#1353, "Panel plugins" below) and the registrar contract by `PluginRegistrarProvider` and, for Test Connection, `PluginStatusProbe` (#1352, "Registrar plugins"); the virtual server contracts are not called yet, which is what #1354 adds. A plugin that declares any
+  capability whose interface derives from `IProvisioningPlugin` (`PluginCapabilityRules.DeclaresProvisioning`) must list valid `serverModules`
+  (the SDK's `PluginServerModules.Validate`) and any other plugin must list none (`PLUGIN_MANIFEST_SERVER_MODULES_INVALID`,
+  `PluginManifestRule.ServerModulesInvalid`); a registrar plugin's `connectionRole` settings are checked by the packaging package's
+  `PluginManifestChecker` (`PluginRuleMap` maps its four rules to `PLUGIN_MANIFEST_CONNECTION_ROLE_*`), never re-implemented in the host.
+  A **serving plugin** is an app plugin or a plugin of any
   other type that declares `endpoints`; `PluginManifestCapabilityExtensions.ServesEndpoints()`
   (`Infrastructure/Plugins/Extensions`) is the one place that decides it, and the loader (which also registers such a
   plugin under `IPluginEndpoints`), `PluginEndpointResolver`, `PluginUiSource` and the manifest validator all ask it.
@@ -307,6 +334,45 @@ docker/                              compose set (shared·dev·prod·platform), 
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
+- **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain: `Known` is the one module the host provisions itself, `CPanel`, so it is the only
+  one offered without a panel plugin, `Centos` and `Cwp7` stay as legacy ids the host still names (the connection test of a stored `Centos` server, the SSH agent profile of
+  `Cwp7`) and are not offered, and `ServerModules.Same` is the one comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and
+  a server stored under an older id is served by a plugin that declares it, whatever the case, and stays valid when edited (`IServerModuleCatalog.Canonical` takes the stored id). `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
+  the module id and a capability name, `Served`, `NotServed` or `Conflict`) is the one reader of the plugins' `serverModules` for calls, and
+  `IServerModuleCatalog` (`ServerModuleCatalog`) the one for the admin side: `GET /api/admin/servers/modules` feeds the server form and the
+  module filter, and `CreateServer` and `UpdateServer` store the catalog's spelling or answer `SERVER_MODULE_UNKNOWN`. Two plugins declaring one
+  module are `PANEL_PLUGIN_CONFLICT` at call time; a plugin that owns a module and is off, unconfigured or migrating answers
+  `PANEL_PLUGIN_UNAVAILABLE`, with no fall back to a built in provider. `PanelPluginCaller` (scoped) is the only place that turns a
+  plugin into an `IProvisioningPanelPlugin` (or the login contract, only when the manifest declares `provisioningPanelLogin`) for a call
+  and logs a throwing plugin by plugin id, operation and exception type, never the message (`PanelPluginCallException`).
+  `PanelPluginProvisioningProvider` implements `IProvisioningProvider` over it and `ProvisioningProviderFactory.CreateFor` chooses it
+  ahead of any built in provider; `SupportedModulesAsync` adds the modules of panel plugins that activate now. One mapping of the answer
+  (`PanelOutcomeExtensions`): `Succeeded`, `AlreadyApplied` and `Pending` are done (`Pending` is logged), `NotFound` is
+  `PANEL_ACCOUNT_NOT_FOUND` (terminate counts it as done), `NotSupported` is `PANEL_OPERATION_NOT_SUPPORTED`, a refusal is the code of its
+  reason (`PANEL_*`, the set `PanelErrorCodes` reads from the `HostpanelErrorCodes` constants with that prefix; `PanelCall` is the one place that passes it through, for every handler and for `HostedAccountOperations`). A call is bounded by `PluginApi:CallTimeoutSeconds` (`PanelPluginCaller`) and fails closed. Create is the one operation with follow up
+  state: `Pending` keeps the service pending and answers `PROVISIONING_PENDING`, and the retry adopts the account the panel then reports as
+  `AlreadyApplied`. The five operations that took only a reference now take orders carrying the service id (`UnsuspendAccountOrder`,
+  `ChangeAccountPasswordOrder`, `ChangeAccountPackageOrder`, `AccountCredentialsOrder`, `ControlPanelSsoOrder`), and
+  `ProvisionAccountOrder` carries the client's id, e-mail and name (masked when printed). `ServerConnectionDto.ToPanelConnection(password)`
+  (Application) is the one mapper to `PanelServerConnection`: `UseSsl` is on the DTO, the stored password is read by
+  `PanelConnectionReader` for a plugin call only and no built in provider receives it, and `Port` is `null`. Test Connection
+  (`ServerConnectionTester`), the disk usage report (`DiskUsageService` with `PanelPluginAccountReader`, paged listing capped at 1000 pages)
+  and the account count cron use the same resolver and caller. No panel that has a plugin keeps a built in provider; cPanel and the legacy CWP provider remain built in until a plugin serves them, and their
+  `#pragma warning disable CS0618` blocks stay for that reason. `PanelPluginPortTests` keeps the panel contracts out of every other layer.
+- **The panel transport and the server's self signed certificate (SDK 3.7.0 `IPanelTransport`).** `PanelTransport`
+  (`Infrastructure/Plugins`, scoped, registered by `AddPanelTransport`, which the tests call as well) is the one `IPanelTransport` a hosting
+  panel, virtual server or registrar plugin takes in its constructor. `CreateClient()` is the named client `HttpClientNames.PanelTransport`:
+  `AddOutboundAddressGuard(followRedirects: false)` (loopback, link-local and metadata refused, the panel route map applied), no logging, no
+  resilience pipeline so no retry, and `HttpBackstopTimeouts.PanelTransport` (120 s) as its only timeout. `CreateClient(server)` reads
+  `Server.AcceptsSelfSignedCertificate` (column `AcceptsSelfSignedCertificate`, off by default, set on the admin server form as
+  `endpoint.acceptsSelfSignedCertificate`) from the **stored** server by id; when it is on the client owns a handler from
+  `OutboundConnector.CreateHandler` (the same guarded handler, one place) whose certificate callback accepts an untrusted chain or a name
+  mismatch only when the connection's target host is that stored host name. The host keeps no panel port, so the allowance is the host name,
+  `PanelServerConnection.Port` is `null` and a plugin uses its own default port. The setting is never global, never read from the connection
+  the plugin passes and never applies to `CreateClient()`. The trust follows the **stored** host name of the server the plugin names by id, not
+  anything the plugin sends, and plugins are trusted code: one that names a server can reach it, so the operator's setting is not a defence
+  against a plugin. The setting is read on a short lived data context of its own (a scope from `IServiceScopeFactory`), never on the caller's
+  context, and a server cannot accept a self signed certificate without SSL (`ServerErrors.SelfSignedRequiresSsl`, thrown by `Server`).
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
   **A method can also be saved within a payment (#915, SDK 3.5.0).** `StartGatewayPayment` (and `StartMyGatewayPayment`,
   `StartOrderGatewayPayment`, which hand their command to it) takes `SavePaymentMethod` and the `ConsentTextVersion` the payer
@@ -368,7 +434,17 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`PluginPageOrigins`), which writes `default-src 'none'` with only those origins for script, style, font, connect, frame and
   form-action, `base-uri 'none'`, `frame-ancestors 'none'` and a sandbox without the application's origin, plus `no-store` and no
   referrer. The client named after a plugin id and the factory's unnamed client do not follow redirects
-  (`AddNoRedirects`). The SDK's `Redirect` reply kind (`PluginReply.Redirect`) is not served yet: it is answered `PLUGIN_FAILED`.
+  (`AddNoRedirects`). The SDK's `Redirect` reply kind is served on callback routes only (#1356): `PluginCallRunner.MapRedirect` keeps the status
+  (301, 302, 303, 307, 308) and hands the address to `Application/Plugins/Common/PluginRedirectLocation`, which accepts a path on the
+  panel (one leading slash, no `//`, no dot segment, no encoded slash or backslash after one round of decoding, never under `/api`)
+  or an absolute `https` address with no user info and no port on `PluginRedirectLocation.AllowedOrigins` (the client portal's
+  origin, when `ClientBaseUrl` is `https`, and the manifest's pure `https` `externalOrigins`, the list a callback page already
+  uses), and nothing with a control character, white space, a non-ASCII character, a fragment or more than 2048 characters. It is
+  narrower than the SDK on purpose, so a plugin that builds the address from the request is still no open redirect. A refused
+  address, a redirect on a client or admin route and a status outside the five are `PLUGIN_FAILED`, logged by plugin id only (the
+  address can carry a payment token). `Shared/Infrastructure/RedirectReplyResult` writes the status, `Location` (a relative
+  address stays relative), no body, `no-store`, `no-referrer`, `nosniff` and the inert policy `RawReplyResult` shares;
+  `BaseApiController.HandleForwarded` chooses it when the reply carries a `Location`.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
@@ -695,19 +771,27 @@ docker/                              compose set (shared·dev·prod·platform), 
     `LocalisedViewKey`), always: the language is first normalised by `PluginUiTexts` to a supported one (`en`, `ru`,
     `hy`, anything else becomes `en`), so the cache holds at most documents times three and a caller cannot grow it.
 - **Plugin rules added with SDK 3.0.0.** Short notes; the code and its tests are the detail.
-  - **`endpoints` capability on a non-App plugin serves callbacks only.** Only the public callback routes
-    (`api.callbacks`) are opened; client and admin routes, pages and slots stay App-only for now. A plugin that declares the
-    capability but whose class does not implement `IPluginEndpoints` is refused (`PluginManifestRule.EndpointsNotImplemented`).
+  - **`endpoints` capability on a non-App plugin serves like an App plugin.** A plugin of any type that declares it gets
+    client and admin routes, pages, menus and slots and its public callbacks (`api.callbacks`), exactly as an App plugin does,
+    through the one lookup `IPluginEndpointResolver.Find` (there is no separate callback lookup). A plugin that declares the
+    capability but whose class does not implement `IPluginEndpoints` is refused (`PluginManifestRule.EndpointsNotImplemented`),
+    and a plugin without it has no route, page, menu or slot: the door answers it as an id that was never loaded.
   - **Plugin-wide `IPluginStore` by constructor.** A plugin may take `IPluginStore` in its constructor for data it needs
     outside a routed call. It is scoped to the plugin id and no client, and each operation runs in its own unit of work.
   - **`RefundInstruction.AlreadyRefundedMinor`.** What the host already recorded as refunded through the gateway order before
     this `RefundId`. A gateway with no idempotency key compares its refunded total with it to tell a retry from a new refund.
+  - **`RefundInstruction.TransactionId` (SDK 3.11.0, #1356).** The transaction id the plugin reported when the payment became
+    paid, read by `RefundInvoicePaymentHandler` from the newest `GatewayPayment` ledger row of the invoice and the plugin
+    (`GatewayLedger`, the query the refunded total uses too). `null` when the row holds the gateway order id, which is what the
+    host records when the plugin reported none, so the SDK's "null when the host holds none" is true; a hand back row with no
+    invoice link never matches.
   - **Plugin assembly namespace.** `Innovayse.Hostpanel.Plugins.<Name>` is the one carve-out from the reserved
     `Innovayse.Hostpanel.` prefix, and a file name already shipped by another plugin is refused with `PLUGIN_ASSEMBLY_CONFLICT`
     (see "Plugin assembly names" above).
   - **Callback door.** Only an allow-list of request headers (plus non-refused `X-*` ones) reaches a plugin on a callback, never
-    the caller's credentials. A raw reply is accepted on a callback only, with a media type from an allow-list (markup and
-    script refused) and a size cap, and is sent with `nosniff` and `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+    the caller's credentials. A raw reply or a redirect is accepted on a callback only (`PluginReplyKind.Raw` and `Redirect`). A raw reply carries a media type
+    from an allow-list (markup and script refused) and a size cap, and is sent with `nosniff` and
+    `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`; a redirect follows `PluginRedirectLocation`.
 - **Plugin icon (#845).** The manifest's optional `icon` is a package-relative `.svg` or `.png` path. `PluginIconReader`
   (`Infrastructure/Plugins`, an adapter over the packaging package's `PluginIconChecker`) checks it at load (`PluginLoader`) and at install (`PluginPackageStore`, on the unpacked
   files): plain lowercase path segments with no `..`, no link on the way, at most 256 KiB read from one bounded handle,
@@ -756,6 +840,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`IPluginRegistry.GetRefusedPlugins`); `GET /api/admin/plugins` lists it with `status: "Refused"`, `refusedRule` and
   `refusedDetail`, never as loaded, and it can be removed like any upload. A removed plugin that still keeps data is listed
   with `status: "Removed"` so the operator can purge it. Needs no database migration.
+- **A plugin built on a newer SDK than the host ships is refused (#1389).** A manifest may carry `sdkPackageVersion`, the `Hostpanel.Sdk` package version the plugin was built against, written by the SDK's `build/Hostpanel.Sdk.targets` (it is not `sdkVersion`, the manifest contract, which stays `1.0`). `PluginSdkCompatibility` (Application `Admin/Plugins/Common`) is the one pure answer, `IsSupported(hostSdkVersion, pluginSdkVersion)`: false only when the plugin's value is a version newer than the host's. A value that is not stated, or is not a version, is not stated: a manifest's bad value is refused by the package checker (`SdkPackageVersionInvalid`), and a registry's is only a claim, which must never read as "newer" and hide a version. The host's own SDK version is the port `IHostSdkVersionProvider` (next to `IInstalledVersionProvider`; Infrastructure `HostSdkVersionProvider` over the internal `HostSdkVersion`, which reads the SDK assembly the host's contracts come from and serves the manifest validator that runs before the container exists). It is asked by `PluginManifestValidator` (`PluginManifestRule.SdkNewerThanHost`, `PLUGIN_SDK_NEWER_THAN_HOST`, 409), so an upload, a registry install after the download, an upgrade and the startup load all refuse; by `InstallRegistryPluginHandler` before the download, from the registry's `sdkPackageVersion` of the version; by `PluginUpdateRule.NewestOffer` (the update check never offers it) and by the registry details' `compatible` flag. The package's `PluginManifestChecker` adds `SdkPackageVersionInvalid` and `MinHostVersionBelowSdk` (`minHostVersion` below the first host release that ships that SDK), mapped by `PluginRuleMap`. **This rule refuses at load too, and #976 is not broken by it:** #976 keeps a working plugin running when the host learns to check one more thing, and a plugin built on a newer SDK is not working, its assembly fails to load whatever the host checks, so the refusal only names the real cause instead of a bare load error. **A plugin installed but not loaded is shown.** When no assembly of an accepted plugin loads or none defines the entry point, `PluginLoader` keeps it as a `RefusedPlugin` with `PluginManifestRule.AssemblyLoadFailed` and the first line of the load error (at most 300 characters); the plugin list reports it as `status: "Refused"` with `refusedRule` and `refusedDetail`. Needs no database migration.
 - **Install records (`InstalledPlugins`).** An uploaded or registry plugin has one row, `InstalledPlugin` (Domain, unique per
   `PluginId`): when it was first installed and by whom (`InstalledAt`, `InstalledByUserId`, `InstalledByName`), when a later
   package was accepted (`UpdatedAt`, null until one is; an upgrade stays staged until the restart, so the package facts describe
@@ -1214,6 +1299,27 @@ docker/                              compose set (shared·dev·prod·platform), 
       SSH key ...`). **The private key is never stored, logged or put in an exception**: it exists only in the returned
       `PluginSshAccess`; the tests assert no column of the database and no log line contains it. `HostKeyFingerprint` is
       the agent's pinned fingerprint only when the customer-facing SSH address is the agent's own.
+  - **The server connection of a client's service (#1357).** `PluginHostApi` also implements the SDK 3.11.0 optional
+    `IPluginHostServiceConnectionApi.ResolveServiceConnectionAsync(serviceId)` and only hands the `PluginCallBinding` to the
+    Application's `Services/Common/PluginServiceConnectionService`, which asks the one `PluginHostingGate` in its fixed order:
+    the manifest declares `hostAccess: ["serviceConnection"]` and the call is a client-area call whose caller holds
+    `ViewModifyPasswords` (`NotAllowed`, an administrator call has no client and gets nothing), the service is the binding's
+    client's (`NotFound` for a foreign and a missing one alike, `IsBoundAsync` is never asked for them), the operator bound the
+    service's product to one of the plugin's slot widgets (`NotAllowed`; a manifest's own `productIds` never count), the
+    service is `Active` with a provisioning reference and an assigned server that still exists (`Unavailable`), and
+    `IsStillAvailableAsync` right before the credentials leave (`NotAllowed`). Only then is one activity line staged and saved,
+    `Plugin {id} read the server connection of service #{n}` (the plugin and the service only, never a host name, user name or
+    credential), so a refused read writes none and a read that cannot be recorded is not given.
+    - **The server password is loaded on this call path only.** `ServerConnectionDto` (the connection every provisioning
+      consumer shares) has no password; `Infrastructure/Provisioning/PluginServiceConnectionReader`
+      (port `IPluginServiceConnectionReader`) reads the service left joined to its server and returns a `PluginServiceConnection`
+      whose `Server` is a `PluginServerAccess` (the mapped `ServerConnectionDto`, which carries the SSL flag, and the password). Both records
+      print through `SecretMembers`.
+    - **One mapping to the SDK.** `Infrastructure/Plugins/Extensions/PanelServerConnectionExtensions` turns a `PluginServerAccess` (through `ServerConnectionDto.ToPanelConnection`, the one server mapping)
+      into `PanelServerConnection` and a granted connection into `PanelAccountContext` (`Port` and `AccountId` stay `null`: the
+      host keeps neither yet). The panel calls of #1353 reuse it.
+    - **Open point for #1353.** A server's `Module` is not matched against the manifest's `serverModules` here: a service tab
+      plugin on a built-in panel lists none and would be locked out, so the operator's product binding is the decision.
   - **Websites and databases on a client's hosting (#1294).** `PluginHostApi` also implements the SDK 3.9.0 optional
     `IPluginHostHostingApi` (`GetHostingCapabilitiesAsync`, `EnsureWebsiteAsync`, `RemoveWebsiteAsync`,
     `EnsureDatabaseAsync`, `RemoveDatabaseAsync`) and only hands the `PluginCallBinding` to the Application's
@@ -1241,6 +1347,26 @@ docker/                              compose set (shared·dev·prod·platform), 
     `ISshKeyProviderFactory.Supports`, so the module-to-agent mapping exists once, and the adapter tests run the agent's
     golden vectors (`backend/agent/ssh-key-agent/tests/contract`, linked into the test output). When a service is terminated
     `RemoveHostingResourcesOnServiceTerminatedHandler` marks its resources `Removed` with no server call.
+  - **Reading a gateway order from a callback (#1356, SDK 3.11.0).** `PluginHostApi` also implements the optional
+    `IPluginHostPaymentApi.RequestOrderReadAsync` and only hands the call's `PluginCallBinding` to the Application's
+    `Billing/Common/PluginOrderReadService` (no adapter takes `IMessageBus`, `PluginHostingGateTests`). The service ignores,
+    silently and in this order, an id that fails `GatewayOrderIds.IsWellFormed` (1 to 255 characters, no control character, no
+    white space at the ends), and a spent `RateLimit:PluginOrderRead` budget (the `plugin-order-read` tier, 6 a minute, per
+    plugin and gateway order, fail closed; `PluginHostAccessKey.ForOrder`, the key's subject carries its kind, `client:` or
+    `order:`), then dispatches `ReadGatewayOrderCommand(binding.PluginId, id)` and swallows every failure (only the caller's
+    cancellation propagates); it never reports an outcome to the plugin. `ReadGatewayOrderHandler` finds the invoice by
+    `GatewayModule` (the binding's plugin, never anything the plugin sent) and `GatewayOrderId`; an unknown order, another
+    plugin's order and a session a newer attempt replaced find nothing and call nothing. **Nothing new settles a payment**: an
+    invoice not settled through the plugin goes through `CompleteGatewayPaymentCommand`, the one settlement path (amount,
+    currency and reference checks, surplus, saved method, fulfilment, an idempotent replay), so the plugin's status read alone
+    decides.
+  - **A status read never moves money (#1356).** For an invoice already settled through the plugin the handler reads the status
+    once; `Declined` (the SDK folds a refund, a reversal and a charge back into it, so partial from full and the host's own
+    refund from the gateway's cannot be told apart) changes nothing on the invoice or the ledger. Staff get
+    `GatewayPaymentReversedEvent` (the `gateway-payment-reversed-admin` template in five languages) once per session: the mark
+    `Invoices.GatewayReversalNotifiedAt` (`Invoice.MarkGatewayReversalNotified`, cleared with the other gateway marks by a new
+    session) is saved first and the event published after, and nothing is read or sent when the mark is set or
+    `Invoice.ShowsRefundThrough` says the invoice is refunded, has a refund through that gateway or has one in flight.
   - **Status codes.** `PLUGIN_ROUTE_NOT_FOUND` 404, `PLUGIN_REQUEST_TOO_LARGE` 413 (the `_TOO_LARGE` suffix),
     `PLUGIN_FAILED` 502 and `PLUGIN_STORE_QUOTA_EXCEEDED` 402 (exact `StatusMapping` rows); each has its sentence in
     en/ru/hy. `PLUGIN_STREAMING_NOT_SUPPORTED` went with #641.
@@ -1249,7 +1375,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     `plugin-strict` or `plugin-heavy` (the manifest route's `RateLimit`, default when none) with
     `Shared/Infrastructure/PluginRateLimiter`, keyed by plugin and client account (client calls) or administrator
     (admin calls). A streaming route also takes a `plugin-stream` concurrency lease, held until the response is
-    disposed. Budgets are `RateLimit:PluginDefault|PluginStrict|PluginHeavy|PluginStreamPermitLimit`. A refusal is the
+    disposed. Budgets are `RateLimit:PluginDefault|PluginStrict|PluginHeavy|PluginStreamPermitLimit`. Three more tiers are not route tiers
+    but are taken inside a call, per plugin and subject, through `IPluginHostAccessLimiter`: `ssh-keys`, `hosting-resources`
+    and `plugin-order-read` (`RateLimit:SshKeys|HostingResources|PluginOrderRead`). A refusal is the
     middleware's own 429 (`RateLimitingExtensions.WriteRejectionAsync`). The limiter is a no-limiter in Testing, and
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
@@ -1345,7 +1473,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   503 `IDENTITY_PLUGIN_UNAVAILABLE` stays, because an outage says nothing about the page. **Every other refusal is the
   same 404 `PLUGIN_PAGE_NOT_FOUND` with an identical body**: a malformed `pluginId` or `pageId` (no 400, which would
   say which ids are well formed), an unknown plugin, a disabled or unconfigured one, a plugin
-  that is not an app plugin, an undeclared page, a missing view, a client caller who acts for no account and one who
+  that does not serve (neither an app plugin nor one declaring `endpoints`), an undeclared page, a missing view, a client caller who acts for no account and one who
   does not hold the page's permission. A page never answers 403 or `CLIENT_PROFILE_NOT_FOUND`, so the endpoint is no
   oracle for which plugins and pages exist. The route door (#639) differs on purpose: it still answers 403
   `CLIENT_PERMISSION_DENIED` after the 404, a signal accepted and explained under "Signals that remain".
@@ -1916,7 +2044,7 @@ feature does not exist is not kept. The decisions:
   slices with `Paginate`. The admin list screens bind search, filters and page to the address through
   `useFilterQuery` and lay them out with `UiListToolbar`; the client list is the reference. The domain list
   (`ListDomainsQuery`, the one list behind the admin Domains screen; the old Domain Registrations screen was the same
-  data and now redirects to it) is on it with a name search and `Status` and `RegistrarModule` enum filters; a domain with
+  data and now redirects to it) is on it with a name search, a `Status` enum filter and a `RegistrarModule` plugin id filter (any letter case, compared in lower case, never validated against the installed plugins); a domain with
   no registrar module recorded is left out when a registrar is chosen.
   The two ticket lists (`ListTicketsQuery`, the staff list, and `ListClientTicketsQuery`, the tickets tab of a client) are on it
   with a subject search and the shared `ITicketListFilters` (`Status`, `Priority`, `DepartmentId`), validated once by
@@ -1944,8 +2072,8 @@ feature does not exist is not kept. The decisions:
   `Category` enum filter; its search is bounded at 100 characters (`PluginRegistrySearchTooLong`), narrower than the shared 200, because that is what the registry accepts, so the
   validator keeps that one extra rule beside the shared ones. The Installed tab's list (`ListPluginsQuery`) is the documented exception: it is not paged and is
   filtered in the browser, because it is the inventory of the plugin folder that other code reads whole (the update badges, the registry cards' installed state, the restart banner).
-  The Settings lists are on it too. The TLD list (`ListTldConfigsQuery`, Settings, TLD Pricing) searches the TLD with `Search` and takes the `RegistrarModule` enum
-  filter (the existing `DomainListRegistrarInvalid` sentence is generic and is reused) and an `Enabled` switch, ordered by sort order, TLD and id; its margin is still worked out
+  The Settings lists are on it too. The TLD list (`ListTldConfigsQuery`, Settings, TLD Pricing) searches the TLD with `Search` and takes the `RegistrarModule` plugin id
+  filter (any letter case, compared in lower case, never validated against the installed plugins) and an `Enabled` switch, ordered by sort order, TLD and id; its margin is still worked out
   in the mapper from the one-year prices. The TLD list had no other caller (the portal and the order flow read prices through `GetTldPricingQuery` and `GetTldRenewPriceQuery`), so no unpaged
   variant exists. The email campaign list (`ListEmailCampaignsQuery`) searches the subject and takes a `CampaignStatus` filter (`CampaignListStatusInvalid`), newest first; the delivery
   counters are read in one grouped query for the ids of the page only. The tax rule list (`ListTaxRulesQuery`) searches the name, country and region and takes an `Enabled` switch,
@@ -1989,7 +2117,7 @@ feature does not exist is not kept. The decisions:
   template per kind of mail, edited in place. Integrations are the catalogue of providers the panel ships or has installed, grouped by category and bounded by that catalogue.
   The Installed plugins tab is the one documented above.
   The server option lookup (`ListServerOptionsQuery`, `GET /api/admin/servers/options`) is a documented picker: the group form, the add existing service dialog, the service
-  detail, the CWP 7 integration (which asks for its own module) and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
+  detail and the dashboard's capacity card need every server at once, so it answers the whole set as lean `ServerOptionDto`
   rows (name, host name, address, state, account count and capacity, no credential or hosting detail), ordered by name; `ServerOptionDto` extends `ServerBriefDto` (the id, name, host name and address other modules show next to a service), so those four facts are declared once, and it keeps the host name and address flat like the brief, where `ServerDto` nests them in `endpoint` with the SSL flag and assigned addresses a picker has no use for, while the Servers screen reads the paged `ListServersQuery`.
   The unpaged product read (`GetProductsQuery`, `GET /api/products`) is the same kind of picker for the screens that choose a product, and the Products screen reads the paged
   `ListProductsQuery`. Knowledge base categories (`ListKbCategories`) are a short
@@ -2405,7 +2533,7 @@ Its own nginx exists for a standalone install.
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
 - **Settings bind into a sealed `*Options` class naming its own `SectionName`**,
-  `BillingOptions`, `NamecheapOptions`, `NameAmOptions`, each
+  `BillingOptions`, `PluginApiOptions`, each
   in an `Options/` folder inside the feature or integration that owns it.
 
 ## Storefront content: in the database, not in the code

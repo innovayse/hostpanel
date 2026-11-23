@@ -467,6 +467,24 @@ public static class HostpanelErrorCodes
     /// <summary>The registrant contact is missing a detail the registrar requires, so nothing was bought (422).</summary>
     public const string REGISTRAR_CONTACT_VALIDATION_FAILED = "REGISTRAR_CONTACT_VALIDATION_FAILED";
 
+    /// <summary>The registrar does not sell this domain extension (409).</summary>
+    public const string REGISTRAR_TLD_NOT_SUPPORTED = "REGISTRAR_TLD_NOT_SUPPORTED";
+
+    /// <summary>The registrar rejected the transfer authorization code (422).</summary>
+    public const string REGISTRAR_EPP_CODE_INVALID = "REGISTRAR_EPP_CODE_INVALID";
+
+    /// <summary>The registrar does not allow this domain to be transferred (409).</summary>
+    public const string REGISTRAR_TRANSFER_NOT_ALLOWED = "REGISTRAR_TRANSFER_NOT_ALLOWED";
+
+    /// <summary>The registrar rejected the nameservers (422).</summary>
+    public const string REGISTRAR_NAMESERVER_INVALID = "REGISTRAR_NAMESERVER_INVALID";
+
+    /// <summary>The registrar rejected the DNS record (422).</summary>
+    public const string REGISTRAR_DNS_RECORD_INVALID = "REGISTRAR_DNS_RECORD_INVALID";
+
+    /// <summary>The registrar did not accept the saved account credentials, which is the operator's to fix and not the caller's (503).</summary>
+    public const string REGISTRAR_ACCESS_DENIED = "REGISTRAR_ACCESS_DENIED";
+
     // Support: knowledge base and content
 
     /// <summary>The id names no knowledge base article (404).</summary>
@@ -722,6 +740,12 @@ public static class HostpanelErrorCodes
     public const string PROVISIONING_OUTCOME_UNKNOWN = "PROVISIONING_OUTCOME_UNKNOWN";
 
     /// <summary>
+    /// The panel accepted the request and is still creating the account (503). Like <c>PROVISIONING_OUTCOME_UNKNOWN</c> it is a
+    /// retry signal: the service stays Pending and a later attempt adopts the account once it exists.
+    /// </summary>
+    public const string PROVISIONING_PENDING = "PROVISIONING_PENDING";
+
+    /// <summary>
     /// The service's first invoice is not paid in full, so the client may not set it up yet (402).
     /// Staff provisioning is not bound by it.
     /// </summary>
@@ -806,6 +830,9 @@ public static class HostpanelErrorCodes
     /// <summary>Products still provision into the server group, so it cannot be deleted (409).</summary>
     public const string SERVER_GROUP_IN_USE = "SERVER_GROUP_IN_USE";
 
+    /// <summary>The module is neither one the host knows nor one an installed plugin declares (400).</summary>
+    public const string SERVER_MODULE_UNKNOWN = "SERVER_MODULE_UNKNOWN";
+
     /// <summary>The connection probe could not reach the server or the panel did not answer (answered inside the test result, not as a refusal).</summary>
     public const string SERVER_CONNECTION_UNREACHABLE = "SERVER_CONNECTION_UNREACHABLE";
 
@@ -815,8 +842,46 @@ public static class HostpanelErrorCodes
     /// <summary>The server stores no API key or access hash to probe a legacy hosting panel with (answered inside the test result).</summary>
     public const string SERVER_CONNECTION_NO_API_KEY = "SERVER_CONNECTION_NO_API_KEY";
 
-    /// <summary>The server's module has no connection probe (answered inside the test result).</summary>
-    public const string SERVER_CONNECTION_MODULE_UNSUPPORTED = "SERVER_CONNECTION_MODULE_UNSUPPORTED";
+    /// <summary>The panel plugin reports the server's connection details incomplete for it (answered inside the test result).</summary>
+    public const string SERVER_CONNECTION_NOT_CONFIGURED = "SERVER_CONNECTION_NOT_CONFIGURED";
+
+    /// <summary>The panel refused the credentials the server stores (answered inside the test result).</summary>
+    public const string SERVER_CONNECTION_AUTH_FAILED = "SERVER_CONNECTION_AUTH_FAILED";
+
+    // Hosting panels served by plugins
+
+    /// <summary>The plugin that serves the server's module is installed but switched off, not configured, migrating or broken (503).</summary>
+    public const string PANEL_PLUGIN_UNAVAILABLE = "PANEL_PLUGIN_UNAVAILABLE";
+
+    /// <summary>Two installed plugins declare the server's module, so none is chosen (409).</summary>
+    public const string PANEL_PLUGIN_CONFLICT = "PANEL_PLUGIN_CONFLICT";
+
+    /// <summary>The panel answered that it does not support the action; also login details asked of a plugin without the login capability (409).</summary>
+    public const string PANEL_OPERATION_NOT_SUPPORTED = "PANEL_OPERATION_NOT_SUPPORTED";
+
+    /// <summary>The panel has no account for the service (409).</summary>
+    public const string PANEL_ACCOUNT_NOT_FOUND = "PANEL_ACCOUNT_NOT_FOUND";
+
+    /// <summary>The panel does not know the hosting package (409).</summary>
+    public const string PANEL_PACKAGE_UNKNOWN = "PANEL_PACKAGE_UNKNOWN";
+
+    /// <summary>The panel does not accept the account username (409).</summary>
+    public const string PANEL_USERNAME_INVALID = "PANEL_USERNAME_INVALID";
+
+    /// <summary>The panel does not accept the domain name (409).</summary>
+    public const string PANEL_DOMAIN_INVALID = "PANEL_DOMAIN_INVALID";
+
+    /// <summary>The panel rejected the password (409).</summary>
+    public const string PANEL_PASSWORD_REJECTED = "PANEL_PASSWORD_REJECTED";
+
+    /// <summary>The panel reached a limit and cannot take the change (409).</summary>
+    public const string PANEL_LIMIT_REACHED = "PANEL_LIMIT_REACHED";
+
+    /// <summary>The panel refused the credentials the operator saved on the server (502).</summary>
+    public const string PANEL_ACCESS_DENIED = "PANEL_ACCESS_DENIED";
+
+    /// <summary>The panel refused the request for a reason no other panel code names (502).</summary>
+    public const string PANEL_REFUSED = "PANEL_REFUSED";
 
     // Admin: plugins
 
@@ -888,6 +953,41 @@ public static class HostpanelErrorCodes
 
     /// <summary>The manifest agentProfile is not one of the SSH key agent profiles the SDK defines (400).</summary>
     public const string PLUGIN_MANIFEST_AGENT_PROFILE_INVALID = "PLUGIN_MANIFEST_AGENT_PROFILE_INVALID";
+
+    /// <summary>The manifest serverModules list is missing or badly formed on a plugin with a provisioningPanel or virtualServer capability, or present on one without (400).</summary>
+    public const string PLUGIN_MANIFEST_SERVER_MODULES_INVALID = "PLUGIN_MANIFEST_SERVER_MODULES_INVALID";
+
+    /// <summary>A manifest setting names a connectionRole in a plugin that is not a registrar plugin (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR = "PLUGIN_MANIFEST_CONNECTION_ROLE_NOT_REGISTRAR";
+
+    /// <summary>Two manifest settings name the same connectionRole (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE = "PLUGIN_MANIFEST_CONNECTION_ROLE_DUPLICATE";
+
+    /// <summary>A manifest connectionRole sits on a setting of a type that cannot carry it (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH = "PLUGIN_MANIFEST_CONNECTION_ROLE_TYPE_MISMATCH";
+
+    /// <summary>A registrar plugin names a connectionRole but not both accountName and apiKey (400).</summary>
+    public const string PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE = "PLUGIN_MANIFEST_CONNECTION_ROLES_INCOMPLETE";
+
+    /// <summary>The plugin manifest's sdkPackageVersion is not a valid semantic version (400).</summary>
+    public const string PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID = "PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID";
+
+    /// <summary>
+    /// The plugin manifest's minHostVersion is missing or below the first host release that ships the SDK the plugin
+    /// was built against (400).
+    /// </summary>
+    public const string PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK = "PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK";
+
+    /// <summary>
+    /// The plugin was built against a newer Hostpanel.Sdk than this host ships, so its assembly cannot load here (409).
+    /// </summary>
+    public const string PLUGIN_SDK_NEWER_THAN_HOST = "PLUGIN_SDK_NEWER_THAN_HOST";
+
+    /// <summary>
+    /// The plugin is installed but none of its assemblies could be loaded, or none defines its entry point; shown on
+    /// the plugin page, never an API answer.
+    /// </summary>
+    public const string PLUGIN_ASSEMBLY_LOAD_FAILED = "PLUGIN_ASSEMBLY_LOAD_FAILED";
 
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
@@ -1831,6 +1931,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The country code of a server location is not two letters (400).</summary>
     public const string LOCATION_COUNTRY_CODE_INVALID = Domain.Locations.ServerLocationErrors.CountryCodeInvalid;
+
+    /// <summary>A server without SSL cannot accept a self signed certificate (400).</summary>
+    public const string SERVER_SELF_SIGNED_REQUIRES_SSL = Domain.Servers.ServerErrors.SelfSignedRequiresSsl;
 
     /// <summary>The sort order of a project is negative (400).</summary>
     public const string PROJECT_SORT_ORDER_NEGATIVE = Domain.Projects.ProjectErrors.SortOrderNegative;

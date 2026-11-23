@@ -17,8 +17,10 @@ public static class ForgedPluginReply
     /// <param name="body">The JSON body, or <see langword="null"/>.</param>
     /// <param name="code">The problem code, or <see langword="null"/>.</param>
     /// <param name="detail">The problem sentence, or <see langword="null"/>.</param>
+    /// <param name="location">The address of a redirect, or <see langword="null"/>.</param>
     /// <returns>The reply.</returns>
-    public static PluginReply Create(PluginReplyKind kind, int status, object? body = null, string? code = null, string? detail = null)
+    public static PluginReply Create(
+        PluginReplyKind kind, int status, object? body = null, string? code = null, string? detail = null, string? location = null)
     {
         var reply = (PluginReply)Activator.CreateInstance(
             typeof(PluginReply), BindingFlags.Instance | BindingFlags.NonPublic, null, [kind, status], null)!;
@@ -26,6 +28,7 @@ public static class ForgedPluginReply
         Set(reply, nameof(PluginReply.Body), body);
         Set(reply, nameof(PluginReply.Code), code);
         Set(reply, nameof(PluginReply.Detail), detail);
+        Set(reply, nameof(PluginReply.Location), location);
         return reply;
     }
 

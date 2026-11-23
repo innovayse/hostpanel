@@ -115,9 +115,7 @@ public sealed class PluginCallGate
     {
         var held = access?.Permissions ?? ClientPermission.None;
 
-        // Only the callback door reaches a non-app plugin that declares the endpoints capability; the client and admin
-        // doors stay app only.
-        var manifest = area == PluginCallbackContract.Area ? _plugins.FindForCallback(pluginId) : _plugins.Find(pluginId);
+        var manifest = _plugins.Find(pluginId);
         if (manifest is null)
         {
             return new PluginCallGateResult(PluginCallGateOutcome.UnknownPlugin, ClientId: clientId, Permissions: held);

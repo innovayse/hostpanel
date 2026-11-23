@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -102,7 +101,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var tld = TldConfig.Create(
-            $"pricing-{Guid.NewGuid():N}"[..12], RegistrarModule.NameAm, "USD", "USD",
+            $"pricing-{Guid.NewGuid():N}"[..12], TestRegistrarModules.First, "USD", "USD",
             isEnabled: true, sortOrder: 0, categories: []);
         tld.UpdateCostPrices(
             register: new Dictionary<int, decimal> { [1] = 5m },
@@ -136,7 +135,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
         var tld = TldConfig.Create(
-            $"period-{Guid.NewGuid():N}"[..12], RegistrarModule.NameAm, "USD", "USD",
+            $"period-{Guid.NewGuid():N}"[..12], TestRegistrarModules.First, "USD", "USD",
             isEnabled: true, sortOrder: 0, categories: []);
         tld.UpdateSellPrices(
             register: new Dictionary<int, decimal> { [3] = 27m, [1] = 10m, [2] = 19.5m },
@@ -179,7 +178,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
         var amd = await context.Currencies.SingleAsync(c => c.Code == "AMD");
         var originalRate = amd.RateToBase;
         var tld = TldConfig.Create(
-            $"rate-{Guid.NewGuid():N}"[..12], RegistrarModule.NameAm, "USD", "USD",
+            $"rate-{Guid.NewGuid():N}"[..12], TestRegistrarModules.First, "USD", "USD",
             isEnabled: true, sortOrder: 0, categories: []);
         tld.UpdateSellPrices(
             register: new Dictionary<int, decimal> { [1] = 10m },

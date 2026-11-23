@@ -1,7 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
-using Innovayse.Hostpanel.Infrastructure.Provisioning;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -14,8 +12,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 public sealed class RecordingProvisioningProviderFactory(RecordingProvisioningProvider provider)
     : IProvisioningProviderFactory
 {
-    /// <summary>The production factory's modules, so a test provisions onto the same servers production would.</summary>
-    public IReadOnlyCollection<ServerModule> SupportedModules => ProvisioningProviderFactory.BuiltModules;
+    /// <summary>Every module the tests seed servers on: the double stands in for whichever panel that is.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The host's modules and the second test panel.</returns>
+    public Task<IReadOnlyCollection<string>> SupportedModulesAsync(CancellationToken ct) =>
+        Task.FromResult(TestPanelModules.Supported);
 
     /// <inheritdoc/>
     public IProvisioningProvider CreateFor(ServerConnectionDto server) => provider;

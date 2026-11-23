@@ -130,8 +130,8 @@ public sealed class MyServicesController : BaseApiController
     /// <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>AllowSingleSignOn</c>, or <c>CLIENT_SSO_DISABLED</c> when the
     /// account does not allow single sign-on; 404 with
-    /// <c>SERVICE_NOT_FOUND</c> when the service is not the caller's; 502 with
-    /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one, or
+    /// <c>SERVICE_NOT_FOUND</c> when the service is not the caller's; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// 502 with <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one, or
     /// <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -143,7 +143,9 @@ public sealed class MyServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<ControlPanelSsoDto>>(
@@ -311,7 +313,8 @@ public sealed class MyServicesController : BaseApiController
     /// 200 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
     /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewModifyPasswords</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the
-    /// caller's; 502 with <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
+    /// caller's; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// 502 with <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/change-password")]
@@ -322,7 +325,9 @@ public sealed class MyServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> ChangePasswordAsync(
         int id, [FromBody] ChangeMyServicePasswordCommand command, CancellationToken ct)
     {

@@ -43,9 +43,9 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
+    public Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct)
     {
-        _unsuspended.Add(provisioningRef);
+        _unsuspended.Add(req.ProvisioningRef);
         return Task.CompletedTask;
     }
 
@@ -57,7 +57,7 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct) =>
+    public Task<ServiceCredentials> GetCredentialsAsync(AccountCredentialsOrder req, CancellationToken ct) =>
         Task.FromResult(new ServiceCredentials(
             "recording-user", "recording-pass", "recording.example.test", "10.0.0.1", "http://panel.recording.example.test"));
 
@@ -65,17 +65,17 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
     public IReadOnlyList<string?> SsoCallerIps => _ssoCallerIps;
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
+    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
     {
-        _ssoCallerIps.Add(callerIp);
+        _ssoCallerIps.Add(req.CallerIp);
         return Task.FromResult("https://recording-panel.example.test/sso");
     }
 
     /// <inheritdoc/>
-    public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct) =>
+    public Task ChangePasswordAsync(ChangeAccountPasswordOrder req, CancellationToken ct) =>
         Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct) =>
+    public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct) =>
         Task.CompletedTask;
 }

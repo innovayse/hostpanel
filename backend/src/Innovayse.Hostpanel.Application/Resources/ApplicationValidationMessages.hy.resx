@@ -383,7 +383,7 @@
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled։</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Գրանցողը պետք է լինի հետևյալներից մեկը՝ NameAm, Namecheap։</value>
+    <value>Գրանցողը պետք է լինի տեղադրված գրանցողի պլագին։</value>
   </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Դրույքի տեսակը պետք է լինի հետևյալներից մեկը՝ Standard, Reduced։</value>
@@ -1032,6 +1032,12 @@
   </data>
   <data name="ServerHostnameTooLong" xml:space="preserve">
     <value>Հոսթի անունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ServerApiHostInvalid" xml:space="preserve">
+    <value>Նշեք հոսթի անուն կամ IP հասցե՝ առանց սխեմայի, ուղու, պորտի և բացատների։</value>
+  </data>
+  <data name="ServerApiHostRefused" xml:space="preserve">
+    <value>Այս հասցեին երբեք չի միացվում․ loopback, link-local և ամպային մետատվյալների հասցեները մերժվում են։</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Օգտանունը պարտադիր է։</value>
@@ -1768,8 +1774,8 @@
   <data name="CampaignListStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Draft, Scheduled, Sending, Sent։</value>
   </data>
-  <data name="ServerListModuleInvalid" xml:space="preserve">
-    <value>Մոդուլը պետք է լինի հետևյալներից մեկը՝ CPanel, Plesk, DirectAdmin, Centos, Cwp7, Lukittu, Virtualmin, HyperVm։</value>
+  <data name="ServerModuleInvalid" xml:space="preserve">
+    <value>Մոդուլը պետք է լինի 1-ից 50 տառից, թվանշանից, կետից, գծիկից կամ ընդգծումից բաղկացած նույնացուցիչ։</value>
   </data>
   <data name="ServerListStateInvalid" xml:space="preserve">
     <value>Վիճակը պետք է լինի հետևյալներից մեկը՝ Online, Offline, Untested։</value>
@@ -1791,5 +1797,8 @@
   </data>
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
+  </data>
+  <data name="GatewayOrderIdInvalid" xml:space="preserve">
+    <value>Դարպասի պատվերի նույնացուցիչը 1-ից 255 նիշ է՝ առանց եզրային բացատների և կառավարող նիշերի։</value>
   </data>
 </root>

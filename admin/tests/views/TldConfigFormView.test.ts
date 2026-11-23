@@ -15,7 +15,7 @@ import { requestsOf, stubRouteTable } from '../helpers/routes'
 const stored: TldConfig = {
   id: 5,
   tld: 'net',
-  registrarModule: 'Namecheap',
+  registrarModule: 'registrar-two',
   currency: 'USD',
   sellCurrency: 'EUR',
   isEnabled: false,
@@ -25,6 +25,15 @@ const stored: TldConfig = {
   sells: { register: { '1': 12.5 }, transfer: {}, renew: {} },
   lastSyncedAt: null,
   createdAt: '2026-01-01T00:00:00Z',
+}
+
+/** The installed registrar plugins the form reads on mount, as the plugins endpoint answers them. */
+const REGISTRAR_ROUTES = {
+  'GET /admin/plugins': () =>
+    json([
+      { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded' },
+      { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded' },
+    ]),
 }
 
 /** The create route. */
@@ -84,13 +93,13 @@ describe('TldConfigFormView', () => {
   })
 
   it('refuses to save without a TLD, with no request sent', async () => {
-    const mock = stubRouteTable({})
+    const mock = stubRouteTable(REGISTRAR_ROUTES)
     const { wrapper } = await mountScreen(TldConfigFormView, {}, CREATE, CREATE)
 
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
 
     expect(wrapper.get('[data-testid="tld-config-form-error"]').text()).toBe('TLD is required.')
-    expect(requestsOf(mock)).toEqual([])
+    expect(requestsOf(mock)).toEqual(['GET /admin/plugins'])
   })
 
   it('shows the currency symbols in the table headers as the currencies change', async () => {
@@ -106,6 +115,7 @@ describe('TldConfigFormView', () => {
 
   it('creates a TLD with only the priced periods and returns to the list', async () => {
     const mock = stubRouteTable({
+      ...REGISTRAR_ROUTES,
       'POST /admin/tld-configs': () => json(8),
     })
     const { wrapper, router } = await mountScreen(TldConfigFormView, {}, CREATE, CREATE)
@@ -122,7 +132,7 @@ describe('TldConfigFormView', () => {
     const body = JSON.parse((post?.[1] as RequestInit | undefined)?.body as string) as Record<string, unknown>
     expect(body).toMatchObject({
       tld: 'com',
-      registrarModule: 'NameAm',
+      registrarModule: 'registrar-one',
       currency: 'AMD',
       sellCurrency: 'USD',
       categories: ['popular', 'business'],

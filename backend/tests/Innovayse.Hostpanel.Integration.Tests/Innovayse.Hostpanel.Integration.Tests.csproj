@@ -25,12 +25,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Innovayse.Hostpanel.API\Innovayse.Hostpanel.API.csproj" />
-    <!--
-      Named explicitly rather than leant on transitively: Cwp7ApiClientTests
-      (Adapters/Integrations/Cwp7) constructs the internal Cwp7ApiClient directly, and the
-      InternalsVisibleTo that permits it is declared in this project's own file.
-    -->
-    <ProjectReference Include="..\..\src\Innovayse.Providers.CWP7\Innovayse.Providers.CWP7.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- The agent's golden vectors: the agent's own tests run them against the real agent, Adapters/Integrations/SshAgent/AgentHostingResourceProviderTests against the host's adapter. -->

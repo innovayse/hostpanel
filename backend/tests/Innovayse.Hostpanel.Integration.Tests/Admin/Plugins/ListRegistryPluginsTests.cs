@@ -45,7 +45,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
             installed.GetProperty("category").GetString().Should().Be("Payment");
             installed.GetProperty("pricing").GetString().Should().Be("Free");
             installed.GetProperty("verified").GetBoolean().Should().BeTrue();
-            installed.TryGetProperty("sdkVersion", out _).Should().BeTrue();
+            installed.GetProperty("sdkPackageVersion").GetString().Should().Be("1.0.0");
             installed.TryGetProperty("iconUrl", out _).Should().BeTrue();
             var fresh = items[freshId];
             fresh.GetProperty("installed").GetBoolean().Should().BeFalse();

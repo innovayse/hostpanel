@@ -22,7 +22,7 @@ public sealed class UpdateTldConfigTests(IntegrationTestFactory factory) : IClas
 
         var response = await admin.PutAsJsonAsync($"/api/admin/tld-configs/{DomainsTestSeeds.UnknownId}", new
         {
-            registrarModule = "NameAm",
+            registrarModule = TestRegistrarModules.First,
             currency = "AMD",
             sellCurrency = "USD",
             isEnabled = true,
@@ -49,7 +49,7 @@ public sealed class UpdateTldConfigTests(IntegrationTestFactory factory) : IClas
 
         var response = await client.PutAsJsonAsync($"/api/admin/tld-configs/{DomainsTestSeeds.UnknownId}", new
         {
-            registrarModule = "NameAm",
+            registrarModule = TestRegistrarModules.First,
             currency = "AMD",
             sellCurrency = "USD",
             isEnabled = true,
@@ -75,7 +75,7 @@ public sealed class UpdateTldConfigTests(IntegrationTestFactory factory) : IClas
 
         var response = await admin.PutAsJsonAsync($"/api/admin/tld-configs/{DomainsTestSeeds.UnknownId}", new
         {
-            registrarModule = "NameAm",
+            registrarModule = TestRegistrarModules.First,
             currency = "AMD",
             sellCurrency = "USD",
             isEnabled = true,

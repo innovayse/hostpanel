@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Servers.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
@@ -16,14 +15,22 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// <summary>Gets the hostname or IP address used to connect to the server API.</summary>
     public string Hostname { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets the address the control panel's API is dialled at when it does not answer at
+    /// <see cref="Hostname"/>, such as a panel whose API port is only reachable on a private or VPN
+    /// address. Null or blank keeps the hostname. This never affects the
+    /// client-facing panel and webmail URLs, which are always built from <see cref="Hostname"/>.
+    /// </summary>
+    public string? ApiHost { get; private set; }
+
     /// <summary>Gets the primary IP address of the server, or null if not set.</summary>
     public string? IpAddress { get; private set; }
 
     /// <summary>Gets additional assigned IP addresses (one per line), or null.</summary>
     public string? AssignedIpAddresses { get; private set; }
 
-    /// <summary>Gets the control panel module managing this server.</summary>
-    public ServerModule Module { get; private set; }
+    /// <summary>Gets the control panel module id managing this server: a built in id (see <see cref="ServerModules"/>) or one a panel plugin declares.</summary>
+    public string Module { get; private set; } = string.Empty;
 
     /// <summary>Gets the API username for authenticating with the server.</summary>
     public string Username { get; private set; } = string.Empty;
@@ -39,6 +46,12 @@ public sealed class Server : BaseEntity, IAggregateRoot
 
     /// <summary>Gets whether SSL should be used when connecting to the server API.</summary>
     public bool UseSSL { get; private set; }
+
+    /// <summary>
+    /// Gets whether the operator trusts the self signed certificate of this server's API. The plugin transport then accepts
+    /// that certificate for this server's own host name and nothing else; it is off by default.
+    /// </summary>
+    public bool AcceptsSelfSignedCertificate { get; private set; }
 
     /// <summary>Gets the maximum number of accounts allowed on this server. Null means unlimited.</summary>
     public int? MaxAccounts { get; private set; }
@@ -105,6 +118,12 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// <summary>Gets the account count reported by the server on last test, or null if unknown.</summary>
     public int? AccountsCount { get; private set; }
 
+    /// <summary>
+    /// Gets the host the control panel's API is dialled at: <see cref="ApiHost"/> when one is set,
+    /// otherwise <see cref="Hostname"/>. Use this for API calls, never for a URL shown to a client.
+    /// </summary>
+    public string ApiEndpointHost => ResolveApiEndpointHost(Hostname, ApiHost);
+
     /// <summary>Gets whether an API password is stored.</summary>
     public bool HasPassword => !string.IsNullOrEmpty(Password);
 
@@ -122,6 +141,18 @@ public sealed class Server : BaseEntity, IAggregateRoot
     private Server(int id)
     {
         Id = id;
+    }
+
+    /// <summary>
+    /// The one rule for the host a control panel's API is dialled at: the API address when one is set, otherwise the host name.
+    /// A server entity and the connection details built from it both answer through it.
+    /// </summary>
+    /// <param name="hostname">The server's host name.</param>
+    /// <param name="apiHost">The server's API address, or <see langword="null"/> or blank when it has none.</param>
+    /// <returns>The host to dial for API calls, never a URL shown to a client.</returns>
+    public static string ResolveApiEndpointHost(string hostname, string? apiHost)
+    {
+        return string.IsNullOrWhiteSpace(apiHost) ? hostname : apiHost;
     }
 
     /// <summary>
@@ -194,10 +225,19 @@ public sealed class Server : BaseEntity, IAggregateRoot
     /// Applies all fields from a <see cref="ServerDetails"/> value object.
     /// </summary>
     /// <param name="d">The details to apply.</param>
+    /// <exception cref="DomainRuleException">The details accept a self signed certificate on a server without SSL.</exception>
     private void Apply(ServerDetails d)
     {
+        if (d.AcceptsSelfSignedCertificate && !d.UseSSL)
+        {
+            throw new DomainRuleException(
+                ServerErrors.SelfSignedRequiresSsl,
+                "A server without SSL cannot accept a self signed certificate.");
+        }
+
         Name = d.Name;
         Hostname = d.Hostname;
+        ApiHost = string.IsNullOrWhiteSpace(d.ApiHost) ? null : d.ApiHost.Trim();
         IpAddress = d.IpAddress;
         AssignedIpAddresses = d.AssignedIpAddresses;
         Module = d.Module;
@@ -220,6 +260,7 @@ public sealed class Server : BaseEntity, IAggregateRoot
         }
 
         UseSSL = d.UseSSL;
+        AcceptsSelfSignedCertificate = d.AcceptsSelfSignedCertificate;
         MaxAccounts = d.MaxAccounts;
         IsDefault = d.IsDefault;
         IsDisabled = d.IsDisabled;

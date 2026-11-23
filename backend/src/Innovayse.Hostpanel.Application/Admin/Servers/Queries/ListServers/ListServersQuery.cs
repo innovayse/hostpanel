@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Servers.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Servers.Queries.ListServers;
 
@@ -14,5 +13,5 @@ public sealed record ListServersQuery(
     int Page,
     int PageSize,
     string? Search = null,
-    ServerModule? Module = null,
+    string? Module = null,
     ServerState? State = null) : IListQuery;

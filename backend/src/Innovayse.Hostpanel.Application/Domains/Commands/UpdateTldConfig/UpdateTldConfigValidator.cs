@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.UpdateTldConfig;
 
 /// <summary>
 /// Validator for <see cref="UpdateTldConfigCommand"/>. Whether the id names a configured TLD, and
-/// whether the registrar module names a known provider, is the handler's answer.
+/// whether the registrar module names an installed registrar plugin, is the handler's answer.
 /// </summary>
 public sealed class UpdateTldConfigValidator : LocalizedValidator<UpdateTldConfigCommand>
 {

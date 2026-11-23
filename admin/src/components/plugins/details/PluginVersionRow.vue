@@ -87,6 +87,11 @@ const hostRangeText = computed<string>(() => {
   return t('pluginDetails.versions.hostAny')
 })
 
+/** The SDK version the version was built on in words, empty when the registry does not state it. */
+const sdkText = computed<string>(() =>
+  props.version.sdkPackageVersion ? t('pluginDetails.versions.sdk', { version: props.version.sdkPackageVersion }) : '',
+)
+
 /** Label of the compatibility badge. */
 const compatibilityText = computed<string>(() =>
   props.version.compatible ? t('pluginDetails.versions.compatible') : t('pluginDetails.versions.incompatible'),
@@ -156,6 +161,10 @@ const installVariant = computed<UiButtonVariant>(() =>
         {{ t('pluginDetails.versions.published', { date: formatDate(version.publishedAt) }) }}
         ·
         {{ hostRangeText }}
+        <template v-if="sdkText !== ''">
+          ·
+          <span :data-testid="`plugin-version-sdk-${version.version}`">{{ sdkText }}</span>
+        </template>
       </UiText>
 
       <UiAlert

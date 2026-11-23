@@ -50,23 +50,6 @@
     "notTestedYet": "Դեռ չի ստուգվել",
     "setupNote": "Կարգավորման նշում"
   },
-  "cwp7Integration": {
-    "cwp7": "CWP7",
-    "controlWebPanel7Provisioning": "Control Web Panel 7՝ մատակարարման պրովայդեր հոսթինգ հաշիվների, փաթեթների և սերվերի ռեսուրսների կառավարման համար։",
-    "hostingProvisioning": "Հոսթինգ / մատակարարում",
-    "moduleType": "Մոդուլի տեսակ",
-    "serverModule": "Սերվերային մոդուլ",
-    "developer": "Մշակող",
-    "createNewServer": "Ստեղծել նոր սերվեր",
-    "addACwp7ServerWith": "Ավելացրեք CWP7 սերվեր՝ հոսթի անվանումով, մուտքի տվյալներով և անվանային սերվերներով",
-    "createNewProduct": "Ստեղծել նոր ապրանք",
-    "createAHostingPlanLinked": "Ստեղծեք հոսթինգ պլան, կապված CWP7 սերվերի հետ",
-    "cwp7Servers": "CWP7 սերվերներ",
-    "lengthServerValue": "Սերվերներ՝ {length}",
-    "noCwp7ServersConfiguredYet": "CWP7 սերվերներ դեռ կարգավորված չեն։",
-    "addYourFirstServer": "Ավելացրեք առաջին սերվերը →",
-    "accountsUsage": "Հաշիվներ՝ {usage}"
-  },
   "integrations": {
     "lengthIntegrationValue": "Ինտեգրացիաներ՝ {length}",
     "activecountActive": "· ակտիվ՝ {activeCount}",

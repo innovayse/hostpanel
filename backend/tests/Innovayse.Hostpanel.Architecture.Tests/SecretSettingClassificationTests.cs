@@ -45,12 +45,22 @@ public sealed class SecretSettingClassificationTests
     /// registry too, and no plain setting is. A settings-only plugin is covered like a fields-only one. The host ships
     /// no plugin, so the manifests are written here, in the two shapes a plugin may use.
     /// </summary>
-    /// <param name="manifestJson">A <c>plugin.json</c> that lists its fields in one of the two shapes.</param>
+    /// <param name="listProperty">The manifest property that lists the fields: the legacy <c>fields</c> or the newer <c>settings</c>.</param>
     [Theory]
-    [InlineData("""{ "fields": [ { "key": "host", "label": "Host", "type": "text" }, { "key": "api_key", "label": "Key", "type": "secret" } ] }""")]
-    [InlineData("""{ "settings": [ { "key": "host", "label": "Host", "type": "text" }, { "key": "api_key", "label": "Key", "type": "secret" } ] }""")]
-    public void PluginManifests_SecretSettings_AreInTheRegistry(string manifestJson)
+    [InlineData("fields")]
+    [InlineData("settings")]
+    public void PluginManifests_SecretSettings_AreInTheRegistry(string listProperty)
     {
+        var manifestJson = $$"""
+            {
+              "id": "example", "name": "Example", "version": "1.0.0", "author": "Example", "description": "Example",
+              "type": "provisioning", "category": "Hosting", "entryPoint": "Example.Plugin", "sdkVersion": "3.0",
+              "{{listProperty}}": [
+                { "key": "host", "label": "Host", "type": "text" },
+                { "key": "api_key", "label": "Key", "type": "secret" }
+              ]
+            }
+            """;
         var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson, JsonOptions)!;
 
         // Same union the runtime classifier reads: GetSettings() hides the legacy fields once settings exist.

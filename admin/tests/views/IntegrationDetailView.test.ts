@@ -52,6 +52,13 @@ describe('IntegrationDetailView', () => {
     expect(wrapper.find('[data-testid="integration-status"]').exists()).toBe(true)
   })
 
+  it('names the page by the integration once it has loaded', async () => {
+    stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()) })
+    const wrapper = await mountDetail('bank-transfer')
+
+    expect(wrapper.get('h1').text()).toBe('Bank Transfer')
+  })
+
   it('shows the API sentence when the integration cannot be loaded', async () => {
     stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => problem('Not available.', 503) })
     const wrapper = await mountDetail('bank-transfer')

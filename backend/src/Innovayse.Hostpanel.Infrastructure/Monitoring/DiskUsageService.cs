@@ -113,7 +113,7 @@ public sealed class DiskUsageService : IDiskUsageService
 
                 Upsert(server, accounts, domainToClient, cache);
             }
-            catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED or HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE)
+            catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED)
             {
                 failures.Add(new DiskUsageFailureDto(server.Name, DiskUsageFailureReason.UnsupportedModule));
             }
@@ -135,7 +135,7 @@ public sealed class DiskUsageService : IDiskUsageService
     /// <param name="match">The plugin that serves the server's module, if any.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The accounts, or <see langword="null"/> when a cPanel server stores neither an API token nor an access hash.</returns>
-    /// <exception cref="DomainRuleException">Thrown with <c>PANEL_PLUGIN_CONFLICT</c> when two plugins serve the module, and with <c>PANEL_PLUGIN_UNAVAILABLE</c> when no plugin serves a module other than cPanel, and with a panel code when the plugin refuses.</exception>
+    /// <exception cref="DomainRuleException">Thrown with <c>PANEL_PLUGIN_CONFLICT</c> when two plugins serve the module, and with <c>PANEL_OPERATION_NOT_SUPPORTED</c> when no plugin serves a module other than cPanel, and with a panel code when the plugin refuses.</exception>
     private async Task<IReadOnlyList<HostedAccountUsage>?> ReadAccountsAsync(Server server, ServerModulePluginMatch match, CancellationToken ct)
     {
         switch (match.Outcome)
@@ -148,7 +148,7 @@ public sealed class DiskUsageService : IDiskUsageService
 
         if (!ServerModules.Same(server.Module, ServerModules.CPanel))
         {
-            throw new DomainRuleException(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE, "No plugin serves the server's module.");
+            throw new DomainRuleException(HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "No plugin serves the server's module.");
         }
 
         CpanelWhmApi api;

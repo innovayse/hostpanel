@@ -24,12 +24,17 @@ public sealed class GetMyServicesHandler
     /// <summary>Resolves the account the caller acts for, owner or linked user; the query does not say whose, and must not.</summary>
     private readonly IClientAccess _access;
 
+    /// <summary>Tells the moment a trial's days left are counted from.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">Reaches the Products and Servers modules for the names behind the ids.</param>
     /// <param name="access">Resolves the account the caller acts for, owner or linked user; the query does not say whose, and must not.</param>
-    public GetMyServicesHandler(IHostpanelDbContext context, IMessageBus bus, IClientAccess access)
+    /// <param name="clock">Tells the moment a trial's days left are counted from.</param>
+    public GetMyServicesHandler(IHostpanelDbContext context, IMessageBus bus, IClientAccess access, IClock clock)
     {
+        _clock = clock;
         _context = context;
         _bus = bus;
         _access = access;
@@ -84,6 +89,7 @@ public sealed class GetMyServicesHandler
             new GetDiskUsageByDomainsQuery(domains), ct);
         var usage = (samples.Value ?? []).ToDictionary(u => (u.ServerName, u.Domain));
 
+        var now = _clock.UtcNow;
         var dtos = services
             .Select(svc =>
             {
@@ -117,7 +123,10 @@ public sealed class GetMyServicesHandler
                     server,
                     svc.CreatedAt,
                     svc.Status == ServiceStatus.Suspended ? svc.SuspensionSource : null,
-                    serviceUsage);
+                    serviceUsage,
+                    svc.TrialStatus,
+                    svc.TrialEndsAt,
+                    svc.TrialDaysLeft(now));
             })
             .ToList();
 

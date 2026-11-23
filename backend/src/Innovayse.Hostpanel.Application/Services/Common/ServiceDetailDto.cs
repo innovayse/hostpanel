@@ -18,6 +18,9 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="Account">The hosting account: dedicated IP, credentials and provisioning reference.</param>
 /// <param name="Billing">Quantity, prices, payment details, cycle and renewal.</param>
 /// <param name="Automation">The automatic suspension and termination settings.</param>
+/// <param name="TrialStatus">Where the service is in its free trial, or <see langword="null"/> when it is not a trial.</param>
+/// <param name="TrialEndsAt">When the free trial ends, or <see langword="null"/> when it is not a trial.</param>
+/// <param name="TrialDaysLeft">Whole days left of an active trial, rounded up and never negative; <see langword="null"/> unless the trial is active.</param>
 public sealed record ServiceDetailDto(
     int Id,
     int ClientId,
@@ -33,4 +36,7 @@ public sealed record ServiceDetailDto(
     ServiceServerDto? Server,
     ServiceAccountDto Account,
     ServiceBillingTermsDto Billing,
-    ServiceAutomationDto Automation);
+    ServiceAutomationDto Automation,
+    TrialStatus? TrialStatus,
+    DateTimeOffset? TrialEndsAt,
+    int? TrialDaysLeft);

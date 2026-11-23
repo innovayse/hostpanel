@@ -562,6 +562,8 @@
   <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve"><value>Der Sperrlisteneintrag wurde nicht gefunden.</value></data>
   <data name="ORDER_PRODUCT_SOLD_OUT" xml:space="preserve"><value>Leider ist dieses Produkt ausverkauft.</value></data>
   <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve"><value>Sie haben dieses Produkt bereits; es kann pro Kunde nur einmal bestellt werden.</value></data>
+  <data name="ORDER_TRIAL_ALREADY_USED" xml:space="preserve"><value>Sie haben die kostenlose Testphase dieses Produkts bereits genutzt.</value></data>
+  <data name="PRODUCT_TRIAL_NOT_AVAILABLE" xml:space="preserve"><value>Dieses Produkt hat keine kostenlose Testphase.</value></data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve"><value>Die maximale Anzahl aktiver Dienste muss 0 oder leer für unbegrenzt oder eine positive Zahl sein.</value></data>
   <data name="PLUGIN_MANIFEST_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Das agentProfile im Manifest muss eines der SSH-Schlüssel-Agent-Profile sein, die dieses SDK definiert, und genau so geschrieben sein.</value>

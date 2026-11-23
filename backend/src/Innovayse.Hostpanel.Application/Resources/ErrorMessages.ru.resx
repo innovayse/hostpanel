@@ -1600,6 +1600,12 @@
   <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
     <value>У вас уже есть этот продукт; его можно заказать только один раз на клиента.</value>
   </data>
+  <data name="ORDER_TRIAL_ALREADY_USED" xml:space="preserve">
+    <value>Вы уже использовали бесплатный пробный период этого продукта.</value>
+  </data>
+  <data name="PRODUCT_TRIAL_NOT_AVAILABLE" xml:space="preserve">
+    <value>У этого продукта нет бесплатного пробного периода.</value>
+  </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>Максимальное число активных услуг должно быть 0 или пустым (без ограничений) либо положительным числом.</value>
   </data>

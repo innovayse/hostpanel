@@ -1566,6 +1566,12 @@
   <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
     <value>Ya dispone de este producto; solo se puede pedir una vez por cliente.</value>
   </data>
+  <data name="ORDER_TRIAL_ALREADY_USED" xml:space="preserve">
+    <value>Ya ha utilizado la prueba gratuita de este producto.</value>
+  </data>
+  <data name="PRODUCT_TRIAL_NOT_AVAILABLE" xml:space="preserve">
+    <value>Este producto no tiene prueba gratuita.</value>
+  </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>El número máximo de servicios activos debe ser 0 o estar vacío para ilimitado, o un número positivo.</value>
   </data>

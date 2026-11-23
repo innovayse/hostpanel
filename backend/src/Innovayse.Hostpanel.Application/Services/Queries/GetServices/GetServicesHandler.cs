@@ -35,12 +35,17 @@ public sealed class GetServicesHandler
     /// <summary>Resolves the currency each owning client is billed in.</summary>
     private readonly IPayerCurrencyResolver _payerCurrency;
 
+    /// <summary>Tells the moment a trial's days left are counted from.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context the services are read from.</param>
     /// <param name="bus">The bus the product, client and linked domain queries are dispatched through.</param>
     /// <param name="payerCurrency">Resolves the currency each owning client is billed in.</param>
-    public GetServicesHandler(IHostpanelDbContext context, IMessageBus bus, IPayerCurrencyResolver payerCurrency)
+    /// <param name="clock">Tells the moment a trial's days left are counted from.</param>
+    public GetServicesHandler(IHostpanelDbContext context, IMessageBus bus, IPayerCurrencyResolver payerCurrency, IClock clock)
     {
+        _clock = clock;
         _context = context;
         _bus = bus;
         _payerCurrency = payerCurrency;
@@ -132,6 +137,7 @@ public sealed class GetServicesHandler
             p => new ProductCyclePriceLookup(p.ProductId, p.CurrencyCode, p.Cycle),
             p => p.Amount);
 
+        var now = _clock.UtcNow;
         var result = services
             .Select(svc =>
             {
@@ -148,7 +154,10 @@ public sealed class GetServicesHandler
                     currency.Code,
                     svc.BillingCycle,
                     svc.Status,
-                    svc.NextRenewalAt);
+                    svc.NextRenewalAt,
+                    svc.TrialStatus,
+                    svc.TrialEndsAt,
+                    svc.TrialDaysLeft(now));
             })
             .ToList();
 

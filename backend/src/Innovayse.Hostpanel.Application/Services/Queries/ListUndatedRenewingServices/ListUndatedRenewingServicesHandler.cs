@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +27,7 @@ public sealed class ListUndatedRenewingServicesHandler
     {
         _ = query;
 
-        IReadOnlyList<int> undated = await _context.ClientServices.AsNoTracking()
+        IReadOnlyList<int> undated = await _context.ClientServices.AsNoTracking().NotInTrial()
             .Where(s => s.Status == ServiceStatus.Active && s.AutoRenew && s.NextRenewalAt == null)
             .OrderBy(s => s.Id)
             .Select(s => s.Id)

@@ -1603,6 +1603,12 @@
   <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
     <value>You already have this product; it can be ordered once per customer.</value>
   </data>
+  <data name="ORDER_TRIAL_ALREADY_USED" xml:space="preserve">
+    <value>You have already used the free trial of this product.</value>
+  </data>
+  <data name="PRODUCT_TRIAL_NOT_AVAILABLE" xml:space="preserve">
+    <value>This product has no free trial.</value>
+  </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>The maximum number of active services must be 0 or empty for unlimited, or a positive number.</value>
   </data>

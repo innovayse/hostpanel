@@ -723,6 +723,12 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string ORDER_PRODUCT_ONE_PER_CLIENT = "ORDER_PRODUCT_ONE_PER_CLIENT";
 
+    /// <summary>The client already used the free trial of this product, which is granted once per client (409).</summary>
+    public const string ORDER_TRIAL_ALREADY_USED = "ORDER_TRIAL_ALREADY_USED";
+
+    /// <summary>The product offers no free trial, so a trial cannot be ordered for it (409).</summary>
+    public const string PRODUCT_TRIAL_NOT_AVAILABLE = "PRODUCT_TRIAL_NOT_AVAILABLE";
+
     /// <summary>The service is not Pending, so it cannot be set up (400).</summary>
     public const string SERVICE_NOT_PENDING = "SERVICE_NOT_PENDING";
 

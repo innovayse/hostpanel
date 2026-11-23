@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,7 +33,8 @@ public sealed class GetServiceBillingStatesHandler
         var states = await _context.ClientServices.AsNoTracking()
             .Where(s => query.ServiceIds.Contains(s.Id))
             .OrderBy(s => s.Id)
-            .Select(s => new ServiceBillingStateDto(s.Id, s.Status, s.SuspensionSource, s.OverrideAutoSuspend, s.SuspendUntil, s.AutoRenew))
+            .Select(s => new ServiceBillingStateDto(s.Id, s.Status, s.SuspensionSource, s.OverrideAutoSuspend, s.SuspendUntil, s.AutoRenew,
+                s.TrialStatus == TrialStatus.Active))
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<ServiceBillingStateDto>>.Success(states);

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Application.Services.Commands.OrderService;
@@ -26,6 +27,12 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.OrderService;
 /// is stored with it, and ordering again for the same line answers with the service that already exists instead of
 /// creating a second one, so a retried line never provisions or bills twice.
 /// </param>
+/// <param name="Trial">
+/// The product's trial rules when the service is ordered as a free trial, or <see langword="null"/> for an ordinary
+/// service. A trial service starts with its trial running, and the client's one trial of the product is recorded in the
+/// same transaction, so a second trial of it is refused with <c>ORDER_TRIAL_ALREADY_USED</c>.
+/// </param>
 public sealed record OrderServiceCommand(int ClientId, int ProductId, BillingCycle BillingCycle,
     decimal? FirstPaymentAmount, decimal? RecurringAmount, string? PaymentMethod = null,
-    string? Domain = null, int? FirstInvoiceId = null, int? OrderItemId = null);
+    string? Domain = null, int? FirstInvoiceId = null, int? OrderItemId = null,
+    ProductTrial? Trial = null);

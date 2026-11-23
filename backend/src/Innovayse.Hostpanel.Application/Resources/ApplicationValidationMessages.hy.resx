@@ -715,6 +715,9 @@
   <data name="OrderServiceClientIdInvalid" xml:space="preserve">
     <value>Նշեք վավեր հաճախորդ։</value>
   </data>
+  <data name="StartTrialProductIdInvalid" xml:space="preserve">
+    <value>Նշեք վավեր ապրանք։</value>
+  </data>
   <data name="OrderServiceProductIdInvalid" xml:space="preserve">
     <value>Նշեք վավեր ապրանք։</value>
   </data>

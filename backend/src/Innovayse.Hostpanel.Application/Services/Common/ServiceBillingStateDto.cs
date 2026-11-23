@@ -12,10 +12,12 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="OverrideAutoSuspend">Whether staff opted it out of automatic suspension.</param>
 /// <param name="SuspendUntil">Until when automatic suspension is held off, if set.</param>
 /// <param name="AutoRenew">Whether billing looks after the service at all; <see langword="false"/> means staff bill it by hand.</param>
+/// <param name="InTrial">Whether a free trial is still running on it (active); billing never suspends such a service.</param>
 public sealed record ServiceBillingStateDto(
     int Id,
     ServiceStatus Status,
     SuspensionSource? SuspensionSource,
     bool OverrideAutoSuspend,
     DateTimeOffset? SuspendUntil,
-    bool AutoRenew);
+    bool AutoRenew,
+    bool InTrial);

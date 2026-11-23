@@ -20,11 +20,16 @@ public sealed class GetServiceHandler
     /// <summary>The bus the product, client and server queries are dispatched through.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>Tells the moment a trial's days left are counted from.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">The bus the product, client and server queries are dispatched through.</param>
-    public GetServiceHandler(IHostpanelDbContext context, IMessageBus bus)
+    /// <param name="clock">Tells the moment a trial's days left are counted from.</param>
+    public GetServiceHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock)
     {
+        _clock = clock;
         _context = context;
         _bus = bus;
     }
@@ -90,7 +95,10 @@ public sealed class GetServiceHandler
                 svc.OverrideAutoSuspend,
                 svc.SuspendUntil,
                 svc.AutoTerminateEndOfCycle,
-                svc.AutoTerminateReason));
+                svc.AutoTerminateReason),
+            svc.TrialStatus,
+            svc.TrialEndsAt,
+            svc.TrialDaysLeft(_clock.UtcNow));
 
         return Result<ServiceDetailDto>.Success(dto);
     }

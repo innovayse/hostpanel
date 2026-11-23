@@ -69,7 +69,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.6.0"
+AGENT_VERSION = "1.7.0"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -85,7 +85,7 @@ ED25519_LINE_RE = re.compile(r"^ssh-ed25519 ([A-Za-z0-9+/]{68}(?:==|=)?)(?: [^\r
 DOCROOT_RE = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}(?:/[A-Za-z0-9_-][A-Za-z0-9._-]{0,63}){0,5}$")
 LABEL_RE = re.compile(r"^[a-z][a-z0-9]{0,14}$")
 PHP_VERSION_RE = re.compile(r"^[0-9]\.[0-9]{1,2}$")
-PHP_CLI_RE = re.compile(r"^/[A-Za-z0-9._+/-]{1,200}$")
+ABS_PATH_RE = re.compile(r"^/[A-Za-z0-9._+/-]{1,200}$")
 DB_PASSWORD_RE = re.compile(r"^[0-9a-f]{40}$")
 RESULT_PREFIX = "RESULT "
 DISABLED_SHELLS = {"/sbin/nologin", "/usr/sbin/nologin", "/bin/false", "/usr/bin/false", ""}
@@ -112,13 +112,13 @@ DEFAULTS = {
     "jail_enrol": "false",
     "jail_root": "/home/jail",
     "jail_group": "sftp-ssh",
-    "jail_sections": "basicshell,editors,extendedshell,netutils,terminfo",
     "jail_shell": "/bin/bash",
-    # Copied into every jail with jk_cp (binaries with their libraries) when the jail lacks an entry
-    # or the host copy changed, so a jail built before an entry was added gets it on the next key,
-    # and an entry already in place costs no copy. A bare jailkit tree on CWP lacks
-    # uname, which a login profile script calls, and /etc/profile.d/colorls.sh, where `ll` is defined.
-    "jail_extras": "/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS",
+    # The jk_init sections of a new jail and the paths added on top of what the provider's jail-extras helper lists
+    # are the profile's to choose (profiles/*.conf): no panel flavour is built in. Each path is copied into every jail
+    # with jk_cp (binaries with their libraries) when the jail lacks it or the host copy changed, so a jail built
+    # before an entry was added gets it on the next key, and an entry already in place costs no copy.
+    "jail_sections": "",
+    "jail_extras": "",
     "systemd_unit_dir": "/etc/systemd/system",
     # Directory of the provider helpers behind ensure-website, remove-website, ensure-database and
     # remove-database (1.5.0+). A helper that is not there makes its op answer not_supported.
@@ -133,6 +133,8 @@ WITHDRAWN_SHELL = "/sbin/nologin"
 PRIVATE_KEY_FILE_PATTERNS = ("*.key", "ssh_host_*_key", "privkey*.pem", "*.p12", "*.pfx", "*.jks")
 # The only `jail_extras` paths meant for TLS trust (git, curl in a jail); install.sh --check prints them.
 SAFE_TRUST_PATHS = ("/etc/pki/tls/certs", "/etc/pki/ca-trust/extracted", "/etc/ssl/certs")
+# jailkit's catalogue of sections; install.sh --check warns when a configured `jail_sections` entry is not in it.
+JAILKIT_INI = "/etc/jailkit/jk_init.ini"
 
 
 class AgentError(Exception):
@@ -582,14 +584,14 @@ def _entries_with_targets(extra):
     return found
 
 
-def unsafe_jail_extras(config):
+def unsafe_jail_extras(extras):
     """
-    The `jail_extras` entries that are, or contain (following symlinks), private key material (see
+    The entries of `jail_extras(config)` that are, or contain (following symlinks), private key material (see
     `_is_private_key_path`). Entries missing on the host are skipped, as they are when copying. A
     jail only ever needs public trust material (`SAFE_TRUST_PATHS`).
     """
     unsafe = []
-    for extra in config.get("jail_extras", []):
+    for extra in extras:
         if not os.path.isabs(extra) or not os.path.exists(extra):
             continue
         if any(_is_private_key_path(path) for path in _entries_with_targets(extra)):
@@ -630,14 +632,17 @@ def enrol_jail(account, config):
     jail = os.path.join(jail_root, name)
     if os.path.dirname(jail) != jail_root:
         raise AgentError("internal_error")
-    unsafe = unsafe_jail_extras(config)
+    if not config["jail_sections"]:
+        raise AgentError("internal_error", "jail_sections is empty")
+    paths = jail_extras(config)
+    unsafe = unsafe_jail_extras(paths)
     if unsafe:
         raise AgentError("internal_error", "jail_extras holds private keys: " + ", ".join(unsafe))
     _root_dir(jail_root)
     if not os.path.isdir(os.path.join(jail, "etc")):
         _root_dir(jail)
         _jail_run(["/usr/sbin/jk_init", "-f", "-j", jail] + list(config["jail_sections"]))
-    extras = [p for p in config.get("jail_extras", []) if os.path.isabs(p) and os.path.exists(p)]
+    extras = [p for p in paths if os.path.isabs(p) and os.path.exists(p)]
     stale = [p for p in extras if _jail_copy_is_stale(jail, p)]
     if stale:
         _jail_run(["/usr/sbin/jk_cp", "-f", "-j", jail] + stale)
@@ -794,6 +799,9 @@ OPS_HELPER_TIMEOUT_SECONDS = 50
 # The provider helper that lists the php versions this server offers: one "N.N" or "N.N<TAB>/abs/cli" per line on
 # stdout, no arguments.
 PHP_VERSIONS_HELPER = "php-versions"
+# The optional provider helper that lists what a jail needs for the server's deploy tools and PHP CLIs (1.7.0+), one
+# absolute path per line. It is given SAFE_TRUST_PATHS and prints the CA bundle found in them.
+JAIL_EXTRAS_HELPER = "jail-extras"
 # The optional provider helper that lists the ops this server can really do right now, one per line (1.6.0+).
 CAPABILITIES_HELPER = "capabilities"
 
@@ -807,16 +815,16 @@ def helper_path(op, config):
     return path if os.path.isfile(path) and os.access(path, os.X_OK) else None
 
 
-def _helper_lines(name, config):
+def _helper_lines(name, config, args=()):
     """
-    The stdout lines of a provider's read-only listing helper (no arguments), or None when this server does not ship
-    it or it fails. Only well-formed lines are interpreted by the callers.
+    The stdout lines of a provider's read-only listing helper (fixed arguments only), or None when this server does not
+    ship it or it fails. Only well-formed lines are interpreted by the callers.
     """
     helper = helper_path(name, config)
     if helper is None:
         return None
     try:
-        done = subprocess.run([helper], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        done = subprocess.run([helper, *args], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               env=dict(JAIL_ENV), timeout=OPS_HELPER_TIMEOUT_SECONDS, check=False, text=True)
     except (OSError, subprocess.SubprocessError):
         return None
@@ -851,10 +859,24 @@ def php_installs(config):
     installs = {}
     for line in _helper_lines(PHP_VERSIONS_HELPER, config) or []:
         version, _, cli = line.partition("\t")
-        if not PHP_VERSION_RE.fullmatch(version) or (cli and not PHP_CLI_RE.fullmatch(cli)):
+        if not PHP_VERSION_RE.fullmatch(version) or (cli and not ABS_PATH_RE.fullmatch(cli)):
             continue
         installs.setdefault(version, cli or None)
     return sorted(installs.items(), key=lambda item: tuple(int(part) for part in item[0].split(".")))
+
+
+def jail_extras(config):
+    """
+    Every path a jail gets on top of jk_init: the configured `jail_extras` and what the provider's `jail-extras` helper
+    lists (deploy tools, PHP CLIs with their ini and extension directories, the CA bundle), without duplicates. A line
+    of the helper that is not an absolute path is dropped. The one place that unions them: enrolment and
+    install.sh --check both read it, and both run the private key check over the result.
+    """
+    paths = list(config.get("jail_extras", []))
+    for line in _helper_lines(JAIL_EXTRAS_HELPER, config, SAFE_TRUST_PATHS) or []:
+        if ABS_PATH_RE.fullmatch(line) and line not in paths:
+            paths.append(line)
+    return paths
 
 
 def _helper_args(request):
@@ -875,7 +897,7 @@ def _is_valid_result(request, body):
     if request["op"] == "ensure-website" and "php_cli" in body:
         # 1.6.0: the CLI of the php version the site runs, an absolute path, only when a version was asked for.
         cli = body["php_cli"]
-        if "php" not in request or not isinstance(cli, str) or PHP_CLI_RE.fullmatch(cli) is None:
+        if "php" not in request or not isinstance(cli, str) or ABS_PATH_RE.fullmatch(cli) is None:
             return False
         body = {key: value for key, value in body.items() if key != "php_cli"}
     if request["op"] != "ensure-database":
@@ -1060,14 +1082,32 @@ def _on_timeout(signum, frame):
     raise AgentError("timeout")
 
 
+def missing_jail_sections(config):
+    """
+    The configured `jail_sections` that jailkit's catalogue (`JAILKIT_INI`) does not define; all of them when the
+    catalogue cannot be read, which is what a server without jailkit looks like. Empty unless `jail_enrol` is on.
+    """
+    if not config.get("jail_enrol"):
+        return []
+    try:
+        with open(JAILKIT_INI, encoding="utf-8", errors="replace") as handle:
+            defined = set(re.findall(r"^\[([^\]]+)\]", handle.read(), re.MULTILINE))
+    except OSError:
+        defined = set()
+    return [section for section in config["jail_sections"] if section not in defined]
+
+
 def check_config():
     """
-    install.sh --check: prints a line per unsafe `jail_extras` entry plus the safe trust paths and returns 1
-    when there is one; returns 0 when every entry is safe, and 2 (message on stderr) when the configuration
-    cannot be read, so the caller tells a failure from an unsafe entry.
+    install.sh --check: prints a line per problem of the jail configuration and returns 1 when there is one, 0 when
+    there is none, and 2 (message on stderr) when the configuration cannot be read, so the caller tells a failure
+    from a problem. A problem is an unsafe entry of `jail_extras(config)` (the configured paths plus the provider's
+    `jail-extras` helper), listed with the safe trust paths, or a configured jail section missing from `JAILKIT_INI`.
     """
     try:
-        unsafe = unsafe_jail_extras(load_config())
+        config = load_config()
+        unsafe = unsafe_jail_extras(jail_extras(config))
+        missing = missing_jail_sections(config)
     except (AgentError, OSError, ValueError) as exc:
         sys.stderr.write("cannot check the configuration: %s\n" % exc)
         return 2
@@ -1075,7 +1115,9 @@ def check_config():
         sys.stdout.write("jail_extras entry %s is or contains private keys\n" % extra)
     if unsafe:
         sys.stdout.write("customer jails must only get public trust material (%s)\n" % ", ".join(SAFE_TRUST_PATHS))
-    return 1 if unsafe else 0
+    for section in missing:
+        sys.stdout.write("jail section %s is missing from %s\n" % (section, JAILKIT_INI))
+    return 1 if unsafe or missing else 0
 
 
 def main():

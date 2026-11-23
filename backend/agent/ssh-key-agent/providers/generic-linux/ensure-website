@@ -8,7 +8,7 @@
 #       nginx the vhost passes $realpath_root, behind Apache the pool revalidates OPcache and the realpath cache on
 #       every request. A hostname registered to another account is refused, a vhost or pool this helper did not write
 #       is a conflict. Idempotent. Every edited file is copied first; both configurations are tested before a reload
-#       and everything is restored when a test fails.
+#       and everything is restored when a test fails. Refuses (exit 1) while SELinux is enforcing, because the files it writes are not labelled for it.
 # Usage (root, called by hostpanel-ssh-key-agent): ensure-website <account> <hostname> <docroot> <php|""> <link_root 0|1>
 # Exit: 0 done, 2 bad arguments, 3 not the account's (hostname or docroot), 4 conflict (a vhost or pool the agent did
 #       not write), 5 php version not installed, other = failed. Prints one
@@ -26,6 +26,8 @@ hp_require_account "$1"
 [ -z "$PHP" ] || [[ "$PHP" =~ $PHP_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad php version"
 [[ "$LINK" =~ ^[01]$ ]] || hp_die "$EXIT_BAD_ARGS" "bad link_root"
 [ "$LINK" = 0 ] || [ -n "$PHP" ] || hp_die "$EXIT_BAD_ARGS" "link_root needs a php version"
+
+! hp_selinux_enforcing || hp_die 1 "SELinux is enforcing; HostPanel cannot label a website for it yet, so no website is written (set SELinux to permissive or disabled, or serve the site by hand)"
 
 hp_detect_web
 

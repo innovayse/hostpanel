@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# What: lists, one absolute path per line, what a jailed SSH account needs to deploy a site and run PHP: the deploy tools
+#       resolved with `command -v` (the ones that are installed; rsync and unzip are optional), every installed PHP CLI
+#       with its ini directory, additional ini directory and extension directory, and the CA bundle found in the
+#       trust directories given as arguments. The agent unions the list with `jail_extras` of agent.conf, runs its
+#       private key check over the result and copies the paths into each jail with jk_cp. Read only; nothing here
+#       is copied or changed.
+# Usage (root, called by hostpanel-ssh-key-agent, or by hand): jail-extras [trust directory] (any number)
+#       The agent passes its SAFE_TRUST_PATHS as the trust directories. Only plain absolute paths are used.
+# Exit: 0 always unless the arguments are wrong (2).
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+TOOLS=(flock setsid nohup awk basename cut find grep head ln mkdir mktemp mv readlink rm sed sha256sum sort tail tar touch
+  tr curl gzip gunzip mysql mysqldump base64 rsync unzip)
+# The files a CA bundle goes by: Debian and Ubuntu, RHEL and AlmaLinux (the second is a link into ca-trust).
+BUNDLES=(ca-certificates.crt ca-bundle.crt tls-ca-bundle.pem)
+
+for dir in "$@"; do
+  [[ "$dir" =~ ^/[A-Za-z0-9._+/-]+$ ]] && [[ "$dir" != *..* ]] || hp_die "$EXIT_BAD_ARGS" "usage: jail-extras [trust directory] (any number)"
+done
+
+{
+  for tool in "${TOOLS[@]}"; do
+    hp_tool_path "$tool" || true
+  done
+  while IFS=$'\t' read -r _ cli; do
+    printf '%s\n' "$cli"
+    hp_php_dirs "$cli"
+  done < <(hp_php_versions)
+  for dir in "$@"; do
+    for name in "${BUNDLES[@]}"; do
+      file="$ROOT$dir/$name"
+      [ -e "$file" ] || continue
+      printf '%s/%s\n' "$dir" "$name"
+      if [ -L "$file" ] && target="$(readlink -f -- "$file")" && target="$(hp_logical "$target")"; then
+        printf '%s\n' "$target"
+      fi
+    done
+  done
+} | awk '!seen[$0]++'

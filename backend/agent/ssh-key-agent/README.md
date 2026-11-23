@@ -142,9 +142,9 @@ HostPanel; nobody runs anything on the server by hand. It assumes the customer s
 | `jail_enrol` | `false` | Enrol on the first key, withdraw on the last. |
 | `jail_root` | `/home/jail` | Parent of every jail; root-owned. |
 | `jail_group` | `sftp-ssh` | Group the customer sshd chroots. Leave `ssh_group` empty when this is on. |
-| `jail_sections` | `basicshell,editors,extendedshell,netutils,terminfo` | `jk_init` sections copied into a new jail. |
+| `jail_sections` | none, the profile sets it (`generic-linux`: `basicshell,extendedshell,editors,netutils,terminfo`) | `jk_init` sections copied into a new jail. No built in default: enrolment with none is refused (`internal_error`). With `jail_enrol` on, `install.sh --check` warns for each section missing from `/etc/jailkit/jk_init.ini`. |
 | `jail_shell` | `/bin/bash` | Login shell set on enrolment. |
-| `jail_extras` | `/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS` | Paths copied into the jail with `jk_cp -f` (binaries bring their libraries) when the jail lacks one or its host copy changed (missing in the jail, another size, or newer in whole seconds); paths missing on the host are skipped, and an entry already in place costs no copy. A bare jailkit tree lacks `uname`, which a login profile script calls, and `/etc/profile.d/colorls.sh` (with `dircolors`), where `ll` is defined; `rsync`, `tar`, `gzip` and `unzip` let a CI job deploy a site over SSH. An entry that is or contains (symlinks followed) private key material is refused: a `private` directory (such as `/etc/pki/tls/private`), or a file named `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks`. Enrolment fails with `internal_error` before anything is built, and `install.sh --check` warns (exit 1 of `hostpanel-ssh-key-agent --check-config`; any other exit is reported as a failed check). The safe trust paths for outgoing TLS (git, curl) are listed in `SAFE_TRUST_PATHS` of the agent, which `--check` prints, and in the `jail_extras` entry of [the server documentation](../../../docs/en/servers/ssh-key-agent.md); never list `/etc/pki/tls`. |
+| `jail_extras` | none in `generic-linux` (the `jail-extras` helper lists the deploy tools), the CWP profile lists `uname`, `id`, `hostname`, `dircolors`, `rsync`, `tar`, `gzip`, `unzip`, `/etc/bashrc`, `/etc/profile.d/colorls.sh` and `/etc/DIR_COLORS` | Paths copied into the jail with `jk_cp -f` (binaries bring their libraries) when the jail lacks one or its host copy changed (missing in the jail, another size, or newer in whole seconds); paths missing on the host are skipped, and an entry already in place costs no copy. Added to what the provider's `jail-extras` helper lists (see "A jail for site deployers"), and the private key check covers both. An entry that is or contains (symlinks followed) private key material is refused: a `private` directory (such as `/etc/pki/tls/private`), or a file named `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks`. Enrolment fails with `internal_error` before anything is built, and `install.sh --check` warns (exit 1 of `hostpanel-ssh-key-agent --check-config`; any other exit is reported as a failed check). The safe trust paths for outgoing TLS (git, curl) are listed in `SAFE_TRUST_PATHS` of the agent, which `--check` prints, and in the `jail_extras` entry of [the server documentation](../../../docs/en/servers/ssh-key-agent.md); never list `/etc/pki/tls`. |
 | `systemd_unit_dir` | `/etc/systemd/system` | Where the home bind-mount unit is written. |
 
 While it is on, an account that passes every other check reports `shell_enabled: true` even
@@ -172,6 +172,33 @@ To remove a jail entirely: `systemctl disable --now <unit>`, delete the unit fil
 prints nothing: while the bind mount is active, `<jail_root>/<user>/home/<user>` *is* the
 customer's website, and `rm -rf` on the jail would delete it. Only when nothing is mounted, remove
 the jail with `rm -rf --one-file-system <jail_root>/<user>`.
+
+## A jail for site deployers (`jail-extras`, agent 1.7.0+)
+
+A bare jailkit tree holds a shell and little else, so a jailed account could not deploy a site. The `generic-linux`
+profile ships the `jail-extras` helper (`providers/generic-linux/jail-extras`, run as root, read only). On every
+enrolment the agent runs it with `SAFE_TRUST_PATHS` as arguments and copies what it prints into the jail, on top of
+`jail_extras`:
+
+* the deploy tools that are installed, resolved with `command -v`: flock, setsid, nohup, awk, basename, cut, find, grep,
+  head, ln, mkdir, mktemp, mv, readlink, rm, sed, sha256sum, sort, tail, tar, touch, tr, curl, gzip, gunzip, mysql,
+  mysqldump and base64, plus rsync and unzip when they are present;
+* every installed PHP CLI (the same detection `php-versions` uses, see `hp-common.sh`) with its ini directory, its
+  directory of additional ini files, the directories the links in it lead to (where Debian keeps the module files) and
+  its extension directory, all asked of the CLI itself;
+* the CA bundle found in the trust directories it was given: `ca-certificates.crt`, `ca-bundle.crt` or
+  `tls-ca-bundle.pem`, and the target of a link.
+
+`jail_extras(config)` in the agent unions the helper's paths with the configured ones (absolute plain paths only, no
+duplicates) and is the only place that does. Enrolment and `install.sh --check` (`--check-config`) both run the private
+key check, `unsafe_jail_extras`, over that union, so a key the helper would expose fails the enrolment with
+`internal_error` exactly like a configured one. A server without the helper, or one whose helper fails, gets just the
+configured paths. Run it by hand to see a server's list: `jail-extras /etc/ssl/certs /etc/pki/tls/certs`.
+
+The jail sections are the profile's choice: `profiles/generic-linux.conf` sets
+`jail_sections = basicshell,extendedshell,editors,netutils,terminfo` and `profiles/cwp.conf` keeps its own sections and
+extras; the agent has no built in default for either. `install.sh --check` warns, by name, for each configured section
+that `/etc/jailkit/jk_init.ini` does not define (all of them when jailkit is not installed), when `jail_enrol` is on.
 
 ## Removing the jail of a deleted account (`remove-jail`, agent 1.4.0+)
 
@@ -308,6 +335,11 @@ runs as, the virtual host directory and every PHP version with its CLI.
 * **Safe change.** Every edited file is copied first, the web server and php-fpm configuration are tested, and only then
   are they reloaded (`systemctl reload`); a failed test restores the files and answers `website_failed`. Enabled Apache
   modules (`proxy_fcgi`) are left enabled. HTTP only; TLS is left to the server's own certificate handling.
+* **SELinux.** While SELinux is enforcing (`getenforce` prints `Enforcing`, the default on RHEL and AlmaLinux),
+  `ensure-website` refuses with `website_failed` before it changes anything: the virtual hosts, pools and document roots
+  it writes are not labelled for SELinux, so the web server could not read them. Set SELinux to permissive or disabled,
+  or serve the site by hand, until labelling is supported. The message is on the helper's stderr for whoever runs it by
+  hand; the agent sends only the code.
 * **Databases.** Present when a `mariadb` client (else `mysql`) is installed and one of the units `mysql`, `mysqld` or
   `mariadb` is running; otherwise `ping` lists neither database op and the helpers refuse (`database_failed`). The
   helpers act as the database administrator through `/root/.my.cnf` when it exists, else through root's socket
@@ -363,3 +395,6 @@ tests reuse as fixtures.
 Apache on RHEL with Remi, nginx on RHEL with the AppStream php, nginx on Debian) with fake `systemctl`, `apache2ctl`,
 `httpd`, `nginx`, `a2ensite`, `a2dissite`, `a2enmod`, `php-fpm*` and `php`: idempotent ensure, `link_root` per server, one or
 several php versions, the registry, restore after a failed test, an ambiguous web server and the `php_cli` map.
+It also covers `jail-extras` (the tools, the PHP CLI directories, the CA bundle, the union and the private key check over
+it) and the SELinux refusal; `tests/test_agent.py` covers the union in the agent, the empty `jail_sections` refusal and the
+`--check-config` warnings.

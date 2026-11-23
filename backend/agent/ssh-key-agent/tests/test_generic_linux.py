@@ -205,9 +205,9 @@ class GenericLinuxCase(test_ops.OpsTestCase):
                     found.append(os.path.relpath(os.path.join(directory, name), self.root))
         return sorted(found)
 
-    def run_helper(self, name):
-        """Runs a no-argument helper the way the agent does and returns its output."""
-        done = subprocess.run([os.path.join(self.helper_dir, name)], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+    def run_helper(self, name, *args):
+        """Runs a helper the way the agent does and returns its output."""
+        done = subprocess.run([os.path.join(self.helper_dir, name), *args], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               env=dict(test_ops.agent.JAIL_ENV), check=True, text=True)
         return done.stdout
 
@@ -734,3 +734,104 @@ class DatabaseTests(GenericLinuxCase):
         self.assertIn("database_client=/usr/bin/mariadb\ndatabase_unit=mariadb\n", self.run_helper("detect"))
         os.unlink(os.path.join(self.root, "active/mariadb"))
         self.assertIn("database_client=unknown\n", self.run_helper("detect"))
+
+
+FAKE_SURY_PHP = """#!/bin/sh
+printf '/etc/php/8.3/cli\\n/etc/php/8.3/cli/conf.d\\n/usr/lib/php/20230831\\n'
+"""
+FAKE_GETENFORCE = """#!/bin/sh
+echo "$(cat "$HP_ROOT/selinux")"
+"""
+
+
+class JailExtrasTests(GenericLinuxCase):
+    """The jail-extras helper: the deploy tools, the PHP CLIs with their directories and the CA bundle, found on the server."""
+
+    def setUp(self):
+        super().setUp()
+        self.build(SCENARIOS[3])
+        self.tool("flock")
+        self.tool("tar")
+        self.tool("gzip")
+        self.tool("curl")
+        write_executable(os.path.join(self.root, "usr/bin/php8.3"), FAKE_SURY_PHP)
+        for directory in ("etc/php/8.3/cli", "etc/php/8.3/mods-available", "usr/lib/php/20230831"):
+            os.makedirs(os.path.join(self.root, directory))
+        os.makedirs(os.path.join(self.root, "etc/php/8.3/cli/conf.d"))
+        open(os.path.join(self.root, "etc/php/8.3/mods-available/curl.ini"), "w").close()
+        os.symlink("../../mods-available/curl.ini", os.path.join(self.root, "etc/php/8.3/cli/conf.d/20-curl.ini"))
+
+    def tool(self, name):
+        """Installs a stand-in deploy tool in /usr/bin."""
+        write_executable(os.path.join(self.root, "usr/bin", name), "#!/bin/sh\n")
+
+    def paths(self):
+        """The helper's output for the agent's trust paths, as a list of lines."""
+        return self.run_helper("jail-extras", *test_ops.agent.SAFE_TRUST_PATHS).splitlines()
+
+    def test_lists_the_installed_tools_the_php_cli_with_its_directories_and_the_bundle(self):
+        os.makedirs(os.path.join(self.root, "etc/ssl/certs"))
+        open(os.path.join(self.root, "etc/ssl/certs/ca-certificates.crt"), "w").close()
+        self.assertEqual(self.paths(), [
+            "/usr/bin/flock", "/usr/bin/tar", "/usr/bin/curl", "/usr/bin/gzip",
+            "/usr/bin/php8.3", "/etc/php/8.3/cli", "/etc/php/8.3/cli/conf.d", "/usr/lib/php/20230831",
+            "/etc/php/8.3/mods-available", "/etc/ssl/certs/ca-certificates.crt"])
+
+    def test_rsync_and_unzip_are_listed_only_when_installed(self):
+        self.assertNotIn("/usr/bin/rsync", self.paths())
+        self.tool("rsync")
+        self.tool("unzip")
+        paths = self.paths()
+        self.assertIn("/usr/bin/rsync", paths)
+        self.assertIn("/usr/bin/unzip", paths)
+
+    def test_a_bundle_that_is_a_link_lists_its_target_too(self):
+        os.makedirs(os.path.join(self.root, "etc/pki/tls/certs"))
+        os.makedirs(os.path.join(self.root, "etc/pki/ca-trust/extracted/pem"))
+        open(os.path.join(self.root, "etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"), "w").close()
+        os.symlink("../../ca-trust/extracted/pem/tls-ca-bundle.pem", os.path.join(self.root, "etc/pki/tls/certs/ca-bundle.crt"))
+        paths = self.paths()
+        self.assertIn("/etc/pki/tls/certs/ca-bundle.crt", paths)
+        self.assertIn("/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", paths)
+
+    def test_a_trust_directory_that_is_not_a_plain_path_is_refused(self):
+        done = subprocess.run([os.path.join(self.helper_dir, "jail-extras"), "/etc/ssl/../x"], stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, env=dict(test_ops.agent.JAIL_ENV), text=True)
+        self.assertEqual(done.returncode, 2)
+        self.assertEqual(done.stdout, "")
+
+    def test_the_agent_reads_the_helper_and_the_private_key_check_passes_over_the_union(self):
+        os.makedirs(os.path.join(self.root, "etc/ssl/certs"))
+        open(os.path.join(self.root, "etc/ssl/certs/ca-certificates.crt"), "w").close()
+        self.config["jail_extras"] = ["/configured/by/hand"]
+        union = test_ops.agent.jail_extras(self.config)
+        self.assertEqual(union[0], "/configured/by/hand")
+        self.assertEqual(union[1:], self.paths())
+        self.assertEqual(test_ops.agent.unsafe_jail_extras(union), [])
+
+
+class SelinuxTests(GenericLinuxCase):
+    """ensure-website refuses while SELinux is enforcing, because the files it writes are not labelled for it."""
+
+    def setUp(self):
+        super().setUp()
+        self.build(SCENARIOS[2])
+        write_executable(os.path.join(self.root, "usr/sbin/getenforce"), FAKE_GETENFORCE)
+
+    def set_mode(self, mode):
+        """Sets what the stand-in getenforce reports."""
+        with open(os.path.join(self.root, "selinux"), "w") as handle:
+            handle.write(mode)
+
+    def test_enforcing_refuses_the_website_and_changes_nothing(self):
+        self.set_mode("Enforcing")
+        before = self.all_files()
+        self.assertEqual(self.call(**self.site())["error"], "website_failed")
+        self.assertEqual(self.all_files(), before)
+        self.assertFalse(os.path.exists(self.vhost_path()))
+
+    def test_permissive_and_a_server_without_selinux_serve_the_website(self):
+        self.set_mode("Permissive")
+        self.assertTrue(self.call(**self.site())["ok"])
+        os.unlink(os.path.join(self.root, "usr/sbin/getenforce"))
+        self.assertTrue(self.call(**self.site(hostname="two.example.com", docroot="sites/two"))["ok"])

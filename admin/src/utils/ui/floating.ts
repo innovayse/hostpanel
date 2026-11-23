@@ -62,10 +62,15 @@ export interface FloatingPlace {
   bottom?: number
   /** Width of the trigger, for a list that is as wide as its field. */
   width: number
+  /** The tallest the panel may be, in pixels: the room on the side it opens to, so a tall panel scrolls inside itself instead of leaving the screen. */
+  maxHeight: number
 }
 
 /** Smallest distance kept between a clamped panel and the viewport's left edge, in pixels. */
 const VIEWPORT_MARGIN_PX = 8
+
+/** Distance kept between a panel and the viewport edge it opens toward (top or bottom), in pixels. */
+const VIEWPORT_VERTICAL_MARGIN_PX = 8
 
 /** Distance kept between a clamped panel and the viewport's right edge, in pixels. */
 const VIEWPORT_EDGE_GAP_PX = 16
@@ -75,7 +80,7 @@ const VIEWPORT_EDGE_GAP_PX = 16
  * (written from script, never an inline style attribute) and `auto` when the variable is absent. The classes are
  * literals because an interpolated Tailwind class emits no CSS.
  */
-export const FLOATING_PLACE_CLASSES = 'fixed left-[var(--fp-left,auto)] right-[var(--fp-right,auto)] top-[var(--fp-top,auto)] bottom-[var(--fp-bottom,auto)]'
+export const FLOATING_PLACE_CLASSES = 'fixed left-[var(--fp-left,auto)] right-[var(--fp-right,auto)] top-[var(--fp-top,auto)] bottom-[var(--fp-bottom,auto)] max-h-[var(--fp-max-h,none)] overflow-y-auto overscroll-contain'
 
 /**
  * The surface every floating panel (menu, select, field selector, date popup, tooltip, command palette) wears: a fully opaque raised ground (`--surface-elevated` is solid in both
@@ -103,7 +108,8 @@ export const computeFloatingPlace = (
 ): FloatingPlace => {
   const below = viewport.height - anchor.bottom
   const opensAbove = below < options.minRoom && anchor.top > below
-  const place: FloatingPlace = { width: anchor.width }
+  const room = opensAbove ? anchor.top - options.gap : below - options.gap
+  const place: FloatingPlace = { width: anchor.width, maxHeight: Math.max(room - VIEWPORT_VERTICAL_MARGIN_PX, 0) }
   const fitWidth = options.keepInsideWidth ?? panelWidth
   const endFits = panelWidth === undefined || anchor.right - panelWidth >= VIEWPORT_MARGIN_PX
   if (options.align === FloatingAlign.End && endFits) {
@@ -150,4 +156,5 @@ export const applyFloatingPlace = (element: HTMLElement, place: FloatingPlace): 
   writeVariable(element, '--fp-top', place.top)
   writeVariable(element, '--fp-bottom', place.bottom)
   writeVariable(element, '--fp-width', place.width)
+  writeVariable(element, '--fp-max-h', place.maxHeight)
 }

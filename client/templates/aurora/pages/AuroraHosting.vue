@@ -3,7 +3,7 @@
     <UiBackdrop variant="aurora" />
 
     <UiContainer class="relative">
-      <UiStack as="section" align="center" gap="none" class="relative pb-9 pt-[clamp(48px,7vw,80px)] text-center">
+      <UiStack :as="UiStackTag.Section" align="center" gap="none" class="relative pb-9 pt-[clamp(48px,7vw,80px)] text-center">
         <UiText tone="inherit" size="inherit" :class="[EYEBROW_CLASS, 'text-ac1']">{{ t('aurora.hostingPage.eyebrow') }}</UiText>
         <UiHeading :level="1" size="bare" :class="[PAGE_TITLE_CLASS, 'mt-3.5']" data-testid="hosting-title">
           {{ t('aurora.hostingPage.title') }}
@@ -41,6 +41,7 @@ import { EYEBROW_CLASS, PAGE_TITLE_CLASS } from '~/templates/aurora/typography'
 import type { PlanCard } from '~/types/plancard'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { ComparisonRow } from '~/types/comparisonrow'
+import { UiStackTag } from '~/utils/ui/enums'
 
 withDefaults(defineProps<{
   /** Hosting plans for the cards and the comparison columns. */

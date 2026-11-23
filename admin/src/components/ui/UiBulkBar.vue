@@ -9,7 +9,8 @@
  * one-word label that never wraps, and its full sentence as its title (the native tooltip, as in the page header). On a phone only the first action (the primary one) stays
  * a button and the others fold into a "..." menu (`useFoldedActions`, shared with the page header), so the bar never outgrows the screen. The bar is a `role="toolbar"` named
  * by `label`, and the count is a polite live region, so a screen reader hears the selection change.
- * The root is a Teleport, which cannot take attributes, so a caller's `data-testid` goes onto the toolbar.
+ * The bar is fixed over the page, so while it is shown an empty spacer of its own height stands where the component sits (the end of the list it
+ * belongs to), and the last rows can be scrolled clear of it. The root is a Teleport, which cannot take attributes, so a caller's `data-testid` goes onto the toolbar.
  */
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -80,6 +81,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <div v-if="count > 0" class="h-24 max-sm:h-32" aria-hidden="true" data-testid="ui-bulk-bar-spacer" />
   <Teleport to="body">
     <div class="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:px-0 max-sm:pb-[env(safe-area-inset-bottom)]">
       <UiTransition :kind="UiTransitionKind.BulkBar">

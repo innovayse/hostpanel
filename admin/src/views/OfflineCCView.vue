@@ -18,12 +18,14 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { invoiceViewPath } from '@/lib/routes'
 import { useBillingStore } from '@/stores/billing'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiMaxWidth } from '@/utils/ui/layout'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
 import schema from '@/views/OfflineCCView.schema'
 
 const { t } = useI18n()
@@ -89,7 +91,7 @@ const openInvoice = async (): Promise<void> => {
 <template>
   <UiStack>
     <UiPageHeader v-bind="schemaHeader(schema, t)" data-testid="offline-cc-header" />
-    <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors" class="max-w-3xl" data-testid="offline-cc-form" @submit="submit">
+    <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors" :max-width="UiMaxWidth.Form" data-testid="offline-cc-form" @submit="submit">
       <template #field-invoiceId="{ id, invalid }">
         <UiNumberInput
           :id="id"
@@ -139,7 +141,7 @@ const openInvoice = async (): Promise<void> => {
         <UiInput
           :id="id"
           v-model="form.transactionId.value"
-          type="text"
+          :type="UiInputType.Text"
           :invalid="invalid"
           :placeholder="t('billing.invoicePaymentTab.gatewayReference')"
           data-testid="offline-cc-reference"
@@ -148,19 +150,18 @@ const openInvoice = async (): Promise<void> => {
       <UiFormActions>
         <UiButton
           :action="UiActionKind.Confirm"
-          type="submit"
-          variant="primary"
+          :type="UiButtonType.Submit"
+          :variant="UiButtonVariant.Primary"
           :loading="form.submitting.value"
           :disabled="!canSubmit"
           data-testid="offline-cc-submit"
         >
           {{ t('billing.offlineCC.processPayment') }}
         </UiButton>
-        <UiButton v-if="paidInvoiceId !== null" :action="UiActionKind.View" variant="secondary" data-testid="offline-cc-open-invoice" @click="openInvoice">
+        <UiButton v-if="paidInvoiceId !== null" :action="UiActionKind.View" :variant="UiButtonVariant.Secondary" data-testid="offline-cc-open-invoice" @click="openInvoice">
           {{ t('billing.offlineCC.viewInvoice', { id: paidInvoiceId }) }}
         </UiButton>
       </UiFormActions>
-      <UiStatusMessage :message="form.feedback.message.value" :tone="form.feedbackTone.value" data-testid="offline-cc-feedback" />
     </UiSchemaForm>
   </UiStack>
 </template>

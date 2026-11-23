@@ -35,6 +35,8 @@ import { AppRoute, quotePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema, { QUOTE_GENERAL_FORM_PART, QUOTE_NOTES_FORM_PART } from '@/views/AddQuoteView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -110,7 +112,7 @@ onMounted(() => {
   <UiStack data-testid="billing-add-quote-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiAlert v-if="store.error" variant="error" data-testid="billing-add-quote-error">
+    <UiAlert v-if="store.error" :variant="UiTone.Danger" data-testid="billing-add-quote-error">
       {{ store.error }}
     </UiAlert>
 
@@ -171,10 +173,10 @@ onMounted(() => {
       </template>
 
       <UiFormActions>
-        <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingQuotes" variant="ghost" data-testid="billing-add-quote-cancel">
+        <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingQuotes" :variant="UiButtonVariant.Ghost" data-testid="billing-add-quote-cancel">
           {{ t('shared.cancel') }}
         </UiLink>
-        <UiButton :action="UiActionKind.Add" type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-quote-submit">
+        <UiButton :action="UiActionKind.Add" type="submit" :variant="UiButtonVariant.Primary" :loading="store.loading" data-testid="billing-add-quote-submit">
           {{ t('billing.addQuote.createQuote') }}
         </UiButton>
       </UiFormActions>

@@ -6,7 +6,7 @@
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the credits reviewer is made of. */
 const schema: ReportSkeletonSchema = {
@@ -22,10 +22,10 @@ const schema: ReportSkeletonSchema = {
   summary: true,
   table: {
     columns: [
-      { key: 'id', label: 'reports.creditsReviewer.creditId', size: UiColumnSize.Compact },
-      { key: 'clientId', label: 'reports.creditsReviewer.clientId', size: UiColumnSize.Compact },
+      { key: 'id', label: 'reports.creditsReviewer.creditId', kind: UiColumnKind.Id },
+      { key: 'clientId', label: 'reports.creditsReviewer.clientId', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName' },
-      { key: 'date', label: 'shared.date', align: UiAlign.Center, size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', align: UiAlign.Center, kind: UiColumnKind.Date },
       { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
       { key: 'currency', label: 'shared.currency', size: UiColumnSize.Compact },
       { key: 'amount', label: 'shared.amount', align: UiAlign.Right },

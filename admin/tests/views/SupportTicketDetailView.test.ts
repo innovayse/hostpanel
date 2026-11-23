@@ -13,6 +13,7 @@ import { mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { UiTone } from '@/utils/ui/tone'
 
 /** A ticket with one staff reply. */
 const ticket = {
@@ -127,7 +128,7 @@ describe('SupportTicketDetailView', () => {
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Reply sent.'])
   })
 
-  it('shows the API sentence next to the reply form when the reply is refused', async () => {
+  it('toasts the API sentence when the reply is refused', async () => {
     stubRoutes({
       'POST /api/tickets/5/reply': () => problem('The ticket is closed.', 409),
       'GET /api/tickets/departments': () => json([]),
@@ -139,7 +140,7 @@ describe('SupportTicketDetailView', () => {
     await wrapper.get('[data-testid="ticket-reply-submit"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="ticket-reply-feedback"]').text()).toBe('The ticket is closed.')
+    expect(useToastStore().toasts.map((toast) => [toast.message, toast.tone])).toEqual([['The ticket is closed.', UiTone.Danger]])
   })
 
   it('deletes only after the danger confirmation and stays on a refusal', async () => {
@@ -158,7 +159,7 @@ describe('SupportTicketDetailView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="ticket-action-feedback"]').text()).toBe('The ticket is locked.')
+    expect(useToastStore().toasts.map((toast) => [toast.message, toast.tone])).toEqual([['The ticket is locked.', UiTone.Danger]])
     expect(wrapper.get('[data-testid="ticket-title"]').text()).toContain('DNS is down')
   })
 

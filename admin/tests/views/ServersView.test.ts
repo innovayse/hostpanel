@@ -13,6 +13,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { serverDto, serverGroupDto, serverModuleOptionDtos, serverOptionDto, serverSshSettingsDto, serverSshSetupDto } from '../helpers/serverFixtures'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address the screen is registered under. */
 const PATH = '/servers'
@@ -85,7 +86,7 @@ describe('ServersView', () => {
     expect(listUrls(mock)[0]).toBe('/api/admin/servers?page=2&pageSize=20&search=host&module=hestiacp&state=offline')
     expect(wrapper.find('[data-testid="server-row-2"]').exists()).toBe(true)
     expect((wrapper.get('[data-testid="servers-search"]').element as HTMLInputElement).value).toBe('host')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Hestia Control Panel')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Offline')
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('2')
   })
@@ -129,7 +130,7 @@ describe('ServersView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp', state: 'untested' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp&state=untested')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Hestia Control Panel')
     expect(wrapper.get('[data-testid="filter-chip-state"]').text()).toContain('Not tested')
   })
 
@@ -145,8 +146,8 @@ describe('ServersView', () => {
 
     expect(router.currentRoute.value.query).toEqual({ module: 'hestiacp' })
     expect(listUrls(mock).at(-1)).toBe('/api/admin/servers?page=1&pageSize=20&module=hestiacp')
-    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('hestiacp')
-    expect(wrapper.get('[data-testid="servers-module-hestiacp"]').text()).toBe('hestiacp')
+    expect(wrapper.get('[data-testid="filter-chip-module"]').text()).toContain('Hestia Control Panel')
+    expect(wrapper.get('[data-testid="servers-module-hestiacp"]').text()).toBe('Hestia Control Panel')
   })
 
   it('removes the state from the address and reloads when its chip is removed', async () => {
@@ -309,7 +310,7 @@ describe('ServersView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('The server has services.')
+    expect(toastMessages()).toContain('The server has services.')
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
   })
 
@@ -431,7 +432,7 @@ describe('ServersView', () => {
     expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(true)
     await wrapper.get('[data-testid="server-ssh-cancel"]').trigger('click')
     expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('')
+    expect(toastMessages()).toEqual([])
   })
 
   it('keeps the SSH dialog open after a save, with the confirmation inside it', async () => {
@@ -455,7 +456,7 @@ describe('ServersView', () => {
 
     expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="server-ssh-saved"]').text()).toBe('Saved')
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('')
+    expect(toastMessages()).toEqual([])
   })
 
   it('keeps the page header, the toolbar and the card grid and draws placeholder cards while the servers load', async () => {

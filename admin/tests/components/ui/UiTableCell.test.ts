@@ -10,7 +10,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 import { createTestI18n } from '../../helpers/i18n'
 
 describe('UiTableCell', () => {
@@ -91,9 +91,46 @@ describe('UiTableCell', () => {
     const cells = wrapper.findAll('tbody td')
 
     expect(cells[0]?.classes()).toEqual(expect.arrayContaining(['w-px', 'whitespace-nowrap']))
-    expect(cells[1]?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0', 'truncate']))
-    expect(cells[2]?.classes()).toContain('whitespace-nowrap')
+    expect(cells[1]?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
+    expect(cells[2]?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'truncate']))
     expect(cells[2]?.classes()).not.toContain('w-px')
+  })
+
+  it('shows the full text of a cut cell as a tooltip, and nothing for a cell that fits or does not truncate', async () => {
+    const Harness = defineComponent({
+      render: () => h(UiTable, null, {
+        default: () => [
+          h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => [
+            h(UiTableHeader, null, { default: () => 'Name' }),
+            h(UiTableHeader, { kind: UiColumnKind.Date }, { default: () => 'Date' }),
+          ] }) }),
+          h(UiTableBody, null, { default: () => h(UiTableRow, null, { default: () => [
+            h(UiTableCell, null, { default: () => 'A very long name' }),
+            h(UiTableCell, null, { default: () => '2026-01-01' }),
+          ] }) }),
+        ],
+      }),
+    })
+    const wrapper = mount(Harness, { global: { plugins: [createTestI18n()] } })
+    await nextTick()
+    const [name, date] = wrapper.findAll('tbody td')
+    /** Gives an element the scroll and client widths a layout engine would measure. */
+    const measure = (element: Element | undefined, scrollWidth: number, clientWidth: number): void => {
+      Object.defineProperty(element, 'scrollWidth', { configurable: true, value: scrollWidth })
+      Object.defineProperty(element, 'clientWidth', { configurable: true, value: clientWidth })
+    }
+
+    measure(name?.element, 200, 80)
+    await name?.trigger('mouseenter')
+    expect(name?.attributes('title')).toBe('A very long name')
+
+    measure(name?.element, 80, 80)
+    await name?.trigger('mouseenter')
+    expect(name?.attributes('title')).toBe('')
+
+    measure(date?.element, 200, 80)
+    await date?.trigger('mouseenter')
+    expect(date?.attributes('title')).toBeUndefined()
   })
 
   it('has no size of its own outside a table', () => {

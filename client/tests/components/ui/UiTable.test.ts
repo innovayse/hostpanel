@@ -40,4 +40,65 @@ describe('UiTable', () => {
 
     expect(scroller.attributes('tabindex')).toBeUndefined()
   })
+
+  it('keeps the frame unless flush', () => {
+    const framed = mountWithKit(UiTable)
+    const flush = mountWithKit(UiTable, { props: { flush: true } })
+
+    expect(framed.classes()).toEqual(expect.arrayContaining(['border', 'rounded-2xl', 'bg-ui-surface']))
+    expect(flush.classes()).toContain('overflow-hidden')
+    expect(flush.classes()).not.toContain('border')
+    expect(flush.classes()).not.toContain('rounded-2xl')
+    expect(flush.classes()).not.toContain('bg-ui-surface')
+  })
+
+  it('draws the head and the body slots', () => {
+    const wrapper = mountWithKit(UiTable, {
+      slots: { head: '<thead><tr><th>h</th></tr></thead>', default: '<tbody><tr><td>b</td></tr></tbody>' },
+    })
+
+    expect(wrapper.find('thead th').text()).toBe('h')
+    expect(wrapper.find('tbody td').text()).toBe('b')
+  })
+
+  it('draws one placeholder cell per column per loading row instead of the body', () => {
+    const wrapper = mountWithKit(UiTable, {
+      props: { loading: true, columns: 3 },
+      slots: { default: '<tbody data-testid="rows"><tr><td>b</td></tr></tbody>' },
+    })
+
+    expect(wrapper.find('[data-testid="rows"]').exists()).toBe(false)
+    const rows = wrapper.findAll('[data-testid="ui-table-loading"] tr')
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0]?.findAll('td')).toHaveLength(3)
+    expect(rows[0]?.findAll('[data-testid="ui-skeleton"]')).toHaveLength(3)
+  })
+
+  it('draws the empty state in one full-width row instead of the body', () => {
+    const wrapper = mountWithKit(UiTable, {
+      props: { empty: true, emptyText: 'Nothing here', emptyDescription: 'Add one', columns: 4 },
+      slots: { default: '<tbody data-testid="rows"><tr><td>b</td></tr></tbody>' },
+    })
+
+    expect(wrapper.find('[data-testid="rows"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-empty"] td').attributes('colspan')).toBe('4')
+    expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('Nothing here')
+    expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('Add one')
+  })
+
+  it('puts the empty slot in the empty state as its action', () => {
+    const wrapper = mountWithKit(UiTable, {
+      props: { empty: true, emptyText: 'Nothing here' },
+      slots: { empty: '<button data-testid="first">New</button>' },
+    })
+
+    expect(wrapper.find('[data-testid="ui-empty-state"] [data-testid="first"]').exists()).toBe(true)
+  })
+
+  it('shows the loading state before the empty state', () => {
+    const wrapper = mountWithKit(UiTable, { props: { loading: true, empty: true, emptyText: 'Nothing here' } })
+
+    expect(wrapper.find('[data-testid="ui-table-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(false)
+  })
 })

@@ -12,21 +12,15 @@ import { domainStatusTone } from '@/lib/tones'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import type { DomainRegistration } from '@/types/domain'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
-import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientDomainsListView.schema'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
@@ -107,65 +101,47 @@ onMounted(() => fetchDomains())
       @retry="fetchDomains()"
     />
 
-    <UiCard v-else-if="initialLoading || domains.length > 0">
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="initialLoading"
-        data-testid="client-domains-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="domain in domains"
-            :key="domain.id"
-            hoverable
-            class="cursor-pointer"
-            :data-testid="`client-domains-row-${domain.id}`"
-            @click="viewDomain(domain.id)"
-          >
-            <UiTableCell muted>{{ domain.id }}</UiTableCell>
-            <UiTableCell>{{ domain.name }}</UiTableCell>
-            <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="domain.autoRenew"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('shared.yes')"
-                :off-label="t('shared.no')"
-              />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-      <template v-if="initialLoading || totalCount > pageSize" #footer>
-        <UiStack
-          direction="row"
-          wrap
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!initialLoading && domains.length === 0"
+      :empty-text="t('clients.clientDomainsList.noDomainsFoundForThis')"
+      :page="page"
+      :total="totalCount"
+      :page-size="pageSize"
+      pagination-testid="client-domains-pagination"
+      data-testid="client-domains-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="domain in domains"
+          :key="domain.id"
+          hoverable
+          clickable
+          :data-testid="`client-domains-row-${domain.id}`"
+          @click="viewDomain(domain.id)"
         >
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
-            {{ t('shared.totalcountDomainValue', { totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="totalCount"
-            :page-size="pageSize"
-            :loading="initialLoading"
-            testid="client-domains-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
-      </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState :title="t('clients.clientDomainsList.noDomainsFoundForThis')" />
-    </UiCard>
+          <UiTableCell muted>{{ domain.id }}</UiTableCell>
+          <UiTableCell>{{ domain.name }}</UiTableCell>
+          <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="domain.autoRenew"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('shared.yes')"
+              :off-label="t('shared.no')"
+            />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

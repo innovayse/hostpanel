@@ -24,9 +24,9 @@
               <Search :size="16" :stroke-width="2" class="text-gray-400" />
             </template>
           </UiInput>
-          <UiButton type="submit" size="lg" data-testid="kb-search-submit">
+          <UiButton variant="primary" type="submit" size="lg" data-testid="kb-search-submit">
             <Search :size="16" :stroke-width="2" class="mr-2" />
-            {{ t('kb.search') }}
+            {{ t('ui.searchButton') }}
           </UiButton>
         </UiStack>
       </UiForm>
@@ -44,11 +44,13 @@
             <UiButton
               variant="ghost"
               size="sm"
+              :title="t('ui.clearSearch')"
+              :aria-label="t('ui.clearSearch')"
               data-testid="kb-clear-search"
               @click="clearSearch"
             >
               <X :size="14" :stroke-width="2" class="mr-1.5" />
-              {{ t('kb.backToKb') }}
+              {{ t('common.clear') }}
             </UiButton>
           </UiStack>
 
@@ -117,7 +119,7 @@
                       class="border border-primary-500/20 bg-primary-500/10 text-primary-700 dark:text-primary-300 [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border-classic-border [.tpl-classic_&]:bg-classic-brand-soft [.tpl-classic_&]:text-classic-brand"
                     />
                     <UiText
-                      as="span"
+                      :as="UiTextTag.Span"
                       weight="semibold"
                       class="transition-colors group-hover:text-primary-600 dark:group-hover:text-primary-400 group-hover:[.tpl-classic_&]:text-classic-brand"
                     >
@@ -173,6 +175,7 @@ import type { KbArticleSummary } from '~/types/kbarticlesummary'
 import type { KbCategory } from '~/types/kbcategory'
 import { kbCategorySlug } from '~/utils/kbCategory'
 import { siteKnowledgebaseCategoryPath } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Localised path builder from the i18n module. */
 const localePath = useLocalePath()

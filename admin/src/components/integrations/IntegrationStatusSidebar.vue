@@ -17,6 +17,9 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { MS_PER_SECOND } from '@/lib/limits'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function and the active locale (for time wording). */
 const { t, locale } = useI18n()
@@ -46,10 +49,10 @@ const formatDuration = (ms: number): string =>
 </script>
 
 <template>
-  <UiStack gap="md" data-testid="integration-status">
+  <UiStack :gap="UiGap.Md" data-testid="integration-status">
     <!-- Status -->
-    <UiStack gap="sm">
-      <UiText tone="muted" size="sm">
+    <UiStack :gap="UiGap.Sm">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
         {{ t('integrations.integrationStatusSidebar.connectionStatus') }}
       </UiText>
 
@@ -58,64 +61,64 @@ const formatDuration = (ms: number): string =>
         starts, so without this branch the card would show "Not tested yet" for the
         duration of the probe.
       -->
-      <UiStack v-if="testing" gap="xs" aria-busy="true" data-testid="integration-status-testing">
+      <UiStack v-if="testing" :gap="UiGap.Xs" aria-busy="true" data-testid="integration-status-testing">
         <!-- The result it will become: a state badge and the probe's message line -->
         <UiSkeletonBar class="h-5 w-28 rounded-full" aria-hidden="true" />
         <UiSkeletonBar class="h-3.5 w-48 max-w-full rounded-md" aria-hidden="true" />
       </UiStack>
 
       <!-- In-session test result -->
-      <UiStack v-else-if="testResult" gap="xs" data-testid="integration-status-result">
-        <UiBadge :tone="testResult.success ? 'success' : 'danger'" dot>
+      <UiStack v-else-if="testResult" :gap="UiGap.Xs" data-testid="integration-status-result">
+        <UiBadge :tone="testResult.success ? UiTone.Success : UiTone.Danger" dot>
           {{ testResult.success ? t('integrations.integrationStatusSidebar.connectionOk') : t('integrations.integrationStatusSidebar.connectionFailed') }}
         </UiBadge>
-        <UiText tone="muted" size="sm">{{ testResult.message }}</UiText>
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ testResult.message }}</UiText>
 
         <!--
           What the probe actually did. Each row is shown only when its value exists, so a
           built-in integration without a URL still gets a tidy card.
         -->
-        <UiStack v-if="endpointHost" direction="row" gap="sm">
-          <UiText tone="muted" size="xs">{{ t('integrations.integrationStatusSidebar.endpoint') }}</UiText>
-          <UiText tone="secondary" size="xs" class="truncate font-mono">{{ endpointHost }}</UiText>
+        <UiStack v-if="endpointHost" :direction="UiDirection.Row" :gap="UiGap.Sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('integrations.integrationStatusSidebar.endpoint') }}</UiText>
+          <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Xs" class="truncate font-mono">{{ endpointHost }}</UiText>
         </UiStack>
-        <UiStack v-if="testResult.testedAt" direction="row" gap="sm">
-          <UiText tone="muted" size="xs">{{ t('integrations.integrationStatusSidebar.tested') }}</UiText>
-          <UiText tone="secondary" size="xs">{{ formatClock(testResult.testedAt, locale) }}</UiText>
+        <UiStack v-if="testResult.testedAt" :direction="UiDirection.Row" :gap="UiGap.Sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('integrations.integrationStatusSidebar.tested') }}</UiText>
+          <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Xs">{{ formatClock(testResult.testedAt, locale) }}</UiText>
         </UiStack>
-        <UiStack v-if="testResult.durationMs !== undefined" direction="row" gap="sm">
-          <UiText tone="muted" size="xs">{{ t('integrations.integrationStatusSidebar.roundTrip') }}</UiText>
-          <UiText tone="secondary" size="xs">{{ formatDuration(testResult.durationMs) }}</UiText>
+        <UiStack v-if="testResult.durationMs !== undefined" :direction="UiDirection.Row" :gap="UiGap.Sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('integrations.integrationStatusSidebar.roundTrip') }}</UiText>
+          <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Xs">{{ formatDuration(testResult.durationMs) }}</UiText>
         </UiStack>
       </UiStack>
 
       <!-- No test on this page yet, but the plugin reported its state (cached by the API) -->
-      <UiStack v-else-if="connection" gap="xs" data-testid="integration-status-connection">
+      <UiStack v-else-if="connection" :gap="UiGap.Xs" data-testid="integration-status-connection">
         <UiBadge :tone="integrationConnectionTone[connection.state]" dot>
           {{ t(`integrations.connectionState.${connection.state}`) }}
         </UiBadge>
-        <UiText tone="muted" size="sm">{{ connection.message }}</UiText>
-        <UiStack direction="row" gap="sm">
-          <UiText tone="muted" size="xs">{{ t('integrations.integrationStatusSidebar.tested') }}</UiText>
-          <UiText tone="secondary" size="xs">{{ formatClock(connection.checkedAt, locale) }}</UiText>
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ connection.message }}</UiText>
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('integrations.integrationStatusSidebar.tested') }}</UiText>
+          <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Xs">{{ formatClock(connection.checkedAt, locale) }}</UiText>
         </UiStack>
       </UiStack>
 
       <!-- Nothing tested on this page yet -->
-      <UiStack v-else gap="xs" data-testid="integration-status-idle">
-        <UiBadge tone="neutral" dot>
+      <UiStack v-else :gap="UiGap.Xs" data-testid="integration-status-idle">
+        <UiBadge :tone="UiTone.Neutral" dot>
           {{ t('integrations.integrationStatusSidebar.notTestedYet') }}
         </UiBadge>
       </UiStack>
     </UiStack>
 
     <!-- Hint callout -->
-    <UiAlert v-if="hint" variant="warning" data-testid="integration-status-hint">
-      <UiStack gap="xs">
-        <UiText tone="warning" size="sm" class="font-medium">
+    <UiAlert v-if="hint" :variant="UiTone.Warning" data-testid="integration-status-hint">
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Warning" :size="UiTextSize.Sm" class="font-medium">
           {{ t('integrations.integrationStatusSidebar.setupNote') }}
         </UiText>
-        <UiText tone="secondary" size="sm">{{ hint }}</UiText>
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ hint }}</UiText>
       </UiStack>
     </UiAlert>
   </UiStack>

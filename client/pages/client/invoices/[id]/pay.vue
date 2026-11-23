@@ -31,7 +31,7 @@
             <UiAlert variant="error">{{ optionsError }}</UiAlert>
             <UiStack direction="row" gap="none">
               <UiButton variant="outline" :loading="retrying" data-testid="invoice-pay-options-retry" @click="retryOptions">
-                {{ $t('invoicePay.retry') }}
+                {{ $t('common.retry') }}
               </UiButton>
             </UiStack>
           </UiStack>

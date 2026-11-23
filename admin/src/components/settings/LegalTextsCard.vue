@@ -21,6 +21,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { LEGAL_TEXT_MAX_LENGTH } from '@/lib/limits'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
+import { UiGap } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -125,7 +126,7 @@ const inputTestid = (field: LegalDocumentField, locale: SettingLanguage): string
           :setting-key="field.keys[locale]"
           :env-name="SettingEnv[field.keys[locale]]"
         />
-        <UiStack v-else gap="xs">
+        <UiStack v-else :gap="UiGap.Xs">
           <UiTextarea
             v-model="field.localized.drafts[locale].value.value"
             :placeholder="t('settings.legalTexts.placeholder')"

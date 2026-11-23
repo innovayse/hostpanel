@@ -104,6 +104,8 @@ describe('pages/faq/[category]', () => {
     const wrapper = await mountRenderedPage(Page, ROOT)
 
     expect(wrapper.find('[data-testid="faq-back-to-all"]').attributes('href')).toBe('/en/faq')
+    expect(wrapper.find('[data-testid="faq-back-to-all"]').text()).toBe('common.back')
+    expect(wrapper.find('[data-testid="faq-back-to-all"]').attributes('aria-label')).toBe('faq.backToAll')
   })
 
   it('sets the tags and the structured data of the topic only', async () => {

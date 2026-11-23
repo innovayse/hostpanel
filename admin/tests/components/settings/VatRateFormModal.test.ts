@@ -14,13 +14,13 @@ import { mountScreen } from '../../helpers/mount'
 const reduced: VatRateDto = { id: 3, country: 'DE', kind: VatRateKind.Reduced, ratePercent: 7, validFrom: '2024-01-01' }
 
 describe('VatRateFormModal', () => {
-  it('opens empty in add mode, with the Add label', async () => {
+  it('opens empty in add mode, with the Create label', async () => {
     const { wrapper } = await mountScreen(VatRateFormModal, { rate: null, saving: false, error: null })
 
-    expect(wrapper.get('h2').text()).toBe('Add VAT Rate')
+    expect(wrapper.get('h2').text()).toBe('Create VAT rate')
     expect(wrapper.getComponent(UiCountrySelect).props('modelValue')).toBe('')
     expect(wrapper.getComponent(UiDatePicker).props('modelValue')).toBeNull()
-    expect(wrapper.get('[data-testid="vat-rate-form-save"]').text()).toBe('Add')
+    expect(wrapper.get('[data-testid="vat-rate-form-save"]').text()).toBe('Create')
   })
 
   it('fills the fields from the edited row', async () => {

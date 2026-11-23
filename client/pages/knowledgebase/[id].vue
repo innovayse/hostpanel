@@ -7,10 +7,12 @@
         tone="muted"
         :underline="false"
         class="inline-flex items-center gap-2 self-start text-sm"
+        :title="t('kb.backToKb')"
+        :aria-label="t('kb.backToKb')"
         testid="kb-back"
       >
         <ArrowLeft :size="15" :stroke-width="2" />
-        {{ t('kb.backToKb') }}
+        {{ t('common.back') }}
       </UiLink>
 
       <!-- Loading -->
@@ -21,12 +23,12 @@
       </UiStack>
 
       <!-- Article -->
-      <UiStack v-else-if="article" as="article" gap="lg">
+      <UiStack v-else-if="article" :as="UiStackTag.Article" gap="lg">
         <!-- Meta row -->
         <UiStack direction="row" wrap align="center" gap="sm">
           <UiText
             v-if="article.dateupdated"
-            as="span"
+            :as="UiTextTag.Span"
             size="xs"
             tone="muted"
             class="flex items-center gap-1"
@@ -37,7 +39,7 @@
           </UiText>
           <UiText
             v-if="article.views"
-            as="span"
+            :as="UiTextTag.Span"
             size="xs"
             tone="muted"
             class="flex items-center gap-1"
@@ -106,6 +108,7 @@ import { SeoPageType } from '~/types/seopagetype'
 import { pageLoadError } from '~/utils/pageLoadError'
 import { detailTitle } from '~/utils/seoTitle'
 import { SITE_KNOWLEDGEBASE_PATH } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** The current route. */
 const route = useRoute()

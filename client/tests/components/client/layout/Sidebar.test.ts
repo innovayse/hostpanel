@@ -5,9 +5,10 @@
  * @module tests/components/client/layout/Sidebar.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { Globe, Server } from 'lucide-vue-next'
+import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { mountClient } from '~/tests/helpers/mountClient'
 import Sidebar from '~/components/client/layout/Sidebar.vue'
 import { CLIENT_DOMAINS_PATH, CLIENT_SERVICES_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
@@ -31,6 +32,11 @@ const routeAt = (path: string): void => {
 enableAutoUnmount(afterEach)
 
 describe('ClientLayoutSidebar', () => {
+  // The theme toggle and language switcher in the drawer read the real colour mode and settings composables.
+  beforeEach(() => {
+    stubAuthRuntime()
+  })
+
   it('renders one link per item', () => {
     routeAt('/')
     const wrapper = mountClient(Sidebar, { props: { items: ITEMS, open: false } })
@@ -99,5 +105,15 @@ describe('ClientLayoutSidebar', () => {
     expect(link.exists()).toBe(true)
     expect(link.attributes('href')).toBe('https://docs.example.com')
     expect(link.attributes('rel')).toContain('noopener')
+  })
+
+  it('carries the theme and language controls on a phone only, since the top bar hides them there', () => {
+    routeAt('/')
+    const wrapper = mountClient(Sidebar, { props: { items: ITEMS, open: true } })
+
+    const preferences = wrapper.find('[data-testid="client-sidebar-preferences"]')
+    expect(preferences.exists()).toBe(true)
+    expect(preferences.classes()).toContain('lg:hidden')
+    expect(preferences.find('[data-testid="language-switcher"]').exists()).toBe(true)
   })
 })

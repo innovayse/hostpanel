@@ -10,7 +10,7 @@
       data-testid="invite-invalid"
     >
       <UiBackLink :to="CLIENT_LOGIN_PATH" testid="invite-invalid-back" class="mt-3" compact>
-        {{ $t('client.acceptInvite.backToSignIn') }}
+        {{ $t('client.login.backToSignIn') }}
       </UiBackLink>
     </ClientOutcomePanel>
 
@@ -25,7 +25,7 @@
     >
       <UiButton variant="primary" size="lg" full-width class="mt-3" data-testid="invite-sign-in" @click="goToSignIn">
         <LogIn :size="18" :stroke-width="2" class="mr-2" />
-        {{ $t('client.acceptInvite.signInAction') }}
+        {{ $t('common.signIn') }}
       </UiButton>
     </ClientOutcomePanel>
 
@@ -38,7 +38,7 @@
       </UiButton>
       <UiStack align="center">
         <UiBackLink :to="CLIENT_LOGIN_PATH" testid="invite-back" compact>
-          {{ $t('client.acceptInvite.backToSignIn') }}
+          {{ $t('client.login.backToSignIn') }}
         </UiBackLink>
       </UiStack>
     </UiForm>

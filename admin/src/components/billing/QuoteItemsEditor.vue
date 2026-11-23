@@ -27,8 +27,12 @@ import { blankQuoteLine } from '@/lib/quoteLines'
 import { QUOTE_ITEMS_TABLE } from '@/lib/quoteSchemaParts'
 import type { QuoteLineDraft } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 import { UiAlign } from '@/utils/ui/table'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -95,7 +99,7 @@ const lineActions = (index: number): UiMenuAction[] => {
   }
   return [
     {
-      label: t('billing.addQuote.deleteRow'),
+      label: t('billing.invoiceItems.removeItem'),
       icon: Icon.Trash,
       testid: `billing-quote-item-remove-${index}`,
       danger: true,
@@ -113,10 +117,10 @@ const lineActions = (index: number): UiMenuAction[] => {
 </script>
 
 <template>
-  <UiStack gap="sm" data-testid="billing-quote-items">
+  <UiStack :gap="UiGap.Sm" data-testid="billing-quote-items">
     <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :colspan="7">
       <UiSchemaTableHead :columns="QUOTE_ITEMS_TABLE.columns" />
-      <UiTableBody divided>
+      <UiTableBody>
         <UiTableRow v-for="(line, index) in lines" :key="line.key">
           <UiTableCell>
             <UiNumberInput
@@ -164,7 +168,7 @@ const lineActions = (index: number): UiMenuAction[] => {
             />
           </UiTableCell>
           <UiTableCell numeric>
-            <UiText tone="primary" size="md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
           </UiTableCell>
           <UiTableCell actions>
             <UiRowActions :actions="lineActions(index)" :testid="`billing-quote-item-actions-${index}`" />
@@ -173,18 +177,18 @@ const lineActions = (index: number): UiMenuAction[] => {
       </UiTableBody>
     </UiTable>
 
-    <UiStack direction="row" justify="between" align="center" wrap>
-      <UiButton :action="UiActionKind.Add" variant="secondary" size="sm" data-testid="billing-quote-item-add" @click="addLine">
-        {{ t('billing.quoteDetail.addItem') }}
+    <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" wrap>
+      <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-quote-item-add" @click="addLine">
+        {{ t('billing.actions.addItem') }}
       </UiButton>
-      <UiStack align="end" gap="xs">
-        <UiStack direction="row" gap="lg" align="center">
-          <UiText tone="muted" size="md">{{ t('shared.subTotal2') }}</UiText>
-          <UiText tone="secondary" size="md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
+      <UiStack :align="UiAlignItems.End" :gap="UiGap.Xs">
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg" :align="UiAlignItems.Center">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ t('shared.subTotal2') }}</UiText>
+          <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
         </UiStack>
-        <UiStack direction="row" gap="lg" align="center">
-          <UiText tone="primary" size="md">{{ t('shared.totalDue2') }}</UiText>
-          <UiText tone="primary" size="md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg" :align="UiAlignItems.Center">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('shared.totalDue2') }}</UiText>
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
         </UiStack>
       </UiStack>
     </UiStack>

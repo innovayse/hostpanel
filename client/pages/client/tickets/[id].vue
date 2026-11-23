@@ -12,14 +12,14 @@
     <template v-else>
       <UiCard data-testid="ticket-header">
         <UiStack direction="row" justify="between" align="start" wrap>
-          <UiStack gap="xs">
+          <UiStack gap="xs" class="min-w-0">
             <UiHeading :level="1" size="subsection">{{ ticket.subject }}</UiHeading>
             <UiStack direction="row" align="center" gap="sm" wrap>
-              <UiText as="span" size="xs" tone="subtle">{{ ticket.departmentName }}</UiText>
-              <UiText as="span" size="xs" tone="subtle">·</UiText>
-              <UiText as="span" size="xs" tone="subtle">{{ formatDateTime(ticket.createdAt) }}</UiText>
-              <UiText as="span" size="xs" tone="subtle">·</UiText>
-              <UiText as="span" size="xs" tone="subtle" class="capitalize">{{ ticket.priority }}</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ ticket.departmentName }}</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="subtle">·</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ formatDateTime(ticket.createdAt) }}</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="subtle">·</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="subtle" class="capitalize">{{ ticket.priority }}</UiText>
             </UiStack>
           </UiStack>
           <ClientStatusBadge :status="ticket.status" />
@@ -62,9 +62,9 @@ data-testid="ticket-reply-form"
             required
           />
           <template #actions>
-            <UiButton type="submit" :loading="replyLoading" data-testid="ticket-reply-submit">
+            <UiButton variant="primary" type="submit" :loading="replyLoading" data-testid="ticket-reply-submit">
               <Send v-if="!replyLoading" :size="16" :stroke-width="2" class="mr-2" />
-              {{ $t('client.tickets.sendReply') }}
+              {{ $t('common.reply') }}
             </UiButton>
           </template>
         </UiForm>
@@ -73,8 +73,7 @@ data-testid="ticket-reply-form"
       <UiCard v-else padding="sm" data-testid="ticket-closed-notice">
         <UiText size="sm" tone="subtle" class="text-center">
           {{ $t('client.tickets.closedNotice') }}
-          <UiLink data-testid="ticket-new-link" :to="CLIENT_TICKET_NEW_PATH" :underline="false">{{ $t('client.tickets.openNewLink') }}</UiLink>
-          {{ $t('client.tickets.closedSuffix') }}
+          <UiLink tone="primary" data-testid="ticket-new-link" :to="CLIENT_TICKET_NEW_PATH" :underline="false">{{ $t('client.tickets.create') }}</UiLink>
         </UiText>
       </UiCard>
     </template>
@@ -95,6 +94,7 @@ import { SubmitOutcome } from '~/types/submitoutcome'
 import { TicketStatus } from '~/types/ticketstatus'
 import { nameOrUnknown } from '~/utils/displayFallback'
 import { formatDateTime } from '~/utils/formatDate'
+import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

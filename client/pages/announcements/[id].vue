@@ -7,10 +7,12 @@
         tone="muted"
         :underline="false"
         class="inline-flex items-center gap-2 self-start text-sm"
+        :title="t('announcements.backToList')"
+        :aria-label="t('announcements.backToList')"
         testid="announcement-back"
       >
         <ArrowLeft :size="15" :stroke-width="2" />
-        {{ t('announcements.backToList') }}
+        {{ t('common.back') }}
       </UiLink>
 
       <!-- Loading -->
@@ -21,10 +23,10 @@
       </UiStack>
 
       <!-- Content -->
-      <UiStack v-else-if="item" as="article" gap="lg">
+      <UiStack v-else-if="item" :as="UiStackTag.Article" gap="lg">
         <!-- Date -->
         <UiText
-          as="span"
+          :as="UiTextTag.Span"
           size="xs"
           tone="muted"
           class="flex items-center gap-2"
@@ -64,6 +66,7 @@ import { pageLoadError } from '~/utils/pageLoadError'
 import { detailTitle, plainDescription } from '~/utils/seoTitle'
 import { SITE_ANNOUNCEMENTS_PATH } from '~/constants/siteRoutes'
 import type { PublishedAnnouncement } from '~/types/publishedannouncement'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** The reader's language, so the publication date is written the way they read dates. */
 const { t, locale } = useI18n()

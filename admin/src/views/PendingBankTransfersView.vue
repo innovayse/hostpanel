@@ -10,25 +10,21 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useResultBanner } from '@/composables/useResultBanner'
-import UiCard from '@/components/ui/UiCard.vue'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import schema from '@/views/PendingBankTransfersView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { formatDateTime } from '@/lib/format'
@@ -36,6 +32,8 @@ import { formatCurrencyCode } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
 import { useBankTransfersStore } from '@/stores/bankTransfers'
 import type { PendingBankTransfer } from '@/types/pendingbanktransfer'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
@@ -68,10 +66,7 @@ const noteError = ref('')
 const deciding = ref(false)
 
 /** The outcome line of the last decision. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** The sentence of the last refused list load, shown with Retry; null when the list loaded. */
 const loadError = ref<string | null>(null)
@@ -152,7 +147,6 @@ const handleConfirm = async (): Promise<void> => {
   if (target === null) {
     return
   }
-  feedback.clear()
   deciding.value = true
   const confirmed = await store.confirm(target.invoiceId)
   deciding.value = false
@@ -174,7 +168,6 @@ const handleReject = async (): Promise<void> => {
     noteError.value = t('billing.bankTransfers.noteRequired')
     return
   }
-  feedback.clear()
   deciding.value = true
   const rejected = await store.reject(target.invoiceId, note.value.trim())
   deciding.value = false
@@ -190,7 +183,7 @@ const handleReject = async (): Promise<void> => {
  */
 const transferActions = (transfer: PendingBankTransfer): UiMenuAction[] => [
   {
-    label: t('billing.bankTransfers.confirm'),
+    label: t('shared.confirm'),
     icon: Icon.CheckCircle,
     testid: `billing-bank-transfer-confirm-${transfer.invoiceId}`,
     /**
@@ -225,7 +218,6 @@ onMounted(() => load(1))
   <UiStack data-testid="billing-bank-transfers-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-bank-transfers-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -235,24 +227,24 @@ onMounted(() => load(1))
       @retry="load(page)"
     />
 
-    <UiText v-if="loadError === null" tone="muted" size="md" data-testid="billing-bank-transfers-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
-
-    <UiCard>
-      <UiTable
-        :empty-text="t('billing.bankTransfers.empty')"
-        :loading="store.loading && !hasRows"
-        :empty="!store.loading && loadError === null && !hasRows"
-        data-testid="billing-bank-transfers-table"
-      >
+    <UiDataTable
+      :empty-text="t('billing.bankTransfers.empty')"
+      :loading="store.loading && !hasRows"
+      :empty="!store.loading && loadError === null && !hasRows"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="DEFAULT_PAGE_SIZE"
+      pagination-testid="billing-bank-transfers-pagination"
+      data-testid="billing-bank-transfers-table"
+      @update:page="load"
+    >
         <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow v-for="transfer in store.transfers" :key="transfer.invoiceId" hoverable>
             <UiTableCell>
               <UiLink
                 :to="invoicePath(transfer.invoiceId)"
-                variant="link"
+                :variant="UiButtonVariant.Link"
                 :data-testid="`billing-bank-transfer-invoice-${transfer.invoiceId}`"
               >
                 #{{ transfer.invoiceId }}
@@ -260,7 +252,7 @@ onMounted(() => load(1))
             </UiTableCell>
             <UiTableCell>
               <UiLink
-                variant="link"
+                :variant="UiButtonVariant.Link"
                 :to="clientPath(transfer.clientId)"
                 :data-testid="`billing-bank-transfer-client-${transfer.invoiceId}`"
               >
@@ -275,27 +267,18 @@ onMounted(() => load(1))
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
-      :page="page"
-      :total="store.totalCount"
-      :page-size="DEFAULT_PAGE_SIZE"
-      testid="billing-bank-transfers-pagination"
-      @update:page="load"
-    />
+    </UiDataTable>
 
     <UiDialog
       v-if="confirmTarget !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('billing.bankTransfers.confirmTitle')"
       :message="t('billing.bankTransfers.confirmMessage', {
         amount: formatCurrencyCode(confirmTarget.amountDue, confirmTarget.currency),
         id: confirmTarget.invoiceId,
         reference: confirmTarget.reference,
       })"
-      :confirm-label="t('billing.bankTransfers.confirm')"
+      :confirm-label="t('shared.confirm')"
       :loading="deciding"
       data-testid="billing-bank-transfers-confirm-dialog"
       @confirm="handleConfirm"
@@ -304,7 +287,7 @@ onMounted(() => load(1))
 
     <UiDialog
       v-if="rejectTarget !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('billing.bankTransfers.rejectTitle')"
       :message="t('billing.bankTransfers.rejectMessage', { id: rejectTarget.invoiceId, reference: rejectTarget.reference })"
       :confirm-label="t('billing.bankTransfers.reject')"

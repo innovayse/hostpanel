@@ -16,7 +16,8 @@
  * The list is drawn in the page body (a teleport) and placed under the trigger with fixed positioning, because the
  * frosted cards of a page create stacking contexts and would paint a list rendered in place under the next card; on a
  * phone (below `sm`) it is a bottom sheet titled with the placeholder or the accessible name ({@link UiFloatingSurface}).
- * `data-testid` and classes land on the root element.
+ * `data-testid` and classes land on the root element, which never grows past the row it sits in (`max-w-full min-w-0`): a long
+ * label is cut with an ellipsis in the trigger instead of pushing the control out of its card.
  */
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -26,6 +27,8 @@ import { useDropdown } from '@/composables/useDropdown'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { fieldInvalidClasses, fieldSurfaceClasses } from '@/utils/ui/input'
 import { Key } from '@/utils/ui/keys'
+import { widthClasses } from '@/utils/ui/layout'
+import type { UiWidth } from '@/utils/ui/layout'
 import {
   TYPEAHEAD_RESET_MS,
   filterOptions,
@@ -88,7 +91,12 @@ const props = defineProps<{
    * border, so the two read as one control.
    */
   attached?: boolean
+  /** Fixed width of the control (a filter in a toolbar); without it the select takes the width its parent gives it. */
+  width?: UiWidth
 }>()
+
+/** Width class of the chosen width, none when the parent sizes the select. */
+const widthClass = computed<string>(() => (props.width === undefined ? '' : widthClasses[props.width]))
 
 const emit = defineEmits<{
   /** Emitted when the user picks an option. */
@@ -149,8 +157,8 @@ const triggerSizeClasses = computed<string>(() => {
     return 'h-8 px-3 text-[0.8125rem] rounded-[9px]'
   }
   return props.attached
-    ? 'h-10.5 px-3.5 text-sm rounded-l-control border-r-0'
-    : 'h-10.5 px-3.5 text-sm rounded-control'
+    ? 'h-10.5 max-sm:h-11 px-3.5 text-sm rounded-l-control border-r-0'
+    : 'h-10.5 max-sm:h-11 px-3.5 text-sm rounded-control'
 })
 
 /**
@@ -407,7 +415,7 @@ onUnmounted(cancelSearchTimer)
 </script>
 
 <template>
-  <div ref="root" class="relative">
+  <div ref="root" :class="['relative max-w-full min-w-0', widthClass]">
     <!-- Trigger: the combobox itself on a plain list, the popup's opener when the popup holds the filter field -->
     <button
       ref="trigger"
@@ -469,7 +477,7 @@ onUnmounted(cancelSearchTimer)
           :aria-label="t('shared.search')"
           :placeholder="t('shared.search')"
           data-testid="ui-select-search"
-          class="w-full h-8 px-3 text-[0.8125rem] rounded-[9px]"
+          class="w-full h-8 max-sm:h-11 px-3 text-[0.8125rem] rounded-[9px]"
           :class="fieldSurfaceClasses"
           @keydown="onKeydown"
         >

@@ -21,9 +21,12 @@ import UiPhoneInput from '@/components/ui/UiPhoneInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiLabelVariant } from '@/utils/ui/text'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiLabelVariant } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
@@ -243,19 +246,19 @@ onMounted(() => {
 <template>
   <UiDialog
     :title="isEditing ? t('clients.contactForm.editContact') : t('clients.contactForm.addContact')"
-    size="lg"
+    :size="UiDialogSize.Lg"
     @close="emit('close')"
   >
     <UiForm stacked @submit="handleSave">
-      <UiGrid :columns="2">
+      <UiGrid :columns="2" container>
         <UiStack>
-          <UiHeading :level="3" variant="card">{{ t('clients.contactForm.profile') }}</UiHeading>
+          <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('clients.contactForm.profile') }}</UiHeading>
           <UiField :label="t('shared.firstName')" :error="errors.firstName || undefined" required>
             <template #default="{ id, invalid }">
               <UiInput
                 :id="id"
                 v-model="firstName"
-                type="text"
+                :type="UiInputType.Text"
                 :invalid="invalid"
                 :placeholder="t('shared.firstName')"
                 data-testid="clients-contact-first-name"
@@ -268,7 +271,7 @@ onMounted(() => {
               <UiInput
                 :id="id"
                 v-model="lastName"
-                type="text"
+                :type="UiInputType.Text"
                 :invalid="invalid"
                 :placeholder="t('shared.lastName')"
                 data-testid="clients-contact-last-name"
@@ -281,7 +284,7 @@ onMounted(() => {
               <UiInput
                 :id="id"
                 v-model="companyName"
-                type="text"
+                :type="UiInputType.Text"
                 :placeholder="t('shared.company')"
                 data-testid="clients-contact-company"
               />
@@ -292,7 +295,7 @@ onMounted(() => {
               <UiInput
                 :id="id"
                 v-model="email"
-                type="email"
+                :type="UiInputType.Email"
                 :invalid="invalid"
                 :placeholder="t('shared.examples.email')"
                 data-testid="clients-contact-email"
@@ -313,13 +316,13 @@ onMounted(() => {
         </UiStack>
 
         <UiStack>
-          <UiHeading :level="3" variant="card">{{ t('clients.contactForm.address') }}</UiHeading>
+          <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('clients.contactForm.address') }}</UiHeading>
           <UiField :label="t('shared.address1')">
             <template #default="{ id }">
               <UiInput
                 :id="id"
                 v-model="street"
-                type="text"
+                :type="UiInputType.Text"
                 :placeholder="t('clients.contactForm.streetAddress')"
                 data-testid="clients-contact-street"
               />
@@ -330,19 +333,19 @@ onMounted(() => {
               <UiInput
                 :id="id"
                 v-model="address2"
-                type="text"
+                :type="UiInputType.Text"
                 :placeholder="t('clients.contactForm.suiteAptEtc')"
                 data-testid="clients-contact-address2"
               />
             </template>
           </UiField>
-          <UiGrid :columns="2" gap="sm">
+          <UiGrid :columns="2" :gap="UiGap.Sm" container>
             <UiField :label="t('shared.city')">
               <template #default="{ id }">
                 <UiInput
                   :id="id"
                   v-model="city"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('shared.city')"
                   data-testid="clients-contact-city"
                 />
@@ -353,7 +356,7 @@ onMounted(() => {
                 <UiInput
                   :id="id"
                   v-model="state"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('shared.state')"
                   data-testid="clients-contact-state"
                 />
@@ -364,7 +367,7 @@ onMounted(() => {
                 <UiInput
                   :id="id"
                   v-model="postCode"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('shared.postcode')"
                   data-testid="clients-contact-postcode"
                 />
@@ -375,8 +378,8 @@ onMounted(() => {
             </UiField>
           </UiGrid>
 
-          <UiHeading :level="3" variant="card">{{ t('shared.emailNotifications') }}</UiHeading>
-          <UiStack gap="sm">
+          <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('shared.emailNotifications') }}</UiHeading>
+          <UiStack :gap="UiGap.Sm">
             <UiLabel v-for="toggle in notifyToggles" :key="toggle.key" :variant="UiLabelVariant.Inline">
               <UiToggle v-model="notify[toggle.key]" :data-testid="`clients-contact-notify-${toggle.key}`" />
               {{ toggle.label }}
@@ -385,19 +388,19 @@ onMounted(() => {
         </UiStack>
       </UiGrid>
 
-      <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
         <UiButton :action="UiActionKind.Delete"
           v-if="isEditing"
-          type="button"
+          :type="UiButtonType.Button"
           :variant="UiButtonVariant.Danger"
           data-testid="clients-contact-delete"
           @click="handleDelete"
         >
-          {{ t('clients.contactForm.deleteContact') }}
+          {{ t('shared.delete') }}
         </UiButton>
-        <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
           <UiButton :action="UiActionKind.Cancel"
-            type="button"
+            :type="UiButtonType.Button"
             :variant="UiButtonVariant.Secondary"
             data-testid="clients-contact-cancel"
             @click="emit('close')"
@@ -405,12 +408,12 @@ onMounted(() => {
             {{ t('shared.cancel') }}
           </UiButton>
           <UiButton :action="UiActionKind.Save"
-            type="submit"
+            :type="UiButtonType.Submit"
             :variant="UiButtonVariant.Primary"
             :loading="saving"
             data-testid="clients-contact-save"
           >
-            {{ isEditing ? t('shared.saveChanges') : t('clients.contactForm.addContact') }}
+            {{ isEditing ? t('shared.save') : t('shared.add') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -419,11 +422,11 @@ onMounted(() => {
 
   <UiDialog
     v-if="showDeleteConfirm"
-    variant="confirm"
+    :variant="UiDialogVariant.Confirm"
     :title="t('clients.contactForm.deleteContact')"
     :message="t('clients.contactForm.permanentlyDeleteThisContactThis')"
     :confirm-label="t('shared.delete')"
-    tone="danger"
+    :tone="UiTone.Danger"
     @confirm="confirmDelete"
     @close="showDeleteConfirm = false"
   />

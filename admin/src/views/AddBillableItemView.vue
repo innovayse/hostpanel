@@ -31,6 +31,9 @@ import { AppRoute } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema, { ITEM_SECTION_KEY, RECURRING_ITEM_SECTION } from '@/views/AddBillableItemView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTone } from '@/utils/ui/tone'
+import { UiMaxWidth } from '@/utils/ui/layout'
 
 /** Translator for the screen's labels. */
 const { t } = useI18n()
@@ -99,11 +102,11 @@ onMounted(loadClients)
   <UiStack data-testid="billing-add-billable-item-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiAlert v-if="store.error" variant="error" data-testid="billing-add-billable-item-error">
+    <UiAlert v-if="store.error" :variant="UiTone.Danger" data-testid="billing-add-billable-item-error">
       {{ store.error }}
     </UiAlert>
 
-    <UiSchemaForm :columns="columns" :errors="store.fieldErrors" class="max-w-3xl" @submit="submit">
+    <UiSchemaForm :columns="columns" :errors="store.fieldErrors" :max-width="UiMaxWidth.Form" @submit="submit">
       <template #field-clientId>
         <UiClientSelect
           v-model="clientId"
@@ -148,11 +151,11 @@ onMounted(loadClients)
       </template>
 
       <UiFormActions>
-        <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingBillableItems" variant="ghost" data-testid="billing-add-billable-item-cancel">
+        <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingBillableItems" :variant="UiButtonVariant.Ghost" data-testid="billing-add-billable-item-cancel">
           {{ t('shared.cancel') }}
         </UiLink>
-        <UiButton :action="UiActionKind.Add" type="submit" variant="primary" :loading="store.loading" data-testid="billing-add-billable-item-submit">
-          {{ t('shared.addBillableItem') }}
+        <UiButton :action="UiActionKind.Add" type="submit" :variant="UiButtonVariant.Primary" :loading="store.loading" data-testid="billing-add-billable-item-submit">
+          {{ t('shared.create') }}
         </UiButton>
       </UiFormActions>
     </UiSchemaForm>

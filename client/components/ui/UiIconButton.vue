@@ -65,11 +65,11 @@ const VARIANT_CLASSES: Record<UiIconButtonVariant, string> = {
   [UiIconButtonVariant.Bare]: '',
 }
 
-/** Square dimensions per size. */
+/** Square dimensions per size; the small and medium steps are 44px on a phone so a finger has a target. */
 const SIZE_CLASSES: Record<UiSize, string> = {
-  [UiSize.Sm]: 'w-8 h-8',
-  [UiSize.Md]: 'w-9 h-9',
-  [UiSize.Lg]: 'w-10 h-10',
+  [UiSize.Sm]: 'w-11 h-11 sm:w-8 sm:h-8',
+  [UiSize.Md]: 'w-11 h-11 sm:w-9 sm:h-9',
+  [UiSize.Lg]: 'w-11 h-11 sm:w-10 sm:h-10',
 }
 
 /** Icon pixel size per size step. */

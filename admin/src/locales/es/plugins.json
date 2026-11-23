@@ -2,16 +2,14 @@
   "pluginCard": {
     "builtIn": "Integrado",
     "pendingRestart": "Reinicio pendiente",
-    "remove": "Eliminar",
     "refused": "Rechazado",
+    "loadFailed": "No se pudo cargar",
     "staged": "Versión {version} preparada, se aplica tras el reinicio",
     "brokenRule": "{id} · regla violada: {rule}",
-    "updateAvailable": "Actualización disponible: {version}",
-    "loadFailed": "No se pudo cargar"
+    "updateAvailable": "Actualización disponible: {version}"
   },
   "pluginUploader": {
-    "valueKbReadyToInstall": "{value} KB · Listo para instalar",
-    "installPlugin": "Instalar complemento"
+    "valueKbReadyToInstall": "{value} KB · Listo para instalar"
   },
   "pluginInstallDialog": {
     "title": "¿Instalar {name} {version}?",
@@ -23,8 +21,8 @@
     "rangeBetween": "Se ejecuta en versiones del servidor {min} a {max}.",
     "rangeFrom": "Se ejecuta en la versión {min} del servidor y posteriores.",
     "rangeUpTo": "Se ejecuta en versiones del servidor hasta {max}.",
+    "sdk": "Creado con el SDK de plugins {version}",
     "incompatible": "Este complemento no se ejecuta en la versión {host} de este servidor. {range}",
-    "install": "Instalar",
     "hostAccess": {
       "ssh": "Ejecutar comandos en la cuenta de alojamiento de un cliente por SSH",
       "websites": "Gestionar los sitios web del servicio de alojamiento de un cliente",
@@ -35,12 +33,12 @@
       "endpoints": "Añade sus propias páginas, menús y widgets a los paneles",
       "paymentReturn": "Completar un pago cuando el pagador vuelve de la pasarela",
       "storedCredentials": "Cobrar en tarjetas guardadas y cuentas de pago"
-    },
-    "sdk": "Creado con el SDK de plugins {version}"
+    }
   },
   "restartBanner": {
     "restartRequired": "Reinicio requerido",
     "pluginChangesWillTakeEffect": "Los cambios del complemento entrarán en vigor tras un reinicio del servidor.",
+    "restart": "Reiniciar",
     "restartServer": "Reiniciar servidor"
   },
   "pluginSigning": {
@@ -65,13 +63,11 @@
     "confirmPurgeMessage": "Toda la configuración y los datos almacenados del complemento {id} se eliminarán para siempre. Esto no se puede deshacer.",
     "confirmDowngradeTitle": "¿Instalar una versión anterior?",
     "confirmDowngradeMessage": "Esta versión es anterior a la instalada. Retroceder puede romper los datos escritos por la versión más reciente.",
-    "forceDowngrade": "Retroceder de todos modos",
     "pluginStaged": "Versión {version} cargada y preparada. Reemplaza la versión instalada tras el reinicio del servidor.",
     "tabInstalled": "Instalados",
     "tabBrowse": "Examinar",
     "confirmUpdateTitle": "¿Actualizar este complemento?",
     "confirmUpdateMessage": "¿Actualizar {id} a la versión {version}? El cambio se aplica tras reiniciar el servidor.",
-    "confirmUpdate": "Actualizar",
     "tabSettings": "Ajustes",
     "uploadPlugin": "Subir complemento",
     "uploadTitle": "Subir un paquete de complemento",
@@ -110,9 +106,7 @@
     "byAuthor": "por {author}",
     "version": "v{version}",
     "verified": "Verificado",
-    "install": "Instalar",
     "update": "Actualizar a {version}",
-    "details": "Detalles",
     "emptyTitle": "No se encontraron complementos",
     "emptyDescription": "Intenta otra búsqueda o categoría.",
     "total": "{total} complementos",
@@ -193,21 +187,14 @@
     "notFoundTitle": "Página no encontrada",
     "tableEmpty": "Todavía no hay nada que mostrar.",
     "chatMessage": "Mensaje",
-    "chatSend": "Enviar",
-    "chatStop": "Detener",
-    "chatResultDetails": "Detalles",
     "chatStepStopped": "detenido",
     "chatStepsCount": "{done} de {total} hechos",
     "chatLog": "Conversación",
     "chatEmpty": "Inicia la conversación.",
     "chatJumpToLatest": "Ir a lo más reciente",
     "chatHint": "Intro para enviar, Mayús+Intro para una línea nueva",
-    "chatCopy": "Copiar respuesta",
-    "chatCopyCode": "Copiar código",
-    "chatCopied": "Copiado",
     "openUrlBlocked": "Este navegador bloqueó la nueva pestaña. Permite las ventanas emergentes para este sitio e inténtalo de nuevo.",
     "openUrlRefused": "El complemento respondió con una dirección que no se puede abrir.",
-    "chatRetry": "Reintentar",
     "chatWriting": "Escribiendo una respuesta"
   }
 }

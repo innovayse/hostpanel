@@ -2,6 +2,9 @@
   "ui": {
     "selectPlaceholder": "Seleccione una opción",
     "noOptions": "No hay opciones disponibles",
+    "pageHeader": {
+      "actions": "Acciones de la página"
+    },
     "theme": {
       "switchDark": "Cambiar a modo oscuro",
       "switchLight": "Cambiar a modo claro"
@@ -38,11 +41,36 @@
     "previous": "Anterior",
     "home": "Inicio",
     "products": "Productos",
-    "backToProducts": "Volver a Productos",
+    "backToProducts": "Volver a productos",
     "goToSlide": "Ir a la diapositiva {n}",
     "scrollHorizontal": "Desplácese para explorar",
     "retry": "Reintentar",
-    "breadcrumb": "Ruta de navegación"
+    "breadcrumb": "Ruta de navegación",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Añadir",
+    "remove": "Quitar",
+    "view": "Ver",
+    "back": "Atrás",
+    "continue": "Continuar",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "send": "Enviar",
+    "refresh": "Actualizar",
+    "apply": "Aplicar",
+    "clear": "Borrar",
+    "reply": "Responder",
+    "select": "Seleccionar",
+    "details": "Detalles",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "pdf": "PDF",
+    "learnMore": "Más información",
+    "pay": "Pagar",
+    "manage": "Gestionar",
+    "getStarted": "Empezar",
+    "contactUs": "Contáctenos"
   },
   "fallback": {
     "unknown": "Desconocido"

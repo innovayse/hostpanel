@@ -19,6 +19,8 @@ import type { DownloadCategory } from '@/types/downloadcategory'
 import { DownloadType } from '@/types/downloaditem'
 import type { DownloadItem, DownloadItemPayload } from '@/types/downloaditem'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** Props for DownloadItemEditDialog. */
@@ -103,7 +105,7 @@ watch(
 </script>
 
 <template>
-  <UiDialog :open="download !== null" :title="t('support.downloads.editDownload')" size="lg" @close="emit('close')">
+  <UiDialog :open="download !== null" :title="t('support.downloads.editDownload')" :size="UiDialogSize.Lg" @close="emit('close')">
     <UiStack>
       <UiField :label="t('shared.category')">
         <UiSelect
@@ -152,7 +154,7 @@ watch(
           data-testid="downloads-edit-download-count"
         />
       </UiField>
-      <UiStack direction="row" gap="lg" wrap>
+      <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg" wrap>
         <SupportCheckboxField
           v-model="clientsOnly"
           :label="t('support.downloads.clientsOnly')"
@@ -181,7 +183,7 @@ watch(
         data-testid="downloads-edit-download-save"
         @click="submit"
       >
-        {{ t('shared.saveChanges') }}
+        {{ t('shared.save') }}
       </UiButton>
     </template>
   </UiDialog>

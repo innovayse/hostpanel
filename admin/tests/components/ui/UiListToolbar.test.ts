@@ -145,4 +145,29 @@ describe('UiListToolbar', () => {
   it('shows no clear button while the search box is empty', () => {
     expect(mountToolbar().find('[data-testid="input-clear"]').exists()).toBe(false)
   })
+
+  it('lays the search box and the Filters button in one centred row of equal height that wraps', () => {
+    const wrapper = mountToolbar()
+    const search = wrapper.get('[data-testid="list-search"]')
+    const trigger = wrapper.get('[data-testid="filter-trigger"]')
+    const row = trigger.element.parentElement
+
+    expect(row?.classList.contains('flex-wrap')).toBe(true)
+    expect(row?.classList.contains('items-center')).toBe(true)
+    expect(row?.contains(search.element)).toBe(true)
+    expect(search.classes()).toContain('h-10.5')
+    expect(trigger.classes()).toContain('h-10.5')
+  })
+
+  it('keeps the row height with search text, the clear button being out of the flow', () => {
+    const wrapper = mountWithApp(UiListToolbar, {
+      props: { searchTestid: 'list-search', search: 'ada' },
+      slots: { default: FIELDS },
+      stubs: { teleport: true },
+    })
+    const clear = wrapper.get('[data-testid="input-clear"]')
+
+    expect(clear.element.parentElement?.classList.contains('absolute')).toBe(true)
+    expect(clear.classes()).not.toContain('relative')
+  })
 })

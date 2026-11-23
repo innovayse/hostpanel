@@ -25,6 +25,8 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { PortalTemplate, PortalThemeMode } from '@/types/portalappearance'
 import { SettingEnv, SettingKey, SettingToggle } from '@/types/setting'
 import type { Setting } from '@/types/setting'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -121,7 +123,7 @@ const missingKeys = computed<SettingKey[]>(() => {
     />
 
     <!-- Template -->
-    <UiStack v-if="templateDraft.setting.value" direction="row" align="end" wrap>
+    <UiStack v-if="templateDraft.setting.value" :direction="UiDirection.Row" :align="UiAlignItems.End" wrap>
       <UiSelect
         v-model="templateDraft.value.value"
         :options="templateOptions"
@@ -130,21 +132,21 @@ const missingKeys = computed<SettingKey[]>(() => {
         class="min-w-56"
       />
       <SettingOutcome :outcome="templateDraft.outcome.value" />
-      <UiText tone="muted" size="md">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md">
         {{ templateHint }}
       </UiText>
     </UiStack>
 
     <!-- Colour mode -->
-    <UiStack v-if="themeDraft.setting.value" gap="sm">
-      <UiHeading :level="3" variant="card">
+    <UiStack v-if="themeDraft.setting.value" :gap="UiGap.Sm">
+      <UiHeading :level="3" :variant="UiHeadingVariant.Card">
         {{ t('settings.portalAppearance.themeDefault') }}
       </UiHeading>
-      <UiText tone="muted" size="sm">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
         {{ t('settings.portalAppearance.themeDefaultHint') }}
       </UiText>
-      <UiStack direction="row" align="center" wrap>
-        <UiLabel v-for="mode in THEME_MODES" :key="mode.value" variant="inline">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+        <UiLabel v-for="mode in THEME_MODES" :key="mode.value" :variant="UiLabelVariant.Inline">
           <UiRadio
             v-model="themeDraft.value.value"
             name="portal-theme-default"
@@ -158,13 +160,13 @@ const missingKeys = computed<SettingKey[]>(() => {
     </UiStack>
 
     <!-- Visitor toggle -->
-    <UiStack v-if="toggleDraft.setting.value" direction="row" align="center" wrap>
+    <UiStack v-if="toggleDraft.setting.value" :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
       <UiToggle v-model="toggleEnabled" data-testid="portal-user-toggle" />
-      <UiStack gap="xs">
-        <UiText tone="primary" size="md">
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">
           {{ t('settings.portalAppearance.userToggle') }}
         </UiText>
-        <UiText tone="muted" size="sm">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
           {{ t('settings.portalAppearance.userToggleHint') }}
         </UiText>
       </UiStack>

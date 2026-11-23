@@ -37,7 +37,7 @@ describe('AuroraProcess', () => {
     const wrapper = mountWithKit(AuroraProcess)
 
     expect(wrapper.find('[data-testid="process-aside"]').classes()).toEqual(expect.arrayContaining(['lg:sticky', 'lg:self-start']))
-    expect(wrapper.find('[data-testid="process-start"]').text()).toBe('aurora.process.start')
+    expect(wrapper.find('[data-testid="process-start"]').text()).toBe('aurora.actions.getStarted')
     expect(wrapper.find('[data-testid="process-start"]').attributes('href')).toBe('/hosting')
     expect(wrapper.find('[data-testid="process-talk"]').attributes('href')).toBe('/contact')
     expect(wrapper.find('[data-testid="process-note"]').text()).toBe('aurora.process.note')

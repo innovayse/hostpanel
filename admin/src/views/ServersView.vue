@@ -16,8 +16,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServersStore } from '@/stores/servers'
-import { FILL_TYPE_LABELS, ServerState, moduleLabel } from '@/types/server'
-import { ServerModuleSource } from '@/types/serverenums'
+import { FILL_TYPE_LABELS, ServerState, moduleNameOf, moduleOptionLabel } from '@/types/server'
 import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerListFilters, ServerPayload, ServerTestOutcome } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 import ServerCard from '@/components/servers/ServerCard.vue'
@@ -37,7 +36,7 @@ import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
@@ -47,9 +46,8 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import type { UiSelectOption } from '@/utils/ui/select'
 import { SERVER_STATE_KEYS } from '@/lib/servers'
 import { useListQuery } from '@/composables/useListQuery'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { EMPTY_VALUE } from '@/lib/format'
@@ -58,6 +56,9 @@ import { schemaHeader } from '@/lib/schemaHeader'
 import schema, { SERVER_CARDS_PART, SERVER_GROUPS_PART, SERVER_GROUPS_TABLE } from '@/views/ServersView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiGridMinWidth } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** Translation function. */
@@ -66,7 +67,7 @@ const { t } = useI18n()
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
   { label: t('servers.servers.createGroup'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Secondary, testid: 'servers-add-group', onSelect: openAddGroup },
-  { label: t('servers.servers.addNewServer'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'servers-add', onSelect: openAddServer },
+  { label: t('servers.servers.createServer'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'servers-add', onSelect: openAddServer },
 ])
 
 /** Servers store: the lists, the refusal sentences and the actions. */
@@ -103,12 +104,9 @@ const deleteServerTarget = ref<ServerDto | null>(null)
 const sshServerTarget = ref<ServerDto | null>(null)
 
 /** The outcome line of the last save or delete. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /**
  * Shows the outcome of a delete: the success sentence, or the API's refusal.
@@ -190,7 +188,7 @@ const moduleOptions = computed<UiSelectOption<string>[]>(() => [
   { value: '', label: t('shared.any') },
   ...store.moduleOptions.map(option => ({
     value: option.id,
-    label: option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id),
+    label: moduleOptionLabel(option),
   })),
 ])
 
@@ -205,7 +203,7 @@ const chips = chipsOf(() => [
   {
     key: FilterKey.Module,
     label: t('servers.servers.filterModule'),
-    value: moduleOfAddress.value === undefined ? undefined : moduleLabel(moduleOfAddress.value),
+    value: moduleOfAddress.value === undefined ? undefined : moduleNameOf(moduleOfAddress.value, store.moduleOptions),
   },
   {
     key: FilterKey.State,
@@ -309,7 +307,6 @@ const confirmDeleteServer = async (): Promise<void> => {
   if (!target) {
     return
   }
-  feedback.clear()
   deletingServer.value = true
   const deleted = await store.deleteServer(target.id)
   deletingServer.value = false
@@ -352,7 +349,6 @@ const confirmDeleteGroup = async (): Promise<void> => {
   if (!target) {
     return
   }
-  feedback.clear()
   deletingGroup.value = true
   const deleted = await store.deleteGroup(target.id)
   deletingGroup.value = false
@@ -436,8 +432,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiStack gap="lg" class="w-full">
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="servers-feedback" />
+  <UiStack :gap="UiGap.Lg">
 
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)" >
       <template #actions>
@@ -470,7 +465,7 @@ onMounted(() => {
         @remove="remove"
         @clear="clearAll"
       >
-        <UiGrid :columns="1" gap="md">
+        <UiGrid :columns="1" :gap="UiGap.Md">
           <UiField :label="t('servers.servers.filterModule')">
             <template #default="{ id }">
               <UiSelect
@@ -497,9 +492,9 @@ onMounted(() => {
       </UiListToolbar>
 
       <!-- Servers, every module in one grid; while the list loads the same grid holds placeholder cards -->
-      <UiStack v-if="store.loading || store.servers.length > 0" gap="md" data-testid="servers-list">
+      <UiStack v-if="store.loading || store.servers.length > 0" :gap="UiGap.Md" data-testid="servers-list">
         <!-- One grid for every module, so a module with a single server never leaves half the row empty -->
-        <UiGrid min-item-width="md" gap="md">
+        <UiGrid :min-item-width="UiGridMinWidth.Md" :gap="UiGap.Md">
           <template v-if="store.loading">
             <ServerCard v-for="placeholder in SERVER_CARDS_PART.count" :key="placeholder" />
           </template>
@@ -508,6 +503,7 @@ onMounted(() => {
               v-for="server in store.servers"
               :key="server.id"
               :server="server"
+              :module-options="store.moduleOptions"
               :actions="serverActions(server)"
               :testing="testingIds.includes(server.id)"
               :test-outcome="testResults[server.id] ?? null"
@@ -531,8 +527,8 @@ onMounted(() => {
     <!-- Empty state -->
     <UiEmptyState v-else :title="t('servers.servers.noServersYet')" data-testid="servers-empty">
       <template #actions>
-        <UiButton variant="link" data-testid="servers-add-first" @click="openAddServer">
-          {{ t('servers.servers.addYourFirstServer') }}
+        <UiButton :variant="UiButtonVariant.Link" data-testid="servers-add-first" @click="openAddServer">
+          {{ t('servers.servers.createServer') }}
         </UiButton>
       </template>
     </UiEmptyState>
@@ -540,11 +536,11 @@ onMounted(() => {
     <!-- The card of the groups: its placeholder while the lists load, the note and the table or the empty line after -->
     <UiDetailCards :columns="SERVER_GROUPS_PART.columns" :loading="store.loading">
       <template #card-groups>
-        <UiText tone="secondary" size="sm">{{ t('servers.servers.serverGroupsAllowYouTo') }}</UiText>
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('servers.servers.serverGroupsAllowYouTo') }}</UiText>
 
-        <UiTable v-if="store.groups.length > 0" :density="UiTableDensity.Comfortable" data-testid="server-groups-table">
+        <UiDataTable v-if="store.groups.length > 0" :density="UiTableDensity.Comfortable" data-testid="server-groups-table">
           <UiSchemaTableHead :columns="SERVER_GROUPS_TABLE.columns" />
-          <UiTableBody divided>
+          <UiTableBody>
             <UiTableRow v-for="group in store.groups" :key="group.id" hoverable :data-testid="`server-group-row-${group.id}`">
               <UiTableCell>{{ group.name }}</UiTableCell>
               <UiTableCell muted>{{ FILL_TYPE_LABELS[group.fillType] }}</UiTableCell>
@@ -556,13 +552,13 @@ onMounted(() => {
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>
-        </UiTable>
+        </UiDataTable>
 
         <!-- Groups empty -->
-        <UiStack v-else direction="row" align="center" gap="xs" data-testid="server-groups-empty">
-          <UiText tone="muted" size="md">{{ t('servers.servers.noGroupsYet') }}</UiText>
-          <UiButton variant="link" data-testid="server-groups-create-first" @click="openAddGroup">
-            {{ t('servers.servers.createOne') }}
+        <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" data-testid="server-groups-empty">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ t('servers.servers.noGroupsYet') }}</UiText>
+          <UiButton :variant="UiButtonVariant.Link" data-testid="server-groups-create-first" @click="openAddGroup">
+            {{ t('servers.servers.createGroup') }}
           </UiButton>
         </UiStack>
       </template>
@@ -601,7 +597,7 @@ onMounted(() => {
 
     <UiDialog
       v-if="deleteServerTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('servers.servers.deleteServer')"
       :message="t('servers.servers.deleteServerMessage', { name: deleteServerTarget.name })"
       :confirm-label="t('shared.delete')"
@@ -613,7 +609,7 @@ onMounted(() => {
 
     <UiDialog
       v-if="deleteGroupTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('servers.servers.deleteGroup')"
       :message="t('servers.servers.deleteGroupMessage', { name: deleteGroupTarget.name })"
       :confirm-label="t('shared.delete')"

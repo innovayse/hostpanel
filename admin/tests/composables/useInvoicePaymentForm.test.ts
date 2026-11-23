@@ -9,10 +9,10 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { DEFAULT_PAYMENT_GATEWAY, useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
 import type { InvoicePaymentForm, InvoicePaymentFormOptions } from '@/composables/useInvoicePaymentForm'
-import { useToastStore } from '@/stores/toast'
 import { PaymentGateway } from '@/types/gateway'
 import { UiTone } from '@/utils/ui/tone'
 import { createTestI18n } from '../helpers/i18n'
+import { toastsOnScreen } from '../helpers/toasts'
 
 /**
  * Mounts a throwaway component that owns the form, so the i18n, the store and the unmount hooks are real.
@@ -136,10 +136,7 @@ describe('useInvoicePaymentForm', () => {
     expect(form.amount.value).toBe(0)
     expect(form.fees.value).toBe(0)
     expect(form.submitting.value).toBe(false)
-    // A success is a toast, not an inline sentence.
-    expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Recorded.'])
-    expect(form.feedback.message.value).toBeNull()
-    expect(form.feedbackTone.value).toBe(UiTone.Success)
+    expect(toastsOnScreen()).toEqual([['Recorded.', UiTone.Success]])
   })
 
   it('shows the refusal sentence and keeps the fields when the payment is refused', async () => {
@@ -149,8 +146,7 @@ describe('useInvoicePaymentForm', () => {
 
     expect(await form.submit(7)).toBe(false)
 
-    expect(form.feedback.message.value).toBe('The amount exceeds the balance.')
-    expect(form.feedbackTone.value).toBe(UiTone.Danger)
+    expect(toastsOnScreen()).toEqual([['The amount exceeds the balance.', UiTone.Danger]])
     expect(form.amount.value).toBe(25)
     expect(form.transactionId.value).toBe('ref-1')
     expect(form.submitting.value).toBe(false)
@@ -162,6 +158,6 @@ describe('useInvoicePaymentForm', () => {
 
     await form.submit(7)
 
-    expect(form.feedback.message.value).toBe('Could not reach the server. Check your connection and try again.')
+    expect(toastsOnScreen()).toEqual([['Could not reach the server. Check your connection and try again.', UiTone.Danger]])
   })
 })

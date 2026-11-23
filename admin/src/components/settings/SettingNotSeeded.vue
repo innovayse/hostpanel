@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiField from '@/components/ui/UiField.vue'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -31,7 +32,7 @@ defineProps<{
 
 <template>
   <UiField v-if="loading" loading data-testid="setting-loading" />
-  <UiAlert v-else variant="warning" data-testid="setting-not-seeded">
+  <UiAlert v-else :variant="UiTone.Warning" data-testid="setting-not-seeded">
     {{ t('settings.portalAppearance.notSeeded', { key: settingKey, env: envName }) }}
   </UiAlert>
 </template>

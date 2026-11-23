@@ -90,4 +90,10 @@ describe('UiForm', () => {
     expect(wrapper.find('[data-testid="ui-form-success"]').classes()).toContain('bg-green-50')
     expect(wrapper.find('[data-testid="ui-form-success"] p').classes()).toContain('text-green-700')
   })
+
+  it('wraps the actions row so buttons never run off a narrow screen', () => {
+    const wrapper = mountWithKit(UiForm, { slots: { actions: 'Save' } })
+
+    expect(wrapper.find('form > div:last-child').classes()).toEqual(expect.arrayContaining(['flex-wrap', 'justify-end']))
+  })
 })

@@ -23,6 +23,10 @@ import { formatAffixed } from '@/lib/money'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
 import { CURRENCY_CODE_LENGTH, CURRENCY_MAX_DECIMALS, EXCHANGE_RATE_STEP } from '@/lib/limits'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -86,10 +90,10 @@ watch(() => props.currency, (current) => {
 const formatSample = computed<string>(() => formatAffixed(SAMPLE_AMOUNT, { prefix: prefix.value, suffix: suffix.value, decimals: decimals.value }))
 
 /** Title of the dialog. */
-const title = computed<string>(() => (isEditMode.value ? t('currencies.form.editTitle') : t('currencies.form.addTitle')))
+const title = computed<string>(() => (isEditMode.value ? t('currencies.form.editTitle') : t('currencies.addCurrency')))
 
 /** Label of the submit button. */
-const submitLabel = computed<string>(() => (isEditMode.value ? t('currencies.form.save') : t('currencies.form.add')))
+const submitLabel = computed<string>(() => (isEditMode.value ? t('shared.save') : t('shared.create')))
 
 /** Submits the form by emitting the save event with the current field values. */
 const handleSubmit = (): void => {
@@ -105,7 +109,7 @@ const handleSubmit = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="title" size="md" @close="emit('close')">
+  <UiDialog :title="title" :size="UiDialogSize.Md" @close="emit('close')">
     <UiForm stacked data-testid="currency-form" @submit="handleSubmit">
       <UiField :label="t('currencies.form.code.label')">
         <template #default="{ id, invalid, describedby }">
@@ -139,7 +143,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiGrid :columns="2">
+      <UiGrid :columns="2" container>
         <UiField :label="t('currencies.form.prefix.label')">
           <template #default="{ id, invalid, describedby }">
             <UiInput
@@ -166,7 +170,7 @@ const handleSubmit = (): void => {
         </UiField>
       </UiGrid>
 
-      <UiText tone="muted" size="sm" data-testid="currency-form-sample">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="currency-form-sample">
         {{ t('currencies.form.formatSample', { sample: formatSample }) }}
       </UiText>
 
@@ -195,12 +199,12 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">
             {{ t('currencies.form.enabled.label') }}
           </UiText>
-          <UiText tone="muted" size="sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
             {{ isBase ? t('currencies.form.enabled.baseHint') : t('currencies.form.enabled.hint') }}
           </UiText>
         </UiStack>
@@ -209,10 +213,10 @@ const handleSubmit = (): void => {
       </UiStack>
 
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="currency-form-cancel" @click="emit('close')">
-          {{ t('currencies.form.cancel') }}
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="currency-form-cancel" @click="emit('close')">
+          {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="currency-form-save">
+        <UiButton :action="UiActionKind.Save" :type="UiButtonType.Submit" :variant="UiButtonVariant.Primary" :loading="saving" data-testid="currency-form-save">
           {{ submitLabel }}
         </UiButton>
       </UiFormActions>

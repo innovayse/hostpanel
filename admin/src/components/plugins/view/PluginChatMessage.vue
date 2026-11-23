@@ -26,8 +26,9 @@ import UiTypingDots from '@/components/ui/UiTypingDots.vue'
 import { formatTime } from '@/lib/format'
 import { PluginChatRole } from '@/types/pluginview'
 import type { PluginChatMessage } from '@/types/pluginview'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Props for PluginChatMessage. */
@@ -55,9 +56,6 @@ const emit = defineEmits<{
 /** Translation function and the operator's locale. */
 const { t, locale } = useI18n()
 
-/** The classes of the time: always shown, so a keyboard or touch reader sees it as well as a pointer one. */
-const TIME_CLASSES = 'text-[0.72rem] text-text-muted'
-
 /** The time the message was written, for the operator. */
 const time = computed<string>(() => formatTime(props.message.sentAt, locale.value))
 
@@ -73,7 +71,7 @@ const waiting = computed<boolean>(() =>
 <template>
   <UiStack v-if="message.role === PluginChatRole.User" :gap="UiGap.None" :align="UiAlignItems.End">
     <UiChatBubble :side="UiChatBubbleSide.Own" :data-testid="`plugin-chat-${message.role}`">{{ message.text }}</UiChatBubble>
-    <time v-if="message.sentAt !== undefined" :datetime="isoTime" :class="TIME_CLASSES" data-testid="plugin-chat-time">{{ time }}</time>
+    <UiText v-if="message.sentAt !== undefined" :as="UiTextTag.Time" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" :datetime="isoTime" data-testid="plugin-chat-time">{{ time }}</UiText>
   </UiStack>
   <UiStack v-else :direction="UiDirection.Row" :gap="UiGap.Xs" :align="UiAlignItems.Start" data-testid="plugin-chat-reply">
     <UiChatAvatar :label="assistantLabel" />
@@ -84,13 +82,13 @@ const waiting = computed<boolean>(() =>
           v-if="message.text !== ''"
           :source="message.text"
           :links="false"
-          :copy-label="t('plugins.pluginPage.chatCopyCode')"
-          :copied-label="t('plugins.pluginPage.chatCopied')"
+          :copy-label="t('shared.copy')"
+          :copied-label="t('shared.copied')"
           :caret="writing"
         />
         <template v-for="link in message.links" :key="link.key">
-          <UiLink v-if="link.external" :href="link.href" external data-testid="plugin-chat-link">{{ link.text }}</UiLink>
-          <UiLink v-else :to="link.href" data-testid="plugin-chat-link">{{ link.text }}</UiLink>
+          <UiLink v-if="link.external" :href="link.href" external :variant="UiButtonVariant.Link" data-testid="plugin-chat-link">{{ link.text }}</UiLink>
+          <UiLink v-else :to="link.href" :variant="UiButtonVariant.Link" data-testid="plugin-chat-link">{{ link.text }}</UiLink>
         </template>
       </UiStack>
       <UiTypingDots v-if="waiting" :label="t('plugins.pluginPage.chatWriting')" />
@@ -115,11 +113,11 @@ const waiting = computed<boolean>(() =>
         <UiCopyButton
           v-if="message.text !== ''"
           :value="message.text"
-          :label="t('plugins.pluginPage.chatCopy')"
-          :copied-label="t('plugins.pluginPage.chatCopied')"
+          :label="t('shared.copy')"
+          :copied-label="t('shared.copied')"
           testid="plugin-chat-copy"
         />
-        <time v-if="message.sentAt !== undefined" :datetime="isoTime" :class="TIME_CLASSES" data-testid="plugin-chat-time">{{ time }}</time>
+        <UiText v-if="message.sentAt !== undefined" :as="UiTextTag.Time" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" :datetime="isoTime" data-testid="plugin-chat-time">{{ time }}</UiText>
       </UiStack>
     </UiStack>
   </UiStack>

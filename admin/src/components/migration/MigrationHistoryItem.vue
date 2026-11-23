@@ -8,10 +8,10 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiProgress from '@/components/ui/UiProgress.vue'
+import UiSelectableRow from '@/components/ui/UiSelectableRow.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
@@ -22,6 +22,8 @@ import { migrationStatusTone } from '@/lib/tones'
 import type { MigrationJob } from '@/types/migration'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function and the active locale (for the relative date). */
 const { t, locale } = useI18n()
@@ -51,48 +53,39 @@ const createdAgo = computed<string>(() => formatRelativeFromNow(props.job.create
 </script>
 
 <template>
-  <UiStack
-    direction="row"
-    align="start"
-    gap="xs"
-    class="rounded-control border p-1.5 transition-colors"
-    :class="selected ? 'border-border-control-hover bg-surface-active' : 'border-transparent hover:bg-surface-hover'"
+  <UiSelectableRow
+    :selected="selected"
+    :select-testid="`migration-select-${job.id}`"
     :data-testid="`migration-job-${job.id}`"
-    :data-selected="selected ? 'true' : undefined"
+    @select="emit('select', job)"
   >
-    <UiButton
-      type="button"
-      :variant="UiButtonVariant.Plain"
-      class="min-w-0 flex-1 justify-start p-1.5 text-left"
-      :aria-pressed="selected"
-      :data-testid="`migration-select-${job.id}`"
-      @click="emit('select', job)"
-    >
-      <UiStack gap="xs" class="w-full min-w-0">
-        <UiStack direction="row" align="center" justify="between" gap="xs">
-          <UiText size="sm" class="truncate font-medium">
-            {{ name }}
-          </UiText>
-          <UiBadge :tone="migrationStatusTone[job.status]" small>
-            {{ t(migrationStatusLabelKey[job.status]) }}
-          </UiBadge>
-        </UiStack>
-        <UiProgress :value="job.overallPercent" :label="t('migration.migrationProgressCard.jobId', { id: job.id })" />
-        <UiText tone="muted" size="xs" data-testid="migration-job-created">
-          {{ createdAgo }}
+    <UiStack :gap="UiGap.Xs" class="w-full min-w-0">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Xs">
+        <UiText :size="UiTextSize.Sm" class="truncate font-medium">
+          {{ name }}
         </UiText>
+        <UiBadge :tone="migrationStatusTone[job.status]" small>
+          {{ t(migrationStatusLabelKey[job.status]) }}
+        </UiBadge>
       </UiStack>
-    </UiButton>
-    <UiTooltip :text="t('migration.migration.deleteMigration')">
-      <UiIconButton
-        :label="t('migration.migration.deleteMigration')"
-        size="sm"
-        :disabled="deleting"
-        :data-testid="`migration-delete-${job.id}`"
-        @click="emit('delete', job)"
-      >
-        <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
-      </UiIconButton>
-    </UiTooltip>
-  </UiStack>
+      <UiProgress :value="job.overallPercent" :label="t('migration.migrationProgressCard.jobId', { id: job.id })" />
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" data-testid="migration-job-created">
+        {{ createdAgo }}
+      </UiText>
+    </UiStack>
+    <template #trailing>
+      <UiTooltip :text="t('migration.migration.deleteMigration')">
+        <UiIconButton
+          :label="t('migration.migration.deleteMigration')"
+          :variant="UiButtonVariant.Danger"
+          :size="UiSize.Sm"
+          :disabled="deleting"
+          :data-testid="`migration-delete-${job.id}`"
+          @click="emit('delete', job)"
+        >
+          <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
+        </UiIconButton>
+      </UiTooltip>
+    </template>
+  </UiSelectableRow>
 </template>

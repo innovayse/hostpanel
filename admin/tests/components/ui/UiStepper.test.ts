@@ -83,4 +83,11 @@ describe('UiStepper', () => {
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([0])
   })
+
+  it('hides the 16px steppers on a phone and gives the field their room back, the number keyboard types the value', () => {
+    const wrapper = mount(UiStepper, { props: { modelValue: 1 } })
+
+    expect(wrapper.get('[data-testid="stepper-increment"]').element.parentElement?.classList.contains('max-sm:hidden')).toBe(true)
+    expect(wrapper.get('input').classes()).toContain('max-sm:pr-3.5')
+  })
 })

@@ -114,20 +114,20 @@ describe('ClientsListView', () => {
     expect(row.get('circle').attributes('fill')).toBe('#112233')
   })
 
-  it('shows two-factor sign-in as one icon named for assistive technology, in a narrow column', async () => {
+  it('shows two-factor sign-in as one icon named for assistive technology, in a narrow share column', async () => {
     const { wrapper } = await mountGrouped()
 
     const icon = wrapper.get('[data-testid="client-row"] [role="img"]')
     expect(icon.attributes('aria-label')).toMatch(/disabled/i)
     expect(icon.text()).toBe('')
-    expect(wrapper.findAll('th').find((header) => header.text().includes('2FA'))?.classes()).toContain('w-px')
+    expect(wrapper.findAll('th').find((header) => header.text().includes('2FA'))?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
   })
 
   it('lets the name column take the remaining width and clips the card to its rounded corners', async () => {
     const { wrapper } = await mountGrouped()
 
     const nameHeader = wrapper.findAll('th').find((header) => header.text().includes('Name'))
-    expect(nameHeader?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0']))
+    expect(nameHeader?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0']))
     expect(wrapper.get('[data-testid="clients-list-table"]').element.closest('.overflow-clip')).not.toBeNull()
   })
 
@@ -135,6 +135,34 @@ describe('ClientsListView', () => {
     const { wrapper } = await mountGrouped()
 
     expect(wrapper.get('[data-testid="client-row-open-8"]').attributes('href')).toBe('/clients/8')
+  })
+
+  it('opens a client from its whole row, a pointer target', async () => {
+    const { wrapper, router } = await mountGrouped()
+
+    expect(wrapper.get('[data-testid="client-row"]').classes()).toContain('cursor-pointer')
+    await wrapper.get('[data-testid="client-row"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/clients/8')
+  })
+
+  it('answers an empty narrowed list with an empty state in the table and a way to clear the filters', async () => {
+    stubPathRoutes([
+      { path: '/api/clients', body: { items: [], totalCount: 0 } },
+      { path: '/api/admin/client-groups', body: [] },
+    ])
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }],
+    })
+    await router.push('/clients?status=Active')
+    await router.isReady()
+    const wrapper = mount(ClientsListView, { global: { plugins: [createTestI18n(), createPinia(), router], stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="client-row"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="clients-list-table"]').text()).toContain('No clients match your filters')
+    expect(wrapper.find('[data-testid="clients-list-clear-empty"]').exists()).toBe(true)
   })
 
   it('restores the filters, the search and the page from the address and sends them', async () => {

@@ -22,6 +22,10 @@ import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/stor
 import { ContentLanguage } from '@/locales/contentLanguage'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -87,11 +91,11 @@ const handleSubmit = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="slug" size="xl" @close="emit('close')">
+  <UiDialog :title="slug" :size="UiDialogSize.Xl" @close="emit('close')">
     <UiForm stacked data-testid="email-template-form" @submit="handleSubmit">
       <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="email-template-tab" />
 
-      <UiText v-if="!activeVersion" tone="muted" size="sm" data-testid="email-template-missing">
+      <UiText v-if="!activeVersion" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="email-template-missing">
         {{ t('settings.emailTemplates.missingVersion') }}
       </UiText>
 
@@ -134,15 +138,15 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiAlert v-if="error" variant="error" data-testid="email-template-error">
+      <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="email-template-error">
         {{ error }}
       </UiAlert>
 
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="email-template-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="email-template-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="email-template-save">
+        <UiButton :action="UiActionKind.Save" :type="UiButtonType.Submit" :variant="UiButtonVariant.Primary" :loading="saving" data-testid="email-template-save">
           {{ t('shared.save') }}
         </UiButton>
       </UiFormActions>

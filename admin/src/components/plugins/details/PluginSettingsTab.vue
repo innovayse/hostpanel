@@ -14,6 +14,8 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto } from '@/types/plugin'
 import type { Product } from '@/types/product'
+import { UiGap } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -46,7 +48,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UiStack gap="md" data-testid="plugin-details-settings">
+  <UiStack :gap="UiGap.Md" data-testid="plugin-details-settings">
     <IntegrationConfigPanel v-if="hasConfig" :slug="plugin.id" />
     <UiErrorState
       v-if="widgetsError !== null"
@@ -56,7 +58,7 @@ const emit = defineEmits<{
     />
     <UiCard
       v-else-if="widgetsLoading && widgets.length === 0"
-      padding="md"
+      :padding="UiCardPadding.Md"
       loading
       :skeleton-lines="3"
       data-testid="plugin-slot-widgets-loading"

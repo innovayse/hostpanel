@@ -269,6 +269,8 @@ export enum UiSplitRatio {
 
 /** Vertical padding of a section. */
 export enum UiSectionPadding {
+  /** None: the content or the caller's classes carry the vertical space (a hero band, a full-height slider). */
+  None = 'none',
   /** Tight. */
   Sm = 'sm',
   /** Default. */
@@ -381,6 +383,16 @@ export enum UiSkeletonShape {
   Block = 'block',
   /** A circle (avatar). */
   Circle = 'circle',
+}
+
+/** Width of a line or block placeholder. */
+export enum UiSkeletonWidth {
+  /** The whole width of the container. */
+  Full = 'full',
+  /** Three quarters of the container, a line that stops short. */
+  ThreeQuarters = 'three-quarters',
+  /** A fixed heading-sized stub, capped at the container width. */
+  Heading = 'heading',
 }
 
 /** Named decorative backgrounds for marketing sections. */
@@ -511,4 +523,178 @@ export enum UiChatBubbleSide {
   Own = 'own',
   /** Written by the other party: left-aligned, neutral. */
   Other = 'other',
+}
+
+/** Edge steps of a `UiDot`, the small round status marker. */
+export enum UiDotSize {
+  /** A 7px dot beside a badge label. */
+  Sm = 'sm',
+  /** An 8px dot beside a row title. */
+  Md = 'md',
+  /** A 9px dot beside a result name. */
+  Lg = 'lg',
+}
+
+/** Elements a `UiBlock`, `UiContainer` or `UiSection` can be drawn as: a plain container or a page landmark. */
+export enum UiBlockTag {
+  /** A generic container. */
+  Div = 'div',
+  /** A page or section header landmark. */
+  Header = 'header',
+  /** A page or section footer landmark. */
+  Footer = 'footer',
+  /** A complementary aside landmark. */
+  Aside = 'aside',
+  /** A navigation landmark. */
+  Nav = 'nav',
+  /** The main landmark. */
+  Main = 'main',
+  /** A thematic section. */
+  Section = 'section',
+  /** A self-contained article. */
+  Article = 'article',
+}
+
+/** Elements a `UiCodeBlock` can be drawn as. */
+export enum UiCodeBlockTag {
+  /** Inline code: one command on one line. */
+  Code = 'code',
+  /** Preformatted text: a multi-line snippet that keeps its line breaks. */
+  Pre = 'pre',
+}
+
+/** Elements a `UiStack` can be drawn as: a container, a landmark, a list or a list item. */
+export enum UiStackTag {
+  /** A generic container. */
+  Div = 'div',
+  /** An inline container. */
+  Span = 'span',
+  /** A thematic section. */
+  Section = 'section',
+  /** A self-contained article. */
+  Article = 'article',
+  /** A complementary aside landmark. */
+  Aside = 'aside',
+  /** A navigation landmark. */
+  Nav = 'nav',
+  /** The main landmark. */
+  Main = 'main',
+  /** A header landmark. */
+  Header = 'header',
+  /** A footer landmark. */
+  Footer = 'footer',
+  /** A figure with a caption. */
+  Figure = 'figure',
+  /** The caption of a figure. */
+  Figcaption = 'figcaption',
+  /** An unordered list. */
+  Ul = 'ul',
+  /** An ordered list. */
+  Ol = 'ol',
+  /** A list item. */
+  Li = 'li',
+}
+
+/** Elements a `UiText` can be drawn as: a paragraph, inline text, a heading or a text-level element. */
+export enum UiTextTag {
+  /** A paragraph. */
+  P = 'p',
+  /** Inline text. */
+  Span = 'span',
+  /** A generic block of text. */
+  Div = 'div',
+  /** A list item. */
+  Li = 'li',
+  /** A quotation. */
+  Blockquote = 'blockquote',
+  /** The caption of a table. */
+  Caption = 'caption',
+  /** The caption of a figure. */
+  Figcaption = 'figcaption',
+  /** A header landmark. */
+  Header = 'header',
+  /** A footer landmark. */
+  Footer = 'footer',
+  /** A thematic section. */
+  Section = 'section',
+  /** A date or a time. */
+  Time = 'time',
+  /** A form label. */
+  Label = 'label',
+  /** A native disclosure widget. */
+  Details = 'details',
+  /** The summary of a details disclosure. */
+  Summary = 'summary',
+  /** A term of a description list. */
+  Dt = 'dt',
+  /** A description of a description list. */
+  Dd = 'dd',
+  /** A level-one heading. */
+  H1 = 'h1',
+  /** A level-two heading. */
+  H2 = 'h2',
+  /** A level-three heading. */
+  H3 = 'h3',
+  /** A level-four heading. */
+  H4 = 'h4',
+}
+
+/** Elements a `UiGrid` or `UiBalancedGrid` can be drawn as: a container or a list. */
+export enum UiGridTag {
+  /** A generic container. */
+  Div = 'div',
+  /** An unordered list of cards. */
+  Ul = 'ul',
+  /** An ordered list of cards. */
+  Ol = 'ol',
+  /** A description list. */
+  Dl = 'dl',
+}
+
+/** Elements a `UiDecor` ornament can be drawn as. */
+export enum UiDecorTag {
+  /** A block ornament. */
+  Div = 'div',
+  /** An inline ornament. */
+  Span = 'span',
+}
+
+/** Elements a `UiGradientText` can be drawn as. */
+export enum UiGradientTextTag {
+  /** Inline gradient text. */
+  Span = 'span',
+  /** A block of gradient text. */
+  Div = 'div',
+  /** A paragraph of gradient text. */
+  P = 'p',
+  /** A level-one heading. */
+  H1 = 'h1',
+  /** A level-two heading. */
+  H2 = 'h2',
+  /** A level-three heading. */
+  H3 = 'h3',
+}
+
+/** Elements a `UiAccent` colour scope can wrap its children in. */
+export enum UiAccentTag {
+  /** A generic wrapper. */
+  Div = 'div',
+  /** An inline wrapper. */
+  Span = 'span',
+  /** A list item. */
+  Li = 'li',
+  /** A thematic section. */
+  Section = 'section',
+  /** A self-contained article. */
+  Article = 'article',
+}
+
+/** Elements a `UiRichText` body can be wrapped in. */
+export enum UiRichTextTag {
+  /** A generic wrapper. */
+  Div = 'div',
+  /** A thematic section. */
+  Section = 'section',
+  /** A self-contained article. */
+  Article = 'article',
 }

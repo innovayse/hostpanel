@@ -30,6 +30,14 @@ describe('toast store', () => {
     ])
   })
 
+  it('keeps the danger tone of a refusal', () => {
+    const store = useToastStore()
+
+    store.push('Refused', UiTone.Danger)
+
+    expect(store.toasts.map((toast) => toast.tone)).toEqual([UiTone.Danger])
+  })
+
   it('dismisses a toast by itself after its time and no sooner', () => {
     const store = useToastStore()
     store.push('Saved')

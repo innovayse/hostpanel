@@ -8,20 +8,18 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/PaymentClaimsView.schema'
-import UiText from '@/components/ui/UiText.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { formatDateTime } from '@/lib/format'
 import { formatCurrencyCode } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
@@ -65,24 +63,24 @@ onMounted(() => load(1))
       @retry="load(page)"
     />
 
-    <UiText v-if="!store.error" tone="muted" size="md" data-testid="billing-payment-claims-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiText>
-
-    <UiCard>
-      <UiTable
-        :empty-text="t('billing.paymentClaims.empty')"
-        :loading="store.loading && store.claims.length === 0"
-        :empty="!store.loading && !store.error && store.claims.length === 0"
-        data-testid="billing-payment-claims-table"
-      >
+    <UiDataTable
+      :empty-text="t('billing.paymentClaims.empty')"
+      :loading="store.loading && store.claims.length === 0"
+      :empty="!store.loading && !store.error && store.claims.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="DEFAULT_PAGE_SIZE"
+      pagination-testid="billing-payment-claims-pagination"
+      data-testid="billing-payment-claims-table"
+      @update:page="load"
+    >
         <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow v-for="claim in store.claims" :key="claim.id" hoverable>
             <UiTableCell>
               <UiLink
                 :to="invoicePath(claim.invoiceId)"
-                variant="link"
+                :variant="UiButtonVariant.Link"
                 :data-testid="`billing-payment-claim-invoice-${claim.id}`"
               >
                 #{{ claim.invoiceId }}
@@ -90,7 +88,7 @@ onMounted(() => load(1))
             </UiTableCell>
             <UiTableCell>
               <UiLink
-                variant="link"
+                :variant="UiButtonVariant.Link"
                 :to="clientPath(claim.clientId)"
                 :data-testid="`billing-payment-claim-client-${claim.id}`"
               >
@@ -105,15 +103,6 @@ onMounted(() => load(1))
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
-      :page="page"
-      :total="store.totalCount"
-      :page-size="DEFAULT_PAGE_SIZE"
-      testid="billing-payment-claims-pagination"
-      @update:page="load"
-    />
+    </UiDataTable>
   </UiStack>
 </template>

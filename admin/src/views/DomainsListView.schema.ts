@@ -5,7 +5,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
 
 /** The domains list. */
 const schema: ListSkeletonSchema = {
@@ -19,11 +19,11 @@ const schema: ListSkeletonSchema = {
       { key: 'client', label: 'shared.client', cardRole: UiCardRole.Subtitle },
       { key: 'registrar', label: 'shared.registrar', hideBelow: UiHideBelow.Lg },
       { key: 'regPeriod', label: 'domains.domainsList.regPeriod', hideBelow: UiHideBelow.Xl },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge },
-      { key: 'nextDueDate', label: 'shared.nextDueDate', hideBelow: UiHideBelow.Xl },
-      { key: 'expiresAt', label: 'domains.domainsList.expiresAt' },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
+      { key: 'nextDueDate', label: 'shared.nextDueDate', kind: UiColumnKind.Date, hideBelow: UiHideBelow.Xl },
+      { key: 'expiresAt', label: 'domains.domainsList.expiresAt', kind: UiColumnKind.Date },
       { key: 'renewalPrice', label: 'domains.domainsList.renewalPrice', numeric: true },
-      { key: 'autoRenew', label: 'shared.autoRenew', size: UiColumnSize.Compact },
+      { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

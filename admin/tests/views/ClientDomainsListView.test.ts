@@ -61,9 +61,9 @@ describe('ClientDomainsListView', () => {
     await flushPromises()
 
     const headers = wrapper.findAll('thead th')
-    expect(headers.filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
-    expect(headers.find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-full')
-    expect(headers.find((header) => header.text() === 'Auto-Renew')?.classes()).toContain('w-px')
+    expect(headers.find((header) => header.text() === 'Domain Name')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
+    expect(headers.find((header) => header.text() === 'Auto-Renew')?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
+    expect(headers.find((header) => header.text() === 'Auto-Renew')?.classes()).not.toContain('max-w-0')
     expect(wrapper.get('tbody tr [role="img"]').attributes('aria-label')).toBe('Yes')
   })
 

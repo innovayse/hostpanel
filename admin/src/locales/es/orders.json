@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "accept": "Aceptar",
     "orderInfo": "Información de la orden",
     "overview": "Resumen",
     "created": "Creada",
@@ -18,11 +17,9 @@
     "orderCancelled": "Orden cancelada.",
     "confirmCancelTitle": "¿Cancelar esta orden?",
     "confirmCancelMessage": "La orden se cancelará. Esto no se puede deshacer.",
-    "cancelOrder": "Cancelar orden",
     "linesSubtotal": "Subtotal de la orden (antes de impuestos y crédito)",
     "invoiceTotal": "Total de la factura",
     "fulfilment": "Suministro",
-    "retry": "Reintentar",
     "lineRetried": "Línea reintentada y suministrada.",
     "attempts": "Intentos: {count}, último {at}",
     "finishRefund": "Parte del coste se devolvió. Termina el reembolso manualmente.",
@@ -36,16 +33,12 @@
     "searchOrders": "Buscar pedidos por número o ID",
     "order": "Orden #",
     "items": "Elementos",
-    "accept": "Aceptar",
-    "totalcountOrderValue": "Pedidos: {totalCount}",
     "noOrdersFound": "No se encontraron pedidos",
     "noOrdersMatchYourFilters": "Ningún pedido coincide con tu filtro",
-    "clearFilters": "Borrar filtro",
     "orderAccepted": "Orden aceptada.",
     "orderCancelled": "Orden cancelada.",
     "confirmCancelTitle": "¿Cancelar esta orden?",
     "confirmCancelMessage": "La orden se cancelará. Esto no se puede deshacer.",
-    "cancelOrder": "Cancelar orden",
     "failedLines": "{count} para reintentar",
     "needsAttention": "Requiere atención",
     "reviewQueue": "Pendiente de revisión"
@@ -87,7 +80,8 @@
     "rejectReasonLabel": "Motivo",
     "rejectReasonHint": "El cliente lee este motivo en el correo.",
     "rejectReasonPlaceholder": "Por qué se rechaza el pedido",
-    "rejectReasonRequired": "Introduce un motivo.",
-    "rejectSubmit": "Rechazar pedido"
-  }
+    "rejectReasonRequired": "Introduce un motivo."
+  },
+  "accept": "Aceptar",
+  "cancelOrder": "Cancelar pedido"
 }

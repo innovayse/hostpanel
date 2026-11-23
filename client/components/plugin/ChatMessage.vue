@@ -6,29 +6,29 @@
         <UiBadge v-for="chip in message.selectionChips" :key="chip.id">{{ chip.label }}</UiBadge>
       </UiStack>
     </UiChatBubble>
-    <time v-if="message.sentAt" :datetime="isoTime" :class="TIME_CLASSES" data-testid="plugin-chat-time">{{ time }}</time>
+    <UiText v-if="message.sentAt" :as="UiTextTag.Time" :datetime="isoTime" :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" data-testid="plugin-chat-time">{{ time }}</UiText>
   </UiStack>
   <UiStack v-else :direction="UiDirection.Row" :gap="UiGap.Xs" :align="UiCrossAlign.Start" data-testid="plugin-chat-reply">
     <UiChatAvatar :label="assistantLabel" />
     <UiStack :gap="UiGap.Xs" class="min-w-0 max-w-[75ch] flex-1">
-      <UiText v-if="assistantLabel" as="span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" :weight="UiTextWeight.Medium" data-testid="plugin-chat-assistant-label">{{ assistantLabel }}</UiText>
+      <UiText v-if="assistantLabel" :as="UiTextTag.Span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" :weight="UiTextWeight.Medium" data-testid="plugin-chat-assistant-label">{{ assistantLabel }}</UiText>
       <UiStack v-if="message.text !== '' || message.links.length" :gap="UiGap.Xs" class="text-sm text-gray-800 dark:text-gray-200" :data-testid="`plugin-chat-${message.role}`">
         <UiMarkdownText
           v-if="message.text !== ''"
           :text="message.text"
           :copy-label="$t('plugins.chatCopyCode')"
-          :copied-label="$t('plugins.chatCopied')"
+          :copied-label="$t('common.copied')"
           :caret="writing"
         />
         <template v-for="link in message.links" :key="link.key">
-          <UiLink v-if="link.external" :href="link.href" external class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
-          <UiLink v-else :to="link.href" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
+          <UiLink v-if="link.external" :href="link.href" external :tone="UiLinkTone.Primary" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
+          <UiLink v-else :to="link.href" :tone="UiLinkTone.Primary" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
         </template>
       </UiStack>
       <UiTypingDots v-if="waiting" :label="$t('plugins.chatWriting')" />
       <UiStack v-if="writing && message.status" :direction="UiDirection.Row" :gap="UiGap.Xs" :align="UiCrossAlign.Center" role="status">
         <LoaderCircle :size="14" class="shrink-0 animate-spin text-primary-500 motion-reduce:animate-none" aria-hidden="true" />
-        <UiText as="span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" data-testid="plugin-chat-status">{{ message.status }}</UiText>
+        <UiText :as="UiTextTag.Span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" data-testid="plugin-chat-status">{{ message.status }}</UiText>
       </UiStack>
       <PluginChatSteps v-if="message.steps.length" :steps="message.steps" />
       <UiAlert v-for="issue in message.issues" :key="issue.key" :variant="UiAlertVariant.Error" data-testid="plugin-chat-issue">{{ issue.text }}</UiAlert>
@@ -45,10 +45,10 @@
           v-if="message.text !== ''"
           :value="message.text"
           :label="$t('plugins.chatCopy')"
-          :copied-label="$t('plugins.chatCopied')"
+          :copied-label="$t('common.copied')"
           testid="plugin-chat-copy"
         />
-        <time v-if="message.sentAt" :datetime="isoTime" :class="TIME_CLASSES" data-testid="plugin-chat-time">{{ time }}</time>
+        <UiText v-if="message.sentAt" :as="UiTextTag.Time" :datetime="isoTime" :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" data-testid="plugin-chat-time">{{ time }}</UiText>
       </UiStack>
     </UiStack>
   </UiStack>
@@ -68,7 +68,7 @@ import { LoaderCircle } from 'lucide-vue-next'
 import type { PluginChatMessage } from '~/types/pluginchatmessage'
 import { PluginChatRole } from '~/types/pluginchatrole'
 import { formatTime } from '~/utils/formatDate'
-import { UiAlertVariant, UiCrossAlign, UiDirection, UiGap, UiTextSize, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
+import { UiAlertVariant, UiCrossAlign, UiDirection, UiGap, UiLinkTone, UiTextSize, UiTextTag, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
 
 /** Props of PluginChatMessage. */
 interface Props {
@@ -94,9 +94,6 @@ const emit = defineEmits<{
   /** A card's action asked to send the conversation's last message again. */
   resend: []
 }>()
-
-/** The classes of the time: always shown, so a keyboard or touch reader sees it as well as a pointer one. */
-const TIME_CLASSES = 'text-xs text-gray-500 dark:text-gray-400'
 
 /** The time the message was written, for the reader. */
 const time = computed(() => formatTime(props.message.sentAt))

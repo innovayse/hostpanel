@@ -1,12 +1,12 @@
 /**
- * Mount tests for AppLayout: the shell holds the sidebar, the topbar and the routed content, the
+ * Mount tests for MainLayout: the shell holds the sidebar, the topbar and the routed content, the
  * hamburger opens the navigation drawer, and a screen still downloading is answered in the content
  * area while the shell stays.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { RouteLocationNormalized } from 'vue-router'
-import AppLayout from '@/layouts/AppLayout.vue'
+import MainLayout from '@/layouts/MainLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
 import { useDemoStore } from '@/stores/demo'
@@ -16,7 +16,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 
-describe('AppLayout', () => {
+describe('MainLayout', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     window.localStorage.clear()
@@ -24,28 +24,29 @@ describe('AppLayout', () => {
 
   it('renders the desktop sidebar, the topbar and the content area', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
 
-    expect(wrapper.find('[data-testid="app-layout"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="app-sidebar-desktop"] [data-testid="app-sidebar"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="app-topbar"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="main-layout"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="sidebar-desktop"] [data-testid="sidebar"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="topbar"]').exists()).toBe(true)
   })
 
   it('shows the persistent sidebar and its folded rail from md up, never on a phone', async () => {
     window.localStorage.setItem('hostpanel.sidebar.collapsed', '1')
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
 
-    const desktop = wrapper.get('[data-testid="app-sidebar-desktop"]').classes()
+    const desktop = wrapper.get('[data-testid="sidebar-desktop"]').classes()
     expect(desktop).toEqual(expect.arrayContaining(['hidden', 'md:flex']))
     expect(desktop).not.toContain('flex')
   })
 
   it('stands on the glowing ground, scrolls only the content area and mounts the command palette once', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
 
-    expect(wrapper.get('[data-testid="app-layout"]').classes()).toEqual(expect.arrayContaining(['ground', 'h-dvh', 'overflow-hidden']))
+    expect(wrapper.get('[data-testid="main-layout"]').classes()).toEqual(expect.arrayContaining(['ground', 'h-dvh', 'overflow-hidden']))
+    expect(wrapper.get('main').element.parentElement?.contains(wrapper.get('[data-testid="topbar"]').element)).toBe(true)
     expect(wrapper.get('main').classes()).toEqual(expect.arrayContaining(['container-size', 'min-h-0', 'min-w-0', 'overflow-x-hidden', 'overflow-y-auto']))
 
     useCommandPaletteStore().open()
@@ -56,33 +57,33 @@ describe('AppLayout', () => {
 
   it('puts the demo strip across the full width above both the sidebar and the main column', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
     useDemoStore().enabled = true
     await flushPromises()
 
-    const shell = wrapper.get('[data-testid="app-layout"]').element
+    const shell = wrapper.get('[data-testid="main-layout"]').element
     const banner = wrapper.get('[data-testid="demo-banner"]').element
     expect(banner.parentElement).toBe(shell)
-    expect(banner.nextElementSibling?.contains(wrapper.get('[data-testid="app-sidebar-desktop"]').element)).toBe(true)
-    expect(banner.nextElementSibling?.contains(wrapper.get('[data-testid="app-topbar"]').element)).toBe(true)
-    expect(wrapper.get('[data-testid="app-topbar"]').element.parentElement?.contains(banner)).toBe(false)
+    expect(banner.nextElementSibling?.contains(wrapper.get('[data-testid="sidebar-desktop"]').element)).toBe(true)
+    expect(banner.nextElementSibling?.contains(wrapper.get('[data-testid="topbar"]').element)).toBe(true)
+    expect(wrapper.get('[data-testid="topbar"]').element.parentElement?.contains(banner)).toBe(false)
   })
 
   it('opens the navigation drawer from the hamburger', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
-    expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(1)
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
+    expect(wrapper.findAll('[data-testid="sidebar"]')).toHaveLength(1)
 
     await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(2)
+    expect(wrapper.findAll('[data-testid="sidebar"]')).toHaveLength(2)
   })
 
   it('opens the navigation as a bottom sheet below lg, closes it after choosing a page and on Escape', async () => {
     vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
 
     await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
     await flushPromises()
@@ -94,21 +95,21 @@ describe('AppLayout', () => {
     expect(sheet.find('[data-testid="sidebar-theme"]').exists()).toBe(true)
     expect(sheet.find('[data-testid="sidebar-locale"]').exists()).toBe(true)
 
-    await sheet.get('[data-testid="app-sidebar"] a').trigger('click')
+    await sheet.get('[data-testid="sidebar"] a').trigger('click')
     await flushPromises()
-    expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(1)
+    expect(wrapper.findAll('[data-testid="sidebar"]')).toHaveLength(1)
 
     await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
     await flushPromises()
     await wrapper.get('aside[role="dialog"]').trigger('keydown', { key: 'Escape' })
     await flushPromises()
-    expect(wrapper.findAll('[data-testid="app-sidebar"]')).toHaveLength(1)
+    expect(wrapper.findAll('[data-testid="sidebar"]')).toHaveLength(1)
   })
 
   it('opens the navigation as a bottom sheet on a tablet too, where the sidebar is only the icon rail', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: !query.includes('639'), addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
 
     await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
     await flushPromises()
@@ -118,7 +119,7 @@ describe('AppLayout', () => {
 
   it('shows the skeleton in the content area while the next screen downloads, and keeps the shell', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
     expect(wrapper.find('[data-testid="view-loading"]').exists()).toBe(false)
 
     // A navigation the guards admitted, heading for a screen drawn by another record than the current one.
@@ -126,8 +127,8 @@ describe('AppLayout', () => {
     await flushPromises()
 
     expect(wrapper.find('main [data-testid="view-loading"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="app-sidebar-desktop"] [data-testid="app-sidebar"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="app-topbar"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="sidebar-desktop"] [data-testid="sidebar"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="topbar"]').exists()).toBe(true)
   })
 })
 
@@ -141,7 +142,7 @@ describe('AppLayout', () => {
 const callsTo = (mock: ReturnType<typeof vi.fn>, path: string): number =>
   mock.mock.calls.filter((call) => String(call[0]).includes(path)).length
 
-describe('AppLayout version loading', () => {
+describe('MainLayout version loading', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -151,7 +152,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/dashboard/activity': () => json([]),
       'GET /api/admin/version': () => json({ installedVersion: '1.4.0' }),
     })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
     useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     await flushPromises()
     await wrapper.get('[data-testid="topbar-toggle-sidebar"]').trigger('click')
@@ -169,7 +170,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/version': () => json({ installedVersion: '1.4.0' }),
       'GET /api/admin/release-status': () => json({ installedVersion: '1.4.0', latestVersion: '2.0.0', isUpgradeAvailable: true }),
     })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
     useAuthStore().user = { email: 'admin@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Admin'] }
     await flushPromises()
 
@@ -184,7 +185,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/dashboard/activity': () => json([]),
       'GET /api/admin/version': () => (refuse ? problem('No access.', 403) : json({ installedVersion: '1.4.0' })),
     })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
     useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     await flushPromises()
 
@@ -202,7 +203,7 @@ describe('AppLayout version loading', () => {
       'GET /api/admin/dashboard/activity': () => json([]),
       'GET /api/admin/version': () => json({ installedVersion: '1.4.0' }),
     })
-    const wrapper = await mountView(AppLayout, { path: '/dashboard' })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
     useAuthStore().user = { email: 'staff@example.com', firstName: 'Ada', lastName: 'Lovelace', roles: ['Reseller'] }
     await flushPromises()
     expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(true)
@@ -211,5 +212,12 @@ describe('AppLayout version loading', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(false)
+  })
+
+  it('keeps clear of a notch at the sides', async () => {
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([]) })
+    const wrapper = await mountView(MainLayout, { path: '/dashboard' })
+
+    expect(wrapper.get('[data-testid="main-layout"]').classes()).toEqual(expect.arrayContaining(['pl-[env(safe-area-inset-left)]', 'pr-[env(safe-area-inset-right)]']))
   })
 })

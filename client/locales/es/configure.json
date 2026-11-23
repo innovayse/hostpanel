@@ -1,14 +1,12 @@
 {
   "configure": {
     "title": "Configurar",
-    "back": "Volver a Productos",
     "notFound": "Producto no encontrado.",
     "includedFeatures": "Características incluidas",
     "chooseBillingCycle": "Elija el ciclo de facturación",
     "orderSummary": "Resumen del pedido",
     "setupFees": "Costes de configuración",
     "totalDueToday": "Total a pagar hoy",
-    "continue": "Continuar",
     "haveQuestions": "¿Tiene preguntas? Contacte con nuestro equipo de ventas.",
     "clickHere": "Haga clic aquí"
   }

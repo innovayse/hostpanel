@@ -7,20 +7,20 @@
       "email": "E-mail",
       "pricing": "Tarifs",
       "support": "Support",
-      "login": "Connexion",
-      "getStarted": "Commencer",
       "menu": "Ouvrir le menu",
       "close": "Fermer le menu",
       "cart": "Panier",
       "skipToContent": "Aller au contenu",
       "preferences": "Langue et thème"
     },
+    "cta": {
+      "getStarted": "Commencer",
+      "seePlans": "Voir les offres"
+    },
     "hero": {
       "badge": "Hébergement, domaines et e-mail dans un seul compte",
       "title": "Un hébergement rapide et sécurisé, conçu pour votre site web",
       "lead": "{site} vous offre le serveur, le domaine et le panneau de contrôle au même endroit. Les comptes sont créés automatiquement, la facturation est transparente, et une vraie personne répond à chaque ticket.",
-      "ctaPrimary": "Commencer",
-      "ctaSecondary": "Voir les offres",
       "benefitSsl": "Certificat SSL gratuit",
       "benefitBackups": "Sauvegardes automatiques",
       "benefitSupport": "Support inclus",
@@ -180,9 +180,7 @@
     },
     "finalCta": {
       "title": "Prêt à lancer votre site web ?",
-      "lead": "Choisissez une offre, faites pointer votre domaine vers elle et soyez en ligne dès aujourd'hui.",
-      "primary": "Commencer",
-      "secondary": "Voir les offres d'hébergement"
+      "lead": "Choisissez une offre, faites pointer votre domaine vers elle et soyez en ligne dès aujourd'hui."
     },
     "footer": {
       "tagline": "L'hébergement, les domaines et l'e-mail pour ceux qui préfèrent se concentrer sur la création de leur site.",

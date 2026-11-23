@@ -32,6 +32,10 @@ import {
 import type { ShadeStep } from '@/lib/brandPalette'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -168,12 +172,12 @@ const reset = (field: ColourField): void => {
   >
     <template v-for="field in FIELDS" :key="field.key">
       <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="field.env" />
-      <UiStack v-else gap="sm">
-        <UiText tone="secondary" size="md">
+      <UiStack v-else :gap="UiGap.Sm">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t(field.labelKey) }}
         </UiText>
 
-        <UiStack direction="row" align="center" wrap>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
           <UiColorField
             :model-value="field.draft.value.value"
             :placeholder="DEFAULTS[field.key]"
@@ -185,22 +189,24 @@ const reset = (field: ColourField): void => {
           <SettingOutcome :outcome="field.draft.outcome.value" />
           <UiButton
             v-if="field.draft.setting.value?.value"
-            type="button"
-            variant="link"
-            size="sm"
+            :type="UiButtonType.Button"
+            :variant="UiButtonVariant.Link"
+            :size="UiSize.Sm"
+            :title="t('settings.brandColors.reset')"
+            :aria-label="t('settings.brandColors.reset')"
             :data-testid="`brand-colors-reset-${field.testid}`"
             @click="reset(field)"
           >
-            {{ t('settings.brandColors.reset') }}
+            {{ t('shared.reset') }}
           </UiButton>
         </UiStack>
 
-        <UiText tone="muted" size="sm">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
           {{ t(field.hintKey) }}
         </UiText>
 
         <!-- The ramp the storefront will derive, lightest to darkest, the picked colour in the middle. -->
-        <UiStack direction="row" gap="none" class="overflow-hidden rounded-lg border border-border">
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.None" class="overflow-hidden rounded-lg border border-border">
           <UiColorSwatch
             v-for="shade in shades[field.key] ?? []"
             :key="shade.step"
@@ -211,8 +217,8 @@ const reset = (field: ColourField): void => {
         </UiStack>
 
         <!-- What a filled button looks like on a light and a dark surface, with the text the storefront picks. The two grounds are the storefront's fixed white and near-black, not panel tokens, so they stay the same in both panel themes. -->
-        <UiStack direction="row" align="center" wrap>
-          <UiStack direction="row" align="center" gap="sm" class="rounded-lg bg-white p-2">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="rounded-lg bg-white p-2">
             <UiColorSwatch
               :color="effective(field)"
               :text-color="bestTextOn(effective(field))"
@@ -220,7 +226,7 @@ const reset = (field: ColourField): void => {
             />
             <UiColorSwatch :text-color="shadeAt(field, LIGHT_SURFACE_SHADE)" :label="t('settings.brandColors.previewLink')" />
           </UiStack>
-          <UiStack direction="row" align="center" gap="sm" class="rounded-lg bg-neutral-950 p-2">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="rounded-lg bg-neutral-950 p-2">
             <UiColorSwatch
               :color="effective(field)"
               :text-color="bestTextOn(effective(field))"
@@ -231,8 +237,8 @@ const reset = (field: ColourField): void => {
         </UiStack>
 
         <UiText
-          :tone="contrast(field).passes ? 'success' : 'warning'"
-          size="sm"
+          :tone="contrast(field).passes ? UiTextTone.Success : UiTextTone.Warning"
+          :size="UiTextSize.Sm"
           :data-testid="`brand-colors-contrast-${field.testid}`"
         >
           {{ t(contrastKey(field), { ratio: contrast(field).ratio }) }}

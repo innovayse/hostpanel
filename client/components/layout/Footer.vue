@@ -1,11 +1,13 @@
 <template>
-  <footer
+  <UiStack
+    :as="UiStackTag.Footer"
+    gap="none"
     class="relative border-t border-classic-border bg-classic-footer shadow-[0_-12px_32px_-20px_rgba(17,24,39,0.18)] dark:shadow-none"
     data-testid="layout-footer"
   >
     <!-- Top band: one line of copy and the two ways in. -->
     <UiStack class="border-b border-classic-border" gap="none" data-testid="footer-cta">
-      <UiContainer class="py-8">
+      <UiContainer class="w-full py-8">
         <UiStack gap="md" align="start" class="md:flex-row md:items-center md:justify-between">
           <UiStack gap="xs" class="min-w-0">
             <UiHeading :level="UiHeadingLevel.H2" size="bare" class="text-xl font-semibold text-classic-ink">
@@ -18,14 +20,14 @@
           <UiStack gap="sm" align="start" class="w-full sm:flex-row sm:items-center md:w-auto">
             <SectionsDomainSearch size="md" class="w-full sm:min-w-[24rem] sm:flex-1 md:w-[28rem] md:flex-none" />
             <UiButton :to="localePath(SITE_PRODUCTS_PATH)" :variant="UiButtonVariant.Outline" size="md" data-testid="footer-cta-plans">
-              {{ $t('footer.cta.plans') }}
+              {{ $t('common.getStarted') }}
             </UiButton>
           </UiStack>
         </UiStack>
       </UiContainer>
     </UiStack>
 
-    <UiContainer class="py-12">
+    <UiContainer class="w-full py-12">
       <UiGrid cols="1" gap="xl" class="sm:grid-cols-3 lg:grid-cols-7">
         <!-- Brand block -->
         <UiStack gap="none" class="min-w-0 sm:col-span-3 lg:col-span-2" data-testid="footer-brand">
@@ -54,7 +56,7 @@
             <UiListItem v-for="mark in trustMarks" :key="mark.key">
               <UiStack direction="row" align="center" gap="xs" class="text-classic-muted">
                 <component :is="mark.icon" :size="16" class="shrink-0" aria-hidden="true" />
-                <UiText as="span" tone="inherit" size="xs">{{ mark.label }}</UiText>
+                <UiText :as="UiTextTag.Span" tone="inherit" size="xs">{{ mark.label }}</UiText>
               </UiStack>
             </UiListItem>
           </UiList>
@@ -72,7 +74,7 @@
 
     <!-- Bottom row: copyright on the left, pickers and theme on the right. -->
     <UiStack gap="none" class="border-t border-classic-border" data-testid="footer-bottom">
-      <UiContainer class="py-5">
+      <UiContainer class="w-full py-5">
         <UiStack gap="md" align="start" class="sm:flex-row sm:items-center sm:justify-between">
           <UiText tone="inherit" size="sm" class="text-classic-muted">
             © {{ currentYear }} {{ BRAND_NAME }}. {{ $t('footer.bottom.rights') }}
@@ -85,7 +87,7 @@
         </UiStack>
       </UiContainer>
     </UiStack>
-  </footer>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -119,7 +121,7 @@ import {
 import { useCatalogStore } from '~/stores/catalog'
 import type { FooterLink } from '~/types/footerlink'
 import { familyKey } from '~/utils/catalogGroups'
-import { UiButtonVariant, UiFooterLinkVariant, UiHeadingLevel, UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
+import { UiButtonVariant, UiFooterLinkVariant, UiHeadingLevel, UiMenuAlign, UiPlacement, UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** One trust mark: a generic icon and its label. */
 interface TrustMark {

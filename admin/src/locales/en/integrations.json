@@ -1,7 +1,7 @@
 {
   "integrationCard": {
     "plugin": "Plugin",
-    "configure": "Configure →",
+    "configure": "Configure",
     "notConfigured": "Not configured"
   },
   "categories": {

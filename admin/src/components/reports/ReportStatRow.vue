@@ -9,11 +9,13 @@ import { inject } from 'vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
+import UiText from '@/components/ui/UiText.vue'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { Icon } from '@/lib/icons'
 import { NOT_LOADING, REPORT_LOADING } from '@/lib/reportLoading'
 import type { ReportStat } from '@/types/reportstat'
 import { UiSize } from '@/utils/ui/size'
+import { UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Props for ReportStatRow. */
 defineProps<{
@@ -39,9 +41,9 @@ const loading = inject(REPORT_LOADING, NOT_LOADING)
     >
       <template v-if="stat.tooltip" #icon>
         <UiTooltip :text="stat.tooltip" placement="bottom">
-          <span tabindex="0" class="text-text-muted" :aria-label="stat.tooltip" :data-testid="`report-stat-${stat.key}-tooltip`">
+          <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" tabindex="0" :aria-label="stat.tooltip" :data-testid="`report-stat-${stat.key}-tooltip`">
             <UiIcon :markup="Icon.Info" :size="UiSize.Sm" />
-          </span>
+          </UiText>
         </UiTooltip>
       </template>
     </UiStatTile>

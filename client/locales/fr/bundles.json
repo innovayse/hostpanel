@@ -4,14 +4,12 @@
     "subtitle": "Des services complémentaires, commandés en une seule fois et proposés à prix réduit.",
     "domainIncluded": "Domaine inclus : {years}",
     "choose": "Choisir ce pack",
-    "back": "Retour aux produits",
     "notFound": "Pack introuvable.",
     "primary": "Service principal",
     "cycle": "Cycle de facturation",
     "cyclePlaceholder": "Sélectionnez un cycle de facturation",
     "unpriced": "Ce service n'a pas de prix pour le moment, le pack ne peut donc pas être commandé.",
     "orderSummary": "Récapitulatif du pack",
-    "continue": "Continuer",
     "discount": {
       "percentage": "{amount} % de réduction",
       "fixed": "{amount} de réduction"
@@ -24,7 +22,6 @@
     "domain": {
       "title": "Domaine inclus",
       "actionLabel": "Enregistrer un nouveau domaine ou en transférer un",
-      "pick": "Sélectionner",
       "useTransfer": "Utiliser ce domaine",
       "change": "Modifier",
       "unavailable": "Les domaines ne peuvent pas être commandés pour le moment."

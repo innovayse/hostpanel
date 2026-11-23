@@ -28,7 +28,7 @@ describe('SettingsSubsection', () => {
     const one = mount(SettingsSubsection, { props: { title: 'A', columns: 1 } })
 
     expect(two.classes()).toContain('col-span-full')
-    expect(two.get('.grid').classes()).toContain('md:grid-cols-2')
-    expect(one.get('.grid').classes()).not.toContain('md:grid-cols-2')
+    expect(two.get('.grid').classes()).toContain('@lg:grid-cols-2')
+    expect(one.get('.grid').classes()).not.toContain('@lg:grid-cols-2')
   })
 })

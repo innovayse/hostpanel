@@ -3,8 +3,8 @@
     <UiStack v-if="block.compact" direction="row" gap="md" align="center" wrap data-testid="plugin-header-compact">
       <UiBackLink v-if="back" :to="back.to" :label="back.label" compact testid="plugin-page-back" />
       <UiStack v-if="title || subtitle" gap="none" class="min-w-0">
-        <UiText as="p" weight="semibold" class="truncate" data-testid="plugin-header">{{ title }}</UiText>
-        <UiText v-if="subtitle" as="p" size="xs" tone="muted" class="truncate font-mono" data-testid="plugin-header-subtitle">{{ subtitle }}</UiText>
+        <UiText :as="UiTextTag.P" weight="semibold" class="truncate" data-testid="plugin-header">{{ title }}</UiText>
+        <UiText v-if="subtitle" :as="UiTextTag.P" size="xs" tone="muted" class="truncate font-mono" data-testid="plugin-header-subtitle">{{ subtitle }}</UiText>
       </UiStack>
       <UiStack direction="row" gap="md" align="center" wrap class="ml-auto">
         <PluginBlock v-for="action in actions" :key="action.key" :block="action.block" />
@@ -49,7 +49,7 @@
  */
 import { providePluginActionMessages, usePluginBackLink, usePluginEmbedded, usePluginSource } from '~/composables/usePluginView'
 import type { PluginHeaderBlock } from '~/types/pluginblock'
-import { UiHeadingLevel, UiHeadingSize } from '~/utils/ui/enums'
+import { UiHeadingLevel, UiHeadingSize, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of PluginHeaderBlock. */
 interface Props {

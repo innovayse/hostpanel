@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The billable items list. */
 const schema: ListSkeletonSchema = {
@@ -17,12 +17,12 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'client', label: 'shared.clientName' },
       { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
       { key: 'amount', label: 'shared.amount', numeric: true },
       { key: 'type', label: 'shared.type' },
-      { key: 'invoiced', label: 'billing.billableItems.invoiced', size: UiColumnSize.Compact },
+      { key: 'invoiced', label: 'billing.billableItems.invoiced', kind: UiColumnKind.Status },
     ],
   },
 }

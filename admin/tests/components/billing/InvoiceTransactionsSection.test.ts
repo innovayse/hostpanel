@@ -15,6 +15,7 @@ describe('InvoiceTransactionsSection', () => {
     expect(wrapper.findAll('[data-testid="billing-invoice-history-table"] tbody tr')).toHaveLength(2)
     expect(wrapper.get('[data-testid="billing-invoice-history-table"]').text()).toContain('Goodwill')
     expect(wrapper.get('[data-testid="billing-invoice-payments-table"]').text()).toContain('40.00 USD')
+    expect(wrapper.text()).toContain('Transaction History')
   })
 
   it('formats payment amounts and fees with the invoice currency when not USD', () => {

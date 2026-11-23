@@ -48,7 +48,7 @@ describe('UiSkeletonTable', () => {
     const [compact, grow] = wrapper.findAll('[role="columnheader"]')
 
     expect(compact?.classes()).toContain('w-px')
-    expect(grow?.classes()).toContain('w-full')
+    expect(grow?.classes()).toContain('w-[28%]')
   })
 
   it('opens the rows with a group heading placeholder only for a grouped table', () => {

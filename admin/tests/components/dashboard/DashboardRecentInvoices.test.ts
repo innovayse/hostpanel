@@ -37,8 +37,10 @@ describe('DashboardRecentInvoices', () => {
     const invoice = { id: 11, clientName: 'Ada', status: 'Paid', total: 50, currency: 'USD' } as Invoice
     const wrapper = mountWithApp(DashboardRecentInvoices, { props: { invoices: [invoice], loading: false } })
 
-    expect(wrapper.get('li').classes()).toContain('max-sm:grid-cols-[auto_1fr_auto]')
-    expect(wrapper.get('li span.truncate').classes()).toEqual(expect.arrayContaining(['max-sm:col-span-3', 'max-sm:row-start-1']))
-    expect(wrapper.get('[data-testid="dashboard-invoice-11"]').classes()).toContain('max-sm:row-start-2')
+    expect(wrapper.get('ul').element.children).toHaveLength(1)
+    expect(wrapper.get('li').classes()).toEqual(expect.arrayContaining(['flex', 'max-sm:flex-wrap']))
+    const name = wrapper.get('li span.truncate').element.parentElement
+    expect(name?.className.split(' ')).toEqual(expect.arrayContaining(['max-sm:order-first', 'max-sm:basis-full']))
+    expect(wrapper.get('[data-testid="dashboard-invoice-11"]').element.parentElement?.className.split(' ')).toContain('max-sm:shrink-0')
   })
 })

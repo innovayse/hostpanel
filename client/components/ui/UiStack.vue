@@ -12,12 +12,12 @@
  * are enums, so spacing across the portal comes from one scale.
  */
 import { computed } from 'vue'
-import { UiCrossAlign, UiDirection, UiGap, UiJustify } from '~/utils/ui/enums'
+import { UiCrossAlign, UiDirection, UiGap, UiJustify, UiStackTag } from '~/utils/ui/enums'
 
 /** Props of UiStack. */
 interface Props {
   /** Tag to render. */
-  as?: string
+  as?: `${UiStackTag}`
   /** Column (default) or row. */
   direction?: `${UiDirection}`
   /** Space between children. */
@@ -32,7 +32,7 @@ interface Props {
 
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
-  as: 'div',
+  as: UiStackTag.Div,
   direction: UiDirection.Column,
   gap: UiGap.Md,
   align: UiCrossAlign.Stretch,

@@ -1,10 +1,10 @@
 /**
- * Mount tests for AppTopbar: page title from the route, the notification badge and drawer, the
+ * Mount tests for MainTopbar: page title from the route, the notification badge and drawer, the
  * language select, the theme select, the hamburger event, and the primary action.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import AppTopbar from '@/components/layout/AppTopbar.vue'
+import MainTopbar from '@/components/layout/MainTopbar.vue'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { stubRoutes } from '../../helpers/routes'
@@ -30,10 +30,10 @@ const events = [
  */
 const mountBar = async (path: string, feed: unknown[] = events) => {
   stubRoutes({ 'GET /api/admin/dashboard/activity': () => json(feed) })
-  return mountView(AppTopbar, { path })
+  return mountView(MainTopbar, { path })
 }
 
-describe('AppTopbar', () => {
+describe('MainTopbar', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -41,7 +41,7 @@ describe('AppTopbar', () => {
   it('takes its height from the shell header token the sidebar brand row shares', async () => {
     const wrapper = await mountBar('/dashboard')
 
-    expect(wrapper.get('[data-testid="app-topbar"]').classes()).toContain('h-[calc(var(--shell-header-h)+env(safe-area-inset-top))]')
+    expect(wrapper.get('[data-testid="topbar"]').classes()).toContain('h-[calc(var(--shell-header-h)+env(safe-area-inset-top))]')
   })
 
   it('titles the bar after the current section', async () => {
@@ -99,7 +99,7 @@ describe('AppTopbar', () => {
     expect(dot.classes()).toEqual(expect.arrayContaining(['rounded-full', 'bg-primary-500']))
     expect(dot.classes()).toContain('sm:hidden')
     const count = wrapper.get('[data-testid="topbar-notification-count"]')
-    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-pill', 'ring-2']))
+    expect(count.classes()).toEqual(expect.arrayContaining(['rounded-2xl', 'ring-2']))
     expect(count.classes()).toContain('max-sm:hidden')
   })
 
@@ -143,7 +143,7 @@ describe('AppTopbar', () => {
     const action = wrapper.get('[data-testid="topbar-primary-action"]')
 
     expect(action.attributes('href')).toBe('/clients/add')
-    expect(action.text()).toBe('New client')
+    expect(action.text()).toBe('Create client')
   })
 
   it('opens the command palette from the search trigger, which announces the shortcut', async () => {
@@ -158,7 +158,8 @@ describe('AppTopbar', () => {
     // The shortcut chip is the first thing to go as the bar narrows: it needs 5xl, the wide field only 4xl.
     expect(wrapper.get('[data-testid="topbar-search-shortcut"]').text()).toBe('Ctrl K')
     expect(wrapper.get('[data-testid="topbar-search-shortcut"]').classes()).toEqual(expect.arrayContaining(['hidden', '@5xl:block']))
-    expect(wrapper.get('[data-testid="app-topbar"]').classes()).toContain('@container')
+    expect(wrapper.get('[data-testid="topbar"]').classes()).toContain('@container')
+    expect(wrapper.get('[data-testid="topbar"]').element.tagName).toBe('HEADER')
     expect(useCommandPaletteStore().isOpen).toBe(false)
 
     await trigger.trigger('click')
@@ -169,10 +170,10 @@ describe('AppTopbar', () => {
   it('blurs the bar, hairlines it and keeps clear of the top safe area', async () => {
     const wrapper = await mountBar('/dashboard')
 
-    expect(wrapper.get('[data-testid="app-topbar"]').classes()).toEqual(expect.arrayContaining(['bg-surface-topbar', 'border-b', 'backdrop-blur-[14px]', 'pt-[env(safe-area-inset-top)]']))
+    expect(wrapper.get('[data-testid="topbar"]').classes()).toEqual(expect.arrayContaining(['bg-surface-topbar', 'border-b', 'backdrop-blur-[14px]', 'pt-[env(safe-area-inset-top)]']))
   })
 
-  it('keeps the theme picker out of a phone top bar', async () => {
+  it('keeps the theme toggle out of a phone top bar', async () => {
     const wrapper = await mountBar('/dashboard')
 
     // The menu sits in a stack that is hidden below the sm breakpoint.
@@ -180,27 +181,25 @@ describe('AppTopbar', () => {
     expect(holder?.classList).toContain('sm:flex')
   })
 
-  it('switches the theme from the theme menu and remembers it', async () => {
+  it('switches the theme with one click on the theme toggle and remembers it', async () => {
     resetThemeDocument()
     stubSchemeQuery(false)
     const wrapper = await mountBar('/dashboard')
 
+    expect(wrapper.get('[data-testid="topbar-theme"]').attributes('aria-pressed')).toBe('true')
     await wrapper.get('[data-testid="topbar-theme"]').trigger('click')
-    expect(wrapper.get('[data-testid="theme-option-system"]').attributes('aria-checked')).toBe('true')
-    await wrapper.get('[data-testid="theme-option-light"]').trigger('click')
 
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
+    expect(wrapper.get('[data-testid="topbar-theme"]').attributes('aria-pressed')).toBe('false')
 
     await wrapper.get('[data-testid="topbar-theme"]').trigger('click')
-    expect(wrapper.get('[data-testid="theme-option-light"]').attributes('aria-checked')).toBe('true')
-    await wrapper.get('[data-testid="theme-option-dark"]').trigger('click')
     expect(document.documentElement.classList.contains('light')).toBe(false)
   })
 
   it('draws bars in the rows of the drawer while the feed loads', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
-    const wrapper = await mountView(AppTopbar, { path: '/dashboard' })
+    const wrapper = await mountView(MainTopbar, { path: '/dashboard' })
 
     await wrapper.get('[data-testid="topbar-notifications"]').trigger('click')
 
@@ -212,9 +211,9 @@ describe('AppTopbar', () => {
 
   it('draws the trail from the section down to the page in place of the plain section title', async () => {
     stubRoutes({ 'GET /api/admin/dashboard/activity': () => json(events) })
-    const wrapper = await mountView(AppTopbar, { path: '/settings/slides/create', pattern: '/settings/slides/create' })
+    const wrapper = await mountView(MainTopbar, { path: '/settings/slides/create', pattern: '/settings/slides/create' })
 
-    const bar = wrapper.get('[data-testid="app-topbar"]')
+    const bar = wrapper.get('[data-testid="topbar"]')
     expect(bar.get('[data-testid="ui-breadcrumb"]').text()).toContain('Settings')
     expect(bar.get('[data-testid="ui-breadcrumb"]').text()).toContain('Slides')
     expect(bar.get('[data-testid="topbar-title"]').text()).toBe('New')
@@ -223,7 +222,7 @@ describe('AppTopbar', () => {
 
   it('names the page by its own title on a phone, not by the generic last step of the trail', async () => {
     stubPhone(true)
-    const wrapper = await mountView(AppTopbar, { path: '/clients/7', pattern: '/clients/:id' })
+    const wrapper = await mountView(MainTopbar, { path: '/clients/7', pattern: '/clients/:id' })
     usePageTitleStore().announce(Symbol('header'), 'Ada Lovelace')
     await flushPromises()
 
@@ -232,14 +231,14 @@ describe('AppTopbar', () => {
 
   it('keeps the trail on a phone until a header shows a title', async () => {
     stubPhone(true)
-    const wrapper = await mountView(AppTopbar, { path: '/orders/8', pattern: '/orders/:id' })
+    const wrapper = await mountView(MainTopbar, { path: '/orders/8', pattern: '/orders/:id' })
 
     expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Details')
   })
 
   it('keeps the trail from a tablet up, whatever title a header shows', async () => {
     stubPhone(false)
-    const wrapper = await mountView(AppTopbar, { path: '/orders/8', pattern: '/orders/:id' })
+    const wrapper = await mountView(MainTopbar, { path: '/orders/8', pattern: '/orders/:id' })
     usePageTitleStore().announce(Symbol('header'), 'Order 8')
     await flushPromises()
 

@@ -45,10 +45,16 @@ describe('UiIconButton', () => {
     expect(wrapper.classes()).toContain(expected)
   })
 
+  it('keeps every size at a 44px touch target on a phone', () => {
+    for (const size of [UiSize.Sm, UiSize.Md, UiSize.Lg]) {
+      expect(mountWithKit(UiIconButton, { props: { label: 'x', size } }).classes()).toEqual(expect.arrayContaining(['w-11', 'h-11']))
+    }
+  })
+
   it('maps the sizes to square dimensions', () => {
-    expect(mountWithKit(UiIconButton, { props: { label: 'x', size: UiSize.Sm } }).classes()).toContain('w-8')
-    expect(mountWithKit(UiIconButton, { props: { label: 'x' } }).classes()).toContain('w-9')
-    expect(mountWithKit(UiIconButton, { props: { label: 'x', size: UiSize.Lg } }).classes()).toContain('w-10')
+    expect(mountWithKit(UiIconButton, { props: { label: 'x', size: UiSize.Sm } }).classes()).toContain('sm:w-8')
+    expect(mountWithKit(UiIconButton, { props: { label: 'x' } }).classes()).toContain('sm:w-9')
+    expect(mountWithKit(UiIconButton, { props: { label: 'x', size: UiSize.Lg } }).classes()).toContain('sm:w-10')
   })
 
   it('disables the button', () => {

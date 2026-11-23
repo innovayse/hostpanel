@@ -43,4 +43,11 @@ describe('ClientLayoutNavItem', () => {
 
     expect(wrapper.emitted('navigate')).toHaveLength(1)
   })
+
+  it('keeps a 44px row and lets a long label break instead of pushing the drawer wider', () => {
+    const wrapper = mountClient(NavItem, { props: { item: { ...ITEM, label: 'A very long plugin menu label' }, active: false } })
+
+    expect(wrapper.find('a').classes()).toContain('min-h-11')
+    expect(wrapper.find('a span').classes()).toEqual(expect.arrayContaining(['min-w-0', 'break-words']))
+  })
 })

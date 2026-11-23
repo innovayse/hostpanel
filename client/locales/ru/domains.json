@@ -12,8 +12,7 @@
     "invalidDomain": "Введите домен с расширением (например, mysite.com)",
     "tabRegister": "Регистрация",
     "tabTransfer": "Перенос",
-    "transferBtn": "Добавить в корзину",
-    "takenTransfer": "Перенести этот домен",
+    "takenTransfer": "Перенести",
     "transferNote": "* Исключает некоторые TLD и недавно продлённые домены",
     "transferFormTitle": "Перенос одного домена",
     "transferDomainLabel": "Имя домена",
@@ -65,7 +64,7 @@
     "promoTransferBtn": "Перенести домен",
     "promoTransferNote": "* Исключает некоторые TLD и недавно продлённые домены",
     "tldNotSupported": "Это расширение недоступно для регистрации",
-    "alreadyInCart": "Уже в корзине",
+    "alreadyInCart": "В корзине",
     "transferEppPlaceholder": "EPP-код / код авторизации",
     "transferDomainPlaceholder": "example.com",
     "years": "{n} год | {n} года | {n} лет"

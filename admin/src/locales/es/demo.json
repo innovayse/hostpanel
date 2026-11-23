@@ -6,7 +6,8 @@
     "minutes": "{minutes}m",
     "hoursMinutes": "{hours}h {minutes}m",
     "dataResets": "Todo lo que cambies aquí es temporal y se restablece según un programa.",
-    "guide": "¿Nuevo aquí? Lee la guía"
+    "guide": "¿Nuevo aquí? Lee la guía",
+    "guideTitle": "¿Eres nuevo? Lee la guía"
   },
   "login": {
     "hint": "Esta es una demostración pública. Usa la cuenta de abajo para explorar.",

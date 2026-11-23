@@ -10,8 +10,8 @@
       data-testid="confirm-email-change-success"
     >
       <UiText size="sm" tone="muted">{{ $t('client.emailChange.signInAgain') }}</UiText>
-      <UiLink :to="CLIENT_LOGIN_PATH" :underline="false" testid="confirm-email-change-signin" class="font-medium">
-        {{ $t('client.confirmEmail.signIn') }}
+      <UiLink tone="primary" :to="CLIENT_LOGIN_PATH" :underline="false" testid="confirm-email-change-signin" class="font-medium">
+        {{ $t('common.signIn') }}
       </UiLink>
     </ClientOutcomePanel>
 
@@ -22,7 +22,7 @@
       :title="message"
       data-testid="confirm-email-change-failed"
     >
-      <UiLink :to="CLIENT_ACCOUNT_PATH" :underline="false" testid="confirm-email-change-account" class="font-medium">
+      <UiLink tone="primary" :to="CLIENT_ACCOUNT_PATH" :underline="false" testid="confirm-email-change-account" class="font-medium">
         {{ $t('client.emailChange.backToAccount') }}
       </UiLink>
     </ClientOutcomePanel>

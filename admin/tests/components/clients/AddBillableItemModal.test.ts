@@ -1,7 +1,7 @@
 /**
  * Mount tests for AddBillableItemModal: a one time item and a recurring item each post exactly the
  * API's create command with the day they are invoiced, the due date label follows the type, the
- * API's field messages appear under their fields, a reopened modal starts without them, and cancel
+ * API's sentence is toasted and its field messages appear under their fields, a reopened modal starts without them, and cancel
  * closes.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,6 +18,7 @@ import type { ConfiguredCurrency } from '@/types/client'
 import { createTestI18n } from '../../helpers/i18n'
 import { invalid, json } from '../../helpers/fetch'
 import { stubRoutes } from '../../helpers/routes'
+import { toastMessages } from '../../helpers/toasts'
 
 /** Request line of the create call the modal makes for client 3. */
 const CREATE_LINE = 'POST /api/clients/3/billable-items'
@@ -144,7 +145,7 @@ describe('AddBillableItemModal', () => {
     expect(wrapper.emitted('saved')).toHaveLength(1)
   })
 
-  it('shows the API field messages under their fields and the sentence above the form', async () => {
+  it('shows the API field messages under their fields and toasts the sentence', async () => {
     stubRoutes({
       'GET /api/admin/currencies': () => json(configuredCurrencies),
       [CREATE_LINE]: () =>
@@ -158,7 +159,7 @@ describe('AddBillableItemModal', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="clients-add-billable-item-error"]').text()).toContain('Some fields are not valid.')
+    expect(toastMessages()).toEqual(['Some fields are not valid.'])
     expect(wrapper.get('[data-testid="clients-add-billable-item-description-error"]').text()).toBe(
       'Enter a description of at most 500 characters.',
     )
@@ -166,7 +167,7 @@ describe('AddBillableItemModal', () => {
     expect(wrapper.emitted('saved')).toBeUndefined()
   })
 
-  it('opens again without the sentence and field messages of the last refused add', async () => {
+  it('opens again without the field messages of the last refused add', async () => {
     stubRoutes({
       'GET /api/admin/currencies': () => json(configuredCurrencies),
       [CREATE_LINE]: () =>
@@ -175,13 +176,11 @@ describe('AddBillableItemModal', () => {
     const first = await mountModal()
     await first.get('form').trigger('submit')
     await flushPromises()
-    expect(first.get('[data-testid="clients-add-billable-item-error"]').text()).toContain('Some fields are not valid.')
     expect(first.find('[data-testid="clients-add-billable-item-description-error"]').exists()).toBe(true)
     first.unmount()
 
     const reopened = await mountModal()
 
-    expect(reopened.get('[data-testid="clients-add-billable-item-error"]').text()).toBe('')
     expect(reopened.find('[data-testid="clients-add-billable-item-description-error"]').exists()).toBe(false)
   })
 

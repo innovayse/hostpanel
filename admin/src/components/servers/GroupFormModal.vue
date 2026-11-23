@@ -26,6 +26,13 @@ import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { UiSize } from '@/utils/ui/size'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
+import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -121,11 +128,11 @@ const handleSubmit = (): void => {
 <template>
   <UiDialog
     :title="props.group ? t('servers.groupForm.editGroup') : t('servers.groupForm.createNewGroup')"
-    size="lg"
+    :size="UiDialogSize.Lg"
     @close="emit('close')"
   >
     <UiForm stacked @submit.prevent="handleSubmit">
-      <UiAlert v-if="props.error" variant="error" data-testid="group-form-error">{{ props.error }}</UiAlert>
+      <UiAlert v-if="props.error" :variant="UiTone.Danger" data-testid="group-form-error">{{ props.error }}</UiAlert>
 
       <!-- Name -->
       <UiField :label="t('servers.groupForm.groupName')" :error="props.fieldErrors.name" required>
@@ -133,7 +140,7 @@ const handleSubmit = (): void => {
           <UiInput
             :id="id"
             v-model="name"
-            type="text"
+            :type="UiInputType.Text"
             :invalid="invalid"
             :aria-describedby="describedby"
             :placeholder="t('servers.groupForm.eGWebServers')"
@@ -143,57 +150,57 @@ const handleSubmit = (): void => {
       </UiField>
 
       <!-- Fill type -->
-      <UiStack gap="sm">
-        <UiLabel variant="field">{{ t('servers.groupForm.fillType') }}</UiLabel>
-        <UiLabel v-for="ft in fillTypes" :key="ft" variant="inline">
+      <UiStack :gap="UiGap.Sm">
+        <UiLabel :variant="UiLabelVariant.Field">{{ t('servers.groupForm.fillType') }}</UiLabel>
+        <UiLabel v-for="ft in fillTypes" :key="ft" :variant="UiLabelVariant.Inline">
           <UiRadio v-model="fillType" :value="ft" :data-testid="`group-form-fill-${ft}`" />
           {{ FILL_TYPE_LABELS[ft] }}
         </UiLabel>
       </UiStack>
 
       <!-- Server selector -->
-      <UiStack gap="sm">
-        <UiLabel variant="field">{{ t('servers.groupForm.servers') }}</UiLabel>
-        <UiGrid :columns="2" gap="sm">
-          <UiStack gap="xs">
-            <UiText tone="muted" size="xs">{{ t('servers.groupForm.available') }}</UiText>
-            <UiCard padding="sm" class="min-h-[120px] max-h-[160px] overflow-y-auto" data-testid="group-form-available">
-              <UiStack gap="xs">
+      <UiStack :gap="UiGap.Sm">
+        <UiLabel :variant="UiLabelVariant.Field">{{ t('servers.groupForm.servers') }}</UiLabel>
+        <UiGrid :columns="2" :gap="UiGap.Sm" container>
+          <UiStack :gap="UiGap.Xs">
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('servers.groupForm.available') }}</UiText>
+            <UiCard :padding="UiCardPadding.Sm" class="min-h-[120px] max-h-[160px] overflow-y-auto" data-testid="group-form-available">
+              <UiStack :gap="UiGap.Xs">
                 <UiButton
                   v-for="s in unselected()"
                   :key="s.id"
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                  :type="UiButtonType.Button"
+                  :variant="UiButtonVariant.Ghost"
+                  :size="UiSize.Sm"
                   :data-testid="`group-form-add-${s.id}`"
                   @click="toggle(s.id)"
                 >
                   {{ s.name }} +
                 </UiButton>
-                <UiText v-if="unselected().length === 0" tone="muted" size="sm">
+                <UiText v-if="unselected().length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
                   {{ t('servers.groupForm.allAssigned') }}
                 </UiText>
               </UiStack>
             </UiCard>
           </UiStack>
 
-          <UiStack gap="xs">
-            <UiText tone="muted" size="xs">{{ t('servers.groupForm.inGroup') }}</UiText>
-            <UiCard padding="sm" class="min-h-[120px] max-h-[160px] overflow-y-auto" data-testid="group-form-selected">
-              <UiStack gap="xs">
+          <UiStack :gap="UiGap.Xs">
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('servers.groupForm.inGroup') }}</UiText>
+            <UiCard :padding="UiCardPadding.Sm" class="min-h-[120px] max-h-[160px] overflow-y-auto" data-testid="group-form-selected">
+              <UiStack :gap="UiGap.Xs">
                 <UiButton
                   v-for="s in selected()"
                   :key="s.id"
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                  :type="UiButtonType.Button"
+                  :variant="UiButtonVariant.Ghost"
+                  :size="UiSize.Sm"
                   :data-testid="`group-form-remove-${s.id}`"
                   @click="toggle(s.id)"
                 >
                   {{ s.name }}
                   <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
                 </UiButton>
-                <UiText v-if="selected().length === 0" tone="muted" size="sm">
+                <UiText v-if="selected().length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
                   {{ t('servers.groupForm.noneSelected') }}
                 </UiText>
               </UiStack>
@@ -204,17 +211,17 @@ const handleSubmit = (): void => {
     </UiForm>
 
     <template #footer>
-      <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="group-form-cancel" @click="emit('close')">
+      <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="group-form-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
       <UiButton :action="UiActionKind.Save"
-        type="button"
-        variant="primary"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Primary"
         :loading="props.saving"
         data-testid="group-form-save"
         @click="handleSubmit"
       >
-        {{ props.group ? t('shared.saveChanges') : t('servers.groupForm.createGroup') }}
+        {{ props.group ? t('shared.save') : t('servers.servers.createGroup') }}
       </UiButton>
     </template>
   </UiDialog>

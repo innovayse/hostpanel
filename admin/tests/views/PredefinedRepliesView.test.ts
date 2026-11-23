@@ -10,6 +10,7 @@ import { mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** One category as the endpoint returns it. */
 const category = { id: 1, name: 'Greetings', parentCategoryId: null, replyCount: 1 }
@@ -42,14 +43,14 @@ describe('PredefinedRepliesView', () => {
       expect(wrapper.find(`[data-testid="predefined-replies-tab-${tab.key}"]`).exists()).toBe(true)
     }
     expect(wrapper.find('[data-testid="ui-form-field-name"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="ui-detail-card-categories"]').findAll('[role="columnheader"]')).toHaveLength(REPLIES_CATEGORIES_TABLE.columns.length)
+    expect(wrapper.get('[data-testid="predefined-replies-categories"]').findAll('[role="columnheader"]')).toHaveLength(REPLIES_CATEGORIES_TABLE.columns.length)
 
     await wrapper.get('[data-testid="predefined-replies-tab-reply"]').trigger('click')
 
     for (const field of REPLY_FORM_PART.columns.flat().flatMap((section) => section.fields)) {
       expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
     }
-    expect(wrapper.get('[data-testid="ui-detail-card-replies"]').findAll('[role="columnheader"]')).toHaveLength(REPLIES_TABLE.columns.length)
+    expect(wrapper.get('[data-testid="predefined-replies-replies"]').findAll('[role="columnheader"]')).toHaveLength(REPLIES_TABLE.columns.length)
   })
 
   it('lists the categories', async () => {
@@ -85,7 +86,7 @@ describe('PredefinedRepliesView', () => {
     await wrapper.get('[data-testid="predefined-replies-category-add"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="predefined-replies-feedback"]').text()).toBe('Name is taken.')
+    expect(toastMessages()).toContain('Name is taken.')
     expect(wrapper.find('[data-testid="predefined-replies-error"]').exists()).toBe(false)
   })
 
@@ -159,7 +160,7 @@ describe('PredefinedRepliesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="predefined-replies-feedback"]').text()).toBe('Category is in use.')
+    expect(toastMessages()).toContain('Category is in use.')
     expect(wrapper.get('[data-testid="predefined-replies-category-1"]').text()).toContain('Greetings')
   })
 

@@ -3,7 +3,7 @@
     <UiBackdrop variant="aurora" />
 
     <UiContainer class="relative">
-      <UiStack as="section" gap="none" class="relative pb-5 pt-[clamp(36px,5vw,56px)]">
+      <UiStack :as="UiStackTag.Section" gap="none" class="relative pb-5 pt-[clamp(36px,5vw,56px)]">
         <UiLink
           :to="localePath(SITE_HOSTING_PATH)"
           tone="inherit"
@@ -26,11 +26,11 @@
         </UiText>
         <UiStack direction="row" align="center" gap="xs" class="mt-3.5 text-sm text-mut">
           <ShieldCheck :size="16" class="text-ok" />
-          <UiText as="span" size="sm" tone="inherit">{{ $t('cart.secureCheckout') }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" tone="inherit">{{ $t('cart.secureCheckout') }}</UiText>
         </UiStack>
       </UiStack>
 
-      <UiStack as="section" gap="none" class="relative pb-[clamp(56px,8vw,84px)]">
+      <UiStack :as="UiStackTag.Section" gap="none" class="relative pb-[clamp(56px,8vw,84px)]">
         <!-- Empty cart -->
         <UiCard
           v-if="cart.isEmpty"
@@ -80,8 +80,8 @@
                     <UiStack direction="row" align="center" gap="sm">
                       <UiTile size="lg" rounded :icon="CheckCircle" class="bg-acbg text-ok" />
                       <UiStack gap="none">
-                        <UiText as="span" size="sm" tone="inherit" weight="semibold" class="text-tx">{{ $t('checkout.loggedInAs') }}</UiText>
-                        <UiText as="span" size="sm" tone="inherit" class="text-ok">{{ userEmail }}</UiText>
+                        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="semibold" class="text-tx">{{ $t('checkout.loggedInAs') }}</UiText>
+                        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="text-ok">{{ userEmail }}</UiText>
                       </UiStack>
                     </UiStack>
                     <UiButton
@@ -216,7 +216,7 @@
           </template>
 
           <template #end>
-            <UiStack as="aside" gap="lg">
+            <UiStack :as="UiStackTag.Aside" gap="lg">
               <UiCard tone="bare" padding="lg" data-testid="checkout-summary" class="border-line2 bg-card shadow-panel">
                 <UiStack direction="row" align="center" gap="sm" class="text-ac1">
                   <Receipt :size="20" />
@@ -240,13 +240,13 @@
                       <UiStack direction="row" align="center" gap="sm" class="min-w-0">
                         <UiTile size="lg" :icon="Server" class="bg-acbg text-ac1" />
                         <UiStack gap="none" class="min-w-0">
-                          <UiText as="span" size="sm" tone="inherit" weight="bold" truncate class="text-tx">{{ item.name }}</UiText>
-                          <UiText as="span" size="inherit" tone="inherit" weight="bold" class="mt-0.5 text-[10px] uppercase tracking-widest text-ac1">
+                          <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="bold" truncate class="text-tx">{{ item.name }}</UiText>
+                          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="mt-0.5 text-[10px] uppercase tracking-widest text-ac1">
                             {{ item.cycleLabel }}
                           </UiText>
                         </UiStack>
                       </UiStack>
-                      <UiText as="span" size="sm" tone="inherit" weight="bold" class="whitespace-nowrap text-tx">{{ itemPrice(item) }}</UiText>
+                      <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="bold" class="whitespace-nowrap text-tx">{{ itemPrice(item) }}</UiText>
                     </UiStack>
                   </UiCard>
                 </UiStack>
@@ -256,9 +256,9 @@
                 <CheckoutBundleSummary :name="bundleName" :offer="bundleOffer" :discount="bundleDiscount" class="mb-4" />
 
                 <UiStack direction="row" align="center" justify="between" class="mb-6">
-                  <UiText as="span" size="inherit" tone="inherit" weight="medium" class="text-mut">{{ $t('cart.total') }}</UiText>
+                  <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="medium" class="text-mut">{{ $t('cart.total') }}</UiText>
                   <UiText
-                    as="span"
+                    :as="UiTextTag.Span"
                     size="inherit"
                     tone="inherit"
                     weight="bold"
@@ -292,7 +292,7 @@
 
                 <UiStack direction="row" align="center" justify="center" gap="xs" class="mt-5 text-xs text-mut2">
                   <ShieldCheck :size="14" class="text-ok" />
-                  <UiText as="span" size="xs" tone="inherit">{{ $t('cart.secureCheckout') }}</UiText>
+                  <UiText :as="UiTextTag.Span" size="xs" tone="inherit">{{ $t('cart.secureCheckout') }}</UiText>
                 </UiStack>
               </UiCard>
 
@@ -300,8 +300,8 @@
                 <UiStack direction="row" align="center" gap="md">
                   <UiTile size="lg" rounded :icon="HelpCircle" class="border border-line2 text-mut" />
                   <UiStack gap="none">
-                    <UiText as="span" size="sm" tone="inherit" weight="bold" class="text-tx">{{ $t('aurora.checkout.helpTitle') }}</UiText>
-                    <UiText as="span" size="xs" tone="inherit" class="text-mut2">{{ $t('aurora.checkout.helpBody') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="bold" class="text-tx">{{ $t('aurora.checkout.helpTitle') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="text-mut2">{{ $t('aurora.checkout.helpBody') }}</UiText>
                   </UiStack>
                   <UiLink
                     :to="localePath(SITE_CONTACT_PATH)"
@@ -339,6 +339,7 @@ import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
 import { BRAND_BUTTON } from '~/templates/aurora/buttons'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
 import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t: $t } = useI18n()

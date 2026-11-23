@@ -4,23 +4,11 @@
 
     <UiAlert variant="info" data-testid="credit-notes-explain">{{ $t('client.creditNotes.explain') }}</UiAlert>
 
-    <UiStack v-if="store.loading" gap="sm">
-      <UiSkeleton v-for="i in 3" :key="i" shape="block" class="h-16" />
-    </UiStack>
-
-    <UiAlert v-else-if="store.error" variant="error" data-testid="credit-notes-error">{{ store.error }}</UiAlert>
-
-    <UiEmptyState
-      v-else-if="store.notes.length === 0"
-      :icon="FileMinus"
-      :title="$t('client.creditNotes.empty')"
-      :description="$t('client.creditNotes.emptyHint')"
-      data-testid="credit-notes-empty"
-    />
+    <UiAlert v-if="store.error" variant="error" data-testid="credit-notes-error">{{ store.error }}</UiAlert>
 
     <template v-else>
       <UiAlert v-if="store.downloadError" variant="error" data-testid="credit-notes-download-error">{{ store.downloadError }}</UiAlert>
-      <ClientCreditnotesTable :notes="store.notes" :downloading-id="store.downloadingId" @download="store.downloadPdf" />
+      <ClientCreditnotesTable :notes="store.notes" :downloading-id="store.downloadingId" :loading="store.loading" @download="store.downloadPdf" />
     </template>
   </UiStack>
 </template>

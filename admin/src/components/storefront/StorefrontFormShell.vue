@@ -16,6 +16,8 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 
@@ -60,7 +62,7 @@ const leaveGuard = useUnsavedChangesGuard(() => props.dirty && !props.saving)
 </script>
 
 <template>
-  <UiStack gap="none" class="pb-24" :data-testid="`${testid}-form-view`">
+  <UiStack :gap="UiGap.None" class="pb-24" :data-testid="`${testid}-form-view`">
     <UiPageHeader :title="title" />
 
     <UiErrorState v-if="loadError && !loading" :message="loadError" :testid="`${testid}-form-load-error`" @retry="emit('retry')" />
@@ -76,11 +78,11 @@ const leaveGuard = useUnsavedChangesGuard(() => props.dirty && !props.saving)
     <!-- Unsaved-changes question, asked while the route change waits -->
     <UiDialog
       v-if="leaveGuard.pending.value"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('storefront.form.unsavedChanges')"
       :message="t('storefront.form.unsavedChangesMessage')"
       :confirm-label="t('storefront.form.leave')"
-      tone="warning"
+      :tone="UiTone.Warning"
       @confirm="leaveGuard.confirmLeave"
       @close="leaveGuard.cancelLeave"
     />

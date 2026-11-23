@@ -31,13 +31,11 @@
       "status": "Оплата",
       "paid": "Оплачено",
       "amount": "Сумма",
-      "setupService": "Настроить мою услугу",
       "viewInvoices": "Посмотреть счета",
       "domain": "Домен",
       "action": "Действие",
       "registration": "Регистрация",
-      "transfer": "Перенос",
-      "manageDomain": "Управление доменом"
+      "transfer": "Перенос"
     },
     "secureCheckout": "Безопасная оплата",
     "identifyPrompt": "Как нам вас идентифицировать?",

@@ -1,30 +1,16 @@
 /**
- * The operator's colour scheme: light, dark or following the system.
+ * The operator's colour scheme: light or dark.
  *
- * The choice lives in localStorage so the inline pre-paint script (`lib/themeBoot.ts`) can apply it
- * before the app loads. This store owns changing it afterwards, and re-applies "system" whenever
- * the operating system switches scheme.
+ * Until the operator switches once, the panel follows the operating system's scheme. The choice then
+ * lives in localStorage so the pre-paint script (`lib/themeBoot.ts`) can apply it before the app
+ * loads. This store owns changing it afterwards, and re-applies the system scheme whenever the
+ * operating system switches while nothing is stored.
  */
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { bootTheme, THEME_BOOT_CONFIG } from '@/lib/themeBoot'
 import { AdminTheme } from '@/types/admintheme'
-
-/**
- * Reads the stored choice, treating a missing, unknown or unreadable value as "system".
- *
- * @returns The operator's choice.
- */
-const readStoredTheme = (): AdminTheme => {
-  try {
-    const stored = window.localStorage.getItem(THEME_BOOT_CONFIG.storageKey)
-    const known = Object.values(AdminTheme).find(theme => theme === stored)
-    return known ?? AdminTheme.System
-  } catch {
-    return AdminTheme.System
-  }
-}
 
 /**
  * Persists a choice. Storage that throws only costs the choice surviving a reload.
@@ -41,18 +27,18 @@ const writeStoredTheme = (theme: AdminTheme): void => {
 
 /** Pinia store holding the theme choice and applying it to the document. */
 export const useThemeStore = defineStore('theme', () => {
-  /** The operator's choice. */
-  const choice = ref<AdminTheme>(readStoredTheme())
-
   /** True when the light palette is applied right now. */
   const isLight = ref(false)
+
+  /** The choice made on this page, applied even when storage could not keep it; undefined until the first switch. */
+  let chosen: AdminTheme | undefined
 
   /** The system scheme query, kept so its listener is added only once. */
   let media: MediaQueryList | null = null
 
-  /** Re-applies the stored choice to the document. */
+  /** Re-applies the stored choice, or the system scheme when none is stored, to the document. */
   const apply = (): void => {
-    isLight.value = bootTheme(THEME_BOOT_CONFIG)
+    isLight.value = bootTheme(THEME_BOOT_CONFIG, chosen)
   }
 
   /** Applies the choice and starts following system scheme changes. Safe to call twice. */
@@ -60,21 +46,17 @@ export const useThemeStore = defineStore('theme', () => {
     apply()
     if (media === null && typeof window.matchMedia === 'function') {
       media = window.matchMedia(THEME_BOOT_CONFIG.lightQuery)
-      // Only "system" depends on it, but bootTheme re-reads the choice, so one listener is enough.
+      // Only an unstored choice depends on it, but bootTheme re-reads the storage, so one listener is enough.
       media.addEventListener('change', apply)
     }
   }
 
-  /**
-   * Switches to a theme, stores it and applies it.
-   *
-   * @param theme - The new choice.
-   */
-  const setTheme = (theme: AdminTheme): void => {
-    choice.value = theme
-    writeStoredTheme(theme)
+  /** Switches to the other of light and dark, stores the choice and applies it. */
+  const toggle = (): void => {
+    chosen = isLight.value ? AdminTheme.Dark : AdminTheme.Light
+    writeStoredTheme(chosen)
     apply()
   }
 
-  return { choice, isLight, init, setTheme }
+  return { isLight, init, toggle }
 })

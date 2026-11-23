@@ -32,7 +32,7 @@
   "supportChildren": {
     "overview": "Обзор",
     "tickets": "Тикеты",
-    "newTicket": "Новый тикет",
+    "newTicket": "Создать тикет",
     "predefinedReplies": "Ответы",
     "announcements": "Объявления",
     "emailCampaigns": "Email-рассылки",

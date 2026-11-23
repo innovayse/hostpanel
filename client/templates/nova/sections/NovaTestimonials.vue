@@ -3,21 +3,21 @@
     <NovaSectionHeader :eyebrow="t('nova.testimonials.eyebrow')" :title="t('nova.testimonials.title')" />
 
     <!-- Compact cards at up to three per row; fewer quotes than columns stay centred at the normal width. -->
-    <UiStack as="ul" direction="row" wrap justify="center" gap="md" class="mt-8">
-      <li v-for="testimonial in testimonials" :key="testimonial.id" class="w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]">
+    <UiStack :as="UiStackTag.Ul" direction="row" wrap justify="center" gap="md" class="mt-8">
+      <UiStack v-for="testimonial in testimonials" :key="testimonial.id" :as="UiStackTag.Li" gap="none" class="w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]">
         <UiCard padding="md" class="flex h-full flex-col !border-nova-border !bg-nova-bg">
-          <figure class="flex h-full flex-col">
+          <UiStack :as="UiStackTag.Figure" gap="none" class="h-full">
             <Icon name="lucide:quote" class="h-4 w-4 text-nova-brand" aria-hidden="true" />
-            <blockquote class="mt-3 flex-1 text-sm leading-relaxed text-nova-ink">
+            <UiText :as="UiTextTag.Blockquote" size="inherit" tone="inherit" class="mt-3 flex-1 text-sm leading-relaxed text-nova-ink">
               {{ testimonial.quote }}
-            </blockquote>
-            <figcaption class="mt-4 border-t border-nova-border pt-3 text-sm">
-              <span class="font-semibold text-nova-ink">{{ testimonial.name }}</span>
-              <span v-if="attribution(testimonial)" class="block text-xs text-nova-muted">{{ attribution(testimonial) }}</span>
-            </figcaption>
-          </figure>
+            </UiText>
+            <UiStack :as="UiStackTag.Figcaption" gap="none" class="mt-4 border-t border-nova-border pt-3 text-sm">
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="semibold" class="text-nova-ink">{{ testimonial.name }}</UiText>
+              <UiText v-if="attribution(testimonial)" :as="UiTextTag.Span" size="inherit" tone="inherit" class="block text-xs text-nova-muted">{{ attribution(testimonial) }}</UiText>
+            </UiStack>
+          </UiStack>
         </UiCard>
-      </li>
+      </UiStack>
     </UiStack>
   </UiSection>
 </template>
@@ -31,6 +31,7 @@
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { useStorefrontStore } from '~/stores/storefront'
 import type { Testimonial } from '~/types/testimonial'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the copy, and the active language. */
 const { t, locale } = useI18n()

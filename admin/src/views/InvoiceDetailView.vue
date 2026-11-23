@@ -3,7 +3,7 @@
  * Invoice detail: the invoice loaded by id and shown in eight tabs (summary, add payment, options,
  * credit, refund, credit notes, fulfilment, notes). The route decides the mode (`/view` is read-only, `/edit` lets the
  * operator change the invoice) and a button on the page toggles it. Every tab shows the outcome
- * of its own actions next to them, and the PDF download shows its refusal beside its button; the
+ * of its own actions next to them, and the PDF download toasts its refusal; the
  * page itself only reports a failed load, with Retry. While the invoice is read the page draws the cards of
  * `InvoiceDetailView.schema` as placeholders, the same blocks the summary tab fills once it has arrived.
  */
@@ -23,8 +23,8 @@ import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { AppRoute } from '@/lib/routes'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
@@ -44,7 +44,7 @@ const { t } = useI18n()
 const headerActions = computed<UiHeaderAction[]>(() => [
   { label: manageMode.value ? t('billing.invoiceDetail.viewInvoice') : t('billing.invoiceDetail.manageInvoice'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Primary, testid: 'billing-invoice-toggle-mode', onSelect: toggleMode },
   { label: t('shared.print'), icon: actionIcons[UiActionKind.Print], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-print', onSelect: print },
-  { label: t('billing.invoiceDetail.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf },
+  { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf },
 ])
 
 /** Route action that opens the invoice for editing. */
@@ -59,8 +59,8 @@ const activeTab = ref<string>(InvoiceTab.Summary)
 /** True when the operator can change the invoice (the `/edit` route, or toggled on). */
 const manageMode = ref(route.params.action === EDIT_ACTION)
 
-/** Sentence of a failed PDF download, shown beside its button; null while there is none. */
-const pdfError = ref<string | null>(null)
+/** Toasts the outcome of the PDF download. */
+const feedback = useOutcomeToast()
 
 /** Id of the invoice from the route. */
 const invoiceId = computed<number>(() => Number(route.params.id))
@@ -111,12 +111,11 @@ const print = (): void => {
   window.print()
 }
 
-/** Downloads the invoice's PDF and saves it; a refusal is shown beside the button. */
+/** Downloads the invoice's PDF and saves it; a refusal is toasted with the API's own sentence. */
 const downloadPdf = async (): Promise<void> => {
-  pdfError.value = null
   const file = await store.downloadPdf(invoiceId.value)
   if (file === null) {
-    pdfError.value = store.error
+    feedback.show(store.error ?? t('errors.noAnswer'), true)
     return
   }
   saveBlob(file.blob, file.fileName ?? `invoice-${invoiceId.value}.pdf`)
@@ -135,14 +134,7 @@ watch(invoiceId, load)
       back-mobile-only
       back-testid="billing-invoice-back"
       data-testid="invoice-detail-title"
-    >
-      <template #actions>
-        
-        
-        
-        <UiStatusMessage :message="pdfError" :tone="UiTone.Danger" data-testid="billing-invoice-download-feedback" />
-      </template>
-    </UiPageHeader>
+    />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -157,7 +149,7 @@ watch(invoiceId, load)
       <UiDetailCards v-if="invoice === null" :columns="schema.columns" loading />
 
       <template v-else>
-        <UiAlert v-if="showDraftNotice" variant="info" data-testid="billing-invoice-draft-banner">
+        <UiAlert v-if="showDraftNotice" :variant="UiTone.Info" data-testid="billing-invoice-draft-banner">
           {{ t('billing.invoiceDetail.thisIsADraftInvoice') }} {{ t('billing.invoiceDetail.theClientIsNotAble') }}
         </UiAlert>
 

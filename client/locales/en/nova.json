@@ -7,20 +7,20 @@
       "email": "Email",
       "pricing": "Pricing",
       "support": "Support",
-      "login": "Log in",
-      "getStarted": "Get Started",
       "menu": "Open menu",
       "close": "Close menu",
       "cart": "Cart",
       "skipToContent": "Skip to content",
       "preferences": "Language and theme"
     },
+    "cta": {
+      "getStarted": "Get started",
+      "seePlans": "See plans"
+    },
     "hero": {
       "badge": "Hosting, domains and email in one account",
       "title": "Fast, secure hosting built for your website",
       "lead": "{site} gives you the server, the domain and the control panel in one place. Accounts are provisioned automatically, billing is transparent, and there is a real person on the other end of every ticket.",
-      "ctaPrimary": "Get Started",
-      "ctaSecondary": "View Plans",
       "benefitSsl": "Free SSL certificate",
       "benefitBackups": "Automatic backups",
       "benefitSupport": "Support included",
@@ -117,7 +117,7 @@
       "eyebrow": "Control panel",
       "title": "Everything about your site, in one place",
       "lead": "Domains, files, databases, certificates and mailboxes are all managed from the same client area. No second login, no separate billing portal.",
-      "cta": "See the client area",
+      "cta": "See client area",
       "windowTitle": "Client area",
       "websites": "Websites",
       "websitesValue": "Add and remove",
@@ -139,7 +139,7 @@
       "title": "Move your website to {site}",
       "lead": "You do not have to rebuild anything. Send us what you have and we will move it, then tell you before we switch anything over.",
       "free": "Free migration",
-      "cta": "Start a migration",
+      "cta": "Start migration",
       "step1Title": "Choose your plan",
       "step1Body": "Pick the plan that fits the site you are moving. If you are unsure, ask first. We would rather size it correctly.",
       "step2Title": "Send us your website",
@@ -176,13 +176,11 @@
     "faq": {
       "eyebrow": "FAQ",
       "title": "Questions people ask before signing up",
-      "viewAll": "View all questions"
+      "viewAll": "See all questions"
     },
     "finalCta": {
       "title": "Ready to launch your website?",
-      "lead": "Pick a plan, point your domain at it, and be online today.",
-      "primary": "Get Started",
-      "secondary": "View Hosting Plans"
+      "lead": "Pick a plan, point your domain at it, and be online today."
     },
     "footer": {
       "tagline": "Hosting, domains and email for people who would rather get on with building the site.",
@@ -255,7 +253,7 @@
       "phoneTitle": "Phone",
       "phoneBody": "Talk to a person about anything that is hard to explain in writing.",
       "responseTime": "Typical reply: {time}",
-      "open": "Contact us"
+      "open": "Talk to us"
     }
   }
 }

@@ -21,7 +21,7 @@
       <UiGrid cols="1" gap="xl" class="lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-start" data-testid="legal-layout">
         <UiStack
           v-if="sections.length > 1"
-          as="nav"
+          :as="UiStackTag.Nav"
           gap="xs"
           :aria-label="t('legal.toc')"
           class="sticky top-24 hidden lg:flex"
@@ -115,6 +115,7 @@
             <UiLink
               v-if="section.link"
               :href="section.link.href"
+              tone="primary"
               :underline="false"
               class="font-medium"
               testid="legal-section-link"
@@ -176,6 +177,7 @@ import type { Component } from 'vue'
 import { ArrowRight, CheckCircle } from 'lucide-vue-next'
 import type { LegalSection } from '~/types/legalsection'
 import { SITE_CONTACT_PATH } from '~/constants/siteRoutes'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of LegalDocument. */
 interface Props {

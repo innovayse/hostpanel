@@ -10,6 +10,8 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
@@ -49,13 +51,13 @@ const handleSave = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="t('shared.changePassword')" size="sm" @close="emit('close')">
+  <UiDialog :title="t('shared.changePassword')" :size="UiDialogSize.Sm" @close="emit('close')">
     <UiField :label="t('clients.changePassword.newPassword')" :error="fieldError || undefined">
       <template #default="{ id, invalid, describedby }">
         <UiInput
           :id="id"
           v-model="password"
-          type="password"
+          :type="UiInputType.Password"
           :invalid="invalid"
           :aria-describedby="describedby"
           :placeholder="t('clients.changePassword.enterNewPassword')"

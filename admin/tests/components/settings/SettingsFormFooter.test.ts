@@ -76,12 +76,12 @@ describe('SettingsFormFooter', () => {
     expect(save.attributes('disabled')).toBeDefined()
   })
 
-  it('stays one compact row on a phone: tight padding, 32px buttons that do not wrap, a status line that truncates', () => {
+  it('stays one compact row on a phone: tight padding, small buttons, a status line that truncates', () => {
     const wrapper = mountFooter({ saveLabel: 'Save changes', saving: false, status: '2 unsaved changes' })
     const save = wrapper.get('[data-testid="settings-form-save"]')
 
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['px-3', 'py-2', 'sm:px-6', 'sm:py-4']))
-    expect(save.classes()).toEqual(expect.arrayContaining(['whitespace-nowrap', 'max-sm:h-8', 'max-sm:px-3']))
+    expect(save.classes()).toEqual(expect.arrayContaining(['h-8', 'px-3.5']))
     expect(wrapper.get('[data-testid="settings-form-status"]').classes()).toContain('truncate')
   })
 

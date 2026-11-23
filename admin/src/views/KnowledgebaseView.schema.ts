@@ -11,7 +11,7 @@ import { AppRoute } from '@/lib/routes'
 import { KnowledgebaseTab } from '@/types/supporttab'
 import { SkeletonFieldKind, SkeletonKind, SkeletonPartKind, SkeletonSpan } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, FormSkeletonPart, SkeletonTable, TabsSkeletonPart } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** Key of the card of the categories table, the suffix of its `card-<key>` slot. */
 export const KB_CATEGORIES_CARD = 'categories'
@@ -20,8 +20,8 @@ export const KB_CATEGORIES_CARD = 'categories'
 export const KB_TABS_PART: TabsSkeletonPart = {
   kind: SkeletonPartKind.Tabs,
   tabs: [
-    { key: KnowledgebaseTab.Category, label: 'shared.addCategory' },
-    { key: KnowledgebaseTab.Article, label: 'support.knowledgebase.addArticle' },
+    { key: KnowledgebaseTab.Category, label: 'shared.createCategory' },
+    { key: KnowledgebaseTab.Article, label: 'support.knowledgebase.createArticle' },
   ],
 }
 
@@ -48,7 +48,7 @@ export const KB_CATEGORIES_TABLE: SkeletonTable = {
   columns: [
     { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
     { key: 'description', label: 'shared.description' },
-    { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+    { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }

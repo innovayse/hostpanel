@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiDecor from '~/components/ui/UiDecor.vue'
+import { UiDecorTag } from '~/utils/ui/enums'
 
 describe('UiDecor', () => {
   it('is hidden from assistive technology and takes no pointer events', () => {
@@ -22,6 +23,6 @@ describe('UiDecor', () => {
   })
 
   it('renders the requested tag', () => {
-    expect(mountWithKit(UiDecor, { props: { as: 'span' } }).element.tagName).toBe('SPAN')
+    expect(mountWithKit(UiDecor, { props: { as: UiDecorTag.Span } }).element.tagName).toBe('SPAN')
   })
 })

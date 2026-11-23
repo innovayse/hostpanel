@@ -14,32 +14,28 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiAlert from '@/components/ui/UiAlert.vue'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useListQuery } from '@/composables/useListQuery'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
@@ -57,8 +53,10 @@ import type { TldConfigListFilters, TldConfigListItem } from '@/types/tldconfig'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiDirection, UiGap, UiWidth } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/TldConfigsView.schema'
-import { UiTextSize } from '@/utils/ui/text'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
@@ -66,7 +64,7 @@ const { t, locale } = useI18n()
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
   { label: t('settings.tldConfigs.syncPrices'), icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'tld-configs-sync', loading: syncing.value, onSelect: handleSync },
-  { label: t('settings.tldConfigs.addTld'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'tld-configs-add', to: createRoute },
+  { label: t('settings.tldConfigForm.createTld'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'tld-configs-add', to: createRoute },
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `TldConfigListFilters` member. */
@@ -79,7 +77,7 @@ const FilterKey = {
 const store = useTldConfigsStore()
 
 /** The result banner for import, sync and delete. */
-const banner = useResultBanner()
+const banner = useOutcomeToast()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
@@ -176,7 +174,6 @@ const confirmDelete = async (): Promise<void> => {
   if (!deleteTarget.value) {
     return
   }
-  banner.clear()
   deleting.value = true
   const removed = await store.remove(deleteTarget.value.id)
   if (removed) {
@@ -204,7 +201,6 @@ const dismissDelete = (): void => {
  */
 const handleImport = async (module: string): Promise<void> => {
   importing.value = true
-  banner.clear()
   const result = await store.importFromProvider(module)
   if (result) {
     banner.show(t('settings.tldConfigs.importComplete', { imported: result.imported, updated: result.updated }), false)
@@ -218,7 +214,6 @@ const handleImport = async (module: string): Promise<void> => {
 /** Triggers a manual price sync from all providers, then reloads the page. */
 const handleSync = async (): Promise<void> => {
   syncing.value = true
-  banner.clear()
   if (await store.syncPrices()) {
     banner.show(t('settings.tldConfigs.priceSyncComplete'), false)
     await load()
@@ -250,8 +245,8 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
    */
   const onDelete = (): void => promptDelete(item)
   return [
-    { label: t('settings.tldConfigs.editTld'), icon: Icon.Edit, testid: `tld-edit-${item.tld}`, to: editPath(AppRoute.SettingsTldPricing, item.id) },
-    { label: t('settings.tldConfigs.deleteTld'), icon: Icon.Trash, testid: `tld-delete-${item.tld}`, onSelect: onDelete, danger: true },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `tld-edit-${item.tld}`, to: editPath(AppRoute.SettingsTldPricing, item.id) },
+    { label: t('shared.delete'), icon: Icon.Trash, testid: `tld-delete-${item.tld}`, onSelect: onDelete, danger: true },
   ]
 }
 </script>
@@ -268,7 +263,7 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
           :placeholder="t('settings.tldConfigs.import')"
           :disabled="importing"
           data-testid="tld-configs-import"
-          class="w-40"
+          :width="UiWidth.Md"
           @update:model-value="handleImport"
         />
         
@@ -276,9 +271,6 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
       </template>
     </UiPageHeader>
 
-    <UiAlert v-if="banner.message.value" :variant="UiTone.Danger" data-testid="tld-configs-result">
-      {{ banner.message.value }}
-    </UiAlert>
 
     <UiListToolbar
       v-model:search="search"
@@ -327,17 +319,27 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" clip>
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="tld-configs-table">
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!store.loading && !hasRows"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="tld-configs-pagination"
+      data-testid="tld-configs-table"
+      @update:page="setPage"
+    >
         <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow
             v-for="item in store.configs"
             :key="item.id"
             hoverable
             :data-testid="`tld-row-${item.tld}`"
           >
-            <UiTableCell class="font-semibold text-text-primary">.{{ item.tld }}</UiTableCell>
+            <UiTableCell strong>.{{ item.tld }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="UiTone.Neutral" small>
                 {{ registrarLabel(item.registrarModule) }}
@@ -361,20 +363,20 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
             <UiTableCell numeric>
               <!-- No margin means no rate between the cost and the sell currency, or no price: the dash says why on hover. -->
               <UiTooltip v-if="item.marginPercent === null" :text="t('settings.tldConfigs.marginUnavailable')">
-                <UiText tone="muted" size="lg" class="font-medium" tabindex="0" :data-testid="`tld-margin-${item.tld}`">
+                <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Lg" class="font-medium" tabindex="0" :data-testid="`tld-margin-${item.tld}`">
                   {{ formatMarginPercent(item.marginPercent) }}
                 </UiText>
               </UiTooltip>
-              <UiText v-else :tone="marginPercentTone(item.marginPercent)" size="lg" class="font-medium" :data-testid="`tld-margin-${item.tld}`">
+              <UiText v-else :tone="marginPercentTone(item.marginPercent)" :size="UiTextSize.Lg" class="font-medium" :data-testid="`tld-margin-${item.tld}`">
                 {{ formatMarginPercent(item.marginPercent) }}
               </UiText>
             </UiTableCell>
             <UiTableCell>
-              <UiStack direction="row" gap="xs" wrap>
+              <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs" wrap>
                 <UiBadge v-for="category in item.categories" :key="category" small>
                   {{ category }}
                 </UiBadge>
-                <UiText v-if="item.categories.length === 0" tone="muted" size="md">{{ EMPTY_VALUE }}</UiText>
+                <UiText v-if="item.categories.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ EMPTY_VALUE }}</UiText>
               </UiStack>
             </UiTableCell>
             <UiTableCell muted>{{ lastSyncedText(item.lastSyncedAt) }}</UiTableCell>
@@ -383,39 +385,22 @@ const tldActions = (item: TldConfigListItem): UiMenuAction[] => {
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-            {{ t('settings.tldConfigs.totalcountTldValue', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            testid="tld-configs-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('settings.tldConfigs.noTldsMatchYourFilters') : t('settings.tldConfigs.noTldConfigurationsFoundAdd')"
+          data-testid="tld-configs-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Globe" :size="UiSize.Lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="tld-configs-clear-empty" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('settings.tldConfigs.noTldsMatchYourFilters') : t('settings.tldConfigs.noTldConfigurationsFoundAdd')"
-        data-testid="tld-configs-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Globe" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="tld-configs-clear-empty" @click="clearAll">
-            {{ t('settings.tldConfigs.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
 
     <!-- Delete confirmation -->
     <UiDialog

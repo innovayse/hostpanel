@@ -27,6 +27,7 @@ import { storeToRefs } from 'pinia'
 import { useServerSshStore } from '@/stores/serverssh'
 import type { ServerSshSettingsDto, ServerSshSettingsPayload, SshAgentNetworkLines } from '@/types/serverssh'
 import { SshProviderFailure } from '@/types/sshenums'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -47,6 +48,10 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -289,27 +294,27 @@ watch(settings, (loaded) => {
 </script>
 
 <template>
-  <UiDialog :title="t('servers.ssh.title', { name: props.serverName })" size="lg" @close="emit('close')">
-    <UiStack gap="lg" :aria-busy="firstLoad ? 'true' : undefined" data-testid="server-ssh-body">
+  <UiDialog :title="t('servers.ssh.title', { name: props.serverName })" :size="UiDialogSize.Lg" @close="emit('close')">
+    <UiStack :gap="UiGap.Lg" :aria-busy="firstLoad ? 'true' : undefined" data-testid="server-ssh-body">
       <UiLink
         v-if="sshGuideUrl"
         :href="sshGuideUrl"
         external
-        class="text-sm"
+        :variant="UiButtonVariant.Link"
         data-testid="ssh-guide-link"
       >{{ t('common.help') }} →</UiLink>
-      <UiAlert v-if="error" variant="error" data-testid="server-ssh-error">{{ error }}</UiAlert>
+      <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="server-ssh-error">{{ error }}</UiAlert>
 
       <template v-if="settings || firstLoad">
-        <UiAlert v-if="settings && !settings.isSupported" variant="warning" data-testid="server-ssh-unsupported">
+        <UiAlert v-if="settings && !settings.isSupported" :variant="UiTone.Warning" data-testid="server-ssh-unsupported">
           {{ t('servers.ssh.unsupported') }}
         </UiAlert>
 
         <!-- 1. Connection -->
-        <UiStack gap="sm" data-testid="server-ssh-step-connection">
+        <UiStack :gap="UiGap.Sm" data-testid="server-ssh-step-connection">
           <UiHeading :level="4">{{ t('servers.ssh.stepConnection') }}</UiHeading>
           <UiForm stacked @submit.prevent="handleSave">
-            <UiGrid :columns="2" gap="sm">
+            <UiGrid :columns="2" :gap="UiGap.Sm" container>
               <UiField :label="t('servers.ssh.sshHostname')" :hint="t('servers.ssh.sshHostnameHint')" :error="fieldErrors.sshHostname">
                 <template #default="{ id, invalid }">
                   <UiInput :id="id" v-model="form.sshHostname" :invalid="invalid" :placeholder="t('servers.ssh.hostnamePlaceholder')" data-testid="server-ssh-hostname" />
@@ -319,7 +324,7 @@ watch(settings, (loaded) => {
                 <UiNumberInput v-model="form.sshPort" :min="1" :max="65535" :placeholder="t('servers.ssh.portPlaceholder')" data-testid="server-ssh-port" />
               </UiField>
             </UiGrid>
-            <UiGrid :columns="2" gap="sm">
+            <UiGrid :columns="2" :gap="UiGap.Sm" container>
               <UiField :label="t('servers.ssh.agentHost')" :hint="t('servers.ssh.agentHostHint')" :error="fieldErrors.agentHost">
                 <template #default="{ id, invalid }">
                   <UiInput :id="id" v-model="form.agentHost" :invalid="invalid" :placeholder="t('servers.ssh.hostnamePlaceholder')" data-testid="server-ssh-agent-host" />
@@ -329,7 +334,7 @@ watch(settings, (loaded) => {
                 <UiNumberInput v-model="form.agentPort" :min="1" :max="65535" :placeholder="t('servers.ssh.portPlaceholder')" data-testid="server-ssh-agent-port" />
               </UiField>
             </UiGrid>
-            <UiGrid :columns="2" gap="sm">
+            <UiGrid :columns="2" :gap="UiGap.Sm" container>
               <UiField :label="t('servers.ssh.agentUsername')" :error="fieldErrors.agentUsername">
                 <template #default="{ id, invalid }">
                   <UiInput :id="id" v-model="form.agentUsername" :invalid="invalid" :placeholder="t('servers.ssh.agentUsernamePlaceholder')" data-testid="server-ssh-agent-username" />
@@ -339,61 +344,80 @@ watch(settings, (loaded) => {
                 <UiNumberInput v-model="form.connectTimeoutSeconds" :min="1" :max="120" :placeholder="t('servers.ssh.secondsPlaceholder')" data-testid="server-ssh-connect-timeout" />
               </UiField>
             </UiGrid>
-            <UiText size="sm" tone="muted">{{ t('servers.ssh.connectionHint') }}</UiText>
+            <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.connectionHint') }}</UiText>
           </UiForm>
-          <UiStack v-if="setup" gap="sm" data-testid="server-ssh-network">
+          <UiStack v-if="setup" :gap="UiGap.Sm" data-testid="server-ssh-network">
             <UiHeading :level="5">{{ t('servers.ssh.networkTitle') }}</UiHeading>
             <template v-if="networkBlocks.length > 0">
-              <UiText size="sm" tone="muted">{{ t('servers.ssh.networkIntro', { addresses: sourceAddressList }) }}</UiText>
-              <UiStack gap="xs" data-testid="server-ssh-network-lines">
-                <UiStack v-for="block in networkBlocks" :key="block.key" gap="xs">
-                  <UiText size="xs" tone="muted">{{ block.label }}</UiText>
-                  <UiCodeBlock :code="block.code" :copy-label="t('servers.ssh.copy')" :copied-label="t('servers.ssh.copied')" :data-testid="`server-ssh-network-${block.key}`" />
+              <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.networkIntro', { addresses: sourceAddressList }) }}</UiText>
+              <UiStack :gap="UiGap.Xs" data-testid="server-ssh-network-lines">
+                <UiStack v-for="block in networkBlocks" :key="block.key" :gap="UiGap.Xs">
+                  <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Muted">{{ block.label }}</UiText>
+                  <UiCodeBlock :code="block.code" :copy-label="t('shared.copy')" :copied-label="t('shared.copied')" :data-testid="`server-ssh-network-${block.key}`" />
                 </UiStack>
               </UiStack>
             </template>
-            <UiText v-else size="sm" tone="muted" data-testid="server-ssh-network-unset">{{ t('servers.ssh.networkUnset') }}</UiText>
-            <UiText size="sm" tone="muted">{{ t('servers.ssh.networkVpn') }}</UiText>
+            <UiText v-else :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="server-ssh-network-unset">{{ t('servers.ssh.networkUnset') }}</UiText>
+            <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.networkVpn') }}</UiText>
           </UiStack>
         </UiStack>
 
         <!-- 2. Install -->
-        <UiStack gap="sm" data-testid="server-ssh-step-install">
+        <UiStack :gap="UiGap.Sm" data-testid="server-ssh-step-install">
           <UiHeading :level="4">{{ t('servers.ssh.stepInstall') }}</UiHeading>
           <template v-if="setup?.profile">
-            <UiText size="sm" tone="muted">{{ t('servers.ssh.installIntro', { profile: setup.profile, version: setup.bundleVersion }) }}</UiText>
-            <UiStack direction="row" gap="sm" wrap>
-              <UiButton :action="UiActionKind.Generate" type="button" variant="secondary" :loading="generating" data-testid="server-ssh-generate" @click="handleGenerate">
-                {{ setup.publicKey ? t('servers.ssh.rotateIdentity') : t('servers.ssh.generateIdentity') }}
+            <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.installIntro', { profile: setup.profile, version: setup.bundleVersion }) }}</UiText>
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
+              <UiButton
+                :action="UiActionKind.Generate"
+                :type="UiButtonType.Button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="generating"
+                :title="setup.publicKey ? t('servers.ssh.rotateIdentity') : t('servers.ssh.generateIdentity')"
+                :aria-label="setup.publicKey ? t('servers.ssh.rotateIdentity') : t('servers.ssh.generateIdentity')"
+                data-testid="server-ssh-generate"
+                @click="handleGenerate"
+              >
+                {{ setup.publicKey ? t('servers.ssh.rotate') : t('shared.generate') }}
               </UiButton>
             </UiStack>
-            <UiText v-if="setup.publicKey" size="sm" tone="muted">{{ t('servers.ssh.rotateWarning') }}</UiText>
+            <UiText v-if="setup.publicKey" :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.rotateWarning') }}</UiText>
             <template v-if="installCommand">
-              <UiText size="sm">{{ t('servers.ssh.runAsRoot') }}</UiText>
-              <UiCodeBlock :code="installCommand" :copy-label="t('servers.ssh.copy')" :copied-label="t('servers.ssh.copied')" data-testid="server-ssh-install-command" />
-              <UiText size="sm" tone="muted">{{ t('servers.ssh.installVerifies', { sha: setup.bundleSha256 }) }}</UiText>
+              <UiText :size="UiTextSize.Sm">{{ t('servers.ssh.runAsRoot') }}</UiText>
+              <UiCodeBlock :code="installCommand" :copy-label="t('shared.copy')" :copied-label="t('shared.copied')" data-testid="server-ssh-install-command" />
+              <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.installVerifies', { sha: setup.bundleSha256 }) }}</UiText>
             </template>
           </template>
         </UiStack>
 
         <!-- 3. Host key -->
-        <UiStack gap="sm" data-testid="server-ssh-step-hostkey">
+        <UiStack :gap="UiGap.Sm" data-testid="server-ssh-step-hostkey">
           <UiHeading :level="4">{{ t('servers.ssh.stepHostKey') }}</UiHeading>
-          <UiText size="sm" tone="muted">{{ t('servers.ssh.hostKeyIntro') }}</UiText>
-          <UiStack direction="row" gap="sm" wrap>
-            <UiButton :action="UiActionKind.Test" type="button" variant="secondary" :loading="scanning" :disabled="!hasEndpoint" data-testid="server-ssh-scan" @click="handleScan">
+          <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.hostKeyIntro') }}</UiText>
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
+            <UiButton :action="UiActionKind.Test" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" :loading="scanning" :disabled="!hasEndpoint" data-testid="server-ssh-scan" @click="handleScan">
               {{ t('servers.ssh.scanHostKey') }}
             </UiButton>
           </UiStack>
-          <UiAlert v-if="scanError" variant="error" data-testid="server-ssh-scan-error">{{ scanError }}</UiAlert>
+          <UiAlert v-if="scanError" :variant="UiTone.Danger" data-testid="server-ssh-scan-error">{{ scanError }}</UiAlert>
           <template v-if="scannedKey">
-            <UiCodeBlock :code="scannedKey" :copy-label="t('servers.ssh.copy')" :copied-label="t('servers.ssh.copied')" data-testid="server-ssh-scanned" />
-            <UiStack direction="row" gap="sm" wrap>
+            <UiCodeBlock :code="scannedKey" :copy-label="t('shared.copy')" :copied-label="t('shared.copied')" data-testid="server-ssh-scanned" />
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
               <UiBadge :tone="scanMatches ? UiTone.Success : UiTone.Warning" dot data-testid="server-ssh-scan-match">
                 {{ scanMatches ? t('servers.ssh.matchesPinned') : t('servers.ssh.notPinned') }}
               </UiBadge>
-              <UiButton :action="UiActionKind.Confirm" v-if="!scanMatches" type="button" variant="ghost" size="sm" data-testid="server-ssh-use-scanned" @click="useScannedFingerprint">
-                {{ t('servers.ssh.useScanned') }}
+              <UiButton
+                :action="UiActionKind.Confirm"
+                v-if="!scanMatches"
+                :type="UiButtonType.Button"
+                :variant="UiButtonVariant.Ghost"
+                :size="UiSize.Sm"
+                :title="t('servers.ssh.useScanned')"
+                :aria-label="t('servers.ssh.useScanned')"
+                data-testid="server-ssh-use-scanned"
+                @click="useScannedFingerprint"
+              >
+                {{ t('shared.confirm') }}
               </UiButton>
             </UiStack>
           </template>
@@ -405,40 +429,42 @@ watch(settings, (loaded) => {
         </UiStack>
 
         <!-- 4. Test -->
-        <UiStack gap="sm" data-testid="server-ssh-step-test">
+        <UiStack :gap="UiGap.Sm" data-testid="server-ssh-step-test">
           <UiHeading :level="4">{{ t('servers.ssh.stepTest') }}</UiHeading>
-          <UiStack direction="row" gap="sm" wrap>
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
             <UiButton :action="UiActionKind.Test"
-              type="button"
-              variant="secondary"
+              :type="UiButtonType.Button"
+              :variant="UiButtonVariant.Secondary"
               :loading="testing"
               :disabled="busy || !settings?.hasAgentPrivateKey || !hasEndpoint"
+              :title="t('servers.ssh.test')"
+              :aria-label="t('servers.ssh.test')"
               data-testid="server-ssh-test"
               @click="handleTest"
             >
-              {{ t('servers.ssh.test') }}
+              {{ t('shared.test') }}
             </UiButton>
             <UiBadge :tone="health.tone" dot data-testid="server-ssh-health">{{ health.label }}</UiBadge>
-            <UiText v-if="agentVersionLabel" size="sm" tone="muted" data-testid="server-ssh-agent-version">{{ agentVersionLabel }}</UiText>
+            <UiText v-if="agentVersionLabel" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="server-ssh-agent-version">{{ agentVersionLabel }}</UiText>
           </UiStack>
-          <UiAlert v-if="isBindingMismatch" variant="error" data-testid="server-ssh-binding-mismatch">
+          <UiAlert v-if="isBindingMismatch" :variant="UiTone.Danger" data-testid="server-ssh-binding-mismatch">
             {{ t('servers.ssh.bindingMismatch') }}
           </UiAlert>
-          <UiText v-else-if="agentFailure" size="sm" tone="muted" data-testid="server-ssh-agent-error">{{ agentFailure }}</UiText>
+          <UiText v-else-if="agentFailure" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="server-ssh-agent-error">{{ agentFailure }}</UiText>
         </UiStack>
 
         <!-- 5. Enable -->
-        <UiStack gap="sm" data-testid="server-ssh-step-enable">
+        <UiStack :gap="UiGap.Sm" data-testid="server-ssh-step-enable">
           <UiHeading :level="4">{{ t('servers.ssh.stepEnable') }}</UiHeading>
-          <UiLabel variant="inline">
+          <UiLabel :variant="UiLabelVariant.Inline">
             <UiToggle v-model="form.isEnabled" :disabled="!settings?.isSupported" data-testid="server-ssh-enabled" />
             {{ t('servers.ssh.enabled') }}
           </UiLabel>
-          <UiText size="sm" tone="muted">{{ t('servers.ssh.enabledHint') }}</UiText>
+          <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ t('servers.ssh.enabledHint') }}</UiText>
         </UiStack>
 
         <!-- Advanced: an existing key instead of a generated one -->
-        <UiStack gap="sm" data-testid="server-ssh-step-advanced">
+        <UiStack :gap="UiGap.Sm" data-testid="server-ssh-step-advanced">
           <UiHeading :level="4">{{ t('servers.ssh.advanced') }}</UiHeading>
           <UiField
             :label="t('servers.ssh.privateKey')"
@@ -466,13 +492,13 @@ watch(settings, (loaded) => {
     </UiStack>
 
     <template #footer>
-      <UiText v-if="showSaved" size="sm" tone="success" data-testid="server-ssh-saved">{{ t('servers.ssh.saved') }}</UiText>
-      <UiText v-else-if="saveFailure" size="sm" tone="danger" data-testid="server-ssh-save-status">{{ saveFailure }}</UiText>
-      <UiButton :action="UiActionKind.Close" type="button" variant="secondary" data-testid="server-ssh-cancel" @click="emit('close')">
+      <UiText v-if="showSaved" :size="UiTextSize.Sm" :tone="UiTextTone.Success" data-testid="server-ssh-saved">{{ t('servers.ssh.saved') }}</UiText>
+      <UiText v-else-if="saveFailure" :size="UiTextSize.Sm" :tone="UiTextTone.Danger" data-testid="server-ssh-save-status">{{ saveFailure }}</UiText>
+      <UiButton :action="UiActionKind.Close" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="server-ssh-cancel" @click="emit('close')">
         {{ t('shared.close') }}
       </UiButton>
-      <UiButton :action="UiActionKind.Save" type="button" variant="primary" :loading="saving" :disabled="busy || !settings" data-testid="server-ssh-save" @click="handleSave">
-        {{ t('shared.saveChanges') }}
+      <UiButton :action="UiActionKind.Save" :type="UiButtonType.Button" :variant="UiButtonVariant.Primary" :loading="saving" :disabled="busy || !settings" data-testid="server-ssh-save" @click="handleSave">
+        {{ t('shared.save') }}
       </UiButton>
     </template>
   </UiDialog>

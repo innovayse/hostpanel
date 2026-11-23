@@ -7,7 +7,7 @@ import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ChartReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ChartKind, UiChartHeight } from '@/utils/ui/chart'
 import { ReportAction, ReportNote } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind } from '@/utils/ui/table'
 
 /** What the monthly transactions report is made of. */
 const schema: ChartReportSkeletonSchema = {
@@ -21,7 +21,7 @@ const schema: ChartReportSkeletonSchema = {
   chart: { kind: ChartKind.Line, height: UiChartHeight.Lg },
   table: {
     columns: [
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Grow },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'amountIn', label: 'shared.amountIn', align: UiAlign.Right },
       { key: 'fees', label: 'shared.fees', align: UiAlign.Right },
       { key: 'amountOut', label: 'shared.amountOut', align: UiAlign.Right },

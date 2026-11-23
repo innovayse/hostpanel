@@ -15,7 +15,7 @@ import { UiSize } from '@/utils/ui/size'
 </script>
 
 <template>
-  <UiStack class="min-h-dvh" :align="UiAlignItems.Center" :justify="UiJustify.Center" data-testid="app-loading">
+  <UiStack class="min-h-dvh" :align="UiAlignItems.Center" :justify="UiJustify.Center" data-testid="page-loading">
     <UiLoader :size="UiSize.Md" show-label />
   </UiStack>
 </template>

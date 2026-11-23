@@ -4,7 +4,7 @@
  * stand bottom centre, the full width minus the gutter and above the home indicator (the safe-area inset).
  *
  * The container is a polite live region that is always rendered, so a screen reader announces a toast the moment its
- * text arrives. Each toast carries a close button; left alone it dismisses itself (see `stores/toast.ts`). Mounted
+ * text arrives; a danger toast (a refusal) is an alert of its own, so it is announced at once. Each toast carries a close button; left alone it dismisses itself (see `stores/toast.ts`). Mounted
  * once, by `App.vue`.
  */
 import { onBeforeUnmount } from 'vue'
@@ -14,7 +14,7 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import { Icon } from '@/lib/icons'
 import { useToastStore } from '@/stores/toast'
 import { UiSize } from '@/utils/ui/size'
-import { toneAlertClasses } from '@/utils/ui/tone'
+import { UiTone, toneAlertClasses } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -37,6 +37,7 @@ onBeforeUnmount(store.clear)
       :key="toast.id"
       class="pointer-events-auto flex items-center gap-3 rounded-card border py-2 pl-4 pr-2 text-sm shadow-lg"
       :class="toneAlertClasses[toast.tone]"
+      :role="toast.tone === UiTone.Danger ? 'alert' : undefined"
       :data-tone="toast.tone"
       data-testid="ui-toast"
     >

@@ -43,16 +43,24 @@ afterEach(async () => {
 })
 
 describe('TeamMembersList', () => {
-  it('shows a skeleton while loading', () => {
+  it('shows placeholder rows while loading', () => {
     const wrapper = mountAccount(TeamMembersList, { props: { users: [], loading: true } })
 
-    expect(wrapper.find('[data-testid="account-team-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-loading"]').exists()).toBe(true)
   })
 
   it('shows the empty state without members', () => {
     const wrapper = mountAccount(TeamMembersList, { props: { users: [], loading: false } })
 
-    expect(wrapper.find('[data-testid="account-team-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').text()).toContain('client.users.empty')
+  })
+
+  it('lists the members as table rows under the user, role, last login and action columns', () => {
+    const wrapper = mountAccount(TeamMembersList, { props: { users, loading: false } })
+
+    expect(wrapper.findAll('thead th')).toHaveLength(4)
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2)
+    expect(wrapper.find('[data-testid="account-team-member-2"]').text()).toContain('client.users.member')
   })
 
   it('lists members, the owner without a remove button', () => {

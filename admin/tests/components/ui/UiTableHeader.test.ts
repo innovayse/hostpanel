@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
-import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize, UiColumnWidth } from '@/utils/ui/table'
 
 describe('UiTableHeader', () => {
   it('hides the column below its breakpoint and shows it as a table cell from there', () => {
@@ -35,16 +35,27 @@ describe('UiTableHeader', () => {
     expect(classes.some(name => name.startsWith('bg-'))).toBe(false)
   })
 
-  it('keeps its caption on one line by default', () => {
-    expect(mount(UiTableHeader).classes()).toContain('whitespace-nowrap')
+  it('takes a double share of the width and truncates by default, like free text', () => {
+    expect(mount(UiTableHeader).classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
+  })
+
+  it('takes a single share of the width for a status, a date or an id column, never the whole free width', () => {
+    for (const kind of [UiColumnKind.Status, UiColumnKind.Date, UiColumnKind.Id]) {
+      expect(mount(UiTableHeader, { props: { kind } }).classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
+    }
+  })
+
+  it('lets a size the screen names win over the kind, and a fixed column takes its width', () => {
+    expect(mount(UiTableHeader, { props: { kind: UiColumnKind.Date, size: UiColumnSize.Auto } }).classes()).not.toContain('w-px')
+    expect(mount(UiTableHeader, { props: { size: UiColumnSize.Fixed, width: UiColumnWidth.Large } }).classes()).toEqual(expect.arrayContaining(['w-64', 'whitespace-nowrap']))
   })
 
   it('shrinks to its content when compact', () => {
     expect(mount(UiTableHeader, { props: { size: UiColumnSize.Compact } }).classes()).toEqual(expect.arrayContaining(['w-px', 'whitespace-nowrap']))
   })
 
-  it('takes the remaining width and truncates when it is the growing column', () => {
-    expect(mount(UiTableHeader, { props: { size: UiColumnSize.Grow } }).classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0', 'min-w-36', 'truncate']))
+  it('takes a double share of the width and truncates when it is the growing column', () => {
+    expect(mount(UiTableHeader, { props: { size: UiColumnSize.Grow } }).classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'min-w-36', 'truncate']))
   })
 
   it('aligns on request', () => {

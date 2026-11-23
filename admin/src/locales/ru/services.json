@@ -2,10 +2,8 @@
   "servicesList": {
     "services": "Услуги",
     "viewAndManageAllClient": "Просмотр всех хостинг-услуг клиентов и управление ими",
-    "totalcountServiceValue": "Услуг: {totalCount}",
     "noServicesFound": "Услуги не найдены",
     "searchServices": "Поиск по домену, продукту или ID",
-    "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам",
-    "clearFilters": "Сбросить фильтры"
+    "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам"
   }
 }

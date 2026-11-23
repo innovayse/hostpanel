@@ -221,25 +221,25 @@ describe('UiSkeletonOf', () => {
       expect(wrapper.get('[data-testid="ui-tabs-panel"] [data-testid="child"]').text()).toBe('Child skeleton')
     })
 
-    it('draws the key figures as plain captions with bars in a header card above the strip, in the columns of the schema', () => {
-      const wrapper = mountSkeleton({ ...tabs, statColumns: 6, actions: 1 })
+    it('draws the key figures as plain captions with bars in a header card above the strip, as many columns as the width of the row holds', () => {
+      const wrapper = mountSkeleton({ ...tabs, actions: 1 })
       const card = wrapper.get('[data-testid="ui-skeleton-header-card"]')
 
       expect(card.findAll('[data-testid^="ui-stat-row-"]')).toHaveLength(2)
-      expect(card.get('[data-testid="ui-stat-row"]').classes()).toContain('lg:grid-cols-6')
+      expect(card.get('[data-testid="ui-stat-row"]').classes()).toContain('grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]')
       expect(card.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(0)
       expect(card.text()).toContain('Clients')
       // The one action of the schema is a button shaped bar beside the identity bars.
       expect(card.findAll('.h-9.w-28')).toHaveLength(1)
     })
 
-    it('folds the actions of the header card on a phone, and keeps the key figures two across', () => {
+    it('folds the actions of the header card on a phone, and keeps the key figures as wide as the row lets them', () => {
       const wrapper = mountSkeleton({ ...tabs, actions: 3 })
       const card = wrapper.get('[data-testid="ui-skeleton-header-card"]')
 
       expect(card.findAll('.h-9.w-28')).toHaveLength(3)
       expect(card.find('[data-testid="ui-skeleton-actions-more"]').exists()).toBe(true)
-      expect(card.get('[data-testid="ui-stat-row"]').classes()).toContain('grid-cols-2')
+      expect(card.get('[data-testid="ui-stat-row"]').classes()).toContain('grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]')
     })
 
     it('draws a rail of icon placeholders beside the outlet when the tabs are vertical', () => {

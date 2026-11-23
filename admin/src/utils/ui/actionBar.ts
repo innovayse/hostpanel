@@ -1,12 +1,12 @@
 /**
- * Shared vocabulary of the bars that show a few actions as buttons and fold the rest into a "…" menu on a phone: the
- * floating bulk bar (`UiBulkBar`) and the page header (`UiPageHeader`).
+ * Shared vocabulary of the bars that show their actions as buttons on a wide screen and move some or all of them into a menu
+ * on a phone: the floating bulk bar (`UiBulkBar`) and the page header (`UiPageHeader`).
  */
 import type { RouteLocationRaw } from 'vue-router'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiButtonVariant } from '@/utils/ui/button'
 
-/** The part of an action that both bars draw the same way: a labelled icon button that can fold into the menu. */
+/** The part of an action that both bars draw the same way: a labelled icon button that can move into the menu. */
 export interface UiBarAction {
   /** The label drawn on the button and in the menu (already translated). */
   label: string

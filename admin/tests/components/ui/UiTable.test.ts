@@ -11,7 +11,7 @@ import UiTableFoot from '@/components/ui/UiTableFoot.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiColumnSize, UiHideBelow } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
 import { createTestI18n } from '../../helpers/i18n'
 
 /** Global options giving the table its i18n plugin. */
@@ -97,25 +97,20 @@ describe('UiTable', () => {
 
     const cells = wrapper.findAll('[data-testid="ui-table-skeleton"] tr:first-child td')
     expect(cells[0]?.classes()).toEqual(expect.arrayContaining(['w-px', 'whitespace-nowrap']))
-    expect(cells[1]?.classes()).toEqual(expect.arrayContaining(['w-full', 'max-w-0', 'truncate']))
-    expect(cells[2]?.classes()).toContain('whitespace-nowrap')
+    expect(cells[1]?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
+    expect(cells[2]?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
-  it('accepts one growing column without a warning', async () => {
+  it('spreads the width over several data columns without a warning', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-    mount(headerHarness([{ size: UiColumnSize.Compact }, { size: UiColumnSize.Grow }]), { global: global() })
+    const wrapper = mount(headerHarness([{ size: UiColumnSize.Grow }, {}, { kind: UiColumnKind.Date }]), { global: global() })
     await nextTick()
 
+    const cells = wrapper.findAll('[data-testid="ui-table-skeleton"] tr:first-child td')
+    expect(cells[0]?.classes()).toContain('w-[28%]')
+    expect(cells[1]?.classes()).toContain('w-[28%]')
+    expect(cells[2]?.classes()).toContain('w-[14%]')
     expect(warn).not.toHaveBeenCalled()
-    warn.mockRestore()
-  })
-
-  it('warns in development when two columns both want to grow', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-    mount(headerHarness([{ size: UiColumnSize.Grow }, { size: UiColumnSize.Grow }]), { global: global() })
-    await nextTick()
-
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('at most one'))
     warn.mockRestore()
   })
 

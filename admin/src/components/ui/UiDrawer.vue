@@ -13,7 +13,8 @@
  * has ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
  * `dismissible="false"` makes it a surface the reader cannot leave (no close button; Escape, the backdrop and a drag
  * do nothing) while work runs. A parent that removes it with `v-if` while open gets the leave played on an inert copy
- * of the backdrop (`playGhostLeave`). The caller's attributes (a `data-testid`, `aria-*`) land on the panel.
+ * of the backdrop (`playGhostLeave`). A sheet with `fullscreen` fills the whole screen instead (the shape of a form dialog on a phone):
+ * full width and full dynamic height with room for the notch and the home indicator, the body scrolling inside it and the footer pinned. The caller's attributes (a `data-testid`, `aria-*`) land on the panel.
  */
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -51,6 +52,8 @@ const props = withDefaults(defineProps<{
   flush?: boolean
   /** A narrower side panel (20rem). */
   narrow?: boolean
+  /** Makes a bottom sheet fill the whole screen (no rounded corners, no partial height), for a dialog on a phone; a side panel ignores it. */
+  fullscreen?: boolean
   /** Whether the reader can close it: false hides the close button and ignores Escape, the backdrop and a drag (work is running). */
   dismissible?: boolean
   /** Whether a click on the backdrop closes it. */
@@ -60,6 +63,7 @@ const props = withDefaults(defineProps<{
   side: UiDrawerSide.Right,
   flush: false,
   narrow: false,
+  fullscreen: false,
   dismissible: true,
   closeOnBackdrop: true,
 })
@@ -87,6 +91,9 @@ const sideClasses: Record<UiDrawerSide, string> = {
 /** Placement of a bottom sheet: along the bottom with rounded top corners and room for the home indicator. */
 const sheetPlacement = 'bottom-0 left-0 right-0 rounded-t-panel border-t border-border-strong pb-[env(safe-area-inset-bottom)]'
 
+/** Placement of a full-screen sheet: it covers the viewport, with room for the notch above and the home indicator below. */
+const fullscreenPlacement = 'inset-0 h-dvh max-h-dvh border-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
+
 /** Height limit of a bottom sheet: partial (content height up to this maximum) or opened to full height. */
 const sheetHeights = {
   partial: 'max-h-[85dvh]',
@@ -109,6 +116,9 @@ const sheetActive = computed<boolean>(() => props.presentation === UiDrawerPrese
 const placementClasses = computed<string>(() => {
   if (!sheetActive.value) {
     return sideClasses[props.side]
+  }
+  if (props.fullscreen) {
+    return fullscreenPlacement
   }
   return `${sheetPlacement} ${expanded.value ? sheetHeights.expanded : sheetHeights.partial}`
 })
@@ -263,7 +273,7 @@ onBeforeUnmount(() => {
             </UiHeading>
             <UiIconButton
               v-if="dismissible"
-              :label="t('ui.dialog.close')"
+              :label="t('shared.close')"
               :size="UiSize.Sm"
               class="transition-opacity duration-(--duration-fast) motion-reduce:transition-none"
               :class="settled ? 'opacity-100' : 'invisible opacity-0'"

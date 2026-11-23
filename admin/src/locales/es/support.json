@@ -5,14 +5,12 @@
     "announcementTitle": "Título del anuncio",
     "announcement": "Anuncio",
     "announcementContent": "Contenido del anuncio...",
-    "updateAnnouncement": "Actualizar anuncio",
-    "saveAnnouncement": "Guardar anuncio",
     "pageTitleEdit": "Editar anuncio",
     "pageTitleCreate": "Agregar anuncio"
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Gestionar anuncios para clientes",
-    "addNewAnnouncement": "Agregar nuevo anuncio",
+    "createAnnouncement": "Crear anuncio",
     "noAnnouncementsFound": "No se encontraron anuncios",
     "createYourFirstAnnouncementTo": "Crea tu primer anuncio para comenzar.",
     "deleteAnnouncement": "Eliminar anuncio",
@@ -32,7 +30,7 @@
     "clientsOnly": "Solo clientes",
     "productDownload": "Descarga de producto",
     "clientsOnlyRestrictsToLogged": "Solo Clientes restringe a clientes registrados. Descarga de Producto requiere una compra de producto o complemento. Oculto elimina del área de cliente.",
-    "addDownload": "Agregar descarga",
+    "createDownload": "Crear descarga",
     "downloadHome": "Inicio de descargas",
     "files": "Archivos",
     "noDownloadsFound": "No se encontraron Descargas",
@@ -68,10 +66,9 @@
     "articleTitle": "Título del artículo",
     "content": "Contenido",
     "articleContent": "Contenido del artículo...",
-    "saveArticle": "Guardar artículo",
     "deleteCategory": "Eliminar categoría",
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar esta categoría? Todos los artículos de esta categoría podrían verse afectados.",
-    "addArticle": "Agregar artículo",
+    "createArticle": "Crear artículo",
     "categorySaved": "Categoría guardada.",
     "categoryDeleted": "Categoría eliminada.",
     "articleSaved": "Artículo guardado.",
@@ -96,7 +93,6 @@
     "endDate": "Fecha de fin",
     "selectEndDate": "Seleccionar fecha de fin",
     "describeTheIssueInDetail": "Describe el problema en detalle...",
-    "updateIssue": "Actualizar problema",
     "createIssue": "Crear problema",
     "other": "Otro",
     "low": "Baja",
@@ -112,7 +108,6 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Gestionar estado de red e informes de incidentes",
-    "createNew": "Crear nuevo",
     "startDate": "Fecha de inicio",
     "endDate": "Fecha de fin",
     "deleteNetworkIssue": "Eliminar problema de red",
@@ -140,14 +135,14 @@
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar esta categoría? Todas las respuestas de esta categoría podrían verse afectadas.",
     "deletePredefinedReply": "Eliminar respuesta predefinida",
     "areYouSureYouWant2": "¿Estás seguro de que quieres eliminar esta respuesta predefinida? Esta acción no se puede deshacer.",
-    "addPredefinedReply": "Agregar respuesta predefinida"
+    "addCategory": "Agregar categoría",
+    "addReply": "Agregar respuesta"
   },
   "supportOpenTicket": {
     "searchByNameEmailOr": "Buscar por nombre, correo electrónico o ID...",
     "autoFilledFromSelectedClient": "Autocompletado desde el cliente seleccionado",
     "ticketSubject": "Asunto del ticket",
-    "describeTheIssue": "Describe el problema...",
-    "openTicket": "Abrir ticket"
+    "describeTheIssue": "Describe el problema..."
   },
   "supportOverview": {
     "supportOverview": "Resumen de soporte",
@@ -167,7 +162,6 @@
     "ticketSettings": "Configuración del ticket",
     "noRepliesYet": "Sin respuestas todavía",
     "typeYourReply": "Escribe tu respuesta...",
-    "reply": "Responder",
     "conversation": "Conversación",
     "staff": "Personal",
     "deleteTicket": "Eliminar ticket",
@@ -175,7 +169,6 @@
     "ticketClosed": "Ticket cerrado.",
     "ticketReopened": "Ticket reabierto.",
     "replySent": "Respuesta enviada.",
-    "details": "Detalles",
     "created": "Creado",
     "assignee": "Responsable",
     "unassigned": "Sin asignar"
@@ -184,7 +177,6 @@
     "supportTickets": "Tickets de soporte",
     "manageAllClientSupportRequests": "Gestionar todas las solicitudes de soporte de clientes",
     "searchTicketsBySubject": "Buscar tickets por asunto...",
-    "totalcountRecordsFoundShowingShowingfrom": "{totalCount} registros encontrados, mostrando {showingFrom} a {showingTo}",
     "flag": "Marcar",
     "unflag": "Desmarcar",
     "noRepliesYet": "Todavía no hay respuestas",
@@ -192,7 +184,6 @@
     "noTicketsFound": "No se encontraron tickets",
     "noTicketsMatchYourFilters": "Ningún ticket coincide con tus filtros",
     "tryAdjustingYourFiltersOr": "Intenta ajustar tus filtros o consulta de búsqueda.",
-    "clearFilters": "Borrar filtros",
     "confirmBulkDeleteTitle": "¿Eliminar los tickets seleccionados?",
     "confirmBulkDeleteMessage": "{count} tickets se eliminarán permanentemente. Esto no se puede deshacer."
   }

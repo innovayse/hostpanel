@@ -36,9 +36,10 @@ describe('serverLoadPercent', () => {
 })
 
 describe('serverAccountsLabel', () => {
-  it('writes count over limit, the count alone, or a dash when the count is unknown', () => {
+  it('writes count over limit, count over "Unlimited" for no limit, or a dash when the count is unknown', () => {
     expect(serverAccountsLabel(serverDto({ accountsCount: 12 }))).toBe('12 / 100')
-    expect(serverAccountsLabel(serverDto({ accountsCount: 12, limits: { maxAccounts: null, isDefault: false, isDisabled: false } }))).toBe('12')
+    expect(serverAccountsLabel(serverDto({ accountsCount: 12, limits: { maxAccounts: null, isDefault: false, isDisabled: false } }))).toBe('12 / Unlimited')
+    expect(serverAccountsLabel(serverDto({ accountsCount: null, limits: { maxAccounts: null, isDefault: false, isDisabled: false } }))).toBe('Unlimited')
     expect(serverAccountsLabel(serverDto({ accountsCount: null }))).toBe(EMPTY_VALUE)
   })
 })
@@ -71,7 +72,7 @@ describe('serverFacts', () => {
     const facts = serverFacts(serverDto())
 
     expect(facts.map((fact) => fact.key)).toEqual([ServerFactKey.Services, ServerFactKey.Revenue, ServerFactKey.Connection])
-    expect(facts.map((fact) => fact.value)).toEqual(['3', '45.00 USD / month', 'API over HTTPS'])
+    expect(facts.map((fact) => fact.values)).toEqual([['3'], ['45.00 USD / month'], ['API over HTTPS']])
   })
 
   it('adds the group, datacenter and nameservers when the server has them, in display order', () => {
@@ -89,8 +90,8 @@ describe('serverFacts', () => {
       ServerFactKey.Connection,
       ServerFactKey.NameServers,
     ])
-    expect(facts[0]?.value).toBe('Shared')
-    expect(facts[5]?.value).toBe('ns1.example.com, ns2.example.com')
+    expect(facts[0]?.values).toEqual(['Shared'])
+    expect(facts[5]?.values).toEqual(['ns1.example.com', 'ns2.example.com'])
   })
 
   it('leaves the services and the revenue out when the list did not report them, and names an unencrypted connection', () => {
@@ -100,13 +101,13 @@ describe('serverFacts', () => {
     const facts = serverFacts(server)
 
     expect(facts.map((fact) => fact.key)).toEqual([ServerFactKey.Connection])
-    expect(facts[0]?.value).toBe('API over HTTP')
+    expect(facts[0]?.values).toEqual(['API over HTTP'])
   })
 
   it('shows a server without active services as zero, not as missing', () => {
     const facts = serverFacts(serverDto({ usage: { activeServices: 0, monthlyRevenue: 0, currency: 'USD' } }))
 
-    expect(facts.find((fact) => fact.key === ServerFactKey.Services)?.value).toBe('0')
-    expect(facts.find((fact) => fact.key === ServerFactKey.Revenue)?.value).toBe('0.00 USD / month')
+    expect(facts.find((fact) => fact.key === ServerFactKey.Services)?.values).toEqual(['0'])
+    expect(facts.find((fact) => fact.key === ServerFactKey.Revenue)?.values).toEqual(['0.00 USD / month'])
   })
 })

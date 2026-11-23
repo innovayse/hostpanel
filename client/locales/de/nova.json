@@ -7,20 +7,20 @@
       "email": "E-Mail",
       "pricing": "Preise",
       "support": "Support",
-      "login": "Anmelden",
-      "getStarted": "Jetzt starten",
       "menu": "Menü öffnen",
       "close": "Menü schließen",
       "cart": "Warenkorb",
       "skipToContent": "Zum Inhalt springen",
       "preferences": "Sprache und Design"
     },
+    "cta": {
+      "getStarted": "Jetzt starten",
+      "seePlans": "Tarife ansehen"
+    },
     "hero": {
       "badge": "Hosting, Domains und E-Mail in einem Konto",
       "title": "Schnelles, sicheres Hosting für Ihre Website",
       "lead": "{site} bietet Ihnen Server, Domain und Control-Panel an einem Ort. Konten werden automatisch bereitgestellt, die Abrechnung ist transparent, und hinter jedem Ticket steht ein echter Mensch.",
-      "ctaPrimary": "Jetzt starten",
-      "ctaSecondary": "Tarife ansehen",
       "benefitSsl": "Kostenloses SSL-Zertifikat",
       "benefitBackups": "Automatische Backups",
       "benefitSupport": "Support inklusive",
@@ -180,9 +180,7 @@
     },
     "finalCta": {
       "title": "Bereit, Ihre Website zu starten?",
-      "lead": "Wählen Sie einen Tarif, verbinden Sie Ihre Domain und gehen Sie noch heute online.",
-      "primary": "Jetzt starten",
-      "secondary": "Hosting-Tarife ansehen"
+      "lead": "Wählen Sie einen Tarif, verbinden Sie Ihre Domain und gehen Sie noch heute online."
     },
     "footer": {
       "tagline": "Hosting, Domains und E-Mail für alle, die lieber an ihrer Website arbeiten.",
@@ -255,7 +253,7 @@
       "phoneTitle": "Telefon",
       "phoneBody": "Sprechen Sie mit einem Menschen über alles, was sich schwer schriftlich erklären lässt.",
       "responseTime": "Übliche Antwortzeit: {time}",
-      "open": "Kontakt aufnehmen"
+      "open": "Sprechen Sie uns an"
     }
   }
 }

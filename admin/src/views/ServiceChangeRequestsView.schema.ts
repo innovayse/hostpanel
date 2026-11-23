@@ -6,7 +6,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The plan changes list. */
 const schema: ListSkeletonSchema = {
@@ -16,13 +16,13 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'service', label: 'serviceChangeRequests.service', size: UiColumnSize.Compact },
       { key: 'client', label: 'shared.client' },
       { key: 'plans', label: 'serviceChangeRequests.plans', size: UiColumnSize.Grow },
       { key: 'type', label: 'shared.type', size: UiColumnSize.Compact },
       { key: 'proration', label: 'serviceChangeRequests.proration' },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

@@ -12,8 +12,8 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowLink from '@/components/ui/UiRowLink.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -22,6 +22,10 @@ import { formatRelativeFromNow } from '@/lib/format'
 import { placeholderRows } from '@/lib/placeholderRows'
 import { ACTIVITY_EVENT_LOOK } from '@/lib/activityEventLook'
 import { useActivityStore } from '@/stores/activity'
+import { UiWidth, UiGap } from '@/utils/ui/layout'
+import { UiRowLinkLook } from '@/utils/ui/rowLink'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t, locale } = useI18n()
 
@@ -62,25 +66,24 @@ onMounted(() => activity.fetchActivity(FEED_LIMIT))
 
     <!-- The feed; while it loads the same rows are drawn with bars where the event goes -->
     <UiCard v-else :aria-busy="activity.initialLoading ? 'true' : undefined" data-testid="notifications-list">
-      <UiLink
+      <UiRowLink
         v-for="(event, index) in rows"
         :key="event ? `${event.type}-${event.entityId}-${event.occurredAt}` : `placeholder-${index}`"
         :to="event ? activityEventLink(event) : undefined"
-        class="flex items-start gap-3 px-4 py-3.5 border-b border-border last:border-0"
-        :class="event ? 'hover:bg-surface-hover transition-colors' : ''"
+        :look="UiRowLinkLook.Divided"
         :data-testid="`notification-${index}`"
       >
         <UiSkeletonBar v-if="event === null" class="h-4 w-4 rounded-full" aria-hidden="true" />
-        <UiIcon v-else :markup="ACTIVITY_EVENT_LOOK[event.type].icon" size="sm" :class="ACTIVITY_EVENT_LOOK[event.type].color" />
-        <UiStack v-if="event" gap="xs">
+        <UiIcon v-else :markup="ACTIVITY_EVENT_LOOK[event.type].icon" :size="UiSize.Sm" :class="ACTIVITY_EVENT_LOOK[event.type].color" />
+        <UiStack v-if="event" :gap="UiGap.Xs">
           <UiText>{{ event.message }}</UiText>
-          <UiText tone="muted" size="xs">{{ formatRelativeFromNow(event.occurredAt, locale) }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ formatRelativeFromNow(event.occurredAt, locale) }}</UiText>
         </UiStack>
-        <UiStack v-else gap="xs" class="flex-1" aria-hidden="true">
-          <UiSkeletonBar class="h-3.5 w-2/3 rounded" />
-          <UiSkeletonBar class="h-3 w-24 rounded" />
+        <UiStack v-else :gap="UiGap.Xs" class="flex-1" aria-hidden="true">
+          <UiSkeletonBar :width="UiWidth.TwoThirds" class="h-3.5 rounded" />
+          <UiSkeletonBar :width="UiWidth.Xs" class="h-3 rounded" />
         </UiStack>
-      </UiLink>
+      </UiRowLink>
     </UiCard>
   </UiStack>
 </template>

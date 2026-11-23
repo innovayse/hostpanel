@@ -4,7 +4,8 @@
  *
  * Wrap the block in it and drive it with `open` instead of putting `v-if` on the block, so the leave can play:
  * the rows of a one-column grid animate from `0fr` to `1fr`, so the height is never measured. While it is closed
- * the content is not rendered, so nothing inside it takes focus or is read by a screen reader. While it closes
+ * the content is not rendered, so nothing inside it takes focus or is read by a screen reader; with `keepMounted`
+ * it stays mounted (its state survives) but is hidden and inert instead, with the same effect on focus and screen readers. While it closes
  * the content is inert, so it takes no focus during the leave, and when the focus was inside, it returns to the
  * control that was focused when the block opened (the toggle). Nothing moves under reduced motion (the shared
  * transition set removes it).
@@ -14,10 +15,14 @@ import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 
 /** Props for UiCollapse. */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** Whether the block is shown. */
   open: boolean
-}>()
+  /** Keeps the content mounted while closed, hidden and inert, instead of removing it. */
+  keepMounted?: boolean
+}>(), {
+  keepMounted: false,
+})
 
 /** The control that was focused when the block opened: the toggle focus goes back to on close. */
 let opener: HTMLElement | null = null
@@ -49,7 +54,7 @@ const onBeforeLeave = (el: Element): void => {
 
 <template>
   <UiTransition :kind="UiTransitionKind.Collapse" @before-leave="onBeforeLeave">
-    <div v-if="open" class="grid">
+    <div v-if="open || keepMounted" v-show="open" class="grid" :inert="open ? undefined : true">
       <div class="min-h-0 [.ui-collapsing>&]:overflow-hidden">
         <slot />
       </div>

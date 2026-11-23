@@ -1,9 +1,9 @@
 <template>
   <UiCard padding="sm" class="!bg-gray-50 dark:!bg-white/5" :data-testid="testid">
     <UiStack direction="row" align="center" justify="between">
-      <UiStack gap="none">
-        <UiText as="span" size="sm" weight="medium">{{ enabled ? onLabel : offLabel }}</UiText>
-        <UiText as="span" size="xs" tone="muted">{{ description }}</UiText>
+      <UiStack gap="none" class="min-w-0">
+        <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ enabled ? onLabel : offLabel }}</UiText>
+        <UiText :as="UiTextTag.Span" size="xs" tone="muted">{{ description }}</UiText>
       </UiStack>
       <UiToggle
         :model-value="enabled"
@@ -22,6 +22,7 @@
  * line of explanation and the switch. The switch only asks; the parent decides whether the API
  * accepted the change and passes the new state back in.
  */
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of DomainSwitchRow. */
 interface Props {

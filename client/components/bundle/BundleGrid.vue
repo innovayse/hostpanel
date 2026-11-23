@@ -1,43 +1,39 @@
 <template>
-  <section v-if="bundles.length > 0" class="py-16 bg-ui-page" data-testid="bundle-grid">
-    <UiContainer>
-      <div class="mb-10 text-center">
-        <UiHeading :level="2" size="section">{{ $t('bundles.title') }}</UiHeading>
-        <UiText tone="muted" class="mt-3">{{ $t('bundles.subtitle') }}</UiText>
-      </div>
+  <UiSection v-if="bundles.length > 0" padding="lg" class="bg-ui-page" data-testid="bundle-grid">
+    <UiStack gap="sm" class="mb-10 text-center">
+      <UiHeading :level="2" size="section">{{ $t('bundles.title') }}</UiHeading>
+      <UiText tone="muted">{{ $t('bundles.subtitle') }}</UiText>
+    </UiStack>
 
-      <UiBalancedGrid :count="bundles.length">
-        <UiCard
-          v-for="bundle in bundles"
-          :key="bundle.id"
-          class="flex h-full flex-col gap-4"
-          :data-testid="`bundle-card-${bundle.id}`"
-        >
-          <div class="flex flex-wrap items-start justify-between gap-2">
-            <UiHeading :level="3" size="subsection">{{ bundle.name }}</UiHeading>
-            <UiBadge v-if="discountLabel(bundle)" :data-testid="`bundle-discount-${bundle.id}`">{{ discountLabel(bundle) }}</UiBadge>
-          </div>
+    <UiBalancedGrid :count="bundles.length">
+      <UiCard
+        v-for="bundle in bundles"
+        :key="bundle.id"
+        class="flex h-full flex-col gap-4"
+        :data-testid="`bundle-card-${bundle.id}`"
+      >
+        <UiStack direction="row" wrap align="start" justify="between" gap="xs">
+          <UiHeading :level="3" size="subsection">{{ bundle.name }}</UiHeading>
+          <UiBadge v-if="discountLabel(bundle)" :data-testid="`bundle-discount-${bundle.id}`">{{ discountLabel(bundle) }}</UiBadge>
+        </UiStack>
 
-          <UiText v-if="bundle.description" size="sm" tone="muted">{{ bundle.description }}</UiText>
+        <UiText v-if="bundle.description" size="sm" tone="muted">{{ bundle.description }}</UiText>
 
-          <UiList list-style="plain" class="flex-1 space-y-1.5">
-            <UiListItem v-for="component in bundle.components" :key="component.productId" class="flex items-center gap-2 text-sm">
-              <CheckCircle :size="15" :stroke-width="2" class="flex-shrink-0 text-cyan-700 dark:text-cyan-400" />
-              {{ component.name }}
-            </UiListItem>
-            <UiListItem v-if="bundle.includesDomain && bundle.domainYears" class="flex items-center gap-2 text-sm" :data-testid="`bundle-domain-${bundle.id}`">
-              <Globe :size="15" :stroke-width="2" class="flex-shrink-0 text-cyan-700 dark:text-cyan-400" />
-              {{ $t('bundles.domainIncluded', { years: $t('domains.years', bundle.domainYears) }) }}
-            </UiListItem>
-          </UiList>
+        <UiList list-style="plain" class="flex-1 space-y-1.5">
+          <UiListItem v-for="component in bundle.components" :key="component.productId" :icon="CheckCircle" class="text-sm">
+            {{ component.name }}
+          </UiListItem>
+          <UiListItem v-if="bundle.includesDomain && bundle.domainYears" :icon="Globe" class="text-sm" :data-testid="`bundle-domain-${bundle.id}`">
+            {{ $t('bundles.domainIncluded', { years: $t('domains.years', bundle.domainYears) }) }}
+          </UiListItem>
+        </UiList>
 
-          <UiButton :to="localePath(siteBundlePath(bundle.id))" full-width :data-testid="`bundle-choose-${bundle.id}`">
-            {{ $t('bundles.choose') }}
-          </UiButton>
-        </UiCard>
-      </UiBalancedGrid>
-    </UiContainer>
-  </section>
+        <UiButton :to="localePath(siteBundlePath(bundle.id))" variant="primary" full-width icon="mdi:arrow-right" :data-testid="`bundle-choose-${bundle.id}`">
+          {{ $t('bundles.choose') }}
+        </UiButton>
+      </UiCard>
+    </UiBalancedGrid>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

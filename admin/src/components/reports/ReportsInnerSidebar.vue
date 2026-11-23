@@ -18,6 +18,8 @@ import { Icon, reportIcon } from '@/lib/icons'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { AppRoute, reportPagePath } from '@/lib/routes'
+import { UiInputType } from '@/utils/ui/input'
+import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -58,13 +60,13 @@ const activeKey = computed<string | undefined>(() => {
     <template #header>
       <UiInput
         v-model="query"
-        type="search"
-        size="sm"
+        :type="UiInputType.Search"
+        :size="UiSize.Sm"
         :placeholder="t('reports.sidebar.search')"
         data-testid="reports-nav-search"
       >
         <template #icon>
-          <UiIcon :markup="Icon.Search" size="sm" />
+          <UiIcon :markup="Icon.Search" :size="UiSize.Sm" />
         </template>
       </UiInput>
       <UiText

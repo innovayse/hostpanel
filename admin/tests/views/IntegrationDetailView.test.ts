@@ -10,6 +10,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { integrationDetail } from '../helpers/integrationFixtures'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Mounts the detail screen for a slug.
@@ -93,7 +94,7 @@ describe('IntegrationDetailView', () => {
     await wrapper.get('[data-testid="integration-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="integration-feedback"]').text()).toBe('Required field missing.')
+    expect(toastMessages()).toContain('Required field missing.')
     expect(wrapper.find('[data-testid="integration-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
   })

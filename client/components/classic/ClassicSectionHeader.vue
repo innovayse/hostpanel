@@ -1,6 +1,6 @@
 <template>
   <UiStack gap="xs" align="center" class="text-center" data-testid="classic-section-header">
-    <UiText v-if="eyebrow" as="span" tone="inherit" size="sm" weight="bold" class="uppercase tracking-widest text-classic-brand" data-testid="classic-section-header-eyebrow">
+    <UiText v-if="eyebrow" :as="UiTextTag.Span" tone="inherit" size="sm" weight="bold" class="uppercase tracking-widest text-classic-brand" data-testid="classic-section-header-eyebrow">
       {{ eyebrow }}
     </UiText>
     <UiHeading :level="2" size="bare" class="text-3xl md:text-4xl font-bold tracking-tight text-classic-ink" data-testid="classic-section-header-title">
@@ -20,6 +20,7 @@
  * is no pill, no highlighted word and no motion: the classic template reads as a plain, trusted
  * hosting site. Spacing below it is the caller's (`class="mb-12"`).
  */
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ClassicSectionHeader. */
 interface Props {

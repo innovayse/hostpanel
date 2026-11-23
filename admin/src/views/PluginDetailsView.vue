@@ -34,10 +34,9 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { AppRoute } from '@/lib/routes'
 import { PluginErrorCode, PluginProcessingStep, VersionRelation } from '@/types/plugin'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto, RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
@@ -45,6 +44,8 @@ import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
 import schema, { PLUGIN_LINKS_CARD } from '@/views/PluginDetailsView.schema'
+import { UiGap } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -62,10 +63,7 @@ const store = usePluginsStore()
 const integrations = useIntegrationsStore()
 
 /** The outcome line of the last action. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** One install the operator asked for and has not confirmed yet. */
 interface PendingInstall {
@@ -364,7 +362,6 @@ const clearLicenceField = (): void => {
  * @param key - The licence key.
  */
 const handleSaveKey = async (key: string): Promise<void> => {
-  feedback.clear()
   // The store reloads the details itself, so `hasLicenceKey` is current when this returns.
   const outcome = await store.saveLicenceKey(pluginId.value, key)
   if (outcome.ok) {
@@ -375,7 +372,6 @@ const handleSaveKey = async (key: string): Promise<void> => {
 
 /** Removes the stored licence key and shows the outcome. */
 const handleRemoveKey = async (): Promise<void> => {
-  feedback.clear()
   const outcome = await store.removeLicenceKey(pluginId.value)
   if (outcome.ok) {
     clearLicenceField()
@@ -392,7 +388,6 @@ const handleRestart = async (): Promise<void> => {
 
 // The same screen serves every plugin: a new id in the address loads that plugin.
 watch(pluginId, () => {
-  feedback.clear()
   void loadRegistry()
   void loadWidgets()
 })
@@ -409,7 +404,7 @@ onMounted(load)
 </script>
 
 <template>
-  <UiStack gap="lg" class="w-full" data-testid="plugin-details">
+  <UiStack :gap="UiGap.Lg" data-testid="plugin-details">
     <UiPageHeader
       :title="plugin?.name ?? t('pluginDetails.title')"
       :back-to="AppRoute.Plugins"
@@ -420,7 +415,6 @@ onMounted(load)
 
     <RestartBanner v-if="store.requiresRestart" :restarting="restarting" @restart="handleRestart" />
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugin-details-feedback" />
 
     <UiDetailCards v-if="showLoading" :columns="schema.columns" loading />
 
@@ -494,7 +488,7 @@ onMounted(load)
           @remove="handleRemoveKey"
         />
       </template>
-      <UiCard v-else-if="activeTab === DetailsTab.Changes && details !== null" padding="md" data-testid="plugin-details-changes">
+      <UiCard v-else-if="activeTab === DetailsTab.Changes && details !== null" :padding="UiCardPadding.Md" data-testid="plugin-details-changes">
         <PluginUpdateChanges
           :versions="details.versions"
           :installed-version="plugin.version"
@@ -508,7 +502,7 @@ onMounted(load)
       :variant="UiDialogVariant.Confirm"
       :title="t('pluginDetails.confirm.installTitle')"
       :message="t('pluginDetails.confirm.installMessage', { name: plugin?.name ?? '', version: pendingInstall?.version ?? '' })"
-      :confirm-label="t('pluginDetails.confirm.install')"
+      :confirm-label="t('shared.install')"
       :loading="busy"
       :tone="UiTone.Primary"
       :size="UiDialogSize.Lg"
@@ -533,7 +527,7 @@ onMounted(load)
         version: pendingInstall?.version ?? '',
         installed: plugin?.version ?? '',
       })"
-      :confirm-label="t('pluginDetails.confirm.downgrade')"
+      :confirm-label="t('pluginDetails.versions.action.older')"
       :loading="busy"
       :tone="UiTone.Warning"
       data-testid="plugin-details-downgrade-dialog"

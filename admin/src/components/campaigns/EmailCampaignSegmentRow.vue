@@ -18,7 +18,9 @@ import UiText from '@/components/ui/UiText.vue'
 import { daysRangeOf } from '@/lib/emailCampaigns'
 import { CampaignFilterType } from '@/types/emailcampaign'
 import type { EmailCampaignSegmentDraft } from '@/types/emailcampaign'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** A product or a client group an audience rule can pick. */
@@ -100,8 +102,8 @@ const changeDays = (value: number | null): void => {
 </script>
 
 <template>
-  <UiStack direction="row" gap="sm" align="center" wrap :data-testid="testid">
-    <div class="w-64 max-w-full">
+  <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap :data-testid="testid">
+    <UiStack :gap="UiGap.None" class="w-64 max-w-full">
       <UiSelect
         :model-value="modelValue.filterType"
         :options="typeOptions"
@@ -109,9 +111,9 @@ const changeDays = (value: number | null): void => {
         :data-testid="`${testid}-type`"
         @update:model-value="changeType"
       />
-    </div>
+    </UiStack>
 
-    <div v-if="modelValue.filterType === CampaignFilterType.Product" class="w-64 max-w-full">
+    <UiStack v-if="modelValue.filterType === CampaignFilterType.Product" :gap="UiGap.None" class="w-64 max-w-full">
       <UiSelect
         :model-value="modelValue.filterValue"
         :options="products"
@@ -120,16 +122,16 @@ const changeDays = (value: number | null): void => {
         :data-testid="`${testid}-value`"
         @update:model-value="changeValue"
       />
-    </div>
-    <div v-else-if="modelValue.filterType === CampaignFilterType.Country" class="w-64 max-w-full">
+    </UiStack>
+    <UiStack v-else-if="modelValue.filterType === CampaignFilterType.Country" :gap="UiGap.None" class="w-64 max-w-full">
       <UiCountrySelect
         :model-value="modelValue.filterValue"
         :placeholder="t('emailCampaigns.countryPlaceholder')"
         :data-testid="`${testid}-value`"
         @update:model-value="changeValue"
       />
-    </div>
-    <div v-else-if="modelValue.filterType === CampaignFilterType.ClientGroup" class="w-64 max-w-full">
+    </UiStack>
+    <UiStack v-else-if="modelValue.filterType === CampaignFilterType.ClientGroup" :gap="UiGap.None" class="w-64 max-w-full">
       <UiSelect
         :model-value="modelValue.filterValue"
         :options="groups"
@@ -138,9 +140,9 @@ const changeDays = (value: number | null): void => {
         :data-testid="`${testid}-value`"
         @update:model-value="changeValue"
       />
-    </div>
-    <UiStack v-else-if="daysRange !== null" direction="row" gap="sm" align="center">
-      <div class="w-40">
+    </UiStack>
+    <UiStack v-else-if="daysRange !== null" :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
+      <UiStack :gap="UiGap.None" class="w-40">
         <UiNumberInput
           :model-value="days"
           :min="daysRange.min"
@@ -150,17 +152,17 @@ const changeDays = (value: number | null): void => {
           :data-testid="`${testid}-value`"
           @update:model-value="changeDays"
         />
-      </div>
-      <UiText tone="muted" size="sm">{{ daysSuffix }}</UiText>
+      </UiStack>
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ daysSuffix }}</UiText>
     </UiStack>
 
     <UiButton :action="UiActionKind.Remove"
-      type="button"
+      :type="UiButtonType.Button"
       :variant="UiButtonVariant.Secondary"
       :data-testid="`${testid}-remove`"
       @click="emit('remove')"
     >
-      {{ t('emailCampaigns.removeSegment') }}
+      {{ t('shared.remove') }}
     </UiButton>
   </UiStack>
 </template>

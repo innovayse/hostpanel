@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiRichText from '~/components/ui/UiRichText.vue'
+import { UiRichTextTag } from '~/utils/ui/enums'
 import { EXTERNAL_LINK_REL } from '~/utils/ui/richText'
 
 /**
@@ -14,7 +15,7 @@ import { EXTERNAL_LINK_REL } from '~/utils/ui/richText'
  * @param as Wrapper tag.
  * @returns The mounted wrapper.
  */
-const render = (html: string, as?: string) => mountWithKit(UiRichText, { props: as ? { html, as } : { html } })
+const render = (html: string, as?: UiRichTextTag) => mountWithKit(UiRichText, { props: as ? { html, as } : { html } })
 
 describe('UiRichText', () => {
   it('renders into a div by default and an empty body as an empty wrapper', () => {
@@ -26,7 +27,7 @@ describe('UiRichText', () => {
   })
 
   it('renders into the requested tag', () => {
-    expect(render('hi', 'article').element.tagName).toBe('ARTICLE')
+    expect(render('hi', UiRichTextTag.Article).element.tagName).toBe('ARTICLE')
   })
 
   it('renders paragraphs, emphasis and lists as elements with classes', () => {

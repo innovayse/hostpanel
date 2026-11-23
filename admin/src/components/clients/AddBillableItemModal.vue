@@ -3,11 +3,12 @@
  * Modal for adding one billable item to a client: a one time or recurring charge with its
  * description, amount, currency and the day it is invoiced automatically (the invoice day of a one
  * time item, the next due date of a recurring one). A recurring item also takes how often it repeats.
- * The form sends exactly the API's create command; a refusal shows the API's sentence above the form
- * and each field's message under its field. Every opening starts without the last refusal's messages.
+ * The form sends exactly the API's create command; a refusal toasts the API's sentence
+ * and shows each field's message under its field. Every opening starts without the last refusal's messages.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useClientBillableItemsStore } from '@/stores/clientBillableItems'
 import { useClientsStore } from '@/stores/clients'
 import { BILLABLE_ITEM_TYPE_OPTIONS, RECURRING_PERIOD_OPTIONS } from '@/lib/constants'
@@ -25,13 +26,11 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
-import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translator for the modal's labels. */
@@ -53,6 +52,9 @@ const emit = defineEmits<{
 
 /** Billable items store, the only caller of the billable item endpoints. */
 const store = useClientBillableItemsStore()
+
+/** Toasts the API's sentence of a refused add. */
+const feedback = useOutcomeToast()
 
 /** Clients store: the open client's billing currency and the currencies the operator enabled. */
 const clientsStore = useClientsStore()
@@ -134,6 +136,8 @@ const handleSave = async (): Promise<void> => {
   saving.value = false
   if (saved) {
     emit('saved')
+  } else {
+    feedback.show(store.saveError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -151,8 +155,6 @@ onMounted(async () => {
 <template>
   <UiDialog :title="t('shared.addBillableItem')" :size="UiDialogSize.Lg" @close="emit('close')">
     <UiStack>
-      <UiStatusMessage :message="store.saveError" :tone="UiTone.Danger" data-testid="clients-add-billable-item-error" />
-
       <UiForm stacked @submit="handleSave">
         <UiField
           :label="t('shared.description')"
@@ -172,7 +174,7 @@ onMounted(async () => {
           </template>
         </UiField>
 
-        <UiGrid :columns="2">
+        <UiGrid :columns="2" container>
           <UiField
             :label="t('shared.amount')"
             :error="store.fieldErrors.amount"
@@ -194,7 +196,7 @@ onMounted(async () => {
           </UiField>
         </UiGrid>
 
-        <UiGrid :columns="2">
+        <UiGrid :columns="2" container>
           <UiField :label="t('shared.type')" :error="store.fieldErrors.type" error-testid="clients-add-billable-item-type-error">
             <UiSelect
               v-model="type"

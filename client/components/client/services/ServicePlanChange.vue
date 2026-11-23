@@ -6,8 +6,8 @@
       <UiAlert variant="success" data-testid="service-plan-change-success">
         {{ $t(RESULT_KEYS[result.status], { amount: money(result.prorationAmount, result.currencyCode) }) }}
       </UiAlert>
-      <UiLink v-if="result.invoiceId !== null" :to="clientInvoicePayPath(result.invoiceId)" testid="service-plan-change-pay">
-        {{ $t('client.services.planChangePayInvoice') }}
+      <UiLink v-if="result.invoiceId !== null" tone="primary" :to="clientInvoicePayPath(result.invoiceId)" testid="service-plan-change-pay">
+        {{ $t('common.pay') }}
       </UiLink>
     </UiStack>
 
@@ -39,12 +39,13 @@
 
         <template #actions>
           <UiButton
+            variant="primary"
             type="submit"
             :loading="submitting"
             :disabled="selectedProductId === null"
             data-testid="service-plan-change-submit"
           >
-            {{ $t('client.services.planChangeBtn') }}
+            {{ $t('client.services.tabPlanChange') }}
           </UiButton>
         </template>
       </UiForm>

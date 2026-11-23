@@ -12,7 +12,7 @@
       <template #action>
         <UiIconButton
           :icon="streaming ? Square : ArrowUp"
-          :label="streaming ? $t('plugins.chatStop') : $t('plugins.chatSend')"
+          :label="streaming ? $t('plugins.chatStop') : $t('common.send')"
           :variant="UiIconButtonVariant.Primary"
           :disabled="!streaming && !canSend"
           :testid="streaming ? 'plugin-chat-stop' : 'plugin-chat-send'"
@@ -20,7 +20,7 @@
         />
       </template>
     </UiChatInput>
-    <UiText as="p" :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" class="hidden sm:block" data-testid="plugin-chat-hint">{{ $t('plugins.chatHint') }}</UiText>
+    <UiText :as="UiTextTag.P" :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" class="hidden sm:block" data-testid="plugin-chat-hint">{{ $t('plugins.chatHint') }}</UiText>
   </UiStack>
 </template>
 
@@ -35,7 +35,7 @@
  * field, which the chat does after every send.
  */
 import { ArrowUp, Square } from 'lucide-vue-next'
-import { UiGap, UiIconButtonVariant, UiTextSize, UiTextTone } from '~/utils/ui/enums'
+import { UiGap, UiIconButtonVariant, UiTextSize, UiTextTag, UiTextTone } from '~/utils/ui/enums'
 
 /** Props of PluginChatComposer. */
 interface Props {

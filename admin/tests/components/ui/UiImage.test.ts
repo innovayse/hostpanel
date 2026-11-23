@@ -42,4 +42,14 @@ describe('UiImage', () => {
     expect(mount(UiImage, { props: { src: '/a.png', rounded: 'md' } }).classes()).toContain('rounded-control')
     expect(mount(UiImage, { props: { src: '/a.png', rounded: 'lg' } }).classes()).toContain('rounded-card')
   })
+
+  it('maps the size steps to a framed thumbnail box and leaves the box to the caller by default', () => {
+    expect(mount(UiImage, { props: { src: '/a.png', size: 'thumb' } }).classes()).toEqual(expect.arrayContaining(['h-10', 'w-10', 'border']))
+    expect(mount(UiImage, { props: { src: '/a.png', size: 'thumbWide' } }).classes()).toEqual(expect.arrayContaining(['h-10', 'w-16', 'border']))
+    expect(mount(UiImage, { props: { src: '/a.png' } }).classes()).not.toContain('h-10')
+  })
+
+  it('gives the fallback box the same thumbnail size', () => {
+    expect(mount(UiImage, { props: { fallback: true, size: 'thumbWide' } }).classes()).toEqual(expect.arrayContaining(['h-10', 'w-16', 'border-border']))
+  })
 })

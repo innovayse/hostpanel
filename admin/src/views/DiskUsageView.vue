@@ -24,9 +24,12 @@ import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import { DiskUsageFailureReason } from '@/types/reportdiskusage'
 import type { ReportDiskUsage, ReportDiskUsageFailure, ReportDiskUsageServer } from '@/types/reportdiskusage'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import schema from '@/views/DiskUsageView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 const { t } = useI18n()
 
@@ -93,37 +96,37 @@ const updateNow = async (): Promise<void> => {
 <template>
   <ReportPage :retry="load" :schema="schema">
     <template #alert>
-      <UiAlert v-if="data && failures.length > 0" variant="warning" data-testid="report-failures">
-        <UiText size="sm">
+      <UiAlert v-if="data && failures.length > 0" :variant="UiTone.Warning" data-testid="report-failures">
+        <UiText :size="UiTextSize.Sm">
           {{ t('reports.diskUsage.failuresTitle') }}
         </UiText>
-        <UiText v-for="failure in failures" :key="failure.serverName" size="sm" data-testid="report-failure">
+        <UiText v-for="failure in failures" :key="failure.serverName" :size="UiTextSize.Sm" data-testid="report-failure">
           {{ failure.serverName }}: {{ t(FAILURE_TEXT_KEYS[failure.reason]) }}
         </UiText>
       </UiAlert>
     </template>
 
     <template v-if="data">
-      <UiStack v-if="servers.length > 0" direction="row" justify="between" align="center">
-        <UiText v-if="lastUpdated" tone="muted" size="sm" data-testid="report-last-updated">
+      <UiStack v-if="servers.length > 0" :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
+        <UiText v-if="lastUpdated" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="report-last-updated">
           {{ t('reports.diskUsage.diskSpaceUsageStatsLast', { value: lastUpdated }) }}
         </UiText>
-        <UiButton :action="UiActionKind.Refresh" variant="secondary" :loading="store.updating" data-testid="report-update-now" @click="updateNow">
-          {{ t('reports.diskUsage.updateNow') }}
+        <UiButton :action="UiActionKind.Refresh" :variant="UiButtonVariant.Secondary" :loading="store.updating" data-testid="report-update-now" @click="updateNow">
+          {{ t('shared.refresh') }}
         </UiButton>
       </UiStack>
 
       <ReportTable v-else-if="store.updating" :columns="columns" row-key="domain" />
       <ReportEmptyState v-else :title="t('reports.diskUsage.noData')" :hint="t('reports.diskUsage.noDataHint')">
         <template #actions>
-          <UiButton :action="UiActionKind.Refresh" variant="secondary" data-testid="report-update-now" @click="updateNow">
-            {{ t('reports.diskUsage.updateNow') }}
+          <UiButton :action="UiActionKind.Refresh" :variant="UiButtonVariant.Secondary" data-testid="report-update-now" @click="updateNow">
+            {{ t('shared.refresh') }}
           </UiButton>
         </template>
       </ReportEmptyState>
 
-      <UiStack v-for="server in servers" :key="server.serverName" gap="sm">
-        <UiHeading :level="2" variant="section">
+      <UiStack v-for="server in servers" :key="server.serverName" :gap="UiGap.Sm">
+        <UiHeading :level="2" :variant="UiHeadingVariant.Section">
           {{ server.serverName }}
         </UiHeading>
         <ReportTable

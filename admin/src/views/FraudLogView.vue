@@ -11,17 +11,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -38,6 +35,8 @@ import { useFraudLogStore } from '@/stores/fraudLog'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import type { FraudLogFilters } from '@/types/fraud'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -174,57 +173,50 @@ const initialLoading = computed<boolean>(() => store.loading && store.entries.le
       @retry="load"
     />
 
-    <UiResultCount :loading="initialLoading" data-testid="fraud-log-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiCard clip>
-      <UiTable
-        :empty-text="narrowed ? t('fraud.log.noMatches') : t('shared.noRecordsFound')"
-        :loading="initialLoading"
-        :empty="!store.loading && store.entries.length === 0"
-        data-testid="fraud-log-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable :data-testid="`fraud-log-row-${entry.id}`">
-            <UiTableCell muted>{{ formatDateTime(entry.createdAt) }}</UiTableCell>
-            <UiTableCell>{{ statusLabel(FRAUD_CHECK_KIND_OPTIONS, entry.kind) }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="fraudDecisionTone(entry.decision)">{{ statusLabel(FRAUD_DECISION_OPTIONS, entry.decision) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell numeric>{{ entry.score }}</UiTableCell>
-            <UiTableCell>
-              <UiStack v-if="entry.reasons.length > 0" direction="row" wrap gap="xs">
-                <UiBadge v-for="code in entry.reasons" :key="code" small>{{ statusLabel(FRAUD_REASON_OPTIONS, code) }}</UiBadge>
-              </UiStack>
-              <UiText v-else tone="muted" size="sm">{{ t('fraud.log.noReasons') }}</UiText>
-            </UiTableCell>
-            <UiTableCell>
-              <UiLink v-if="entry.clientId !== null" :to="clientPath(entry.clientId)" :variant="UiButtonVariant.Link">
-                #{{ entry.clientId }}
-              </UiLink>
-              <template v-else>{{ t('shared.notAvailable') }}</template>
-            </UiTableCell>
-            <UiTableCell>
-              <UiLink v-if="entry.orderId !== null" :to="orderPath(entry.orderId)" :variant="UiButtonVariant.Link">
-                #{{ entry.orderId }}
-              </UiLink>
-              <template v-else>{{ t('shared.notAvailable') }}</template>
-            </UiTableCell>
-            <UiTableCell class="font-mono">{{ entry.ipAddress ?? t('shared.notAvailable') }}</UiTableCell>
-            <UiTableCell>{{ entry.email ?? t('shared.notAvailable') }}</UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      :empty-text="narrowed ? t('fraud.log.noMatches') : t('shared.noRecordsFound')"
+      :loading="initialLoading"
+      :empty="!store.loading && store.entries.length === 0"
       :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
-      testid="fraud-log-pagination"
+      pagination-testid="fraud-log-pagination"
+      data-testid="fraud-log-table"
       @update:page="setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable :data-testid="`fraud-log-row-${entry.id}`">
+          <UiTableCell muted>{{ formatDateTime(entry.createdAt) }}</UiTableCell>
+          <UiTableCell>{{ statusLabel(FRAUD_CHECK_KIND_OPTIONS, entry.kind) }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="fraudDecisionTone(entry.decision)">{{ statusLabel(FRAUD_DECISION_OPTIONS, entry.decision) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell numeric>{{ entry.score }}</UiTableCell>
+          <UiTableCell>
+            <UiStack v-if="entry.reasons.length > 0" :direction="UiDirection.Row" wrap :gap="UiGap.Xs">
+              <UiBadge v-for="code in entry.reasons" :key="code" small>{{ statusLabel(FRAUD_REASON_OPTIONS, code) }}</UiBadge>
+            </UiStack>
+            <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('fraud.log.noReasons') }}</UiText>
+          </UiTableCell>
+          <UiTableCell>
+            <UiLink v-if="entry.clientId !== null" :to="clientPath(entry.clientId)" :variant="UiButtonVariant.Link">
+              #{{ entry.clientId }}
+            </UiLink>
+            <template v-else>{{ t('shared.notAvailable') }}</template>
+          </UiTableCell>
+          <UiTableCell>
+            <UiLink v-if="entry.orderId !== null" :to="orderPath(entry.orderId)" :variant="UiButtonVariant.Link">
+              #{{ entry.orderId }}
+            </UiLink>
+            <template v-else>{{ t('shared.notAvailable') }}</template>
+          </UiTableCell>
+          <UiTableCell>
+            <UiText class="font-mono">{{ entry.ipAddress ?? t('shared.notAvailable') }}</UiText>
+          </UiTableCell>
+          <UiTableCell>{{ entry.email ?? t('shared.notAvailable') }}</UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

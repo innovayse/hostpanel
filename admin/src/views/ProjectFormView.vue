@@ -28,6 +28,10 @@ import { useProjectsStore } from '@/stores/projects'
 import type { Project, ProjectPayload, ProjectTranslation } from '@/types/project'
 import { AppRoute } from '@/lib/routes'
 import schema from '@/views/ProjectFormView.schema'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 
 const { t } = useI18n()
 
@@ -163,7 +167,7 @@ const setImage = (index: number, url: string): void => {
   <StorefrontFormShell
     testid="project"
     :title="flow.isEditMode.value ? t('storefront.projects.edit') : t('storefront.projects.create')"
-    :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.projects.create')"
+    :save-label="flow.isEditMode.value ? t('shared.save') : t('storefront.projects.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"
     :dirty="flow.isDirty.value"
@@ -199,7 +203,7 @@ const setImage = (index: number, url: string): void => {
 
       <template #field-images>
         <UiStack>
-          <UiStack v-for="(slot, index) in form.images" :key="slot.id" direction="row" align="start" gap="sm">
+          <UiStack v-for="(slot, index) in form.images" :key="slot.id" :direction="UiDirection.Row" :align="UiAlignItems.Start" :gap="UiGap.Sm">
             <StorefrontImageField
               class="flex-1"
               :model-value="slot.url"
@@ -211,16 +215,16 @@ const setImage = (index: number, url: string): void => {
               @update:model-value="setImage(index, $event)"
             />
             <UiIconButton
-              :label="t('storefront.projects.removeImage')"
-              size="sm"
+              :label="t('storefront.form.removeImage')"
+              :variant="UiButtonVariant.Ghost"
+              :size="UiSize.Sm"
               :data-testid="`project-form-image-delete-${index}`"
               @click="removeImage(index)"
             >
-              <UiIcon :markup="Icon.Trash" size="sm" />
+              <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
             </UiIconButton>
           </UiStack>
-          <UiButton type="button" variant="link" size="sm" class="self-start" data-testid="project-form-image-add" @click="addImage">
-            <UiIcon :markup="Icon.Add" size="sm" />
+          <UiButton type="button" :variant="UiButtonVariant.Link" :action="UiActionKind.Add" :size="UiSize.Sm" class="self-start" data-testid="project-form-image-add" @click="addImage">
             {{ t('storefront.projects.addImage') }}
           </UiButton>
         </UiStack>

@@ -6,6 +6,8 @@
  */
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiAlignItems, UiDirection, UiJustify } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for OrderFact. */
 defineProps<{
@@ -15,11 +17,11 @@ defineProps<{
 </script>
 
 <template>
-  <UiStack direction="row" justify="between" align="center">
-    <UiText tone="muted" size="sm">
+  <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
       {{ label }}
     </UiText>
-    <UiText tone="secondary" size="md">
+    <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
       <slot />
     </UiText>
   </UiStack>

@@ -21,7 +21,6 @@
   "staged": "Versión {version} preparada; se aplica tras reiniciar",
   "updateAvailable": "Actualización disponible: {version}",
   "updateTo": "Actualizar a {version}",
-  "uninstall": "Desinstalar",
   "links": {
     "heading": "Enlaces",
     "documentation": "Documentación",
@@ -66,6 +65,7 @@
     "hostMin": "Versión del host {min} o posterior",
     "hostMax": "Versión del host {max} o anterior",
     "hostAny": "Se ejecuta en cualquier versión del host",
+    "sdk": "Creado con el SDK {version}",
     "reason": "Motivo: {reason}",
     "noReason": {
       "Deprecated": "El editor marcó esta versión como obsoleta.",
@@ -75,8 +75,7 @@
     "changelog": "Notas de la versión",
     "noChangelog": "Sin notas de la versión.",
     "permissions": "Permisos",
-    "noPermissions": "No solicita ningún permiso.",
-    "sdk": "Creado con el SDK {version}"
+    "noPermissions": "No solicita ningún permiso."
   },
   "overview": {
     "details": "Detalles",
@@ -133,10 +132,8 @@
   "confirm": {
     "installTitle": "¿Instalar esta versión?",
     "installMessage": "¿Instalar la versión {version} de {name}? El cambio se aplica tras reiniciar el servidor.",
-    "install": "Instalar",
     "downgradeTitle": "¿Instalar una versión anterior?",
-    "downgradeMessage": "La versión {version} de {name} es anterior a la instalada {installed}. Una versión anterior puede carecer de correcciones y no leer los datos que escribió la más reciente. El cambio se aplica tras reiniciar el servidor. ¿Instalarla de todos modos?",
-    "downgrade": "Instalar versión anterior"
+    "downgradeMessage": "La versión {version} de {name} es anterior a la instalada {installed}. Una versión anterior puede carecer de correcciones y no leer los datos que escribió la más reciente. El cambio se aplica tras reiniciar el servidor. ¿Instalarla de todos modos?"
   },
   "feedback": {
     "licenceSaved": "La clave de licencia se ha guardado.",

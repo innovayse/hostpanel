@@ -108,6 +108,7 @@ describe('invoice list page', () => {
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.invoices.empty')
+    expect(wrapper.find('[data-testid="invoices-table"]').findAll('thead th')).toHaveLength(6)
   })
 
   it('shows the failure, not the empty state, when the read failed', async () => {

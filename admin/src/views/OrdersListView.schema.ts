@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The orders list. */
 const schema: ListSkeletonSchema = {
@@ -17,14 +17,14 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'order', label: 'orders.ordersList.order', cardRole: UiCardRole.Title, size: UiColumnSize.Compact },
+      { key: 'order', label: 'orders.ordersList.order', cardRole: UiCardRole.Title, kind: UiColumnKind.Id },
       { key: 'client', label: 'shared.client', size: UiColumnSize.Grow, cardRole: UiCardRole.Subtitle },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
       { key: 'ipAddress', label: 'shared.ipAddress' },
       { key: 'paymentMethod', label: 'shared.paymentMethod' },
       { key: 'total', label: 'shared.total', numeric: true, size: UiColumnSize.Compact },
       { key: 'items', label: 'orders.ordersList.items', numeric: true, size: UiColumnSize.Compact },
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

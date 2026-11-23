@@ -61,4 +61,12 @@ describe('UiFilterChips', () => {
     expect(button.classes()).toEqual(expect.arrayContaining(['w-5', 'h-5', 'rounded-full']))
     expect(button.classes()).not.toContain('w-8')
   })
+
+  it('reaches a 44px hit area around the 20px remove button on a phone only', () => {
+    const wrapper = mountChips(chips)
+    const remove = wrapper.get('[data-testid="filter-chip-remove-status"]')
+
+    expect(remove.classes()).toEqual(expect.arrayContaining(['relative', 'before:absolute', 'before:-inset-3', 'sm:before:hidden']))
+    expect(wrapper.get('[data-testid="filter-chips-clear"]').classes()).toContain('max-sm:min-h-11')
+  })
 })

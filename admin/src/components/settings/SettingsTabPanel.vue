@@ -14,6 +14,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { provideSettingsDraftRegistry } from '@/composables/useSettingsDraftRegistry'
 import type { SettingSave } from '@/types/setting'
 import { UI_FIELD_LOADING } from '@/utils/ui/injection'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Props for SettingsTabPanel. */
 const props = withDefaults(defineProps<{
@@ -42,14 +43,13 @@ const unsavedLabel = computed<string>(() =>
 </script>
 
 <template>
-  <UiStack gap="none" class="flex-1" data-testid="settings-tab-panel">
+  <UiStack :gap="UiGap.None" class="flex-1" data-testid="settings-tab-panel">
     <slot />
     <!-- Pinned to the bottom of the content column: unsaved count, save all, discard all. -->
     <SettingsFormFooter
       v-if="!props.loading"
       class="mt-auto"
-      :save-label="t('settings.saveBar.save')"
-      :cancel-label="t('settings.saveBar.discard')"
+      :save-label="t('shared.save')"
       :saving="registry.saving.value"
       :dirty="registry.dirtyCount.value > 0"
       :status="unsavedLabel"

@@ -9,9 +9,8 @@
     "empty": "No hay anuncios por el momento.",
     "signInRequired": "Inicie sesión para leer los anuncios",
     "signInRequiredDesc": "Los anuncios se muestran a los clientes que han iniciado sesión.",
-    "signIn": "Iniciar sesión",
     "errorDesc": "Inténtelo de nuevo más tarde.",
-    "backToList": "Volver a Anuncios",
+    "backToList": "Volver a los anuncios",
     "published": "Publicado"
   }
 }

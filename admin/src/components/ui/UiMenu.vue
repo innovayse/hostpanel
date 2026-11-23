@@ -163,7 +163,7 @@ watch(open, async (val) => {
       @keydown="onKeydown"
     >
       <slot>
-        <span class="inline-flex size-8 items-center justify-center rounded-control text-text-muted transition-colors group-hover:bg-surface-hover group-hover:text-text-primary">
+        <span class="inline-flex size-8 items-center justify-center rounded-control max-sm:size-11 text-text-muted transition-colors group-hover:bg-surface-hover group-hover:text-text-primary">
           <UiIcon :markup="Icon.MoreHorizontal" size="sm" />
         </span>
       </slot>

@@ -55,7 +55,7 @@ interface PaletteAction {
 /** The create actions, in display order; each opens a route that exists in the router. */
 const PALETTE_ACTIONS: readonly PaletteAction[] = [
   { to: AppRoute.ClientsAdd, labelKey: 'commandPalette.actions.newClient' },
-  { to: AppRoute.SupportTicketsNew, labelKey: 'commandPalette.actions.newTicket' },
+  { to: AppRoute.SupportTicketsNew, labelKey: 'nav.supportChildren.newTicket' },
   { to: AppRoute.BillingQuotesAdd, labelKey: 'commandPalette.actions.newQuote' },
   { to: AppRoute.BillingAddTransaction, labelKey: 'commandPalette.actions.addTransaction' },
   { to: AppRoute.BillingBillableItemsAdd, labelKey: 'commandPalette.actions.newBillableItem' },

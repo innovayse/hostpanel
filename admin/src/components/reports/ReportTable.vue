@@ -10,21 +10,21 @@
  * state when every part of the report is empty, otherwise the table is replaced by that same
  * state, titled with the report's empty sentence (the page's, from its schema; see `lib/reportEmpty`), in its place. With no columns (no field
  * chosen) the same compact state asks to choose fields, never a bare bar of header or rows without
- * cells. The card is glass; the table scrolls inside it past a height cap with its header stuck, and
+ * cells. The table is drawn by `UiDataTable` (the glass card, the table and, for a paged report, the pager in the card's footer); it scrolls inside the card with its header stuck, and
  * sideways on a narrow screen.
  */
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import ReportEmptyState from '@/components/reports/ReportEmptyState.vue'
 import ReportStatusBadge from '@/components/reports/ReportStatusBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableFoot from '@/components/ui/UiTableFoot.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiText from '@/components/ui/UiText.vue'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatCurrencyCode, formatReportAmount } from '@/lib/money'
 import { useReportEmptyText, useReportPartEmpty } from '@/lib/reportEmpty'
@@ -32,8 +32,9 @@ import { NOT_LOADING, REPORT_LOADING } from '@/lib/reportLoading'
 import { valueAtPath } from '@/lib/valueAtPath'
 import { isNumericColumn, ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
-import { UiTableDensity } from '@/utils/ui/injection'
+import type { ReportPagination } from '@/types/reporttabledata'
 import { UiCardRole } from '@/utils/ui/table'
+import { UiTextTag } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -57,6 +58,8 @@ const props = withDefaults(defineProps<{
   formatMoney?: (amount: number) => string
   /** Whether the rows come in groups opened by heading rows, so the loading placeholder opens with one too. */
   grouped?: boolean
+  /** The pager in the card's footer; none when the report is not paged. */
+  pagination?: ReportPagination
   /** Prefix of the `data-testid`s (`<prefix>`, `<prefix>-row`). */
   testid?: string
 }>(), {
@@ -79,8 +82,14 @@ const props = withDefaults(defineProps<{
    */
   formatMoney: (amount: number) => formatReportAmount(amount),
   grouped: false,
+  pagination: undefined,
   testid: 'report-table',
 })
+
+defineEmits<{
+  /** The operator chose another page of the table. */
+  page: [page: number]
+}>()
 
 /** Slots a screen may fill. */
 defineSlots<{
@@ -200,40 +209,48 @@ const totalText = (column: ReportColumn, position: number): string => {
   <template v-if="collapsed" />
   <ReportEmptyState v-else-if="noColumns" :title="t('shared.chooseFieldsToInclude')" hint="" :testid="`${testid}-empty`" />
   <ReportEmptyState v-else-if="noData" :title="emptySentence" :testid="`${testid}-empty`" />
-  <UiCard v-else clip :data-testid="testid">
-    <UiTable :density="UiTableDensity.Comfortable" :loading="loading" :skeleton-group="grouped">
-      <UiTableHead>
-        <UiTableRow>
-          <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align" :size="column.size" :numeric="isNumericColumn(column)" :card-role="column.format === ReportCellFormat.Status ? UiCardRole.Badge : undefined">
-            <span :title="column.hint">{{ column.label }}</span>
-          </UiTableHeader>
-        </UiTableRow>
-      </UiTableHead>
-      <UiTableBody divided>
-        <slot name="body" :columns="columns">
-          <UiTableRow v-for="row in rows" :key="keyOf(row)" hoverable :data-testid="`${testid}-row`">
-            <UiTableCell v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
-              <slot :name="`cell-${column.key}`" :row="row" :value="valueOf(row, column.key)">
-                <ReportStatusBadge
-                  v-if="column.format === ReportCellFormat.Status && valueOf(row, column.key)"
-                  :status="String(valueOf(row, column.key))"
-                />
-                <template v-else>
-                  {{ cellText(row, column) }}
-                </template>
-              </slot>
-            </UiTableCell>
-          </UiTableRow>
-        </slot>
-      </UiTableBody>
-      <UiTableFoot v-if="totals && !loading">
-        <UiTableRow data-testid="report-totals">
-          <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)" class="text-text-primary">
-            {{ totalText(column, position) }}
+  <UiDataTable
+    v-else
+    :loading="loading"
+    :skeleton-group="grouped"
+    :page="pagination?.page"
+    :total="pagination?.total"
+    :page-size="pagination?.pageSize"
+    :pagination-testid="pagination?.testid"
+    :data-testid="testid"
+    @update:page="$emit('page', $event)"
+  >
+    <UiTableHead>
+      <UiTableRow>
+        <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align" :size="column.size" :kind="column.kind" :numeric="isNumericColumn(column)" :card-role="column.format === ReportCellFormat.Status ? UiCardRole.Badge : undefined">
+          <UiText :as="UiTextTag.Span" :title="column.hint">{{ column.label }}</UiText>
+        </UiTableHeader>
+      </UiTableRow>
+    </UiTableHead>
+    <UiTableBody>
+      <slot name="body" :columns="columns">
+        <UiTableRow v-for="row in rows" :key="keyOf(row)" hoverable :data-testid="`${testid}-row`">
+          <UiTableCell v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
+            <slot :name="`cell-${column.key}`" :row="row" :value="valueOf(row, column.key)">
+              <ReportStatusBadge
+                v-if="column.format === ReportCellFormat.Status && valueOf(row, column.key)"
+                :status="String(valueOf(row, column.key))"
+              />
+              <template v-else>
+                {{ cellText(row, column) }}
+              </template>
+            </slot>
           </UiTableCell>
         </UiTableRow>
-      </UiTableFoot>
-      <slot name="footer" />
-    </UiTable>
-  </UiCard>
+      </slot>
+    </UiTableBody>
+    <UiTableFoot v-if="totals && !loading">
+      <UiTableRow data-testid="report-totals">
+        <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)" strong>
+          {{ totalText(column, position) }}
+        </UiTableCell>
+      </UiTableRow>
+    </UiTableFoot>
+    <slot name="footer" />
+  </UiDataTable>
 </template>

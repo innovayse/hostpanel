@@ -7,7 +7,6 @@
     "creditRemoved": "Guthaben von der Rechnung entfernt.",
     "confirmRemoveCreditTitle": "Guthaben entfernen?",
     "confirmRemoveCreditMessage": "{amount} Guthaben von Rechnung #{id} entfernen?",
-    "removeCredit": "Guthaben entfernen",
     "topUpNoCredit": "Dies ist eine Rechnung für eine Guthabenaufladung. Darauf kann kein Guthaben angewendet werden: Sie ist vollständig zu bezahlen, und ihr Betrag wird dem Guthaben des Kunden gutgeschrieben, sobald sie bezahlt ist."
   },
   "invoiceNotesTab": {
@@ -21,7 +20,6 @@
   "invoicePaymentTab": {
     "publishTheInvoiceBeforeAdding": "Veröffentlichen Sie die Rechnung, bevor Sie Zahlungen hinzufügen.",
     "invoiceIsCancelledPleaseMark": "Die Rechnung ist storniert: Setzen Sie sie zuerst auf „Unbezahlt“, um eine Zahlung zu erfassen.",
-    "addPayment": "Zahlung hinzufügen",
     "gatewayReference": "Gateway-Referenz",
     "paymentAdded": "Zahlung erfasst."
   },
@@ -50,11 +48,10 @@
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "Dies ist ein Rechnungsentwurf. Der Kunde kann diese Rechnung erst sehen oder darauf zugreifen, wenn sie veröffentlicht ist.",
-    "viewInvoices": "(Rechnungen anzeigen)",
+    "viewInvoices": "Rechnungen anzeigen",
     "invoiceAmount": "Rechnungsbetrag",
     "paymentMethod": "Zahlungsart:",
     "publish": "Veröffentlichen",
-    "markPaid": "Als bezahlt markieren",
     "published": "Rechnung veröffentlicht.",
     "cancelled": "Rechnung storniert.",
     "markedPaid": "Rechnung als bezahlt markiert.",
@@ -74,7 +71,6 @@
     "createQuote": "Angebot erstellen",
     "createANewQuoteFor": "Neues Angebot für einen Kunden erstellen",
     "generalInformation": "Allgemeine Informationen",
-    "deleteRow": "Zeile löschen",
     "proposalText": "Angebotstext",
     "displayedAtTheTopOf": "(Wird oben im Angebot angezeigt)",
     "enterProposalText": "Angebotstext eingeben",
@@ -91,7 +87,7 @@
     "dead": "Abgeschrieben"
   },
   "addTransaction": {
-    "addTransaction": "Transaktion hinzufügen",
+    "createTransaction": "Transaktion erstellen",
     "recordANewPaymentTransaction": "Neue Zahlungstransaktion erfassen",
     "relatedClient": "Zugehöriger Kunde",
     "whatIsThisTransactionFor": "Wofür ist diese Transaktion?",
@@ -105,16 +101,15 @@
     "billableItems": "Abrechenbare Positionen",
     "manageUninvoicedAndRecurringCharges": "Nicht abgerechnete und wiederkehrende Gebühren verwalten",
     "searchItems": "Nach Beschreibung oder ID suchen",
-    "lengthRecordsFound": "{length} Datensätze gefunden",
     "invoiced": "Abgerechnet",
     "typeOneTime": "Einmalig",
     "typeRecurring": "Wiederkehrend",
     "noItemsFound": "Keine Positionen gefunden.",
     "noItemsMatchYourFilters": "Keine abrechenbaren Positionen entsprechen Ihren Filtern.",
-    "clearFilters": "Filter zurücksetzen",
     "deleteItems": "Abrechenbare Positionen löschen",
     "deleteItemsMessage": "{count} ausgewählte abrechenbare Position löschen? Diese Aktion kann nicht rückgängig gemacht werden. | {count} ausgewählte abrechenbare Positionen löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "itemsDeleted": "Abrechenbare Positionen gelöscht."
+    "itemsDeleted": "Abrechenbare Positionen gelöscht.",
+    "create": "Abrechenbare Position erstellen"
   },
   "disputes": {
     "listDisputes": "Streitfälle auflisten",
@@ -124,8 +119,7 @@
   },
   "editTransaction": {
     "editTransaction": "Transaktion bearbeiten",
-    "updatePaymentTransactionDetails": "Details der Zahlungstransaktion aktualisieren",
-    "updateTransaction": "Transaktion aktualisieren"
+    "updatePaymentTransactionDetails": "Details der Zahlungstransaktion aktualisieren"
   },
   "gatewayLog": {
     "gatewayTransactionLog": "Gateway-Transaktionsprotokoll",
@@ -175,7 +169,6 @@
     "reference": "Referenz",
     "requested": "Gewählt",
     "empty": "Keine Banküberweisungen ausstehend.",
-    "confirm": "Bestätigen",
     "reject": "Ablehnen",
     "confirmTitle": "Banküberweisung bestätigen",
     "confirmMessage": "Bestätigen Sie, dass {amount} für Rechnung #{id} (Referenz {reference}) eingegangen ist? Die Rechnung wird als bezahlt markiert.",
@@ -218,17 +211,13 @@
     "tabCredit": "Guthaben",
     "tabRefund": "Erstattung",
     "tabCreditNotes": "Gutschriften",
-    "tabFulfilment": "Erfüllung",
-    "downloadPdf": "PDF herunterladen"
+    "tabFulfilment": "Erfüllung"
   },
   "invoicesList": {
     "manageBillingInvoices": "Rechnungen verwalten",
     "due": "Fällig",
     "summaryHint": "{count} Rechnung auf dieser Seite | {count} Rechnungen auf dieser Seite",
     "dateRefunded": "Erstattungsdatum",
-    "totalcountRecordsFoundShowingValue": "{totalCount} Datensätze gefunden, angezeigt: {value} bis {value2}",
-    "markPaid": "Als bezahlt markieren",
-    "markUnpaid": "Als unbezahlt markieren",
     "duplicateInvoice": "Rechnung duplizieren",
     "collections": "Inkasso",
     "paymentPending": "Zahlung ausstehend",
@@ -240,11 +229,7 @@
     "bulkActionDone": "Für die ausgewählten Rechnungen erledigt.",
     "invoiceDeleted": "Rechnung gelöscht.",
     "cancelInvoices": "Rechnungen stornieren",
-    "cancelInvoicesMessage": "{count} ausgewählte Rechnung als storniert markieren? | {count} ausgewählte Rechnungen als storniert markieren?",
-    "bulkPaid": "Bezahlt",
-    "bulkUnpaid": "Unbezahlt",
-    "bulkCancelled": "Storniert",
-    "bulkDuplicate": "Duplikat"
+    "cancelInvoicesMessage": "{count} ausgewählte Rechnung als storniert markieren? | {count} ausgewählte Rechnungen als storniert markieren?"
   },
   "offlineCC": {
     "offlineCreditCardProcessing": "Offline-Kreditkartenverarbeitung",
@@ -259,11 +244,9 @@
     "quoteSubject": "Betreff des Angebots",
     "selectStage": "Phase auswählen",
     "dateCreated": "Erstellungsdatum",
-    "duplicate": "Duplizieren",
     "convertToInvoice": "In Rechnung umwandeln",
     "unitPrice": "Einzelpreis",
     "discount": "Rabatt %",
-    "addItem": "Position hinzufügen",
     "proposalText": "Angebotstext",
     "proposalTextVisibleToThe": "Für den Kunden sichtbarer Angebotstext",
     "customerNotes": "Kundenhinweise",
@@ -279,7 +262,6 @@
   },
   "quotesList": {
     "customerQuotesAndProposals": "Kundenangebote",
-    "createQuote": "Angebot erstellen",
     "validityPeriod": "Gültigkeitsdauer",
     "created": "Erstellt",
     "noQuotesFound": "Keine Angebote gefunden.",
@@ -289,7 +271,6 @@
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Zahlungstransaktionen und Datensätze",
-    "addTransaction": "Transaktion hinzufügen",
     "show": "Anzeigen",
     "netRevenueUsd": "Nettoumsatz (USD)",
     "totalIncome": "Gesamteinnahmen",
@@ -315,7 +296,6 @@
     "attempts": "Versuche",
     "lastError": "Letzter Fehler",
     "when": "Abgeschlossen / nächster Versuch",
-    "retry": "Erneut versuchen",
     "empty": "Keine Erfüllungsdatensätze für diese Rechnung.",
     "statusPending": "Ausstehend",
     "statusProcessing": "In Verarbeitung",
@@ -343,7 +323,6 @@
     "lines": "Gutgeschriebene Positionen",
     "useInvoiceLines": "Rechnungspositionen übernehmen",
     "addLine": "Position hinzufügen",
-    "removeLine": "Entfernen",
     "descriptionPlaceholder": "Was gutgeschrieben wird",
     "pricePlaceholder": "Preis",
     "quantityPlaceholder": "Menge",
@@ -382,7 +361,6 @@
       "Voided": "Entwertet"
     },
     "detailTitle": "Gutschrift {number}",
-    "downloadPdf": "PDF herunterladen",
     "voidButton": "Gutschrift entwerten",
     "voidTitle": "Gutschrift entwerten",
     "voidMessage": "Gutschrift {number} entwerten? Sie behält ihre Nummer und bleibt dokumentiert. Dadurch gewährtes Kontoguthaben wird vom Guthaben des Kunden abgezogen, und die Rechnung kann erneut gutgeschrieben werden.",
@@ -395,5 +373,13 @@
     "quantity": "Menge",
     "unitPrice": "Einzelpreis",
     "amount": "Betrag"
+  },
+  "actions": {
+    "addItem": "Position hinzufügen",
+    "duplicate": "Duplizieren",
+    "markPaid": "Als bezahlt markieren",
+    "markUnpaid": "Als unbezahlt markieren",
+    "markCancelled": "Als storniert markieren",
+    "downloadPdf": "PDF herunterladen"
   }
 }

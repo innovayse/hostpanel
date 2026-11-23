@@ -1,5 +1,5 @@
 <template>
-  <UiStack as="section" gap="none" class="relative pb-[clamp(56px,8vw,84px)]">
+  <UiStack :as="UiStackTag.Section" gap="none" class="relative pb-[clamp(56px,8vw,84px)]">
     <UiStack gap="xs" class="w-full">
       <UiText v-if="!hasZones" tone="inherit" class="text-center text-[15px] text-mut2" data-testid="domain-results-no-zones">
         {{ t('aurora.domainSearch.noZones') }}
@@ -22,8 +22,8 @@
         >
           <UiStack direction="row" wrap align="center" justify="between" gap="md">
             <UiStack direction="row" align="center" gap="md" class="min-w-0">
-              <span class="h-[9px] w-[9px] shrink-0 rounded-full" :class="AVAILABILITY_DOT_CLASSES[result.status]" />
-              <UiText as="span" size="inherit" tone="inherit" class="break-all font-mono text-[clamp(15px,2vw,18px)] text-tx">
+              <UiDot size="lg" :class="AVAILABILITY_DOT_CLASSES[result.status]" />
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="break-all font-mono text-[clamp(15px,2vw,18px)] text-tx">
                 {{ result.name }}
               </UiText>
               <UiBadge size="sm" rounded :variant="AVAILABILITY_TONES[result.status]">
@@ -32,7 +32,7 @@
             </UiStack>
 
             <UiStack direction="row" align="center" gap="lg">
-              <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[17px] text-tx">{{ result.price }}</UiText>
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[17px] text-tx">{{ result.price }}</UiText>
 
               <!--
                 Available names go to the cart; taken ones offer transfer instead,
@@ -46,7 +46,7 @@
                 :class="[BRAND_BUTTON, 'px-[18px] py-[11px] text-sm disabled:opacity-50']"
                 @click="emit('add', result.name)"
               >
-                {{ inCart.includes(result.name) ? t('aurora.domainSearch.inCart') : t('aurora.domainSearch.add') }}
+                {{ inCart.includes(result.name) ? t('aurora.domainSearch.inCart') : t('common.add') }}
               </UiButton>
               <UiButton
                 v-else-if="result.status === DomainResultStatus.Taken"
@@ -77,6 +77,7 @@ import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_TONES } from '~/utils/domainStat
 import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { DomainResult } from '~/types/domainresult'
 import { SITE_DOMAINS_TRANSFER_PATH } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 withDefaults(defineProps<{
   /** Lookup results, one row per checked extension. */

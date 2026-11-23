@@ -8,7 +8,7 @@
     "getStarted": "Empezar",
     "addToCart": "Añadir al carrito",
     "inCart": "En el carrito",
-    "orderNow": "Pedir ahora",
+    "orderNow": "Pedir",
     "custom": "Personalizado",
     "loadError": "No se pudieron cargar los planes de hosting. Inténtelo de nuevo más tarde.",
     "planNotFound": "Plan no encontrado.",
@@ -38,7 +38,6 @@
     "premiumSolutions": "Soluciones de hosting premium",
     "enterpriseSolutions": "Soluciones para agencias y empresas",
     "agencyBadge": "Máximo rendimiento",
-    "select": "Seleccionar",
     "free": "Gratis"
   }
 }

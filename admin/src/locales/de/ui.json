@@ -42,20 +42,15 @@
   },
   "uiFieldSelector": {
     "fields": "Felder",
-    "clearAll": "Alle zurücksetzen",
     "selectedCount": "{count} von {total} Feldern"
   },
   "uiFilterTrigger": {
     "filters": "Filter",
-    "title": "Filter",
-    "apply": "Anwenden",
-    "reset": "Zurücksetzen",
-    "cancel": "Abbrechen"
+    "title": "Filter"
   },
   "uiFilterChips": {
     "label": "Aktive Filter",
-    "remove": "Filter entfernen {label}: {value}",
-    "clearAll": "Alle entfernen"
+    "remove": "Filter entfernen {label}: {value}"
   },
   "uiSelect": {
     "noResults": "Keine Ergebnisse",
@@ -68,14 +63,9 @@
     "countryCode": "Landesvorwahl"
   },
   "selectCountry": "Land auswählen",
-  "dialog": {
-    "close": "Schließen",
-    "confirm": "Bestätigen"
-  },
   "pagination": {
     "navigation": "Seitennavigation",
     "previous": "Zurück",
-    "next": "Weiter",
     "page": "Seite",
     "range": "{from} bis {to} von {total}",
     "pageOf": "Seite {page} von {count}",
@@ -102,11 +92,7 @@
   },
   "input": {
     "showPassword": "Passwort anzeigen",
-    "hidePassword": "Passwort ausblenden",
-    "clearSearch": "Leeren"
-  },
-  "errorState": {
-    "retry": "Erneut versuchen"
+    "hidePassword": "Passwort ausblenden"
   },
   "uiDateTimePicker": {
     "title": "Datum und Uhrzeit auswählen"

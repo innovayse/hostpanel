@@ -6,9 +6,11 @@
  * (`v-if="tab === 'x'"`) or from the scoped slot's `active` value. The slot is drawn in a panel
  * 22px under the tab line (the standard section gap), so content never touches it. Left/Right arrow keys move
  * between enabled tabs and move focus with the selection (roving tabindex: only the selected tab is in the tab order).
- * A strip wider than its box fades the side that still hides tabs, so a cut label reads as more to scroll to.
+ * A strip wider than its box fades the side that still hides tabs, so a cut label reads as more to scroll to, and it
+ * scrolls the selected tab into view (on mount, when the selection changes and when the strip or a tab changes size),
+ * so the selected tab is never the one cut off.
  */
-import { ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useScrollEdges } from '@/composables/useScrollEdges'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { neighbourValue, UiTabMarker } from '@/utils/ui/tabs'
@@ -39,8 +41,25 @@ const emit = defineEmits<{
 /** The scrolling tab list, watched for the sides that hide tabs. */
 const tablist = ref<HTMLElement | null>(null)
 
+/**
+ * Scrolls the selected tab to the middle of the strip. Only the strip scrolls (`inline`), never the page
+ * (`block: 'nearest'`); with no selected tab (a loading strip) nothing moves.
+ */
+const revealSelected = (): void => {
+  tablist.value?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
+}
+
 /** The fade of the sides of the tab list that hide tabs. */
-const { fadeClass } = useScrollEdges(tablist)
+const { fadeClass } = useScrollEdges(tablist, revealSelected)
+
+/** Brings the selected tab into view on first draw. */
+onMounted(revealSelected)
+
+/** Brings a newly selected tab into view once its `aria-selected` is on the page. */
+watch(() => props.modelValue, async () => {
+  await nextTick()
+  revealSelected()
+})
 
 /** The tab buttons by tab value, so a key press can move focus to the tab it selects. */
 const buttons = new Map<string, HTMLElement>()

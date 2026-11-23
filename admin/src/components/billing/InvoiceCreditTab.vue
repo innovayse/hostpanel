@@ -16,13 +16,16 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -50,7 +53,7 @@ const processing = ref(false)
 const confirmingRemove = ref(false)
 
 /** The outcome line of the last credit change, shown in the tab. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 
 /** Credit currently applied to the invoice. */
 const availableCredit = computed<number>(() => props.invoice.amounts.credit ?? 0)
@@ -66,9 +69,6 @@ const canAdd = computed<boolean>(() => !processing.value && addAmount.value > 0)
 /** True when "remove credit" has an amount and credit to take back. */
 const canRemove = computed<boolean>(() => !processing.value && removeAmount.value > 0 && availableCredit.value > 0)
 
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
-
 /**
  * Runs one credit change and shows its outcome in the tab.
  *
@@ -77,7 +77,6 @@ const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Dan
  * @returns True when the API accepted the change.
  */
 const runChange = async (change: () => Promise<boolean>, successKey: string): Promise<boolean> => {
-  feedback.clear()
   processing.value = true
   const ok = await change()
   processing.value = false
@@ -131,50 +130,49 @@ const removeCredit = async (): Promise<void> => {
 
 <template>
   <UiStack data-testid="billing-invoice-credit">
-    <UiAlert v-if="invoice.isCreditTopUp" variant="info" data-testid="billing-invoice-credit-top-up">
+    <UiAlert v-if="invoice.isCreditTopUp" :variant="UiTone.Info" data-testid="billing-invoice-credit-top-up">
       {{ t('billing.invoiceCreditTab.topUpNoCredit') }}
     </UiAlert>
 
-    <UiCard v-else padding="md">
+    <UiCard v-else :padding="UiCardPadding.Md" container>
       <UiStack>
-        <UiGrid :columns="2" gap="lg">
-          <UiStack align="center" gap="sm">
-            <UiHeading :level="3" variant="card">
+        <UiGrid :columns="2" :gap="UiGap.Lg" container>
+          <UiStack :align="UiAlignItems.Center" :gap="UiGap.Sm">
+            <UiHeading :level="3" :variant="UiHeadingVariant.Card">
               {{ t('billing.invoiceCreditTab.addCreditToInvoice') }}
             </UiHeading>
-            <UiStack direction="row" gap="sm" align="center">
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
               <UiNumberInput v-model="addAmount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-invoice-credit-add-amount" />
               <UiButton :action="UiActionKind.Add"
-                variant="secondary"
+                :variant="UiButtonVariant.Secondary"
                 :disabled="!canAdd"
                 data-testid="billing-invoice-credit-add"
                 @click="addCredit"
               >
-                {{ t('shared.go') }}
+                {{ t('shared.add') }}
               </UiButton>
             </UiStack>
-            <UiText tone="success" size="sm">{{ availableText }}</UiText>
+            <UiText :tone="UiTextTone.Success" :size="UiTextSize.Sm">{{ availableText }}</UiText>
           </UiStack>
 
-          <UiStack align="center" gap="sm">
-            <UiHeading :level="3" variant="card">
+          <UiStack :align="UiAlignItems.Center" :gap="UiGap.Sm">
+            <UiHeading :level="3" :variant="UiHeadingVariant.Card">
               {{ t('billing.invoiceCreditTab.removeCreditFromInvoice') }}
             </UiHeading>
-            <UiStack direction="row" gap="sm" align="center">
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
               <UiNumberInput v-model="removeAmount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-invoice-credit-remove-amount" />
               <UiButton :action="UiActionKind.Remove"
-                variant="secondary"
+                :variant="UiButtonVariant.Secondary"
                 :disabled="!canRemove"
                 data-testid="billing-invoice-credit-remove"
                 @click="askRemove"
               >
-                {{ t('shared.go') }}
+                {{ t('shared.remove') }}
               </UiButton>
             </UiStack>
-            <UiText tone="success" size="sm">{{ availableText }}</UiText>
+            <UiText :tone="UiTextTone.Success" :size="UiTextSize.Sm">{{ availableText }}</UiText>
           </UiStack>
         </UiGrid>
-        <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-invoice-credit-feedback" />
       </UiStack>
     </UiCard>
 
@@ -183,7 +181,7 @@ const removeCredit = async (): Promise<void> => {
       :variant="UiDialogVariant.Confirm"
       :title="t('billing.invoiceCreditTab.confirmRemoveCreditTitle')"
       :message="t('billing.invoiceCreditTab.confirmRemoveCreditMessage', { amount: formatPlainAmount(removeAmount, invoice.currency), id: invoice.id })"
-      :confirm-label="t('billing.invoiceCreditTab.removeCredit')"
+      :confirm-label="t('shared.remove')"
       :loading="processing"
       :tone="UiTone.Danger"
       @confirm="removeCredit"

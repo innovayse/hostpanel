@@ -18,7 +18,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -34,6 +34,12 @@ import { LANGUAGE_OPTIONS } from '@/lib/constants'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { EMPTY_VALUE } from '@/lib/format'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -162,17 +168,17 @@ const confirmDelete = (): void => {
 <template>
   <UiDialog
     :title="t('clients.userForm.manageUserEmail', { email: user.email })"
-    size="lg"
+    :size="UiDialogSize.Lg"
     data-testid="clients-userform-dialog"
     @close="emit('close')"
   >
-    <UiStack gap="md">
+    <UiStack :gap="UiGap.Md">
       <UiField :label="t('shared.firstName')">
         <template #default="{ id }">
           <UiInput
             :id="id"
             v-model="firstName"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('clients.userForm.firstNamePlaceholder')"
             data-testid="clients-userform-first-name"
           />
@@ -184,7 +190,7 @@ const confirmDelete = (): void => {
           <UiInput
             :id="id"
             v-model="lastName"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('clients.userForm.lastNamePlaceholder')"
             data-testid="clients-userform-last-name"
           />
@@ -196,7 +202,7 @@ const confirmDelete = (): void => {
           <UiInput
             :id="id"
             v-model="email"
-            type="email"
+            :type="UiInputType.Email"
             :placeholder="t('clients.userForm.emailPlaceholder')"
             data-testid="clients-userform-email"
           />
@@ -213,15 +219,15 @@ const confirmDelete = (): void => {
       </UiField>
 
       <!-- Permissions section (only when clientId is provided) -->
-      <UiStack v-if="props.clientId !== undefined" gap="sm">
-        <UiHeading :level="3" variant="card">{{ t('clients.userForm.permissions') }}</UiHeading>
+      <UiStack v-if="props.clientId !== undefined" :gap="UiGap.Sm">
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('clients.userForm.permissions') }}</UiHeading>
 
-        <UiAlert v-if="props.isOwner" variant="info">
+        <UiAlert v-if="props.isOwner" :variant="UiTone.Info">
           {{ t('clients.userForm.thisUserIsTheAccount') }}
         </UiAlert>
 
-        <UiGrid :columns="2" gap="sm">
-          <UiLabel v-for="perm in PERMISSION_LABELS" :key="perm.flag" variant="inline">
+        <UiGrid :columns="2" :gap="UiGap.Sm" container>
+          <UiLabel v-for="perm in PERMISSION_LABELS" :key="perm.flag" :variant="UiLabelVariant.Inline">
             <UiCheckbox
               :model-value="props.isOwner ? true : hasPermission(perm.flag)"
               :disabled="props.isOwner"
@@ -233,17 +239,17 @@ const confirmDelete = (): void => {
         </UiGrid>
 
         <!-- Make Owner (only for non-owners) -->
-        <UiLabel v-if="!props.isOwner" variant="inline">
+        <UiLabel v-if="!props.isOwner" :variant="UiLabelVariant.Inline">
           <UiCheckbox v-model="makeOwnerChecked" data-testid="clients-userform-make-owner" />
           {{ t('clients.userForm.transferOwnershipToThisUser') }}
         </UiLabel>
       </UiStack>
 
       <!-- Accounts section -->
-      <UiStack gap="sm">
-        <UiHeading :level="3" variant="card">{{ t('shared.accounts') }}</UiHeading>
+      <UiStack :gap="UiGap.Sm">
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('shared.accounts') }}</UiHeading>
 
-        <UiTable v-if="user.accounts.length > 0" :density="UiTableDensity.Compact" data-testid="clients-userform-accounts">
+        <UiDataTable v-if="user.accounts.length > 0" :density="UiTableDensity.Compact" data-testid="clients-userform-accounts">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.id') }}</UiTableHeader>
@@ -268,24 +274,24 @@ const confirmDelete = (): void => {
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>
-        </UiTable>
+        </UiDataTable>
 
-        <UiText v-else tone="muted" size="sm">{{ t('clients.userForm.noAccountsLinked') }}</UiText>
+        <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('clients.userForm.noAccountsLinked') }}</UiText>
       </UiStack>
     </UiStack>
 
     <template #footer>
-      <UiStack direction="row" justify="between" align="center" class="w-full">
-        <UiButton :action="UiActionKind.Confirm" variant="danger" data-testid="clients-userform-delete" @click="handleDelete">
-          {{ t('clients.userForm.permanentlyDelete') }}
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" class="w-full">
+        <UiButton :action="UiActionKind.Delete" :variant="UiButtonVariant.Danger" data-testid="clients-userform-delete" @click="handleDelete">
+          {{ t('shared.delete') }}
         </UiButton>
 
-        <UiStack direction="row" gap="sm" align="center">
-          <UiButton :action="UiActionKind.Close" variant="secondary" data-testid="clients-userform-close" @click="emit('close')">
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
+          <UiButton :action="UiActionKind.Close" :variant="UiButtonVariant.Secondary" data-testid="clients-userform-close" @click="emit('close')">
             {{ t('shared.close') }}
           </UiButton>
           <UiButton :action="UiActionKind.Save"
-            variant="primary"
+            :variant="UiButtonVariant.Primary"
             :loading="saving"
             data-testid="clients-userform-save"
             @click="handleSave"
@@ -300,11 +306,11 @@ const confirmDelete = (): void => {
   <!-- Delete confirmation -->
   <UiDialog
     v-if="showDeleteConfirm"
-    variant="confirm"
+    :variant="UiDialogVariant.Confirm"
     :title="t('clients.userForm.deleteUser')"
     :message="t('clients.userForm.deleteMessage', { email })"
     :confirm-label="t('shared.delete')"
-    tone="danger"
+    :tone="UiTone.Danger"
     data-testid="clients-userform-delete-confirm"
     @confirm="confirmDelete"
     @close="cancelDelete"

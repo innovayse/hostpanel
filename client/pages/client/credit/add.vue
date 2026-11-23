@@ -1,8 +1,14 @@
 <template>
   <UiStack gap="lg" data-testid="client-credit-add">
-    <UiBackLink :to="CLIENT_CREDIT_PATH" :label="$t('client.credit.add.back')" testid="credit-add-back" />
-
-    <UiPageHeader :title="$t('client.credit.add.title')" :description="$t('client.credit.add.subtitle')" :icon="Wallet" class="!mb-0" />
+    <UiPageHeader
+      :title="$t('client.credit.add.title')"
+      :description="$t('client.credit.add.subtitle')"
+      :icon="Wallet"
+      :back-to="CLIENT_CREDIT_PATH"
+      :back-label="$t('client.credit.add.back')"
+      back-testid="credit-add-back"
+      class="!mb-0"
+    />
 
     <UiAlert v-if="store.error" variant="error" data-testid="credit-add-load-error">{{ store.error }}</UiAlert>
 

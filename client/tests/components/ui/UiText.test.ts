@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiText from '~/components/ui/UiText.vue'
-import { UiTextSize, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
+import { UiTextSize, UiTextTag, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
 
 describe('UiText', () => {
   it('is a base-size paragraph with its slot', () => {
@@ -16,7 +16,12 @@ describe('UiText', () => {
   })
 
   it('renders the requested tag', () => {
-    expect(mountWithKit(UiText, { props: { as: 'span' } }).element.tagName).toBe('SPAN')
+    expect(mountWithKit(UiText, { props: { as: UiTextTag.Span } }).element.tagName).toBe('SPAN')
+  })
+
+  it('draws a native disclosure and its summary', () => {
+    expect(mountWithKit(UiText, { props: { as: UiTextTag.Details } }).element.tagName).toBe('DETAILS')
+    expect(mountWithKit(UiText, { props: { as: UiTextTag.Summary } }).element.tagName).toBe('SUMMARY')
   })
 
   it.each([

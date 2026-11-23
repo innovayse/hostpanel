@@ -26,6 +26,30 @@ describe('ServerFacts', () => {
     expect(wrapper.find(`[data-testid="server-fact-${ServerFactKey.Connection}"]`).exists()).toBe(true)
   })
 
+  it('draws the nameservers one per line, without a joining comma', () => {
+    const server = serverDto({ id: 7 })
+    server.nameServers.ns1Hostname = 'ns1.example.com'
+    server.nameServers.ns2Hostname = 'ns2.example.com'
+
+    const fact = mountFacts(server).get(`[data-testid="server-fact-${ServerFactKey.NameServers}"]`)
+    const lines = fact.findAll('p, span, div').map(node => node.text()).filter(text => /^ns\d\.example\.com$/.test(text))
+
+    expect(lines).toEqual(['ns1.example.com', 'ns2.example.com'])
+    expect(fact.text()).not.toContain(',')
+  })
+
+  it('draws every fact on one shape: the icon top aligned, the caption and the host names on one line with their full text as a hint', () => {
+    const server = serverDto({ id: 7 })
+    server.nameServers.ns1Hostname = 'ns1.long-host-name.example.com'
+
+    const fact = mountFacts(server).get(`[data-testid="server-fact-${ServerFactKey.NameServers}"]`)
+    const host = fact.findAll('[title]').find(node => node.text() === 'ns1.long-host-name.example.com')
+
+    expect(fact.classes()).toContain('items-start')
+    expect(host?.classes()).toContain('truncate')
+    expect(fact.find('.break-words').exists()).toBe(false)
+  })
+
   it('draws one placeholder per fact slot while the server loads', () => {
     const wrapper = mountFacts(null)
 

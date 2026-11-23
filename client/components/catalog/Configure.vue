@@ -1,51 +1,55 @@
 <template>
-  <UiStack gap="none" class="bg-ui-page py-10 md:py-16 [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))]" data-testid="configure">
-    <UiContainer>
-      <div>
-        <UiLink :to="localePath(SITE_PRODUCTS_PATH)" tone="muted" :underline="false" class="inline-flex items-center gap-2 text-sm mb-8" testid="configure-back">
-          <ArrowLeft :size="16" :stroke-width="2" />
-          {{ $t('configure.back') }}
-        </UiLink>
+  <UiStack :gap="UiGap.None" class="bg-ui-page py-10 md:py-16 [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))]" data-testid="configure">
+    <UiContainer class="w-full">
+      <UiLink :to="localePath(SITE_PRODUCTS_PATH)" :tone="UiLinkTone.Muted" :underline="false" class="inline-flex items-center gap-2 text-sm mb-8" testid="configure-back">
+        <ArrowLeft :size="16" :stroke-width="2" />
+        {{ $t('common.backToProducts') }}
+      </UiLink>
 
-        <!-- Loading -->
-        <div v-if="pending" class="grid md:grid-cols-[1fr_360px] gap-8" data-testid="configure-loading">
-          <div class="space-y-4">
-            <div class="w-64"><UiSkeleton shape="block" class="h-8" /></div>
-            <UiSkeleton shape="block" class="h-4" />
-            <div class="w-3/4"><UiSkeleton shape="block" class="h-4" /></div>
-            <UiSkeleton shape="block" class="h-48 mt-6" />
-          </div>
-          <UiSkeleton shape="block" class="h-80" />
-        </div>
+      <!-- Loading -->
+      <UiAsideLayout v-if="pending" data-testid="configure-loading">
+        <template #main>
+          <UiStack :gap="UiGap.Md">
+            <UiSkeleton :shape="UiSkeletonShape.Block" :width="UiSkeletonWidth.Heading" class="h-8" />
+            <UiSkeleton :shape="UiSkeletonShape.Block" class="h-4" />
+            <UiSkeleton :shape="UiSkeletonShape.Block" :width="UiSkeletonWidth.ThreeQuarters" class="h-4" />
+            <UiSkeleton :shape="UiSkeletonShape.Block" class="h-48 mt-6" />
+          </UiStack>
+        </template>
+        <template #aside>
+          <UiSkeleton :shape="UiSkeletonShape.Block" class="h-80" />
+        </template>
+      </UiAsideLayout>
 
-        <!-- Not found -->
-        <UiEmptyState v-else-if="!found" :icon="AlertCircle" :title="$t('configure.notFound')" data-testid="configure-missing">
-          <UiLink :to="localePath(SITE_PRODUCTS_PATH)" testid="configure-missing-back">{{ $t('configure.back') }}</UiLink>
-        </UiEmptyState>
+      <!-- Not found -->
+      <UiEmptyState v-else-if="!found" :icon="AlertCircle" :title="$t('configure.notFound')" data-testid="configure-missing">
+        <UiLink :to="localePath(SITE_PRODUCTS_PATH)" :tone="UiLinkTone.Primary" testid="configure-missing-back">{{ $t('common.backToProducts') }}</UiLink>
+      </UiEmptyState>
 
-        <!-- Configure layout -->
-        <div v-else class="grid md:grid-cols-[1fr_360px] gap-8 items-start">
-          <!-- Product details -->
-          <div class="space-y-8">
-            <div>
-              <div class="flex items-center gap-4 mb-4">
+      <!-- Configure layout -->
+      <UiAsideLayout v-else>
+        <!-- Product details -->
+        <template #main>
+          <UiStack :gap="UiGap.Xl">
+            <UiStack :gap="UiGap.None">
+              <UiStack :direction="UiDirection.Row" :align="UiCrossAlign.Center" :gap="UiGap.Md" class="mb-4">
                 <UiAccent v-if="icon && color" :color="color">
                   <UiAccentTile :icon="icon" />
                 </UiAccent>
-                <div>
-                  <div class="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-widest mb-1">{{ groupName }}</div>
-                  <UiHeading :level="1" class="text-2xl md:text-3xl" data-testid="configure-product-name">{{ productName }}</UiHeading>
-                </div>
-              </div>
-              <UiText v-if="description" tone="muted" class="leading-relaxed">
-                <strong class="text-gray-900 dark:text-white">{{ productName }}</strong> {{ description }}
+                <UiStack :gap="UiGap.None">
+                  <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Muted" class="uppercase tracking-widest mb-1">{{ groupName }}</UiText>
+                  <UiHeading :level="UiHeadingLevel.H1" class="text-2xl md:text-3xl" data-testid="configure-product-name">{{ productName }}</UiHeading>
+                </UiStack>
+              </UiStack>
+              <UiText v-if="description" :tone="UiTextTone.Muted" class="leading-relaxed">
+                <UiText :as="UiTextTag.Span" :weight="UiTextWeight.Bold" :size="UiTextSize.Inherit">{{ productName }}</UiText> {{ description }}
               </UiText>
-            </div>
+            </UiStack>
 
             <!-- Features -->
             <UiCard v-if="features.length > 0" data-testid="configure-features">
-              <UiHeading :level="2" size="label" class="mb-4 tracking-widest">{{ $t('configure.includedFeatures') }}</UiHeading>
-              <UiList list-style="plain">
+              <UiHeading :level="UiHeadingLevel.H2" :size="UiHeadingSize.Label" class="mb-4 tracking-widest">{{ $t('configure.includedFeatures') }}</UiHeading>
+              <UiList :list-style="UiListStyle.Plain">
                 <UiListItem v-for="feature in features" :key="feature" class="flex items-center gap-2 text-sm">
                   <CheckCircle :size="15" :stroke-width="2" class="text-cyan-700 dark:text-cyan-400 flex-shrink-0 [.tpl-classic_&]:text-classic-brand" />
                   {{ feature }}
@@ -54,13 +58,13 @@
             </UiCard>
 
             <!-- Billing cycle -->
-            <div>
-              <UiHeading :level="2" size="label" class="mb-3 tracking-widest">{{ $t('configure.chooseBillingCycle') }}</UiHeading>
-              <div class="space-y-2">
+            <UiStack :gap="UiGap.None">
+              <UiHeading :level="UiHeadingLevel.H2" :size="UiHeadingSize.Label" class="mb-3 tracking-widest">{{ $t('configure.chooseBillingCycle') }}</UiHeading>
+              <UiStack :gap="UiGap.Xs">
                 <UiCard
                   v-for="option in cycles"
                   :key="option.cycle"
-                  padding="sm"
+                  :padding="UiCardPadding.Sm"
                   :class="[selectedCycle === option.cycle ? 'ring-2 ring-cyan-500/60 [.tpl-classic_&]:ring-1 [.tpl-classic_&]:ring-classic-brand [.tpl-classic_&]:border-classic-brand' : '', 'flex items-center justify-between cursor-pointer transition-all duration-200']"
                   :data-testid="`configure-cycle-${option.cycle}`"
                   @click="emit('update:selectedCycle', option.cycle)"
@@ -72,68 +76,57 @@
                     :label="option.label"
                     @update:model-value="emit('update:selectedCycle', option.cycle)"
                   />
-                  <span class="font-bold text-gray-900 dark:text-white">{{ option.price }}</span>
+                  <UiText :as="UiTextTag.Span" :weight="UiTextWeight.Bold">{{ option.price }}</UiText>
                 </UiCard>
-              </div>
-            </div>
-          </div>
+              </UiStack>
+            </UiStack>
+          </UiStack>
+        </template>
 
-          <!-- Order summary -->
-          <div class="sticky top-24">
-            <UiCard padding="none" class="overflow-hidden" data-testid="configure-summary">
-              <div class="px-6 py-4 bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/10 [.tpl-classic_&]:border-classic-border [.tpl-classic_&]:bg-classic-surface-2">
-                <UiHeading :level="2" size="subsection">{{ $t('configure.orderSummary') }}</UiHeading>
-              </div>
+        <!-- Order summary -->
+        <template #aside>
+          <UiCard :padding="UiCardPadding.None" class="overflow-hidden" data-testid="configure-summary">
+            <UiStack :gap="UiGap.None" class="px-6 py-4 bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/10 [.tpl-classic_&]:border-classic-border [.tpl-classic_&]:bg-classic-surface-2">
+              <UiHeading :level="UiHeadingLevel.H2" :size="UiHeadingSize.Subsection">{{ $t('configure.orderSummary') }}</UiHeading>
+            </UiStack>
 
-              <div class="p-6 space-y-4">
-                <div>
-                  <div class="font-semibold text-gray-900 dark:text-white">{{ productName }}</div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400 italic">{{ groupName }}</div>
-                </div>
+            <UiStack :gap="UiGap.Md" class="p-6">
+              <UiStack :gap="UiGap.None">
+                <UiText :weight="UiTextWeight.Semibold">{{ productName }}</UiText>
+                <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted" class="italic">{{ groupName }}</UiText>
+              </UiStack>
 
-                <div class="space-y-2 pt-2 border-t border-gray-200 dark:border-white/10">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 dark:text-gray-400">{{ productName }}</span>
-                    <span class="text-gray-900 dark:text-white">{{ selectedPrice }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 dark:text-gray-400">{{ $t('configure.setupFees') }}</span>
-                    <span class="text-gray-600 dark:text-gray-400">{{ setupFee }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 dark:text-gray-400">{{ selectedCycleLabel }}</span>
-                    <span class="text-gray-900 dark:text-white">{{ selectedPrice }}</span>
-                  </div>
-                </div>
+              <UiStack :gap="UiGap.Xs" class="pt-2 border-t border-gray-200 dark:border-white/10">
+                <UiKeyValue :label="productName" :value="selectedPrice" />
+                <UiKeyValue :label="$t('configure.setupFees')" :value="setupFee" />
+                <UiKeyValue :label="selectedCycleLabel" :value="selectedPrice" />
+              </UiStack>
 
-                <div class="pt-3 border-t border-gray-200 dark:border-white/10">
-                  <div class="flex justify-between">
-                    <span class="text-2xl font-bold text-gray-900 dark:text-white" data-testid="configure-total">{{ selectedPrice }}</span>
-                  </div>
-                  <div class="text-xs text-gray-600 dark:text-gray-400 text-right mt-0.5">{{ $t('configure.totalDueToday') }}</div>
-                </div>
+              <UiStack :gap="UiGap.None" class="pt-3 border-t border-gray-200 dark:border-white/10">
+                <UiText :as="UiTextTag.Span" :size="UiTextSize.Inherit" :weight="UiTextWeight.Bold" class="text-2xl" data-testid="configure-total">{{ selectedPrice }}</UiText>
+                <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Muted" class="text-right mt-0.5">{{ $t('configure.totalDueToday') }}</UiText>
+              </UiStack>
 
-                <UiButton
-                  size="lg"
-                  full-width
-                  class="py-4 font-bold bg-gradient-to-r from-cyan-600 to-primary-600 hover:from-cyan-500 hover:to-primary-500 hover:scale-[1.02] shadow-lg [.tpl-classic_&]:bg-none [.tpl-classic_&]:shadow-none [.tpl-classic_&]:hover:scale-100 [.tpl-classic_&]:font-semibold"
-                  data-testid="configure-continue"
-                  @click="emit('continue')"
-                >
-                  {{ $t('configure.continue') }}
-                  <ArrowRight :size="18" :stroke-width="2.5" class="ml-2" />
-                </UiButton>
-              </div>
-            </UiCard>
+              <UiButton
+                :variant="UiButtonVariant.Primary"
+                :size="UiSize.Lg"
+                full-width
+                data-testid="configure-continue"
+                @click="emit('continue')"
+              >
+                {{ $t('common.continue') }}
+                <ArrowRight :size="18" :stroke-width="2.5" class="ml-2" />
+              </UiButton>
+            </UiStack>
+          </UiCard>
 
-            <UiText size="xs" tone="subtle" class="mt-4 text-center flex items-center justify-center gap-1.5">
-              <HelpCircle :size="13" :stroke-width="2" />
-              {{ $t('configure.haveQuestions') }}
-              <UiLink :to="localePath(SITE_CONTACT_PATH)" :underline="false" class="hover:underline" testid="configure-contact">{{ $t('configure.clickHere') }}</UiLink>
-            </UiText>
-          </div>
-        </div>
-      </div>
+          <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" class="mt-4 text-center flex items-center justify-center gap-1.5">
+            <HelpCircle :size="13" :stroke-width="2" />
+            {{ $t('configure.haveQuestions') }}
+            <UiLink :to="localePath(SITE_CONTACT_PATH)" :tone="UiLinkTone.Primary" :underline="false" class="hover:underline" testid="configure-contact">{{ $t('configure.clickHere') }}</UiLink>
+          </UiText>
+        </template>
+      </UiAsideLayout>
     </UiContainer>
   </UiStack>
 </template>
@@ -147,6 +140,7 @@
  * shows a skeleton while `pending`, a notice when the product was not `found`, and the screen
  * otherwise.
  */
+import { UiButtonVariant, UiCardPadding, UiCrossAlign, UiDirection, UiGap, UiHeadingLevel, UiHeadingSize, UiLinkTone, UiListStyle, UiSize, UiSkeletonShape, UiSkeletonWidth, UiTextSize, UiTextTag, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
 import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle, HelpCircle } from 'lucide-vue-next'
 import type { PricingCycle } from '~/types/pricingcycle'
 import type { PricingCycleOption } from '~/types/pricingcycleoption'

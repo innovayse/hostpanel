@@ -3,7 +3,7 @@
  * form so the two cannot disagree about a margin or a price cell.
  */
 import { formatSymbolPrice } from '@/lib/money'
-import type { UiTextTone } from '@/utils/ui/text'
+import { UiTextTone } from '@/utils/ui/text'
 import { EMPTY_VALUE } from '@/lib/format'
 
 /** The registration periods, in years, that a price is entered for. */
@@ -82,9 +82,9 @@ export const calcMargin = (cost: number | undefined, sell: number | undefined): 
  */
 export const marginTone = (cost: number | undefined, sell: number | undefined): UiTextTone => {
   if (!comparable(cost, sell) || sell === undefined) {
-    return 'muted'
+    return UiTextTone.Muted
   }
-  return sell >= cost ? 'success' : 'danger'
+  return sell >= cost ? UiTextTone.Success : UiTextTone.Danger
 }
 
 /**
@@ -108,9 +108,9 @@ export const formatMarginPercent = (margin: number | null): string => {
  */
 export const marginPercentTone = (margin: number | null): UiTextTone => {
   if (margin === null || margin === undefined) {
-    return 'muted'
+    return UiTextTone.Muted
   }
-  return margin >= 0 ? 'success' : 'danger'
+  return margin >= 0 ? UiTextTone.Success : UiTextTone.Danger
 }
 
 /**

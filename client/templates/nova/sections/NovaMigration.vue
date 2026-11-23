@@ -1,6 +1,6 @@
 <template>
   <UiSection padding="lg" class="border-b border-nova-border">
-    <div class="max-w-[75ch]">
+    <UiStack gap="none" class="max-w-[75ch]">
       <NovaSectionHeader
         :eyebrow="t('nova.migration.eyebrow')"
         :title="t('nova.migration.title', { site: siteName })"
@@ -14,7 +14,7 @@
           -->
           <UiText
             v-if="freeMigration"
-            as="span"
+            :as="UiTextTag.Span"
             size="inherit"
             tone="inherit"
             class="rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-nova-on-accent"
@@ -23,15 +23,19 @@
           </UiText>
         </template>
       </NovaSectionHeader>
-    </div>
+    </UiStack>
 
     <UiList ordered list-style="bare" class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      <li v-for="(step, index) in MIGRATION_STEPS" :key="step.key">
+      <UiStack v-for="(step, index) in MIGRATION_STEPS" :key="step.key" :as="UiStackTag.Li" gap="none">
         <UiCard padding="lg" class="relative h-full !border-nova-border !bg-nova-surface">
-          <span
-            class="grid h-9 w-9 place-items-center rounded-full bg-nova-surface-2 text-[15px] font-extrabold text-nova-brand"
+          <UiStack
+            :as="UiStackTag.Span"
+            align="center"
+            justify="center"
+            gap="none"
+            class="h-9 w-9 rounded-full bg-nova-surface-2 text-[15px] font-extrabold text-nova-brand"
             aria-hidden="true"
-          >{{ index + 1 }}</span>
+          >{{ index + 1 }}</UiStack>
           <UiHeading :level="3" size="bare" class="mt-4 text-[16px] font-bold text-nova-ink">
             {{ t(step.titleKey) }}
           </UiHeading>
@@ -39,7 +43,7 @@
             {{ t(step.bodyKey) }}
           </UiText>
         </UiCard>
-      </li>
+      </UiStack>
     </UiList>
 
     <NovaCta :to="localePath(SITE_CONTACT_PATH)" tone="outline" class="mt-9" data-testid="nova-migration-cta">
@@ -61,6 +65,7 @@ import { SETTING_ON } from '~/constants/settingValue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { MIGRATION_FREE_SETTING, MIGRATION_STEPS } from '~/templates/nova/content'
 import { SITE_CONTACT_PATH } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

@@ -12,8 +12,9 @@ import UiForm from '@/components/ui/UiForm.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import type { UiInputType } from '@/utils/ui/input'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -90,9 +91,9 @@ const handleSave = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="t('clients.domainContact.modifyContactDetails')" size="lg" @close="emit('close')">
+  <UiDialog :title="t('clients.domainContact.modifyContactDetails')" :size="UiDialogSize.Lg" @close="emit('close')">
     <UiForm stacked @submit="handleSave">
-      <UiGrid :columns="2" gap="sm">
+      <UiGrid :columns="2" :gap="UiGap.Sm" container>
         <UiField v-for="field in fields" :key="field.key" :label="field.label">
           <template #default="{ id }">
             <UiInput
@@ -105,9 +106,9 @@ const handleSave = (): void => {
           </template>
         </UiField>
       </UiGrid>
-      <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm">
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
         <UiButton :action="UiActionKind.Cancel"
-          type="button"
+          :type="UiButtonType.Button"
           :variant="UiButtonVariant.Secondary"
           data-testid="clients-domain-contact-cancel"
           @click="emit('close')"
@@ -115,12 +116,12 @@ const handleSave = (): void => {
           {{ t('shared.cancel') }}
         </UiButton>
         <UiButton :action="UiActionKind.Save"
-          type="submit"
+          :type="UiButtonType.Submit"
           :variant="UiButtonVariant.Primary"
           :loading="saving"
           data-testid="clients-domain-contact-save"
         >
-          {{ t('shared.saveChanges') }}
+          {{ t('shared.save') }}
         </UiButton>
       </UiStack>
     </UiForm>

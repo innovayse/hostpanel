@@ -59,5 +59,7 @@ describe('ClientCreditBalanceCard', () => {
     expect(full.find('[data-testid="credit-view"]').exists()).toBe(false)
     expect(compact.find('[data-testid="credit-balance-note"]').exists()).toBe(false)
     expect(compact.get('[data-testid="credit-view"]').attributes('href')).toBe(CLIENT_CREDIT_PATH)
+    expect(compact.get('[data-testid="credit-view"]').text()).toBe('common.view')
+    expect(compact.get('[data-testid="credit-view"]').attributes('aria-label')).toBe('client.credit.view')
   })
 })

@@ -11,6 +11,9 @@
  * marked `aria-busy`. The `footer` slot is the strip under the body (a pager, a total) with the standard divider and
  * padding; it stays while the body loads. `clip` cuts the content at the rounded corners with `overflow: clip`, which, unlike
  * `overflow: hidden`, makes the card no scroll container, so a sticky table header inside it still sticks to the page.
+ * `container` wraps the body in an `@container` block, so a `UiGrid` with `container` inside it counts its columns by the width of
+ * the card instead of the screen; the wrapper is a plain block inside the card, never the card itself, so the card keeps its own
+ * sizing in a flex row.
  */
 import { computed } from 'vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
@@ -27,6 +30,8 @@ const props = withDefaults(defineProps<{
   elevated?: boolean
   /** Cuts the content at the rounded corners (a table whose sticky header fill would poke out of them) without making the card a scroll container. */
   clip?: boolean
+  /** Makes the body an inline-size container, for a `UiGrid` with `container` inside the card. */
+  container?: boolean
   /** Shows placeholder lines in place of the body; the `header` slot stays. */
   loading?: boolean
   /** Number of placeholder lines drawn while loading. */
@@ -36,6 +41,7 @@ const props = withDefaults(defineProps<{
   radius: UiCardRadius.Card,
   elevated: false,
   clip: false,
+  container: false,
   loading: false,
   skeletonLines: 3,
 })
@@ -76,6 +82,9 @@ const classes = computed<string[]>(() => [
         class="h-3.5 rounded-md"
         :class="index === lineIndexes.length - 1 && lineIndexes.length > 1 ? 'w-2/3' : 'w-full'"
       />
+    </div>
+    <div v-else-if="container" class="@container" data-testid="ui-card-body">
+      <slot />
     </div>
     <slot v-else />
     <div v-if="$slots.footer" class="border-t border-border px-4 py-3" data-testid="ui-card-footer">

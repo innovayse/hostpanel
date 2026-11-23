@@ -10,6 +10,8 @@ import AuthShell from '@/components/auth/AuthShell.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import { AppRoute } from '@/lib/routes'
 import { Icon } from '@/lib/icons'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -19,8 +21,8 @@ const { t } = useI18n()
   <AuthShell :title="t('auth.notFound.title')" :subtitle="t('auth.notFound.description')">
     <UiLink :icon="Icon.Back"
       :to="AppRoute.Dashboard"
-      variant="primary"
-      size="lg"
+      :variant="UiButtonVariant.Primary"
+      :size="UiSize.Lg"
       class="w-full"
       data-testid="not-found-back"
     >

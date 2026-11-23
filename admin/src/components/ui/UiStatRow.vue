@@ -6,7 +6,9 @@
  * resolved here and stays while `loading`; everything else comes from `figures` by the tile's key: the value (empty until it
  * is known), the colour, the change and a caption of its own when the tile's name follows the data. A tile is a bar while
  * the row or that figure is `loading`. `variant` `inline` draws the same figures as plain captioned values, for a card that
- * frames them already. `testidPrefix` names the tiles for the screen's own tests (`<prefix>-<key>`).
+ * frames them already; those figures fill the row's own width with as many columns as fit (two across on a phone, the
+ * grid decides the rest, so a card in a narrow column or beside a sidebar never cramps them) and a long value wraps and
+ * carries its full text as a title instead of being cut. `testidPrefix` names the tiles for the screen's own tests (`<prefix>-<key>`).
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -15,7 +17,7 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiGap } from '@/utils/ui/layout'
+import { UiGap, UiGridMinWidth } from '@/utils/ui/layout'
 import type { UiGridColumns } from '@/utils/ui/layout'
 import type { SkeletonStat } from '@/utils/ui/skeletonSchema'
 import { UiStatRowVariant } from '@/utils/ui/statRow'
@@ -31,7 +33,7 @@ const props = withDefaults(defineProps<{
   stats: readonly SkeletonStat[]
   /** What the screen knows of each tile, by tile key. */
   figures?: Readonly<Record<string, UiStatFigure>>
-  /** Columns of the row from `lg`. */
+  /** Columns of a tile row from `lg`; the inline look sizes its columns by the row's width instead. */
   columns?: UiGridColumns
   /** The look of the tiles. */
   variant?: UiStatRowVariant
@@ -74,10 +76,13 @@ const cells = computed<StatCell[]>(() =>
 
 /** Gap between the tiles: tight for the inline figures of a card, the usual one between tile cards. */
 const gap = computed<UiGap>(() => (props.variant === UiStatRowVariant.Inline ? UiGap.Sm : UiGap.Md))
+
+/** Column rule of the grid: the inline figures fill the row with as many columns as fit, the tiles keep the screen's `columns`. */
+const gridProps = computed(() => (props.variant === UiStatRowVariant.Inline ? { minItemWidth: UiGridMinWidth.Xs } : { paired: true, columns: props.columns }))
 </script>
 
 <template>
-  <UiGrid paired :columns="columns" :gap="gap" data-testid="ui-stat-row">
+  <UiGrid v-bind="gridProps" :gap="gap" data-testid="ui-stat-row">
     <template v-for="cell in cells" :key="cell.key">
       <UiStatTile
         v-if="variant === UiStatRowVariant.Tile"
@@ -94,7 +99,7 @@ const gap = computed<UiGap>(() => (props.variant === UiStatRowVariant.Inline ? U
           {{ cell.label }}
         </UiText>
         <UiSkeletonBar v-if="cell.loading || cell.figure === undefined" class="h-4 w-20 rounded-md" aria-hidden="true" />
-        <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="truncate font-medium">
+        <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="break-words font-medium" :title="String(cell.figure.value)">
           {{ cell.figure.value }}
         </UiText>
       </UiStack>

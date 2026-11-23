@@ -118,7 +118,6 @@
       "missingCredentials": "no API token or access hash is set.",
       "unreachable": "the server did not answer or refused the request."
     },
-    "updateNow": "Update Now",
     "clientNameDomain": "Client Name / Domain",
     "diskUsage": "Disk Usage",
     "diskLimit": "Disk Limit",
@@ -127,7 +126,7 @@
     "bwLimit": "BW Limit",
     "noAccountsOnThisServer": "No accounts on this server.",
     "noData": "No data found.",
-    "noDataHint": "Click Update Now to fetch stats from your hosting servers."
+    "noDataHint": "Click Refresh to fetch stats from your hosting servers."
   },
   "domainRenewalEmails": {
     "domainRenewalReminderEmails": "Domain Renewal Reminder Emails",
@@ -258,7 +257,6 @@
     },
     "showInactive": "Show inactive domains",
     "showInactiveHint": "Also list domains that are not active.",
-    "recheck": "Re-check SSL status",
     "recheckHint": "Check the certificates again now.",
     "noDomains": "No domains to monitor.",
     "summary": "Domains per expiry group"

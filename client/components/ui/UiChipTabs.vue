@@ -70,7 +70,7 @@ const SCROLLER_CLASSES = 'no-scrollbar w-full max-w-full overflow-x-auto overscr
 const LIST_CLASSES = 'flex w-max min-w-full justify-center gap-2 px-1'
 
 /** Structure shared by every chip (`ui-chip` is the template hook classic.css restyles); the focus ring is inset so it follows the pill and is never clipped by the scroll box. */
-const TAB_BASE = 'ui-chip inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px] font-semibold leading-none transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-offset-0'
+const TAB_BASE = 'ui-chip inline-flex shrink-0 items-center justify-center whitespace-nowrap min-h-11 rounded-full border px-3.5 py-2 text-[13px] font-semibold leading-none sm:min-h-0 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-offset-0'
 
 /** The chosen chip: brand gradient with its contrast text; the ring takes the same colour so it reads on the gradient. */
 const TAB_ACTIVE = 'ui-chip-active border-transparent bg-brand text-on-brand shadow-md focus-visible:ring-on-brand/80'

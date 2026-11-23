@@ -1,5 +1,5 @@
 <template>
-  <section :id="HomeSectionId.Process" :class="[HOME_SECTION_SCROLL_MARGIN_CLASS, 'py-14 md:py-20 bg-classic-page']" data-testid="sections-process">
+  <UiSection :id="HomeSectionId.Process" :contained="false" padding="lg" :class="[HOME_SECTION_SCROLL_MARGIN_CLASS, 'bg-classic-page']" data-testid="sections-process">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -19,7 +19,7 @@
           <UiStack gap="sm">
             <UiStack direction="row" align="center" justify="between" gap="sm">
               <ClassicIconTile :icon="step.icon" />
-              <UiText as="span" tone="inherit" weight="bold" class="text-3xl tabular-nums text-classic-brand">{{ String(step.order).padStart(2, '0') }}</UiText>
+              <UiText :as="UiTextTag.Span" tone="inherit" weight="bold" class="text-3xl tabular-nums text-classic-brand">{{ String(step.order).padStart(2, '0') }}</UiText>
             </UiStack>
             <UiHeading :level="3" size="bare" class="text-lg font-semibold text-classic-ink">{{ step.title }}</UiHeading>
             <UiText tone="inherit" size="sm" class="leading-relaxed text-classic-muted">{{ step.description }}</UiText>
@@ -27,7 +27,7 @@
         </ClassicCard>
       </UiGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +40,7 @@
 import { HomeSectionId } from '~/types/homesectionid'
 import { HOME_SECTION_SCROLL_MARGIN_CLASS } from '~/constants/homeSections'
 import { PROCESS_STEPS } from '~/constants/processStep'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translation helpers and the active language. */
 const { t } = useI18n()

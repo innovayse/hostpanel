@@ -3,6 +3,7 @@
     :model-value="open"
     size="sm"
     :closable="false"
+    :sheet="false"
     @update:model-value="emit('cancel')"
   >
     <div class="text-center" data-testid="ui-confirm-dialog">
@@ -17,11 +18,11 @@
           :class="isDanger ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'"
         />
       </div>
-      <h3 class="text-base font-bold text-gray-900 dark:text-white mb-2">{{ title }}</h3>
-      <p v-if="description" class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{{ description }}</p>
+      <h3 class="text-base font-bold text-gray-900 dark:text-white mb-2 break-words">{{ title }}</h3>
+      <p v-if="description" class="text-sm text-gray-500 dark:text-gray-400 leading-relaxed break-words">{{ description }}</p>
     </div>
 
-    <div class="flex gap-3 mt-6">
+    <div class="flex flex-wrap gap-3 mt-6">
       <UiButton
         class="flex-1"
         variant="outline"

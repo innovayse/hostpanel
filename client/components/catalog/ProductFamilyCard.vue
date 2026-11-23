@@ -9,7 +9,8 @@
     >
       <NuxtLink :to="href" class="flex flex-col flex-1" :data-testid="`product-link-${product.id}`">
         <!-- Cover: the operator's group image, or the illustration generated for the family's type -->
-        <div
+        <UiStack
+          gap="none"
           :class="[
             accent.tintStrong,
             'relative h-36 shrink-0 overflow-hidden [.tpl-classic_&]:bg-classic-brand-soft',
@@ -25,9 +26,9 @@
             class="absolute inset-0 w-full h-full"
             testid="product-cover-image"
           />
-          <div
+          <UiDecor
             v-else
-            :class="[accent.fill, coverClass, 'absolute inset-0 opacity-80 [.tpl-classic_&]:bg-classic-fill [.tpl-classic_&]:opacity-60']"
+            :class="[accent.fill, coverClass, 'inset-0 opacity-80 [.tpl-classic_&]:bg-classic-fill [.tpl-classic_&]:opacity-60']"
             data-testid="product-cover-art"
           />
           <UiBadge
@@ -40,43 +41,43 @@
           >
             {{ $t('products.products.featured') }}
           </UiBadge>
-        </div>
+        </UiStack>
 
         <!-- Icon chip, overlapping the cover edge -->
-        <div class="relative z-10 -mt-7 ml-5 w-fit rounded-2xl bg-ui-surface p-1 [.tpl-classic_&]:rounded-lg">
+        <UiStack gap="none" class="relative z-10 -mt-7 ml-5 w-fit rounded-2xl bg-ui-surface p-1 [.tpl-classic_&]:rounded-lg">
           <UiAccentTile :icon="product.icon" size="sm" class="group-hover:scale-110 [.tpl-classic_&]:group-hover:scale-100" />
-        </div>
+        </UiStack>
 
         <!-- Body: text and bullets take the room that is left, the action stays at the bottom -->
-        <div class="flex flex-1 flex-col px-5 pb-5 pt-3 sm:px-6 sm:pb-6">
-          <div class="flex-1">
+        <UiStack gap="none" class="flex-1 px-5 pb-5 pt-3 sm:px-6 sm:pb-6">
+          <UiStack gap="none" class="flex-1">
             <UiHeading :level="3" class="break-words text-xl font-bold group-hover:text-primary-700 dark:group-hover:text-primary-300 [.tpl-classic_&]:font-semibold [.tpl-classic_&]:text-classic-ink [.tpl-classic_&]:group-hover:text-classic-brand transition-colors">
               {{ product.name }}
             </UiHeading>
             <!-- Only the static domains card carries a tagline; families have no such field. -->
-            <span v-if="product.tagline" :class="[accent.text, 'block text-xs uppercase tracking-wider font-bold mt-1']">{{ product.tagline }}</span>
+            <UiText v-if="product.tagline" :as="UiTextTag.Span" size="xs" weight="bold" tone="inherit" :class="[accent.text, 'block uppercase tracking-wider mt-1']">{{ product.tagline }}</UiText>
 
             <!-- Clamped: a long description never makes one card taller than the others in its row. -->
             <UiText tone="muted" size="sm" class="mt-2 leading-relaxed line-clamp-3 break-words [.tpl-classic_&]:text-classic-muted">{{ product.description }}</UiText>
 
             <!-- Feature highlights -->
-            <div v-if="bullets.length" class="mt-4 space-y-2" data-testid="product-bullets">
-              <div v-for="(feature, featureIndex) in bullets" :key="featureIndex" class="flex items-center gap-2">
+            <UiStack v-if="bullets.length" gap="xs" class="mt-4" data-testid="product-bullets">
+              <UiStack v-for="(feature, featureIndex) in bullets" :key="featureIndex" direction="row" align="center" gap="xs">
                 <CheckCircle :size="16" :stroke-width="2" :class="[accent.text, 'shrink-0 [.tpl-classic_&]:text-classic-brand']" />
-                <span class="text-xs text-gray-700 dark:text-gray-300 line-clamp-1 [.tpl-classic_&]:text-classic-ink">{{ feature }}</span>
-              </div>
-            </div>
-          </div>
+                <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="text-gray-700 dark:text-gray-300 line-clamp-1 [.tpl-classic_&]:text-classic-ink">{{ feature }}</UiText>
+              </UiStack>
+            </UiStack>
+          </UiStack>
 
           <!-- Action (the whole card is the link) -->
-          <span :class="[accent.tintStrong, accent.borderMedium, 'relative mt-5 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-gray-900 dark:text-white border transition-all duration-300 overflow-hidden group/btn [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border-transparent [.tpl-classic_&]:bg-classic-fill [.tpl-classic_&]:font-semibold [.tpl-classic_&]:text-classic-on-brand [.tpl-classic_&]:group-hover:bg-classic-fill-hover']">
-            <span class="relative z-10 flex items-center gap-2 group-hover/btn:translate-x-1 [.tpl-classic_&]:group-hover/btn:translate-x-0 transition-transform">
+          <UiStack :as="UiStackTag.Span" direction="row" align="center" justify="center" gap="xs" :class="[accent.tintStrong, accent.borderMedium, 'relative mt-5 px-6 py-3 rounded-xl font-bold text-gray-900 dark:text-white border transition-all duration-300 overflow-hidden group/btn [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border-transparent [.tpl-classic_&]:bg-classic-fill [.tpl-classic_&]:font-semibold [.tpl-classic_&]:text-classic-on-brand [.tpl-classic_&]:group-hover:bg-classic-fill-hover']">
+            <UiStack :as="UiStackTag.Span" direction="row" align="center" gap="xs" class="relative z-10 group-hover/btn:translate-x-1 [.tpl-classic_&]:group-hover/btn:translate-x-0 transition-transform">
               {{ $t('products.pricing.cta.learnMore') }}
               <Icon name="mdi:arrow-right" :size="18" />
-            </span>
-            <UiDecor as="span" class="inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--accent)_25%,transparent),color-mix(in_srgb,var(--accent)_12%,transparent))]" />
-          </span>
-        </div>
+            </UiStack>
+            <UiDecor :as="UiDecorTag.Span" class="inset-0 opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--accent)_25%,transparent),color-mix(in_srgb,var(--accent)_12%,transparent))]" />
+          </UiStack>
+        </UiStack>
       </NuxtLink>
     </UiCard>
   </UiAccent>
@@ -101,6 +102,7 @@ import { revealDelay } from '~/utils/reveal'
 import { ACCENT_CLASSES } from '~/utils/ui/accent'
 import type { ProductFamily } from '~/types/productfamily'
 import { siteProductFamilyPath } from '~/constants/siteRoutes'
+import { UiDecorTag, UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ProductFamilyCard. */
 interface Props {

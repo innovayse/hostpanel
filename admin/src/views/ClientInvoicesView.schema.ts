@@ -6,7 +6,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The client invoices tab. */
 const schema: ListSkeletonSchema = {
@@ -19,13 +19,13 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
-      { key: 'invoiceDate', label: 'shared.invoiceDate', size: UiColumnSize.Compact },
-      { key: 'dueDate', label: 'shared.dueDate', size: UiColumnSize.Compact },
-      { key: 'datePaid', label: 'shared.datePaid', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
+      { key: 'invoiceDate', label: 'shared.invoiceDate', kind: UiColumnKind.Date },
+      { key: 'dueDate', label: 'shared.dueDate', kind: UiColumnKind.Date },
+      { key: 'datePaid', label: 'shared.datePaid', kind: UiColumnKind.Date },
       { key: 'total', label: 'shared.total', numeric: true, size: UiColumnSize.Compact },
       { key: 'paymentMethod', label: 'shared.paymentMethod' },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

@@ -4,7 +4,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -16,11 +16,11 @@ const schema: ReportSkeletonSchema = {
   ],
   table: {
     columns: [
-      { key: 'ticketId', label: 'reports.ticketFeedbackComments.ticketId' },
+      { key: 'ticketId', label: 'reports.ticketFeedbackComments.ticketId', kind: UiColumnKind.Id },
       { key: 'staffName', label: 'reports.ticketFeedbackComments.staffName' },
       { key: 'subject', label: 'shared.subject' },
       { key: 'feedbackLeftBy', label: 'reports.ticketFeedbackComments.feedbackLeft' },
-      { key: 'rating', label: 'reports.ticketFeedbackComments.rating', align: UiAlign.Center },
+      { key: 'rating', label: 'reports.ticketFeedbackComments.rating', align: UiAlign.Center, kind: UiColumnKind.Status },
       { key: 'feedbackComment', label: 'reports.ticketFeedbackComments.comments', size: UiColumnSize.Grow },
     ],
   },

@@ -15,6 +15,11 @@ import UiText from '@/components/ui/UiText.vue'
 import UiUploadZone from '@/components/ui/UiUploadZone.vue'
 import { BYTES_PER_KB } from '@/lib/limits'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -53,22 +58,22 @@ const clearFile = (): void => {
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-uploader">
-    <UiStack gap="md">
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-uploader">
+    <UiStack :gap="UiGap.Md">
       <UiUploadZone accept=".zip" input-testid="plugin-zip-input" @select="handleSelect" />
 
-      <UiStack v-if="picked !== null" direction="row" align="center" gap="md" wrap>
-        <UiText tone="primary" size="md" class="font-mono" data-testid="plugin-selected-name">
+      <UiStack v-if="picked !== null" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" wrap>
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" class="font-mono" data-testid="plugin-selected-name">
           {{ picked.name }}
         </UiText>
-        <UiText tone="muted" size="sm">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
           {{ t('plugins.pluginUploader.valueKbReadyToInstall', { value: (picked.size / BYTES_PER_KB).toFixed(1) }) }}
         </UiText>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="ghost" size="sm" data-testid="plugin-cancel" @click="clearFile">
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Ghost" :size="UiSize.Sm" data-testid="plugin-cancel" @click="clearFile">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Upload" type="button" variant="primary" size="sm" data-testid="plugin-install" @click="handleUpload">
-          {{ t('plugins.pluginUploader.installPlugin') }}
+        <UiButton :action="UiActionKind.Upload" :type="UiButtonType.Button" :variant="UiButtonVariant.Primary" :size="UiSize.Sm" data-testid="plugin-install" @click="handleUpload">
+          {{ t('shared.install') }}
         </UiButton>
       </UiStack>
     </UiStack>

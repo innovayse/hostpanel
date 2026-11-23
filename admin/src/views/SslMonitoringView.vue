@@ -26,6 +26,9 @@ import { useReportsStore } from '@/stores/reports'
 import { SSL_GROUP_TITLE_KEYS, SSL_GROUP_TONES } from '@/types/reportssl'
 import type { ReportSsl, ReportSslGroup, ReportSslRow } from '@/types/reportssl'
 import type { ReportTableData } from '@/types/reporttabledata'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTag } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import schema from '@/views/SslMonitoringView.schema'
 
@@ -66,21 +69,21 @@ const revalidate = async (): Promise<void> => {
 <template>
   <ReportPage :retry="load" :schema="schema" :table="table">
     <template #actions>
-      <UiStack direction="row" gap="md" align="center" class="shrink-0 whitespace-nowrap">
+      <UiStack :direction="UiDirection.Row" :gap="UiGap.Md" :align="UiAlignItems.Center" class="shrink-0 whitespace-nowrap">
         <UiTooltip :text="t('reports.sslMonitoring.showInactiveHint')" placement="bottom">
-          <UiStack direction="row" gap="sm" align="center">
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
             <UiToggle
               v-model="includeInactive"
               :aria-label="t('reports.sslMonitoring.showInactive')"
               data-testid="report-toggle-inactive"
             />
-            <UiText as="span" size="sm">
+            <UiText :as="UiTextTag.Span" :size="UiTextSize.Sm">
               {{ t('reports.sslMonitoring.showInactive') }}
             </UiText>
           </UiStack>
         </UiTooltip>
         <UiTooltip :text="t('reports.sslMonitoring.recheckHint')" placement="bottom">
-          <UiButton :icon="Icon.Refresh" variant="secondary" :loading="store.updating" data-testid="report-revalidate" @click="revalidate">{{ t('reports.sslMonitoring.recheck') }}
+          <UiButton :icon="Icon.Refresh" :variant="UiButtonVariant.Secondary" :loading="store.updating" data-testid="report-revalidate" @click="revalidate">{{ t('shared.refresh') }}
           </UiButton>
         </UiTooltip>
       </UiStack>
@@ -89,8 +92,8 @@ const revalidate = async (): Promise<void> => {
     <template #summary>
       <UiStack
         v-if="data && !allEmpty"
-        direction="row"
-        gap="sm"
+        :direction="UiDirection.Row"
+        :gap="UiGap.Sm"
         wrap
         role="group"
         :aria-label="t('reports.sslMonitoring.summary')"

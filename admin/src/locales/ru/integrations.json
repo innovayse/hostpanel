@@ -1,7 +1,7 @@
 {
   "integrationCard": {
     "plugin": "Плагин",
-    "configure": "Настроить →",
+    "configure": "Настроить",
     "notConfigured": "Не настроено"
   },
   "categories": {

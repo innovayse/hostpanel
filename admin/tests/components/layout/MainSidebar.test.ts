@@ -1,12 +1,12 @@
 /**
- * Mount tests for AppSidebar: the top-level entries, sub-menus that open for the current section
+ * Mount tests for MainSidebar: the top-level entries, sub-menus that open for the current section
  * or on click, the active marker (also on the target of a navigation still downloading), the
  * navigate event, the fold to an icon rail, the documentation link and the theme select of the menu drawer.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { RouteLocationNormalized } from 'vue-router'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
+import MainSidebar from '@/components/layout/MainSidebar.vue'
 import { useBrandingStore } from '@/stores/branding'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useNavigationStore } from '@/stores/navigation'
@@ -30,10 +30,10 @@ import { AdminTheme } from '@/types/admintheme'
 const mountSidebar = async (path: string, docsUrl = '') => {
   stubDocsUrl(docsUrl)
   stubRoutes({})
-  return mountView(AppSidebar, { path })
+  return mountView(MainSidebar, { path })
 }
 
-describe('AppSidebar', () => {
+describe('MainSidebar', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -49,21 +49,21 @@ describe('AppSidebar', () => {
 
   it('shows the product mark and name and a fixed width on the desktop, and neither inside the menu drawer', async () => {
     stubRoutes({})
-    const desktop = await mountView(AppSidebar, { path: '/dashboard' })
-    expect(desktop.get('[data-testid="app-sidebar"]').classes()).toEqual(expect.arrayContaining(['w-62', 'border-r', 'bg-surface-sidebar']))
+    const desktop = await mountView(MainSidebar, { path: '/dashboard' })
+    expect(desktop.get('[data-testid="sidebar"]').classes()).toEqual(expect.arrayContaining(['w-62', 'border-r', 'bg-surface-sidebar']))
     expect(desktop.get('[data-testid="sidebar-brand-mark"]').attributes('src')).toBe('/favicon.svg')
     expect(desktop.get('[data-testid="sidebar-brand-name"]').text()).toBe('Hostpanel')
 
-    const { wrapper: embedded } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
-    expect(embedded.get('[data-testid="app-sidebar"]').classes()).toEqual(expect.arrayContaining(['w-full']))
-    expect(embedded.get('[data-testid="app-sidebar"]').classes()).not.toContain('w-62')
+    const { wrapper: embedded } = await mountScreen(MainSidebar, { embedded: true }, '/dashboard')
+    expect(embedded.get('[data-testid="sidebar"]').classes()).toEqual(expect.arrayContaining(['w-full']))
+    expect(embedded.get('[data-testid="sidebar"]').classes()).not.toContain('w-62')
     expect(embedded.find('[data-testid="sidebar-brand-mark"]').exists()).toBe(false)
     expect(embedded.find('[data-testid="sidebar-brand-name"]').exists()).toBe(false)
   })
 
   it('shows the operator logo instead of the mark and name when one is uploaded', async () => {
     stubRoutes({})
-    const { wrapper } = await mountScreen(AppSidebar, {}, '/dashboard')
+    const { wrapper } = await mountScreen(MainSidebar, {}, '/dashboard')
     const branding = useBrandingStore()
     branding.logoUrl = '/logo-custom.png'
     await flushPromises()
@@ -92,17 +92,27 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="nav-storefront-locations"]').attributes('href')).toBe('/storefront/locations')
   })
 
-  it('keeps a closed sub-menu out of reach and opens it over a transition, not by switching it on', async () => {
+  it('keeps a closed sub-menu mounted but out of reach and opens it through the collapse, not by switching it on', async () => {
     const wrapper = await mountSidebar('/dashboard')
-    const submenu = wrapper.get('[data-testid="nav-billing-submenu"]')
+    const submenu = wrapper.get<HTMLElement>('[data-testid="nav-billing-submenu"]')
+    /** The grid element that collapses the sub-menu. */
+    const collapse = (): HTMLElement | null => submenu.element.closest<HTMLElement>('.grid')
 
-    expect(submenu.attributes('inert')).toBeDefined()
-    expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[0fr]', 'opacity-0', 'duration-300']))
+    expect(collapse()?.hasAttribute('inert')).toBe(true)
+    expect(collapse()?.style.display).toBe('none')
+    expect(wrapper.find('[data-testid="nav-billing-invoices"]').exists()).toBe(true)
 
     await wrapper.get('[data-testid="nav-billing"]').trigger('click')
 
-    expect(submenu.attributes('inert')).toBeUndefined()
-    expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[1fr]', 'opacity-100']))
+    expect(collapse()?.hasAttribute('inert')).toBe(false)
+    expect(collapse()?.style.display).not.toBe('none')
+  })
+
+  it('draws the sidebar and its menu as the aside and nav landmarks', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+
+    expect(wrapper.get('[data-testid="sidebar"]').element.tagName).toBe('ASIDE')
+    expect(wrapper.get('nav').attributes('aria-label')).toBe('Main navigation')
   })
 
   it('groups the top-level entries under labelled sections in the order an operator works', async () => {
@@ -170,7 +180,7 @@ describe('AppSidebar', () => {
 
   it('draws the phone menu drawer in the same order as the desktop sidebar', async () => {
     const desktop = await mountSidebar('/dashboard')
-    const { wrapper: embedded } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    const { wrapper: embedded } = await mountScreen(MainSidebar, { embedded: true }, '/dashboard')
 
     /**
      * Lists every top-level entry of a sidebar (outside the sub-menus) in display order.
@@ -257,7 +267,7 @@ describe('AppSidebar', () => {
   it('gives every sub-menu link its own guide segment on a row that grows with its label, with no fixed row height or list rail', async () => {
     const wrapper = await mountSidebar('/billing/invoices')
 
-    const list = wrapper.get('[data-testid="nav-billing-submenu"] .pl-9').classes()
+    const list = wrapper.get('[data-testid="nav-billing-submenu"]').classes()
     const link = wrapper.get('[data-testid="nav-billing-quotes"]').classes()
 
     expect(list).toEqual(expect.arrayContaining(['[--n:1]', 'py-(--nav-guide-gap)', 'gap-(--nav-guide-gap)']))
@@ -272,7 +282,7 @@ describe('AppSidebar', () => {
 
     await wrapper.get('[data-testid="nav-billing"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="nav-billing-submenu"] .pl-9').classes().some((name) => name.startsWith('[--n:'))).toBe(false)
+    expect(wrapper.get('[data-testid="nav-billing-submenu"]').classes().some((name) => name.startsWith('[--n:'))).toBe(false)
     expect(wrapper.get('[data-testid="nav-billing-transactions"]').classes()).not.toContain('nav-guide-lit')
   })
 
@@ -333,7 +343,7 @@ describe('AppSidebar', () => {
   it('shows the installed version quietly in the footer', async () => {
     stubDocsUrl('')
     stubRoutes({})
-    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    const wrapper = await mountView(MainSidebar, { path: '/dashboard' })
     useVersionStore().version = '1.4.0'
     await flushPromises()
 
@@ -343,7 +353,7 @@ describe('AppSidebar', () => {
   it('shows no version line when the version cannot be loaded', async () => {
     stubDocsUrl('')
     const mock = stubRoutes({ 'GET /api/admin/version': () => problem('No access.', 403) })
-    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    const wrapper = await mountView(MainSidebar, { path: '/dashboard' })
     // The layout starts this load in the app; here the test starts it and waits for the refusal.
     await useVersionStore().ensureLoaded()
     await flushPromises()
@@ -369,27 +379,25 @@ describe('AppSidebar', () => {
     expect(link.attributes('rel')).toContain('noopener')
   })
 
-  it('offers the theme and language menus inside the menu drawer only, and applies the choice', async () => {
+  it('offers the theme toggle and the language menu inside the menu drawer only, and applies the choice', async () => {
     resetThemeDocument()
     stubSchemeQuery(false)
     stubDocsUrl('')
     stubRoutes({})
-    const { wrapper: desktop } = await mountScreen(AppSidebar, {}, '/dashboard')
+    const { wrapper: desktop } = await mountScreen(MainSidebar, {}, '/dashboard')
     expect(desktop.find('[data-testid="sidebar-theme"]').exists()).toBe(false)
 
-    const { wrapper: drawer } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    const { wrapper: drawer } = await mountScreen(MainSidebar, { embedded: true }, '/dashboard')
     expect(drawer.find('[data-testid="sidebar-locale"]').exists()).toBe(true)
     expect(desktop.find('[data-testid="sidebar-locale"]').exists()).toBe(false)
     await drawer.get('[data-testid="sidebar-theme"]').trigger('click')
-    expect(drawer.get('[data-testid="theme-option-system"]').attributes('aria-checked')).toBe('true')
-    await drawer.get('[data-testid="theme-option-light"]').trigger('click')
 
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
   })
 })
 
-describe('AppSidebar icon rail', () => {
+describe('MainSidebar icon rail', () => {
   beforeEach(() => {
     window.localStorage.clear()
   })
@@ -404,7 +412,7 @@ describe('AppSidebar icon rail', () => {
 
     await wrapper.get('[data-testid="sidebar-collapse-toggle"]').trigger('click')
 
-    const aside = wrapper.get('[data-testid="app-sidebar"]')
+    const aside = wrapper.get('[data-testid="sidebar"]')
     expect(aside.classes()).toContain('w-18')
     expect(wrapper.find('[data-testid="nav-section-sales-label"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="sidebar-brand-mark"]').exists()).toBe(true)
@@ -426,7 +434,7 @@ describe('AppSidebar icon rail', () => {
 
     await wrapper.get('[data-testid="nav-billing"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-62')
+    expect(wrapper.get('[data-testid="sidebar"]').classes()).toContain('w-62')
     expect(wrapper.get('[data-testid="nav-billing"]').attributes('aria-expanded')).toBe('true')
   })
 
@@ -434,27 +442,27 @@ describe('AppSidebar icon rail', () => {
     vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
     const wrapper = await mountSidebar('/dashboard')
 
-    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-18')
+    expect(wrapper.get('[data-testid="sidebar"]').classes()).toContain('w-18')
     expect(wrapper.find('[data-testid="sidebar-collapse-toggle"]').exists()).toBe(false)
 
     await wrapper.get('[data-testid="nav-billing"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-18')
-    expect(wrapper.findComponent(AppSidebar).emitted('open-menu')).toHaveLength(1)
+    expect(wrapper.get('[data-testid="sidebar"]').classes()).toContain('w-18')
+    expect(wrapper.emitted('open-menu')).toHaveLength(1)
   })
 
   it('draws the phone drawer in full even when the desktop panel is folded, without the fold button', async () => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, '1')
     stubRoutes({})
-    const { wrapper } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+    const { wrapper } = await mountScreen(MainSidebar, { embedded: true }, '/dashboard')
 
     expect(wrapper.find('[data-testid="nav-section-sales-label"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="sidebar-collapse-toggle"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="app-sidebar"]').classes()).toContain('w-full')
+    expect(wrapper.get('[data-testid="sidebar"]').classes()).toContain('w-full')
   })
 })
 
-describe('AppSidebar Add-ons', () => {
+describe('MainSidebar Add-ons', () => {
   beforeEach(() => {
     window.localStorage.clear()
   })
@@ -477,7 +485,7 @@ describe('AppSidebar Add-ons', () => {
         ],
       }),
     })
-    const wrapper = await mountView(AppSidebar, { path: '/apps/sites/usage' })
+    const wrapper = await mountView(MainSidebar, { path: '/apps/sites/usage' })
 
     const sections = wrapper.findAll('[data-testid^="nav-section-"]:not([data-testid$="-label"])').map((section) => section.attributes('data-testid'))
     expect(sections).toEqual(['nav-section-home', 'nav-section-sales', 'nav-section-support', 'nav-section-catalog', 'nav-section-infrastructure', 'nav-section-insights', 'nav-section-addons', 'nav-section-system'])
@@ -494,7 +502,7 @@ describe('AppSidebar Add-ons', () => {
   it('draws no Add-ons section while no plugin declares a menu item', async () => {
     stubDocsUrl('')
     stubRoutes({ 'GET /api/admin/plugins/ui': () => json({ menus: [], pages: [] }) })
-    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    const wrapper = await mountView(MainSidebar, { path: '/dashboard' })
 
     expect(wrapper.find('[data-testid="nav-section-addons"]').exists()).toBe(false)
   })

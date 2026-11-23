@@ -118,7 +118,6 @@
       "missingCredentials": "no hay ningún token de API ni hash de acceso definido.",
       "unreachable": "el servidor no respondió o rechazó la solicitud."
     },
-    "updateNow": "Actualizar ahora",
     "clientNameDomain": "Nombre del cliente / dominio",
     "diskUsage": "Uso de disco",
     "diskLimit": "Límite de disco",
@@ -258,7 +257,6 @@
     },
     "showInactive": "Mostrar dominios inactivos",
     "showInactiveHint": "Mostrar también los dominios que no están activos.",
-    "recheck": "Volver a comprobar el estado SSL",
     "recheckHint": "Comprobar los certificados de nuevo ahora.",
     "noDomains": "No hay dominios que supervisar.",
     "summary": "Dominios por grupo de caducidad"

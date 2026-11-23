@@ -37,6 +37,9 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -227,16 +230,16 @@ const handleSave = (): void => {
 </script>
 
 <template>
-  <UiStack gap="lg" data-testid="integration-config-form">
+  <UiStack :gap="UiGap.Lg" data-testid="integration-config-form">
     <!-- Card header: logo + name + enabled switch -->
-    <UiStack direction="row" align="center" gap="md">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md">
       <UiPluginAvatar
         v-if="integration.isPlugin"
         :name="integration.name"
         :icon-url="integration.iconUrl"
         data-testid="integration-plugin-avatar"
       />
-      <UiStack v-else align="center" justify="center" class="h-10 w-10 shrink-0 rounded-control p-2" :class="meta?.color ?? 'bg-text-muted'">
+      <UiStack v-else :align="UiAlignItems.Center" :justify="UiJustify.Center" class="h-10 w-10 shrink-0 rounded-control p-2" :class="meta?.color ?? 'bg-text-muted'">
         <UiImage
           v-if="meta?.logo"
           :src="meta.logo"
@@ -244,20 +247,20 @@ const handleSave = (): void => {
           class="h-full w-full object-contain brightness-0 invert"
         />
       </UiStack>
-      <UiStack gap="xs" class="min-w-0 flex-1">
-        <UiHeading :level="2" variant="card">{{ integration.name }}</UiHeading>
-        <UiText v-if="meta" tone="muted" size="sm" class="truncate">{{ meta.shortDescription }}</UiText>
+      <UiStack :gap="UiGap.Xs" class="min-w-0 flex-1">
+        <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ integration.name }}</UiHeading>
+        <UiText v-if="meta" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="truncate">{{ meta.shortDescription }}</UiText>
       </UiStack>
-      <UiLabel variant="inline" class="shrink-0">
+      <UiLabel :variant="UiLabelVariant.Inline" class="shrink-0">
         <UiToggle v-model="isEnabled" data-testid="integration-enabled" />
-        <UiText :tone="isEnabled ? 'success' : 'muted'" size="sm" class="font-semibold">
+        <UiText :tone="isEnabled ? UiTextTone.Success : UiTextTone.Muted" :size="UiTextSize.Sm" class="font-semibold">
           {{ isEnabled ? t('shared.enabled') : t('shared.disabled') }}
         </UiText>
       </UiLabel>
     </UiStack>
 
     <!-- Dynamic fields -->
-    <UiGrid :columns="2" gap="md">
+    <UiGrid :columns="2" :gap="UiGap.Md">
       <template v-for="field in integration.fieldDefinitions ?? []" :key="field.key">
         <UiField
           :label="field.label"
@@ -266,7 +269,7 @@ const handleSave = (): void => {
           :class="field.type === IntegrationFieldType.Textarea ? 'md:col-span-2' : ''"
         >
           <template #default="{ id }">
-            <UiStack v-if="isSecretField(field)" gap="xs">
+            <UiStack v-if="isSecretField(field)" :gap="UiGap.Xs">
               <SecretSettingField
                 :id="id"
                 :has-value="secretIsSet(field)"
@@ -278,8 +281,8 @@ const handleSave = (): void => {
               />
               <UiText
                 v-if="clearedFields.includes(field.key)"
-                tone="muted"
-                size="sm"
+                :tone="UiTextTone.Muted"
+                :size="UiTextSize.Sm"
                 :data-testid="`integration-field-${field.key}-pending-clear`"
               >
                 {{ t('settings.secret.pendingClear') }}
@@ -305,13 +308,13 @@ const handleSave = (): void => {
             />
 
             <!-- Boolean fields are kept as the strings "true" / "false" -->
-            <UiLabel v-else-if="field.type === IntegrationFieldType.Toggle" variant="inline">
+            <UiLabel v-else-if="field.type === IntegrationFieldType.Toggle" :variant="UiLabelVariant.Inline">
               <UiToggle
                 :model-value="localConfig[field.key] === SettingToggle.On"
                 :data-testid="`integration-field-${field.key}`"
                 @update:model-value="setToggle(field.key, $event)"
               />
-              <UiText :tone="localConfig[field.key] === SettingToggle.On ? 'success' : 'muted'" size="sm" class="font-semibold">
+              <UiText :tone="localConfig[field.key] === SettingToggle.On ? UiTextTone.Success : UiTextTone.Muted" :size="UiTextSize.Sm" class="font-semibold">
                 {{ localConfig[field.key] === SettingToggle.On ? t('shared.enabled') : t('shared.disabled') }}
               </UiText>
             </UiLabel>
@@ -347,24 +350,26 @@ const handleSave = (): void => {
       <!-- Hidden when the API says the integration has no test (a plugin without the status capability). -->
       <UiButton :action="UiActionKind.Test"
         v-if="integration.canTestConnection"
+        :title="t('shared.testConnection')"
+        :aria-label="t('shared.testConnection')"
         type="button"
-        variant="secondary"
+        :variant="UiButtonVariant.Secondary"
         :loading="testing"
         :disabled="loading"
         data-testid="integration-test"
         @click="emit('test')"
       >
-        {{ t('shared.testConnection') }}
+        {{ t('shared.test') }}
       </UiButton>
       <UiButton :action="UiActionKind.Save"
         type="button"
-        variant="primary"
+        :variant="UiButtonVariant.Primary"
         :loading="loading"
         :disabled="testing"
         data-testid="integration-save"
         @click="handleSave"
       >
-        {{ t('shared.saveChanges') }}
+        {{ t('shared.save') }}
       </UiButton>
     </UiFormActions>
   </UiStack>

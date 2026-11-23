@@ -15,6 +15,9 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import { EMPTY_VALUE } from '@/lib/format'
 import type { Setting } from '@/types/setting'
+import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 
 const { t } = useI18n()
 
@@ -37,11 +40,11 @@ const draft = useSettingDraft(settings, props.settingKey)
   <UiTableRow v-if="draft.setting.value" hoverable :data-testid="`setting-row-${draft.setting.value.id}`">
     <UiTableCell class="font-mono text-text-primary">{{ draft.setting.value.key }}</UiTableCell>
     <UiTableCell>
-      <UiStack gap="xs">
+      <UiStack :gap="UiGap.Xs">
         <UiInput
           v-model="draft.value.value"
-          type="text"
-          size="sm"
+          :type="UiInputType.Text"
+          :size="UiSize.Sm"
           :placeholder="t('shared.value')"
           :data-testid="`setting-value-${draft.setting.value.id}`"
           class="min-w-48"

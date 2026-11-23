@@ -2,7 +2,7 @@
 /**
  * Image.
  *
- * `fit` decides how the picture fills its box and `rounded` the corner radius. `alt` defaults to
+ * `fit` decides how the picture fills its box, `rounded` the corner radius and `size` the box of a list thumbnail. `alt` defaults to
  * empty (decorative); pass real text when the picture carries meaning. Other attributes
  * (`width`, `height`, classes) land on the native `<img>`. With `fallback` and no `src` the picture is
  * replaced by a framed box of the same size holding an image icon, so a list of thumbnails keeps its rhythm.
@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
-import type { UiImageFit, UiImageRounded } from '@/utils/ui/image'
+import type { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
 
 /** Props for UiImage. */
 const props = withDefaults(defineProps<{
@@ -22,6 +22,8 @@ const props = withDefaults(defineProps<{
   fit?: UiImageFit
   /** Corner radius. */
   rounded?: UiImageRounded
+  /** Box size; a thumbnail size also frames the picture with a hairline border. */
+  size?: UiImageSize
   /** Draws the framed icon box instead of the picture while there is no `src`. */
   fallback?: boolean
 }>(), {
@@ -29,6 +31,7 @@ const props = withDefaults(defineProps<{
   alt: '',
   fit: 'none',
   rounded: 'none',
+  size: 'auto',
   fallback: false,
 })
 
@@ -47,8 +50,15 @@ const roundedClasses: Record<UiImageRounded, string> = {
   full: 'rounded-full',
 }
 
-/** Classes of the chosen fit and radius. */
-const classes = computed<string[]>(() => [fitClasses[props.fit], roundedClasses[props.rounded]])
+/** Box classes. */
+const sizeClasses: Record<UiImageSize, string> = {
+  auto: '',
+  thumb: 'h-10 w-10 border border-border',
+  thumbWide: 'h-10 w-16 border border-border',
+}
+
+/** Classes of the chosen fit, radius and size. */
+const classes = computed<string[]>(() => [fitClasses[props.fit], roundedClasses[props.rounded], sizeClasses[props.size]])
 </script>
 
 <template>

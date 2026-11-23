@@ -13,6 +13,7 @@ import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { InvoiceRefundType, InvoiceStatus } from '@/types/invoice'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -178,7 +179,7 @@ describe('InvoiceRefundTab', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-refund-feedback"]').text()).toContain('The gateway declined the refund.')
+    expect(toastMessages().join(' ')).toContain('The gateway declined the refund.')
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
   })
 

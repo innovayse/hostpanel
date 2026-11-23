@@ -32,7 +32,6 @@ test('the gateway log lists the API entries and sends the search to the API', as
   await page.goto('/billing/gateway-log')
   await expect(page.getByTestId('billing-gateway-log-table')).toContainText('Invoice #9 order ord-9')
   await expect(page.getByTestId('billing-gateway-log-table')).toContainText('Invoice #4 ref ref-4')
-  await expect(page.getByTestId('billing-gateway-log-count')).toContainText('2 Records Found')
 
   // The search box writes to the address after a pause and the log reloads from it.
   await fieldOf(page, 'billing-gateway-log-search').fill('ref-4')

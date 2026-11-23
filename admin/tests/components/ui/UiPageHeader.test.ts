@@ -59,12 +59,36 @@ describe('UiPageHeader', () => {
       slots: { actions: '<button data-testid="act" />' },
     })
 
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex-wrap', 'md:flex-nowrap']))
-    const text = wrapper.get('h1').element.closest('header > div')
-    expect(text?.className).toEqual(expect.stringContaining('md:basis-0'))
-    expect(text?.className).toEqual(expect.stringContaining('min-w-0'))
+    const row = wrapper.get('h1').element.parentElement?.parentElement
+    expect(row?.classList.contains('flex-wrap')).toBe(true)
+    expect(wrapper.get('h1').element.parentElement?.className).toEqual(expect.stringContaining('min-w-0'))
     expect(wrapper.get('p').classes()).toContain('max-w-[70ch]')
-    expect(wrapper.get('[data-testid="act"]').element.parentElement?.className).toEqual(expect.stringContaining('md:shrink-0'))
+  })
+
+  it('stacks the header in a column and wraps its title row, so the actions drop under a long title instead of squeezing it', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'Service #1 - A long product name' }, slots: { actions: '<button data-testid="act" />' } })
+    const text = wrapper.get('h1').element.parentElement
+    const actions = wrapper.get('[data-testid="act"]').element.parentElement
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex', 'flex-col']))
+    expect(wrapper.classes()).not.toContain('flex-wrap')
+    expect(text?.parentElement?.classList.contains('flex-wrap')).toBe(true)
+    // The text column grows from a 20rem basis and may shrink, so the title wraps by words and never per letter.
+    expect(text?.classList.contains('flex-[1_1_20rem]')).toBe(true)
+    expect(text?.classList.contains('min-w-0')).toBe(true)
+    expect(wrapper.get('h1').classes()).toContain('break-words')
+    expect(text?.className).not.toContain('break-all')
+    // The actions row wraps too and never exceeds the header.
+    expect(actions?.classList.contains('flex-wrap')).toBe(true)
+    expect(actions?.classList.contains('max-w-full')).toBe(true)
+    expect(actions?.classList.contains('whitespace-nowrap')).toBe(false)
+    expect(actions?.classList.contains('shrink-0')).toBe(false)
+  })
+
+  it('keeps default-slot content (a switcher, a badge) inside the text column under the title', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'Service' }, slots: { default: '<span data-testid="extra" />' } })
+
+    expect(wrapper.get('[data-testid="extra"]').element.parentElement).toBe(wrapper.get('h1').element.parentElement)
   })
 
   it('draws a title bar instead of the text while loading, and a subtitle bar only when one is passed', () => {
@@ -115,22 +139,13 @@ describe('UiPageHeader', () => {
     expect(wrapper.find('[data-testid="act"]').exists()).toBe(true)
   })
 
-  it('keeps the actions on the right of the title row, wrapping only below sm so they never leave the viewport', () => {
-    const wrapper = mount(UiPageHeader, { props: { title: 'Clients' }, slots: { actions: '<button data-testid="act" />' } })
-    const actions = wrapper.get('[data-testid="act"]').element.parentElement
-
-    expect(actions?.classList.contains('flex-wrap')).toBe(true)
-    expect(actions?.classList.contains('sm:flex-nowrap')).toBe(true)
-    expect(actions?.classList.contains('whitespace-nowrap')).toBe(true)
-  })
-
   it('keeps 22px under itself less the gap its stack already adds', () => {
     const wrapper = mount(UiPageHeader, { props: { title: 'Clients' } })
 
     expect(wrapper.classes()).toContain('mb-[calc(1.375rem-var(--stack-gap,0rem))]')
   })
 
-  it('draws the back pill left of the title when it has a target and a label', () => {
+  it('draws the back pill on its own row above the title when it has a target and a label', () => {
     const wrapper = mount(UiPageHeader, {
       props: { title: 'Plugin', backTo: '/plugins', backLabel: 'Plugins', backTestid: 'probe-back' },
       global: { stubs: { RouterLink: RouterLinkStub } },
@@ -140,8 +155,10 @@ describe('UiPageHeader', () => {
     expect(wrapper.findComponent(RouterLinkStub).props('to')).toBe('/plugins')
     expect(back.text()).toBe('Plugins')
     expect(back.classes()).toContain('rounded-pill')
-    // The back pill comes before the heading in the document, so it sits to its left.
+    // The back pill comes before the heading and is a direct child of the header, not part of the title row.
     expect(back.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(back.element.parentElement).toBe(wrapper.element)
+    expect(back.classes()).toContain('self-start')
   })
 
   it('draws no back link without a target, or without a label', () => {
@@ -238,15 +255,37 @@ describe('UiPageHeader', () => {
       expect(order).toEqual(['help', 'h-refresh'])
     })
 
-    it('keeps only the primary action as a button on a phone and folds the others into one menu', () => {
+    it('collapses every action into one compact plus trigger below md, the primary action first with its full label', async () => {
       const original = window.matchMedia
       window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined })) as unknown as typeof window.matchMedia
       try {
-        const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: ACTIONS }, global: { stubs: { RouterLink: RouterLinkStub } } })
+        const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: ACTIONS }, slots: { default: '<i data-testid="filters" />' }, global: { stubs: { RouterLink: RouterLinkStub } }, attachTo: document.body })
+        const trigger = wrapper.get('[data-testid="ui-page-header-more"]')
 
-        expect(wrapper.find('[data-testid="h-add"]').exists()).toBe(true)
+        expect(wrapper.find('[data-testid="h-add"]').exists()).toBe(false)
         expect(wrapper.find('[data-testid="h-refresh"]').exists()).toBe(false)
-        expect(wrapper.find('[data-testid="ui-page-header-more"]').exists()).toBe(true)
+        expect(trigger.attributes('aria-label')).toBe('Actions')
+        expect(wrapper.get('[data-testid="ui-page-header-trigger"]').classes()).toEqual(expect.arrayContaining(['size-11', 'gradient-brand']))
+        expect(wrapper.find('[data-testid="filters"]').exists()).toBe(true)
+
+        await trigger.trigger('click')
+        const items = Array.from(document.body.querySelectorAll('[role^="menuitem"]')).map((node) => node.getAttribute('data-testid'))
+
+        expect(items).toEqual(['h-add', 'h-refresh'])
+        wrapper.unmount()
+      } finally {
+        window.matchMedia = original
+      }
+    })
+
+    it('uses the overflow icon trigger below md when no action is primary', () => {
+      const original = window.matchMedia
+      window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined })) as unknown as typeof window.matchMedia
+      try {
+        const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: [ACTIONS[0]!] } })
+
+        expect(wrapper.get('[data-testid="ui-page-header-more"]').attributes('aria-label')).toBe('More actions')
+        expect(wrapper.get('[data-testid="ui-page-header-trigger"]').classes()).not.toContain('gradient-brand')
       } finally {
         window.matchMedia = original
       }

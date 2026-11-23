@@ -13,25 +13,21 @@ import { useI18n } from 'vue-i18n'
 import { useClientTransactionsStore } from '@/stores/clientTransactions'
 import { useFilterDateRange } from '@/composables/useFilterDateRange'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { TransactionFilterKey, useTransactionFilters } from '@/composables/useTransactionFilters'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import AddTransactionModal from '@/components/clients/AddTransactionModal.vue'
 import TransactionFilterFields from '@/components/billing/TransactionFilterFields.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatRow from '@/components/ui/UiStatRow.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -42,8 +38,8 @@ import schema, { CLIENT_TRANSACTIONS_STATS } from '@/views/ClientTransactionsVie
 import type { Transaction } from '@/types/transaction'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 import type { UiStatFigure } from '@/utils/ui/statRow'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
@@ -102,10 +98,7 @@ const deleting = ref(false)
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last add or delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Loads the page of the ledger the address names with the filters and search it holds.
@@ -151,7 +144,6 @@ const executeDelete = async (): Promise<void> => {
   if (!deleteTargetId.value) {
     return
   }
-  feedback.clear()
   deleting.value = true
   const ok = await store.remove(deleteTargetId.value)
   deleting.value = false
@@ -200,7 +192,7 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
 
 <template>
   <UiStack>
-    <UiSectionHeader :level="1" variant="card">
+    <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('shared.transactions') }}
       <template #actions>
         <UiButton :action="UiActionKind.Add"
@@ -209,12 +201,11 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
           data-testid="client-transactions-add"
           @click="showAddModal = true"
         >
-          {{ t('clients.clientTransactions.addNewTransaction') }}
+          {{ t('clients.clientTransactions.addTransaction') }}
         </UiButton>
       </template>
     </UiSectionHeader>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-transactions-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -250,73 +241,58 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
         />
       </UiListToolbar>
 
-      <UiCard class="overflow-x-auto">
-        <UiTable
-          :density="UiTableDensity.Comfortable"
-          :loading="initialLoading"
-          :empty="!initialLoading && store.transactions.length === 0"
-          data-testid="client-transactions-table"
-        >
-          <UiSchemaTableHead :columns="schema.table.columns" />
-          <UiTableBody divided>
-            <UiTableRow v-for="tx in store.transactions" :key="tx.id" hoverable>
-              <UiTableCell muted>{{ formatDate(tx.date) }}</UiTableCell>
-              <UiTableCell muted>{{ tx.paymentMethod }}</UiTableCell>
-              <UiTableCell muted>{{ tx.description }}</UiTableCell>
-              <UiTableCell numeric>
-                <UiText :tone="tx.amountIn > 0 ? UiTextTone.Success : UiTextTone.Muted">{{ formatPlainAmount(tx.amountIn, tx.currency) }}</UiText>
-              </UiTableCell>
-              <UiTableCell numeric>
-                <UiText :tone="tx.amountOut > 0 ? UiTextTone.Danger : UiTextTone.Muted">{{ formatPlainAmount(tx.amountOut, tx.currency) }}</UiText>
-              </UiTableCell>
-              <UiTableCell muted numeric>{{ formatPlainAmount(tx.fees, tx.currency) }}</UiTableCell>
-              <UiTableCell actions>
-                <UiRowActions :actions="transactionActions(tx)" :testid="`client-transactions-actions-${tx.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-          <template #empty>
-            <UiEmptyState
-              :title="narrowed ? t('clients.clientTransactions.noTransactionsMatchYourFilters') : t('shared.noRecordsFound')"
-              data-testid="client-transactions-empty"
-            >
-              <template v-if="activeCount > 0" #actions>
-                <UiButton :variant="UiButtonVariant.Link" data-testid="client-transactions-clear-empty" @click="clearAll">
-                  {{ t('clients.clientTransactions.clearFilters') }}
-                </UiButton>
-              </template>
-            </UiEmptyState>
-          </template>
-        </UiTable>
-        <UiStack
-          v-if="initialLoading || store.totalCount > LEDGER_PAGE_SIZE"
-          direction="row"
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
-        >
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
-            {{ t('clients.clientTransactions.totalcountTransactionValue', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="LEDGER_PAGE_SIZE"
-            :loading="initialLoading"
-            testid="client-transactions-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
-      </UiCard>
+      <UiDataTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        :empty="!initialLoading && store.transactions.length === 0"
+        :page="page"
+        :total="store.totalCount"
+        :page-size="LEDGER_PAGE_SIZE"
+        pagination-testid="client-transactions-pagination"
+        data-testid="client-transactions-table"
+        @update:page="setPage"
+      >
+        <UiSchemaTableHead :columns="schema.table.columns" />
+        <UiTableBody>
+          <UiTableRow v-for="tx in store.transactions" :key="tx.id" hoverable>
+            <UiTableCell muted>{{ formatDate(tx.date) }}</UiTableCell>
+            <UiTableCell muted>{{ tx.paymentMethod }}</UiTableCell>
+            <UiTableCell muted>{{ tx.description }}</UiTableCell>
+            <UiTableCell numeric>
+              <UiText :tone="tx.amountIn > 0 ? UiTextTone.Success : UiTextTone.Muted">{{ formatPlainAmount(tx.amountIn, tx.currency) }}</UiText>
+            </UiTableCell>
+            <UiTableCell numeric>
+              <UiText :tone="tx.amountOut > 0 ? UiTextTone.Danger : UiTextTone.Muted">{{ formatPlainAmount(tx.amountOut, tx.currency) }}</UiText>
+            </UiTableCell>
+            <UiTableCell muted numeric>{{ formatPlainAmount(tx.fees, tx.currency) }}</UiTableCell>
+            <UiTableCell actions>
+              <UiRowActions :actions="transactionActions(tx)" :testid="`client-transactions-actions-${tx.id}`" />
+            </UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+        <template #empty>
+          <UiEmptyState
+            :title="narrowed ? t('clients.clientTransactions.noTransactionsMatchYourFilters') : t('shared.noRecordsFound')"
+            data-testid="client-transactions-empty"
+          >
+            <template v-if="activeCount > 0" #actions>
+              <UiButton :variant="UiButtonVariant.Link" data-testid="client-transactions-clear-empty" @click="clearAll">
+                {{ t('shared.clearFilters') }}
+              </UiButton>
+            </template>
+          </UiEmptyState>
+        </template>
+      </UiDataTable>
     </template>
 
     <UiDialog
       v-if="showDeleteModal"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientTransactions.deleteTransaction')"
       :message="t('clients.clientTransactions.confirmDeleteTransaction', { id: deleteTargetId })"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="executeDelete"
       @close="dismissDelete"
     />

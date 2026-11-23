@@ -16,6 +16,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 // The chart library needs a canvas the test environment does not have; TransactionChart has its own test.
 vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
@@ -116,7 +117,7 @@ describe('TransactionsListView', () => {
     expect(wrapper.get('[data-testid="billing-transactions-total-in"]').text()).toContain('120.00 EUR')
     expect(wrapper.get('[data-testid="billing-transactions-balance"]').text()).toContain('96.50 EUR')
     expect(wrapper.findAll('[data-testid="billing-transactions-table"] tbody tr')).toHaveLength(2)
-    expect(wrapper.get('[data-testid="billing-transactions-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.get('[data-testid="billing-transactions-table"]').findAll('th').find((header) => header.text() === 'Description')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('opens the edit page from the row actions menu', async () => {
@@ -248,6 +249,8 @@ describe('TransactionsListView', () => {
     )
     const { wrapper, router } = await mountLedgerAt()
 
+    expect(wrapper.find('[data-testid="ui-card-footer"] [data-testid="billing-transactions-pagination-next"]').exists()).toBe(true)
+
     await wrapper.get('[data-testid="billing-transactions-pagination-next"]').trigger('click')
     await flushPromises()
 
@@ -293,7 +296,7 @@ describe('TransactionsListView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-transactions-feedback"]').text()).toBe('Transaction is settled.')
+    expect(toastMessages()).toContain('Transaction is settled.')
     expect(wrapper.find('[data-testid="billing-transactions-error"]').exists()).toBe(false)
   })
 
@@ -320,13 +323,11 @@ describe('TransactionsListView', () => {
     expect(wrapper.find('[data-testid="billing-transactions-error"]').exists()).toBe(false)
   })
 
-  it('hands the revenue chart its loading state and draws a bar for the count while the first load is pending', async () => {
+  it('hands the revenue chart its loading state while the first load is pending', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountLedger()
 
     expect(wrapper.get('[data-testid="billing-transaction-chart"]').find('[data-testid="chart-skeleton"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="ui-result-count-skeleton"]').text()).toBe('')
-    expect(wrapper.find('[data-testid="billing-transactions-count"]').exists()).toBe(false)
   })
 
   it('draws the table skeleton under the schema head while the first load is in flight', async () => {

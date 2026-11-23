@@ -21,7 +21,7 @@
       <template #action>
         <UiButton size="sm" variant="subtle" :to="CLIENT_INVOICES_PATH" data-testid="dashboard-alert-unpaid-action">
           <ArrowRight :size="13" :stroke-width="2" class="mr-1" />
-          {{ $t('client.dashboard.unpaidView') }}
+          {{ $t('common.view') }}
         </UiButton>
       </template>
     </UiAlert>

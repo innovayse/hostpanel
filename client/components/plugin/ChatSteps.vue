@@ -1,10 +1,10 @@
 <template>
   <UiCard padding="none" class="px-2.5 py-2" data-testid="plugin-chat-steps-box">
-    <UiStack as="ul" :gap="UiGap.Xs" data-testid="plugin-chat-steps">
+    <UiStack :as="UiStackTag.Ul" :gap="UiGap.Xs" data-testid="plugin-chat-steps">
       <UiStack
         v-for="step in steps"
         :key="step.key"
-        as="li"
+        :as="UiStackTag.Li"
         :direction="UiDirection.Row"
         :gap="UiGap.Xs"
         :align="UiCrossAlign.Center"
@@ -12,11 +12,11 @@
         data-testid="plugin-chat-step"
       >
         <component :is="STEP_ICONS[step.state]" :size="14" :class="STEP_ICON_CLASSES[step.state]" aria-hidden="true" />
-        <UiText as="span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted">{{ step.label }}</UiText>
-        <UiText v-if="step.state === PluginChatStepState.Stopped" as="span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" data-testid="plugin-chat-step-stopped">{{ $t('plugins.chatStepStopped') }}</UiText>
+        <UiText :as="UiTextTag.Span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted">{{ step.label }}</UiText>
+        <UiText v-if="step.state === PluginChatStepState.Stopped" :as="UiTextTag.Span" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" data-testid="plugin-chat-step-stopped">{{ $t('plugins.chatStepStopped') }}</UiText>
       </UiStack>
     </UiStack>
-    <UiText as="p" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" class="mt-1" data-testid="plugin-chat-steps-count">{{ $t('plugins.chatStepsCount', { done, total: steps.length }) }}</UiText>
+    <UiText :as="UiTextTag.P" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" class="mt-1" data-testid="plugin-chat-steps-count">{{ $t('plugins.chatStepsCount', { done, total: steps.length }) }}</UiText>
   </UiCard>
 </template>
 
@@ -25,7 +25,7 @@
  * PluginChatSteps: the compact list of steps a plugin's reply reports, each with the icon of its state, and how many
  * have finished.
  */
-import { UiCrossAlign, UiDirection, UiGap, UiTextSize, UiTextTone } from '~/utils/ui/enums'
+import { UiCrossAlign, UiDirection, UiGap, UiStackTag, UiTextSize, UiTextTag, UiTextTone } from '~/utils/ui/enums'
 import type { Component } from 'vue'
 import { Check, CircleSlash, LoaderCircle, X } from 'lucide-vue-next'
 import type { PluginChatStep } from '~/types/pluginchatstep'

@@ -1,7 +1,7 @@
 {
   "integrationCard": {
     "plugin": "Պլագին",
-    "configure": "Կարգավորել →",
+    "configure": "Կարգավորել",
     "notConfigured": "Կարգավորված չէ"
   },
   "categories": {

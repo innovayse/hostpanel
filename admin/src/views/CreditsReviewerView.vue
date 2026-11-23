@@ -23,6 +23,8 @@ import type { ReportCreditRow, ReportCredits, ReportCreditTotal } from '@/types/
 import type { ReportTableData } from '@/types/reporttabledata'
 import { DateRangePreset, presetIsoRange } from '@/utils/ui/datePicker'
 import { ReportFieldWidth } from '@/utils/ui/reportField'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/CreditsReviewerView.schema'
 
 const { t } = useI18n()
@@ -106,8 +108,8 @@ const table = computed<ReportTableData<ReportCreditRow>>(() => ({
     </template>
 
     <template #summary>
-      <UiStack gap="xs" data-testid="report-credits-summary">
-        <UiText v-for="total in totals" :key="total.currency" tone="secondary" size="md">
+      <UiStack :gap="UiGap.Xs" data-testid="report-credits-summary">
+        <UiText v-for="total in totals" :key="total.currency" :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{
             t('reports.creditsReviewer.currencySummary', {
               currency: total.currency,

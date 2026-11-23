@@ -19,7 +19,7 @@
       <!-- Gateway payment: whichever gateway plugin the deployment enabled. -->
       <template v-if="hostedGatewayModule">
         <UiText size="sm" tone="muted" data-testid="invoice-pay-hosted-hint">{{ $t('invoicePay.hostedHint') }}</UiText>
-        <UiButton full-width :loading="submitting" data-testid="invoice-pay-hosted" @click="payWithHostedGateway">
+        <UiButton variant="primary" full-width :loading="submitting" data-testid="invoice-pay-hosted" @click="payWithHostedGateway">
           {{ $t('invoicePay.payByCardHosted') }}
         </UiButton>
       </template>

@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The client groups screen. */
 const schema: ListSkeletonSchema = {
@@ -19,7 +19,7 @@ const schema: ListSkeletonSchema = {
       { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
       { key: 'discount', label: 'clients.clientGroups.discount', size: UiColumnSize.Compact },
       { key: 'clients', label: 'clients.clientGroups.clients', size: UiColumnSize.Compact },
-      { key: 'default', label: 'shared.default', size: UiColumnSize.Compact },
+      { key: 'default', label: 'shared.default', kind: UiColumnKind.Status },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

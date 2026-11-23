@@ -1,7 +1,5 @@
 {
   "signInPrompt": {
-    "message": "You are not signed in. Sign in to see your services, invoices and tickets.",
-    "signIn": "Sign in",
-    "dismiss": "Not now"
+    "message": "You are not signed in. Sign in to see your services, invoices and tickets."
   }
 }

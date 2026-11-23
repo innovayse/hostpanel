@@ -7,20 +7,20 @@
       "email": "Correo",
       "pricing": "Precios",
       "support": "Soporte",
-      "login": "Iniciar sesión",
-      "getStarted": "Empezar",
       "menu": "Abrir menú",
       "close": "Cerrar menú",
       "cart": "Carrito",
       "skipToContent": "Saltar al contenido",
       "preferences": "Idioma y tema"
     },
+    "cta": {
+      "getStarted": "Empezar",
+      "seePlans": "Ver planes"
+    },
     "hero": {
       "badge": "Hosting, dominios y correo en una sola cuenta",
       "title": "Hosting rápido y seguro, hecho para su sitio web",
       "lead": "{site} le ofrece el servidor, el dominio y el panel de control en un solo lugar. Las cuentas se aprovisionan automáticamente, la facturación es transparente y hay una persona real al otro lado de cada ticket.",
-      "ctaPrimary": "Empezar",
-      "ctaSecondary": "Ver planes",
       "benefitSsl": "Certificado SSL gratuito",
       "benefitBackups": "Copias de seguridad automáticas",
       "benefitSupport": "Soporte incluido",
@@ -117,7 +117,7 @@
       "eyebrow": "Panel de control",
       "title": "Todo sobre su sitio, en un solo lugar",
       "lead": "Dominios, archivos, bases de datos, certificados y buzones se gestionan desde la misma área de clientes. Sin un segundo acceso ni un portal de facturación aparte.",
-      "cta": "Ver el área de clientes",
+      "cta": "Ver área de clientes",
       "windowTitle": "Área de clientes",
       "websites": "Sitios web",
       "websitesValue": "Añadir y eliminar",
@@ -139,7 +139,7 @@
       "title": "Traslade su sitio web a {site}",
       "lead": "No tiene que reconstruir nada. Envíenos lo que tiene y nosotros lo trasladamos; le avisaremos antes de cambiar nada.",
       "free": "Migración gratuita",
-      "cta": "Iniciar una migración",
+      "cta": "Iniciar migración",
       "step1Title": "Elija su plan",
       "step1Body": "Elija el plan que se ajuste al sitio que va a trasladar. Si tiene dudas, pregúntenos primero. Preferimos dimensionarlo correctamente.",
       "step2Title": "Envíenos su sitio web",
@@ -180,9 +180,7 @@
     },
     "finalCta": {
       "title": "¿Listo para lanzar su sitio web?",
-      "lead": "Elija un plan, apunte su dominio y esté en línea hoy mismo.",
-      "primary": "Empezar",
-      "secondary": "Ver planes de hosting"
+      "lead": "Elija un plan, apunte su dominio y esté en línea hoy mismo."
     },
     "footer": {
       "tagline": "Hosting, dominios y correo para quienes prefieren centrarse en construir su sitio.",
@@ -255,7 +253,7 @@
       "phoneTitle": "Teléfono",
       "phoneBody": "Hable con una persona sobre lo que resulte difícil de explicar por escrito.",
       "responseTime": "Respuesta habitual: {time}",
-      "open": "Contáctenos"
+      "open": "Hable con nosotros"
     }
   }
 }

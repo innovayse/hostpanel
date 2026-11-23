@@ -1,5 +1,5 @@
 <template>
-  <section v-if="guarantees.length" class="py-14 md:py-20 bg-classic-surface border-y border-classic-border" data-testid="sections-guarantees">
+  <UiSection v-if="guarantees.length" :contained="false" padding="lg" class="bg-classic-surface border-y border-classic-border" data-testid="sections-guarantees">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -23,7 +23,7 @@
         </ClassicCard>
       </UiBalancedGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

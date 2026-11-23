@@ -3,7 +3,8 @@
     "verifyYourEmail": "Verify Your Email",
     "pleaseCheckYourInboxAnd": "Please check your inbox and click the verification link to activate your admin account. You won't be able to use the admin panel until your email is verified.",
     "didnTReceiveTheEmail": "Didn't receive the email? Check your spam folder.",
-    "resend": "Resend the email",
+    "resend": "Resend",
+    "resendTitle": "Resend the email",
     "resent": "Verification email sent."
   },
   "collapseSidebar": "Collapse sidebar",
@@ -30,10 +31,7 @@
     "es": "Español"
   },
   "theme": {
-    "label": "Theme",
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System"
+    "label": "Dark theme"
   },
   "version": {
     "label": "Hostpanel {version}"
@@ -41,8 +39,6 @@
   "releaseUpdate": {
     "title": "Hostpanel {version} available",
     "releaseNotes": "Release notes",
-    "copy": "Copy upgrade command",
-    "copied": "Copied!"
-  },
-  "newClient": "New client"
+    "copy": "Copy upgrade command"
+  }
 }

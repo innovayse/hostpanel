@@ -1,8 +1,8 @@
 <template>
-  <section id="products-section" class="py-24 bg-ui-page relative" data-testid="products-catalog">
-    <UiContainer>
+  <UiStack id="products-section" :as="UiStackTag.Section" gap="none" class="py-24 bg-ui-page relative" data-testid="products-catalog">
+    <UiContainer class="w-full">
       <!-- Product navigation -->
-      <div class="flex flex-wrap justify-center gap-2 sm:gap-3 mb-12 sm:mb-14 md:mb-16">
+      <UiStack direction="row" wrap justify="center" gap="xs" class="sm:gap-3 mb-12 sm:mb-14 md:mb-16">
         <UiButton
           v-for="(product, index) in products"
           :key="product.id"
@@ -16,7 +16,7 @@
         >
           {{ product.name }}
         </UiButton>
-      </div>
+      </UiStack>
 
       <!-- Catalogue grid -->
       <UiBalancedGrid :count="products.length" data-testid="product-grid">
@@ -26,7 +26,7 @@
 
     <!-- Decorative rule -->
     <UiDecor class="bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-secondary-500/30 to-transparent" />
-  </section>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +40,7 @@
 import { revealDelay } from '~/utils/reveal'
 import type { ProductFamily } from '~/types/productfamily'
 import { siteProductFamilyPath } from '~/constants/siteRoutes'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of ProductFamilyGrid. */
 interface Props {

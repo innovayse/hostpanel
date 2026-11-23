@@ -1,5 +1,5 @@
 <template>
-  <article class="h-full" :data-testid="`nova-plan-${plan.id}`">
+  <UiStack :as="UiStackTag.Article" gap="none" class="h-full" :data-testid="`nova-plan-${plan.id}`">
     <UiCard
       padding="lg"
       class="relative flex h-full flex-col transition-[transform,border-color] motion-safe:hover:-translate-y-1 !bg-nova-surface"
@@ -7,7 +7,7 @@
     >
       <UiText
         v-if="plan.popular"
-        as="span"
+        :as="UiTextTag.Span"
         size="inherit"
         tone="inherit"
         class="absolute -top-3 left-6 rounded-full bg-nova-accent px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-nova-on-accent"
@@ -17,7 +17,7 @@
 
       <UiText
         v-else-if="plan.isFree"
-        as="span"
+        :as="UiTextTag.Span"
         size="inherit"
         tone="inherit"
         class="absolute -top-3 left-6 rounded-full border border-nova-brand bg-nova-bg px-3 py-1 text-[12px] font-extrabold uppercase tracking-[0.06em] text-nova-brand"
@@ -36,19 +36,19 @@
       </UiText>
 
       <UiStack direction="row" wrap align="end" gap="none" class="mt-6 gap-x-2">
-        <span class="text-[2.4rem] font-extrabold leading-none tracking-tight text-nova-ink">
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[2.4rem] font-extrabold leading-none tracking-tight text-nova-ink">
           {{ plan.isFree ? plan.priceMonthly : cardCyclePrice(plan, cycle) }}
-        </span>
+        </UiText>
         <!--
           A free plan costs the same whichever billing period is selected, so
           saying "per month, billed yearly" over a zero would be describing an
           invoice that never arrives.
         -->
-        <span class="pb-1 text-sm text-nova-muted">
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="pb-1 text-sm text-nova-muted">
           {{ plan.isFree
             ? t('nova.plans.freeForever')
             : perMonthLabel }}
-        </span>
+        </UiText>
       </UiStack>
 
       <!--
@@ -68,10 +68,18 @@
       </UiText>
 
       <UiList v-if="plan.features.length" list-style="bare" class="mt-6 flex flex-col gap-2.5">
-        <li v-for="line in plan.features" :key="line" class="flex items-start gap-2.5 text-[14px] text-nova-ink">
+        <UiStack
+          v-for="line in plan.features"
+          :key="line"
+          :as="UiStackTag.Li"
+          direction="row"
+          align="start"
+          gap="none"
+          class="gap-2.5 text-[14px] text-nova-ink"
+        >
           <Icon name="lucide:check" class="mt-0.5 h-4 w-4 shrink-0 text-nova-success" aria-hidden="true" />
-          <span class="min-w-0">{{ line }}</span>
-        </li>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="min-w-0">{{ line }}</UiText>
+        </UiStack>
       </UiList>
 
       <NovaCta
@@ -83,10 +91,10 @@
         :data-testid="`nova-plan-cta-${plan.id}`"
       >
         {{ t('nova.plans.cta') }}
-        <span class="sr-only"> {{ plan.name }}</span>
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="sr-only"> {{ plan.name }}</UiText>
       </NovaCta>
     </UiCard>
-  </article>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -105,6 +113,7 @@ import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import type { NovaPlan } from '~/templates/nova/types/novaplan'
 import { PricingCycle } from '~/types/pricingcycle'
 import { cardCyclePrice } from '~/utils/planCycles'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of PricingCard. */
 const props = defineProps<{

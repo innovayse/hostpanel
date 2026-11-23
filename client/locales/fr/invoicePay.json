@@ -10,7 +10,6 @@
     "payByCardHosted": "Payer par carte",
     "noPaymentOption": "Le paiement en ligne n'est pas disponible pour le moment. Veuillez contacter le support pour régler cette facture.",
     "hostedHint": "Choisissez « Payer par carte » pour finaliser le paiement sur la page sécurisée du prestataire de paiement.",
-    "retry": "Réessayer",
     "bankTransfer": {
       "hint": "Payez par virement bancaire. Vous verrez les coordonnées bancaires et une référence à indiquer sur le virement, et la facture est marquée comme payée dès que nous confirmons la réception des fonds.",
       "choose": "Payer par virement bancaire",
@@ -25,7 +24,6 @@
       "iban": "IBAN",
       "swift": "SWIFT / BIC",
       "copy": "Copier {field}",
-      "copied": "Copié",
       "noDetails": "Aucune coordonnée bancaire n'est encore configurée pour ce virement. Veuillez nous contacter pour obtenir le compte à créditer, en indiquant la référence ci-dessus.",
       "afterwards": "Nous vous avons également envoyé ces informations par e-mail. La facture reste en attente jusqu'à ce que nous voyions les fonds sur notre compte, ce qui peut prendre quelques jours ouvrés bancaires."
     }

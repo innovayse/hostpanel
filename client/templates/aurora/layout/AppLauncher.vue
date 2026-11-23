@@ -7,8 +7,8 @@
     <template #trigger="{ toggle }">
       <UiButton
         variant="bare"
-        :title="t('aurora.apps.title')"
-        :aria-label="t('aurora.apps.title')"
+        :title="t('aurora.nav.apps')"
+        :aria-label="t('aurora.nav.apps')"
         :aria-expanded="open"
         aria-haspopup="menu"
         data-testid="app-launcher-trigger"
@@ -35,8 +35,8 @@
         >
           <UiStack gap="xs" align="start" class="w-full min-w-0 text-left">
             <UiTile :class="[tileClass(app.id), 'font-mono text-tile-ink']">{{ app.tag }}</UiTile>
-            <UiText as="span" size="sm" weight="semibold" tone="inherit">{{ app.label }}</UiText>
-            <UiText as="span" size="xs" tone="inherit" class="leading-snug text-mut2">{{ app.desc }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" weight="semibold" tone="inherit">{{ app.label }}</UiText>
+            <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="leading-snug text-mut2">{{ app.desc }}</UiText>
           </UiStack>
         </UiButton>
       </UiGrid>
@@ -58,6 +58,7 @@
  */
 
 import { PortalAppId } from '~/types/portalappid'
+import { UiTextTag } from '~/utils/ui/enums'
 
 const { t } = useI18n()
 /** Apps the deployment offers; empty hides the launcher. */

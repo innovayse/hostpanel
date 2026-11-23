@@ -13,7 +13,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -21,21 +21,17 @@ import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/EmailCampaignsListView.schema'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { CAMPAIGN_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDateTimeCompact } from '@/lib/format'
 import { Icon } from '@/lib/icons'
@@ -46,17 +42,17 @@ import { useEmailCampaignsStore } from '@/stores/emailCampaigns'
 import { CampaignStatus } from '@/types/emailcampaign'
 import type { EmailCampaignListFilters, EmailCampaignListItem } from '@/types/emailcampaign'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiTextSize } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('emailCampaigns.list.add'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'email-campaigns-add', to: AppRoute.SupportEmailCampaignsNew },
+  { label: t('emailCampaigns.list.create'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'email-campaigns-add', to: AppRoute.SupportEmailCampaignsNew },
 ])
 
 /** The filter field the dialog edits; it is one query key and one `EmailCampaignListFilters` member. */
@@ -99,10 +95,7 @@ const deleteTarget = ref<number | null>(null)
 const deleting = ref(false)
 
 /** The outcome line of the last delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** The sentence of the last refused list load, shown with Retry; null when the list loaded. The store keeps one sentence for every call, and a refused delete must not hide the list. */
 const loadError = ref<string | null>(null)
@@ -137,7 +130,6 @@ const handleDelete = async (): Promise<void> => {
   if (deleteTarget.value === null) {
     return
   }
-  feedback.clear()
   deleting.value = true
   const removed = await store.remove(deleteTarget.value)
   deleting.value = false
@@ -194,7 +186,6 @@ const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="email-campaigns-feedback" />
 
     <UiListToolbar
       v-model:search="search"
@@ -232,83 +223,72 @@ const rowActions = (campaign: EmailCampaignListItem): UiMenuAction[] => {
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" class="overflow-x-auto">
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="initialLoading"
-        data-testid="email-campaigns-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="campaign in store.campaigns"
-            :key="campaign.id"
-            hoverable
-            :data-testid="`email-campaigns-row-${campaign.id}`"
-          >
-            <UiTableCell>{{ campaign.subject }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="campaignStatusTone[campaign.status]">
-                {{ t(`emailCampaigns.status.${campaign.status}`) }}
-              </UiBadge>
-            </UiTableCell>
-            <UiTableCell muted>{{ formatDateTimeCompact(campaign.scheduledAt) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDateTimeCompact(campaign.sentAt) }}</UiTableCell>
-            <UiTableCell muted>
-              {{ t('emailCampaigns.list.deliverySummary', {
-                sent: campaign.stats.sent,
-                failed: campaign.stats.failed,
-                unsubscribed: campaign.stats.unsubscribed,
-              }) }}
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="rowActions(campaign)" :testid="`email-campaigns-${campaign.id}-actions`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-            {{ t('emailCampaigns.list.totalCount', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            testid="email-campaigns-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!store.loading && !hasRows"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="email-campaigns-pagination"
+      data-testid="email-campaigns-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="campaign in store.campaigns"
+          :key="campaign.id"
+          hoverable
+          :data-testid="`email-campaigns-row-${campaign.id}`"
+        >
+          <UiTableCell>{{ campaign.subject }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="campaignStatusTone[campaign.status]">
+              {{ t(`emailCampaigns.status.${campaign.status}`) }}
+            </UiBadge>
+          </UiTableCell>
+          <UiTableCell muted>{{ formatDateTimeCompact(campaign.scheduledAt) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDateTimeCompact(campaign.sentAt) }}</UiTableCell>
+          <UiTableCell muted>
+            {{ t('emailCampaigns.list.deliverySummary', {
+              sent: campaign.stats.sent,
+              failed: campaign.stats.failed,
+              unsubscribed: campaign.stats.unsubscribed,
+            }) }}
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="rowActions(campaign)" :testid="`email-campaigns-${campaign.id}-actions`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('emailCampaigns.list.noMatches') : t('emailCampaigns.list.emptyTitle')"
+          :description="narrowed ? undefined : t('emailCampaigns.list.emptyDescription')"
+          data-testid="email-campaigns-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Mail" size="lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="email-campaigns-clear-empty" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('emailCampaigns.list.noMatches') : t('emailCampaigns.list.emptyTitle')"
-        :description="narrowed ? undefined : t('emailCampaigns.list.emptyDescription')"
-        data-testid="email-campaigns-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Mail" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="email-campaigns-clear-empty" @click="clearAll">
-            {{ t('emailCampaigns.list.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="deleteTarget !== null"
       :title="t('emailCampaigns.list.deleteTitle')"
       :message="t('emailCampaigns.list.deleteMessage')"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="handleDelete"
       @close="dismissDelete"
     />

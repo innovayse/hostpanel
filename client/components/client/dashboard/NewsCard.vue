@@ -17,15 +17,16 @@
     <UiEmptyState v-if="!announcements.length" :icon="Megaphone" :title="$t('client.dashboard.noAnnouncements')" class="!py-6" data-testid="dashboard-news-empty" />
 
     <UiStack v-else gap="sm">
-      <div
+      <UiStack
         v-for="announcement in announcements.slice(0, 3)"
         :key="announcement.id"
+        gap="none"
         class="rounded-xl bg-gray-50 p-3 dark:bg-white/5"
         :data-testid="`dashboard-news-${announcement.id}`"
       >
         <UiText size="sm" weight="medium">{{ announcement.title }}</UiText>
         <UiText size="xs" tone="subtle" class="mt-0.5">{{ formatDate(announcement.publishedAt) }}</UiText>
-      </div>
+      </UiStack>
     </UiStack>
   </UiCard>
 </template>

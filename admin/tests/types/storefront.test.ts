@@ -10,7 +10,6 @@ describe('storefrontTestIds', () => {
       view: 'faqs-view',
       add: 'faqs-add',
       error: 'faqs-error',
-      actionError: 'faqs-action-error',
       row: 'faq-row',
       actions: 'faq-actions',
       edit: 'faq-edit',

@@ -25,13 +25,18 @@ import UiRadio from '@/components/ui/UiRadio.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useBillingStore } from '@/stores/billing'
+import { Icon } from '@/lib/icons'
 import { InvoiceRefundType, InvoiceTransactionType, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
+import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -83,7 +88,7 @@ const processing = ref(false)
 const confirming = ref(false)
 
 /** The outcome line of the last refund, shown in the tab. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 
 /** Payments that can still be refunded. */
 const payments = computed<InvoiceTransaction[]>(() =>
@@ -217,7 +222,6 @@ const refund = async (): Promise<void> => {
   if (!canRefund.value) {
     return
   }
-  feedback.clear()
   processing.value = true
   const kind = sentKind.value
   const manual = kind === InvoiceRefundType.Manual
@@ -244,26 +248,26 @@ const refund = async (): Promise<void> => {
 
 <template>
   <UiStack data-testid="billing-invoice-refund">
-    <UiAlert v-if="readonly && payments.length === 0" variant="warning" data-testid="billing-invoice-refund-none">
+    <UiAlert v-if="readonly && payments.length === 0" :variant="UiTone.Warning" data-testid="billing-invoice-refund-none">
       {{ t('billing.invoiceRefundTab.thereAreNoTransactionsThat') }}
     </UiAlert>
 
     <template v-if="!readonly">
-      <UiAlert v-if="isDraft" variant="warning" data-testid="billing-invoice-refund-draft">
+      <UiAlert v-if="isDraft" :variant="UiTone.Warning" data-testid="billing-invoice-refund-draft">
         {{ t('billing.invoiceRefundTab.publishTheInvoiceBeforeRequesting') }}
       </UiAlert>
-      <UiAlert v-else-if="isCancelled" variant="warning" data-testid="billing-invoice-refund-cancelled">
+      <UiAlert v-else-if="isCancelled" :variant="UiTone.Warning" data-testid="billing-invoice-refund-cancelled">
         {{ t('billing.invoiceRefundTab.cannotRefundACancelledInvoice') }}
       </UiAlert>
-      <UiAlert v-else-if="isRefunded" variant="warning" data-testid="billing-invoice-refund-refunded">
+      <UiAlert v-else-if="isRefunded" :variant="UiTone.Warning" data-testid="billing-invoice-refund-refunded">
         {{ t('billing.invoiceRefundTab.thisInvoiceHasAlreadyBeen') }}
       </UiAlert>
 
-      <UiAlert v-if="isTopUp && !formBlocked" variant="info" data-testid="billing-invoice-refund-top-up">
+      <UiAlert v-if="isTopUp && !formBlocked" :variant="UiTone.Info" data-testid="billing-invoice-refund-top-up">
         {{ t('billing.invoiceRefundTab.topUpRefund') }}
       </UiAlert>
 
-      <UiCard v-if="!formBlocked" padding="md">
+      <UiCard v-if="!formBlocked" :padding="UiCardPadding.Md">
         <UiForm stacked data-testid="billing-invoice-refund-form" @submit="askRefund">
           <UiField :label="t('shared.transactions')">
             <UiSelect
@@ -284,7 +288,7 @@ const refund = async (): Promise<void> => {
               <UiInput
                 :id="id"
                 v-model="refundReference"
-                type="text"
+                :type="UiInputType.Text"
                 :invalid="invalid"
                 :placeholder="t('billing.invoiceRefundTab.externalRefundReference')"
                 data-testid="billing-invoice-refund-reference"
@@ -292,11 +296,11 @@ const refund = async (): Promise<void> => {
             </template>
           </UiField>
 
-          <UiStack v-if="selectedPayment && !isTopUp" gap="sm" data-testid="billing-invoice-refund-credit">
-            <UiText tone="danger" size="md">{{ t('billing.invoiceRefundTab.warning') }}</UiText>
-            <UiText tone="secondary" size="md">{{ creditWarning }}</UiText>
-            <UiText tone="muted" size="md">{{ t('billing.invoiceRefundTab.weCanThereforeAutomaticallyRemove') }}</UiText>
-            <UiLabel variant="inline">
+          <UiStack v-if="selectedPayment && !isTopUp" :gap="UiGap.Sm" data-testid="billing-invoice-refund-credit">
+            <UiText :tone="UiTextTone.Danger" :size="UiTextSize.Md">{{ t('billing.invoiceRefundTab.warning') }}</UiText>
+            <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ creditWarning }}</UiText>
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ t('billing.invoiceRefundTab.weCanThereforeAutomaticallyRemove') }}</UiText>
+            <UiLabel :variant="UiLabelVariant.Inline">
               <UiRadio
                 v-model="creditAction"
                 :value="CreditAction.Remove"
@@ -304,7 +308,7 @@ const refund = async (): Promise<void> => {
               />
               {{ t('billing.invoiceRefundTab.clickHereToRemoveThe') }}
             </UiLabel>
-            <UiLabel variant="inline">
+            <UiLabel :variant="UiLabelVariant.Inline">
               <UiRadio
                 v-model="creditAction"
                 :value="CreditAction.Leave"
@@ -315,9 +319,9 @@ const refund = async (): Promise<void> => {
           </UiStack>
 
           <UiFormActions>
-            <UiButton :action="UiActionKind.Reset"
-              type="submit"
-              variant="primary"
+            <UiButton :icon="Icon.Undo"
+              :type="UiButtonType.Submit"
+              :variant="UiButtonVariant.Primary"
               :loading="processing"
               :disabled="!canRefund"
               data-testid="billing-invoice-refund-submit"
@@ -328,13 +332,6 @@ const refund = async (): Promise<void> => {
         </UiForm>
       </UiCard>
 
-      <UiAlert
-        v-if="feedback.message.value"
-        :variant="feedback.isError.value ? UiTone.Danger : UiTone.Success"
-        data-testid="billing-invoice-refund-feedback"
-      >
-        {{ feedback.message.value }}
-      </UiAlert>
 
       <UiDialog
         :open="confirming"

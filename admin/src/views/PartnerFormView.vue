@@ -102,7 +102,7 @@ const hints = computed(() => ({ isActive: t('storefront.partners.activeHint') })
   <StorefrontFormShell
     testid="partner"
     :title="flow.isEditMode.value ? t('storefront.partners.edit') : t('storefront.partners.create')"
-    :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.partners.create')"
+    :save-label="flow.isEditMode.value ? t('shared.save') : t('storefront.partners.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"
     :dirty="flow.isDirty.value"

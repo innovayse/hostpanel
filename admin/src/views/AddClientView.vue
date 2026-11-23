@@ -35,6 +35,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiLabelVariant } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema, { EXISTING_OWNER_SECTION, OWNER_SECTION_KEY } from '@/views/AddClientView.schema'
@@ -299,7 +300,7 @@ onMounted(() => {
     >
     </UiPageHeader>
 
-    <UiAlert v-if="saveError" variant="error" data-testid="add-client-error">
+    <UiAlert v-if="saveError" :variant="UiTone.Danger" data-testid="add-client-error">
       {{ saveError }}
     </UiAlert>
 

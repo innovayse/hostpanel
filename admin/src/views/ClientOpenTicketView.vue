@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * Open New Ticket page: form to create a support ticket on behalf of a client.
- * Navigates to the ticket detail page on success.
+ * Navigates to the ticket detail page on success; a refusal is toasted with the API's sentence.
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useClientTicketsStore } from '@/stores/clientTickets'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
 import { TicketPriority } from '@/types/ticket'
@@ -16,14 +17,13 @@ import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientItemPath, clientSectionPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema from '@/views/ClientOpenTicketView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiDirection } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -32,6 +32,9 @@ const route = useRoute()
 
 /** Router, used to open the new ticket. */
 const router = useRouter()
+
+/** Toasts the refusal of the creation. */
+const feedback = useOutcomeToast()
 
 /** Client ticket store, owner of departments, creation and its error. */
 const store = useClientTicketsStore()
@@ -79,6 +82,8 @@ const handleSubmit = async (): Promise<void> => {
 
   if (newId) {
     router.push(clientItemPath(clientId.value, ClientSection.Tickets, newId))
+  } else {
+    feedback.show(store.error ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -129,7 +134,7 @@ onMounted(() => {
         />
       </template>
 
-      <UiStack direction="row">
+      <UiStack :direction="UiDirection.Row">
         <UiButton :action="UiActionKind.Add"
           type="button"
           :variant="UiButtonVariant.Primary"
@@ -138,10 +143,9 @@ onMounted(() => {
           data-testid="client-open-ticket-submit"
           @click="handleSubmit"
         >
-          {{ t('clients.clientOpenTicket.openTicket') }}
+          {{ t('clients.clientOpenTicket.createTicket') }}
         </UiButton>
       </UiStack>
-      <UiStatusMessage :message="store.error" :tone="UiTone.Danger" data-testid="client-open-ticket-error" />
     </UiSchemaForm>
   </UiStack>
 </template>

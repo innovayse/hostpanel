@@ -15,6 +15,11 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { MS_PER_MINUTE } from '@/lib/limits'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiBreakpoint, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -83,24 +88,28 @@ const timeLeft = computed<string | null>(() => {
 <template>
   <UiStack
     v-if="demo.enabled"
-    direction="row"
-    gap="sm"
-    align="center"
+    :direction="UiDirection.Row"
+    :gap="UiGap.Sm"
+    :align="UiAlignItems.Center"
     class="glass h-9 shrink-0 border-b border-border px-4 lg:px-6"
     data-testid="demo-banner"
   >
-    <UiBadge tone="info" small dot data-testid="demo-banner-label">{{ t('demo.banner.label') }}</UiBadge>
-    <UiText v-if="timeLeft !== null" tone="primary" size="sm" class="truncate" data-testid="demo-banner-countdown">
+    <UiBadge :tone="UiTone.Info" small dot data-testid="demo-banner-label">{{ t('demo.banner.label') }}</UiBadge>
+    <UiText v-if="timeLeft !== null" :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="truncate" data-testid="demo-banner-countdown">
       {{ t('demo.banner.resetsIn', { time: timeLeft }) }}
     </UiText>
-    <UiStack visible-from="sm" class="min-w-0">
-      <UiText size="sm" tone="secondary" class="truncate">{{ t('demo.banner.dataResets') }}</UiText>
+    <UiStack :visible-from="UiBreakpoint.Sm" class="min-w-0">
+      <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Secondary" class="truncate">{{ t('demo.banner.dataResets') }}</UiText>
     </UiStack>
     <UiLink
       v-if="docsUrl"
       :href="docsUrl"
       external
-      class="ml-auto shrink-0 text-xs font-medium underline"
+      :variant="UiButtonVariant.Link"
+      :size="UiSize.Xs"
+      class="ml-auto shrink-0"
+      :title="t('demo.banner.guideTitle')"
+      :aria-label="t('demo.banner.guideTitle')"
       data-testid="demo-banner-guide"
     >{{ t('demo.banner.guide') }}</UiLink>
   </UiStack>

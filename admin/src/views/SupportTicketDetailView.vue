@@ -28,16 +28,17 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
-import type { ResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import type { UpdateTicketPayload } from '@/types/ticket'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
 import schema, { COMPOSER_CARD, CONVERSATION_CARD, DETAILS_CARD } from '@/views/SupportTicketDetailView.schema'
@@ -83,35 +84,20 @@ const replyMessage = ref('')
 /** Whether the delete confirmation dialog is visible. */
 const showDeleteDialog = ref(false)
 
-/** Outcome line of the header actions (close, reopen, delete). */
-const headerFeedback = useResultBanner()
-
-/** Outcome line of the department and priority save. */
-const saveFeedback = useResultBanner()
-
-/** Outcome line of the staff reply. */
-const replyFeedback = useResultBanner()
+/** Reports the outcome of every action of the screen (close, reopen, delete, save, reply) as a toast. */
+const outcome = useOutcomeToast()
 
 /**
- * Tone of an outcome line: danger for a refusal, success otherwise.
+ * Reports the outcome of a change: the success sentence, or the API's refusal.
  *
- * @param banner - The outcome line.
- * @returns The tone to draw it in.
- */
-const toneOf = (banner: ResultBanner): UiTone => (banner.isError.value ? UiTone.Danger : UiTone.Success)
-
-/**
- * Shows the outcome of a change in its own line: the success sentence, or the API's refusal.
- *
- * @param banner - The outcome line next to the action.
  * @param ok - Whether the API accepted the change.
  * @param successKey - Locale key of the success sentence.
  */
-const report = (banner: ResultBanner, ok: boolean, successKey: string): void => {
+const report = (ok: boolean, successKey: string): void => {
   if (ok) {
-    banner.show(t(successKey), false)
+    outcome.show(t(successKey), false)
   } else {
-    banner.show(store.actionError ?? t('errors.noAnswer'), true)
+    outcome.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -161,9 +147,8 @@ const handleSaveChanges = async (): Promise<void> => {
   if (editDepartmentId.value) {
     payload.departmentId = editDepartmentId.value
   }
-  saveFeedback.clear()
   const saved = await store.updateTicket(ticketId.value, payload)
-  report(saveFeedback, saved, 'shared.changesSavedSuccessfully')
+  report(saved, 'shared.changesSavedSuccessfully')
   await reloadIf(saved)
 }
 
@@ -171,9 +156,8 @@ const handleSaveChanges = async (): Promise<void> => {
  * Closes the ticket.
  */
 const handleClose = async (): Promise<void> => {
-  headerFeedback.clear()
   const closed = await store.updateTicket(ticketId.value, { status: TicketStatus.Closed })
-  report(headerFeedback, closed, 'support.supportTicketDetail.ticketClosed')
+  report(closed, 'support.supportTicketDetail.ticketClosed')
   await reloadIf(closed)
 }
 
@@ -181,9 +165,8 @@ const handleClose = async (): Promise<void> => {
  * Reopens a closed ticket.
  */
 const handleReopen = async (): Promise<void> => {
-  headerFeedback.clear()
   const reopened = await store.updateTicket(ticketId.value, { status: TicketStatus.Open })
-  report(headerFeedback, reopened, 'support.supportTicketDetail.ticketReopened')
+  report(reopened, 'support.supportTicketDetail.ticketReopened')
   await reloadIf(reopened)
 }
 
@@ -194,9 +177,8 @@ const handleReply = async (): Promise<void> => {
   if (!canReply.value) {
     return
   }
-  replyFeedback.clear()
   const sent = await store.replyToTicket(ticketId.value, replyMessage.value.trim())
-  report(replyFeedback, sent, 'support.supportTicketDetail.replySent')
+  report(sent, 'support.supportTicketDetail.replySent')
   if (sent) {
     replyMessage.value = ''
     await store.fetchById(ticketId.value)
@@ -207,13 +189,12 @@ const handleReply = async (): Promise<void> => {
  * Deletes the ticket and returns to the tickets list.
  */
 const handleDelete = async (): Promise<void> => {
-  headerFeedback.clear()
   const deleted = await store.deleteTicket(ticketId.value)
   showDeleteDialog.value = false
   if (deleted) {
     router.push(AppRoute.SupportTickets)
   } else {
-    headerFeedback.show(store.actionError ?? t('errors.noAnswer'), true)
+    outcome.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -258,29 +239,28 @@ onMounted(() => {
         back-testid="ticket-back"
         data-testid="ticket-title"
       >
-        <UiStack v-if="store.currentTicket" direction="row" align="center" wrap>
+        <UiStack v-if="store.currentTicket" :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
           <SupportTicketStatusBadge :status="store.currentTicket.status" />
           <SupportTicketPriorityBadge :priority="store.currentTicket.priority" />
         </UiStack>
         <template #actions>
-          <UiButton :icon="Icon.Clipboard"
+          <UiButton :icon="Icon.Info"
             :variant="UiButtonVariant.Secondary"
             class="lg:hidden"
             :disabled="!store.currentTicket"
             data-testid="ticket-details-open"
             @click="detailsOpen = true"
-          >{{ t('support.supportTicketDetail.details') }}
+          >{{ t('shared.details') }}
           </UiButton>
         </template>
       </UiPageHeader>
 
-      <UiStatusMessage :message="headerFeedback.message.value" :tone="toneOf(headerFeedback)" data-testid="ticket-action-feedback" />
 
       <UiSplit v-model:open="detailsOpen" :ratio="schema.ratio" :aside-title="t(DETAILS_CARD.title)">
         <UiStack>
-          <UiCard padding="md" data-testid="ticket-thread">
+          <UiCard :padding="UiCardPadding.Md" data-testid="ticket-thread">
             <UiStack>
-              <UiHeading :level="2" variant="card">{{ t(CONVERSATION_CARD.title) }}</UiHeading>
+              <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t(CONVERSATION_CARD.title) }}</UiHeading>
 
               <template v-if="store.currentTicket">
                 <SupportTicketMessage
@@ -318,8 +298,8 @@ onMounted(() => {
           </UiCard>
 
           <!-- Pinned to the bottom of the scrolling page, so the reply field is always in reach. -->
-          <UiCard padding="sm" elevated class="sticky bottom-0 z-10" data-testid="ticket-composer">
-            <UiStack gap="sm">
+          <UiCard :padding="UiCardPadding.Sm" elevated class="sticky bottom-0 z-10" data-testid="ticket-composer">
+            <UiStack :gap="UiGap.Sm">
               <UiChatInput
                 v-model="replyMessage"
                 :label="t(COMPOSER_CARD.rows[0])"
@@ -330,7 +310,7 @@ onMounted(() => {
               >
                 <template #action>
                   <UiIconButton
-                    :label="t('support.supportTicketDetail.reply')"
+                    :label="t('shared.reply')"
                     :variant="UiButtonVariant.Primary"
                     :size="UiSize.Sm"
                     :disabled="store.loading || !canReply || !store.currentTicket"
@@ -341,7 +321,6 @@ onMounted(() => {
                   </UiIconButton>
                 </template>
               </UiChatInput>
-              <UiStatusMessage :message="replyFeedback.message.value" :tone="toneOf(replyFeedback)" data-testid="ticket-reply-feedback" />
             </UiStack>
           </UiCard>
         </UiStack>
@@ -355,8 +334,6 @@ onMounted(() => {
             :departments-error="store.departmentsError"
             :last-reply-at="lastReplyAt"
             :saving="store.loading"
-            :feedback="saveFeedback.message.value"
-            :feedback-tone="toneOf(saveFeedback)"
             @save="handleSaveChanges"
             @retry-departments="store.fetchDepartments"
           />

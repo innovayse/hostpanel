@@ -1,5 +1,5 @@
 <template>
-  <section v-if="partners.length" class="py-10 sm:py-16 bg-ui-page relative overflow-hidden" data-testid="sections-partners">
+  <UiSection v-if="partners.length" :contained="false" padding="none" class="py-10 sm:py-16 bg-ui-page relative overflow-hidden" data-testid="sections-partners">
     <!-- Background -->
     <UiDecor class="inset-0">
       <UiDecor class="inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent" />
@@ -10,12 +10,10 @@
 
     <UiContainer class="relative z-10">
       <!-- Header -->
-      <div
-        class="text-center mb-8 sm:mb-12 animate-reveal-up motion-reduce:animate-none"
-      >
+      <UiStack gap="none" class="text-center mb-8 sm:mb-12 animate-reveal-up motion-reduce:animate-none">
         <UiText size="sm" tone="subtle" class="uppercase tracking-wider mb-2">{{ $t('clients.subtitle') }}</UiText>
         <UiHeading :level="3" size="subsection" class="text-xl">{{ $t('clients.heading') }}</UiHeading>
-      </div>
+      </UiStack>
 
       <!-- A short list sits centred and wrapped; a marquee of two names reads as a half-empty strip. -->
       <UiLogoWall
@@ -30,7 +28,7 @@
     <!-- Decorative corner accents -->
     <UiDecor class="top-0 right-0 w-32 h-32 border-r-2 border-t-2 border-secondary-500/25" />
     <UiDecor class="bottom-0 left-0 w-32 h-32 border-l-2 border-b-2 border-primary-500/25" />
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

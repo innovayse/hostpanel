@@ -26,9 +26,6 @@ internal static class Layers
     /// <summary>The plugin SDK: contracts every provider implements.</summary>
     public static readonly Assembly Sdk = typeof(global::Hostpanel.Sdk.Plugins.Manifest.PluginManifest).Assembly;
 
-    /// <summary>The CWP provider plugin.</summary>
-    public static readonly Assembly ProviderCwp = typeof(Innovayse.Providers.CWP.CwpProvisioningProvider).Assembly;
-
     /// <summary>
     /// The types a developer wrote in an assembly: loadable types minus compiler-generated closures,
     /// state machines and display classes, which no layout rule is about.

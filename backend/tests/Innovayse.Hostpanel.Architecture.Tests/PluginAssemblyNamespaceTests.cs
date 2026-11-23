@@ -40,7 +40,7 @@ public sealed class PluginAssemblyNamespaceTests
         Assembly[] layers =
         [
             Layers.SharedKernel, Layers.Domain, Layers.Shared, Layers.Application, Layers.Infrastructure,
-            Layers.Api, Layers.Sdk, Layers.ProviderCwp,
+            Layers.Api, Layers.Sdk,
         ];
         var names = layers
             .Select(assembly => assembly.GetName().Name!)

@@ -19,7 +19,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Monitoring;
 /// <summary>
 /// Disk usage service. Returns cached stats from the database.
 /// UpdateNowAsync polls every cPanel server and every server a panel plugin serves, and upserts the cache; a server that
-/// cannot be polled is answered as a failure instead of being left out silently. A server of any other module is no part of the report.
+/// cannot be polled is answered as a failure instead of being left out silently. A server whose module no plugin serves, and that is not cPanel, is answered as an unsupported module.
 /// </summary>
 public sealed class DiskUsageService : IDiskUsageService
 {
@@ -74,11 +74,9 @@ public sealed class DiskUsageService : IDiskUsageService
     /// <inheritdoc/>
     public async Task<DiskUsageDto> UpdateNowAsync(CancellationToken ct)
     {
-        // Load every enabled hosting server, the host's own panels and the ones a plugin serves; one whose panel cannot
-        // be polled is answered as a failure below. Filtered after loading: which plugin serves a module is not in SQL.
-        var servers = (await _db.Servers.Where(s => !s.IsDisabled).ToListAsync(ct))
-            .Where(IsHostingServer)
-            .ToList();
+        // Load every enabled server; one whose panel cannot be polled, a module no plugin serves included, is answered
+        // as a failure below.
+        var servers = await _db.Servers.Where(s => !s.IsDisabled).ToListAsync(ct);
         var failures = new List<DiskUsageFailureDto>();
 
         // Load all client services with client info (to map cPanel domain → client name)
@@ -132,21 +130,12 @@ public sealed class DiskUsageService : IDiskUsageService
         return BuildReport(allStats, failures);
     }
 
-    /// <summary>Tells whether a server hosts client accounts: one of the host's panel modules, or one an installed panel plugin serves.</summary>
-    /// <param name="server">The server.</param>
-    /// <returns><see langword="true"/> when the server is part of the disk usage report.</returns>
-    private bool IsHostingServer(Server server)
-    {
-        return ServerModules.Known.Any(module => ServerModules.Same(module, server.Module))
-            || _resolver.Find(server.Module, PluginCapabilities.ProvisioningPanel).Outcome is not ServerModulePluginOutcome.NotServed;
-    }
-
     /// <summary>Reads the accounts of one server from the plugin that serves its module, or from WHM when no plugin does.</summary>
     /// <param name="server">The server.</param>
     /// <param name="match">The plugin that serves the server's module, if any.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The accounts, or <see langword="null"/> when a cPanel server stores neither an API token nor an access hash.</returns>
-    /// <exception cref="DomainRuleException">Thrown with <c>PANEL_PLUGIN_CONFLICT</c> when two plugins serve the module, and with a panel code when the plugin refuses.</exception>
+    /// <exception cref="DomainRuleException">Thrown with <c>PANEL_PLUGIN_CONFLICT</c> when two plugins serve the module, and with <c>PANEL_OPERATION_NOT_SUPPORTED</c> when no plugin serves a module other than cPanel, and with a panel code when the plugin refuses.</exception>
     private async Task<IReadOnlyList<HostedAccountUsage>?> ReadAccountsAsync(Server server, ServerModulePluginMatch match, CancellationToken ct)
     {
         switch (match.Outcome)
@@ -155,6 +144,11 @@ public sealed class DiskUsageService : IDiskUsageService
                 return await _pluginReader.ReadAsync(match.PluginId!, server.ToConnection().ToPanelConnection(server.Password), ct);
             case ServerModulePluginOutcome.Conflict:
                 throw new DomainRuleException(HostpanelErrorCodes.PANEL_PLUGIN_CONFLICT, "More than one plugin serves the server's module.");
+        }
+
+        if (!ServerModules.Same(server.Module, ServerModules.CPanel))
+        {
+            throw new DomainRuleException(HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "No plugin serves the server's module.");
         }
 
         CpanelWhmApi api;

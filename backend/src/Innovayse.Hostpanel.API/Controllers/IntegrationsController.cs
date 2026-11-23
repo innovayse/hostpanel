@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Commands.TestIntegrationConnection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
-using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetHostingPanelServerInfo;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.ListIntegrations;
 using Innovayse.Hostpanel.Shared.Authorization;
@@ -106,19 +105,6 @@ public sealed class IntegrationsController : BaseApiController
     {
         var outcome = await _bus.InvokeAsync<Result<IntegrationTestResultDto>>(
             new TestIntegrationConnectionCommand(slug), ct);
-        return HandleResult(outcome);
-    }
-
-    /// <summary>Live hosting panel server status (cached 5 minutes).</summary>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 with the connection status, account count and version; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.</returns>
-    [HttpGet("cwp/server-info")]
-    [ProducesResponseType(typeof(HostingPanelServerInfoDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetHostingPanelServerInfoAsync(CancellationToken ct)
-    {
-        var outcome = await _bus.InvokeAsync<Result<HostingPanelServerInfoDto>>(new GetHostingPanelServerInfoQuery(), ct);
         return HandleResult(outcome);
     }
 }

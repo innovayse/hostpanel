@@ -1,4 +1,3 @@
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
@@ -49,7 +48,6 @@ using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Infrastructure.Vat;
 using Innovayse.Hostpanel.Infrastructure.Vat.Settings;
 using Innovayse.Hostpanel.Shared.Settings;
-using Innovayse.Providers.CWP;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -656,34 +654,6 @@ public static class DependencyInjection
         // Servers: connection testing and placement of new accounts.
         services.AddScoped<IServerConnectionTester, ServerConnectionTester>();
         services.AddScoped<IServerSelector, ServerSelector>();
-
-        // CWP API client.
-        //
-        // No retry stage and no breaker. Every CWP call is a form POST and the operation lives in
-        // the body's `action` field, not in the method or the path: create, suspend, unsuspend and
-        // terminate all post to /v1/account, and so does the account listing behind the
-        // server-info screen. A predicate cannot separate the read from the writes without
-        // re-reading a consumed request body, and guessing wrong re-creates a hosting account.
-        // The breaker is off because the server is a per-call argument rather than a base
-        // address, so one dead node would open it for every healthy one.
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
-        services.AddHttpClient<IHostingPanelApiClient, CwpApiClient>(client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Cwp;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Cwp);
-#pragma warning restore CS0618
-        // Named twin of the typed registration above:
-        // CwpProvisioningProvider builds its own CwpApiClient (the interface exposes only the
-        // server-info call) and resolves this client by name. That keeps the
-        // provisioning path, the one that matters most, inside the timeout and the no-retry pipeline.
-        services.AddHttpClient(CwpApiClient.HttpClientName, client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.Cwp;
-        })
-            .AddOutboundAddressGuard()
-            .AddNoRetryResilience(o => o.Cwp);
 
         // WHM API client for cPanel servers, named only: the factory and the tester build a client over it per server. The chain (no request logging, no
         // redirects, the WHM resilience profile) is one extension, which the tests resolve as well.

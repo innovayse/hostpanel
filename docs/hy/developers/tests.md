@@ -9,7 +9,7 @@ description: Բոլոր ստուգումները, որ գործարկում է C
 
 Յուրաքանչյուր pull request պետք է անցնի.
 
-1. Բեքենդի թեստեր՝ դոմեյնի, ինտեգրացիոն, ճարտարապետական և պլագինների
+1. Բեքենդի թեստեր՝ դոմեյնի, ինտեգրացիոն, ճարտարապետական
 2. Ադմինի վահանակ՝ lint, typecheck, unit թեստեր, end-to-end թեստեր
 3. Հաճախորդի պորտալ՝ lint, typecheck, unit թեստեր
 
@@ -21,7 +21,7 @@ description: Բոլոր ստուգումները, որ գործարկում է C
 ./scripts/manage.sh test
 ```
 
-Հինգ թեստային նախագիծ.
+Երեք թեստային նախագիծ.
 
 **`Innovayse.Hostpanel.Domain.Tests`**․ unit թեստեր դոմեյնի տրամաբանության համար։
 
@@ -37,8 +37,6 @@ description: Բոլոր ստուգումները, որ գործարկում է C
 | `ResourceCoverageTests` | Յուրաքանչյուր սխալի կոդ ունի նախադասություն `ErrorMessages.resx` ֆայլում |
 
 `ModelDiffBaselineTests`-ը գտնվում է `Integration.Tests/Persistence` թղթապանակում և ստուգում է, որ EF մոդելը համապատասխանում է վերջին միգրացիային։
-
-**`Innovayse.CWP.Tests`**, **`Innovayse.Inecobank.Tests`**․ թեստեր ներկառուցված պլագինների համար։
 
 ## Ադմինի վահանակ {#admin-panel}
 

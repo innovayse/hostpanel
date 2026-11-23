@@ -71,18 +71,6 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'apiToken', get label() { return translate('integrationMeta.cpanel.fieldApiToken') }, type: IntegrationFieldType.Password },
     ],
   },
-  cwp: {
-    slug: 'cwp',
-    color: 'bg-sky-700',
-    logo: logoUrl('cwp.svg'),
-    get shortDescription() { return translate('integrationMeta.cwp.shortDescription') },
-    category: 'provisioning',
-    fields: [
-      { key: 'host', get label() { return translate('integrationMeta.cwp.fieldHost') }, type: IntegrationFieldType.Text },
-      { key: 'port', get label() { return translate('integrationMeta.cpanel.fieldPort') }, type: IntegrationFieldType.Text },
-      { key: 'api_key', get label() { return translate('integrationMeta.cwp.fieldApiKey') }, type: IntegrationFieldType.Password },
-    ],
-  },
   smtp: {
     slug: 'smtp',
     color: 'bg-teal-700',

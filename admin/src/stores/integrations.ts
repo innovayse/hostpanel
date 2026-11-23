@@ -1,6 +1,5 @@
 /**
- * Pinia store for the integration list, the per-integration config page and the live CWP server
- * status.
+ * Pinia store for the integration list, and the per-integration config page.
  *
  * The only caller of `useIntegrationsApi` for these screens. A refusal is kept as the API's own
  * sentence in `error`; a failed connection test is reported as an unsuccessful `testResult`
@@ -13,7 +12,6 @@ import { useIntegrationsApi } from '@/composables/apis/useIntegrationsApi'
 import { runAction } from '@/lib/runAction'
 import { IntegrationCategory, IntegrationCategoryName } from '@/types/integration'
 import { PluginType } from '@/types/plugin'
-import type { CwpServerInfoDto } from '@/types/cwp'
 import type {
   IntegrationConfigPayload,
   IntegrationDetailDto,
@@ -82,15 +80,6 @@ export const useIntegrationsStore = defineStore('integrations', () => {
 
   /** Result of the last connection test. */
   const testResult = ref<IntegrationTestResult | null>(null)
-
-  /** Live status of the CWP server, null until the first successful read. */
-  const cwpServerInfo = ref<CwpServerInfoDto | null>(null)
-
-  /**
-   * Sentence for the last failed CWP status read, null when none. Kept apart from `error` so a
-   * status refusal never hides the config page's own load or save refusal.
-   */
-  const cwpServerInfoError = ref<string | null>(null)
 
   /**
    * Fetches the summary list of all integrations.
@@ -168,21 +157,6 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     testResult.value = { ...result.value, durationMs }
   }
 
-  /**
-   * Reads the live status of the CWP server.
-   *
-   * On failure the previous status stays in `cwpServerInfo` and the refusal is left in
-   * `cwpServerInfoError`.
-   *
-   * @returns Resolves when the request is over.
-   */
-  const fetchCwpServerInfo = async (): Promise<void> => {
-    const result = await runAction(cwpServerInfoError, api.getCwpServerInfo)
-    if (result.ok) {
-      cwpServerInfo.value = result.value
-    }
-  }
-
   return {
     integrations,
     current,
@@ -190,12 +164,9 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     testing,
     error,
     testResult,
-    cwpServerInfo,
-    cwpServerInfoError,
     fetchAll,
     fetchOne,
     saveConfig,
     testConnection,
-    fetchCwpServerInfo,
   }
 })

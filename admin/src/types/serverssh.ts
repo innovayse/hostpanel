@@ -108,7 +108,7 @@ export interface SshHostKeyScanDto {
 
 /** The lines that let only this HostPanel reach a server's agent port, one string per tool. */
 export interface SshAgentNetworkLines {
-  /** ConfigServer Firewall (the CWP default): allow each address. */
+  /** ConfigServer Firewall: allow each address. */
   csf: string
   /** firewalld: one permanent rich rule per address, then a reload. */
   firewalld: string

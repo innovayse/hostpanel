@@ -20,9 +20,6 @@ public static class HttpBackstopTimeouts
     /// <summary>Fraud scoring service; short because it sits between a checkout and its answer, and its failure falls back to local scoring.</summary>
     public static readonly TimeSpan MaxMind = TimeSpan.FromSeconds(10);
 
-    /// <summary>CWP control-panel clients, typed and named.</summary>
-    public static readonly TimeSpan Cwp = TimeSpan.FromSeconds(15);
-
     /// <summary>WHM API client, resolved by name per cPanel server.</summary>
     public static readonly TimeSpan CPanelWhm = TimeSpan.FromSeconds(120);
 

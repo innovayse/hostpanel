@@ -1,10 +1,10 @@
 namespace Innovayse.Hostpanel.Architecture.Tests;
 
 /// <summary>
-/// The core source names no plugin. The plugin ids and entry point type names come from the in-tree
-/// <c>plugin.json</c> manifests (<see cref="PluginNeutralSourceScan"/>); no Domain, Application, Infrastructure,
-/// API, Shared or SharedKernel file may contain one, apart from <see cref="LegacyBuiltIn"/>. The host admin and
-/// client interfaces are held to the same rule by their own vitest suites (<c>pluginNeutrality.test.ts</c>).
+/// The core source names no plugin. No Domain, Application, Infrastructure, API, Shared or SharedKernel file may
+/// contain the id or entry point type of a plugin that lives outside this repository
+/// (<see cref="PluginNeutralSourceScan.PluginNames"/>). The host admin and client interfaces are held to the same
+/// rule by their own vitest suites (<c>pluginNeutrality.test.ts</c>).
 /// </summary>
 public sealed class PluginNeutralSourceTests
 {
@@ -13,17 +13,6 @@ public sealed class PluginNeutralSourceTests
     [
         "Innovayse.Hostpanel.Domain", "Innovayse.Hostpanel.Application", "Innovayse.Hostpanel.Infrastructure",
         "Innovayse.Hostpanel.API", "Shared", "SharedKernel",
-    ];
-
-    /// <summary>
-    /// The files that still name a built-in provider: the integrations slugs and the dependency registration, which still
-    /// name the legacy CWP provider. This list only shrinks; a new entry needs a reason, and an
-    /// entry whose file no longer names a plugin fails <see cref="LegacyBuiltIn_ListHasNoStaleEntry"/>.
-    /// </summary>
-    private static readonly string[] LegacyBuiltIn =
-    [
-        "Innovayse.Hostpanel.Domain/Settings/IntegrationSlugs.cs",
-        "Innovayse.Hostpanel.Infrastructure/DependencyInjection.cs",
     ];
 
     /// <summary>The solution directory.</summary>
@@ -44,62 +33,35 @@ public sealed class PluginNeutralSourceTests
             .ToList();
     }
 
-    /// <summary>The manifests of the in-tree plugins yield names to look for.</summary>
-    [Fact]
-    public void PluginNames_AreReadFromTheManifests()
-    {
-        PluginNeutralSourceScan.PluginNames(BackendRoot).Should().NotBeEmpty("the in-tree plugins declare an id and an entry point");
-    }
-
-    /// <summary>No core file outside the legacy list names a plugin id or plugin type.</summary>
+    /// <summary>No core file names a plugin id or plugin type.</summary>
     [Fact]
     public void CoreSources_NameNoPlugin()
     {
-        var names = PluginNeutralSourceScan.PluginNames(BackendRoot);
-
-        var offenders = PluginNeutralSourceScan.Offenders(CoreSources().Where(source => !LegacyBuiltIn.Contains(source.Name)), names);
+        var offenders = PluginNeutralSourceScan.Offenders(CoreSources(), PluginNeutralSourceScan.PluginNames);
 
         offenders.Should().BeEmpty("a plugin is reached through its manifest and an SDK contract, never named by the core");
-    }
-
-    /// <summary>Every legacy entry still names a plugin, so the list shrinks as the references go.</summary>
-    [Fact]
-    public void LegacyBuiltIn_ListHasNoStaleEntry()
-    {
-        var names = PluginNeutralSourceScan.PluginNames(BackendRoot);
-        var sources = CoreSources();
-
-        foreach (var entry in LegacyBuiltIn)
-        {
-            sources.Should().Contain(source => source.Name == entry, "the legacy entry must be an existing core file");
-            PluginNeutralSourceScan.NamesIn(sources.Single(source => source.Name == entry).Text, names)
-                .Should().NotBeEmpty($"{entry} no longer names a plugin, so remove it from the legacy list");
-        }
     }
 
     /// <summary>A planted plugin id and a planted plugin type name in an in-memory source are both reported, so the rule is proven to bite.</summary>
     [Fact]
     public void Rule_FailsOnPlantedReference()
     {
-        var names = PluginNeutralSourceScan.PluginNames(BackendRoot);
-        var id = names.First(name => char.IsLower(name[0]));
-        var type = names.First(name => char.IsUpper(name[0]));
-
         var offenders = PluginNeutralSourceScan.Offenders(
-            [("Planted/Id.cs", $"const string Id = \"{id}\";"), ("Planted/Type.cs", $"new {type}();"), ("Planted/Clean.cs", "const string Id = \"other\";")],
-            names);
+            [
+                ("Planted/Id.cs", "const string Id = \"innovayse-cwp\";"),
+                ("Planted/Type.cs", "new CwpProvisioningProvider();"),
+                ("Planted/Clean.cs", "const string Id = \"other\";"),
+            ],
+            PluginNeutralSourceScan.PluginNames);
 
-        offenders.Should().Equal($"Planted/Id.cs -> {id}", $"Planted/Type.cs -> {type}");
+        offenders.Should().Equal("Planted/Id.cs -> innovayse-cwp", "Planted/Type.cs -> CwpProvisioningProvider");
     }
 
     /// <summary>A name that is only part of a longer identifier or id is not a reference.</summary>
     [Fact]
     public void Rule_IgnoresANameInsideALongerToken()
     {
-        var names = PluginNeutralSourceScan.PluginNames(BackendRoot);
-        var name = names[0];
-
-        PluginNeutralSourceScan.NamesIn($"var x = {name}Suffix; var y = Prefix{name}; var z = \"{name}-more\";", names)
-            .Should().NotContain(name);
+        PluginNeutralSourceScan.NamesIn("var x = paypalSuffix; var y = Prefixpaypal; var z = \"paypal-more\";", PluginNeutralSourceScan.PluginNames)
+            .Should().NotContain("paypal");
     }
 }

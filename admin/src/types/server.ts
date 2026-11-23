@@ -6,11 +6,12 @@ import { translate } from '@/lib/translate'
 import { ServerModuleSource } from '@/types/serverenums'
 
 /**
- * The control panel module ids the host provisions itself (cPanel only), spelled as a server stores them. A server's module
+ * The module ids the host names itself (cPanel, and a plain Linux server with no control panel), spelled as a server stores them. A server's module
  * is an open id: it can also be one an installed panel plugin declares, which the module list the API answers names.
  */
 export const ServerModule = {
   CPanel: 'CPanel',
+  Linux: 'Linux',
 } as const
 
 /** An id the host itself knows. */
@@ -293,9 +294,10 @@ export interface ServerGroupPayload {
   serverIds: number[]
 }
 
-/** Human-readable labels for each module the host itself knows. */
+/** Human-readable labels for each module the host itself knows, resolved in the operator's language on each read. */
 export const MODULE_LABELS: Record<ServerModule, string> = {
   CPanel: 'cPanel / WHM',
+  get Linux() { return translate('servers.module.linux') },
 }
 
 /**

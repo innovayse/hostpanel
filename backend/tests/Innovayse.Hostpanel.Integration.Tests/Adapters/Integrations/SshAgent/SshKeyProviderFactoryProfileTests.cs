@@ -35,6 +35,17 @@ public sealed class SshKeyProviderFactoryProfileTests
         factory.Supports(SshAgentTestSeeds.Module).Should().BeFalse();
     }
 
+    /// <summary>The plain Linux module is supported with the built-in profile, matched ignoring case, with no plugin installed.</summary>
+    [Fact]
+    public void TheLinuxModule_UsesTheBuiltInProfile()
+    {
+        var factory = SshAgentTestSeeds.KeyFactory();
+
+        factory.AgentProfileFor(ServerModules.Linux).Should().Be("generic-linux");
+        factory.AgentProfileFor(ServerModules.Linux.ToUpperInvariant()).Should().Be("generic-linux");
+        factory.Supports(ServerModules.Linux).Should().BeTrue();
+    }
+
     /// <summary>A module no plugin serves has no profile.</summary>
     [Fact]
     public void AModuleNobodyServes_IsNotSupported()
@@ -80,5 +91,6 @@ public sealed class SshKeyProviderFactoryProfileTests
 
         factory.CreateFor(new ServerSshTargetDto(7, SshAgentTestSeeds.Module, false, agent)).Should().NotBeNull();
         factory.CreateFor(new ServerSshTargetDto(7, ServerModules.CPanel, false, agent)).Should().BeNull();
+        factory.CreateFor(new ServerSshTargetDto(7, ServerModules.Linux, false, agent)).Should().NotBeNull();
     }
 }

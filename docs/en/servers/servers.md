@@ -26,6 +26,8 @@ Type part of a name, host name or IP address in the search box to find a server.
 <strong>cPanel</strong> provisions accounts automatically and is built in; it is new and not yet tested against a live WHM server, see <a href="./cpanel">cPanel servers</a>. Every other panel is provisioned by its plugin: install and switch on the plugin, and its panel types (for example DirectAdmin) appear in the Module list, ready to pick, to test and to provision accounts on. An entry in the list with no plugin behind it (DirectAdmin, Lukittu, Virtualmin, HyperVm) is stored but does not provision accounts automatically and cannot be tested. A server that uses a panel type whose plugin is switched off answers that the plugin is not available. Control Web Panel (CWP) is supported through the CWP plugin: install it from the plugin registry, switch it on in Integrations, and note that a newly installed plugin is loaded at the next start.
 </Callout>
 
+A server with no control panel at all is added with the **Linux server (no control panel)** module. It is not a product, so orders never pick it: add it with the existing service flow, give it an SSH key and the agent installs the built-in `generic-linux` profile, which supports SSH accounts, websites and databases (see [Plain Linux servers](./ssh-key-agent#plain-linux-servers-generic-linux)).
+
 ## Add a server
 
 Click **Add New Server**. The form has three tabs.
@@ -53,7 +55,7 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 
 | Field | Notes |
 |-------|-------|
-| Module | Control panel type: cPanel and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
+| Module | Control panel type: cPanel, Linux server (no control panel) and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
 | Username | API username |
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |

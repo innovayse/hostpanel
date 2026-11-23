@@ -22,8 +22,20 @@ public sealed class ServerModuleCatalogTests
 
         var options = catalog.List();
 
-        options.Select(o => o.Id).Should().Equal(ServerModules.Known);
+        options.Select(o => o.Id).Should().Equal(ServerModules.Listed);
         options.Should().OnlyContain(o => o.Source == ServerModuleSource.BuiltIn);
+    }
+
+    /// <summary>The plain Linux module is listed as built in next to cPanel, so an existing server can be added with it.</summary>
+    [Fact]
+    public void List_IncludesTheLinuxModuleAsBuiltIn()
+    {
+        var catalog = new ServerModuleCatalog(PluginActivationTestSeeds.Registry());
+
+        var linux = catalog.List().Single(o => o.Id == ServerModules.Linux);
+
+        linux.Source.Should().Be(ServerModuleSource.BuiltIn);
+        catalog.Canonical("lInUx").Should().Be(ServerModules.Linux);
     }
 
     /// <summary>A plugin's modules are listed after the host's, under the plugin's name, and a module both declare is listed once in the host's spelling.</summary>
@@ -35,7 +47,7 @@ public sealed class ServerModuleCatalogTests
 
         var options = catalog.List();
 
-        options.Select(o => o.Id).Should().Equal([.. ServerModules.Known, "hestiacp"]);
+        options.Select(o => o.Id).Should().Equal([.. ServerModules.Listed, "hestiacp"]);
         var hestia = options.Single(o => o.Id == "hestiacp");
         hestia.Name.Should().Be("Panel plugin");
         hestia.Source.Should().Be(ServerModuleSource.Plugin);

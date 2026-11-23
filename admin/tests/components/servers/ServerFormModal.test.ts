@@ -10,6 +10,7 @@ import ServerFormModal from '@/components/servers/ServerFormModal.vue'
 import { createTestI18n } from '../../helpers/i18n'
 import { optionValues, pickOption, selectText } from '../../helpers/select'
 import { serverDto, serverModuleOptionDtos } from '../../helpers/serverFixtures'
+import { ServerModuleSource } from '@/types/serverenums'
 
 /**
  * Mounts the dialog with the teleport inlined.
@@ -70,6 +71,22 @@ describe('ServerFormModal', () => {
     await wrapper.get('[data-testid="server-form-save"]').trigger('click')
 
     expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'RetiredPanel' })
+  })
+
+  it('offers the plain Linux server under its own name and saves its id', async () => {
+    const wrapper = mountModal({
+      moduleOptions: serverModuleOptionDtos([{ id: 'Linux', name: 'Linux', source: ServerModuleSource.BuiltIn }]),
+    })
+    await wrapper.get('[data-testid="server-form-name"]').setValue('vps1')
+    await wrapper.get('[data-testid="server-form-hostname"]').setValue('vps1.example.com')
+    await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
+    await wrapper.get('[data-testid="server-form-username"]').setValue('root')
+
+    expect(optionValues(wrapper, 'server-form-module')).toContain('Linux')
+    await pickOption(wrapper, 'server-form-module', 'Linux server (no control panel)')
+    await wrapper.get('[data-testid="server-form-save"]').trigger('click')
+
+    expect(wrapper.emitted('saved')?.[0]?.[0]).toMatchObject({ module: 'Linux' })
   })
 
   it('emits the payload with empty text turned into null', async () => {

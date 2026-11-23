@@ -213,6 +213,8 @@ Jail является личной средой клиента, поэтому �
 
 ### Обычные серверы Linux (`generic-linux`)
 
+Сервер, добавленный с модулем **Linux-сервер (без панели управления)** (`Linux`), получает этот профиль без всякого плагина; диалог SSH предлагает для него встроенный пакет, а заказы такой сервер никогда не выбирают.
+
 Агент 1.6.0 поставляет вспомогательные программы для сайтов и баз данных в профиле `generic-linux`, поэтому сайты можно размещать и на сервере без панели хостинга (`install.sh --provider generic-linux` кладёт их в `helper_dir`). Нужны Debian, Ubuntu, RHEL или AlmaLinux с Apache или nginx и, для PHP, php-fpm.
 
 - **Веб-сервер.** Тот, который запущен. Если запущены оба или ни один, операции с сайтами отклоняются, а ответ ping ничего не перечисляет, пока в `agent.conf` не задан `web_server`: `apache` или `nginx`. Виртуальные хосты пишутся в `/etc/apache2/sites-available/hp-<hostname>.conf` (Apache на Debian, включается через `a2ensite`, `proxy_fcgi` через `a2enmod`), `/etc/httpd/conf.d/hp-<hostname>.conf` (Apache на RHEL) или `/etc/nginx/conf.d/hp-<hostname>.conf` (nginx) и перед перезагрузкой проверяются командой `apache2ctl -t`, `httpd -t` или `nginx -t`.

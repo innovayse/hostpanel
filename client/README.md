@@ -20,7 +20,7 @@ lib/errorHandler.ts   the one place an error sentence is chosen
 server/               Nitro BFF: every portal route goes through internalApiCall
 types/ constants/     one concept per file; closed sets are enums
 utils/ utils/ui/      pure helpers (formatting, rich-text allow-list, tone classes)
-locales/{en,ru,hy,de,es}/   one JSON per area, all languages together
+locales/{en,ru,hy,de,es,fr}/ one JSON per area, all languages together
 tests/                vitest, mirrors the source tree
 e2e/                  Playwright, one spec per flow, data-testid selectors only
 scripts/              lint:i18n, check-layers, legacy-field gate, audit:conformance
@@ -47,7 +47,7 @@ There is no ratchet any more: every rule applies to every `.vue` and `.ts` file.
 | Command | What it checks |
 |---|---|
 | `yarn lint` | ESLint conformance block (JSDoc, const arrows, braces, placeholders, no raw tags in screens, layering imports, no `any`/`!`), `scripts/check-layers.mjs`, `scripts/check-no-legacy-error-fields.mjs` |
-| `yarn lint:i18n` | en/ru/hy/de/es parity, unused keys, literal `t('key')` absent from `en` |
+| `yarn lint:i18n` | en/ru/hy/de/es/fr parity, unused keys, literal `t('key')` absent from `en` |
 | `yarn audit:conformance --strict` | every conformance metric is zero (raw tags, JSDoc, test ids, hard-coded text, `style`, `catch` in `.vue` and so on) |
 | `yarn typecheck` | `nuxt typecheck` (`vue-tsc`) |
 | `yarn test --maxWorkers=2` | vitest: unit and component tests in `tests/` (real kit, real Pinia) |

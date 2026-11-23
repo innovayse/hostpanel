@@ -50,7 +50,7 @@ describe('buildClientMenu', () => {
     }
   })
 
-  it('translates the labels: ru and hy differ from en and from each other', () => {
+  it('translates the labels: ru, hy and fr differ from en and from each other', () => {
     /**
      * The menu labels, in order, for one language.
      *
@@ -61,6 +61,7 @@ describe('buildClientMenu', () => {
 
     expect(labels(AppLocale.Ru)).toEqual(['Панель управления', 'Мои услуги', 'Мои домены', 'Счета', 'Поддержка'])
     expect(labels(AppLocale.Hy)).toEqual(['Վահանակ', 'Իմ ծառայությունները', 'Իմ դոմենները', 'Հաշիվ-ապրանքագրեր', 'Աջակցություն'])
+    expect(labels(AppLocale.Fr)).toEqual(['Tableau de bord', 'Mes services', 'Mes domaines', 'Factures', 'Support'])
     expect(labels(AppLocale.Ru)).not.toEqual(labels(AppLocale.En))
   })
 

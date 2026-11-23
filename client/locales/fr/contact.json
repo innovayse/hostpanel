@@ -1,0 +1,65 @@
+{
+  "contact": {
+    "hero": {
+      "badge": "Contactez-nous",
+      "title": "Nous sommes là",
+      "titleHighlight": "pour vous aider",
+      "subtitle": "Une question sur l'hébergement, les domaines ou votre compte ? Notre équipe est prête à vous aider."
+    },
+    "form": {
+      "title": "Envoyez-nous un message",
+      "name": "Nom complet",
+      "email": "Adresse e-mail",
+      "phone": "Numéro de téléphone",
+      "service": "Qu'est-ce qui vous intéresse ?",
+      "message": "Message",
+      "placeholders": {
+        "name": "Jean Dupont",
+        "email": "jean{'@'}exemple.com",
+        "phone": "+33 1 23 45 67 89",
+        "service": "Sélectionnez un service",
+        "message": "Dites-nous de quoi vous avez besoin"
+      },
+      "serviceOptions": {
+        "hosting": "Hébergement",
+        "domains": "Domaines",
+        "servers": "Serveurs",
+        "billing": "Facturation",
+        "support": "Support technique",
+        "other": "Autre"
+      },
+      "consentPrefix": "J'accepte la",
+      "consentLink": "politique de confidentialité",
+      "consentSuffix": "et consens à être contacté au sujet de ma demande",
+      "submit": "Envoyer le message",
+      "success": {
+        "title": "Message envoyé avec succès !",
+        "subtitle": "Nous vous répondrons très bientôt."
+      },
+      "error": {
+        "consentRequired": "Veuillez accepter la politique de confidentialité pour continuer"
+      }
+    },
+    "info": {
+      "officeAddress": {
+        "title": "Adresse du bureau"
+      },
+      "contactMethods": {
+        "title": "Moyens de contact",
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "workingHours": "Horaires d'ouverture"
+      },
+      "quickConnect": {
+        "title": "Contact rapide",
+        "telegram": "Telegram",
+        "whatsapp": "WhatsApp",
+        "liveChat": "Chat en direct",
+        "toggle": "Nous contacter"
+      }
+    },
+    "map": {
+      "title": "Emplacement du bureau sur la carte"
+    }
+  }
+}

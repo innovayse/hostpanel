@@ -1,0 +1,28 @@
+{
+  "trial": {
+    "badge": "Essai gratuit",
+    "title": "Essayez {product} gratuitement",
+    "subtitle": "Profitez d'un accès complet pendant l'essai et voyez-le fonctionner par vous-même.",
+    "cta": "Démarrer l'essai gratuit",
+    "noCc": "Démarrez votre essai dès aujourd'hui.",
+    "featuresTitle": "Tout ce que contient {product}",
+    "perks": {
+      "noCc": {
+        "title": "Démarrage rapide",
+        "desc": "Commencez immédiatement"
+      },
+      "duration": {
+        "title": "Période d'essai",
+        "desc": "Un accès complet pendant votre essai"
+      },
+      "support": {
+        "title": "Support complet",
+        "desc": "Notre équipe de support vous aide à tout configurer"
+      }
+    },
+    "seo": {
+      "title": "Démarrer l'essai gratuit : {product}",
+      "description": "Essayez {product} gratuitement."
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "paymentResult": {
+    "title": "Résultat du paiement",
+    "successTitle": "Paiement réussi",
+    "successBody": "Votre paiement a été confirmé. Merci !",
+    "pendingTitle": "Paiement en cours de confirmation",
+    "pendingBody": "La banque n'a pas encore confirmé le paiement. Cela peut prendre quelques minutes. Vous pouvez relancer la vérification ci-dessous.",
+    "declinedTitle": "Le paiement n'a pas abouti",
+    "declinedBody": "Le paiement a été refusé ou annulé. Aucun montant n'a été débité pour cette tentative.",
+    "unknownTitle": "Nous n'avons pas pu confirmer votre paiement",
+    "unknownBody": "Nous n'avons pas pu joindre la banque pour confirmer l'état de votre paiement pour le moment. S'il a abouti, votre commande ou votre facture sera mise à jour automatiquement sous peu. Veuillez ne pas payer de nouveau d'ici là. Vérifiez à nouveau ci-dessous.",
+    "missingTitle": "Aucun paiement à vérifier",
+    "missingBody": "Cette page n'a reçu aucune référence de paiement, il n'y a donc rien à vérifier ici. Si vous avez été redirigé ici après un paiement, consultez vos factures ci-dessous.",
+    "viewInvoices": "Voir les factures"
+  }
+}

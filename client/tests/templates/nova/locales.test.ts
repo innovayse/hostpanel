@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { APP_LOCALES, DEFAULT_APP_LOCALE } from '~/constants/appLocales'
+import type { AppLocale } from '~/types/applocale'
 import {
   DASHBOARD_ROWS,
   GUARANTEE_CARDS,
@@ -19,8 +21,8 @@ import {
   WHY_FEATURES,
 } from '~/templates/nova/content'
 
-/** The locales the portal ships; plugins/i18n.ts loads all three. */
-const LOCALES = ['en', 'ru', 'hy'] as const
+/** The locales the portal ships; plugins/i18n.ts loads every one of them. */
+const LOCALES = APP_LOCALES
 
 /**
  * Reads one locale's nova module.
@@ -54,7 +56,7 @@ const flatten = (value: unknown, prefix = ''): string[] => {
 /** The flattened key set of each locale's Nova messages. */
 const messages = Object.fromEntries(
   LOCALES.map(locale => [locale, new Set(flatten(load(locale)))]),
-) as Record<(typeof LOCALES)[number], Set<string>>
+) as Record<AppLocale, Set<string>>
 
 /** Every i18n key `content.ts` asks the components to render. */
 const referenced = [
@@ -77,10 +79,9 @@ describe('nova locales', () => {
   })
 
   it('carries the same keys in every locale, so no language falls back mid-page', () => {
-    const [first, ...rest] = LOCALES
-    const reference = [...messages[first]].sort()
+    const reference = [...messages[DEFAULT_APP_LOCALE]].sort()
 
-    for (const locale of rest) {
+    for (const locale of LOCALES.filter(candidate => candidate !== DEFAULT_APP_LOCALE)) {
       expect([...messages[locale]].sort(), locale).toEqual(reference)
     }
   })

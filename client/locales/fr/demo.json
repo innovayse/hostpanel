@@ -1,0 +1,11 @@
+{
+  "demo": {
+    "label": "Mode démo",
+    "resetsIn": "Réinitialisation dans {time}",
+    "resetsSoon": "Réinitialisation imminente",
+    "hoursMinutes": "{hours} h {minutes} min",
+    "minutes": "{minutes} min",
+    "note": "Tout ce que vous voyez ici est un exemple de données, réinitialisé régulièrement.",
+    "guide": "Nouveau ici ? Lisez le guide"
+  }
+}

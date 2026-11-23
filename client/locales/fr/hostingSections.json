@@ -1,0 +1,114 @@
+{
+  "hostingSections": {
+    "locations": {
+      "badge": "Emplacements",
+      "title": "Des serveurs proches de vos visiteurs",
+      "subtitle": "Choisissez le centre de données le plus proche de votre public pour des pages plus rapides."
+    },
+    "performance": {
+      "badge": "Performances",
+      "title": "Une rapidité et une fiabilité mesurables",
+      "subtitle": "Les chiffres derrière chaque offre d'hébergement.",
+      "stats": {
+        "uptime": "Disponibilité",
+        "response_time": "Temps de réponse moyen",
+        "sites_hosted": "Sites hébergés",
+        "support_response": "Réponse du support"
+      }
+    },
+    "security": {
+      "badge": "Sécurité",
+      "title": "Vos sites restent protégés",
+      "subtitle": "Une protection intégrée à chaque offre.",
+      "features": {
+        "ssl": {
+          "title": "SSL gratuit",
+          "description": "Des connexions chiffrées pour chaque domaine que vous hébergez."
+        },
+        "backups": {
+          "title": "Sauvegardes automatiques",
+          "description": "Des copies régulières de vos fichiers et bases de données, prêtes à être restaurées."
+        },
+        "ddos": {
+          "title": "Protection DDoS",
+          "description": "Le trafic d'attaque est filtré avant d'atteindre votre site."
+        },
+        "malware": {
+          "title": "Analyse antimalware",
+          "description": "Les fichiers sont analysés en continu et les menaces sont supprimées."
+        },
+        "firewall": {
+          "title": "Pare-feu",
+          "description": "Un pare-feu applicatif web bloque les failles courantes."
+        }
+      }
+    },
+    "apps": {
+      "badge": "Applications en un clic",
+      "title": "Installez les applications populaires en un clic",
+      "subtitle": "Lancez un site sans toucher à la ligne de commande.",
+      "count": "{count} applications prêtes à installer",
+      "categories": {
+        "cms": "Gestion de contenu",
+        "shop": "Boutiques en ligne",
+        "forum": "Forums",
+        "wiki": "Wikis",
+        "blog": "Blogs",
+        "gallery": "Galeries"
+      }
+    },
+    "guarantees": {
+      "badge": "Garanties",
+      "title": "Un hébergement en toute confiance",
+      "subtitle": "Des engagements clairs, sans mauvaises surprises.",
+      "items": {
+        "free_migration": {
+          "title": "Migration gratuite",
+          "description": "Nous transférons gratuitement votre site existant chez nous."
+        },
+        "money_back": {
+          "title": "Remboursement sous {days} jours",
+          "description": "Pas satisfait dans les {days} jours ? Vous êtes intégralement remboursé."
+        },
+        "no_hidden_fees": {
+          "title": "Aucun frais caché",
+          "description": "Le prix affiché est le prix que vous payez."
+        }
+      }
+    },
+    "support": {
+      "badge": "Support",
+      "title": "De vraies personnes, prêtes à vous aider",
+      "subtitle": "Joignez l'équipe de la manière qui vous convient.",
+      "responseTime": "Réponse en {time}",
+      "channels": {
+        "chat": {
+          "title": "Chat en direct",
+          "description": "Posez une question et obtenez une réponse tout de suite.",
+          "action": "Ouvrir le chat"
+        },
+        "ticket": {
+          "title": "Ticket de support",
+          "description": "Décrivez le problème et nous le suivons jusqu'à sa résolution.",
+          "action": "Ouvrir un ticket"
+        },
+        "email": {
+          "title": "E-mail",
+          "description": "Écrivez-nous à tout moment.",
+          "action": "Envoyer un e-mail"
+        },
+        "phone": {
+          "title": "Téléphone",
+          "description": "Parlez à un membre de l'équipe.",
+          "action": "Appelez-nous"
+        }
+      }
+    },
+    "plans": {
+      "badge": "Hébergement et domaines",
+      "title": "Tout ce dont votre site a besoin",
+      "subtitle": "Offres d'hébergement, domaines et plus encore, avec des tarifs clairs.",
+      "viewAll": "Voir toutes les offres"
+    }
+  }
+}

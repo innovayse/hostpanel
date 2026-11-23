@@ -62,7 +62,7 @@ public sealed class CreateLocationTests(IntegrationTestFactory factory) : IClass
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.PostAsJsonAsync("/api/admin/locations", new { countryCode = "de", sortOrder = 0, isActive = true, translations = new { fr = new { name = "Nom", city = (string?)null, latencyNote = (string?)null } } });
+        var response = await client.PostAsJsonAsync("/api/admin/locations", new { countryCode = "de", sortOrder = 0, isActive = true, translations = new { en = new { name = "Name", city = (string?)null, latencyNote = (string?)null }, it = new { name = "Nome", city = (string?)null, latencyNote = (string?)null } } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

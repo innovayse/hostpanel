@@ -15,6 +15,15 @@ public sealed class ServerModulesTests
         ServerModules.Known.Should().Equal("CPanel");
     }
 
+    /// <summary>The Linux module is spelled as stored, listed in the catalog and never in the orderable modules.</summary>
+    [Fact]
+    public void Linux_IsListedButNotKnown()
+    {
+        ServerModules.Linux.Should().Be("Linux");
+        ServerModules.Listed.Should().Equal("CPanel", "Linux");
+        ServerModules.Known.Should().NotContain(ServerModules.Linux);
+    }
+
     /// <summary>The legacy id is spelled as stored rows hold it and is not offered.</summary>
     [Fact]
     public void LegacyConstant_IsTheStoredSpelling_AndIsNotKnown()

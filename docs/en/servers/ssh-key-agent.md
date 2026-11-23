@@ -213,6 +213,8 @@ Errors added in 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `p
 
 ### Plain Linux servers (`generic-linux`)
 
+A server added with the **Linux server (no control panel)** module (`Linux`) gets this profile with no plugin involved; the SSH dialog offers the built-in bundle for it, and orders never choose such a server.
+
 Agent 1.6.0 ships website and database helpers for the `generic-linux` profile, so a server with no hosting panel can host websites too (`install.sh --provider generic-linux` puts them in `helper_dir`). They need Debian, Ubuntu, RHEL or AlmaLinux with Apache or nginx and, for PHP, php-fpm.
 
 - **Web server.** The one that is running. When both or neither run, the website operations are refused and the ping answer lists none until `web_server` in `agent.conf` is set to `apache` or `nginx`. Virtual hosts are written to `/etc/apache2/sites-available/hp-<hostname>.conf` (Debian Apache, enabled with `a2ensite`, `proxy_fcgi` enabled with `a2enmod`), `/etc/httpd/conf.d/hp-<hostname>.conf` (RHEL Apache) or `/etc/nginx/conf.d/hp-<hostname>.conf` (nginx), and tested with `apache2ctl -t`, `httpd -t` or `nginx -t` before a reload.

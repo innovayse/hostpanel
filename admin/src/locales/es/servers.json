@@ -102,6 +102,9 @@
     "deleteServerMessage": "¿Eliminar \"{name}\"? Esto no se puede deshacer.",
     "deleteGroupMessage": "¿Eliminar el grupo \"{name}\"? Los servidores en él se desasignarán."
   },
+  "module": {
+    "linux": "Servidor Linux (sin panel de control)"
+  },
   "fillType": {
     "leastFull": "Agregar al servidor menos lleno",
     "fillUntilFull": "Llenar servidor activo hasta que esté lleno y luego cambiar"

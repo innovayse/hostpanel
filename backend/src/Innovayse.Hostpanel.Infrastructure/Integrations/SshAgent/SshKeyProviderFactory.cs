@@ -9,7 +9,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
 
 /// <summary>
 /// Default <see cref="ISshKeyProviderFactory"/>. A server is served by the agent-backed provider when the plugin that serves its
-/// module names an <c>sshAgentProfile</c> in its manifest. The one transitional exception is the profile the host still ships
+/// module names an <c>sshAgentProfile</c> in its manifest. The plain Linux module (<see cref="ServerModules.Linux"/>) is served by the
+/// built-in profile. The one transitional exception is the profile the host still ships
 /// for a legacy module id (<see cref="ServerModules.Cwp7"/>): it applies only while no plugin supplies a profile for the module,
 /// and goes when that profile does. Every other module answers unsupported.
 /// </summary>
@@ -52,6 +53,11 @@ public sealed class SshKeyProviderFactory : ISshKeyProviderFactory
     /// <inheritdoc/>
     public string? AgentProfileFor(string module)
     {
+        if (ServerModules.Same(module, ServerModules.Linux))
+        {
+            return PluginSshAgentLayout.ReservedProfile;
+        }
+
         var match = _resolver.Find(module, PluginCapabilities.ProvisioningPanel);
         if (match.Outcome == ServerModulePluginOutcome.Served)
         {

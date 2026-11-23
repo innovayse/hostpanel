@@ -102,6 +102,9 @@
     "deleteServerMessage": "Delete \"{name}\"? This cannot be undone.",
     "deleteGroupMessage": "Delete group \"{name}\"? Servers in it will be unassigned."
   },
+  "module": {
+    "linux": "Linux server (no control panel)"
+  },
   "fillType": {
     "leastFull": "Add to the least full server",
     "fillUntilFull": "Fill active server until full then switch"

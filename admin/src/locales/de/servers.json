@@ -102,6 +102,9 @@
     "connectionHttps": "API über HTTPS",
     "connectionHttp": "API über HTTP"
   },
+  "module": {
+    "linux": "Linux-Server (ohne Bedienfeld)"
+  },
   "fillType": {
     "leastFull": "Zum am wenigsten ausgelasteten Server hinzufügen",
     "fillUntilFull": "Aktiven Server bis zur Auslastung füllen, dann wechseln"

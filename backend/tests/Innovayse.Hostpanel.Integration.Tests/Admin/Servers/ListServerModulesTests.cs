@@ -27,7 +27,7 @@ public sealed class ListServerModulesTests(IntegrationTestFactory factory) : ICl
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var rows = (await response.Content.ReadFromJsonAsync<JsonElement>()).EnumerateArray().ToList();
-        rows.Select(r => r.GetProperty("id").GetString()).Should().Contain(ServerModules.Known);
+        rows.Select(r => r.GetProperty("id").GetString()).Should().Contain(ServerModules.Listed);
         rows.Single(r => r.GetProperty("id").GetString() == ServerModules.CPanel).GetProperty("source").GetString().Should().Be("BuiltIn");
         rows.Should().OnlyContain(r => !string.IsNullOrWhiteSpace(r.GetProperty("name").GetString()));
     }

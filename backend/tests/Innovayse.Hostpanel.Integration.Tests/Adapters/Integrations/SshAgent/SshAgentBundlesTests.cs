@@ -1,6 +1,7 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Text;
+using Innovayse.Hostpanel.Domain.Servers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.SshAgent;
 
@@ -30,6 +31,17 @@ public sealed class SshAgentBundlesTests
         var bundles = SshAgentTestSeeds.Bundles(SshAgentTestSeeds.Plugin("panel-plugin"));
 
         bundles.For("generic-linux").Should().BeSameAs(bundles.BuiltIn);
+    }
+
+    /// <summary>The profile of the plain Linux module resolves to the built-in bundle, which holds its profile file.</summary>
+    [Fact]
+    public void For_TheLinuxModulesProfile_IsTheBuiltInBundle()
+    {
+        var bundles = SshAgentTestSeeds.Bundles();
+        var profile = SshAgentTestSeeds.KeyFactory().AgentProfileFor(ServerModules.Linux)!;
+
+        bundles.For(profile).Should().BeSameAs(bundles.BuiltIn);
+        Entries(bundles.BuiltIn.Content.ToArray()).Keys.Should().Contain($"profiles/{profile}.conf");
     }
 
     /// <summary>An id no loaded plugin ships and the agent does not embed has no bundle.</summary>

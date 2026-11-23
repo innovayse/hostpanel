@@ -17,6 +17,7 @@ describe('moduleOptionLabel', () => {
   it('names a plugin module by the plugin and a built in one by the host label', () => {
     expect(moduleOptionLabel(options[1] as ServerModuleOptionDto)).toBe('Example Panel')
     expect(moduleOptionLabel(options[0] as ServerModuleOptionDto)).toBe('cPanel / WHM')
+    expect(moduleOptionLabel({ id: 'Linux', name: 'Linux', source: ServerModuleSource.BuiltIn })).toBe('Linux server (no control panel)')
   })
 })
 

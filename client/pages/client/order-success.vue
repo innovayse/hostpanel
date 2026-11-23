@@ -31,15 +31,16 @@
       <UiStack gap="sm">
         <UiButton
           v-if="domainName"
+          variant="primary"
           :to="localePath(CLIENT_DOMAINS_PATH)"
           size="lg"
           full-width
           data-testid="order-success-manage-domain"
         >
-          {{ $t('checkout.success.manageDomain') }}
+          {{ $t('common.manage') }}
         </UiButton>
-        <UiButton v-if="!digitalOnly" size="lg" full-width data-testid="order-success-setup-service" @click="openServices">
-          {{ $t('checkout.success.setupService') }}
+        <UiButton v-if="!digitalOnly" variant="primary" size="lg" full-width data-testid="order-success-setup-service" @click="openServices">
+          {{ $t('client.services.completeSetup') }}
         </UiButton>
         <UiButton
           :to="localePath(CLIENT_INVOICES_PATH)"

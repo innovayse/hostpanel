@@ -46,9 +46,9 @@
           :tone="isHeaderPathActive(path, child.to) ? 'solid' : 'soft'"
           :data-testid="`header-nav-child-${child.key}-icon`"
         />
-        <UiStack gap="none" as="span" class="min-w-0">
+        <UiStack gap="none" :as="UiStackTag.Span" class="min-w-0">
           <UiText
-            as="span"
+            :as="UiTextTag.Span"
             size="sm"
             weight="medium"
             tone="inherit"
@@ -56,7 +56,7 @@
           >
             {{ child.label }}
           </UiText>
-          <UiText v-if="child.desc" as="span" size="xs" tone="inherit" truncate class="mt-0.5 text-classic-muted">
+          <UiText v-if="child.desc" :as="UiTextTag.Span" size="xs" tone="inherit" truncate class="mt-0.5 text-classic-muted">
             {{ child.desc }}
           </UiText>
         </UiStack>
@@ -80,6 +80,7 @@ import type { ComponentPublicInstance } from 'vue'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import { HEADER_ICON_ROW, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_NAV_ITEM } from '~/utils/headerControl'
 import { isHeaderPathActive } from '~/utils/headerNav'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of LayoutHeaderDropdown. */
 const props = defineProps<{

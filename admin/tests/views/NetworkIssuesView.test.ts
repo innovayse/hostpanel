@@ -14,6 +14,7 @@ import { mountRouted, mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** One network issue as the list endpoint returns it. */
 const issue = {
@@ -209,7 +210,7 @@ describe('NetworkIssuesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="network-issues-feedback"]').text()).toBe('The issue is locked.')
+    expect(toastMessages()).toContain('The issue is locked.')
     expect(wrapper.find('[data-testid="network-issues-row-2"]').exists()).toBe(true)
   })
 

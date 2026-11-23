@@ -9,13 +9,11 @@
 import { computed, ref } from 'vue'
 import type { ComputedRef, Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useResultBanner } from '@/composables/useResultBanner'
-import type { ResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { GATEWAY_OPTIONS } from '@/lib/constants'
 import type { SelectOption } from '@/lib/constants'
 import type { InvoicePaymentPayload } from '@/types/invoice'
 import { PaymentGateway } from '@/types/gateway'
-import { UiTone } from '@/utils/ui/tone'
 
 /** Gateway preselected in the form: the built-in offline one, since gateways from plugins are not known here. */
 export const DEFAULT_PAYMENT_GATEWAY: PaymentGateway = PaymentGateway.BankTransfer
@@ -48,10 +46,6 @@ export interface InvoicePaymentForm {
   submitting: Ref<boolean>
   /** Gateways the operator can pick: every real one, never "none". */
   gatewayOptions: ComputedRef<SelectOption<PaymentGateway>[]>
-  /** The outcome line of the last payment. */
-  feedback: ResultBanner
-  /** Tone of the outcome line: danger for a refusal, success otherwise. */
-  feedbackTone: ComputedRef<UiTone>
   /** True when the fields have what the API needs. */
   canSubmit: ComputedRef<boolean>
   /** Records the payment against the invoice; true when accepted. The form is cleared on success. */
@@ -85,16 +79,13 @@ export const useInvoicePaymentForm = (options: InvoicePaymentFormOptions): Invoi
   /** True while the payment is being recorded. */
   const submitting = ref(false)
 
-  /** The outcome line of the last payment. */
-  const feedback = useResultBanner()
+  /** Reports the outcome of the last payment as a toast. */
+  const feedback = useOutcomeToast()
 
   /** Gateways to offer: the option objects are reused so their labels keep following the language. */
   const gatewayOptions = computed<SelectOption<PaymentGateway>[]>(
     () => GATEWAY_OPTIONS.filter((option) => option.value !== PaymentGateway.None) as SelectOption<PaymentGateway>[],
   )
-
-  /** Tone of the outcome line: danger for a refusal, success otherwise. */
-  const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
   /** True when the fields have what the API needs. */
   const canSubmit = computed<boolean>(() => {
@@ -122,7 +113,6 @@ export const useInvoicePaymentForm = (options: InvoicePaymentFormOptions): Invoi
     if (!canSubmit.value || paymentDate.value === null) {
       return false
     }
-    feedback.clear()
     submitting.value = true
     const ok = await options.record(invoiceId, {
       date: new Date(paymentDate.value).toISOString(),
@@ -141,5 +131,5 @@ export const useInvoicePaymentForm = (options: InvoicePaymentFormOptions): Invoi
     return true
   }
 
-  return { paymentDate, gateway, transactionId, amount, fees, submitting, gatewayOptions, feedback, feedbackTone, canSubmit, submit }
+  return { paymentDate, gateway, transactionId, amount, fees, submitting, gatewayOptions, canSubmit, submit }
 }

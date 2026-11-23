@@ -19,13 +19,18 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
+import UiRowLink from '@/components/ui/UiRowLink.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { integrationConfigurePath } from '@/lib/routes'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiRowLinkLook } from '@/utils/ui/rowLink'
 import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { integrationConnectionTone } from '@/lib/tones'
 
 /** Translation function. */
@@ -47,14 +52,14 @@ const description = computed<string | undefined>(() => props.integration?.descri
 </script>
 
 <template>
-  <UiLink
+  <UiRowLink
     :to="integration ? integrationConfigurePath(integration.slug) : undefined"
-    class="block"
+    :look="UiRowLinkLook.Block"
     :data-testid="integration ? `integration-card-${integration.slug}` : 'integration-card-loading'"
   >
-    <UiCard padding="md" class="h-full" :aria-busy="integration ? undefined : 'true'">
-      <UiStack gap="md" class="h-full">
-        <UiStack direction="row" align="start" justify="between">
+    <UiCard :padding="UiCardPadding.Md" class="h-full" :aria-busy="integration ? undefined : 'true'">
+      <UiStack :gap="UiGap.Md" class="h-full">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Start" :justify="UiJustify.Between">
           <UiSkeletonBar v-if="integration === null" class="h-12 w-12 rounded-control" aria-hidden="true" />
           <UiPluginAvatar
             v-else-if="integration.isPlugin"
@@ -63,7 +68,7 @@ const description = computed<string | undefined>(() => props.integration?.descri
             :size="UiSize.Lg"
             data-testid="integration-plugin-avatar"
           />
-          <UiStack v-else align="center" justify="center" class="h-12 w-12 rounded-control p-2.5" :class="meta?.color ?? 'bg-text-muted'">
+          <UiStack v-else :align="UiAlignItems.Center" :justify="UiJustify.Center" class="h-12 w-12 rounded-control p-2.5" :class="meta?.color ?? 'bg-text-muted'">
             <UiImage
               v-if="meta?.logo"
               :src="meta.logo"
@@ -72,7 +77,7 @@ const description = computed<string | undefined>(() => props.integration?.descri
             />
           </UiStack>
           <UiSkeletonBar v-if="integration === null" class="h-5 w-16 rounded-full" aria-hidden="true" />
-          <UiStack v-else direction="row" align="center" gap="xs">
+          <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs">
             <!-- The plugin's own report (IPluginStatus): only the state is worded here, its sentence is the tooltip. -->
             <UiBadge
               v-if="integration.connection"
@@ -84,23 +89,23 @@ const description = computed<string | undefined>(() => props.integration?.descri
             >
               {{ t(`integrations.connectionState.${integration.connection.state}`) }}
             </UiBadge>
-            <UiBadge :tone="integration.isEnabled ? 'success' : 'neutral'" small :data-testid="`integration-status-${integration.slug}`">
+            <UiBadge :tone="integration.isEnabled ? UiTone.Success : UiTone.Neutral" small :data-testid="`integration-status-${integration.slug}`">
               {{ integration.isEnabled ? t('shared.active') : t('shared.inactive') }}
             </UiBadge>
           </UiStack>
         </UiStack>
 
         <UiSkeletonBar v-if="integration === null" class="h-5 w-40 rounded-md" aria-hidden="true" />
-        <UiStack v-else direction="row" align="center" gap="sm" class="min-w-0">
-          <UiHeading :level="3" variant="card" class="min-w-0 truncate" :title="integration.name" data-testid="integration-card-name">
+        <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="min-w-0">
+          <UiHeading :level="3" :variant="UiHeadingVariant.Card" class="min-w-0 truncate" :title="integration.name" data-testid="integration-card-name">
             {{ integration.name }}
           </UiHeading>
-          <UiBadge v-if="integration.isPlugin" tone="primary" small class="shrink-0" :data-testid="`integration-plugin-${integration.slug}`">
+          <UiBadge v-if="integration.isPlugin" :tone="UiTone.Primary" small class="shrink-0" :data-testid="`integration-plugin-${integration.slug}`">
             {{ t('integrations.integrationCard.plugin') }}
           </UiBadge>
           <UiBadge
             v-if="!integration.isConfigured"
-            tone="warning"
+            :tone="UiTone.Warning"
             small
             class="shrink-0"
             :data-testid="`integration-unconfigured-${integration.slug}`"
@@ -109,18 +114,18 @@ const description = computed<string | undefined>(() => props.integration?.descri
           </UiBadge>
         </UiStack>
 
-        <UiStack v-if="integration === null" gap="xs" class="flex-1" aria-hidden="true">
+        <UiStack v-if="integration === null" :gap="UiGap.Xs" class="flex-1" aria-hidden="true">
           <UiSkeletonBar class="h-3.5 w-full rounded-md" />
           <UiSkeletonBar class="h-3.5 w-2/3 rounded-md" />
         </UiStack>
-        <UiText v-else tone="muted" size="md" class="flex-1">
+        <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Md" class="flex-1">
           {{ description }}
         </UiText>
 
-        <UiText tone="primary" size="sm" class="font-medium">
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="font-medium">
           {{ t('integrations.integrationCard.configure') }}
         </UiText>
       </UiStack>
     </UiCard>
-  </UiLink>
+  </UiRowLink>
 </template>

@@ -1,9 +1,9 @@
 <template>
   <template v-if="visible">
     <PluginActionBlock v-if="action.block" :block="action.block" />
-    <UiButton v-else-if="action.resend" :size="UiSize.Sm" :disabled="disabled" data-testid="plugin-chat-result-resend" @click="emit('resend')">{{ action.label }}</UiButton>
-    <UiLink v-else-if="action.link?.external" :href="action.link.href" external testid="plugin-chat-result-link">{{ action.label }}</UiLink>
-    <UiLink v-else-if="action.link" :to="action.link.href" testid="plugin-chat-result-link">{{ action.label }}</UiLink>
+    <UiButton v-else-if="action.resend" :variant="UiButtonVariant.Primary" :size="UiSize.Sm" :disabled="disabled" data-testid="plugin-chat-result-resend" @click="emit('resend')">{{ action.label }}</UiButton>
+    <UiLink v-else-if="action.link?.external" :href="action.link.href" external :tone="UiLinkTone.Primary" testid="plugin-chat-result-link">{{ action.label }}</UiLink>
+    <UiLink v-else-if="action.link" :to="action.link.href" :tone="UiLinkTone.Primary" testid="plugin-chat-result-link">{{ action.label }}</UiLink>
   </template>
 </template>
 
@@ -19,7 +19,7 @@
  * It reports whether it shows (`visibility`), so the row that holds the card's actions can hide itself when every action
  * is hidden. A hidden action stays mounted: it is what reads the condition again at the next refresh.
  */
-import { UiSize } from '~/utils/ui/enums'
+import { UiButtonVariant, UiLinkTone, UiSize } from '~/utils/ui/enums'
 import { usePluginCondition } from '~/composables/usePluginView'
 import type { PluginChatResultAction } from '~/types/pluginchatresult'
 

@@ -11,6 +11,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -66,6 +67,6 @@ describe('InvoicePaymentTab', () => {
     await wrapper.get('[data-testid="billing-invoice-payment-form"]').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-payment-feedback"]').text()).toBe('The amount exceeds the balance.')
+    expect(toastMessages()).toContain('The amount exceeds the balance.')
   })
 })

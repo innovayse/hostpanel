@@ -1,7 +1,7 @@
 /**
  * Lazy route loaders that survive a dropped download, and the helpers that find them in a route.
  *
- * Every routed screen and layout but the eager shell layout (`AppLayout`) is its own chunk, handed to vue-router as a plain `() => import()`
+ * Every routed screen and layout but the eager shell layout (`MainLayout`) is its own chunk, handed to vue-router as a plain `() => import()`
  * loader, which is the only lazy form the router supports. The loader is wrapped by
  * {@link withRetry} so a failed or stalled download is repeated before the navigation gives up. The plain
  * import behind a wrapper stays reachable through {@link originalLoader}, and

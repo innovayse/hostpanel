@@ -14,31 +14,29 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BlockListAddForm from '@/components/fraud/BlockListAddForm.vue'
-import UiAlert from '@/components/ui/UiAlert.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiText from '@/components/ui/UiText.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatDateTime } from '@/lib/format'
 import { useFraudBlockListStore } from '@/stores/fraudBlockList'
 import { BlockListType } from '@/types/fraud'
 import type { BlockListEntry } from '@/types/fraud'
 import { tabItemsOfSchema } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
@@ -50,7 +48,7 @@ const { t } = useI18n()
 const store = useFraudBlockListStore()
 
 /** The result banner for an add or a delete. */
-const banner = useResultBanner()
+const banner = useOutcomeToast()
 
 /** The query key the tab is kept under. */
 const FilterKey = {
@@ -193,7 +191,7 @@ const confirmDelete = async (): Promise<void> => {
  */
 const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
   {
-    label: t('shared.delete'),
+    label: t('shared.remove'),
     icon: Icon.Trash,
     danger: true,
     testid: `fraud-block-list-delete-${entry.id}`,
@@ -214,13 +212,6 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
   <UiStack data-testid="fraud-block-lists-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiAlert
-      v-if="banner.message.value"
-      :variant="banner.isError.value ? UiTone.Danger : UiTone.Success"
-      data-testid="fraud-block-list-result"
-    >
-      {{ banner.message.value }}
-    </UiAlert>
 
     <UiTabs :items="tabs" :model-value="type" :aria-label="t('fraud.blockList.tabsLabel')" @update:model-value="selectType" />
 
@@ -248,45 +239,38 @@ const entryActions = (entry: BlockListEntry): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiResultCount :loading="initialLoading" data-testid="fraud-block-list-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiCard clip>
-      <UiTable
-        :empty-text="searching ? t('fraud.blockList.noMatches') : t('fraud.blockList.empty')"
-        :loading="initialLoading"
-        :empty="!store.loading && store.entries.length === 0"
-        data-testid="fraud-block-list-table"
-      >
-        <UiSchemaTableHead :columns="BLOCK_LIST_TABLE.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable :data-testid="`fraud-block-list-row-${entry.id}`">
-            <UiTableCell class="font-mono">{{ entry.value }}</UiTableCell>
-            <UiTableCell muted>{{ entry.note ?? t('shared.notAvailable') }}</UiTableCell>
-            <UiTableCell muted>{{ formatDateTime(entry.createdAt) }}</UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="entryActions(entry)" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      :empty-text="searching ? t('fraud.blockList.noMatches') : t('fraud.blockList.empty')"
+      :loading="initialLoading"
+      :empty="!store.loading && store.entries.length === 0"
       :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
-      testid="fraud-block-list-pagination"
+      pagination-testid="fraud-block-list-pagination"
+      data-testid="fraud-block-list-table"
       @update:page="setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="BLOCK_LIST_TABLE.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable :data-testid="`fraud-block-list-row-${entry.id}`">
+          <UiTableCell>
+            <UiText class="font-mono">{{ entry.value }}</UiText>
+          </UiTableCell>
+          <UiTableCell muted>{{ entry.note ?? t('shared.notAvailable') }}</UiTableCell>
+          <UiTableCell muted>{{ formatDateTime(entry.createdAt) }}</UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="entryActions(entry)" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
 
     <UiDialog
       v-if="deleteTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('fraud.blockList.deleteTitle')"
       :message="t('fraud.blockList.deleteMessage', { value: deleteTarget.value })"
-      :confirm-label="t('shared.delete')"
+      :confirm-label="t('shared.remove')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

@@ -3,14 +3,13 @@
     <UiStack :gap="UiGap.Sm" class="flex-1 md:min-h-0">
       <!-- The log fills the pane and scrolls by itself, so the composer below it stays at the bottom. -->
       <UiStack :gap="UiGap.None" class="relative flex-1 md:min-h-0">
-        <div
-          ref="log"
+        <UiScrollArea
+          v-model:element="log"
           role="log"
-          tabindex="0"
           aria-live="polite"
           :aria-busy="streaming"
           :aria-label="$t('plugins.chatLog')"
-          :class="['min-h-64 flex-1 overflow-y-auto', inPane ? 'max-h-[50dvh] md:max-h-none' : 'max-h-[60dvh]']"
+          :class="['min-h-64 flex-1', inPane ? 'max-h-[50dvh] md:max-h-none' : 'max-h-[60dvh]']"
           data-testid="plugin-chat-log"
           @scroll="onScroll"
         >
@@ -34,15 +33,15 @@
               @resend="resendLast(false)"
             />
             <UiAlert v-if="error" :variant="UiAlertVariant.Error">
-              <UiText as="span" :size="UiTextSize.Sm" data-testid="plugin-chat-error">{{ error }}</UiText>
+              <UiText :as="UiTextTag.Span" :size="UiTextSize.Sm" data-testid="plugin-chat-error">{{ error }}</UiText>
               <template v-if="retryable" #action>
-                <UiButton :variant="UiButtonVariant.Outline" :size="UiSize.Sm" :disabled="streaming" data-testid="plugin-chat-retry" @click="resendLast(true)">{{ $t('plugins.chatRetry') }}</UiButton>
+                <UiButton :variant="UiButtonVariant.Outline" :size="UiSize.Sm" :disabled="streaming" data-testid="plugin-chat-retry" @click="resendLast(true)">{{ $t('common.retry') }}</UiButton>
               </template>
             </UiAlert>
           </UiStack>
-        </div>
+        </UiScrollArea>
         <UiStack v-if="!following" :align="UiCrossAlign.Center" class="pointer-events-none absolute inset-x-0 bottom-2">
-          <UiButton :variant="UiButtonVariant.Outline" :size="UiSize.Sm" class="pointer-events-auto bg-white shadow dark:bg-gray-900" data-testid="plugin-chat-jump" @click="jumpToLatest">
+          <UiButton :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" class="pointer-events-auto" data-testid="plugin-chat-jump" @click="jumpToLatest">
             <ArrowDown :size="14" class="mr-1" aria-hidden="true" />
             {{ $t('plugins.chatJumpToLatest') }}
           </UiButton>
@@ -58,14 +57,14 @@
           class="rounded-md bg-primary-50 px-2 py-1 dark:bg-primary-900/30"
           data-testid="plugin-chat-selection-chip"
         >
-          <UiText as="span" :size="UiTextSize.Xs" class="min-w-0 flex-1 truncate">{{ chip.label }}</UiText>
+          <UiText :as="UiTextTag.Span" :size="UiTextSize.Xs" class="min-w-0 flex-1 truncate">{{ chip.label }}</UiText>
           <UiButton
             :variant="UiButtonVariant.Ghost"
             :size="UiSize.Sm"
-            :aria-label="`${$t('plugins.chatSelectionRemove')}: ${chip.label}`"
+            :aria-label="`${$t('common.remove')}: ${chip.label}`"
             data-testid="plugin-chat-selection-remove"
             @click="selection?.remove(chip.id)"
-          >{{ $t('plugins.chatSelectionRemove') }}</UiButton>
+          >{{ $t('common.remove') }}</UiButton>
         </UiStack>
       </UiStack>
       <UiText v-if="selection?.error.value" :size="UiTextSize.Sm" :tone="UiTextTone.Danger" data-testid="plugin-chat-selection-error">{{ selection.error.value }}</UiText>
@@ -130,7 +129,7 @@
  * conversation" action), the reply in flight is stopped, the messages are cleared and the history is read again.
  */
 import { ArrowDown } from 'lucide-vue-next'
-import { UiAlertVariant, UiButtonVariant, UiCrossAlign, UiDirection, UiGap, UiSize, UiTextSize, UiTextTone } from '~/utils/ui/enums'
+import { UiAlertVariant, UiButtonVariant, UiCrossAlign, UiDirection, UiGap, UiSize, UiTextSize, UiTextTag, UiTextTone } from '~/utils/ui/enums'
 import { usePluginChatTurn } from '~/composables/usePluginChatTurn'
 import type { PluginChatCarried, PluginChatSelectionHooks } from '~/composables/usePluginChatTurn'
 import { usePluginSelection } from '~/composables/usePluginSelection'

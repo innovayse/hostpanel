@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <UiBlock>
     <UiForm data-testid="domain-search-bar-form" spacing="none" class="mx-auto" @submit="emit('search', query)">
       <UiStack direction="row" wrap justify="center" align="end" gap="xs">
         <UiInput
@@ -16,7 +16,7 @@
           data-testid="domain-search-submit"
           :class="[BRAND_BUTTON, 'px-[26px] py-4 text-base']"
         >
-          {{ t('aurora.domainSearch.cta') }}
+          {{ t('ui.searchButton') }}
         </UiButton>
       </UiStack>
     </UiForm>
@@ -35,7 +35,7 @@
       testid="domain-categories"
       @update:model-value="value => emit('update:category', value)"
     />
-  </div>
+  </UiBlock>
 </template>
 
 <script setup lang="ts">

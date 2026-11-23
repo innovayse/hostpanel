@@ -1,5 +1,5 @@
 <template>
-  <header class="relative border-b border-line font-aurora">
+  <UiBlock :as="UiBlockTag.Header" class="relative border-b border-line font-aurora">
     <UiContainer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 py-[18px]">
       <UiLink
         :to="localePath(SITE_HOME_PATH)"
@@ -18,7 +18,7 @@
       </UiLink>
 
       <UiStack
-        as="nav"
+        :as="UiStackTag.Nav"
         direction="row"
         align="center"
         wrap
@@ -84,7 +84,7 @@
             testid="nav-sign-in"
             :class="[NAV_LINK, 'hidden text-[15px] sm:inline-flex']"
           >
-            {{ t('aurora.nav.login') }}
+            {{ t('common.signIn') }}
           </UiLink>
 
           <UiButton
@@ -93,7 +93,7 @@
             data-testid="nav-start"
             class="hidden whitespace-nowrap rounded-xl bg-brand px-5 py-[11px] text-[15px] font-semibold text-on-brand hover:brightness-110 sm:inline-flex"
           >
-            {{ t('aurora.nav.start') }}
+            {{ t('aurora.actions.getStarted') }}
           </UiButton>
         </template>
 
@@ -110,15 +110,15 @@
         </UiButton>
       </UiStack>
     </UiContainer>
-  </header>
+  </UiBlock>
 
-  <div
+  <UiBlock
     v-if="menuOpen"
     data-testid="nav-mobile-menu"
     class="relative z-30 border-b border-line bg-panel font-aurora xl:hidden"
   >
     <UiContainer class="pb-5 pt-3">
-      <UiStack as="nav" gap="none">
+      <UiStack :as="UiStackTag.Nav" gap="none">
         <UiLink
           v-for="link in navLinks"
           :key="link.key"
@@ -159,7 +159,7 @@
             class="rounded-xl border border-line2 px-5 py-3 text-center text-base font-semibold text-tx"
             @click="menuOpen = false"
           >
-            {{ t('aurora.nav.login') }}
+            {{ t('common.signIn') }}
           </UiLink>
 
           <UiButton
@@ -169,12 +169,12 @@
             class="w-full rounded-xl bg-brand px-5 py-3 text-base font-semibold text-on-brand hover:brightness-110"
             @click="menuOpen = false"
           >
-            {{ t('aurora.nav.start') }}
+            {{ t('aurora.actions.getStarted') }}
           </UiButton>
         </UiStack>
       </UiStack>
     </UiContainer>
-  </div>
+  </UiBlock>
 </template>
 
 <script setup lang="ts">
@@ -197,7 +197,7 @@ import { CLIENT_DASHBOARD_PATH } from '~/constants/clientRoutes'
 import { homeSectionFromHash, homeSectionPath } from '~/constants/homeSections'
 import { HomeSectionId } from '~/types/homesectionid'
 import { HEADER_CONTROL, NAV_LINK, NAV_LINK_ACTIVE } from '~/templates/aurora/buttons'
-import { UiIconButtonVariant, UiSize } from '~/utils/ui/enums'
+import { UiBlockTag, UiIconButtonVariant, UiSize, UiStackTag } from '~/utils/ui/enums'
 import { useCartStore } from '~/stores/cart'
 import {
   SITE_CART_PATH,

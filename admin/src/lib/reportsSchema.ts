@@ -41,13 +41,14 @@ export const reportHeadline = (schema: ReportSkeletonSchema, t: ReportTranslate)
  * @param column - The schema column.
  * @param t - Resolves a locale key.
  * @param extra - The cell format the screen adds.
- * @returns The column, with the caption translated and the alignment and width of the schema.
+ * @returns The column, with the caption translated and the alignment, kind and width of the schema.
  */
 export const reportColumn = (column: SkeletonColumn, t: ReportTranslate, extra: ReportColumnExtra = {}): ReportColumn => ({
   key: column.key,
   label: column.label === undefined ? '' : t(column.label),
   align: column.align,
   size: column.size,
+  kind: column.kind,
   ...extra,
 })
 

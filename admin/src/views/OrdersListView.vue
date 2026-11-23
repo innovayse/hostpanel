@@ -14,7 +14,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -23,13 +23,10 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -47,13 +44,15 @@ import { useOrdersStore } from '@/stores/orders'
 import { clientPath, orderPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
-import { UiTableDensity } from '@/utils/ui/injection'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -92,10 +91,7 @@ const chips = chipsOf(() => [
 ])
 
 /** The outcome line of the last accept or cancel. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** The order waiting for the cancel confirmation, null when the prompt is closed. */
 const cancelling = ref<number | null>(null)
@@ -111,7 +107,6 @@ const processing = ref(false)
  * @returns True when the API accepted the command, once the reload has settled.
  */
 const runCommand = async (command: () => Promise<boolean>, successKey: string): Promise<boolean> => {
-  feedback.clear()
   processing.value = true
   const ok = await command()
   processing.value = false
@@ -207,7 +202,7 @@ const orderActions = (order: OrderListItem): UiMenuAction[] => {
     cancelling.value = order.id
   }
   return [
-    ...(pending ? [{ label: t('orders.ordersList.accept'), icon: Icon.CheckCircle, testid: `orders-accept-${order.id}`, onSelect: onAccept }] : []),
+    ...(pending ? [{ label: t('orders.accept'), icon: Icon.CheckCircle, testid: `orders-accept-${order.id}`, onSelect: onAccept }] : []),
     { label: t('shared.view'), icon: Icon.Eye, testid: `orders-view-${order.id}`, to: orderPath(order.id) },
     ...(pending ? [{ label: t('shared.cancel'), icon: Icon.Close, testid: `orders-cancel-${order.id}`, danger: true, onSelect: onCancel }] : []),
   ]
@@ -248,7 +243,6 @@ const orderActions = (order: OrderListItem): UiMenuAction[] => {
       </UiField>
     </UiListToolbar>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="orders-action-feedback" />
 
     <UiErrorState
       v-if="store.error"
@@ -258,103 +252,90 @@ const orderActions = (order: OrderListItem): UiMenuAction[] => {
       @retry="load"
     />
 
-    <UiCard v-else-if="store.orders.length > 0 || store.loading">
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="initialLoading"
-        data-testid="orders-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody>
-          <UiTableRow
-            v-for="order in store.orders"
-            :key="order.id"
-            hoverable
-            bordered
-            :data-testid="`orders-row-${order.id}`"
-          >
-            <UiTableCell>{{ order.orderNumber }}</UiTableCell>
-            <UiTableCell>
-              <UiLink variant="link" :to="clientPath(order.clientId)" :data-testid="`orders-client-${order.id}`">
-                {{ order.clientName }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiStack direction="row" gap="xs" align="center" wrap>
-                <UiBadge :tone="orderStatusTone(order.status)" small>
-                  {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
-                </UiBadge>
-                <UiBadge
-                  v-if="order.fraudScore !== null"
-                  :tone="UiTone.Danger"
-                  small
-                  :data-testid="`orders-fraud-score-${order.id}`"
-                >
-                  {{ order.fraudScore }}
-                </UiBadge>
-                <UiText v-if="order.failedLineCount > 0" tone="muted" size="xs" :data-testid="`orders-failed-lines-${order.id}`">
-                  {{ t('orders.ordersList.failedLines', { count: order.failedLineCount }) }}
-                </UiText>
-                <UiText
-                  v-else-if="order.status === OrderStatus.Incomplete"
-                  tone="muted"
-                  size="xs"
-                  :data-testid="`orders-needs-attention-${order.id}`"
-                >
-                  {{ t('orders.ordersList.needsAttention') }}
-                </UiText>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell muted>{{ order.ipAddress ?? '-' }}</UiTableCell>
-            <UiTableCell>{{ order.paymentMethod }}</UiTableCell>
-            <UiTableCell numeric>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>
-            <UiTableCell numeric muted>{{ order.itemCount }}</UiTableCell>
-            <UiTableCell muted>{{ formatDate(order.createdAt) }}</UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="orderActions(order)" :testid="`orders-actions-${order.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiText tone="muted" size="xs">
-            {{ t('orders.ordersList.totalcountOrderValue', { totalCount: store.totalCount }) }}
-          </UiText>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            testid="orders-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+    <UiDataTable
+      v-else
+      :loading="initialLoading"
+      :empty="!store.loading && store.orders.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="orders-pagination"
+      data-testid="orders-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="order in store.orders"
+          :key="order.id"
+          hoverable
+          :data-testid="`orders-row-${order.id}`"
+        >
+          <UiTableCell>{{ order.orderNumber }}</UiTableCell>
+          <UiTableCell>
+            <UiLink :variant="UiButtonVariant.Link" :to="clientPath(order.clientId)" :data-testid="`orders-client-${order.id}`">
+              {{ order.clientName }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs" :align="UiAlignItems.Center" wrap>
+              <UiBadge :tone="orderStatusTone(order.status)" small>
+                {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
+              </UiBadge>
+              <UiBadge
+                v-if="order.fraudScore !== null"
+                :tone="UiTone.Danger"
+                small
+                :data-testid="`orders-fraud-score-${order.id}`"
+              >
+                {{ order.fraudScore }}
+              </UiBadge>
+              <UiText v-if="order.failedLineCount > 0" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" :data-testid="`orders-failed-lines-${order.id}`">
+                {{ t('orders.ordersList.failedLines', { count: order.failedLineCount }) }}
+              </UiText>
+              <UiText
+                v-else-if="order.status === OrderStatus.Incomplete"
+                :tone="UiTextTone.Muted"
+                :size="UiTextSize.Xs"
+                :data-testid="`orders-needs-attention-${order.id}`"
+              >
+                {{ t('orders.ordersList.needsAttention') }}
+              </UiText>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell muted>{{ order.ipAddress ?? '-' }}</UiTableCell>
+          <UiTableCell>{{ order.paymentMethod }}</UiTableCell>
+          <UiTableCell numeric>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>
+          <UiTableCell numeric muted>{{ order.itemCount }}</UiTableCell>
+          <UiTableCell muted>{{ formatDate(order.createdAt) }}</UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="orderActions(order)" :testid="`orders-actions-${order.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('orders.ordersList.noOrdersMatchYourFilters') : t('orders.ordersList.noOrdersFound')"
+          data-testid="orders-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Clipboard" :size="UiSize.Lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="orders-clear-filters" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('orders.ordersList.noOrdersMatchYourFilters') : t('orders.ordersList.noOrdersFound')"
-        data-testid="orders-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Clipboard" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="orders-clear-filters" @click="clearAll">
-            {{ t('orders.ordersList.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
 
     <UiDialog
       :open="cancelling !== null"
       :variant="UiDialogVariant.Confirm"
       :title="t('orders.ordersList.confirmCancelTitle')"
       :message="t('orders.ordersList.confirmCancelMessage')"
-      :confirm-label="t('orders.ordersList.cancelOrder')"
+      :confirm-label="t('orders.cancelOrder')"
       :loading="processing"
       :tone="UiTone.Danger"
       @confirm="confirmCancel"

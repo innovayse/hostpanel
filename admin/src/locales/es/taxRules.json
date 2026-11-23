@@ -5,8 +5,6 @@
   "empty": "Todavía no hay reglas fiscales. Añade una regla para gravar automáticamente las facturas nuevas.",
   "searchPlaceholder": "Buscar por nombre, país o región",
   "noMatches": "Ninguna regla fiscal coincide con tus filtros",
-  "clearFilters": "Borrar filtros",
-  "totalCount": "Reglas fiscales: {totalCount}",
   "table": {
     "name": "Nombre",
     "country": "País",
@@ -20,14 +18,12 @@
   "disabledBadge": "Desactivado",
   "deleteModal": {
     "title": "Eliminar regla fiscal",
-    "message": "¿Eliminar la regla fiscal {name}? Las facturas ya emitidas conservan el tipo con el que se gravaron.",
-    "confirmLabel": "Eliminar"
+    "message": "¿Eliminar la regla fiscal {name}? Las facturas ya emitidas conservan el tipo con el que se gravaron."
   },
   "toasts": {
     "deleted": "La regla fiscal se eliminó."
   },
   "form": {
-    "addTitle": "Añadir regla fiscal",
     "editTitle": "Editar regla fiscal",
     "name": {
       "label": "Nombre",
@@ -49,9 +45,6 @@
     "enabled": {
       "label": "Activado",
       "hint": "Solo se usan las reglas activadas en las facturas nuevas."
-    },
-    "cancel": "Cancelar",
-    "add": "Añadir",
-    "save": "Guardar"
+    }
   }
 }

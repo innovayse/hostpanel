@@ -9,28 +9,24 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { PUBLISHED_FILTER_OPTIONS } from '@/lib/constants'
 import { formatDateTimeCompact } from '@/lib/format'
 import { isPublishedOfFilter } from '@/lib/publishedFilter'
@@ -39,13 +35,12 @@ import { useAnnouncementsStore } from '@/stores/announcements'
 import type { Announcement, AnnouncementListFilters } from '@/types/announcement'
 import { PublishedFilter } from '@/types/publishedfilter'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { Icon } from '@/lib/icons'
-import { UiTableDensity } from '@/utils/ui/injection'
-import schema from '@/views/AnnouncementsListView.schema'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { Icon } from '@/lib/icons'
+import schema from '@/views/AnnouncementsListView.schema'
 import { AppRoute, editPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiTextSize } from '@/utils/ui/text'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
@@ -53,7 +48,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('support.announcementsList.addNewAnnouncement'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'announcements-add', to: AppRoute.SupportAnnouncementsNew },
+  { label: t('support.announcementsList.createAnnouncement'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'announcements-add', to: AppRoute.SupportAnnouncementsNew },
 ])
 
 /** The filter field the dialog edits; it is one query key and one `AnnouncementListFilters` member. */
@@ -98,10 +93,7 @@ const deleting = ref(false)
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Loads the page the address names with the search and the filter it holds, and records whether the load was refused.
@@ -125,7 +117,6 @@ const handleDelete = async (): Promise<void> => {
   if (deleteTarget.value === null) {
     return
   }
-  feedback.clear()
   deleting.value = true
   const removed = await store.remove(deleteTarget.value)
   deleting.value = false
@@ -199,11 +190,6 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
       </UiField>
     </UiListToolbar>
 
-    <UiResultCount :loading="store.loading && store.announcements.length === 0" :size="UiTextSize.Sm" data-testid="announcements-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="announcements-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -213,68 +199,63 @@ const rowActions = (announcement: Announcement): UiMenuAction[] => {
       @retry="load"
     />
 
-    <UiCard v-else>
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="store.loading && store.announcements.length === 0"
-        :empty="!store.loading && store.announcements.length === 0"
-        data-testid="announcements-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="announcement in store.announcements"
-            :key="announcement.id"
-            hoverable
-            :data-testid="`announcements-row-${announcement.id}`"
-          >
-            <UiTableCell muted>{{ formatDateTimeCompact(announcement.createdAt) }}</UiTableCell>
-            <UiTableCell>{{ announcement.title }}</UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="announcement.isPublished"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('shared.yes')"
-                :off-label="t('shared.no')"
-              />
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="rowActions(announcement)" :testid="`announcements-${announcement.id}-actions`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-        <template #empty>
-          <UiEmptyState
-            v-if="narrowed"
-            :title="t('shared.noRecordsFound')"
-            data-testid="announcements-empty-narrowed"
-          />
-          <UiEmptyState
-            v-else
-            :title="t('support.announcementsList.noAnnouncementsFound')"
-            :description="t('support.announcementsList.createYourFirstAnnouncementTo')"
-          />
-        </template>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      v-else
+      :loading="store.loading && store.announcements.length === 0"
+      :empty="!store.loading && store.announcements.length === 0"
       :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
-      testid="announcements-pagination"
+      pagination-testid="announcements-pagination"
+      data-testid="announcements-table"
       @update:page="setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="announcement in store.announcements"
+          :key="announcement.id"
+          hoverable
+          :data-testid="`announcements-row-${announcement.id}`"
+        >
+          <UiTableCell muted>{{ formatDateTimeCompact(announcement.createdAt) }}</UiTableCell>
+          <UiTableCell>{{ announcement.title }}</UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="announcement.isPublished"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('shared.yes')"
+              :off-label="t('shared.no')"
+            />
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="rowActions(announcement)" :testid="`announcements-${announcement.id}-actions`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          v-if="narrowed"
+          :title="t('shared.noRecordsFound')"
+          data-testid="announcements-empty-narrowed"
+        />
+        <UiEmptyState
+          v-else
+          :title="t('support.announcementsList.noAnnouncementsFound')"
+          :description="t('support.announcementsList.createYourFirstAnnouncementTo')"
+        />
+      </template>
+    </UiDataTable>
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="deleteTarget !== null"
       :title="t('support.announcementsList.deleteAnnouncement')"
       :message="t('support.announcementsList.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="handleDelete"
       @close="dismissDelete"
     />

@@ -64,4 +64,15 @@ describe('UiSegmented', () => {
 
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })
+
+  it('never outgrows its row: a long set scrolls inside the group and the buttons keep their size', () => {
+    const wrapper = mount(UiSegmented, { props: { items, modelValue: '30' } })
+
+    expect(wrapper.get('[role="radiogroup"]').classes()).toEqual(expect.arrayContaining(['max-w-full', 'overflow-x-auto']))
+    expect(wrapper.get('[data-testid="opt-30"]').classes()).toContain('shrink-0')
+  })
+
+  it('makes the buttons a 44px touch target on a phone', () => {
+    expect(mount(UiSegmented, { props: { items, modelValue: '30' } }).get('[data-testid="opt-30"]').classes()).toEqual(expect.arrayContaining(['h-8', 'max-sm:h-11']))
+  })
 })

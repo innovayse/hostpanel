@@ -1,6 +1,6 @@
 /**
  * Client service detail flow: each section saves through its own endpoint with only its own
- * fields and confirms the save, and a refused termination date correction shows the API's
+ * fields and confirms the save in a toast, and a refused termination date correction toasts the API's
  * localized sentence.
  */
 import { HttpMethod } from '../src/types/http'
@@ -9,7 +9,7 @@ import type { Page } from '@playwright/test'
 import { adaDetail } from './fixtures/clients'
 import { activeServiceDetail, terminatedServiceDetail } from './fixtures/services'
 import { ServiceSection, ServiceStatus, type ServiceDetail } from '../src/types/service'
-import { fieldOf } from './support/locators'
+import { fieldOf, toastWith } from './support/locators'
 import { json, stubApi, type RecordedCall, type StubApi, type StubRoute } from './support/stubApi'
 
 /** Path of the service detail endpoint every section endpoint hangs off. */
@@ -146,7 +146,7 @@ for (const sectionCase of sectionCases) {
     await sectionCase.edit(page)
     await page.getByTestId(sectionCase.saveButton).click()
 
-    await expect(page.getByTestId(`client-service-outcome-${sectionCase.section}`)).toHaveText('Changes saved successfully.')
+    await expect(toastWith(page, 'Changes saved successfully.')).toBeVisible()
     const saves = sectionSaves(api)
     expect(saves).toHaveLength(1)
     expect(saves[0]?.path).toBe(sectionPath(sectionCase.section))
@@ -163,14 +163,14 @@ test('correcting the termination date of a terminated service sends only the dat
   await fieldOf(page, 'client-service-termination-date').fill('15/10/2026')
   await page.getByTestId('client-service-save-termination-date').click()
 
-  await expect(page.getByTestId('client-service-outcome-termination-date')).toHaveText('Changes saved successfully.')
+  await expect(toastWith(page, 'Changes saved successfully.')).toBeVisible()
   const saves = sectionSaves(api)
   expect(saves).toHaveLength(1)
   expect(saves[0]?.path).toBe(sectionPath(ServiceSection.TerminationDate))
   expect(saves[0]?.body).toEqual({ terminatedAt: '2026-10-15' })
 })
 
-test('a refused termination date correction shows the API sentence and no success notice', async ({ page }) => {
+test('a refused termination date correction toasts the API sentence and no success notice', async ({ page }) => {
   // The API answers in the language the page asked for; the page shows that sentence as is.
   const sentence = 'Only a terminated service has a termination date to correct.'
   const api = await stubServicePage(page, terminatedServiceDetail, [
@@ -186,7 +186,7 @@ test('a refused termination date correction shows the API sentence and no succes
   await fieldOf(page, 'client-service-termination-date').fill('15/10/2026')
   await page.getByTestId('client-service-save-termination-date').click()
 
-  await expect(page.getByTestId('client-service-outcome-termination-date')).toHaveText(sentence)
-  await expect(page.getByTestId('client-service-outcome-termination-date')).toHaveAttribute('data-tone', 'danger')
+  await expect(toastWith(page, sentence)).toBeVisible()
+  await expect(page.getByTestId('ui-toast').filter({ hasText: 'Changes saved successfully.' })).toHaveCount(0)
   expect(sectionSaves(api)).toHaveLength(1)
 })

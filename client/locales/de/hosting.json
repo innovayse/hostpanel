@@ -5,10 +5,10 @@
     "titleHighlight": "Webhosting",
     "subtitle": "Wählen Sie den passenden Hosting-Tarif für Ihre Website. SSD-Speicher, kostenloses SSL, Support inklusive.",
     "recommended": "Empfohlen",
-    "getStarted": "Jetzt starten",
+    "getStarted": "Starten",
     "addToCart": "In den Warenkorb",
     "inCart": "Im Warenkorb",
-    "orderNow": "Jetzt bestellen",
+    "orderNow": "Bestellen",
     "custom": "Individuell",
     "loadError": "Hosting-Tarife konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
     "planNotFound": "Tarif nicht gefunden.",
@@ -38,7 +38,6 @@
     "premiumSolutions": "Premium-Hosting-Lösungen",
     "enterpriseSolutions": "Lösungen für Agenturen & Unternehmen",
     "agencyBadge": "Höchste Leistung",
-    "select": "Auswählen",
     "free": "Kostenlos"
   }
 }

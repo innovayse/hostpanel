@@ -4,7 +4,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the domain renewal emails report is made of. */
 const schema: ReportSkeletonSchema = {
@@ -20,10 +20,10 @@ const schema: ReportSkeletonSchema = {
     columns: [
       { key: 'clientName', label: 'shared.client', size: UiColumnSize.Grow },
       { key: 'domain', label: 'shared.domain' },
-      { key: 'sentAt', label: 'reports.domainRenewalEmails.dateSent' },
+      { key: 'sentAt', label: 'reports.domainRenewalEmails.dateSent', kind: UiColumnKind.Date },
       { key: 'reminder', label: 'reports.domainRenewalEmails.reminder' },
       { key: 'recipients', label: 'reports.domainRenewalEmails.recipients' },
-      { key: 'sent', label: 'reports.domainRenewalEmails.sent', align: UiAlign.Center },
+      { key: 'sent', label: 'reports.domainRenewalEmails.sent', align: UiAlign.Center, kind: UiColumnKind.Status },
     ],
   },
   emptyText: 'shared.noDataFoundForThis2',

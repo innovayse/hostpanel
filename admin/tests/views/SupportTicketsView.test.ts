@@ -15,6 +15,7 @@ import { useToastStore } from '@/stores/toast'
 import { mountRouted } from '../helpers/mount'
 import { json, problem, stubFetch, findCall } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** One ticket row as the list endpoint returns it. */
 const ticket = {
@@ -113,8 +114,7 @@ describe('SupportTicketsView', () => {
     expect(row.text()).toContain('DNS is down')
     expect(row.text()).toContain('Support')
     expect(row.text()).toContain('Awaiting Reply')
-    expect(wrapper.get('[data-testid="support-tickets-count"]').text()).toContain('1')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Subject')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('shows the priority of each ticket beside its status', async () => {
@@ -148,6 +148,8 @@ describe('SupportTicketsView', () => {
   it('keeps the chosen page in the address and loads it', async () => {
     const mock = stubList([ticket], 45)
     const { wrapper, router } = await mountListAt()
+
+    expect(wrapper.find('[data-testid="ui-card-footer"] [data-testid="support-tickets-pagination-next"]').exists()).toBe(true)
 
     await wrapper.get('[data-testid="support-tickets-pagination-next"]').trigger('click')
     await flushPromises()
@@ -271,7 +273,6 @@ describe('SupportTicketsView', () => {
 
     expect(findCall(mock, 'POST', '/api/tickets/bulk')?.body).toEqual({ ticketIds: [5], action: 'close' })
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Changes saved successfully.'])
-    expect(wrapper.find('[data-testid="support-tickets-feedback"]').exists()).toBe(false)
   })
 
   it('deletes the selection only after the danger confirmation', async () => {
@@ -304,7 +305,7 @@ describe('SupportTicketsView', () => {
     await wrapper.get('[data-testid="support-tickets-bulk-close"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="support-tickets-feedback"]').text()).toBe('Tickets are locked.')
+    expect(toastMessages()).toContain('Tickets are locked.')
     expect(wrapper.find('[data-testid="support-tickets-error"]').exists()).toBe(false)
   })
 

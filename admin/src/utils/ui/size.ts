@@ -21,11 +21,11 @@ export type UiSize = (typeof UiSize)[keyof typeof UiSize]
  * the primary button) and 48px (lg). Fields, buttons and icon buttons share it, so a toolbar of mixed controls lines up.
  */
 
-/** Height, side padding and type size of a single-line text field per size. */
+/** Height, side padding and type size of a single-line text field per size; the sm and md ones are 44px high on a phone, like the buttons beside them. */
 export const fieldSizeClasses: Record<UiSize, string> = {
   xs: 'h-6 px-2 text-xs',
-  sm: 'h-8 px-3 text-[0.8125rem]',
-  md: 'h-10.5 px-3.5 text-sm',
+  sm: 'h-8 px-3 text-[0.8125rem] max-sm:h-11',
+  md: 'h-10.5 px-3.5 text-sm max-sm:h-11',
   lg: 'h-12 px-4 text-[0.9375rem]',
 }
 
@@ -45,11 +45,11 @@ export const controlRadiusClasses: Record<UiSize, string> = {
   lg: 'rounded-control',
 }
 
-/** Height, side padding and type size of a button per size. */
+/** Height, side padding and type size of a button per size; the sm and md ones are 44px high on a phone, the smallest comfortable touch target. */
 export const buttonSizeClasses: Record<UiSize, string> = {
   xs: 'h-5 px-2 text-xs',
-  sm: 'h-8 px-3.5 text-[0.8125rem]',
-  md: 'h-10.5 px-[18px] text-sm',
+  sm: 'h-8 px-3.5 text-[0.8125rem] max-sm:h-11',
+  md: 'h-10.5 px-[18px] text-sm max-sm:h-11',
   lg: 'h-12 px-6 text-[0.9375rem]',
 }
 
@@ -64,11 +64,11 @@ export const buttonLinkSizeClasses: Record<UiSize, string> = {
   lg: 'text-[0.9375rem]',
 }
 
-/** Square footprint of an icon-only button per size. */
+/** Square footprint of an icon-only button per size; the sm and md ones grow to 44px on a phone, the smallest comfortable touch target. */
 export const iconButtonSizeClasses: Record<UiSize, string> = {
   xs: 'w-5 h-5',
-  sm: 'w-8 h-8',
-  md: 'w-10.5 h-10.5',
+  sm: 'w-8 h-8 max-sm:h-11 max-sm:w-11',
+  md: 'w-10.5 h-10.5 max-sm:h-11 max-sm:w-11',
   lg: 'w-12 h-12',
 }
 

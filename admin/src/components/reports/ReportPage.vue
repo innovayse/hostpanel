@@ -36,7 +36,6 @@ import ReportTimestamp from '@/components/reports/ReportTimestamp.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSkeletonShape from '@/components/ui/UiSkeletonShape.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -49,10 +48,13 @@ import type { ReportChartData } from '@/types/reportchartdata'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportStatValue } from '@/types/reportstat'
 import type { ReportTableData } from '@/types/reporttabledata'
+import { UiGap } from '@/utils/ui/layout'
 import { ReportNote } from '@/utils/ui/reportParts'
 import type { ReportFieldWidth } from '@/utils/ui/reportField'
 import { SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -199,7 +201,7 @@ provide(REPORT_EMPTY, emptyScope)
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="report-page">
+  <UiStack :gap="UiGap.None" data-testid="report-page">
     <UiPageHeader :title="title ?? headline.title" :subtitle="headline.description">
       <template v-if="hasActions" #actions>
         <ReportActions :actions="schema.actions ?? []" @refresh="retry?.()" @export="emit('export')" @print="emit('print')">
@@ -231,11 +233,11 @@ provide(REPORT_EMPTY, emptyScope)
 
     <template v-if="store.error && !store.loading">
       <UiErrorState v-if="retry" :message="store.error" testid="report-error" @retry="retry()" />
-      <UiAlert v-else variant="danger" data-testid="report-error">
+      <UiAlert v-else :variant="UiTone.Danger" data-testid="report-error">
         {{ store.error }}
       </UiAlert>
     </template>
-    <UiStack v-else gap="lg" :aria-busy="busy ? 'true' : undefined" data-testid="report-body">
+    <UiStack v-else :gap="UiGap.Lg" :aria-busy="busy ? 'true' : undefined" data-testid="report-body">
       <ReportStatRow v-if="schema.stats && stats" :stats="statTiles" />
 
       <UiSkeletonShape v-if="schema.map && busy" :kind="SkeletonPartKind.Map" />
@@ -270,6 +272,8 @@ provide(REPORT_EMPTY, emptyScope)
         :totals-label="table.totalsLabel"
         :format-money="table.formatMoney"
         :grouped="schema.table.grouped"
+        :pagination="schema.table.pagination ? table.pagination : undefined"
+        @page="emit('page', $event)"
       >
         <template v-if="slots.body" #body="scope">
           <slot name="body" v-bind="scope" />
@@ -278,20 +282,11 @@ provide(REPORT_EMPTY, emptyScope)
           <slot :name="name" v-bind="scope" />
         </template>
       </ReportTable>
-      <UiPagination
-        v-if="schema.table?.pagination && table?.pagination"
-        :page="table.pagination.page"
-        :total="table.pagination.total"
-        :page-size="table.pagination.pageSize"
-        :loading="store.loading"
-        :testid="table.pagination.testid"
-        @update:page="emit('page', $event)"
-      />
 
       <UiSkeletonShape v-if="schema.closing && busy" :kind="SkeletonPartKind.Lines" />
       <slot v-else name="closing" />
       <UiSkeletonShape v-if="schema.note !== undefined && busy" :kind="SkeletonPartKind.Note" />
-      <UiText v-else-if="schema.note !== undefined && baseCurrency" tone="muted" size="sm" data-testid="report-note">
+      <UiText v-else-if="schema.note !== undefined && baseCurrency" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="report-note">
         {{ note }}
       </UiText>
 

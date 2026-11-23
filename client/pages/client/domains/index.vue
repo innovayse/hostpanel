@@ -1,23 +1,12 @@
 <template>
   <UiStack gap="lg">
-    <UiPageHeader :title="$t('client.domains.title')" :description="$t('client.domains.subtitle')" :icon="Globe" class="!mb-0">
-      <template #actions>
-        <UiButton :to="SITE_DOMAINS_PATH" variant="outline" data-testid="domains-register-new">
-          <Plus :size="16" :stroke-width="2" class="mr-2" />
-          {{ $t('client.domains.registerNew') }}
-        </UiButton>
-      </template>
-    </UiPageHeader>
+    <UiPageHeader :title="$t('client.domains.title')" :description="$t('client.domains.subtitle')" :icon="Globe" :actions="headerActions" class="!mb-0" />
 
     <UiTabs v-model="activeTab" :tabs="tabs" />
 
-    <UiStack v-if="store.domainsLoading" gap="sm">
-      <UiSkeleton v-for="i in 4" :key="i" shape="block" class="h-20" />
-    </UiStack>
-
     <!-- Not a customer account. Checked before the failure branch: this is a state the
          API reported, not a fault, and it carries its own explanation and a way out. -->
-    <ClientNoProfileNotice v-else-if="store.clientProfileMissing" />
+    <ClientNoProfileNotice v-if="!store.domainsLoading && store.clientProfileMissing" />
 
     <!-- Failed. Checked before the list, which a failure otherwise renders as the toolbar
          above an empty state: a search box over "no domains" rather than a reason. -->
@@ -31,33 +20,43 @@
         <UiSearchInput v-model="search" :placeholder="$t('client.domains.search')" class="sm:w-64" testid="domains-search" />
       </UiStack>
 
-      <UiEmptyState v-if="!filtered.length" :icon="Globe" :title="$t('client.domains.empty')">
-        <UiButton v-if="!search" :to="SITE_DOMAINS_PATH" data-testid="domains-search-domains">{{ $t('client.domains.searchDomains') }}</UiButton>
-      </UiEmptyState>
-
-      <UiTable v-else data-testid="domains-table">
-        <UiTableHead>
-          <UiTableRow :hoverable="false">
-            <UiTableTh>{{ $t('client.domains.colDomain') }}</UiTableTh>
-            <UiTableTh class="hidden lg:table-cell">{{ $t('client.domains.colRegistrationDate') }}</UiTableTh>
-            <UiTableTh class="hidden md:table-cell">{{ $t('client.domains.colNextDueDate') }}</UiTableTh>
-            <UiTableTh align="center">{{ $t('client.domains.colStatus') }}</UiTableTh>
-            <UiTableTh align="right">{{ $t('client.domains.colActions') }}</UiTableTh>
-          </UiTableRow>
-        </UiTableHead>
+      <UiTable
+        scrollable
+        :label="$t('client.domains.title')"
+        :columns="5"
+        :loading="store.domainsLoading"
+        :empty="!filtered.length"
+        :empty-text="$t('client.domains.empty')"
+        :empty-icon="Globe"
+        data-testid="domains-table"
+      >
+        <template #head>
+          <UiTableHead>
+            <UiTableRow :hoverable="false">
+              <UiTableTh>{{ $t('client.domains.colDomain') }}</UiTableTh>
+              <UiTableTh class="hidden lg:table-cell">{{ $t('client.domains.colRegistrationDate') }}</UiTableTh>
+              <UiTableTh class="hidden md:table-cell">{{ $t('client.domains.colNextDueDate') }}</UiTableTh>
+              <UiTableTh align="center">{{ $t('client.domains.colStatus') }}</UiTableTh>
+              <UiTableTh align="right">{{ $t('client.domains.colActions') }}</UiTableTh>
+            </UiTableRow>
+          </UiTableHead>
+        </template>
+        <template v-if="!search" #empty>
+          <UiButton variant="primary" :to="SITE_DOMAINS_PATH" data-testid="domains-search-domains">{{ $t('client.domains.searchDomains') }}</UiButton>
+        </template>
         <UiTableBody>
           <UiTableRow v-for="domain in paged" :key="domain.id" group :data-testid="`domain-row-${domain.id}`">
             <UiTableTd>
               <UiStack direction="row" align="center" gap="sm">
                 <Globe :size="16" :stroke-width="2" class="text-primary-400 flex-shrink-0" />
-                <UiText as="span" size="sm" weight="medium">{{ domain.name }}</UiText>
+                <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ domain.name }}</UiText>
               </UiStack>
             </UiTableTd>
             <UiTableTd class="hidden lg:table-cell">
-              <UiText as="span" size="sm" tone="subtle">{{ formatDate(domain.registeredAt) }}</UiText>
+              <UiText :as="UiTextTag.Span" size="sm" tone="subtle">{{ formatDate(domain.registeredAt) }}</UiText>
             </UiTableTd>
             <UiTableTd class="hidden md:table-cell">
-              <UiText as="span" size="sm" :tone="isExpiringSoon(domain.expiresAt) ? 'danger' : 'subtle'">
+              <UiText :as="UiTextTag.Span" size="sm" :tone="isExpiringSoon(domain.expiresAt) ? 'danger' : 'subtle'">
                 {{ formatDate(domain.expiresAt) }}
               </UiText>
               <UiBadge v-if="isExpiringSoon(domain.expiresAt)" variant="warning" size="sm" class="ml-2">{{ $t('client.domains.expiringSoon') }}</UiBadge>
@@ -67,7 +66,7 @@
             </UiTableTd>
             <UiTableTd align="right">
               <UiButton :to="clientDomainPath(domain.id)" variant="subtle" size="sm" :data-testid="`domain-manage-${domain.id}`">
-                {{ $t('client.domains.manage') }}
+                {{ $t('common.manage') }}
               </UiButton>
             </UiTableTd>
           </UiTableRow>
@@ -91,9 +90,11 @@ import { DEFAULT_PAGE_SIZE } from '~/constants/uiDefaults'
 import { useClientStore } from '~/stores/client'
 import { DomainStatus } from '~/types/domainstatus'
 import { ListFilter } from '~/types/listfilter'
+import type { UiHeaderAction } from '~/types/uiheaderaction'
 import { isExpiringSoon } from '~/utils/domainExpiry'
 import { formatDate } from '~/utils/formatDate'
 import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
@@ -119,6 +120,11 @@ const perPage = ref(DEFAULT_PAGE_SIZE)
 
 // A new filter or search starts again from the first page.
 watch([activeTab, search, perPage], () => { page.value = 1 })
+
+/** The header's one action: ordering a new domain. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { key: 'register-new', label: t('client.domains.registerNew'), icon: Plus, to: SITE_DOMAINS_PATH, primary: true, testid: 'domains-register-new' },
+])
 
 /** The filter tabs, each with the number of domains it holds. */
 const tabs = computed(() => [

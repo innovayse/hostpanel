@@ -12,6 +12,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { AppRoute } from '@/lib/routes'
 import { useIntegrationsStore } from '@/stores/integrations'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -27,7 +28,7 @@ const slug = route.params.slug as string
 </script>
 
 <template>
-  <UiStack gap="md" class="w-full">
+  <UiStack :gap="UiGap.Md" class="w-full">
     <UiPageHeader
       :title="store.current?.name"
       :loading="store.current === null"

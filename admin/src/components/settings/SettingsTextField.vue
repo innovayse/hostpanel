@@ -16,6 +16,8 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import type { SettingDraft } from '@/composables/useSettingDraft'
 import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for SettingsTextField. */
 const props = withDefaults(defineProps<{
@@ -69,7 +71,7 @@ const model = computed<string>({
 
 <template>
   <SettingNotSeeded v-if="!draft.setting.value" :setting-key="settingKey" :env-name="envName" />
-  <UiStack v-else gap="xs">
+  <UiStack v-else :gap="UiGap.Xs">
     <UiInput
       v-model="model"
       :type="type"
@@ -79,10 +81,10 @@ const model = computed<string>({
       :invalid="invalidMessage !== undefined"
       :data-testid="testid"
     />
-    <UiText v-if="invalidMessage !== undefined" tone="danger" size="sm" :data-testid="`${testid}-invalid`">
+    <UiText v-if="invalidMessage !== undefined" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" :data-testid="`${testid}-invalid`">
       {{ invalidMessage }}
     </UiText>
-    <UiText v-else-if="hint !== undefined" tone="muted" size="sm">
+    <UiText v-else-if="hint !== undefined" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
       {{ hint }}
     </UiText>
     <SettingOutcome :outcome="draft.outcome.value" />

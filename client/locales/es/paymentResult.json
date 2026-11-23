@@ -11,10 +11,6 @@
     "unknownBody": "No pudimos conectar con el banco para confirmar el estado de su pago en este momento. Si se realizó, su pedido o factura se actualizará automáticamente en breve. No vuelva a pagar hasta entonces. Compruébelo de nuevo más abajo.",
     "missingTitle": "No hay ningún pago que comprobar",
     "missingBody": "Esta página no recibió una referencia de pago, por lo que no hay nada que verificar. Si le enviaron aquí después de pagar, revise sus facturas más abajo.",
-    "retry": "Comprobar de nuevo",
-    "goToOrder": "Continuar",
-    "goToInvoice": "Volver a la factura",
-    "viewInvoices": "Ver facturas",
-    "tryAgain": "Intentar pagar de nuevo"
+    "viewInvoices": "Ver facturas"
   }
 }

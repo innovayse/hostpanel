@@ -31,13 +31,11 @@
       "status": "Paiement",
       "paid": "Payé",
       "amount": "Montant",
-      "setupService": "Configurer mon service",
       "viewInvoices": "Voir les factures",
       "domain": "Domaine",
       "action": "Action",
       "registration": "Enregistrement",
-      "transfer": "Transfert",
-      "manageDomain": "Gérer votre domaine"
+      "transfer": "Transfert"
     },
     "secureCheckout": "Paiement sécurisé",
     "identifyPrompt": "Comment devons-nous vous identifier ?",

@@ -4,7 +4,8 @@
  * "Clear all" link once there is more than one. Renders nothing while no filter is active.
  *
  * The chip only reports what the reader asked for (`remove` with the chip's key, `clear`); the screen clears the
- * filter, which changes the chips. Pair it with `UiFilterTrigger`, which opens the filters themselves.
+ * filter, which changes the chips. Pair it with `UiFilterTrigger`, which opens the filters themselves. On a phone the remove
+ * button keeps its 20px look but reaches 44px for a finger (an invisible hit area around it).
  */
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -49,6 +50,7 @@ const emit = defineEmits<{
         <UiIconButton
           :label="t('ui.uiFilterChips.remove', { label: chip.label, value: chip.value })"
           :size="UiSize.Xs"
+          class="relative before:absolute before:-inset-3 before:content-[''] sm:before:hidden"
           :data-testid="`filter-chip-remove-${chip.key}`"
           @click="emit('remove', chip.key)"
         >
@@ -57,8 +59,8 @@ const emit = defineEmits<{
       </span>
     </li>
     <li v-if="chips.length > 1">
-      <UiButton variant="link" size="sm" data-testid="filter-chips-clear" @click="emit('clear')">
-        {{ t('ui.uiFilterChips.clearAll') }}
+      <UiButton variant="link" size="sm" class="max-sm:min-h-11" data-testid="filter-chips-clear" @click="emit('clear')">
+        {{ t('shared.clearFilters') }}
       </UiButton>
     </li>
   </ul>

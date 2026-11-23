@@ -29,17 +29,18 @@ import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
-import ThemeMenu from '@/components/layout/ThemeMenu.vue'
+import ThemeToggle from '@/components/layout/ThemeToggle.vue'
 import LocaleMenu from '@/components/layout/LocaleMenu.vue'
+import UiSearchTrigger from '@/components/ui/UiSearchTrigger.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { Icon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
 import { iconTriggerIconSize, UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiBreakpoint, UiDirection, UiGap, UiStackTag } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
-import { UiBreakpoint } from '@/utils/ui/layout'
+import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** Emitted by the hamburger button on a phone. */
@@ -143,12 +144,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="@container flex h-[calc(var(--shell-header-h)+env(safe-area-inset-top))] shrink-0 items-center gap-4 border-b border-border-shell bg-surface-topbar px-4 pt-[env(safe-area-inset-top)] backdrop-blur-[14px] lg:px-8" data-testid="app-topbar">
+  <UiStack :as="UiStackTag.Header" :direction="UiDirection.Row" :align="UiAlignItems.Center" class="@container h-[calc(var(--shell-header-h)+env(safe-area-inset-top))] shrink-0 border-b border-border-shell bg-surface-topbar px-4 pt-[env(safe-area-inset-top)] backdrop-blur-[14px] lg:px-8" data-testid="topbar">
     <!-- Left: hamburger + page title -->
     <!-- The title may shrink (min-w-0) so it is cut with an ellipsis before the controls on the right are pushed off a phone screen; a long Armenian or Russian title would otherwise do that. -->
-    <UiStack direction="row" align="center" gap="sm" class="min-w-0">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="min-w-0">
       <!-- Hamburger: opens the navigation drawer, so only below lg; from lg up the sidebar's own header button folds the sidebar -->
-      <UiIconButton :label="t('layout.openMenu')" class="lg:hidden" data-testid="topbar-toggle-sidebar" @click="emit('toggle-sidebar')">
+      <UiIconButton :label="t('layout.openMenu')" :variant="UiButtonVariant.Ghost" class="lg:hidden" data-testid="topbar-toggle-sidebar" @click="emit('toggle-sidebar')">
         <UiIcon :markup="MENU_MARKUP" :size="iconTriggerIconSize" />
       </UiIconButton>
 
@@ -156,71 +157,70 @@ onMounted(() => {
     </UiStack>
 
     <!-- Opens the command palette; the shortcut is only announced here. The bar's own width decides the shape (a container query, since the sidebar takes a different share of the screen in the rail layout and when folded): 4xl or more draws the wide field, 5xl or more adds the shortcut chip, and a narrower bar the icon alone, drawn like the other icon triggers of the bar (ghost: no fill, no border). -->
-    <UiButton
-      :icon="Icon.Search"
-      type="button"
-      :aria-label="t('commandPalette.open')"
-      class="flex h-[2.625rem] w-10.5 min-w-0 items-center justify-center gap-2.5 rounded-control border border-transparent bg-transparent px-0 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary @4xl:ml-6 @4xl:w-full @4xl:max-w-[460px] @4xl:flex-1 @4xl:justify-start @4xl:border-border @4xl:bg-surface-field @4xl:px-3.5 @4xl:text-text-muted"
+    <UiSearchTrigger
+      :label="t('commandPalette.open')"
+      :text="t('commandPalette.placeholder')"
+      :shortcut="SEARCH_SHORTCUT"
+      shortcut-testid="topbar-search-shortcut"
       data-testid="topbar-search"
       @click="palette.open()"
-    ><UiText :tone="UiTextTone.Muted" class="hidden flex-1 truncate text-left @4xl:block">{{ t('commandPalette.placeholder') }}</UiText>
-      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="hidden shrink-0 rounded-md border border-border-strong px-[7px] py-0.5 @5xl:block" data-testid="topbar-search-shortcut">{{ SEARCH_SHORTCUT }}</UiText>
-    </UiButton>
+    />
 
     <!-- Right: theme + language + notifications + the primary action -->
-    <UiStack direction="row" align="center" gap="sm" class="ml-auto shrink-0">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="ml-auto shrink-0">
       <!-- The theme and language pickers do not fit a phone's top bar; on a phone they are in the menu drawer. -->
-      <UiStack direction="row" align="center" gap="sm" :visible-from="UiBreakpoint.Sm">
-        <ThemeMenu testid="topbar-theme" />
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" :visible-from="UiBreakpoint.Sm">
+        <ThemeToggle testid="topbar-theme" />
         <LocaleMenu testid="topbar-locale" />
       </UiStack>
 
       <!-- The count sits on the bell's top-right corner (the button draws it); on a phone it is a marker dot, the label still says how many. -->
-      <UiIconButton :label="notificationLabel" :badge="notificationCount > 0 ? notificationBadge : undefined" badge-testid="topbar-notification" data-testid="topbar-notifications" @click="openNotifications">
+      <UiIconButton :label="notificationLabel" :variant="UiButtonVariant.Ghost" :badge="notificationCount > 0 ? notificationBadge : undefined" badge-testid="topbar-notification" data-testid="topbar-notifications" @click="openNotifications">
         <UiIcon :markup="BELL_MARKUP" :size="iconTriggerIconSize" />
       </UiIconButton>
 
       <!-- The primary action: the gradient button, from a tablet up. -->
       <UiStack :visible-from="UiBreakpoint.Md">
-        <UiLink :action="UiActionKind.Add" :to="AppRoute.ClientsAdd" :variant="UiButtonVariant.Primary" class="h-[2.625rem] rounded-control px-[18px]" data-testid="topbar-primary-action">
-          {{ t('layout.newClient') }}
+        <UiLink :action="UiActionKind.Add" :to="AppRoute.ClientsAdd" :variant="UiButtonVariant.Primary" data-testid="topbar-primary-action">
+          {{ t('commandPalette.actions.newClient') }}
         </UiLink>
       </UiStack>
     </UiStack>
 
     <!-- Notification feed -->
     <UiDrawer :open="showNotifications" :title="t('common.notifications')" :presentation="presentation" @close="showNotifications = false">
-      <UiStack gap="sm" data-testid="notifications-drawer">
-        <UiBadge tone="primary" small>{{ t('common.newCount', { count: notificationCount }, notificationCount) }}</UiBadge>
+      <UiStack :gap="UiGap.Sm" data-testid="notifications-drawer">
+        <UiBadge :tone="UiTone.Primary" small>{{ t('common.newCount', { count: notificationCount }, notificationCount) }}</UiBadge>
 
         <UiEmptyState v-if="!activity.initialLoading && activity.events.length === 0" :title="t('common.noNotifications')" />
         <!-- The feed; while it loads the same rows are drawn with bars where the event goes -->
-        <UiStack v-else gap="xs" :aria-busy="activity.initialLoading ? 'true' : undefined">
+        <UiStack v-else :gap="UiGap.Xs" :aria-busy="activity.initialLoading ? 'true' : undefined">
           <UiButton
             v-for="(event, index) in feedRows"
             :key="event ? `${event.type}-${event.entityId}-${event.occurredAt}` : `placeholder-${index}`"
             type="button"
-            variant="ghost"
-            class="w-full !justify-start text-left"
+            :variant="UiButtonVariant.Ghost"
+            block
+            class="!justify-start text-left"
             :disabled="event === null"
             :data-testid="`notification-${index}`"
             @click="event && goToActivityEvent(event)"
           >
-            <UiStack v-if="event" gap="xs" class="min-w-0">
-              <UiText tone="primary" size="md">{{ event.message }}</UiText>
-              <UiText tone="muted" size="xs">{{ relativeTime(event.occurredAt) }}</UiText>
+            <UiStack v-if="event" :gap="UiGap.Xs" class="min-w-0">
+              <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ event.message }}</UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ relativeTime(event.occurredAt) }}</UiText>
             </UiStack>
-            <UiStack v-else gap="xs" class="w-full" aria-hidden="true">
+            <UiStack v-else :gap="UiGap.Xs" class="w-full" aria-hidden="true">
               <UiSkeletonBar class="h-4 w-full rounded" />
               <UiSkeletonBar class="h-3 w-16 rounded" />
             </UiStack>
           </UiButton>
         </UiStack>
 
-        <UiButton type="button" variant="link" data-testid="notifications-view-all" @click="viewAllNotifications">
-          {{ t('common.viewAllNotifications') }}
+        <UiButton type="button" :variant="UiButtonVariant.Link" :title="t('common.viewAllNotifications')" :aria-label="t('common.viewAllNotifications')" data-testid="notifications-view-all" @click="viewAllNotifications">
+          {{ t('shared.viewAll') }}
         </UiButton>
       </UiStack>
     </UiDrawer>
-  </header>
+  </UiStack>
 </template>

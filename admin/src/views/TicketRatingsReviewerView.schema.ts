@@ -3,7 +3,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -15,11 +15,11 @@ const schema: ReportSkeletonSchema = {
   ],
   table: {
     columns: [
-      { key: 'ticketId', label: 'reports.ticketRatingsReviewer.ticket' },
-      { key: 'date', label: 'shared.date' },
+      { key: 'ticketId', label: 'reports.ticketRatingsReviewer.ticket', kind: UiColumnKind.Id },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'message', label: 'shared.message', size: UiColumnSize.Grow },
       { key: 'adminName', label: 'reports.ticketRatingsReviewer.admin' },
-      { key: 'rating', label: 'reports.ticketRatingsReviewer.rating', align: UiAlign.Center },
+      { key: 'rating', label: 'reports.ticketRatingsReviewer.rating', align: UiAlign.Center, kind: UiColumnKind.Status },
     ],
   },
   emptyText: 'shared.noDataFoundForThis2',

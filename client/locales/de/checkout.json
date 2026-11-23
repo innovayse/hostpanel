@@ -31,13 +31,11 @@
       "status": "Zahlung",
       "paid": "Bezahlt",
       "amount": "Betrag",
-      "setupService": "Meinen Service einrichten",
       "viewInvoices": "Rechnungen ansehen",
       "domain": "Domain",
       "action": "Aktion",
       "registration": "Registrierung",
-      "transfer": "Transfer",
-      "manageDomain": "Domain verwalten"
+      "transfer": "Transfer"
     },
     "secureCheckout": "Sicherer Checkout",
     "identifyPrompt": "Wie möchten Sie sich identifizieren?",

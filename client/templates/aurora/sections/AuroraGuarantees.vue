@@ -15,8 +15,8 @@
       >
         <UiStack gap="sm">
           <UiTile size="lg" :icon="ICONS[item.key]" class="bg-tile-mint text-white" />
-          <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ t(`aurora.guarantees.${item.key}Title`, { days: item.days ?? 0 }) }}</UiText>
-          <UiText as="span" size="inherit" tone="inherit" class="text-[15px] leading-relaxed text-mut">{{ t(`aurora.guarantees.${item.key}Body`, { days: item.days ?? 0 }) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ t(`aurora.guarantees.${item.key}Title`, { days: item.days ?? 0 }) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[15px] leading-relaxed text-mut">{{ t(`aurora.guarantees.${item.key}Body`, { days: item.days ?? 0 }) }}</UiText>
         </UiStack>
       </UiCard>
     </UiBalancedGrid>
@@ -34,6 +34,7 @@ import { GuaranteeKey } from '~/constants/guaranteeKey'
 import { useGuarantees } from '~/composables/useGuarantees'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import UiStack from '~/components/ui/UiStack.vue'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

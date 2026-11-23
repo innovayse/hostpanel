@@ -29,8 +29,8 @@ test('a hard load of the add client form shows the sidebar, the top bar and the 
   // `commit`: the load event waits for the held chunk's preload, which is exactly what this spec holds back.
   await page.goto('/clients/add', { waitUntil: 'commit' })
 
-  await expect(page.getByTestId('app-sidebar-desktop')).toBeVisible()
-  await expect(page.getByTestId('app-topbar')).toBeVisible()
+  await expect(page.getByTestId('sidebar-desktop')).toBeVisible()
+  await expect(page.getByTestId('topbar')).toBeVisible()
   await expect(page.getByTestId('ui-skeleton-of')).toBeVisible()
   await expect(page.getByTestId('view-loading')).toHaveCount(0)
   await expect(page.getByTestId('add-client-submit')).toHaveCount(0)
@@ -39,5 +39,5 @@ test('a hard load of the add client form shows the sidebar, the top bar and the 
 
   await expect(page.getByTestId('add-client-submit')).toBeVisible()
   await expect(page.getByTestId('ui-skeleton-of')).toHaveCount(0)
-  await expect(page.getByTestId('app-topbar')).toBeVisible()
+  await expect(page.getByTestId('topbar')).toBeVisible()
 })

@@ -249,7 +249,7 @@ describe('IntegrationConfigForm', () => {
     expect(wrapper.get('[data-testid="integration-field-region"]').text()).toContain('Европа')
   })
 
-  it('hides Test Connection when the API says the integration cannot be tested', () => {
+  it('hides the test button when the API says the integration cannot be tested', () => {
     const testable = mountForm()
     const untestable = mountForm({ integration: integrationDetail({ canTestConnection: false }) })
 

@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The gateway transaction log. */
 const schema: ListSkeletonSchema = {
@@ -17,10 +17,10 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date' },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'gateway', label: 'billing.gatewayLog.gateway' },
       { key: 'debugData', label: 'billing.gatewayLog.debugData', size: UiColumnSize.Grow },
-      { key: 'result', label: 'billing.gatewayLog.result', size: UiColumnSize.Compact },
+      { key: 'result', label: 'billing.gatewayLog.result', kind: UiColumnKind.Status },
     ],
   },
 }

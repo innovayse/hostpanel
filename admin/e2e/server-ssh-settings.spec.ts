@@ -85,7 +85,7 @@ test('enabling keeps the stored private key and stays in the dialog with a confi
   expect(body.isEnabled).toBe(true)
   expect(body.agentPrivateKey).toBeNull()
   await expect(page.getByTestId('server-ssh-hostname')).toBeVisible()
-  await expect(page.getByTestId('servers-feedback')).toHaveText('')
+  await expect(page.getByTestId('ui-toast')).toHaveCount(0)
 })
 
 test('a failed agent test says why in words', async ({ page }) => {

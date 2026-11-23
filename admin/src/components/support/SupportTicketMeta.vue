@@ -13,20 +13,18 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
 import { formatDateTimeCompact } from '@/lib/format'
 import type { Ticket, TicketPriority } from '@/types/ticket'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTone } from '@/utils/ui/tone'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
 /** Props for SupportTicketMeta. */
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   /** The ticket whose details are shown; null while it is being read. */
   ticket: Ticket | null
   /** Departments the ticket can be moved to, ready for the select. */
@@ -37,14 +35,7 @@ const props = withDefaults(defineProps<{
   lastReplyAt: string | null
   /** Whether the save is running. */
   saving: boolean
-  /** Outcome sentence of the last save, null for none. */
-  feedback?: string | null
-  /** Tone of the outcome sentence. */
-  feedbackTone?: UiTone
-}>(), {
-  feedback: null,
-  feedbackTone: UiTone.Success,
-})
+}>()
 
 const emit = defineEmits<{
   /** The operator pressed Save. */
@@ -94,9 +85,8 @@ const priority = defineModel<TicketPriority>('priority', { required: true })
       data-testid="ticket-save"
       @click="emit('save')"
     >
-      {{ t('shared.saveChanges') }}
+      {{ t('shared.save') }}
     </UiButton>
-    <UiStatusMessage :message="feedback" :tone="feedbackTone" data-testid="ticket-save-feedback" />
 
     <UiField :label="t('shared.status')" :loading="loading">
       <SupportTicketStatusBadge v-if="ticket" :status="ticket.status" />

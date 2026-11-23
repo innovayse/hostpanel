@@ -5,7 +5,7 @@
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the direct debit report is made of. */
 const schema: ReportSkeletonSchema = {
@@ -14,10 +14,10 @@ const schema: ReportSkeletonSchema = {
   header: { title: 'reports.directDebit.directDebitProcessing', subtitle: 'reports.directDebit.thisReportDisplaysAllUnpaid' },
   table: {
     columns: [
-      { key: 'invoiceId', label: 'shared.invoiceId', size: UiColumnSize.Compact },
+      { key: 'invoiceId', label: 'shared.invoiceId', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName', size: UiColumnSize.Grow },
-      { key: 'invoiceDate', label: 'shared.invoiceDate', align: UiAlign.Center },
-      { key: 'dueDate', label: 'shared.dueDate', align: UiAlign.Center },
+      { key: 'invoiceDate', label: 'shared.invoiceDate', kind: UiColumnKind.Date, align: UiAlign.Center },
+      { key: 'dueDate', label: 'shared.dueDate', kind: UiColumnKind.Date, align: UiAlign.Center },
       { key: 'subtotal', label: 'reports.directDebit.subtotal', align: UiAlign.Right },
       { key: 'tax', label: 'reports.directDebit.tax', align: UiAlign.Right },
       { key: 'credit', label: 'reports.directDebit.credit', align: UiAlign.Right },

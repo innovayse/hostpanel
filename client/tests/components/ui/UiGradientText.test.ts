@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiGradientText from '~/components/ui/UiGradientText.vue'
+import { UiGradientTextTag } from '~/utils/ui/enums'
 
 describe('UiGradientText', () => {
   it('is a span clipped to its text with the slot inside', () => {
@@ -15,7 +16,7 @@ describe('UiGradientText', () => {
   })
 
   it('renders the requested tag', () => {
-    const wrapper = mountWithKit(UiGradientText, { props: { as: 'div' } })
+    const wrapper = mountWithKit(UiGradientText, { props: { as: UiGradientTextTag.Div } })
 
     expect(wrapper.element.tagName).toBe('DIV')
   })

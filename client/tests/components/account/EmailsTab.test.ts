@@ -31,12 +31,12 @@ const emails = (count: number): ClientEmailSummary[] =>
   }))
 
 describe('EmailsTab', () => {
-  it('shows a skeleton while loading', async () => {
+  it('shows placeholder rows while loading', async () => {
     const wrapper = mountAccount(EmailsTab)
     useAccountStore().emailsLoading = true
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="account-emails-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-loading"]').exists()).toBe(true)
   })
 
   it('shows the empty state without mail', () => {

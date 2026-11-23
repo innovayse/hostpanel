@@ -16,6 +16,8 @@ import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { SettingEnv, SettingToggle } from '@/types/setting'
 import type { Setting, SettingKey } from '@/types/setting'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for SettingToggleField. */
 const props = defineProps<{
@@ -45,13 +47,13 @@ const enabled = useSettingSwitch(draft)
 
 <template>
   <SettingNotSeeded v-if="!draft.setting.value" :setting-key="settingKey" :env-name="SettingEnv[settingKey]" />
-  <UiStack v-else direction="row" align="center" wrap>
+  <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
     <UiToggle v-model="enabled" :data-testid="testid" />
-    <UiStack gap="xs" class="min-w-56 flex-1">
-      <UiText tone="primary" size="md">
+    <UiStack :gap="UiGap.Xs" class="min-w-56 flex-1">
+      <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">
         {{ label }}
       </UiText>
-      <UiText v-if="hint" tone="muted" size="sm">
+      <UiText v-if="hint" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
         {{ hint }}
       </UiText>
     </UiStack>

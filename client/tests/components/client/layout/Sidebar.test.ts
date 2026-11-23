@@ -100,4 +100,14 @@ describe('ClientLayoutSidebar', () => {
     expect(link.attributes('href')).toBe('https://docs.example.com')
     expect(link.attributes('rel')).toContain('noopener')
   })
+
+  it('carries the theme and language controls on a phone only, since the top bar hides them there', () => {
+    routeAt('/')
+    const wrapper = mountClient(Sidebar, { props: { items: ITEMS, open: true } })
+
+    const preferences = wrapper.find('[data-testid="client-sidebar-preferences"]')
+    expect(preferences.exists()).toBe(true)
+    expect(preferences.classes()).toContain('lg:hidden')
+    expect(preferences.find('[data-testid="language-switcher"]').exists()).toBe(true)
+  })
 })

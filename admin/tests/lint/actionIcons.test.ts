@@ -9,8 +9,8 @@
  * - not sit in the `actions` slot of a `UiPageHeader`: header actions are data (`UiPageHeader` `actions` prop, `UiHeaderAction`,
  *   whose `icon` is required), so each one has its icon and folds into the "…" menu on a phone with the other actions.
  *
- * Text-only controls are the `link` look (a link inside prose), a plain `UiLink` (navigation text) and an explicit `plain`
- * button (an unstyled row the screen draws itself). A few files hold choice rows that are labelled by data, not actions;
+ * Text-only controls are the `link` look (a link inside prose), a plain `UiLink` (navigation text).
+ * A few files hold choice rows that are labelled by data, not actions;
  * each is named below with its rule and the reason, and the list is checked too: an entry whose file is gone or no longer
  * breaks its rule fails, so the list cannot rot.
  */
@@ -47,7 +47,7 @@ interface AllowedException {
 /** The named exceptions: rows that pick a record, labelled by the record's own data. */
 const ALLOWED: readonly AllowedException[] = [
   { file: 'components/clients/ClientUserPicker.vue', rule: ActionIconRule.MissingIcon, reason: 'search results: each button is a user picked by name' },
-  { file: 'components/layout/AppTopbar.vue', rule: ActionIconRule.MissingIcon, reason: 'activity feed: each button is an event opened by its message' },
+  { file: 'components/layout/MainTopbar.vue', rule: ActionIconRule.MissingIcon, reason: 'activity feed: each button is an event opened by its message' },
   { file: 'components/plugins/view/PluginChatEmpty.vue', rule: ActionIconRule.MissingIcon, reason: 'suggestions: each button sends the suggestion text it shows' },
   { file: 'components/servers/GroupFormModal.vue', rule: ActionIconRule.MissingIcon, reason: 'member lists: each button moves a server named by its own label' },
   { file: 'views/SupportOpenTicketView.vue', rule: ActionIconRule.MissingIcon, reason: 'search results: each button is a client picked by name' },
@@ -95,8 +95,8 @@ const ANY_ACTION = /<(?:UiButton|UiLink)\b/
 /** One opening tag of a kit button or link. */
 const OPENING = /<(UiButton|UiLink)\b/g
 
-/** The text-only looks: the link look, and the explicit plain look. */
-const TEXT_ONLY_LOOK = /variant="(?:link|plain)"|UiButtonVariant\.(?:Link|Plain)\b/
+/** The text-only look: the link look. */
+const TEXT_ONLY_LOOK = /variant="link"|UiButtonVariant\.Link\b/
 
 /** A variant attribute, bound or literal. */
 const VARIANT_ATTR = /(?:^|\s):?variant=/
@@ -218,10 +218,9 @@ describe('action icons', () => {
       expect(brokenRules('<UiLink :to="p" variant="primary" :action="UiActionKind.Add">Add</UiLink>')).toEqual([])
     })
 
-    it('passes the text-only looks: a link in prose, a plain link and a plain button', () => {
+    it('passes the text-only look: a link in prose and a plain link', () => {
       expect(brokenRules('<UiButton variant="link" @click="x">terms</UiButton>')).toEqual([])
       expect(brokenRules('<UiButton :variant="UiButtonVariant.Link" @click="x">terms</UiButton>')).toEqual([])
-      expect(brokenRules('<UiButton :variant="UiButtonVariant.Plain" @click="x">{{ row.name }}</UiButton>')).toEqual([])
       expect(brokenRules('<UiLink :to="p">Name</UiLink>')).toEqual([])
       expect(brokenRules('<UiLink :to="p" variant="link">Name</UiLink>')).toEqual([])
     })

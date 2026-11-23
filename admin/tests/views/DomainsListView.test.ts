@@ -82,7 +82,7 @@ describe('DomainsListView', () => {
     expect(row.text()).toContain('Grace Hopper')
     expect(row.text()).toContain('$12.99 USD')
     expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
-    expect(wrapper.findAll('th').find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-full')
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-[28%]')
     expect(row.text()).toContain('Example Registrar')
     expect(wrapper.get('[data-testid="domains-name-4"]').attributes('href')).toBe('/clients/9/domains/4')
     expect(wrapper.get('[data-testid="domains-view-4"]').attributes('href')).toBe('/clients/9/domains/4')

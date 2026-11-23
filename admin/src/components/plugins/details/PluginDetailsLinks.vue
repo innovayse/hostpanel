@@ -16,6 +16,9 @@ import UiText from '@/components/ui/UiText.vue'
 import { LinkKind } from '@/types/plugin'
 import type { RegistryPluginDetailsDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -65,10 +68,10 @@ const links = computed<LinkItem[]>(() => {
 </script>
 
 <template>
-  <UiCard v-if="links.length > 0 || details.licence !== null" padding="md" data-testid="plugin-details-links">
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="section">{{ t('pluginDetails.links.heading') }}</UiHeading>
-      <UiStack direction="row" align="center" gap="md" wrap>
+  <UiCard v-if="links.length > 0 || details.licence !== null" :padding="UiCardPadding.Md" data-testid="plugin-details-links">
+    <UiStack :gap="UiGap.Sm">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('pluginDetails.links.heading') }}</UiHeading>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" wrap>
         <UiLink
           v-for="link in links"
           :key="link.kind"
@@ -80,7 +83,7 @@ const links = computed<LinkItem[]>(() => {
           {{ t(`pluginDetails.links.${link.kind}`) }}
         </UiLink>
       </UiStack>
-      <UiText v-if="details.licence !== null" tone="muted" size="sm" data-testid="plugin-details-licence-name">
+      <UiText v-if="details.licence !== null" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-details-licence-name">
         {{ t('pluginDetails.links.licence', { licence: details.licence }) }}
       </UiText>
     </UiStack>

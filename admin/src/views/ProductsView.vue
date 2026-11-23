@@ -5,8 +5,8 @@
  * Shows one page of the products in a table with create, edit and specification actions, behind a search box and a
  * filter dialog (group, type, status) with its removable chips. The search, the filters and the page live in the address
  * (`useListQuery`), so a reload, a shared link and the back button restore the same list, and the API applies them before
- * it pages. A refused load offers a retry; a refused save shows inside the product dialog next to its save button, a
- * finished one above the table, and the page the address names is read again.
+ * it pages. A refused load offers a retry; a refused save and a finished one are toasted
+ * (the API's per-field messages stay under their inputs in the dialog), and the page the address names is read again.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -16,19 +16,16 @@ import ProductGroupFormModal from '@/components/settings/ProductGroupFormModal.v
 import ProductGroupsDialog from '@/components/settings/ProductGroupsDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -44,12 +41,12 @@ import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import type { CreateProductPayload, Product, ProductGroup, ProductGroupPayload, ProductListFilters } from '@/types/product'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTableDensity } from '@/utils/ui/injection'
-import { UiTextSize } from '@/utils/ui/text'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { EMPTY_VALUE } from '@/lib/format'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
@@ -59,7 +56,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('settings.products.createProduct'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'products-create', onSelect: openCreate },
+  { label: t('settings.productForm.createProduct'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'products-create', onSelect: openCreate },
   { label: t('settings.productGroups.manage'), icon: Icon.List, variant: UiButtonVariant.Secondary, testid: 'products-groups', onSelect: openGroups },
 ])
 
@@ -219,7 +216,7 @@ const hasRows = computed<boolean>(() => store.productPage.length > 0)
 const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /** The success line of the last save, shown above the table; a refusal shows inside the dialog. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
 
@@ -270,7 +267,6 @@ const openGroups = (): void => {
  * @param group - The group to edit, or null to create one.
  */
 const openGroupForm = (group: ProductGroup | null): void => {
-  store.actionError = null
   store.fieldErrors = {}
   editingGroup.value = group
   showGroupForm.value = true
@@ -282,7 +278,6 @@ const openGroupForm = (group: ProductGroup | null): void => {
  * @param payload - The group data to save.
  */
 const handleGroupSave = async (payload: ProductGroupPayload): Promise<void> => {
-  feedback.clear()
   savingGroup.value = true
   const saved = editingGroup.value
     ? await store.updateProductGroup(editingGroup.value.id, payload)
@@ -292,12 +287,13 @@ const handleGroupSave = async (payload: ProductGroupPayload): Promise<void> => {
     showGroupForm.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
     await store.fetchProductGroups()
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
-  store.actionError = null
   store.fieldErrors = {}
   editingProduct.value = null
   showModal.value = true
@@ -309,7 +305,6 @@ const openCreate = (): void => {
  * @param product - The product to edit.
  */
 const openEdit = (product: Product): void => {
-  store.actionError = null
   store.fieldErrors = {}
   editingProduct.value = product
   showModal.value = true
@@ -321,7 +316,6 @@ const openEdit = (product: Product): void => {
  * @param payload - The product data to save.
  */
 const handleSave = async (payload: CreateProductPayload): Promise<void> => {
-  feedback.clear()
   saving.value = true
   let saved: boolean
   if (editingProduct.value) {
@@ -352,6 +346,8 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
     showModal.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
     await load()
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -374,7 +370,7 @@ const productActions = (product: Product): UiMenuAction[] => {
   const onEdit = (): void => openEdit(product)
   return [
     { label: t('settings.products.editSpecification'), icon: Icon.List, testid: `product-spec-${product.id}`, onSelect: onSpec },
-    { label: t('settings.products.editProduct'), icon: Icon.Edit, testid: `product-edit-${product.id}`, onSelect: onEdit },
+    { label: t('settings.productForm.editProduct'), icon: Icon.Edit, testid: `product-edit-${product.id}`, onSelect: onEdit },
   ]
 }
 </script>
@@ -446,75 +442,67 @@ const productActions = (product: Product): UiMenuAction[] => {
       @retry="loadAll"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" clip>
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="products-table">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="product in store.productPage"
-            :key="product.id"
-            hoverable
-            :data-testid="`product-row-${product.id}`"
-          >
-            <UiTableCell>
-              <UiText tone="primary" size="lg" class="min-w-0 truncate font-medium">{{ product.name }}</UiText>
-              <UiText v-if="product.slug" tone="muted" size="xs" class="min-w-0 truncate">/{{ product.slug }}</UiText>
-            </UiTableCell>
-            <UiTableCell muted>{{ groupName(product.groupId) }}</UiTableCell>
-            <UiTableCell muted>{{ typeLabels[product.type] ?? product.type }}</UiTableCell>
-            <UiTableCell v-for="(cycle, position) in PRODUCT_PRICE_CYCLES" :key="cycle" numeric class="font-mono text-text-primary">
-              {{ formatPrice(product.pricing[cycle]) }}
-              <UiText v-if="position === 0 && otherCurrencyCodes(product).length > 0" tone="muted" size="xs" class="ml-1 inline font-sans">
-                +{{ otherCurrencyCodes(product).join(', ') }}
-              </UiText>
-            </UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="product.status === ProductStatus.Active"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('shared.active')"
-                :off-label="t('shared.inactive')"
-              />
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="productActions(product)" :testid="`product-actions-${product.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-            {{ t('settings.products.totalCount', { totalCount: store.productTotalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.productTotalCount"
-            :page-size="store.productPageSize"
-            testid="products-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+    <UiDataTable
+      v-else
+      :loading="initialLoading"
+      :empty="!store.loading && !hasRows"
+      :page="page"
+      :total="store.productTotalCount"
+      :page-size="store.productPageSize"
+      pagination-testid="products-pagination"
+      data-testid="products-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="product in store.productPage"
+          :key="product.id"
+          hoverable
+          :data-testid="`product-row-${product.id}`"
+        >
+          <UiTableCell>
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" truncate class="font-medium">{{ product.name }}</UiText>
+            <UiText v-if="product.slug" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" truncate>/{{ product.slug }}</UiText>
+          </UiTableCell>
+          <UiTableCell muted>{{ groupName(product.groupId) }}</UiTableCell>
+          <UiTableCell muted>{{ typeLabels[product.type] ?? product.type }}</UiTableCell>
+          <UiTableCell v-for="(cycle, position) in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>
+            {{ formatPrice(product.pricing[cycle]) }}
+            <UiText v-if="position === 0 && otherCurrencyCodes(product).length > 0" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="ml-1 inline font-sans">
+              +{{ otherCurrencyCodes(product).join(', ') }}
+            </UiText>
+          </UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="product.status === ProductStatus.Active"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('shared.active')"
+              :off-label="t('shared.inactive')"
+            />
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="productActions(product)" :testid="`product-actions-${product.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('settings.products.noProductsMatchYourFilters') : t('settings.products.noProductsFoundCreateYour')"
+          data-testid="products-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Box" :size="UiSize.Lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="products-clear-empty" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('settings.products.noProductsMatchYourFilters') : t('settings.products.noProductsFoundCreateYour')"
-        data-testid="products-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Box" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="products-clear-empty" @click="clearAll">
-            {{ t('settings.products.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
 
     <!-- Product form dialog -->
     <ProductFormModal
@@ -522,7 +510,6 @@ const productActions = (product: Product): UiMenuAction[] => {
       :product="editingProduct"
       :groups="store.productGroups"
       :saving="saving"
-      :error="store.actionError"
       :field-errors="store.fieldErrors"
       @save="handleSave"
       @clear-field-error="store.clearFieldError"
@@ -543,7 +530,6 @@ const productActions = (product: Product): UiMenuAction[] => {
       :group="editingGroup"
       :methods="store.paymentMethods"
       :saving="savingGroup"
-      :error="store.actionError"
       @save="handleGroupSave"
       @close="showGroupForm = false"
     />

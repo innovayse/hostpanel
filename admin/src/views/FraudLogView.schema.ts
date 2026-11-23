@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind } from '@/utils/ui/table'
 
 /** The fraud log. */
 const schema: ListSkeletonSchema = {
@@ -17,10 +17,10 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date' },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'kind', label: 'fraud.log.kind' },
-      { key: 'decision', label: 'fraud.log.decision', size: UiColumnSize.Compact },
-      { key: 'score', label: 'fraud.log.score', numeric: true, size: UiColumnSize.Compact },
+      { key: 'decision', label: 'fraud.log.decision', kind: UiColumnKind.Status },
+      { key: 'score', label: 'fraud.log.score', numeric: true },
       { key: 'reasons', label: 'fraud.log.reasons' },
       { key: 'client', label: 'shared.client' },
       { key: 'order', label: 'fraud.log.order' },

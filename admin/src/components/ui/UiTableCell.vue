@@ -5,7 +5,7 @@
  * Padding comes from the table's `density`; `align` positions the content and `muted` greys
  * secondary values and `strong` stresses a group heading or key figure. `numeric` is the one shape of a number or money cell (right aligned, figures of one
  * width) and `hideBelow` hides the column under a breakpoint (a secondary column of a wide list), and `actions` the one shape of the row actions cell (right aligned, the same fixed width on
- * every table), so no screen picks those classes itself. The width of the cell is its column's `size`, read from the header. `select` marks the checkbox cell of a
+ * every table), so no screen picks those classes itself. The width of the cell is its column's `size`, read from the header; a cell of a column that truncates shows its full text as a tooltip when it is cut. `select` marks the checkbox cell of a
  * selectable table (drawn by `UiTableRow`, not set by a screen).
  *
  * On a phone (see `UiTable`) the cell is a part of a `UiRecordCard` and draws a `<div>`, not a `<td>`: the row hands the cell its position (`columnIndex`, counted over the row's
@@ -16,7 +16,7 @@
 import { computed, inject } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
-import { cardCellClasses, cardLabelClasses, cellDensityClasses, columnClasses, columnSizeOf } from '@/utils/ui/table'
+import { cardCellClasses, cardLabelClasses, cellDensityClasses, columnClasses, columnSizeOf, truncatesColumn } from '@/utils/ui/table'
 import type { UiAlign, UiHideBelow } from '@/utils/ui/table'
 
 /** Props for UiTableCell. */
@@ -59,6 +59,20 @@ const column = computed<UiTableColumn | undefined>(() =>
 /** Classes of the caption element, empty when the cell draws none. */
 const labelClasses = computed<string>(() => cardLabelClasses(column.value))
 
+/**
+ * Shows the full text of a cell the column cuts, as its tooltip, the moment the pointer reaches it (the text is cut only
+ * once the table is laid out, so it cannot be known before).
+ *
+ * @param event - The pointer entering the cell.
+ */
+const revealCutText = (event: MouseEvent): void => {
+  if (!truncatesColumn(column.value)) {
+    return
+  }
+  const cell = event.currentTarget as HTMLElement
+  cell.title = cell.scrollWidth > cell.clientWidth ? (cell.textContent ?? '').trim() : ''
+}
+
 /** Padding, alignment and tone classes. */
 const classes = computed<string[]>(() => [
   cellDensityClasses[context.density],
@@ -82,7 +96,7 @@ const cardClasses = computed<string[]>(() => [
     <div v-if="labelClasses" class="min-w-0"><slot /></div>
     <slot v-else />
   </div>
-  <td v-else role="cell" :class="classes">
+  <td v-else role="cell" :class="classes" @mouseenter="revealCutText">
     <slot />
   </td>
 </template>

@@ -2,7 +2,7 @@
   <UiCard data-testid="dashboard-services">
     <UiCardHeader :title="$t('client.dashboard.activeServices')">
       <UiButton size="sm" variant="subtle" :to="CLIENT_SERVICES_PATH" data-testid="dashboard-services-all">
-        {{ $t('client.dashboard.myServices') }}
+        {{ $t('client.dashboard.viewAll') }}
         <ArrowRight :size="12" :stroke-width="2" class="ml-1.5" />
       </UiButton>
     </UiCardHeader>
@@ -24,10 +24,10 @@
       >
         <UiStack direction="row" align="center" gap="sm" class="min-w-0">
           <Server :size="16" :stroke-width="2" class="flex-shrink-0 text-primary-600 dark:text-primary-400" />
-          <div class="min-w-0">
+          <UiStack gap="none" class="min-w-0">
             <UiText size="sm" weight="medium" truncate>{{ service.productName }}</UiText>
             <UiText size="xs" tone="subtle" truncate>{{ service.domain || $t('client.dashboard.noDomain') }}</UiText>
-          </div>
+          </UiStack>
         </UiStack>
         <UiStack direction="row" align="center" gap="sm">
           <UiIconButton

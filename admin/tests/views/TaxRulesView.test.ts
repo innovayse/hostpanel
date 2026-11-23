@@ -16,6 +16,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/tax-rules'
@@ -98,8 +99,7 @@ describe('TaxRulesView', () => {
     expect(second).toContain('Bavaria')
     expect(second).toContain('7.5%')
     expect(wrapper.get('[data-testid="tax-rule-row-2"] [role="img"]').attributes('aria-label')).toBe('Disabled')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
-    expect(wrapper.text()).toContain('Tax rules: 2')
+    expect(wrapper.findAll('th').find((header) => header.text() === 'Name')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {
@@ -127,6 +127,8 @@ describe('TaxRulesView', () => {
   it('keeps the chosen page in the address', async () => {
     stubRoutes({ 'GET /api/admin/tax-rules?': () => json(page([germany], 45)) })
     const { wrapper, router } = await mountListAt()
+
+    expect(wrapper.find('[data-testid="ui-card-footer"] [data-testid="tax-rules-pagination-next"]').exists()).toBe(true)
 
     await wrapper.get('[data-testid="tax-rules-pagination-next"]').trigger('click')
     await flushPromises()
@@ -312,7 +314,7 @@ describe('TaxRulesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tax-rules-result"]').text()).toBe('The tax rule does not exist.')
+      expect(toastMessages()).toContain('The tax rule does not exist.')
     })
   })
 })

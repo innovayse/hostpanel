@@ -15,6 +15,12 @@ describe('UiToggle', () => {
     expect(toggle.attributes('aria-label')).toBe('Lock')
   })
 
+  it('widens its touch area to 44px with a pseudo-element', () => {
+    const wrapper = mountWithKit(UiToggle, { props: { modelValue: false, label: 'Lock' } })
+
+    expect(wrapper.find('button').classes()).toEqual(expect.arrayContaining(['before:absolute', 'before:-inset-y-2.5']))
+  })
+
   it('asks for the opposite value and does not flip itself', async () => {
     const wrapper = mountWithKit(UiToggle, { props: { modelValue: false, label: 'Lock' } })
 

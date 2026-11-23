@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { UiTableDensity } from '@/utils/ui/injection'
+import type { UiTableColumn } from '@/utils/ui/injection'
 import {
   alignClasses,
   cardCellClasses,
@@ -11,11 +12,15 @@ import {
   cardSkeletonOf,
   cellDensityClasses,
   columnSizeOf,
+  sizeOfColumn,
+  truncatesColumn,
   growControlClasses,
   headerDensityClasses,
   UiAlign,
   UiCardRole,
+  UiColumnKind,
   UiColumnSize,
+  UiColumnWidth,
   UiHideBelow,
   UiSortDirection,
   withCardTitle,
@@ -103,6 +108,16 @@ describe('card layout vocabulary', () => {
     expect(shape).toEqual({ select: true, subtitle: true, badge: true, actions: true, fields: 2 })
   })
 
+  it('makes the first status column the badge of the card unless a column already names one', () => {
+    /** The card roles the columns end up with once the card title is chosen. */
+    const roles = (columns: UiTableColumn[]) => withCardTitle(columns).map((column) => column.cardRole)
+
+    expect(roles([{ label: 'Name' }, { label: 'Status', kind: UiColumnKind.Status }, { label: 'Flag', kind: UiColumnKind.Status }]))
+      .toEqual([UiCardRole.Title, UiCardRole.Badge, undefined])
+    expect(roles([{ label: 'Name' }, { label: 'State', kind: UiColumnKind.Status }, { label: 'Own', cardRole: UiCardRole.Badge }]))
+      .toEqual([UiCardRole.Title, undefined, UiCardRole.Badge])
+  })
+
   it('makes an actions column compact, whatever size it asks for', () => {
     expect(columnSizeOf({ label: 'Actions', actions: true })).toBe(columnSizeOf({ label: 'Id', size: UiColumnSize.Compact }))
     expect(columnSizeOf({ label: 'Actions', actions: true, size: UiColumnSize.Grow })).not.toContain('truncate')
@@ -112,5 +127,44 @@ describe('card layout vocabulary', () => {
     expect(columnSizeOf({ label: 'Name', size: UiColumnSize.Grow })).toContain('truncate')
     expect(columnSizeOf({ label: 'Description', size: UiColumnSize.Grow, cardRole: UiCardRole.Control })).toBe(growControlClasses)
     expect(growControlClasses).not.toContain('truncate')
+  })
+
+  describe('column sizing', () => {
+    it('gives free text a double share and a status, a date, an id or a number a single one', () => {
+      expect(sizeOfColumn({ label: 'Name' })).toBe(UiColumnSize.Grow)
+      expect(sizeOfColumn({ label: 'Name', kind: UiColumnKind.Text })).toBe(UiColumnSize.Grow)
+      for (const kind of [UiColumnKind.Status, UiColumnKind.Date, UiColumnKind.Id]) {
+        expect(sizeOfColumn({ label: 'x', kind })).toBe(UiColumnSize.Narrow)
+      }
+      expect(sizeOfColumn({ numeric: true })).toBe(UiColumnSize.Narrow)
+    })
+
+    it('never hands all the free width to one column: every data column claims a percentage share', () => {
+      const shares = [UiColumnSize.Grow, UiColumnSize.Narrow].map((size) => columnSizeOf({ size }))
+
+      expect(shares[0]).toContain('w-[28%]')
+      expect(shares[1]).toContain('w-[14%]')
+      expect(shares.join(' ')).not.toContain('w-full')
+    })
+
+    it('keeps an actions column compact and lets a named size win over the kind', () => {
+      expect(sizeOfColumn({ actions: true, kind: UiColumnKind.Text })).toBe(UiColumnSize.Compact)
+      expect(sizeOfColumn({ kind: UiColumnKind.Date, size: UiColumnSize.Auto })).toBe(UiColumnSize.Auto)
+      expect(columnSizeOf({ actions: true })).toContain('w-px')
+    })
+
+    it('gives a fixed column the class of its width, a medium one when none is named', () => {
+      expect(columnSizeOf({ size: UiColumnSize.Fixed, width: UiColumnWidth.Small })).toContain('w-24')
+      expect(columnSizeOf({ size: UiColumnSize.Fixed, width: UiColumnWidth.Large })).toContain('w-64')
+      expect(columnSizeOf({ size: UiColumnSize.Fixed })).toContain('w-40')
+    })
+
+    it('truncates only a growing column of text', () => {
+      expect(truncatesColumn({ label: 'Name' })).toBe(true)
+      expect(truncatesColumn({ kind: UiColumnKind.Date })).toBe(false)
+      expect(truncatesColumn({ size: UiColumnSize.Grow, cardRole: UiCardRole.Control })).toBe(false)
+      expect(truncatesColumn({ actions: true })).toBe(false)
+      expect(truncatesColumn(undefined)).toBe(false)
+    })
   })
 })

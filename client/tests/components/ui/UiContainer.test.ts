@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import Container from '~/components/ui/UiContainer.vue'
+import { UiBlockTag } from '~/utils/ui/enums'
 
 /**
  * Renders the container to HTML with the given props and default slot text.
@@ -27,7 +28,7 @@ describe('UiContainer', () => {
   })
 
   it('renders the requested tag', async () => {
-    const html = await render({ as: 'section' })
+    const html = await render({ as: UiBlockTag.Section })
 
     expect(html).toBe('<section class="container-custom"></section>')
   })

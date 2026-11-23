@@ -46,7 +46,10 @@ const classes = computed<string[]>(() => [
   buttonVariantClasses[props.variant],
   iconButtonSizeClasses[props.size],
   buttonRadiusClasses(props.variant, props.size),
-  'relative shrink-0',
+  'shrink-0',
+  // Only a badge needs the button as its positioning context. A plain button stays free for a caller to place
+  // (`absolute`, `fixed`), which a built-in `relative` would silently override.
+  props.badge !== undefined ? 'relative' : '',
 ])
 </script>
 

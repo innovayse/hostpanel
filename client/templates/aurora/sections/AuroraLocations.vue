@@ -15,12 +15,12 @@
       >
         <UiStack direction="row" align="center" gap="md">
           <UiTile size="xl" class="bg-tile-sky text-white" :data-testid="`location-code-${location.id}`">
-            <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[13px] tracking-wider">{{ location.countryCode }}</UiText>
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[13px] tracking-wider">{{ location.countryCode }}</UiText>
           </UiTile>
           <UiStack gap="none">
-            <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[17px] text-tx">{{ location.name }}</UiText>
-            <UiText v-if="location.city" as="span" size="inherit" tone="inherit" class="text-[14px] text-mut" :data-testid="`location-city-${location.id}`">{{ location.city }}</UiText>
-            <UiText v-if="location.latencyNote" as="span" size="inherit" tone="inherit" class="text-[13px] text-ac2" :data-testid="`location-latency-${location.id}`">{{ location.latencyNote }}</UiText>
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[17px] text-tx">{{ location.name }}</UiText>
+            <UiText v-if="location.city" :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[14px] text-mut" :data-testid="`location-city-${location.id}`">{{ location.city }}</UiText>
+            <UiText v-if="location.latencyNote" :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[13px] text-ac2" :data-testid="`location-latency-${location.id}`">{{ location.latencyNote }}</UiText>
           </UiStack>
         </UiStack>
       </UiCard>
@@ -37,6 +37,7 @@
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import { useStorefrontStore } from '~/stores/storefront'
 import UiStack from '~/components/ui/UiStack.vue'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator and the active language. */
 const { t, locale } = useI18n()

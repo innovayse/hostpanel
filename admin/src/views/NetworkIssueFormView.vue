@@ -2,14 +2,12 @@
 /**
  * Network issue form shared by create and edit. The mode comes from the route: an `:id` param
  * means edit and loads the issue first. A refused load offers a retry instead of an empty form; a
- * refused save shows the API's sentence next to the save button, a saved issue returns to the list.
+ * refused save toasts the API's sentence, a saved issue returns to the list.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import { UiTone } from '@/utils/ui/tone'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiInput from '@/components/ui/UiInput.vue'
@@ -21,6 +19,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { NETWORK_ISSUE_PRIORITY_OPTIONS, NETWORK_ISSUE_STATUS_OPTIONS, NETWORK_ISSUE_TYPE_OPTIONS } from '@/lib/constants'
 import { toDateInputValue, toIsoDay } from '@/lib/format'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useNetworkIssuesStore } from '@/stores/networkIssues'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -28,6 +27,7 @@ import { AppRoute } from '@/lib/routes'
 import { withoutFields } from '@/lib/formSchema'
 import schema, { NETWORK_ISSUE_STATUS_FIELD } from '@/views/NetworkIssueFormView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -90,8 +90,8 @@ const columns = computed(() => (isEditMode.value ? schema.columns : withoutField
 /** Whether the last load of the issue was refused. */
 const loadFailed = ref(false)
 
-/** The API's sentence for the last refused save, null when none. */
-const saveError = ref<string | null>(null)
+/** Toasts the refusal of a save. */
+const feedback = useOutcomeToast()
 
 /**
  * Loads the issue being edited into the form.
@@ -122,7 +122,6 @@ const fetchIssue = async (): Promise<void> => {
  * Creates or updates the issue according to the mode, then returns to the list.
  */
 const handleSave = async (): Promise<void> => {
-  saveError.value = null
   saving.value = true
   const payload = {
     title: form.value.title,
@@ -146,7 +145,7 @@ const handleSave = async (): Promise<void> => {
   if (saved) {
     router.push(AppRoute.SupportNetworkIssues)
   } else {
-    saveError.value = store.error ?? t('errors.noAnswer')
+    feedback.show(store.error ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -240,7 +239,7 @@ onMounted(() => {
         />
       </template>
 
-      <UiStack direction="row" gap="sm">
+      <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm">
         <UiButton :action="UiActionKind.Add"
           :variant="UiButtonVariant.Primary"
           :loading="saving"
@@ -248,7 +247,7 @@ onMounted(() => {
           data-testid="network-issue-form-save"
           @click="handleSave"
         >
-          {{ isEditMode ? t('support.networkIssueForm.updateIssue') : t('support.networkIssueForm.createIssue') }}
+          {{ isEditMode ? t('shared.save') : t('support.networkIssueForm.createIssue') }}
         </UiButton>
         <UiLink :action="UiActionKind.Cancel"
           :to="AppRoute.SupportNetworkIssues"
@@ -258,7 +257,6 @@ onMounted(() => {
           {{ t('shared.cancel') }}
         </UiLink>
       </UiStack>
-      <UiStatusMessage :message="saveError" :tone="UiTone.Danger" data-testid="network-issue-form-save-error" />
     </UiSchemaForm>
   </UiStack>
 </template>

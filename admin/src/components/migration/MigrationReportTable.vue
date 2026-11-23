@@ -30,6 +30,9 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function and the active locale (for time formatting). */
@@ -136,11 +139,11 @@ watch(page, () => {
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="migration-report">
-    <UiStack gap="md">
+  <UiCard :padding="UiCardPadding.Md" data-testid="migration-report">
+    <UiStack :gap="UiGap.Md">
       <!-- Header + filters -->
-      <UiStack direction="row" align="center" gap="sm" wrap>
-        <UiHeading :level="3" variant="card" class="min-w-0 flex-1">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card" class="min-w-0 flex-1">
           {{ t('migration.migrationReportTable.importReport') }}
         </UiHeading>
         <UiBadge :tone="UiTone.Success" small data-testid="migration-report-count">
@@ -187,7 +190,7 @@ watch(page, () => {
             <UiTableHeader :size="UiColumnSize.Compact">{{ t('migration.migrationReportTable.time') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow v-for="entry in items" :key="entry.id" hoverable>
             <UiTableCell muted>{{ t(`migrationEntities.${toEntityKey(entry.entityType)}`) }}</UiTableCell>
             <UiTableCell class="font-mono">{{ entry.identifier }}</UiTableCell>
@@ -206,7 +209,7 @@ watch(page, () => {
       </UiTable>
 
       <!-- Pagination -->
-      <UiStack v-if="totalCount > DEFAULT_PAGE_SIZE" direction="row" align="center" justify="between">
+      <UiStack v-if="totalCount > DEFAULT_PAGE_SIZE" :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
         <UiPagination
           v-model:page="page"
           :total="totalCount"

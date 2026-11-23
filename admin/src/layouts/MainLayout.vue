@@ -5,6 +5,7 @@
  * The shell fills the viewport and never scrolls itself; the content area (`<main>`) is the one scroller, and a size
  * container so a section layout with an inner sidebar can be exactly as tall as it (`UiSidebarLayout`). The demo
  * strip, when shown, spans the full width above the sidebar and the main column, so their header lines stay aligned.
+ * The shell keeps clear of a notch at the sides (the safe-area insets, which a landscape phone has).
  * Responsive sidebar state:
  * - Desktop (lg+): a full-height column against the left edge, open or folded to an icon rail
  * - Tablet (md up to lg): the same column, always the icon rail (no room to unfold it); an entry with a sub-menu opens the menu sheet
@@ -14,8 +15,8 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppTopbar from '@/components/layout/AppTopbar.vue'
+import MainSidebar from '@/components/layout/MainSidebar.vue'
+import MainTopbar from '@/components/layout/MainTopbar.vue'
 import CommandPalette from '@/components/layout/CommandPalette.vue'
 import DemoBanner from '@/components/layout/DemoBanner.vue'
 import EmailVerificationBanner from '@/components/layout/EmailVerificationBanner.vue'
@@ -23,7 +24,7 @@ import RoutedView from '@/components/layout/RoutedView.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { UiDrawerPresentation } from '@/utils/ui/drawer'
-import { UiBreakpoint } from '@/utils/ui/layout'
+import { UiAlignItems, UiBreakpoint, UiDirection, UiGap, UiStackTag } from '@/utils/ui/layout'
 import { useLinkPrefetch } from '@/composables/useLinkPrefetch'
 import { useAuthStore } from '@/stores/auth'
 import { useDashboardStore } from '@/stores/dashboard'
@@ -84,39 +85,39 @@ const closeDrawer = (): void => {
 
 <template>
   <!-- The shell: the demo strip across the full width on top, then the sidebar column beside the main column, so the sidebar header and the topbar stay on one line -->
-  <UiStack gap="none" class="ground h-dvh overflow-hidden" data-testid="app-layout">
+  <UiStack :gap="UiGap.None" class="ground h-dvh overflow-hidden pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]" data-testid="main-layout">
     <DemoBanner />
 
-    <UiStack direction="row" gap="none" align="stretch" class="min-h-0 flex-1">
-      <!-- Sidebar: only from md up (UiStack swaps its own flex for the breakpoint pair, so it takes no room on a phone), flush with the left edge and the full height; an icon rail below lg -->
-      <UiStack gap="none" :visible-from="UiBreakpoint.Md" data-testid="app-sidebar-desktop">
-        <AppSidebar @open-menu="drawerOpen = true" />
+    <UiStack :direction="UiDirection.Row" :gap="UiGap.None" :align="UiAlignItems.Stretch" class="min-h-0 flex-1">
+      <!-- MainSidebar: only from md up (UiStack swaps its own flex for the breakpoint pair, so it takes no room on a phone), flush with the left edge and the full height; an icon rail below lg -->
+      <UiStack :gap="UiGap.None" :visible-from="UiBreakpoint.Md" data-testid="sidebar-desktop">
+        <MainSidebar @open-menu="drawerOpen = true" />
       </UiStack>
 
-      <!-- Sidebar: a bottom sheet below lg (the persistent sidebar above takes over from there) -->
+      <!-- MainSidebar: a bottom sheet below lg (the persistent sidebar above takes over from there) -->
       <UiDrawer :open="drawerOpen" :presentation="UiDrawerPresentation.Sheet" :title="t('layout.menu')" flush @close="closeDrawer">
-        <AppSidebar embedded @navigate="closeDrawer" />
+        <MainSidebar embedded @navigate="closeDrawer" />
       </UiDrawer>
 
       <!-- The command palette: one instance for the whole shell, opened by the top bar and by Ctrl K -->
       <CommandPalette />
 
       <!-- Main column: topbar + content -->
-      <UiStack gap="none" class="min-h-0 min-w-0 flex-1">
-        <AppTopbar @toggle-sidebar="toggleSidebar" />
+      <UiStack :gap="UiGap.None" class="min-h-0 min-w-0 flex-1">
+        <MainTopbar @toggle-sidebar="toggleSidebar" />
 
-        <main class="container-size relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <UiStack :as="UiStackTag.Main" :gap="UiGap.None" class="container-size relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <!--
             The content gutter lives here, once, rather than being repeated on
             every view root. A flex column with min-h-full so a nested module
             layout can still claim the full height with flex-1, while a long
             page keeps its bottom padding when scrolled to the end.
           -->
-          <UiStack gap="none" class="min-h-full w-full min-w-0 p-4 sm:p-6 lg:px-8 lg:py-7">
+          <UiStack :gap="UiGap.None" class="min-h-full w-full min-w-0 p-4 sm:p-6 lg:px-8 lg:py-7">
             <RoutedView :key="locale" />
           </UiStack>
           <EmailVerificationBanner />
-        </main>
+        </UiStack>
       </UiStack>
     </UiStack>
   </UiStack>

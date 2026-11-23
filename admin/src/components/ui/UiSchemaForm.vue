@@ -14,6 +14,7 @@ import UiFormSection from '@/components/ui/UiFormSection.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { gridColumnsOf } from '@/utils/ui/skeletonLayout'
+import type { UiMaxWidth } from '@/utils/ui/layout'
 import type { SkeletonSection } from '@/utils/ui/skeletonSchema'
 
 /** Props for UiSchemaForm. */
@@ -26,6 +27,8 @@ defineProps<{
   errors?: Readonly<Record<string, string>>
   /** Help lines (already translated) by field key. */
   hints?: Readonly<Record<string, string>>
+  /** Widest the form grows on a wide screen. */
+  maxWidth?: UiMaxWidth
 }>()
 
 /** Emits for UiSchemaForm. */
@@ -48,7 +51,7 @@ const forwardedSlots = (): string[] => Object.keys(slots).filter((name) => name.
 </script>
 
 <template>
-  <UiForm stacked @submit="emit('submit', $event)">
+  <UiForm stacked :max-width="maxWidth" @submit="emit('submit', $event)">
     <UiGrid :columns="gridColumnsOf(columns.length)">
       <UiStack v-for="(column, index) in columns" :key="index">
         <UiFormSection v-for="section in column" :key="section.key" :section="section" :loading="loading" :errors="errors" :hints="hints">

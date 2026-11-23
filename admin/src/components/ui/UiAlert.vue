@@ -2,18 +2,12 @@
 /**
  * Alert banner: an icon and a message in a tinted, bordered card.
  *
- * `variant` is a tone (`error` is accepted as the older name of `danger`). Dangerous tones are
+ * `variant` is a tone. Dangerous tones are
  * announced assertively (`role="alert"`), the rest politely (`role="status"`). The message is the
  * default slot: pass the server's sentence, never compose one.
  */
 import { computed } from 'vue'
 import { toneAlertClasses, UiTone } from '@/utils/ui/tone'
-
-/** The older name of the `danger` tone, still accepted as a variant. */
-const ERROR_ALIAS = 'error'
-
-/** Alert variants: every tone, plus `error` kept as an alias of `danger`. */
-type UiAlertVariant = UiTone | typeof ERROR_ALIAS
 
 /** Live-region roles an alert announces itself with. */
 const AlertRole = {
@@ -26,13 +20,13 @@ const AlertRole = {
 /** Props for UiAlert. */
 const props = withDefaults(defineProps<{
   /** Visual variant controlling colours. */
-  variant?: UiAlertVariant
+  variant?: `${UiTone}`
 }>(), {
   variant: UiTone.Warning,
 })
 
-/** The tone the variant resolves to. */
-const tone = computed<UiTone>(() => (props.variant === ERROR_ALIAS ? UiTone.Danger : props.variant))
+/** The tone the variant names. */
+const tone = computed<UiTone>(() => props.variant as UiTone)
 
 /** Colour classes of the tone. */
 const toneClasses = computed<string>(() => toneAlertClasses[tone.value])
@@ -63,7 +57,7 @@ const iconPath = computed<string>(() => (tone.value === UiTone.Warning ? WARNING
     </svg>
     <!-- The message takes the rest of the row, so content laid out inside it (a row with an
          action pushed to the far edge) spans the whole alert instead of its own width. -->
-    <div class="flex-1 min-w-0 text-sm text-text-primary" data-testid="ui-alert-body">
+    <div class="flex-1 min-w-0 break-words text-sm text-text-primary" data-testid="ui-alert-body">
       <slot />
     </div>
   </div>

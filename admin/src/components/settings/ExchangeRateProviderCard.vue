@@ -21,6 +21,10 @@ import UiText from '@/components/ui/UiText.vue'
 import { ExchangeRateProvider } from '@/types/currency'
 import { BillingSettingKey } from '@/types/setting'
 import type { Setting, SettingSave } from '@/types/setting'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -67,18 +71,18 @@ const provider = computed<ExchangeRateProvider>({
 </script>
 
 <template>
-  <UiCard padding="md" class="mb-5" data-testid="exchange-rate-provider">
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="section">{{ t('currencies.rateProvider.title') }}</UiHeading>
-      <UiText tone="secondary" size="md">{{ t('currencies.rateProvider.description') }}</UiText>
+  <UiCard :padding="UiCardPadding.Md" class="mb-5" data-testid="exchange-rate-provider">
+    <UiStack :gap="UiGap.Sm">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('currencies.rateProvider.title') }}</UiHeading>
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('currencies.rateProvider.description') }}</UiText>
 
-      <UiAlert v-if="!draft.setting.value" variant="warning" data-testid="exchange-rate-provider-not-seeded">
+      <UiAlert v-if="!draft.setting.value" :variant="UiTone.Warning" data-testid="exchange-rate-provider-not-seeded">
         {{ t('currencies.rateProvider.notSeeded', { key: BillingSettingKey.RateProvider }) }}
       </UiAlert>
-      <UiStack v-else direction="row" align="center" wrap>
-        <UiStack gap="xs" class="min-w-56 flex-1">
-          <UiText tone="primary" size="md">{{ t('currencies.rateProvider.label') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('currencies.rateProvider.hint') }}</UiText>
+      <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+        <UiStack :gap="UiGap.Xs" class="min-w-56 flex-1">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('currencies.rateProvider.label') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('currencies.rateProvider.hint') }}</UiText>
         </UiStack>
         <UiSelect
           v-model="provider"

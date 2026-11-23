@@ -12,8 +12,6 @@
       "title": "Erreur du serveur",
       "message": "Un problème est survenu de notre côté. Nous travaillons à le résoudre."
     },
-    "goBack": "Retour",
-    "goHome": "Accueil",
     "helpText": "Si vous avez besoin d'aide, n'hésitez pas à",
     "contactUs": "nous contacter",
     "default": {

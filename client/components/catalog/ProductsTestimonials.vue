@@ -1,11 +1,11 @@
 <template>
-  <section v-if="items.length" class="py-8 md:py-20 bg-ui-page relative" data-testid="products-testimonials">
-    <UiContainer>
+  <UiStack v-if="items.length" :as="UiStackTag.Section" gap="none" class="py-8 md:py-20 bg-ui-page relative" data-testid="products-testimonials">
+    <UiContainer class="w-full">
       <MarketingSectionHeader class="mb-12" :subtitle="$t('products.testimonials.subtitle')">
         <template #title>
           <i18n-t keypath="products.testimonials.title" tag="span">
             <template #thousands>
-              <span class="text-secondary-700 dark:text-secondary-400 [.tpl-classic_&]:text-classic-brand">{{ $t('products.testimonials.thousandsHighlight') }}</span>
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-secondary-700 dark:text-secondary-400 [.tpl-classic_&]:text-classic-brand">{{ $t('products.testimonials.thousandsHighlight') }}</UiText>
             </template>
           </i18n-t>
         </template>
@@ -19,23 +19,23 @@
           :data-testid="`product-testimonial-${testimonial.id}`"
           :class="revealDelay(index * 100)"
         >
-          <div class="flex gap-1 mb-4">
+          <UiStack direction="row" gap="none" class="gap-1 mb-4">
             <Star v-for="star in testimonial.rating" :key="star" :size="14" :stroke-width="2" fill="currentColor" class="text-secondary-700 dark:text-secondary-400 [.tpl-classic_&]:text-classic-brand" />
-          </div>
+          </UiStack>
 
           <UiText size="sm" class="mb-4 italic leading-relaxed text-gray-700 dark:text-gray-300 [.tpl-classic_&]:not-italic [.tpl-classic_&]:text-classic-ink">"{{ testimonial.text }}"</UiText>
 
-          <div class="flex items-center gap-3">
+          <UiStack direction="row" align="center" gap="sm">
             <UiAvatar :first-name="testimonial.name" />
-            <div>
+            <UiStack gap="none">
               <UiText size="sm" weight="semibold">{{ testimonial.name }}</UiText>
               <UiText v-if="testimonial.company" size="xs" tone="subtle">{{ testimonial.company }}</UiText>
-            </div>
-          </div>
+            </UiStack>
+          </UiStack>
         </UiCard>
       </UiGrid>
     </UiContainer>
-  </section>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -47,6 +47,7 @@
 import { revealDelay } from '~/utils/reveal'
 import { Star } from 'lucide-vue-next'
 import { useStorefrontStore } from '~/stores/storefront'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Longest quote shown before it is cut with an ellipsis. */
 const QUOTE_LIMIT = 120

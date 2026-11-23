@@ -2,8 +2,8 @@
   <UiSection v-if="items.length" padding="lg" class="border-b border-nova-border bg-nova-surface" data-testid="nova-projects">
     <NovaSectionHeader :eyebrow="t('storefront.projects.eyebrow')" :title="t('storefront.projects.title')" />
 
-    <UiBalancedGrid as="ul" :count="items.length" class="mt-10" data-testid="nova-projects-grid">
-      <li v-for="project in items" :key="project.id" class="h-full" :data-testid="`project-${project.id}`">
+    <UiBalancedGrid :as="UiGridTag.Ul" :count="items.length" class="mt-10" data-testid="nova-projects-grid">
+      <UiStack v-for="project in items" :key="project.id" :as="UiStackTag.Li" gap="none" class="h-full" :data-testid="`project-${project.id}`">
         <UiCard padding="none" class="flex h-full flex-col overflow-hidden !border-nova-border !bg-nova-bg">
           <UiImage
             v-if="project.imageUrls[0]"
@@ -35,7 +35,7 @@
             </UiLink>
           </UiStack>
         </UiCard>
-      </li>
+      </UiStack>
     </UiBalancedGrid>
   </UiSection>
 </template>
@@ -48,6 +48,7 @@
  */
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { useStorefrontStore } from '~/stores/storefront'
+import { UiGridTag, UiStackTag } from '~/utils/ui/enums'
 
 /** Translator and the active language. */
 const { t, locale } = useI18n()

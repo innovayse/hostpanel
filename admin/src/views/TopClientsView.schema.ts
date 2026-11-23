@@ -6,7 +6,7 @@ import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ChartReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ChartKind, UiChartHeight } from '@/utils/ui/chart'
 import { ReportAction, ReportNote } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ChartReportSkeletonSchema = {
@@ -21,7 +21,7 @@ const schema: ChartReportSkeletonSchema = {
   chart: { kind: ChartKind.Donut, height: UiChartHeight.Lg },
   table: {
     columns: [
-      { key: 'clientId', label: 'reports.creditsReviewer.clientId', size: UiColumnSize.Compact },
+      { key: 'clientId', label: 'reports.creditsReviewer.clientId', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName', size: UiColumnSize.Grow },
       { key: 'totalAmountIn', label: 'shared.amountIn', align: UiAlign.Right },
       { key: 'totalFees', label: 'shared.fees', align: UiAlign.Right },

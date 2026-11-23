@@ -1,5 +1,5 @@
 <template>
-  <section v-if="stats.length" class="py-14 md:py-20 bg-classic-surface border-y border-classic-border" data-testid="sections-performance">
+  <UiSection v-if="stats.length" :contained="false" padding="lg" class="bg-classic-surface border-y border-classic-border" data-testid="sections-performance">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -17,13 +17,13 @@
         >
           <UiStack align="center" gap="sm">
             <ClassicIconTile :icon="STAT_ICONS[stat.key]" />
-            <UiText as="p" tone="inherit" weight="bold" class="text-3xl md:text-4xl tabular-nums text-classic-ink" :data-testid="`performance-value-${stat.key}`">{{ stat.value }}</UiText>
+            <UiText :as="UiTextTag.P" tone="inherit" weight="bold" class="text-3xl md:text-4xl tabular-nums text-classic-ink" :data-testid="`performance-value-${stat.key}`">{{ stat.value }}</UiText>
             <UiText tone="inherit" size="sm" class="text-classic-muted">{{ $t(`hostingSections.performance.stats.${stat.key}`) }}</UiText>
           </UiStack>
         </ClassicCard>
       </UiBalancedGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">
@@ -32,6 +32,7 @@
  * support response) as large numbers. Only set figures show; with none the section renders nothing.
  */
 import { PerformanceStatKey } from '~/constants/performanceStatKey'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** The published figures, in display order. */
 const stats = usePerformanceStats()

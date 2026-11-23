@@ -151,6 +151,23 @@ describe('UiInput', () => {
     expect(button.find('svg').exists()).toBe(true)
   })
 
+  it('places the clear button inside its own absolutely positioned wrapper, not in the flow', () => {
+    const wrapper = mount(UiInput, { props: { type: 'search', modelValue: 'ada' } })
+    const slot = wrapper.get('[data-testid="input-clear-slot"]')
+    const button = wrapper.get('[data-testid="input-clear"]')
+
+    expect(slot.classes()).toEqual(expect.arrayContaining(['absolute', 'right-2.5', 'top-1/2', '-translate-y-1/2']))
+    expect(slot.element.contains(button.element)).toBe(true)
+    expect(button.classes()).not.toContain('relative')
+    expect(button.classes()).not.toContain('absolute')
+  })
+
+  it('draws no clear wrapper while the search field is empty', () => {
+    const wrapper = mount(UiInput, { props: { type: 'search', modelValue: '' } })
+
+    expect(wrapper.find('[data-testid="input-clear-slot"]').exists()).toBe(false)
+  })
+
   it('disables the clear button with the field', () => {
     const wrapper = mount(UiInput, { props: { type: 'search', modelValue: 'ada' }, attrs: { disabled: '' } })
 

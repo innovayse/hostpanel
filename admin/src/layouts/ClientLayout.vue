@@ -28,11 +28,12 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiDirection } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiStatRowVariant } from '@/utils/ui/statRow'
 import type { UiStatFigure } from '@/utils/ui/statRow'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
 import schema, { ClientStatKey } from '@/layouts/ClientLayout.schema'
@@ -87,37 +88,38 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiStack gap="md" class="w-full">
-    <UiAlert v-if="store.error && !store.current" variant="error" data-testid="client-layout-error">
+  <UiStack :gap="UiGap.Md" class="w-full">
+    <UiAlert v-if="store.error && !store.current" :variant="UiTone.Danger" data-testid="client-layout-error">
       {{ store.error }}
     </UiAlert>
 
     <template v-else>
       <!--
-        The header card. The first row holds back, the avatar, the name block (name over status, group and company)
+        The header card. On a phone the back link has a row of its own on top (the breadcrumb offers it from md up). The first
+        row holds the avatar, the name block (name over status, group and company)
         and export; on a phone the name block is one line (name, status, then group and company wrapping after) and
         export drops to a row of its own at the end. The key
         figures sit under it in a grid that is two columns wide on a phone.
       -->
-      <UiCard padding="md" :aria-busy="store.current ? undefined : 'true'" :data-testid="store.current ? 'client-layout-header' : 'client-layout-loading'">
-        <UiStack gap="md">
-          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" reflow-below-md>
-            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="md" class="min-w-0 flex-1">
-              <UiBackLink :to="AppRoute.Clients" :label="t('shared.clients')" mobile-only data-testid="client-layout-back" />
+      <UiCard :padding="UiCardPadding.Md" :aria-busy="store.current ? undefined : 'true'" :data-testid="store.current ? 'client-layout-header' : 'client-layout-loading'">
+        <UiStack :gap="UiGap.Md">
+          <UiBackLink :to="AppRoute.Clients" :label="t('shared.clients')" mobile-only class="self-start" data-testid="client-layout-back" />
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" reflow-below-md>
+            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" class="min-w-0 flex-1">
               <UiBadge v-if="store.current" :tone="UiTone.Primary" data-testid="client-layout-avatar">
                 {{ store.current.firstName.charAt(0) }}{{ store.current.lastName.charAt(0) }}
               </UiBadge>
               <UiSkeletonBar v-else class="h-6 w-10 shrink-0 rounded-full" aria-hidden="true" />
-              <UiStack v-if="!store.current" gap="xs" class="min-w-0 flex-1" aria-hidden="true">
+              <UiStack v-if="!store.current" :gap="UiGap.Xs" class="min-w-0 flex-1" aria-hidden="true">
                 <UiSkeletonBar class="h-7 w-56 max-w-full rounded-md" />
                 <UiSkeletonBar class="h-4 w-40 rounded-md" />
               </UiStack>
-              <UiStack v-else gap="xs" reflow-below-md class="min-w-0 flex-1">
-                <UiHeading :level="1" variant="section" class="min-w-0 break-words" data-testid="client-header-name">
+              <UiStack v-else :gap="UiGap.Xs" reflow-below-md class="min-w-0 flex-1">
+                <UiHeading :level="1" :variant="UiHeadingVariant.Section" class="min-w-0 break-words" data-testid="client-header-name">
                   {{ store.current.firstName }} {{ store.current.lastName }}
                 </UiHeading>
                 <!-- On a phone the name block is one wrapping line, so this row steps aside (`contents`) and the status joins the name's line while the group and company wrap after it -->
-                <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" gap="sm" wrap class="max-md:contents">
+                <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap class="max-md:contents">
                   <UiBadge :tone="clientStatusTone(store.current.status)" small dot>{{ store.current.status }}</UiBadge>
                   <ClientGroupBadge
                     v-if="store.current.clientGroupName && store.current.clientGroupColor"
@@ -137,14 +139,13 @@ onMounted(() => {
               :disabled="!store.current"
               data-testid="client-layout-export"
               @click="showExportModal = true"
-            >{{ t('clients.clientLayout.exportData') }}
+            >{{ t('shared.export') }}
             </UiButton>
           </UiStack>
           <UiStatRow
             v-if="schema.stats"
             :stats="schema.stats"
             :figures="figures"
-            :columns="schema.statColumns"
             :variant="UiStatRowVariant.Inline"
             testid-prefix="client-layout-stat"
             data-testid="client-layout-stats"
@@ -160,7 +161,7 @@ onMounted(() => {
       />
 
       <ClientSectionTabs :client-id="String(route.params.id)" />
-      <UiStack v-if="store.current" gap="none" class="min-w-0 flex-1">
+      <UiStack v-if="store.current" :gap="UiGap.None" class="min-w-0 flex-1">
         <RoutedView />
       </UiStack>
     </template>

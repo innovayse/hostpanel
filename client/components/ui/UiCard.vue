@@ -49,7 +49,7 @@ const PADDING_CLASSES: Record<UiCardPadding, string> = {
   [UiCardPadding.Sm]: 'p-4',
   [UiCardPadding.Md]: 'p-5',
   [UiCardPadding.Lg]: 'p-6',
-  [UiCardPadding.Xl]: 'p-8',
+  [UiCardPadding.Xl]: 'p-6 sm:p-8',
 }
 
 /** Class list of the root element. */

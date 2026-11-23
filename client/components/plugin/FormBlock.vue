@@ -43,7 +43,7 @@
         </template>
       </UiStack>
       <template #actions>
-        <UiButton type="submit" :loading="sending" :disabled="sending" data-testid="plugin-form-submit">{{ block.submit.label }}</UiButton>
+        <UiButton type="submit" :variant="UiButtonVariant.Primary" :loading="sending" :disabled="sending" data-testid="plugin-form-submit">{{ block.submit.label }}</UiButton>
       </template>
     </UiForm>
   </UiCard>
@@ -62,7 +62,7 @@ import { usePluginFollowUp, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginFormBlock, PluginFormField } from '~/types/pluginblock'
 import { PluginFieldType } from '~/types/pluginfieldtype'
-import { UiInputType } from '~/utils/ui/enums'
+import { UiButtonVariant, UiInputType } from '~/utils/ui/enums'
 import { readPluginField } from '~/utils/plugins'
 
 /** Props of PluginFormBlock. */

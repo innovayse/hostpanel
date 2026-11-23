@@ -10,16 +10,15 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -27,16 +26,16 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { fulfilmentStatusTone } from '@/lib/tones'
 import { useBillingStore } from '@/stores/billing'
 import { FulfilmentKind, FulfilmentStatus } from '@/types/invoice'
 import type { FulfilmentRecord, InvoiceDetail } from '@/types/invoice'
+import { UiCardPadding } from '@/utils/ui/card'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiTextTone } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
 
 const { t } = useI18n()
@@ -59,7 +58,7 @@ const pending = ref<FulfilmentRecord | null>(null)
 const retrying = ref(false)
 
 /** The outcome line of the last retry, shown in the tab. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 
 /** The records of this invoice; a list left over from another invoice is never shown. */
 const records = computed<FulfilmentRecord[]>(() =>
@@ -149,7 +148,6 @@ const retry = async (): Promise<void> => {
   if (record === null) {
     return
   }
-  feedback.clear()
   retrying.value = true
   /** The invoice the retry was asked for. */
   const invoiceId = props.invoice.id
@@ -181,7 +179,7 @@ const recordActions = (record: FulfilmentRecord): UiMenuAction[] => {
   }
   return [
     {
-      label: t('billing.invoiceFulfilmentTab.retry'),
+      label: t('shared.retry'),
       icon: Icon.Refresh,
       testid: `billing-invoice-fulfilment-retry-${record.id}`,
       /**
@@ -200,7 +198,6 @@ onMounted(load)
 watch(
   () => props.invoice.id,
   () => {
-    feedback.clear()
     pending.value = null
     void load()
   },
@@ -209,79 +206,66 @@ watch(
 
 <template>
   <UiStack data-testid="billing-invoice-fulfilment">
-    <UiCard padding="md">
-      <UiStack gap="sm">
-        <UiHeading :level="3" variant="card">
-          {{ t('billing.invoiceFulfilmentTab.title') }}
-        </UiHeading>
-
-        <UiAlert
-          v-if="feedback.message.value"
-          :variant="feedback.isError.value ? UiTone.Danger : UiTone.Success"
-          data-testid="billing-invoice-fulfilment-feedback"
-        >
-          {{ feedback.message.value }}
-        </UiAlert>
-
-        <UiErrorState
-          v-if="loadError !== null"
-          :message="loadError"
-          :loading="store.fulfilmentLoading"
-          testid="billing-invoice-fulfilment-error"
-          @retry="load"
-        />
-
-        <UiTable
-          v-else
-          :density="UiTableDensity.Compact"
-          :loading="loading"
-          :empty="!loading && records.length === 0"
-          data-testid="billing-invoice-fulfilment-table"
-        >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader :size="UiColumnSize.Grow">{{ t('billing.invoiceFulfilmentTab.plugin') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.kind') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.lastError') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Compact">{{ t('billing.invoiceFulfilmentTab.when') }}</UiTableHeader>
-              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
-          <UiTableBody divided>
-            <UiTableRow v-for="record in records" :key="record.id" hoverable>
-              <UiTableCell>{{ record.pluginId }}</UiTableCell>
-              <UiTableCell muted>{{ kindLabels[record.kind] ?? record.kind }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="fulfilmentStatusTone(record.status)">
-                  {{ statusLabels[record.status] ?? record.status }}
-                </UiBadge>
-              </UiTableCell>
-              <UiTableCell numeric muted>{{ record.attempts }}</UiTableCell>
-              <UiTableCell muted>
-                <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
-                <template v-else>{{ EMPTY_VALUE }}</template>
-              </UiTableCell>
-              <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
-              <UiTableCell actions>
-                <UiRowActions :actions="recordActions(record)" :testid="`billing-invoice-fulfilment-actions-${record.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-          <template #empty>
-            <UiText data-testid="billing-invoice-fulfilment-empty">{{ t('billing.invoiceFulfilmentTab.empty') }}</UiText>
-          </template>
-        </UiTable>
-      </UiStack>
+    <UiCard v-if="loadError !== null" :padding="UiCardPadding.Md">
+      <UiErrorState
+        :message="loadError"
+        :loading="store.fulfilmentLoading"
+        testid="billing-invoice-fulfilment-error"
+        @retry="load"
+      />
     </UiCard>
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Compact"
+      :loading="loading"
+      :empty="!loading && records.length === 0"
+      data-testid="billing-invoice-fulfilment-table"
+    >
+      <template #header>
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('billing.invoiceFulfilmentTab.title') }}</UiHeading>
+      </template>
+      <UiTableHead>
+        <UiTableRow>
+          <UiTableHeader :size="UiColumnSize.Grow">{{ t('billing.invoiceFulfilmentTab.plugin') }}</UiTableHeader>
+          <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.kind') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
+          <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.lastError') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact">{{ t('billing.invoiceFulfilmentTab.when') }}</UiTableHeader>
+          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+        </UiTableRow>
+      </UiTableHead>
+      <UiTableBody>
+        <UiTableRow v-for="record in records" :key="record.id" hoverable>
+          <UiTableCell>{{ record.pluginId }}</UiTableCell>
+          <UiTableCell muted>{{ kindLabels[record.kind] ?? record.kind }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="fulfilmentStatusTone(record.status)">
+              {{ statusLabels[record.status] ?? record.status }}
+            </UiBadge>
+          </UiTableCell>
+          <UiTableCell numeric muted>{{ record.attempts }}</UiTableCell>
+          <UiTableCell muted>
+            <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
+            <template v-else>{{ EMPTY_VALUE }}</template>
+          </UiTableCell>
+          <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="recordActions(record)" :testid="`billing-invoice-fulfilment-actions-${record.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiText data-testid="billing-invoice-fulfilment-empty">{{ t('billing.invoiceFulfilmentTab.empty') }}</UiText>
+      </template>
+    </UiDataTable>
 
     <UiDialog
       :open="pending !== null"
       :variant="UiDialogVariant.Confirm"
       :title="t('billing.invoiceFulfilmentTab.confirmRetryTitle')"
       :message="confirmMessage"
-      :confirm-label="t('billing.invoiceFulfilmentTab.retry')"
+      :confirm-label="t('shared.retry')"
       :loading="retrying"
       @confirm="retry"
       @close="dismiss"

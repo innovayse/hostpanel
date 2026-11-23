@@ -8,7 +8,7 @@
  */
 import { SkeletonKind, SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, FormSkeletonPart, SkeletonTable, StatsSkeletonPart } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The two tiles: the balance and the currency it is held in. */
 export const CREDIT_STATS_PART: StatsSkeletonPart = {
@@ -43,10 +43,10 @@ export const CREDIT_FORM_PART: FormSkeletonPart = {
 export const CREDIT_HISTORY_TABLE: SkeletonTable = {
   pagination: true,
   columns: [
-    { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+    { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
     { key: 'type', label: 'shared.type' },
     { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
-    { key: 'invoice', label: 'shared.invoice', size: UiColumnSize.Compact },
+    { key: 'invoice', label: 'shared.invoice', kind: UiColumnKind.Id },
     { key: 'change', label: 'clients.clientCredit.change', numeric: true, size: UiColumnSize.Compact },
     { key: 'balance', label: 'shared.balance', numeric: true, size: UiColumnSize.Compact },
   ],

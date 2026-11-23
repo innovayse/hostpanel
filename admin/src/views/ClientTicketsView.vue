@@ -19,26 +19,22 @@ import SupportTicketFilterFields from '@/components/support/SupportTicketFilterF
 import SupportTicketPriorityBadge from '@/components/support/SupportTicketPriorityBadge.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatRow from '@/components/ui/UiStatRow.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema, { CLIENT_TICKETS_STATS } from '@/views/ClientTicketsView.schema'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize } from '@/utils/ui/text'
 import type { UiStatFigure } from '@/utils/ui/statRow'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientItemPath, clientTicketNewPath } from '@/lib/routes'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -95,7 +91,7 @@ onMounted(() => {
 
 <template>
   <UiStack>
-    <UiSectionHeader :level="1" variant="card">
+    <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('clients.clientTickets.tickets') }}
       <template #actions>
         <UiLink :action="UiActionKind.Add"
@@ -103,7 +99,7 @@ onMounted(() => {
           :variant="UiButtonVariant.Primary"
           data-testid="client-tickets-new"
         >
-          {{ t('clients.clientTickets.openNewTicket') }}
+          {{ t('shared.createTicket') }}
         </UiLink>
       </template>
     </UiSectionHeader>
@@ -142,66 +138,51 @@ onMounted(() => {
         />
       </UiListToolbar>
 
-      <UiCard class="overflow-x-auto">
-        <UiTable
-          :density="UiTableDensity.Comfortable"
-          :loading="initialLoading"
-          :empty="!initialLoading && store.tickets.length === 0"
-          data-testid="client-tickets-table"
-        >
-          <UiSchemaTableHead :columns="schema.table.columns" />
-          <UiTableBody divided>
-            <UiTableRow v-for="ticket in store.tickets" :key="ticket.id" hoverable :data-testid="`client-tickets-row-${ticket.id}`">
-              <UiTableCell muted>{{ formatDate(ticket.createdAt) }}</UiTableCell>
-              <UiTableCell muted>{{ ticket.departmentName ?? EMPTY_VALUE }}</UiTableCell>
-              <UiTableCell>
-                <UiLink
-                  :to="clientItemPath(clientId, ClientSection.Tickets, ticket.id)"
-                  :variant="UiButtonVariant.Link"
-                  :data-testid="`client-tickets-open-${ticket.id}`"
-                >
-                  {{ ticket.subject }}
-                </UiLink>
-              </UiTableCell>
-              <UiTableCell><SupportTicketPriorityBadge :priority="ticket.priority" /></UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="ticketStatusTone[ticket.status]" small>{{ ticketStatusLabel(ticket.status) }}</UiBadge>
-              </UiTableCell>
-              <UiTableCell muted>{{ formatDate(ticket.lastReplyAt) }}</UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-          <template #empty>
-            <UiEmptyState
-              :title="narrowed ? t('clients.clientTickets.noTicketsMatchYourFilters') : t('clients.clientTickets.noDataAvailableInTable')"
-              data-testid="client-tickets-empty"
-            >
-              <template v-if="activeCount > 0" #actions>
-                <UiButton :variant="UiButtonVariant.Link" data-testid="client-tickets-clear-empty" @click="clearAll">
-                  {{ t('clients.clientTickets.clearFilters') }}
-                </UiButton>
-              </template>
-            </UiEmptyState>
-          </template>
-        </UiTable>
-        <UiStack
-          v-if="initialLoading || store.totalCount > store.pageSize"
-          direction="row"
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
-        >
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
-            {{ t('clients.clientTickets.totalcountTicketValue', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            :loading="initialLoading"
-            testid="client-tickets-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
-      </UiCard>
+      <UiDataTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        :empty="!initialLoading && store.tickets.length === 0"
+        :page="page"
+        :total="store.totalCount"
+        :page-size="store.pageSize"
+        pagination-testid="client-tickets-pagination"
+        data-testid="client-tickets-table"
+        @update:page="setPage"
+      >
+        <UiSchemaTableHead :columns="schema.table.columns" />
+        <UiTableBody>
+          <UiTableRow v-for="ticket in store.tickets" :key="ticket.id" hoverable :data-testid="`client-tickets-row-${ticket.id}`">
+            <UiTableCell muted>{{ formatDate(ticket.createdAt) }}</UiTableCell>
+            <UiTableCell muted>{{ ticket.departmentName ?? EMPTY_VALUE }}</UiTableCell>
+            <UiTableCell>
+              <UiLink
+                :to="clientItemPath(clientId, ClientSection.Tickets, ticket.id)"
+                :variant="UiButtonVariant.Link"
+                :data-testid="`client-tickets-open-${ticket.id}`"
+              >
+                {{ ticket.subject }}
+              </UiLink>
+            </UiTableCell>
+            <UiTableCell><SupportTicketPriorityBadge :priority="ticket.priority" /></UiTableCell>
+            <UiTableCell>
+              <UiBadge :tone="ticketStatusTone[ticket.status]" small>{{ ticketStatusLabel(ticket.status) }}</UiBadge>
+            </UiTableCell>
+            <UiTableCell muted>{{ formatDate(ticket.lastReplyAt) }}</UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+        <template #empty>
+          <UiEmptyState
+            :title="narrowed ? t('clients.clientTickets.noTicketsMatchYourFilters') : t('clients.clientTickets.noDataAvailableInTable')"
+            data-testid="client-tickets-empty"
+          >
+            <template v-if="activeCount > 0" #actions>
+              <UiButton :variant="UiButtonVariant.Link" data-testid="client-tickets-clear-empty" @click="clearAll">
+                {{ t('shared.clearFilters') }}
+              </UiButton>
+            </template>
+          </UiEmptyState>
+        </template>
+      </UiDataTable>
     </template>
   </UiStack>
 </template>

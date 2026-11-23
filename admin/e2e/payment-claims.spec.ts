@@ -19,7 +19,6 @@ test('the payment claims screen lists the held claims', async ({ page }) => {
   await expect(page.getByTestId('billing-payment-claims-table')).toContainText('Grace Hopper')
   await expect(page.getByTestId('billing-payment-claims-table')).toContainText('$12.50')
   await expect(page.getByTestId('billing-payment-claim-invoice-3')).toHaveAttribute('href', '/billing/5')
-  await expect(page.getByTestId('billing-payment-claims-count')).toContainText('2 Records Found')
   expect(api.callsTo(HttpMethod.Get, '/api/billing/payment-claims')[0]?.search).toContain('status=Held')
 })
 
@@ -32,10 +31,9 @@ test('the payment claims screen shows the empty state when nothing is held', asy
   await page.goto('/billing/payment-claims')
 
   await expect(page.getByTestId('billing-payment-claims-table')).toContainText('No held payment claims.')
-  await expect(page.getByTestId('billing-payment-claims-count')).toContainText('0 Records Found')
 })
 
-test('a refused load shows the API sentence and no empty state or count', async ({ page }) => {
+test('a refused load shows the API sentence and no empty state', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [json(HttpMethod.Get, '/api/billing/payment-claims', claimsRefusal, 403)],
@@ -45,5 +43,4 @@ test('a refused load shows the API sentence and no empty state or count', async 
 
   await expect(page.getByTestId('billing-payment-claims-error')).toContainText(claimsRefusalSentence)
   await expect(page.getByTestId('billing-payment-claims-table')).not.toContainText('No held payment claims.')
-  await expect(page.getByTestId('billing-payment-claims-count')).toHaveCount(0)
 })

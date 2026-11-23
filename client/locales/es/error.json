@@ -12,8 +12,6 @@
       "title": "Error del servidor",
       "message": "Algo ha fallado por nuestra parte. Estamos trabajando para solucionarlo."
     },
-    "goBack": "Volver",
-    "goHome": "Ir al inicio",
     "helpText": "Si necesita ayuda, no dude en",
     "contactUs": "contactarnos",
     "default": {

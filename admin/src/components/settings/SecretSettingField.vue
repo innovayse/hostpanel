@@ -14,8 +14,11 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiInputType } from '@/utils/ui/input'
-import type { UiSize } from '@/utils/ui/size'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translation function. */
@@ -37,7 +40,7 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
 }>(), {
   id: undefined,
-  size: 'md',
+  size: UiSize.Md,
   disabled: false,
 })
 
@@ -70,14 +73,14 @@ const cancelReplace = (): void => {
 </script>
 
 <template>
-  <UiStack direction="row" align="center" gap="sm" wrap :data-testid="testid">
+  <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap :data-testid="testid">
     <template v-if="hasValue && !replacing">
-      <UiText tone="muted" size="sm" class="font-mono" :data-testid="`${testid}-masked`">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="font-mono" :data-testid="`${testid}-masked`">
         {{ t('settings.secret.set') }}
       </UiText>
       <UiButton :action="UiActionKind.Edit"
-        type="button"
-        variant="secondary"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Secondary"
         :size="size"
         :disabled="disabled"
         :data-testid="`${testid}-replace`"
@@ -86,14 +89,14 @@ const cancelReplace = (): void => {
         {{ t('settings.secret.replace') }}
       </UiButton>
       <UiButton :action="UiActionKind.Clear"
-        type="button"
-        variant="ghost"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Ghost"
         :size="size"
         :disabled="disabled"
         :data-testid="`${testid}-clear`"
         @click="emit('clear')"
       >
-        {{ t('settings.secret.clear') }}
+        {{ t('shared.clear') }}
       </UiButton>
     </template>
     <template v-else>
@@ -111,14 +114,14 @@ const cancelReplace = (): void => {
       />
       <UiButton :action="UiActionKind.Cancel"
         v-if="hasValue"
-        type="button"
-        variant="ghost"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Ghost"
         :size="size"
         :disabled="disabled"
         :data-testid="`${testid}-cancel`"
         @click="cancelReplace"
       >
-        {{ t('settings.secret.cancel') }}
+        {{ t('shared.cancel') }}
       </UiButton>
     </template>
   </UiStack>

@@ -15,25 +15,22 @@ import { useListQuery } from '@/composables/useListQuery'
 import { usePeriodFilter } from '@/composables/usePeriodFilter'
 import { formatDateTimeCompact, EMPTY_VALUE } from '@/lib/format'
 import type { ActivityLogFilters } from '@/types/activitylog'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientLogView.schema'
 import UiText from '@/components/ui/UiText.vue'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize, UiTextTone, UiHeadingVariant } from '@/utils/ui/text'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiGap } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -88,7 +85,7 @@ loadOnChange(load)
 
 <template>
   <UiStack>
-    <UiSectionHeader :level="1" variant="card">
+    <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('clients.clientLog.activityLog') }}
     </UiSectionHeader>
 
@@ -122,47 +119,33 @@ loadOnChange(load)
       @retry="load"
     />
 
-    <UiCard v-else class="overflow-x-auto">
-      <UiTable
-        :empty-text="t('shared.noRecordsFound')"
-        :density="UiTableDensity.Comfortable"
-        :loading="initialLoading"
-        :empty="!initialLoading && store.logs.length === 0"
-        data-testid="client-log-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="log in store.logs" :key="log.id" hoverable>
-            <UiTableCell muted>{{ formatDateTimeCompact(log.createdAt) }}</UiTableCell>
-            <UiTableCell>{{ log.description }}</UiTableCell>
-            <UiTableCell>
-              <UiStack gap="none">
-                <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ log.adminName ?? EMPTY_VALUE }}</UiText>
-                <UiText v-if="log.adminEmail" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ log.adminEmail }}</UiText>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell muted>{{ log.ipAddress ?? EMPTY_VALUE }}</UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-      <UiStack
-        v-if="initialLoading || store.totalCount > 0"
-        direction="row"
-        :justify="UiJustify.Between"
-        :align="UiAlignItems.Center"
-      >
-        <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm" data-testid="client-log-count">
-          {{ t('clients.clientLog.totalcountEntrValue', { totalCount: store.totalCount }) }}
-        </UiResultCount>
-        <UiPagination
-          :page="page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          :loading="initialLoading"
-          testid="client-log-pagination"
-          @update:page="setPage"
-        />
-      </UiStack>
-    </UiCard>
+    <UiDataTable
+      v-else
+      :empty-text="t('shared.noRecordsFound')"
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!initialLoading && store.logs.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="client-log-pagination"
+      data-testid="client-log-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="log in store.logs" :key="log.id" hoverable>
+          <UiTableCell muted>{{ formatDateTimeCompact(log.createdAt) }}</UiTableCell>
+          <UiTableCell>{{ log.description }}</UiTableCell>
+          <UiTableCell>
+            <UiStack :gap="UiGap.None">
+              <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ log.adminName ?? EMPTY_VALUE }}</UiText>
+              <UiText v-if="log.adminEmail" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ log.adminEmail }}</UiText>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell muted>{{ log.ipAddress ?? EMPTY_VALUE }}</UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The network issues list. */
 const schema: ListSkeletonSchema = {
@@ -20,9 +20,9 @@ const schema: ListSkeletonSchema = {
       { key: 'title', label: 'shared.title', size: UiColumnSize.Grow },
       { key: 'type', label: 'shared.type', size: UiColumnSize.Compact },
       { key: 'priority', label: 'shared.priority', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
-      { key: 'startDate', label: 'support.networkIssues.startDate' },
-      { key: 'endDate', label: 'support.networkIssues.endDate' },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
+      { key: 'startDate', label: 'support.networkIssues.startDate', kind: UiColumnKind.Date },
+      { key: 'endDate', label: 'support.networkIssues.endDate', kind: UiColumnKind.Date },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

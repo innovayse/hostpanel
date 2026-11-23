@@ -6,6 +6,8 @@
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for SupportCheckboxField. */
 const props = defineProps<{
@@ -32,9 +34,9 @@ const toggle = (): void => {
 </script>
 
 <template>
-  <UiStack direction="row" gap="sm" align="center">
+  <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
     <UiCheckbox :model-value="modelValue" :data-testid="testid" @update:model-value="emit('update:modelValue', $event)" />
-    <UiText tone="secondary" size="md" class="cursor-pointer" :data-testid="`${testid}-label`" @click="toggle">
+    <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="cursor-pointer" :data-testid="`${testid}-label`" @click="toggle">
       {{ label }}
     </UiText>
   </UiStack>

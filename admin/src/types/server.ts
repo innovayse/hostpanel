@@ -3,7 +3,7 @@
  */
 
 import { translate } from '@/lib/translate'
-import type { ServerModuleSource } from '@/types/serverenums'
+import { ServerModuleSource } from '@/types/serverenums'
 
 /**
  * The control panel module ids the host provisions itself (cPanel only), spelled as a server stores them. A server's module
@@ -304,6 +304,27 @@ export const MODULE_LABELS: Record<ServerModule, string> = {
  */
 export const moduleLabel = (module: string): string =>
   (Object.values(ServerModule) as string[]).includes(module) ? MODULE_LABELS[module as ServerModule] : module
+
+/**
+ * The label of a module option: the plugin's own name for a plugin module, the host's label for a built in one.
+ *
+ * @param option - The module option the API declares.
+ * @returns The name to show.
+ */
+export const moduleOptionLabel = (option: ServerModuleOptionDto): string =>
+  option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id)
+
+/**
+ * The name of the module a server is stored with, looked up among the declared options so a plugin module reads by its name.
+ *
+ * @param module - The module id of a server.
+ * @param options - The module options the API declares.
+ * @returns The option's name; the host's label (the id itself for an unknown one) when no option serves the module.
+ */
+export const moduleNameOf = (module: string, options: readonly ServerModuleOptionDto[]): string => {
+  const option = options.find(candidate => candidate.id.toLowerCase() === module.toLowerCase())
+  return option === undefined ? moduleLabel(module) : moduleOptionLabel(option)
+}
 
 /** Human-readable labels for fill types, resolved in the operator's language on each read. */
 export const FILL_TYPE_LABELS: Record<ServerFillType, string> = {

@@ -21,7 +21,6 @@
   "staged": "Version {version} staged, applies after restart",
   "updateAvailable": "Update available: {version}",
   "updateTo": "Update to {version}",
-  "uninstall": "Uninstall",
   "links": {
     "heading": "Links",
     "documentation": "Documentation",
@@ -133,10 +132,8 @@
   "confirm": {
     "installTitle": "Install this version?",
     "installMessage": "Install version {version} of {name}? The change applies after a server restart.",
-    "install": "Install",
     "downgradeTitle": "Install an older version?",
-    "downgradeMessage": "Version {version} of {name} is older than the installed {installed}. An older version may lack fixes and may not read data the newer one wrote. The change applies after a server restart. Install it anyway?",
-    "downgrade": "Install older version"
+    "downgradeMessage": "Version {version} of {name} is older than the installed {installed}. An older version may lack fixes and may not read data the newer one wrote. The change applies after a server restart. Install it anyway?"
   },
   "feedback": {
     "licenceSaved": "The licence key is saved.",

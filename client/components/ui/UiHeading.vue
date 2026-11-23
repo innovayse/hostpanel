@@ -39,12 +39,12 @@ const DEFAULT_SIZES: Record<UiHeadingLevel, UiHeadingSize> = {
   [UiHeadingLevel.H6]: UiHeadingSize.Label,
 }
 
-/** Type utilities per visual size. */
+/** Type utilities per visual size; a heading breaks inside a long word instead of overflowing its column. */
 const SIZE_CLASSES: Record<UiHeadingSize, string> = {
-  [UiHeadingSize.Display]: 'text-4xl md:text-6xl font-bold tracking-tight text-gray-900 dark:text-white',
-  [UiHeadingSize.Title]: 'text-3xl md:text-4xl font-bold text-gray-900 dark:text-white',
-  [UiHeadingSize.Section]: 'text-2xl md:text-3xl font-bold text-gray-900 dark:text-white',
-  [UiHeadingSize.Subsection]: 'text-lg font-semibold text-gray-900 dark:text-white',
+  [UiHeadingSize.Display]: 'break-words text-4xl md:text-6xl font-bold tracking-tight text-gray-900 dark:text-white',
+  [UiHeadingSize.Title]: 'break-words text-3xl md:text-4xl font-bold text-gray-900 dark:text-white',
+  [UiHeadingSize.Section]: 'break-words text-2xl md:text-3xl font-bold text-gray-900 dark:text-white',
+  [UiHeadingSize.Subsection]: 'break-words text-lg font-semibold text-gray-900 dark:text-white',
   [UiHeadingSize.Label]: 'text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400',
   [UiHeadingSize.Bare]: '',
 }

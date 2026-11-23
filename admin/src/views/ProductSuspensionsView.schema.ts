@@ -4,7 +4,7 @@
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -13,11 +13,11 @@ const schema: ReportSkeletonSchema = {
   header: { title: 'reports.productSuspensions.productSuspensions', subtitle: 'reports.productSuspensions.thisReportAllowsYouTo' },
   table: {
     columns: [
-      { key: 'serviceId', label: 'reports.productSuspensions.serviceId', size: UiColumnSize.Compact },
+      { key: 'serviceId', label: 'reports.productSuspensions.serviceId', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName', size: UiColumnSize.Grow },
       { key: 'productName', label: 'shared.productName' },
       { key: 'domain', label: 'shared.domain' },
-      { key: 'nextDueDate', label: 'shared.nextDueDate' },
+      { key: 'nextDueDate', label: 'shared.nextDueDate', kind: UiColumnKind.Date },
       { key: 'suspendReason', label: 'reports.productSuspensions.suspendReason' },
     ],
   },

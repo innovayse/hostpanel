@@ -19,6 +19,8 @@ import { useFaqsStore } from '@/stores/faqs'
 import type { Faq } from '@/types/faq'
 import { storefrontTestIds } from '@/types/storefront'
 import { FaqCategory } from '@/types/storefrontenums'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import schema from '@/views/FaqsView.schema'
 
@@ -90,19 +92,15 @@ const editRoute = (item: Faq): string => editPath(AppRoute.StorefrontFaqs, item.
     :testids="testids"
     :title="t(navTitleKey(AppRoute.StorefrontFaqs))"
     :subtitle="t('storefront.faqs.subtitle')"
-    :add-label="t('storefront.faqs.add')"
+    :add-label="t('storefront.faqs.create')"
     :empty-label="t('storefront.faqs.empty')"
     :delete-title="t('storefront.faqs.deleteTitle')"
-    :edit-label="t('storefront.faqs.edit')"
-    :delete-label="t('storefront.faqs.delete')"
     :move-up-label="t('storefront.list.moveUp')"
     :move-down-label="t('storefront.list.moveDown')"
     :columns="columns"
     :items="store.items"
     :loading="store.loading"
     :error="store.error"
-    :action-error="store.actionError"
-    :outcome="list.outcome.value"
     :saving-order="list.savingOrder.value"
     :delete-target="list.deleteTarget.value"
     :deleting="list.deleting.value"
@@ -117,13 +115,13 @@ const editRoute = (item: Faq): string => editPath(AppRoute.StorefrontFaqs, item.
   >
     <template #row="{ item }">
       <UiTableCell>
-        <UiText tone="primary" size="lg" class="font-medium">{{ questionOf(item) }}</UiText>
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-medium">{{ questionOf(item) }}</UiText>
       </UiTableCell>
       <UiTableCell>
-        <UiBadge tone="primary" small>{{ categoryLabel(item.category) }}</UiBadge>
+        <UiBadge :tone="UiTone.Primary" small>{{ categoryLabel(item.category) }}</UiBadge>
       </UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? 'success' : 'neutral'" small>
+        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
           {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
         </UiBadge>
       </UiTableCell>

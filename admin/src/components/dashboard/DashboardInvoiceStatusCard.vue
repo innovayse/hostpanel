@@ -16,6 +16,7 @@ import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import { statusLabel } from '@/lib/tones'
 import type { DashboardInvoiceStatusCount } from '@/types/dashboardcharts'
 import type { UiChartSeries } from '@/utils/ui/chart'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Props for DashboardInvoiceStatusCard. */
@@ -55,13 +56,13 @@ const series = computed<UiChartSeries[]>(() => [{ label: t('dashboard.invoiceSta
       :loading="loading || waiting"
       :height="chart.height"
     />
-    <UiStack gap="sm">
+    <UiStack :gap="UiGap.Sm">
       <UiStack
         v-for="row in rows"
         :key="row.status"
-        direction="row"
-        align="center"
-        justify="between"
+        :direction="UiDirection.Row"
+        :align="UiAlignItems.Center"
+        :justify="UiJustify.Between"
         :data-testid="`dashboard-invoice-status-${row.status}`"
       >
         <UiText :as="UiTextTag.Span" :size="UiTextSize.Sm">{{ statusLabel(INVOICE_STATUS_OPTIONS, row.status) }}</UiText>

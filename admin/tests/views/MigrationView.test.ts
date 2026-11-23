@@ -10,6 +10,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { useToastStore } from '@/stores/toast'
 import { migrationJob } from '../helpers/migrationFixtures'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Mounts the screen and waits for the history.
@@ -54,6 +55,7 @@ describe('MigrationView', () => {
 
     expect(wrapper.get('[data-testid="migration-none-selected"]').text()).not.toContain('Select a migration from the history')
     expect(wrapper.find('[data-testid="migration-start-first"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="migration-start-first"]').text()).toBe('Create migration')
   })
 
   it('highlights the selected job in the history', async () => {
@@ -163,7 +165,7 @@ describe('MigrationView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="migration-feedback"]').text()).toBe('The migration is running.')
+    expect(toastMessages()).toContain('The migration is running.')
     expect(wrapper.find('[data-testid="migration-error"]').exists()).toBe(false)
   })
 
@@ -179,7 +181,7 @@ describe('MigrationView', () => {
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
   })
 
-  it('shows the API sentence inside the dialog when the create is refused', async () => {
+  it('toasts the API sentence when the create is refused', async () => {
     stubRoutes({
       'GET /api/admin/migrations': () => json([]),
       'POST /api/admin/migrations': () => problem('The source address is unreachable.', 400),
@@ -191,7 +193,7 @@ describe('MigrationView', () => {
     await wrapper.get('[data-testid="migration-create"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="migration-create-error"]').text()).toBe('The source address is unreachable.')
+    expect(toastMessages()).toEqual(['The source address is unreachable.'])
     expect(wrapper.find('[data-testid="migration-error"]').exists()).toBe(false)
   })
 

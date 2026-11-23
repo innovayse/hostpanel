@@ -10,28 +10,24 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/NetworkIssuesView.schema'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { NETWORK_ISSUE_PRIORITY_OPTIONS, NETWORK_ISSUE_STATUS_OPTIONS, NETWORK_ISSUE_TYPE_OPTIONS } from '@/lib/constants'
 import { formatDateTimeCompact } from '@/lib/format'
 import { networkIssuePriorityTone, networkIssueStatusTone, statusLabel } from '@/lib/tones'
@@ -39,11 +35,9 @@ import { useNetworkIssuesStore } from '@/stores/networkIssues'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import type { NetworkIssue, NetworkIssueListFilters } from '@/types/networkissue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTableDensity } from '@/utils/ui/injection'
 import { AppRoute, editPath } from '@/lib/routes'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import { UiTextSize } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
@@ -53,7 +47,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('support.networkIssues.createNew'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'network-issues-create', to: AppRoute.SupportNetworkIssuesNew },
+  { label: t('support.networkIssueForm.createIssue'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'network-issues-create', to: AppRoute.SupportNetworkIssuesNew },
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `NetworkIssueListFilters` member. */
@@ -121,10 +115,7 @@ const deleteTarget = ref<number | null>(null)
 const deleting = ref(false)
 
 /** The outcome line of the last delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Loads the page the address names with the search and the filters it holds.
@@ -146,7 +137,6 @@ const handleDelete = async (): Promise<void> => {
   if (deleteTarget.value === null) {
     return
   }
-  feedback.clear()
   deleting.value = true
   const removed = await store.remove(deleteTarget.value)
   deleting.value = false
@@ -244,11 +234,6 @@ const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
       </UiStack>
     </UiListToolbar>
 
-    <UiResultCount :loading="store.loading && store.issues.length === 0" :size="UiTextSize.Sm" data-testid="network-issues-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="network-issues-feedback" />
 
     <UiErrorState
       v-if="store.error"
@@ -258,49 +243,44 @@ const rowActions = (issue: NetworkIssue): UiMenuAction[] => {
       @retry="load"
     />
 
-    <UiCard v-else>
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="store.loading && store.issues.length === 0"
-        :empty="!store.loading && store.issues.length === 0"
-        data-testid="network-issues-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="issue in store.issues"
-            :key="issue.id"
-            hoverable
-            :data-testid="`network-issues-row-${issue.id}`"
-          >
-            <UiTableCell>{{ issue.title }}</UiTableCell>
-            <UiTableCell muted>{{ statusLabel(NETWORK_ISSUE_TYPE_OPTIONS, issue.type) }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="networkIssuePriorityTone[issue.priority]">{{ statusLabel(NETWORK_ISSUE_PRIORITY_OPTIONS, issue.priority) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="networkIssueStatusTone[issue.status]">{{ statusLabel(NETWORK_ISSUE_STATUS_OPTIONS, issue.status) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell muted>{{ formatDateTimeCompact(issue.startDate) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDateTimeCompact(issue.endDate) }}</UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="rowActions(issue)" :testid="`network-issues-${issue.id}-actions`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-        <template #empty>
-          <UiEmptyState :title="t('shared.noRecordsFound')" data-testid="network-issues-empty" />
-        </template>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      v-else
+      :loading="store.loading && store.issues.length === 0"
+      :empty="!store.loading && store.issues.length === 0"
       :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
-      testid="network-issues-pagination"
+      pagination-testid="network-issues-pagination"
+      data-testid="network-issues-table"
       @update:page="setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="issue in store.issues"
+          :key="issue.id"
+          hoverable
+          :data-testid="`network-issues-row-${issue.id}`"
+        >
+          <UiTableCell>{{ issue.title }}</UiTableCell>
+          <UiTableCell muted>{{ statusLabel(NETWORK_ISSUE_TYPE_OPTIONS, issue.type) }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="networkIssuePriorityTone[issue.priority]">{{ statusLabel(NETWORK_ISSUE_PRIORITY_OPTIONS, issue.priority) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="networkIssueStatusTone[issue.status]">{{ statusLabel(NETWORK_ISSUE_STATUS_OPTIONS, issue.status) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell muted>{{ formatDateTimeCompact(issue.startDate) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDateTimeCompact(issue.endDate) }}</UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="rowActions(issue)" :testid="`network-issues-${issue.id}-actions`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState :title="t('shared.noRecordsFound')" data-testid="network-issues-empty" />
+      </template>
+    </UiDataTable>
 
     <UiDialog
       :variant="UiDialogVariant.Confirm"

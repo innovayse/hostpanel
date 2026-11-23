@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "accept": "Annehmen",
     "orderInfo": "Bestellinformationen",
     "overview": "Übersicht",
     "created": "Erstellt",
@@ -18,15 +17,13 @@
     "orderCancelled": "Bestellung storniert.",
     "confirmCancelTitle": "Diese Bestellung stornieren?",
     "confirmCancelMessage": "Die Bestellung wird storniert. Dies kann nicht rückgängig gemacht werden.",
-    "cancelOrder": "Bestellung stornieren",
     "linesSubtotal": "Zwischensumme der Bestellung (vor Steuer und Guthaben)",
     "invoiceTotal": "Rechnungssumme",
     "fulfilment": "Erfüllung",
-    "retry": "Erneut versuchen",
     "lineRetried": "Position erneut ausgeführt und erfüllt.",
     "attempts": "Versuche: {count}, zuletzt {at}",
     "finishRefund": "Ein Teil der Kosten wurde erstattet. Schließen Sie die Erstattung manuell ab.",
-    "closeRefund": "Erstattung abgeschlossen",
+    "closeRefund": "Als erstattet markieren",
     "confirmCloseRefundTitle": "Diese Erstattung abschließen?",
     "confirmCloseRefundMessage": "Bestätigen Sie, dass die Kosten dieser Position an den Kunden zurückgegeben wurden, durch Sie oder durch eine abgebrochene Erstattung. Eine kürzlich gestartete Erstattung läuft möglicherweise noch und kann noch nicht abgeschlossen werden; nur eine, die länger als die Wiederholungssperre hängt, kann es. Die Position wird als erstattet abgeschlossen und kann nicht mehr erneut ausgeführt werden. Die Aktion wird im Kundenprotokoll vermerkt.",
     "refundClosed": "Position als erstattet abgeschlossen."
@@ -36,16 +33,12 @@
     "searchOrders": "Bestellungen nach Nummer oder ID suchen",
     "order": "Bestellung Nr.",
     "items": "Positionen",
-    "accept": "Annehmen",
-    "totalcountOrderValue": "Bestellungen: {totalCount}",
     "noOrdersFound": "Keine Bestellungen gefunden",
     "noOrdersMatchYourFilters": "Keine Bestellungen entsprechen Ihrem Filter",
-    "clearFilters": "Filter zurücksetzen",
     "orderAccepted": "Bestellung angenommen.",
     "orderCancelled": "Bestellung storniert.",
     "confirmCancelTitle": "Diese Bestellung stornieren?",
     "confirmCancelMessage": "Die Bestellung wird storniert. Dies kann nicht rückgängig gemacht werden.",
-    "cancelOrder": "Bestellung stornieren",
     "failedLines": "{count} erneut auszuführen",
     "needsAttention": "Erfordert Aufmerksamkeit",
     "reviewQueue": "Prüfung ausstehend"
@@ -87,7 +80,8 @@
     "rejectReasonLabel": "Grund",
     "rejectReasonHint": "Der Kunde liest diesen Grund in der E-Mail.",
     "rejectReasonPlaceholder": "Warum die Bestellung abgelehnt wird",
-    "rejectReasonRequired": "Geben Sie einen Grund ein.",
-    "rejectSubmit": "Bestellung ablehnen"
-  }
+    "rejectReasonRequired": "Geben Sie einen Grund ein."
+  },
+  "accept": "Annehmen",
+  "cancelOrder": "Bestellung stornieren"
 }

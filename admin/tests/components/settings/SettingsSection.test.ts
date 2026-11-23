@@ -31,8 +31,8 @@ describe('SettingsSection', () => {
     const double = mount(SettingsSection, { props: { title: 'A', columns: 2 } })
 
     expect(single.get('.grid').classes()).toContain('grid-cols-1')
-    expect(single.get('.grid').classes()).not.toContain('@3xl:grid-cols-2')
-    expect(double.get('.grid').classes()).toEqual(expect.arrayContaining(['grid-cols-1', '@3xl:grid-cols-2']))
+    expect(single.get('.grid').classes()).not.toContain('@lg:grid-cols-2')
+    expect(double.get('.grid').classes()).toEqual(expect.arrayContaining(['grid-cols-1', '@lg:grid-cols-2']))
     expect(double.get('.grid').classes()).not.toContain('md:grid-cols-2')
     expect(double.html()).toContain('@container')
   })
@@ -51,10 +51,10 @@ describe('SettingsSection', () => {
     expect(wrapper.attributes('aria-busy')).toBe('true')
   })
 
-  it('is a section landmark named by its title', () => {
+  it('is a region landmark named by its title', () => {
     const wrapper = mount(SettingsSection, { props: { title: 'Branding' } })
 
-    expect(wrapper.element.tagName).toBe('SECTION')
+    expect(wrapper.attributes('role')).toBe('region')
     const titleId = wrapper.get('h2').attributes('id')
     expect(titleId).toBeTruthy()
     expect(wrapper.attributes('aria-labelledby')).toBe(titleId)

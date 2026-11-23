@@ -59,11 +59,11 @@
                     class="bg-primary-500/20 text-primary-700 dark:text-primary-300 [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border [.tpl-classic_&]:border-classic-border [.tpl-classic_&]:bg-classic-brand-soft [.tpl-classic_&]:text-classic-brand"
                   />
                   <UiStack gap="none">
-                    <UiText as="span" size="xs" tone="muted">
+                    <UiText :as="UiTextTag.Span" size="xs" tone="muted">
                       {{ t('contact.info.contactMethods.email') }}
                     </UiText>
                     <UiText
-                      as="span"
+                      :as="UiTextTag.Span"
                       size="sm"
                       weight="semibold"
                       class="transition-colors group-hover:text-primary-700 dark:group-hover:text-primary-300 group-hover:[.tpl-classic_&]:text-classic-brand"
@@ -88,11 +88,11 @@
                     class="bg-secondary-500/20 text-secondary-700 dark:text-secondary-400 [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border [.tpl-classic_&]:border-classic-border [.tpl-classic_&]:bg-classic-brand-soft [.tpl-classic_&]:text-classic-brand"
                   />
                   <UiStack gap="none">
-                    <UiText as="span" size="xs" tone="muted">
+                    <UiText :as="UiTextTag.Span" size="xs" tone="muted">
                       {{ t('contact.info.contactMethods.phone') }}
                     </UiText>
                     <UiText
-                      as="span"
+                      :as="UiTextTag.Span"
                       size="sm"
                       weight="semibold"
                       class="transition-colors group-hover:text-secondary-700 dark:group-hover:text-secondary-300 group-hover:[.tpl-classic_&]:text-classic-brand"
@@ -117,10 +117,10 @@
                     class="bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 [.tpl-classic_&]:rounded-md [.tpl-classic_&]:border [.tpl-classic_&]:border-classic-border [.tpl-classic_&]:bg-classic-brand-soft [.tpl-classic_&]:text-classic-brand"
                   />
                   <UiStack gap="none">
-                    <UiText as="span" size="xs" tone="muted">
+                    <UiText :as="UiTextTag.Span" size="xs" tone="muted">
                       {{ t('contact.info.contactMethods.workingHours') }}
                     </UiText>
-                    <UiText as="span" size="sm" weight="semibold">
+                    <UiText :as="UiTextTag.Span" size="sm" weight="semibold">
                       {{ workingHours }}
                     </UiText>
                   </UiStack>
@@ -145,7 +145,7 @@
                   testid="contact-telegram"
                 >
                   <Send :size="24" :stroke-width="2" class="text-cyan-700 dark:text-cyan-400 [.tpl-classic_&]:text-classic-brand" />
-                  <UiText as="span" size="sm" weight="semibold">
+                  <UiText :as="UiTextTag.Span" size="sm" weight="semibold">
                     {{ t('contact.info.quickConnect.telegram') }}
                   </UiText>
                 </UiLink>
@@ -160,7 +160,7 @@
                   testid="contact-whatsapp"
                 >
                   <MessageCircle :size="24" :stroke-width="2" class="text-green-600 dark:text-green-400 [.tpl-classic_&]:text-classic-brand" />
-                  <UiText as="span" size="sm" weight="semibold">
+                  <UiText :as="UiTextTag.Span" size="sm" weight="semibold">
                     {{ t('contact.info.quickConnect.whatsapp') }}
                   </UiText>
                 </UiLink>
@@ -246,9 +246,9 @@
                 data-testid="contact-consent"
                 required
               >
-                <UiText as="span" size="sm" tone="muted">
+                <UiText :as="UiTextTag.Span" size="sm" tone="muted">
                   {{ t('contact.form.consentPrefix') }}
-                  <UiLink :to="localePath(SITE_PRIVACY_PATH)" :underline="false" testid="contact-privacy-link">
+                  <UiLink tone="primary" :to="localePath(SITE_PRIVACY_PATH)" :underline="false" testid="contact-privacy-link">
                     {{ t('contact.form.consentLink') }}
                   </UiLink>
                   {{ t('contact.form.consentSuffix') }}
@@ -258,6 +258,8 @@
               <!-- Submit Button -->
               <UiButton
                 type="submit"
+                :title="t('contact.form.submit')"
+                :aria-label="t('contact.form.submit')"
                 data-testid="contact-submit"
                 variant="primary"
                 size="lg"
@@ -266,7 +268,7 @@
                 class="hover:shadow-xl hover:shadow-primary-500/50 hover:[.tpl-classic_&]:shadow-none"
               >
                 <Send v-if="!contactLoading" :size="18" :stroke-width="2" class="mr-2" />
-                {{ t('contact.form.submit') }}
+                {{ t('common.send') }}
               </UiButton>
 
               <!-- Failure Message. Rendered from the API's answer, never from a sentence
@@ -324,6 +326,7 @@ import { ContactService } from '~/types/contactservice'
 import { SubmitOutcome } from '~/types/submitoutcome'
 import { SeoPageType } from '~/types/seopagetype'
 import { SITE_CONTACT_PATH, SITE_PRIVACY_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Operator-set working hours with their time zone; empty when unset. */
 const { workingHours } = useContactHours()

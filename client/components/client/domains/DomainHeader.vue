@@ -1,8 +1,8 @@
 <template>
   <UiStack direction="row" align="center" justify="between" wrap data-testid="domain-header">
-    <UiStack direction="row" align="center">
+    <UiStack direction="row" align="center" class="min-w-0 max-w-full">
       <UiTile :icon="Globe" tone="primary" size="xl" />
-      <UiStack gap="none">
+      <UiStack gap="none" class="min-w-0">
         <UiHeading :level="1" size="subsection">{{ fullName }}</UiHeading>
         <UiText size="sm" tone="muted">{{ $t('client.domains.expires') }} {{ formatDate(domain.expiresAt) }}</UiText>
       </UiStack>

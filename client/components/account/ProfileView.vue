@@ -2,18 +2,18 @@
   <UiStack gap="lg" data-testid="account-profile-view">
     <UiGrid cols="2" gap="lg">
       <UiCard :title="$t('client.profile.accountInfo')">
-        <dl class="grid grid-cols-1 gap-4">
+        <UiGrid :as="UiGridTag.Dl" cols="1">
           <UiDescriptionItem :label="$t('client.profile.firstName')" :value="user.firstName" />
           <UiDescriptionItem :label="$t('client.profile.lastName')" :value="user.lastName" />
           <UiDescriptionItem v-if="user.companyName" :label="$t('client.profile.companyName')" :value="user.companyName" />
           <UiDescriptionItem :label="$t('client.profile.email')" :value="user.email" value-class="break-all" />
           <UiDescriptionItem :label="$t('client.profile.paymentMethod')" :value="paymentMethodLabel" />
           <UiDescriptionItem v-if="ownsLanguage" :label="$t('client.profile.language')" :value="languageLabel" />
-        </dl>
+        </UiGrid>
       </UiCard>
 
       <UiCard :title="$t('client.profile.billingAddress')">
-        <dl class="grid grid-cols-1 gap-4">
+        <UiGrid :as="UiGridTag.Dl" cols="1">
           <UiDescriptionItem :label="$t('client.profile.address1')" :value="user.address?.street || undefined" />
           <UiDescriptionItem v-if="user.address?.address2" :label="$t('client.profile.address2')" :value="user.address.address2" />
           <UiDescriptionItem :label="$t('client.profile.city')" :value="user.address?.city || undefined" />
@@ -27,7 +27,7 @@
             :value="vatValue"
             data-testid="profile-view-vat"
           />
-        </dl>
+        </UiGrid>
       </UiCard>
     </UiGrid>
 
@@ -49,6 +49,7 @@
 
 import type { ClientUser } from '~/types/clientuser'
 import type { EmailPreferenceFlags } from '~/utils/emailPreferences'
+import { UiGridTag } from '~/utils/ui/enums'
 
 /** Props of {@link ProfileView}. */
 interface Props {

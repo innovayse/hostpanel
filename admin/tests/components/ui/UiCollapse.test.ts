@@ -29,6 +29,39 @@ describe('UiCollapse', () => {
     expect(wrapper.get('[data-testid="content"]').text()).toBe('Hello')
   })
 
+  describe('with keepMounted', () => {
+    /**
+     * Mounts the block kept mounted around a paragraph.
+     *
+     * @param open - Whether the block is shown.
+     * @returns The wrapper.
+     */
+    const mountKept = (open: boolean) => mount(UiCollapse, { props: { open, keepMounted: true }, slots: { default: '<p data-testid="content">Hello</p>' } })
+
+    it('keeps the content mounted while closed, hidden and inert', () => {
+      const wrapper = mountKept(false)
+      const grid = wrapper.get<HTMLElement>('.grid')
+
+      expect(wrapper.find('[data-testid="content"]').exists()).toBe(true)
+      expect(grid.element.style.display).toBe('none')
+      expect(grid.attributes('inert')).toBeDefined()
+    })
+
+    it('shows the content and lifts inert when opened', async () => {
+      const wrapper = mountKept(false)
+
+      await wrapper.setProps({ open: true })
+
+      const grid = wrapper.get<HTMLElement>('.grid')
+      expect(grid.element.style.display).not.toBe('none')
+      expect(grid.attributes('inert')).toBeUndefined()
+    })
+
+    it('still removes the content when closed without it', () => {
+      expect(mountBlock(false).find('.grid').exists()).toBe(false)
+    })
+  })
+
   it('animates the rows of a grid, never a measured height', () => {
     const wrapper = mountBlock(true)
 

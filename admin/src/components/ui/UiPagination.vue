@@ -148,7 +148,7 @@ const go = (next: number): void => {
       </div>
       <UiIconButton
         size="sm"
-        :label="t('ui.pagination.next')"
+        :label="t('shared.next')"
         :disabled="loading || page >= pageCount"
         :data-testid="`${testid}-next`"
         @click="go(page + 1)"

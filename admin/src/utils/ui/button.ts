@@ -1,15 +1,13 @@
 /**
  * Button looks shared by `UiButton`, `UiIconButton` and `UiLink`.
  *
- * `plain` adds no colours of its own, so the screen's classes decide everything. Every other look
- * is fully owned by the kit and reads the theme tokens only.
+ * Every look is fully owned by the kit and reads the theme tokens only (`UiButton` defaults to `secondary`, `UiLink` to `link`).
  */
 import { focusRingClasses } from '@/utils/ui/input'
 import { controlRadiusClasses, iconButtonIconSize, UiSize } from '@/utils/ui/size'
 
 /** Closed set of button looks. */
 export const UiButtonVariant = {
-  Plain: 'plain',
   Primary: 'primary',
   Secondary: 'secondary',
   Ghost: 'ghost',
@@ -32,7 +30,7 @@ export const UiButtonType = {
 export type UiButtonType = (typeof UiButtonType)[keyof typeof UiButtonType]
 
 /**
- * Colour classes per look. `field` is a pill on the input-field surface (the search trigger of the top bar). `plain` is empty on purpose.
+ * Colour classes per look. `field` is a pill on the input-field surface (the search trigger of the top bar).
  *
  * Hover and the gradient apply only while the control is not disabled (`not-disabled:`, which also
  * matches a link), and each look has a disabled colour set of its own: a muted label on a flat
@@ -41,7 +39,6 @@ export type UiButtonType = (typeof UiButtonType)[keyof typeof UiButtonType]
  * A disabled control draws its border or label in the muted text colour (3:1 or more on every surface).
  */
 export const buttonVariantClasses: Record<UiButtonVariant, string> = {
-  plain: '',
   primary:
     'not-disabled:gradient-brand not-disabled:shadow-glow-primary not-disabled:hover:bg-(image:--gradient-primary-hover) not-disabled:hover:shadow-glow-primary-hover not-disabled:active:bg-(image:--gradient-primary-active) not-disabled:active:shadow-glow-primary text-text-on-primary font-semibold disabled:bg-surface-hover disabled:shadow-[inset_0_0_0_1px_var(--text-muted)] disabled:text-text-muted',
   secondary:
@@ -58,7 +55,7 @@ export const buttonVariantClasses: Record<UiButtonVariant, string> = {
 /** The ring a loading button shows beside its label: it takes the label's colour, and stands still under reduced motion. */
 export const buttonSpinnerClasses = 'inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none'
 
-/** Classes every non-plain look shares (focus ring, not-allowed cursor, motion). */
+/** Classes every look shares (focus ring, not-allowed cursor, motion). */
 export const buttonBaseClasses = `inline-flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${focusRingClasses}`
 
 /**

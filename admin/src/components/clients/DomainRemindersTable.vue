@@ -5,16 +5,15 @@
  * one timestamp, so there is one date column).
  */
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiColumnSize } from '@/utils/ui/table'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { formatDate } from '@/lib/format'
 import { DOMAIN_REMINDER_TYPE_LABEL_KEYS } from '@/types/domain'
 import type { DomainReminderItem } from '@/types/domain'
@@ -30,32 +29,28 @@ defineProps<{
 </script>
 
 <template>
-  <UiCard padding="md">
-    <UiStack>
-      <UiHeading :level="2" variant="section">
-        {{ t('clients.domainRemindersTable.domainReminderHistory') }}
-      </UiHeading>
-      <UiTable
-        :empty-text="t('shared.noRecordsFound')"
-        :density="UiTableDensity.Compact"
-        :empty="reminders.length === 0"
-        data-testid="clients-domain-reminders-table"
-      >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :size="UiColumnSize.Grow">{{ t('clients.domainRemindersTable.reminder') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.to') }}</UiTableHeader>
-            <UiTableHeader :size="UiColumnSize.Compact">{{ t('clients.domainRemindersTable.sent') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
-        <UiTableBody divided>
-          <UiTableRow v-for="reminder in reminders" :key="reminder.id" hoverable>
-            <UiTableCell>{{ t(DOMAIN_REMINDER_TYPE_LABEL_KEYS[reminder.reminderType]) }}</UiTableCell>
-            <UiTableCell>{{ reminder.sentTo }}</UiTableCell>
-            <UiTableCell muted>{{ formatDate(reminder.sentAt) }}</UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiStack>
-  </UiCard>
+  <UiDataTable
+    :empty-text="t('shared.noRecordsFound')"
+    :density="UiTableDensity.Compact"
+    :empty="reminders.length === 0"
+    data-testid="clients-domain-reminders-table"
+  >
+    <template #header>
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('clients.domainRemindersTable.domainReminderHistory') }}</UiHeading>
+    </template>
+    <UiTableHead>
+      <UiTableRow>
+        <UiTableHeader :size="UiColumnSize.Grow">{{ t('clients.domainRemindersTable.reminder') }}</UiTableHeader>
+        <UiTableHeader>{{ t('shared.to') }}</UiTableHeader>
+        <UiTableHeader :size="UiColumnSize.Compact">{{ t('clients.domainRemindersTable.sent') }}</UiTableHeader>
+      </UiTableRow>
+    </UiTableHead>
+    <UiTableBody>
+      <UiTableRow v-for="reminder in reminders" :key="reminder.id" hoverable>
+        <UiTableCell>{{ t(DOMAIN_REMINDER_TYPE_LABEL_KEYS[reminder.reminderType]) }}</UiTableCell>
+        <UiTableCell>{{ reminder.sentTo }}</UiTableCell>
+        <UiTableCell muted>{{ formatDate(reminder.sentAt) }}</UiTableCell>
+      </UiTableRow>
+    </UiTableBody>
+  </UiDataTable>
 </template>

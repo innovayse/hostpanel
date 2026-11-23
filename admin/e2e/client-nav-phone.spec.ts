@@ -188,7 +188,6 @@ test('a phone changes the theme from the menu drawer, since the top bar has no r
   await page.getByTestId('topbar-toggle-sidebar').click()
   await expect(page.getByTestId('sidebar-theme')).toBeVisible()
   await page.getByTestId('sidebar-theme').click()
-  await page.getByTestId('theme-option-light').click()
 
   await expect(page.locator('html')).toHaveClass(/(^|\s)light(\s|$)/)
   expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)

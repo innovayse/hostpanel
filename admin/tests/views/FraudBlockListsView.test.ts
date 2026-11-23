@@ -14,6 +14,7 @@ import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** Request line of the first page of the IP list. */
 const LIST_IP = 'GET /admin/fraud/blocklist?page=1&pageSize=20&type=Ip'
@@ -63,7 +64,6 @@ describe('FraudBlockListsView', () => {
     const table = wrapper.get('[data-testid="fraud-block-list-table"]').text()
     expect(table).toContain('203.0.113.7')
     expect(table).toContain('spam')
-    expect(wrapper.get('[data-testid="fraud-block-list-count"]').text()).toContain('1 Records Found')
   })
 
   it('shows the empty state of a list with no entries', async () => {
@@ -153,7 +153,7 @@ describe('FraudBlockListsView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="ui-form-field-value-error"]').text()).toBe('Enter a valid IP address.')
-    expect(wrapper.find('[data-testid="fraud-block-list-result"]').exists()).toBe(false)
+    expect(toastMessages()).toEqual([])
     expect((wrapper.get('[data-testid="fraud-block-list-value"]').element as HTMLInputElement).value).toBe('nope')
   })
 
@@ -168,7 +168,7 @@ describe('FraudBlockListsView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="fraud-block-list-result"]').text()).toBe('That entry already exists.')
+    expect(toastMessages()).toContain('That entry already exists.')
   })
 
   it('forgets a refusal when another list is chosen', async () => {
@@ -234,7 +234,7 @@ describe('FraudBlockListsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="fraud-block-list-result"]').text()).toBe('The entry does not exist.')
+    expect(toastMessages()).toContain('The entry does not exist.')
   })
 
   it('steps back a page when a delete empties the last one', async () => {

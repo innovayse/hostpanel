@@ -1,8 +1,8 @@
 /**
  * Unit tests for UiSidebar: entries as links with icons drawn without v-html, active marker and
- * hover expansion.
+ * the flyout that opens over the content on hover or keyboard focus.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
 
@@ -24,7 +24,20 @@ const mountSidebar = (activeKey?: string) =>
     global: { stubs: { RouterLink: RouterLinkStub } },
   })
 
+/**
+ * The panel of a mounted sidebar: the box that holds the entries and grows when it opens.
+ *
+ * @param wrapper - The mounted sidebar.
+ * @returns Its classes.
+ */
+const panelClasses = (wrapper: ReturnType<typeof mountSidebar>): string[] => wrapper.get('[data-testid="int-panel"]').classes()
+
 describe('UiSidebar', () => {
+  // A spy on `Element.prototype.matches` also changes how the test utils find elements, so it must never outlive its test.
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('renders one link per entry with its test id and destination', () => {
     const wrapper = mountSidebar()
     const links = wrapper.findAllComponents(RouterLinkStub)
@@ -49,22 +62,51 @@ describe('UiSidebar', () => {
   })
 
   it('is drawn on the glass surface', () => {
-    expect(mountSidebar().classes()).toContain('glass')
+    expect(panelClasses(mountSidebar())).toContain('glass')
   })
 
   it('is narrow until hovered or focused, then shows the captions', async () => {
     const wrapper = mountSidebar()
 
-    expect(wrapper.classes()).toContain('w-[56px]')
+    expect(panelClasses(wrapper)).toContain('w-[56px]')
 
     await wrapper.trigger('mouseenter')
-    expect(wrapper.classes()).toContain('w-[230px]')
+    expect(panelClasses(wrapper)).toContain('w-[230px]')
 
     await wrapper.trigger('mouseleave')
-    expect(wrapper.classes()).toContain('w-[56px]')
+    expect(panelClasses(wrapper)).toContain('w-[56px]')
+  })
 
-    await wrapper.trigger('focusin')
-    expect(wrapper.classes()).toContain('w-[230px]')
+  it('keeps only the rail width in the layout and opens over the content, on a denser surface, instead of widening its column', async () => {
+    const wrapper = mountSidebar()
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['relative', 'shrink-0', 'w-[56px]']))
+    expect(panelClasses(wrapper)).toEqual(expect.arrayContaining(['absolute', 'inset-y-0', 'left-0', 'z-20', 'glass']))
+
+    await wrapper.trigger('mouseenter')
+
+    expect(wrapper.classes()).toContain('w-[56px]')
+    expect(wrapper.classes()).not.toContain('w-[230px]')
+    expect(panelClasses(wrapper)).toEqual(expect.arrayContaining(['glass-strong', 'shadow-overlay']))
+    expect(panelClasses(wrapper)).not.toContain('glass')
+  })
+
+  it('opens on the focus a ring is drawn for, but not on the focus a click or a tap gives an entry', async () => {
+    const wrapper = mountSidebar()
+    // Both are found before `matches` is stubbed: the stub would make every selector match the root element.
+    const link = wrapper.get('[data-testid="int-payments"]')
+    const panel = wrapper.get('[data-testid="int-panel"]')
+    const matches = vi.spyOn(Element.prototype, 'matches')
+
+    // A pointer press focuses the link without the focus ring.
+    matches.mockImplementation(() => false)
+    await link.trigger('focusin')
+    expect(panel.classes()).toContain('w-[56px]')
+
+    // The keyboard does draw it.
+    matches.mockImplementation(() => true)
+    await link.trigger('focusin')
+    expect(panel.classes()).toContain('w-[230px]')
   })
 
   it('marks the active entry with the navigation pill tokens and idle entries with secondary text', () => {
@@ -82,7 +124,7 @@ describe('UiSidebar', () => {
     expect(link.attributes('title')).toBe('Email')
     expect(link.attributes('aria-label')).toBe('Email')
     expect(link.text()).toBe('')
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['overflow-y-auto', 'min-h-0']))
+    expect(panelClasses(wrapper)).toEqual(expect.arrayContaining(['overflow-y-auto', 'min-h-0']))
   })
 
   it('shows truncated captions once open, with the full title as tooltip', async () => {
@@ -99,16 +141,27 @@ describe('UiSidebar', () => {
     expect(link.attributes('title')).toBe('Payment gateways')
   })
 
-  it('stays open while focus is inside even after the pointer leaves', async () => {
-    const wrapper = mountSidebar()
+  it('stays open while a field inside has focus even after the pointer leaves', async () => {
+    const wrapper = mount(UiSidebar, {
+      props: { items, testid: 'int' },
+      slots: { header: '<input data-testid="head" />' },
+      attachTo: document.body,
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
 
-    await wrapper.trigger('focusin')
     await wrapper.trigger('mouseenter')
+    const field = wrapper.get('[data-testid="head"]')
+    // A field that takes typing always shows the focus ring.
+    const matches = vi.spyOn(Element.prototype, 'matches').mockImplementation(() => true)
+    await field.trigger('focusin')
+    matches.mockRestore()
     await wrapper.trigger('mouseleave')
-    expect(wrapper.classes()).toContain('w-[230px]')
+    expect(panelClasses(wrapper)).toContain('w-[230px]')
 
-    await wrapper.trigger('focusout')
-    expect(wrapper.classes()).toContain('w-[56px]')
+    await field.trigger('focusout')
+    expect(panelClasses(wrapper)).toContain('w-[56px]')
+
+    wrapper.unmount()
   })
 
   it('tells its owner when it opens and folds', async () => {

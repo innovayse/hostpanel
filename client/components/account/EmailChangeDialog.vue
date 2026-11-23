@@ -34,7 +34,7 @@
 
     <!-- Pinned footer; the button submits the body's form through its `form` attribute. -->
     <template #footer>
-      <UiButton type="submit" form="email-change-form" :loading="emailChangeSaving" data-testid="account-email-change-submit">
+      <UiButton variant="primary" type="submit" form="email-change-form" :loading="emailChangeSaving" data-testid="account-email-change-submit">
         <Mail v-if="!emailChangeSaving" :size="15" :stroke-width="2" class="mr-1.5" />
         {{ $t('client.emailChange.submit') }}
       </UiButton>

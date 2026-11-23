@@ -4,6 +4,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   DateRangePreset,
+  dateActionClasses,
+  dateArrowClasses,
+  dateCellBaseClasses,
   dateCellInRangeClasses,
   dateCellRangeEndClasses,
   dateCellRangeStartClasses,
@@ -156,5 +159,11 @@ describe('datePicker range cell caps', () => {
 
   it('resolves a preset to ISO days the way the range is stored', () => {
     expect(presetIsoRange(DateRangePreset.Last30Days, TODAY)).toEqual(presetRange(DateRangePreset.Last30Days, TODAY).map(formatIsoDate))
+  })
+
+  it('makes the calendar cells, the arrows and the text actions 44px targets on a phone', () => {
+    expect(dateCellBaseClasses).toContain('max-sm:h-11')
+    expect(dateArrowClasses).toContain('max-sm:min-h-11')
+    expect(dateActionClasses).toContain('max-sm:min-h-11')
   })
 })

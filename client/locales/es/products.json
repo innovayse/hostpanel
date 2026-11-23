@@ -20,7 +20,6 @@
     },
     "pricing": {
       "title": "Elija su plan",
-      "trial": "Iniciar prueba gratuita",
       "cycles": {
         "monthly": "Mensual",
         "quarterly": "Trimestral",

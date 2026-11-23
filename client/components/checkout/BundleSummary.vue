@@ -1,15 +1,18 @@
 <template>
-  <div
+  <UiStack
     v-if="name && offer"
-    class="flex items-center justify-between gap-3 text-sm"
+    direction="row"
+    align="center"
+    justify="between"
+    gap="sm"
     data-testid="bundle-summary-discount"
   >
-    <span class="flex min-w-0 items-center gap-2 text-gray-600 dark:text-gray-400 [.tpl-classic_&]:text-classic-muted">
-      <span class="truncate">{{ $t('bundles.summary.discount', { name }) }}</span>
+    <UiStack direction="row" align="center" gap="xs" class="min-w-0">
+      <UiText :as="UiTextTag.Span" size="sm" tone="muted" truncate class="[.tpl-classic_&]:text-classic-muted">{{ $t('bundles.summary.discount', { name }) }}</UiText>
       <UiBadge size="sm" rounded data-testid="bundle-summary-offer">{{ offer }}</UiBadge>
-    </span>
-    <span class="whitespace-nowrap text-gray-900 dark:text-white [.tpl-classic_&]:text-classic-ink" data-testid="bundle-summary-amount">-{{ discount }}</span>
-  </div>
+    </UiStack>
+    <UiText :as="UiTextTag.Span" size="sm" class="whitespace-nowrap [.tpl-classic_&]:text-classic-ink" data-testid="bundle-summary-amount">-{{ discount }}</UiText>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +23,7 @@
  *
  * Presentational: the amount is the storefront's estimate; the backend applies the real discount.
  */
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of BundleSummary. */
 interface Props {

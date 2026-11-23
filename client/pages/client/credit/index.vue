@@ -5,7 +5,7 @@
     <!-- Not a customer account: the API said so with a code, so this is one explanation with somewhere to go. -->
     <UiAlert v-if="store.error" variant="error" data-testid="credit-error">
       <UiStack direction="row" justify="between" align="center" gap="sm" wrap>
-        <UiText as="span" size="sm">{{ store.error }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm">{{ store.error }}</UiText>
         <UiButton
           :variant="UiButtonVariant.Secondary"
           size="sm"
@@ -45,7 +45,7 @@
  */
 import { Wallet } from 'lucide-vue-next'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
-import { UiButtonVariant } from '~/utils/ui/enums'
+import { UiButtonVariant, UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

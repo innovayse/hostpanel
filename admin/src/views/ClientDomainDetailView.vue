@@ -42,10 +42,12 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems } from '@/utils/ui/layout'
+import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
 import schema, { MANAGEMENT_COLUMNS, NAMESERVER_LABELS, REGISTRAR_COLUMNS } from '@/views/ClientDomainDetailView.schema'
@@ -472,10 +474,10 @@ onBeforeUnmount(() => {
             {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
           </UiBadge>
           <template #actions>
-            <UiAlert v-if="saveSuccess" variant="success" data-testid="client-domain-saved">
+            <UiAlert v-if="saveSuccess" :variant="UiTone.Success" data-testid="client-domain-saved">
               {{ saveSuccess }}
             </UiAlert>
-            <UiAlert v-if="saveError" variant="error" data-testid="client-domain-action-error">
+            <UiAlert v-if="saveError" :variant="UiTone.Danger" data-testid="client-domain-action-error">
               {{ saveError }}
             </UiAlert>
           </template>
@@ -485,7 +487,7 @@ onBeforeUnmount(() => {
 
         <UiDetailCards v-if="tab === DomainTab.Details" :columns="schema.columns" :loading="!domain">
           <template #card-info>
-            <UiStack v-if="domain" direction="row" gap="lg" wrap>
+            <UiStack v-if="domain" :direction="UiDirection.Row" :gap="UiGap.Lg" wrap>
               <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
                 {{ t('clients.clientDomainDetail.order') }} {{ domain.origin.orderId ?? EMPTY_VALUE }}
               </UiText>
@@ -499,7 +501,7 @@ onBeforeUnmount(() => {
                 {{ t('clients.clientDomainDetail.registrar') }} {{ domain.registrar.module ?? EMPTY_VALUE }}
               </UiText>
             </UiStack>
-            <UiGrid :columns="2" gap="sm">
+            <UiGrid :columns="2" :gap="UiGap.Sm" container>
               <UiField :label="t('clients.clientDomainDetail.firstPaymentAmount')">
                 <UiNumberInput data-testid="client-domain-first-payment" v-model="firstPaymentAmount" :step="0.01" :min="0" placeholder="0.00" />
               </UiField>
@@ -532,9 +534,9 @@ onBeforeUnmount(() => {
           </template>
 
           <template #card-dates>
-            <UiGrid :columns="2" gap="sm">
+            <UiGrid :columns="2" :gap="UiGap.Sm" container>
               <UiField :label="t('clients.clientDomainDetail.registrationPeriod')">
-                <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
+                <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
                   <UiNumberInput data-testid="client-domain-registration-period" v-model="registrationPeriod" :min="1" :max="MAX_YEARS" :step="1" placeholder="1" />
                   <UiText :tone="UiTextTone.Muted">{{ t('clients.clientDomainDetail.years') }}</UiText>
                 </UiStack>
@@ -574,7 +576,7 @@ onBeforeUnmount(() => {
           </template>
 
           <template #card-commands>
-            <UiStack v-if="domain" direction="row" wrap gap="sm">
+            <UiStack v-if="domain" :direction="UiDirection.Row" wrap :gap="UiGap.Sm">
               <UiButton :action="UiActionKind.Add"
                 type="button"
                 :variant="UiButtonVariant.Secondary"
@@ -585,7 +587,7 @@ onBeforeUnmount(() => {
               >
                 {{ t('clients.clientDomainDetail.register') }}
               </UiButton>
-              <UiButton :action="UiActionKind.Add"
+              <UiButton :action="UiActionKind.Refresh"
                 type="button"
                 :variant="UiButtonVariant.Secondary"
                 :loading="commandLoading"
@@ -733,7 +735,7 @@ onBeforeUnmount(() => {
           >
             {{ t('shared.cancel') }}
           </UiButton>
-          <UiButton :action="UiActionKind.Add"
+          <UiButton :action="UiActionKind.Refresh"
             :variant="UiButtonVariant.Primary"
             data-testid="client-domain-renew-confirm"
             @click="confirmRenew"
@@ -745,24 +747,24 @@ onBeforeUnmount(() => {
 
       <UiDialog
         v-if="showRegisterModal"
-        variant="confirm"
+        :variant="UiDialogVariant.Confirm"
         :title="t('clients.clientDomainDetail.registerDomain')"
         :message="t('clients.clientDomainDetail.registerThisDomainWithThe')"
         :confirm-label="t('clients.clientDomainDetail.register')"
         :loading="commandLoading"
-        tone="primary"
+        :tone="UiTone.Primary"
         @confirm="confirmRegister"
         @close="showRegisterModal = false"
       />
 
       <UiDialog
         v-if="showCancelTransferModal"
-        variant="confirm"
+        :variant="UiDialogVariant.Confirm"
         :title="t('clients.clientDomainDetail.cancelTransfer')"
         :message="t('clients.clientDomainDetail.cancelThisTransferAtThe')"
         :confirm-label="t('clients.clientDomainDetail.cancelTransfer')"
         :loading="commandLoading"
-        tone="danger"
+        :tone="UiTone.Danger"
         @confirm="confirmCancelTransfer"
         @close="showCancelTransferModal = false"
       />
@@ -770,11 +772,11 @@ onBeforeUnmount(() => {
       <UiDialog
         v-if="showEppModal"
         :title="t('clients.clientDomainDetail.eppAuthorizationCode')"
-        size="md"
+        :size="UiDialogSize.Md"
         @close="showEppModal = false"
       >
         <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientDomainDetail.useThisCodeToTransfer') }}</UiText>
-        <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
           <UiText :tone="UiTextTone.Primary" class="flex-1 select-all font-mono tracking-widest" data-testid="client-domain-epp-code">
             {{ eppCode }}
           </UiText>
@@ -784,7 +786,7 @@ onBeforeUnmount(() => {
             data-testid="client-domain-epp-copy"
             @click="copyEppCode"
           >
-            {{ t('clients.clientDomainDetail.copy') }}
+            {{ t('shared.copy') }}
           </UiButton>
         </UiStack>
         <template #footer>

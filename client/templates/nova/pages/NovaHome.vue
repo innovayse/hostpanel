@@ -1,5 +1,5 @@
 <template>
-  <UiStack id="nova-main" as="div" gap="none" class="tpl-nova bg-nova-bg font-nova text-nova-ink" data-testid="nova-home">
+  <UiStack id="nova-main" :as="UiStackTag.Div" gap="none" class="tpl-nova bg-nova-bg font-nova text-nova-ink" data-testid="nova-home">
     <NovaHero />
     <NovaTrustBar v-if="isVisible(HomeSection.Stats)" />
     <NovaPartners v-if="isPartnersVisible(isVisible)" />
@@ -69,6 +69,7 @@ import type { PlanCard } from '~/types/plancard'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { ComparisonRow } from '~/types/comparisonrow'
 import type { TldPriceRow } from '~/types/tldpricerow'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of NovaHome. */
 withDefaults(defineProps<{

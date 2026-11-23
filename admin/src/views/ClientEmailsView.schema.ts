@@ -5,7 +5,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The client emails tab. */
 const schema: ListSkeletonSchema = {
@@ -18,9 +18,9 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
-      { key: 'status', label: 'clients.clientEmails.status', size: UiColumnSize.Compact },
+      { key: 'status', label: 'clients.clientEmails.status', kind: UiColumnKind.Status },
     ],
   },
 }

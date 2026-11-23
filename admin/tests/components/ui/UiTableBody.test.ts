@@ -1,5 +1,5 @@
 /**
- * Unit tests for UiTableBody: native tbody and the optional row divider.
+ * Unit tests for UiTableBody: native tbody and its row divider.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -20,8 +20,7 @@ describe('UiTableBody', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
 
-  it('draws dividers between rows only when asked', () => {
-    expect(mount(UiTableBody).classes()).not.toContain('divide-y')
-    expect(mount(UiTableBody, { props: { divided: true } }).classes()).toEqual(expect.arrayContaining(['divide-y', 'divide-border-subtle']))
+  it('always draws the divider between rows', () => {
+    expect(mount(UiTableBody).classes()).toEqual(expect.arrayContaining(['divide-y', 'divide-border-subtle']))
   })
 })

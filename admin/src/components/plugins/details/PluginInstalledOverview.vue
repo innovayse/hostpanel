@@ -23,6 +23,8 @@ import { categoryLabel } from '@/lib/pluginCard'
 import { translateOrRaw } from '@/lib/translate'
 import type { PluginListItemDto } from '@/types/plugin'
 import type { SkeletonDetailCard } from '@/utils/ui/skeletonSchema'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import {
   PLUGIN_OVERVIEW_COMPATIBILITY_CARD,
   PLUGIN_OVERVIEW_DETAILS_CARD,
@@ -150,11 +152,11 @@ const factsOf = (card: SkeletonDetailCard): OverviewRow[] =>
 <template>
   <UiDetailCards :columns="PLUGIN_OVERVIEW_PART.columns" data-testid="plugin-details-overview">
     <template #card-details>
-      <UiStack v-if="plugin.refusedRule" gap="xs" data-testid="plugin-details-refusal">
-        <UiText tone="danger" size="sm">{{ t('plugins.pluginCard.brokenRule', { id: plugin.id, rule: plugin.refusedRule }) }}</UiText>
-        <UiText v-if="plugin.refusedDetail" tone="muted" size="xs" class="font-mono break-all">{{ plugin.refusedDetail }}</UiText>
+      <UiStack v-if="plugin.refusedRule" :gap="UiGap.Xs" data-testid="plugin-details-refusal">
+        <UiText :tone="UiTextTone.Danger" :size="UiTextSize.Sm">{{ t('plugins.pluginCard.brokenRule', { id: plugin.id, rule: plugin.refusedRule }) }}</UiText>
+        <UiText v-if="plugin.refusedDetail" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-mono break-all">{{ plugin.refusedDetail }}</UiText>
       </UiStack>
-      <UiText tone="secondary" size="sm" data-testid="plugin-details-overview-description">
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" data-testid="plugin-details-overview-description">
         {{ plugin.description || t('pluginDetails.overview.noDescription') }}
       </UiText>
       <PluginOverviewFact
@@ -193,15 +195,15 @@ const factsOf = (card: SkeletonDetailCard): OverviewRow[] =>
     </template>
 
     <template #card-permissions>
-      <UiText v-if="asksForNothing" tone="muted" size="sm" data-testid="plugin-details-permissions-none">
+      <UiText v-if="asksForNothing" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-details-permissions-none">
         {{ t('plugins.pluginInstallDialog.noRequests') }}
       </UiText>
-      <UiStack v-else gap="xs" data-testid="plugin-details-capabilities">
+      <UiStack v-else :gap="UiGap.Xs" data-testid="plugin-details-capabilities">
         <UiText
           v-for="kind in hostAccess"
           :key="kind"
-          tone="primary"
-          size="sm"
+          :tone="UiTextTone.Primary"
+          :size="UiTextSize.Sm"
           :data-testid="`plugin-details-host-access-${kind}`"
         >
           {{ t(`plugins.pluginInstallDialog.hostAccess.${kind}`) }}
@@ -209,8 +211,8 @@ const factsOf = (card: SkeletonDetailCard): OverviewRow[] =>
         <UiText
           v-for="capability in plugin.capabilities"
           :key="capability"
-          tone="primary"
-          size="sm"
+          :tone="UiTextTone.Primary"
+          :size="UiTextSize.Sm"
           :data-testid="`plugin-details-capability-${capability}`"
         >
           {{ t(`plugins.pluginInstallDialog.capabilities.${capability}`) }}

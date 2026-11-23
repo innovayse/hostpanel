@@ -219,6 +219,14 @@ describe('ClassicDomains', () => {
     expect(at(rows, 0).text()).toContain('11.00')
   })
 
+  it('draws the price table without a frame of its own, through the kit flush option', async () => {
+    const wrapper = await mountDomains()
+
+    const frame = wrapper.find('[data-testid="classic-domains-row"]').element.closest('table')?.parentElement?.parentElement
+    expect(frame?.classList.contains('border')).toBe(false)
+    expect(frame?.classList.contains('rounded-2xl')).toBe(false)
+  })
+
   it('filters the table to a category and back to all', async () => {
     const wrapper = await mountDomains()
     const categories = wrapper.findAll('[data-testid^="classic-domains-category-"]:not([data-testid="classic-domains-category-all"])')

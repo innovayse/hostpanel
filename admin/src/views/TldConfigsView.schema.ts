@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiAlign, UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The TLD pricing list. */
 const schema: ListSkeletonSchema = {
@@ -24,12 +24,12 @@ const schema: ListSkeletonSchema = {
     columns: [
       { key: 'tld', label: 'settings.tldConfigs.tld', align: UiAlign.Left, size: UiColumnSize.Grow },
       { key: 'provider', label: 'settings.tldConfigs.provider', align: UiAlign.Left },
-      { key: 'status', label: 'shared.status', align: UiAlign.Left, size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', align: UiAlign.Left, kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'cost', label: 'settings.tldConfigs.cost1yr', numeric: true, size: UiColumnSize.Compact },
       { key: 'sell', label: 'settings.tldConfigs.sell1yr', numeric: true, size: UiColumnSize.Compact },
       { key: 'margin', label: 'settings.tldConfigs.margin', numeric: true, size: UiColumnSize.Compact },
       { key: 'categories', label: 'shared.categories', align: UiAlign.Left },
-      { key: 'lastSynced', label: 'settings.tldConfigs.lastSynced', align: UiAlign.Left, size: UiColumnSize.Compact },
+      { key: 'lastSynced', label: 'settings.tldConfigs.lastSynced', align: UiAlign.Left, kind: UiColumnKind.Date },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

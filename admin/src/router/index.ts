@@ -3,7 +3,7 @@ import type { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { authMiddleware } from '@/middleware/auth'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
-import AppLayout from '@/layouts/AppLayout.vue'
+import MainLayout from '@/layouts/MainLayout.vue'
 import { REPORTS } from '@/lib/reports'
 import { AppRoute } from '@/lib/routes'
 import { withRetry, withViewFile } from '@/lib/lazyRoute'
@@ -12,7 +12,7 @@ import { prefetchRoute } from '@/lib/prefetchRoute'
 import { navigationAdmitted, navigationFailed, navigationSettled } from '@/middleware/navigation'
 
 /** Every view and layout but the shell layout as a lazy loader, keyed by its path relative to this file; Vite splits each into its own chunk. */
-const loaders = import.meta.glob<{ default: Component }>(['../views/*.vue', '../layouts/*.vue', '!../layouts/AppLayout.vue'])
+const loaders = import.meta.glob<{ default: Component }>(['../views/*.vue', '../layouts/*.vue', '!../layouts/MainLayout.vue'])
 
 /**
  * Looks up one routed file and makes it a lazy route component.
@@ -87,7 +87,7 @@ const router = createRouter({
       path: '/',
       // The one eager layout: it holds the sidebar and the topbar, so a hard load draws them at once and only the screen
       // inside waits for its chunk (see RoutedView, which draws this record itself while the screen below it loads).
-      component: AppLayout,
+      component: MainLayout,
       meta: { requiresAuth: true, shell: true },
       children: [
         { path: '', redirect: AppRoute.Dashboard },

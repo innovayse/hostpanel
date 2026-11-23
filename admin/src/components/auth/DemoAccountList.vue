@@ -17,8 +17,12 @@ import UiText from '@/components/ui/UiText.vue'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { DemoAccountRole } from '@/types/demo'
 import type { DemoAccount } from '@/types/demo'
-import type { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Props for DemoAccountList. */
 const props = defineProps<{
@@ -45,8 +49,8 @@ const visibleAccounts = computed<DemoAccount[]>(() =>
 
 /** Badge colour per role: the operator account stands out, the customer account stays neutral. */
 const roleTones: Record<DemoAccountRole, UiTone> = {
-  [DemoAccountRole.Admin]: 'primary',
-  [DemoAccountRole.Client]: 'neutral',
+  [DemoAccountRole.Admin]: UiTone.Primary,
+  [DemoAccountRole.Client]: UiTone.Neutral,
 }
 
 /** Translation key of each role's label. */
@@ -57,31 +61,31 @@ const roleLabelKeys: Record<DemoAccountRole, string> = {
 </script>
 
 <template>
-  <UiStack gap="sm" class="glass rounded-card border border-border p-3" data-testid="demo-login">
-    <UiText size="sm" tone="secondary">{{ t('demo.login.hint') }}</UiText>
+  <UiStack :gap="UiGap.Sm" class="glass rounded-card border border-border p-3" data-testid="demo-login">
+    <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Secondary">{{ t('demo.login.hint') }}</UiText>
     <UiStack
       v-for="account in visibleAccounts"
       :key="`${account.role}:${account.email}`"
-      direction="row"
-      gap="sm"
-      align="center"
-      justify="between"
+      :direction="UiDirection.Row"
+      :gap="UiGap.Sm"
+      :align="UiAlignItems.Center"
+      :justify="UiJustify.Between"
       class="rounded-lg bg-surface-hover px-3 py-2"
       :data-testid="`demo-login-account-${account.role}`"
     >
-      <UiStack gap="xs" class="min-w-0">
+      <UiStack :gap="UiGap.Xs" class="min-w-0">
         <UiBadge :tone="roleTones[account.role]" small>{{ t(roleLabelKeys[account.role]) }}</UiBadge>
-        <UiText size="sm" class="truncate" data-testid="demo-login-email">
+        <UiText :size="UiTextSize.Sm" class="truncate" data-testid="demo-login-email">
           {{ t('demo.login.email', { email: account.email }) }}
         </UiText>
-        <UiText size="sm" class="truncate" data-testid="demo-login-password">
+        <UiText :size="UiTextSize.Sm" class="truncate" data-testid="demo-login-password">
           {{ t('demo.login.password', { password: account.password }) }}
         </UiText>
       </UiStack>
       <UiButton :action="UiActionKind.Confirm"
         v-if="account.role === DemoAccountRole.Admin"
-        variant="secondary"
-        size="sm"
+        :variant="UiButtonVariant.Secondary"
+        :size="UiSize.Sm"
         type="button"
         data-testid="demo-login-use"
         @click="emit('use', account)"
@@ -92,7 +96,9 @@ const roleLabelKeys: Record<DemoAccountRole, string> = {
         v-else
         :href="clientBaseUrl"
         external
-        class="shrink-0 text-xs font-medium underline"
+        :variant="UiButtonVariant.Link"
+        :size="UiSize.Xs"
+        class="shrink-0"
         data-testid="demo-login-client-portal"
       >{{ t('demo.login.openClientPortal') }}</UiLink>
     </UiStack>

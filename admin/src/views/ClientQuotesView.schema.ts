@@ -5,7 +5,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The client quotes tab. */
 const schema: ListSkeletonSchema = {
@@ -18,12 +18,12 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
-      { key: 'createDate', label: 'clients.clientQuotes.createDate' },
-      { key: 'validUntil', label: 'shared.validUntil' },
+      { key: 'createDate', label: 'clients.clientQuotes.createDate', kind: UiColumnKind.Date },
+      { key: 'validUntil', label: 'shared.validUntil', kind: UiColumnKind.Date },
       { key: 'total', label: 'shared.total', numeric: true },
-      { key: 'stage', label: 'shared.stage', size: UiColumnSize.Compact },
+      { key: 'stage', label: 'shared.stage', kind: UiColumnKind.Status },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

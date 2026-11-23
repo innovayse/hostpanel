@@ -6,10 +6,9 @@
       "services": "Services",
       "process": "Ablauf",
       "faq": "FAQ",
-      "login": "Anmelden",
-      "start": "Jetzt starten",
       "cart": "Warenkorb",
-      "menu": "Menü"
+      "menu": "Menü",
+      "apps": "Apps"
     },
     "hero": {
       "titleLine1": "Ihre gesamte",
@@ -17,7 +16,6 @@
       "titleAccent": "Infrastruktur",
       "lead": "Domains, Hosting, Server und Rechnungen in einem Kundenportal. Registrieren Sie in wenigen Minuten eine Domain und verwalten Sie alles in einem Panel.",
       "ctaPrimary": "Domain prüfen",
-      "ctaSecondary": "Mit einem Experten sprechen",
       "statClients": "Kunden",
       "statUptime": "Verfügbarkeit",
       "statRegions": "Regionen"
@@ -25,7 +23,6 @@
     "domainSearch": {
       "title": "Finden Sie Ihre Domain",
       "placeholder": "beispiel",
-      "cta": "Suchen",
       "available": "verfügbar",
       "taken": "vergeben",
       "empty": "Geben Sie einen Namen ein und klicken Sie auf Suchen.",
@@ -33,7 +30,7 @@
       "unknown": "Prüfung fehlgeschlagen",
       "add": "Hinzufügen",
       "inCart": "Im Warenkorb",
-      "transfer": "Transfer"
+      "transfer": "Übertragen"
     },
     "trust": {
       "ssl": "SSL-gesichert",
@@ -75,8 +72,6 @@
       "eyebrow": "Ablauf",
       "title": "In vier Schritten online",
       "lead": "Klare Schritte und ein Support-Team in jeder Phase.",
-      "start": "Jetzt starten",
-      "talk": "Mit einem Experten sprechen",
       "note": "Unsicher, welcher Tarif passt? Unser Team hilft Ihnen bei der Auswahl.",
       "step1Title": "Tarif wählen",
       "step1Body": "Wählen Sie Hosting oder einen Server und suchen Sie Ihre Wunschdomain.",
@@ -94,8 +89,6 @@
     "testimonials": {
       "eyebrow": "Kunden",
       "title": "Das sagen Kunden über uns",
-      "prev": "Zurück",
-      "next": "Weiter",
       "rating": "Bewertet mit {rating} von 5",
       "slide": "Kundenstimme {current} von {total}",
       "goTo": "Kundenstimme von {name} anzeigen"
@@ -103,7 +96,7 @@
     "faq": {
       "title": "Häufig gestellte Fragen",
       "lead": "Schnelle Antworten zu Tarifen, Domains und Support.",
-      "contact": "Noch Fragen? Kontaktieren Sie den Support",
+      "contact": "Support kontaktieren",
       "viewAll": "Alle Fragen ansehen"
     },
     "cta": {
@@ -223,6 +216,10 @@
       "email": "E-Mail",
       "phone": "Telefon",
       "response": "Übliche Antwortzeit: {time}"
+    },
+    "actions": {
+      "getStarted": "Jetzt starten",
+      "talkToSpecialist": "Mit einem Experten sprechen"
     }
   }
 }

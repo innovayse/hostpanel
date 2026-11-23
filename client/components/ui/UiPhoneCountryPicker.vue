@@ -54,7 +54,7 @@
           :aria-controls="listId"
           :aria-activedescendant="activeOptionId"
           data-testid="phone-country-search"
-          class="min-h-9 w-full rounded-md border border-gray-200 bg-transparent py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:border-white/10 dark:text-white dark:placeholder:text-gray-400"
+          class="min-h-11 w-full sm:min-h-9 rounded-md border border-gray-200 bg-transparent py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:border-white/10 dark:text-white dark:placeholder:text-gray-400"
           @keydown.arrow-down.prevent="move(1)"
           @keydown.arrow-up.prevent="move(-1)"
           @keydown.enter.prevent="chooseActive"
@@ -221,7 +221,7 @@ const triggerClasses = computed(() => [
 
 /** Class list of the panel: the popover surface, above or below the trigger. */
 const panelClasses = computed(() => [
-  'absolute left-0 z-50 w-full min-w-[19rem] overflow-hidden rounded-xl border border-gray-200 bg-ui-popover shadow-xl shadow-black/10 dark:border-white/15 dark:shadow-black/40',
+  'absolute left-0 z-50 w-full min-w-[19rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-gray-200 bg-ui-popover shadow-xl shadow-black/10 dark:border-white/15 dark:shadow-black/40',
   placeAbove.value ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
 ].join(' '))
 
@@ -233,7 +233,7 @@ const panelClasses = computed(() => [
  * @returns The row classes: chosen, highlighted, or plain.
  */
 const rowClasses = (iso: string, index: number): string => {
-  const base = 'flex cursor-pointer select-none items-center gap-3 px-3 py-2 text-sm font-normal transition-colors duration-100'
+  const base = 'flex min-h-11 sm:min-h-0 cursor-pointer select-none items-center gap-3 px-3 py-2 text-sm font-normal transition-colors duration-100'
   if (iso === props.modelValue) {
     return `${base} bg-primary-50 text-gray-900 dark:bg-primary-500/20 dark:text-white`
   }

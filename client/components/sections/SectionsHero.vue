@@ -1,11 +1,11 @@
 <template>
-  <section class="bg-classic-page border-b border-classic-border" data-testid="sections-hero">
+  <UiSection :contained="false" padding="none" class="bg-classic-page border-b border-classic-border" data-testid="sections-hero">
     <UiContainer class="py-16 md:py-24">
-      <div class="text-center">
+      <UiStack gap="none" class="text-center">
         <!-- Eyebrow badge: the operator's line when set -->
-        <span class="inline-flex items-center px-3 py-1 mb-6 rounded-md bg-classic-brand-soft text-classic-brand text-sm font-medium" data-testid="hero-badge">
+        <UiText :as="UiTextTag.Span" tone="inherit" size="sm" weight="medium" class="inline-flex items-center self-center px-3 py-1 mb-6 rounded-md bg-classic-brand-soft text-classic-brand" data-testid="hero-badge">
           {{ badge }}
-        </span>
+        </UiText>
 
         <UiHeading :level="1" size="display" class="text-4xl sm:text-5xl lg:text-6xl mb-5 leading-tight tracking-tight text-classic-ink">
           {{ $t('hero.title') }}
@@ -16,21 +16,19 @@
         </UiText>
 
         <!-- Main action: the domain search -->
-        <div class="mb-5">
-          <SectionsDomainSearch />
-        </div>
+        <SectionsDomainSearch class="mb-5" />
 
         <!-- Secondary action -->
-        <UiButton :to="localePath(SITE_HOSTING_PATH)" variant="outline" size="lg" class="mb-14" data-testid="hero-secondary">
-          <span>{{ $t('hero.cta.secondary') }}</span>
+        <UiButton :to="localePath(SITE_HOSTING_PATH)" variant="outline" size="lg" class="self-center mb-14" data-testid="hero-secondary">
+          {{ $t('cta.button') }}
           <ArrowRight :size="18" :stroke-width="2" class="ml-2" />
         </UiButton>
 
         <!-- Figures: only the ones the operator configured -->
         <UiStatGroup v-if="stats.length > 0" :stats="stats" data-testid="hero-stats" />
-      </div>
+      </UiStack>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">
@@ -44,6 +42,7 @@
 import { ArrowRight } from 'lucide-vue-next'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Where a headline figure's value and caption come from. */
 interface StatDefinition {

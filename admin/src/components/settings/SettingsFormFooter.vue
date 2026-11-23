@@ -14,13 +14,16 @@
  * Cancel still discards them.
  *
  * Both buttons carry an icon (undo, check) and a short label, so the bar stays one row on a phone: below `sm` it has
- * smaller padding and 32px buttons. It floats 4px above the bottom edge of the scrolling area on every width.
+ * smaller padding, and both buttons are the small size. It floats 4px above the bottom edge of the scrolling area on every width.
  */
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
@@ -55,32 +58,32 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="glass-strong sticky bottom-1 z-30 rounded-card px-3 py-2 sm:px-6 sm:py-4">
-    <UiStack direction="row" align="center" justify="between" gap="sm">
-      <UiText v-if="status" :tone="UiTextTone.Secondary" :size="UiTextSize.Md" role="status" class="min-w-0 truncate" data-testid="settings-form-status">
-        {{ status }}
-      </UiText>
-      <UiStack direction="row" align="center" justify="end" gap="sm" class="ml-auto shrink-0">
-        <UiButton :icon="Icon.Undo"
-          type="button"
-          variant="secondary"
-          class="whitespace-nowrap max-sm:h-8 max-sm:px-3 max-sm:text-[0.8125rem]"
-          :disabled="!dirty || saving"
-          data-testid="settings-form-cancel"
-          @click="emit('cancel')"
-        >{{ cancelLabel ?? t('shared.cancel') }}
-        </UiButton>
-        <UiButton :icon="Icon.Check"
-          type="button"
-          variant="primary"
-          class="whitespace-nowrap max-sm:h-8 max-sm:px-3 max-sm:text-[0.8125rem]"
-          :loading="saving"
-          :disabled="!dirty || saveDisabled"
-          data-testid="settings-form-save"
-          @click="emit('save')"
-        >{{ saveLabel }}
-        </UiButton>
-      </UiStack>
+  <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Sm" class="glass-strong sticky bottom-1 z-30 rounded-card px-3 py-2 sm:px-6 sm:py-4">
+    <UiText v-if="status" :tone="UiTextTone.Secondary" :size="UiTextSize.Md" role="status" class="min-w-0 truncate" data-testid="settings-form-status">
+      {{ status }}
+    </UiText>
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.End" :gap="UiGap.Sm" class="ml-auto shrink-0">
+      <UiButton
+        :action="UiActionKind.Cancel"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Secondary"
+        :size="UiSize.Sm"
+        :disabled="!dirty || saving"
+        data-testid="settings-form-cancel"
+        @click="emit('cancel')"
+      >{{ cancelLabel ?? t('shared.cancel') }}
+      </UiButton>
+      <UiButton
+        :action="UiActionKind.Save"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Primary"
+        :size="UiSize.Sm"
+        :loading="saving"
+        :disabled="!dirty || saveDisabled"
+        data-testid="settings-form-save"
+        @click="emit('save')"
+      >{{ saveLabel }}
+      </UiButton>
     </UiStack>
-  </div>
+  </UiStack>
 </template>

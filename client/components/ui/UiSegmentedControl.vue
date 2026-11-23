@@ -70,7 +70,7 @@ const emit = defineEmits<{
 const TRACK_CLASSES = 'ui-segmented inline-grid max-w-full grid-flow-col auto-cols-fr gap-1 overflow-x-auto rounded-full border border-gray-200 bg-black/[0.04] p-1 dark:border-white/10 dark:bg-white/5'
 
 /** Structure shared by every segment; the focus ring is inset so it follows the pill and never halos. */
-const SEGMENT_BASE = 'ui-segment inline-flex items-center justify-center whitespace-nowrap rounded-full text-center font-semibold leading-none transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-offset-0'
+const SEGMENT_BASE = 'ui-segment inline-flex items-center justify-center min-h-11 whitespace-nowrap rounded-full text-center sm:min-h-0 font-semibold leading-none transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-offset-0'
 
 /** Padding and type size per size step. */
 const SEGMENT_SIZE_CLASSES: Record<UiSize, string> = {

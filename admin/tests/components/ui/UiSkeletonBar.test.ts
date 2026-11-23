@@ -12,6 +12,11 @@ describe('UiSkeletonBar', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['overflow-hidden', 'bg-surface-hover', 'h-3', 'w-full', 'rounded']))
   })
 
+  it('takes its width from the width prop and leaves it to the caller otherwise', () => {
+    expect(mount(UiSkeletonBar, { props: { width: 'two-thirds' } }).classes()).toContain('w-2/3')
+    expect(mount(UiSkeletonBar).classes().some((name) => name.startsWith('w-'))).toBe(false)
+  })
+
   it('sweeps a gradient band across the bar', () => {
     const band = mount(UiSkeletonBar).get('[data-testid="ui-skeleton-bar"] > div')
 

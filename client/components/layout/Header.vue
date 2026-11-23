@@ -1,10 +1,12 @@
 <template>
-  <header
+  <UiStack
+    :as="UiStackTag.Header"
+    gap="none"
     class="sticky top-0 z-40 border-b border-classic-border bg-classic-surface/95 backdrop-blur transition-shadow duration-200"
     :class="scrolled ? 'shadow-sm' : ''"
     data-testid="layout-header"
   >
-    <UiContainer>
+    <UiContainer class="w-full">
       <UiStack direction="row" align="center" gap="none" class="h-16 gap-3 xl:h-[72px] xl:gap-6">
         <!-- Brand: the operator's uploaded logo, or the mark beside the site name. -->
         <UiLink
@@ -24,7 +26,7 @@
 
         <!-- Desktop navigation (1280px and up). -->
         <UiStack
-          as="nav"
+          :as="UiStackTag.Nav"
           direction="row"
           align="center"
           justify="center"
@@ -67,20 +69,20 @@
           <template v-else>
             <!-- A plain anchor: under SSO the sign-in address is a server route the router cannot match. -->
             <UiButton
-              variant="bare"
+              variant="outline"
+              size="md"
               :href="signInHref"
-              :class="[HEADER_CONTROL, 'px-4 text-sm font-semibold']"
               data-testid="layout-sign-in"
             >
-              {{ t('nav.signIn') }}
+              {{ t('common.signIn') }}
             </UiButton>
             <UiButton
-              variant="bare"
+              variant="primary"
+              size="md"
               :to="localePath(SITE_HOSTING_PATH)"
-              :class="HEADER_PRIMARY"
               data-testid="layout-get-started"
             >
-              {{ t('nav.getStarted') }}
+              {{ t('common.getStarted') }}
             </UiButton>
           </template>
         </UiStack>
@@ -105,7 +107,7 @@
     </UiContainer>
 
     <LayoutHeaderDrawer v-model="menuOpen" :items="navItems" :path="route.path" />
-  </header>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -131,9 +133,10 @@ import { useAuthStore } from '~/stores/auth'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogStore } from '~/stores/catalog'
-import { HEADER_CONTROL, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_NAV_ITEM, HEADER_PRIMARY } from '~/utils/headerControl'
+import { HEADER_CONTROL, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_NAV_ITEM } from '~/utils/headerControl'
 import { activeHeaderKey, buildHeaderNav } from '~/utils/headerNav'
 import { SITE_HOME_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Scroll distance (px) after which the bar gets its shadow. */
 const SCROLL_SHADOW_THRESHOLD = 8

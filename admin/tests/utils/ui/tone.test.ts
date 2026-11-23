@@ -6,7 +6,6 @@ import {
   toneAlertClasses,
   toneBadgeClasses,
   toneDotClasses,
-  toneSolidClasses,
   toneTextClasses,
   UiTone,
 } from '@/utils/ui/tone'
@@ -18,7 +17,6 @@ describe('tone maps', () => {
     ['badge', toneBadgeClasses],
     ['alert', toneAlertClasses],
     ['text', toneTextClasses],
-    ['solid', toneSolidClasses],
     ['dot', toneDotClasses],
   ])('the %s map covers every tone with non-empty classes', (_name, map) => {
     for (const tone of tones) {
@@ -34,15 +32,6 @@ describe('tone maps', () => {
       expect(toneAlertClasses[tone]).toMatch(/border-/)
       expect(toneBadgeClasses[tone]).not.toContain('light:')
       expect(toneTextClasses[tone]).not.toContain('light:')
-    }
-  })
-
-  it('pairs solid status fills with the base surface colour as the label, never white or black', () => {
-    for (const tone of [UiTone.Success, UiTone.Warning, UiTone.Danger]) {
-      expect(toneSolidClasses[tone]).toContain('text-surface-base')
-    }
-    for (const tone of tones) {
-      expect(toneSolidClasses[tone]).not.toMatch(/text-(white|black|gray-)/)
     }
   })
 

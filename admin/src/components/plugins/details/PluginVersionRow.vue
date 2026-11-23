@@ -21,9 +21,13 @@ import { relationTo } from '@/components/plugins/details/versionOrder'
 import { formatDate } from '@/lib/format'
 import { PluginVersionStatus, VersionRelation } from '@/types/plugin'
 import type { RegistryPluginVersionDto } from '@/types/plugin'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiTextTag, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
-import { UiActionKind } from '@/utils/ui/actions'
+import { Icon } from '@/lib/icons'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -104,11 +108,11 @@ const installVariant = computed<UiButtonVariant>(() =>
 </script>
 
 <template>
-  <UiCard padding="sm" :data-testid="`plugin-version-${version.version}`">
-    <UiStack gap="sm">
-      <UiStack direction="row" align="center" justify="between" gap="md" wrap>
-        <UiStack direction="row" align="center" gap="sm" wrap>
-          <UiText tone="primary" size="lg" class="font-semibold font-mono">{{ version.version }}</UiText>
+  <UiCard :padding="UiCardPadding.Sm" :data-testid="`plugin-version-${version.version}`">
+    <UiStack :gap="UiGap.Sm">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Md" wrap>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-semibold font-mono">{{ version.version }}</UiText>
           <UiBadge :tone="statusTone[version.status]" small :data-testid="`plugin-version-status-${version.version}`">
             {{ t(`pluginDetails.versions.status.${version.status}`) }}
           </UiBadge>
@@ -144,11 +148,11 @@ const installVariant = computed<UiButtonVariant>(() =>
             {{ compatibilityText }}
           </UiBadge>
         </UiStack>
-        <UiButton :action="UiActionKind.Refresh"
+        <UiButton :icon="Icon.Download"
           v-if="!isInstalled && !isStaged"
-          type="button"
+          :type="UiButtonType.Button"
           :variant="installVariant"
-          size="sm"
+          :size="UiSize.Sm"
           :disabled="installBlocked"
           :data-testid="`plugin-version-install-${version.version}`"
           @click="emit('install', version.version)"
@@ -157,13 +161,13 @@ const installVariant = computed<UiButtonVariant>(() =>
         </UiButton>
       </UiStack>
 
-      <UiText tone="muted" size="xs" :data-testid="`plugin-version-date-${version.version}`">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" :data-testid="`plugin-version-date-${version.version}`">
         {{ t('pluginDetails.versions.published', { date: formatDate(version.publishedAt) }) }}
         ·
         {{ hostRangeText }}
         <template v-if="sdkText !== ''">
           ·
-          <span :data-testid="`plugin-version-sdk-${version.version}`">{{ sdkText }}</span>
+          <UiText :as="UiTextTag.Span" :data-testid="`plugin-version-sdk-${version.version}`">{{ sdkText }}</UiText>
         </template>
       </UiText>
 
@@ -172,25 +176,26 @@ const installVariant = computed<UiButtonVariant>(() =>
         :variant="isYanked ? UiTone.Danger : UiTone.Warning"
         :data-testid="`plugin-version-notice-${version.version}`"
       >
-        <UiStack gap="xs">
-          <span :data-testid="`plugin-version-reason-${version.version}`">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :as="UiTextTag.Span" :data-testid="`plugin-version-reason-${version.version}`">
             {{
               version.statusReason === null
                 ? t(`pluginDetails.versions.noReason.${version.status}`)
                 : t('pluginDetails.versions.reason', { reason: version.statusReason })
             }}
-          </span>
-          <span
+          </UiText>
+          <UiText
             v-if="version.replacementVersion !== null"
+            :as="UiTextTag.Span"
             :data-testid="`plugin-version-replacement-${version.version}`"
           >
             {{ t('pluginDetails.versions.replacement', { version: version.replacementVersion }) }}
-          </span>
+          </UiText>
         </UiStack>
       </UiAlert>
 
-      <UiStack gap="xs">
-        <UiText tone="secondary" size="sm" class="font-semibold">{{ t('pluginDetails.versions.changelog') }}</UiText>
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" class="font-semibold">{{ t('pluginDetails.versions.changelog') }}</UiText>
         <UiMarkdown
           :source="version.changelog"
           :empty="t('pluginDetails.versions.noChangelog')"
@@ -198,12 +203,12 @@ const installVariant = computed<UiButtonVariant>(() =>
         />
       </UiStack>
 
-      <UiStack gap="xs">
-        <UiText tone="secondary" size="sm" class="font-semibold">{{ t('pluginDetails.versions.permissions') }}</UiText>
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" class="font-semibold">{{ t('pluginDetails.versions.permissions') }}</UiText>
         <UiStack
           v-if="version.permissions.length > 0"
-          direction="row"
-          gap="xs"
+          :direction="UiDirection.Row"
+          :gap="UiGap.Xs"
           wrap
           :data-testid="`plugin-version-permissions-${version.version}`"
         >
@@ -211,7 +216,7 @@ const installVariant = computed<UiButtonVariant>(() =>
             {{ permission }}
           </UiBadge>
         </UiStack>
-        <UiText v-else tone="muted" size="sm" :data-testid="`plugin-version-no-permissions-${version.version}`">
+        <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" :data-testid="`plugin-version-no-permissions-${version.version}`">
           {{ t('pluginDetails.versions.noPermissions') }}
         </UiText>
       </UiStack>

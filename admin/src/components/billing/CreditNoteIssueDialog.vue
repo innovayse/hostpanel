@@ -28,7 +28,10 @@ import type { IssueCreditNotePayload } from '@/types/creditnote'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
-import { UiTextTone } from '@/utils/ui/text'
+import { UiGap, UiDirection, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translates a key into the active locale. */
@@ -207,23 +210,23 @@ const submit = (): void => {
     @close="emit('close')"
   >
     <UiStack>
-      <UiAlert variant="info" data-testid="billing-credit-note-dialog-explain">
+      <UiAlert :variant="UiTone.Info" data-testid="billing-credit-note-dialog-explain">
         {{ t('billing.creditNotes.explain') }}
       </UiAlert>
 
-      <UiAlert v-if="error" variant="danger" data-testid="billing-credit-note-dialog-error">
+      <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="billing-credit-note-dialog-error">
         {{ error }}
       </UiAlert>
 
-      <UiStack gap="sm">
-        <UiStack direction="row" justify="between">
+      <UiStack :gap="UiGap.Sm">
+        <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between">
           <UiText :tone="UiTextTone.Primary">{{ t('billing.creditNotes.lines') }}</UiText>
-          <UiButton :action="UiActionKind.Confirm" size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-use-invoice-lines" @click="useInvoiceLines">
+          <UiButton :action="UiActionKind.Confirm" :size="UiSize.Sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-use-invoice-lines" @click="useInvoiceLines">
             {{ t('billing.creditNotes.useInvoiceLines') }}
           </UiButton>
         </UiStack>
-        <UiText v-if="linesError" :tone="UiTextTone.Danger" size="sm" data-testid="billing-credit-note-lines-error">{{ linesError }}</UiText>
-        <UiGrid v-for="(line, index) in lines" :key="line.key" :columns="4" :data-testid="`billing-credit-note-line-${index}`">
+        <UiText v-if="linesError" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" data-testid="billing-credit-note-lines-error">{{ linesError }}</UiText>
+        <UiGrid v-for="(line, index) in lines" :key="line.key" :columns="4" :data-testid="`billing-credit-note-line-${index}`" container>
           <UiInput
             v-model="line.description"
             :placeholder="t('billing.creditNotes.descriptionPlaceholder')"
@@ -245,16 +248,16 @@ const submit = (): void => {
             :data-testid="`billing-credit-note-line-${index}-quantity`"
           />
           <UiButton :action="UiActionKind.Remove"
-            size="sm"
+            :size="UiSize.Sm"
             :variant="UiButtonVariant.Secondary"
             :disabled="lines.length === 1"
             :data-testid="`billing-credit-note-line-${index}-remove`"
             @click="removeLine(line.key)"
           >
-            {{ t('billing.creditNotes.removeLine') }}
+            {{ t('shared.remove') }}
           </UiButton>
         </UiGrid>
-        <UiButton :action="UiActionKind.Add" size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-add-line" @click="addLine">
+        <UiButton :action="UiActionKind.Add" :size="UiSize.Sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-add-line" @click="addLine">
           {{ t('billing.creditNotes.addLine') }}
         </UiButton>
       </UiStack>
@@ -292,16 +295,16 @@ const submit = (): void => {
         </template>
       </UiField>
 
-      <UiStack gap="xs" data-testid="billing-credit-note-totals">
+      <UiStack :gap="UiGap.Xs" data-testid="billing-credit-note-totals">
         <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(subTotal, invoice.currency) }}</UiText>
         <UiText>{{ t('billing.creditNotes.taxAt', { rate: invoice.amounts.taxRate }) }}: {{ formatPlainAmount(tax, invoice.currency) }}</UiText>
         <UiText :tone="UiTextTone.Primary" data-testid="billing-credit-note-total">
           {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(total, invoice.currency) }}
         </UiText>
-        <UiText :tone="UiTextTone.Muted" size="sm" data-testid="billing-credit-note-creditable">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="billing-credit-note-creditable">
           {{ t('billing.creditNotes.creditable', { amount: formatPlainAmount(creditable, invoice.currency) }) }}
         </UiText>
-        <UiText v-if="overCredit" :tone="UiTextTone.Danger" size="sm" data-testid="billing-credit-note-over">
+        <UiText v-if="overCredit" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" data-testid="billing-credit-note-over">
           {{ t('billing.creditNotes.overCredit') }}
         </UiText>
       </UiStack>
@@ -311,7 +314,7 @@ const submit = (): void => {
       <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-cancel" @click="emit('close')">
         {{ t('shared.cancel') }}
       </UiButton>
-      <UiButton :action="UiActionKind.Confirm" :loading="loading" :disabled="loading" data-testid="billing-credit-note-submit" @click="submit">
+      <UiButton :action="UiActionKind.Confirm" :variant="UiButtonVariant.Primary" :loading="loading" :disabled="loading" data-testid="billing-credit-note-submit" @click="submit">
         {{ t('billing.creditNotes.issue') }}
       </UiButton>
     </template>

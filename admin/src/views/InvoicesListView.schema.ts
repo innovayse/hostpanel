@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize, UiHideBelow } from '@/utils/ui/table'
 
 /** The invoices list. */
 const schema: ListSkeletonSchema = {
@@ -22,13 +22,13 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'invoice', label: 'shared.invoice', cardRole: UiCardRole.Title },
+      { key: 'invoice', label: 'shared.invoice', cardRole: UiCardRole.Title, kind: UiColumnKind.Id },
       { key: 'client', label: 'shared.clientName', hideBelow: UiHideBelow.Sm, size: UiColumnSize.Grow, cardRole: UiCardRole.Subtitle },
-      { key: 'date', label: 'shared.invoiceDate', hideBelow: UiHideBelow.Md },
-      { key: 'dueDate', label: 'shared.dueDate', hideBelow: UiHideBelow.Xl },
+      { key: 'date', label: 'shared.invoiceDate', hideBelow: UiHideBelow.Md, kind: UiColumnKind.Date },
+      { key: 'dueDate', label: 'shared.dueDate', hideBelow: UiHideBelow.Xl, kind: UiColumnKind.Date },
       { key: 'total', label: 'shared.total', numeric: true, hideBelow: UiHideBelow.Sm },
       { key: 'paymentMethod', label: 'shared.paymentMethod', hideBelow: UiHideBelow.Xl },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, size: UiColumnSize.Compact },
+      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

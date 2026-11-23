@@ -13,6 +13,7 @@ import { createTestI18n } from '../helpers/i18n'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** Ticket 4 of client 7, open, without replies. */
 const ticket = () =>
@@ -112,7 +113,7 @@ describe('ClientTicketDetailView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-ticket-feedback"]').text()).toBe('The ticket is locked.')
+    expect(toastMessages()).toContain('The ticket is locked.')
     expect(router.currentRoute.value.path).toBe('/clients/7/tickets/4')
   })
 

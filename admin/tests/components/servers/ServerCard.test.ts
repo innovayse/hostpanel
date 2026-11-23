@@ -10,6 +10,7 @@ import { serverDto } from '../../helpers/serverFixtures'
 import { mountWithApp } from '../../helpers/mount'
 import { formatDateTime } from '@/lib/format'
 import { Icon } from '@/lib/icons'
+import { ServerModuleSource } from '@/types/serverenums'
 
 /** Two row actions, so the card draws its menu trigger. */
 const actions: UiMenuAction[] = [{ label: 'Edit', icon: Icon.Edit, onSelect: () => undefined }, { label: 'Delete', icon: Icon.Trash, danger: true, onSelect: () => undefined }]
@@ -24,6 +25,17 @@ describe('ServerCard', () => {
     expect(wrapper.get('[data-testid="ui-progress-value"]').text()).toBe('12 / 100')
     expect(wrapper.get('[data-testid="server-state-1"]').text()).toBe('Online')
     expect(wrapper.find('[data-testid="server-actions-1"]').exists()).toBe(true)
+  })
+
+  it('names the module by the plugin that declares it, not by its id', () => {
+    const wrapper = mountWithApp(ServerCard, {
+      props: {
+        server: serverDto({ module: 'ExamplePanel' }),
+        moduleOptions: [{ id: 'ExamplePanel', name: 'Example Panel', source: ServerModuleSource.Plugin }],
+      },
+    })
+
+    expect(wrapper.get('[data-testid="servers-module-ExamplePanel"]').text()).toBe('Example Panel')
   })
 
   it('draws the facts of the server in a compact grid', () => {
@@ -62,7 +74,14 @@ describe('ServerCard', () => {
     const wrapper = mountWithApp(ServerCard, { props: { server: serverDto({ limits: { maxAccounts: null, isDefault: false, isDisabled: false } }) } })
 
     expect(wrapper.find('[data-testid="ui-progress-value"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('12')
+    expect(wrapper.text()).toContain('12 / Unlimited')
+  })
+
+  it('stretches to the height of its row with the state pinned to the bottom', () => {
+    const wrapper = mountWithApp(ServerCard, { props: { server: serverDto() } })
+
+    expect(wrapper.get('[data-testid="server-row-1"]').classes()).toEqual(expect.arrayContaining(['flex', 'h-full', 'flex-col']))
+    expect(wrapper.get('[data-testid="server-state-1"]').element.closest('.mt-auto')).not.toBeNull()
   })
 
   it('shows the running test in place of the state, as placeholder bars announced as busy', () => {

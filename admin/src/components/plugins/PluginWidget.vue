@@ -20,8 +20,11 @@ import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiCardPadding } from '@/utils/ui/card'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiGap } from '@/utils/ui/layout'
 
 /** How long a body may stay pending before the widget gives up on it. */
 const WIDGET_TIMEOUT_MS = 10_000
@@ -98,11 +101,12 @@ const heading = computed<string>(() =>
 <template>
   <UiCard :padding="UiCardPadding.Md" :data-testid="`plugin-widget-${testId}`">
     <UiStack>
-      <UiSectionHeader :level="2" variant="card">
+      <UiSectionHeader :level="2" :variant="UiHeadingVariant.Card">
         {{ heading }}
         <template #actions>
           <UiIconButton
             :label="t('plugins.pluginSlot.hide')"
+            :variant="UiButtonVariant.Ghost"
             :size="UiSize.Sm"
             :data-testid="`plugin-widget-hide-${testId}`"
             @click="emit('hide')"
@@ -121,7 +125,7 @@ const heading = computed<string>(() =>
         <slot />
         <template #fallback>
           <!-- The widget's body is drawn by the plugin, so its shape is not known: two lines stand in until it resolves -->
-          <UiStack gap="sm" aria-busy="true" :data-testid="`plugin-widget-loading-${testId}`">
+          <UiStack :gap="UiGap.Sm" aria-busy="true" :data-testid="`plugin-widget-loading-${testId}`">
             <UiSkeletonBar class="h-3.5 w-full rounded-md" aria-hidden="true" />
             <UiSkeletonBar class="h-3.5 w-2/3 rounded-md" aria-hidden="true" />
           </UiStack>

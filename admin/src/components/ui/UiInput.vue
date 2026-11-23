@@ -104,7 +104,7 @@ const wrapped = computed<boolean>(() => props.label !== undefined || hasIcon.val
 const inputRef = ref<HTMLInputElement | null>(null)
 
 /** Accessible name of the clear button. */
-const clearLabel = computed<string>(() => translate('ui.input.clearSearch'))
+const clearLabel = computed<string>(() => translate('shared.clear'))
 
 /** Takes the browser's own cancel mark off a search field: the kit draws its own clear button. */
 const searchResetClasses = '[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:appearance-none'
@@ -183,17 +183,21 @@ const onInput = (event: Event): void => {
       >
         <UiIcon :markup="revealed ? Icon.EyeOff : Icon.Eye" />
       </button>
-      <UiIconButton
+      <span
         v-if="clearable"
-        :label="clearLabel"
-        :size="UiSize.Xs"
-        :disabled="isDisabled"
-        class="absolute right-2.5 top-1/2 -translate-y-1/2"
-        data-testid="input-clear"
-        @click="clear"
+        class="absolute right-2.5 top-1/2 flex -translate-y-1/2 items-center"
+        data-testid="input-clear-slot"
       >
-        <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
-      </UiIconButton>
+        <UiIconButton
+          :label="clearLabel"
+          :size="UiSize.Xs"
+          :disabled="isDisabled"
+          data-testid="input-clear"
+          @click="clear"
+        >
+          <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
+        </UiIconButton>
+      </span>
     </div>
   </div>
   <input

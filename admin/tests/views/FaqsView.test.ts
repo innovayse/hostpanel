@@ -13,6 +13,7 @@ import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { renderedCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { storefrontHeadCaptions } from '../helpers/storefrontList'
+import { toastMessages } from '../helpers/toasts'
 import schema from '@/views/FaqsView.schema'
 
 vi.mock('vuedraggable', async () => {
@@ -115,7 +116,7 @@ describe('FaqsView', () => {
     })
   })
 
-  it('shows the API sentence when a delete is refused', async () => {
+  it('toasts the API sentence when a delete is refused', async () => {
     stubRouteTable({
       'GET /admin/faqs': () => json(entries),
       'DELETE /admin/faqs/1': () => problem('The entry is pinned.', 409),
@@ -127,7 +128,7 @@ describe('FaqsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="faqs-action-error"]').text()).toBe('The entry is pinned.')
+      expect(toastMessages()).toEqual(['The entry is pinned.'])
     })
   })
 

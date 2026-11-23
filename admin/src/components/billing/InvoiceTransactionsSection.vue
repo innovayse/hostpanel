@@ -6,10 +6,9 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -23,6 +22,7 @@ import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -43,74 +43,66 @@ const payments = computed<InvoiceTransaction[]>(() =>
 
 <template>
   <UiStack data-testid="billing-invoice-transactions">
-    <UiCard padding="md">
-      <UiStack gap="sm">
-        <UiHeading :level="3" variant="card">
-          {{ t('shared.transactions') }}
-        </UiHeading>
-        <UiTable
-          :empty-text="t('shared.noRecordsFound')"
-          :density="UiTableDensity.Compact"
-          :empty="payments.length === 0"
-          data-testid="billing-invoice-payments-table"
-        >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.date') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.paymentMethod') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.transactionId') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('shared.amount') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('shared.transactionFees') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
-          <UiTableBody divided>
-            <UiTableRow v-for="transaction in payments" :key="transaction.id" hoverable>
-              <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
-              <UiTableCell>{{ transaction.gateway }}</UiTableCell>
-              <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
-              <UiTableCell numeric>
-                <UiText tone="success">{{ formatPlainAmount(transaction.amount, invoice.currency) }}</UiText>
-              </UiTableCell>
-              <UiTableCell numeric muted>{{ formatPlainAmount(transaction.fees, invoice.currency) }}</UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
-      </UiStack>
-    </UiCard>
+    <UiDataTable
+      :empty-text="t('shared.noRecordsFound')"
+      :density="UiTableDensity.Compact"
+      :empty="payments.length === 0"
+      data-testid="billing-invoice-payments-table"
+    >
+      <template #header>
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('shared.transactions') }}</UiHeading>
+      </template>
+      <UiTableHead>
+        <UiTableRow>
+          <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.date') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.paymentMethod') }}</UiTableHeader>
+          <UiTableHeader>{{ t('shared.transactionId') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('shared.amount') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('shared.transactionFees') }}</UiTableHeader>
+        </UiTableRow>
+      </UiTableHead>
+      <UiTableBody>
+        <UiTableRow v-for="transaction in payments" :key="transaction.id" hoverable>
+          <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
+          <UiTableCell>{{ transaction.gateway }}</UiTableCell>
+          <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell numeric>
+            <UiText :tone="UiTextTone.Success">{{ formatPlainAmount(transaction.amount, invoice.currency) }}</UiText>
+          </UiTableCell>
+          <UiTableCell numeric muted>{{ formatPlainAmount(transaction.fees, invoice.currency) }}</UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
 
-    <UiCard padding="md">
-      <UiStack gap="sm">
-        <UiHeading :level="3" variant="card">
-          {{ t('shared.transactionHistory') }}
-        </UiHeading>
-        <UiTable
-          :empty-text="t('shared.noRecordsFound')"
-          :density="UiTableDensity.Compact"
-          :empty="allTransactions.length === 0"
-          data-testid="billing-invoice-history-table"
-        >
-          <UiTableHead>
-            <UiTableRow>
-              <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.date') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.transactionId') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.description') }}</UiTableHeader>
-            </UiTableRow>
-          </UiTableHead>
-          <UiTableBody divided>
-            <UiTableRow v-for="transaction in allTransactions" :key="transaction.id" hoverable>
-              <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
-              <UiTableCell>{{ transaction.gateway }}</UiTableCell>
-              <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge :tone="transactionTypeTone(transaction.type)">{{ transaction.type }}</UiBadge>
-              </UiTableCell>
-              <UiTableCell muted>{{ transaction.notes || EMPTY_VALUE }}</UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
-      </UiStack>
-    </UiCard>
+    <UiDataTable
+      :empty-text="t('shared.noRecordsFound')"
+      :density="UiTableDensity.Compact"
+      :empty="allTransactions.length === 0"
+      data-testid="billing-invoice-history-table"
+    >
+      <template #header>
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('shared.transactionHistory') }}</UiHeading>
+      </template>
+      <UiTableHead>
+        <UiTableRow>
+          <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.date') }}</UiTableHeader>
+          <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
+          <UiTableHeader>{{ t('shared.transactionId') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.description') }}</UiTableHeader>
+        </UiTableRow>
+      </UiTableHead>
+      <UiTableBody>
+        <UiTableRow v-for="transaction in allTransactions" :key="transaction.id" hoverable>
+          <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
+          <UiTableCell>{{ transaction.gateway }}</UiTableCell>
+          <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="transactionTypeTone(transaction.type)">{{ transaction.type }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell muted>{{ transaction.notes || EMPTY_VALUE }}</UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

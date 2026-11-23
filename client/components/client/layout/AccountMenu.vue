@@ -7,7 +7,7 @@
         :aria-expanded="open"
         aria-haspopup="menu"
         data-testid="client-account-trigger"
-        class="h-10 w-10 !p-0"
+        class="h-11 w-11 !p-0"
         @click="toggle"
       >
         <UiAvatar :first-name="firstName" :last-name="lastName" :email="email" size="sm" />
@@ -18,12 +18,12 @@
       <UiStack direction="row" align="center" gap="sm" class="min-w-0 px-3 py-2.5">
         <UiAvatar :first-name="firstName" :last-name="lastName" :email="email" />
         <UiStack gap="none" class="min-w-0">
-          <UiText as="span" size="sm" weight="semibold" truncate data-testid="client-account-name">{{ displayName }}</UiText>
-          <UiText as="span" size="xs" tone="muted" truncate data-testid="client-account-email">{{ email }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" weight="semibold" truncate data-testid="client-account-name">{{ displayName }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="muted" truncate data-testid="client-account-email">{{ email }}</UiText>
         </UiStack>
       </UiStack>
 
-      <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />
+      <UiDivider class="my-1" />
 
       <UiButton
         v-for="item in items"
@@ -41,22 +41,25 @@
       </UiButton>
 
       <template v-if="docsUrl">
-        <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />
+        <UiDivider class="my-1" />
 
-        <UiLink
+        <UiButton
+          variant="ghost"
           :href="docsUrl"
-          external
+          target="_blank"
+          rel="noopener noreferrer"
           role="menuitem"
-          class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-700 no-underline hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+          full-width
+          class="!justify-start gap-3"
           data-testid="client-account-help"
           @click="open = false"
         >
           <BookOpen :size="16" :stroke-width="2" aria-hidden="true" />
           {{ $t('client.nav.help') }}
-        </UiLink>
+        </UiButton>
       </template>
 
-      <div class="my-1 h-px bg-gray-200 dark:bg-white/10" />
+      <UiDivider class="my-1" />
 
       <UiButton
         variant="ghost"
@@ -67,7 +70,7 @@
         @click="onSignOut"
       >
         <LogOut :size="16" :stroke-width="2" aria-hidden="true" />
-        {{ $t('client.nav.signOut') }}
+        {{ $t('common.signOut') }}
       </UiButton>
     </template>
   </UiPopover>
@@ -84,6 +87,7 @@
  */
 import { BookOpen, LogOut } from 'lucide-vue-next'
 import type { ClientNavItem } from '~/types/clientnavitem'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ClientLayoutAccountMenu. */
 interface Props {

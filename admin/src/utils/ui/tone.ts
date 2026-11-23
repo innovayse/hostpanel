@@ -1,5 +1,5 @@
 /**
- * Semantic tones shared by the kit (badge, alert, stat tile, dialog confirm button).
+ * Semantic tones shared by the kit (badge, alert, stat tile).
  *
  * The tone vocabulary is a closed set, declared once as a const object plus a derived union:
  * `UiTone.Danger` is the named member, and a template may still pass the literal `"danger"`
@@ -52,20 +52,6 @@ export const toneTextClasses: Record<UiTone, string> = {
   success: 'text-status-green',
   warning: 'text-status-yellow',
   danger: 'text-status-red',
-}
-
-/**
- * Solid fill classes per tone (confirm buttons). The status fills are bright pastels in the dark theme
- * and deep tones in the light one, so the label is the page's base colour: dark on the pastel, near
- * white on the deep fill. The accent fill steps to a deeper blue in the light theme for the same reason.
- */
-export const toneSolidClasses: Record<UiTone, string> = {
-  neutral: 'bg-surface-hover text-text-primary hover:bg-border',
-  primary: 'bg-primary-400 light:bg-primary-600 text-surface-base hover:bg-primary-300 light:hover:bg-primary-700',
-  info: 'bg-primary-400 light:bg-primary-600 text-surface-base hover:bg-primary-300 light:hover:bg-primary-700',
-  success: 'bg-status-green text-surface-base hover:opacity-90',
-  warning: 'bg-status-yellow text-surface-base hover:opacity-90',
-  danger: 'bg-status-red text-surface-base hover:opacity-90',
 }
 
 /** Dot classes per tone (status dots inside a badge). */

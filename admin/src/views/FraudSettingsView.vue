@@ -18,7 +18,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import FraudNumberInput from '@/components/fraud/FraudNumberInput.vue'
 import FraudRiskBand from '@/components/fraud/FraudRiskBand.vue'
 import SettingsFormFooter from '@/components/settings/SettingsFormFooter.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { changedFraudSettingsCount, fraudSettingsErrors } from '@/lib/fraud'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { useFraudSettingsStore } from '@/stores/fraudSettings'
@@ -33,7 +33,7 @@ const { t } = useI18n()
 const store = useFraudSettingsStore()
 
 /** The result banner for a save. */
-const banner = useResultBanner()
+const banner = useOutcomeToast()
 
 /** The settings being edited, a copy of the stored ones; null until they are read. */
 const draft = ref<FraudSettings | null>(null)
@@ -142,13 +142,6 @@ onMounted(() => store.fetchSettings())
   <UiStack data-testid="fraud-settings-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiAlert
-      v-if="banner.message.value"
-      :variant="banner.isError.value ? UiTone.Danger : UiTone.Success"
-      data-testid="fraud-settings-result"
-    >
-      {{ banner.message.value }}
-    </UiAlert>
 
     <UiErrorState
       v-if="store.error"
@@ -247,8 +240,8 @@ onMounted(() => store.fetchSettings())
 
       <SettingsFormFooter
         v-if="!reading"
-        :save-label="t('shared.saveChanges')"
-        :cancel-label="t('settings.saveBar.discard')"
+        :save-label="t('shared.save')"
+        :cancel-label="t('shared.cancel')"
         :saving="store.saving"
         :dirty="changedCount > 0"
         :save-disabled="hasErrors"

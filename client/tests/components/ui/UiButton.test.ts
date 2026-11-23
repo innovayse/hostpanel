@@ -61,6 +61,17 @@ describe('UiButton', () => {
     expect(wrapper.classes()).toContain('w-full')
   })
 
+  it('is large-radius by default and fully rounded with pill, bare included', () => {
+    expect(mountWithKit(UiButton).classes()).toContain('rounded-lg')
+    expect(mountWithKit(UiButton, { props: { pill: true } }).classes()).toContain('rounded-full')
+    expect(mountWithKit(UiButton, { props: { pill: true } }).classes()).not.toContain('rounded-lg')
+    expect(mountWithKit(UiButton, { props: { variant: UiButtonVariant.Bare, pill: true } }).classes()).toContain('rounded-full')
+  })
+
+  it('is styled as the primary variant when no variant is given', () => {
+    expect(mountWithKit(UiButton).classes()).toEqual(expect.arrayContaining(['ui-btn-primary', 'bg-primary-700']))
+  })
+
   it('is disabled when disabled', () => {
     const wrapper = mountWithKit(UiButton, { props: { disabled: true } })
 
@@ -135,5 +146,16 @@ describe('UiButton', () => {
     const wrapper = mountWithKit(UiButton, { props: { variant: UiButtonVariant.Primary } })
 
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['ui-btn', 'ui-btn-primary']))
+  })
+
+  it('names a shortened label in full through its hint, as accessible name and tooltip', () => {
+    const hinted = mountWithKit(UiButton, { props: { hint: 'Download PDF' }, slots: { default: 'PDF' } })
+    const plain = mountWithKit(UiButton, { slots: { default: 'PDF' } })
+
+    expect(hinted.attributes('aria-label')).toBe('Download PDF')
+    expect(hinted.attributes('title')).toBe('Download PDF')
+    expect(hinted.text()).toBe('PDF')
+    expect(plain.attributes('aria-label')).toBeUndefined()
+    expect(plain.attributes('title')).toBeUndefined()
   })
 })

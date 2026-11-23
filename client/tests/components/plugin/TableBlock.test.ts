@@ -47,7 +47,7 @@ describe('PluginTableBlock', () => {
     const wrapper = mountBlocks([table])
     await settle()
 
-    expect(wrapper.get('[data-testid="plugin-table-empty"]').text()).toBe('plugins.tableEmpty')
+    expect(wrapper.get('[data-testid="ui-table-empty"]').text()).toContain('plugins.tableEmpty')
   })
 
   it('shows the API\'s sentence when the read fails', async () => {

@@ -6,7 +6,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The client services tab. */
 const schema: ListSkeletonSchema = {
@@ -18,13 +18,13 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'product', label: 'shared.productService', size: UiColumnSize.Grow },
       { key: 'domain', label: 'shared.domain' },
       { key: 'price', label: 'shared.price', numeric: true },
       { key: 'billingCycle', label: 'shared.billingCycle' },
-      { key: 'nextDue', label: 'clients.clientServicesList.nextDue' },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'nextDue', label: 'clients.clientServicesList.nextDue', kind: UiColumnKind.Date },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     ],
   },
 }

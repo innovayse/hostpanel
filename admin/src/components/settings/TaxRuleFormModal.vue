@@ -23,6 +23,10 @@ import { MAX_PERCENT, TAX_RATE_STEP, TAX_RULE_NAME_MAX_LENGTH, TAX_RULE_REGION_M
 import type { SaveTaxRulePayload, TaxRuleDto } from '@/types/taxrule'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -71,10 +75,10 @@ watch(() => props.rule, (current) => {
 }, { immediate: true })
 
 /** Title of the dialog. */
-const title = computed<string>(() => (isEditMode.value ? t('taxRules.form.editTitle') : t('taxRules.form.addTitle')))
+const title = computed<string>(() => (isEditMode.value ? t('taxRules.form.editTitle') : t('taxRules.addRule')))
 
 /** Label of the submit button. */
-const submitLabel = computed<string>(() => (isEditMode.value ? t('taxRules.form.save') : t('taxRules.form.add')))
+const submitLabel = computed<string>(() => (isEditMode.value ? t('shared.save') : t('shared.create')))
 
 /** Submits the form by emitting the save event with the current field values. */
 const handleSubmit = (): void => {
@@ -89,7 +93,7 @@ const handleSubmit = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="title" size="md" @close="emit('close')">
+  <UiDialog :title="title" :size="UiDialogSize.Md" @close="emit('close')">
     <UiForm stacked data-testid="tax-rule-form" @submit="handleSubmit">
       <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="tax-rule-form-error">
         {{ error }}
@@ -143,12 +147,12 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">
             {{ t('taxRules.form.enabled.label') }}
           </UiText>
-          <UiText tone="muted" size="sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
             {{ t('taxRules.form.enabled.hint') }}
           </UiText>
         </UiStack>
@@ -156,10 +160,10 @@ const handleSubmit = (): void => {
       </UiStack>
 
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="tax-rule-form-cancel" @click="emit('close')">
-          {{ t('taxRules.form.cancel') }}
+        <UiButton :action="UiActionKind.Cancel" type="button" :variant="UiButtonVariant.Secondary" data-testid="tax-rule-form-cancel" @click="emit('close')">
+          {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="tax-rule-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" :variant="UiButtonVariant.Primary" :loading="saving" data-testid="tax-rule-form-save">
           {{ submitLabel }}
         </UiButton>
       </UiFormActions>

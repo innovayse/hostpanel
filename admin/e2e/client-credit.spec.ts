@@ -75,6 +75,6 @@ test('a deduction larger than the balance shows the API sentence and leaves the 
   await fieldOf(page, 'client-credit-reason').fill('Too much')
   await page.getByTestId('client-credit-submit').click()
 
-  await expect(page.getByTestId('client-credit-feedback')).toHaveText(insufficientSentence)
+  await expect(toastWith(page, insufficientSentence)).toBeVisible()
   await expect(page.getByTestId('client-credit-balance')).toContainText('25.00')
 })

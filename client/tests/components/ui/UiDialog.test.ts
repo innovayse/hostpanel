@@ -87,7 +87,7 @@ describe('UiDialog', () => {
   it('sizes the panel', () => {
     const wrapper = open({ size: UiPanelSize.Xl })
 
-    expect(wrapper.find('[role="dialog"]').classes()).toContain('max-w-2xl')
+    expect(wrapper.find('[role="dialog"]').classes()).toContain('sm:max-w-2xl')
   })
 
   it('closes on Escape', async () => {
@@ -122,7 +122,7 @@ describe('UiDialog', () => {
   it('frames the panel with a border so it stays distinct from the page in dark mode', () => {
     const panel = open({ title: 'T' }).find('[role="dialog"]')
 
-    expect(panel.classes()).toEqual(expect.arrayContaining(['border', 'dark:border-white/15']))
+    expect(panel.classes()).toEqual(expect.arrayContaining(['sm:border', 'dark:border-white/15']))
   })
 
   it('keeps the page locked until the last of two nested dialogs closes', () => {
@@ -135,5 +135,26 @@ describe('UiDialog', () => {
     outer.unmount()
     mounted.shift()
     expect(document.body.classList.contains('overflow-hidden')).toBe(false)
+  })
+
+  it('keeps its padding small on a phone and wraps footer actions instead of overflowing', () => {
+    const wrapper = open({ title: 'T' }, { default: 'Body', footer: 'Foot' })
+
+    expect(wrapper.find('[data-testid="ui-dialog-body"]').classes()).toEqual(expect.arrayContaining(['p-4', 'sm:p-6']))
+    expect(wrapper.find('[role="dialog"] > div:last-child').classes()).toContain('flex-wrap')
+  })
+
+  it('is a full-screen sheet below sm and a centred card from sm', () => {
+    const wrapper = open({ title: 'T' }, { default: 'Body', footer: 'Foot' })
+
+    expect(wrapper.find('[role="dialog"]').classes()).toEqual(expect.arrayContaining(['h-dvh', 'w-full', 'rounded-none', 'sm:h-auto', 'sm:rounded-xl']))
+    expect(wrapper.find('[data-testid="ui-dialog"]').classes()).not.toContain('p-4')
+  })
+
+  it('keeps the centred card on a phone when sheet is off', () => {
+    const wrapper = open({ title: 'T', sheet: false })
+
+    expect(wrapper.find('[role="dialog"]').classes()).toEqual(expect.arrayContaining(['rounded-xl', 'max-h-[90dvh]']))
+    expect(wrapper.find('[data-testid="ui-dialog"]').classes()).toContain('p-4')
   })
 })

@@ -12,8 +12,7 @@
             <UiStack gap="none">
               <UiStack direction="row" align="center" gap="xs" wrap>
                 <UiText v-if="method.detailsAvailable" size="sm" weight="medium">
-                  {{ method.brand || $t('client.storedMethods.card') }}
-                  <span v-if="method.last4">•••• {{ method.last4 }}</span>
+                  {{ method.brand || $t('client.storedMethods.card') }}{{ method.last4 ? ` •••• ${method.last4}` : '' }}
                 </UiText>
                 <UiText v-else size="sm" tone="subtle" :data-testid="`stored-method-unavailable-${method.consentId}`">
                   {{ $t('client.storedMethods.detailsUnavailable') }}
@@ -50,7 +49,7 @@
                 @click="pendingRevokeId = method.consentId"
               >
                 <Trash2 :size="13" :stroke-width="2" class="mr-1" />
-                {{ $t('client.storedMethods.revoke') }}
+                {{ $t('common.remove') }}
               </UiButton>
             </UiStack>
           </UiStack>
@@ -85,6 +84,7 @@
       <UiAlert v-if="success" variant="success" data-testid="stored-methods-success">{{ success }}</UiAlert>
       <UiStack direction="row" gap="none">
         <UiButton
+          variant="primary"
           :loading="starting"
           :disabled="!selectedModule || !consent || !gatewayOptions.length"
           data-testid="stored-methods-start"
@@ -100,7 +100,7 @@
       :open="pendingRevokeId !== null"
       :title="$t('client.storedMethods.revokeConfirm')"
       :description="$t('client.storedMethods.revokeConfirmDesc')"
-      :confirm-label="$t('client.storedMethods.revoke')"
+      :confirm-label="$t('common.remove')"
       :loading="revokingId !== null"
       variant="danger"
       @confirm="onConfirmRevoke"

@@ -1,6 +1,4 @@
 {
-  "save": "Guardar",
-  "signOut": "Cerrar sesión",
   "admin": "Administración",
   "notifications": "Notificaciones",
   "notificationsWithCount": "Notificaciones, {count} nuevas",

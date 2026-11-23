@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiGrid from '~/components/ui/UiGrid.vue'
-import { UiGap, UiGridColumns } from '~/utils/ui/enums'
+import { UiGap, UiGridColumns, UiGridTag } from '~/utils/ui/enums'
 
 describe('UiGrid', () => {
   it('is a grid with the default preset and gap and renders its slot', () => {
@@ -35,7 +35,7 @@ describe('UiGrid', () => {
   })
 
   it('renders the requested tag', () => {
-    expect(mountWithKit(UiGrid, { props: { as: 'ul' } }).element.tagName).toBe('UL')
+    expect(mountWithKit(UiGrid, { props: { as: UiGridTag.Ul } }).element.tagName).toBe('UL')
   })
 
   it('fits as many columns as the width allows for the auto preset', () => {

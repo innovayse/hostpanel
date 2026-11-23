@@ -11,10 +11,6 @@
     "unknownBody": "We could not reach the bank to confirm your payment status right now. If it went through, your order or invoice will update automatically shortly. Please do not pay again until then. Check again below.",
     "missingTitle": "No payment to check",
     "missingBody": "This page didn't receive a payment reference, so there's nothing to verify here. If you were sent here after paying, check your invoices below.",
-    "retry": "Check again",
-    "goToOrder": "Continue",
-    "goToInvoice": "Back to invoice",
-    "viewInvoices": "View invoices",
-    "tryAgain": "Try paying again"
+    "viewInvoices": "View invoices"
   }
 }

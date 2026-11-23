@@ -89,7 +89,7 @@ describe('ClientLogView', () => {
 
     expect(listUrls(mock)[0]).toBe('/api/clients/7/activity-logs?page=1&pageSize=25')
     expect(wrapper.get('[data-testid="client-log-table"]').text()).toContain('Updated the profile')
-    expect(wrapper.get('[data-testid="client-log-count"]').text()).toContain('1')
+    expect(wrapper.get('[data-testid="client-log-table"]').text()).toContain('Ada Admin')
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {

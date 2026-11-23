@@ -10,7 +10,7 @@ import PluginBlocks from '@/components/plugins/view/PluginBlocks.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import type { PluginBlock as PluginBlockData, PluginTabsBlock } from '@/types/pluginview'
-import { UiAlignItems, UiGap } from '@/utils/ui/layout'
+import { UiAlignItems, UiGap, UiDirection } from '@/utils/ui/layout'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** Props for PluginTabsBlock. */
@@ -32,7 +32,7 @@ const openBlocks = computed<readonly PluginBlockData[]>(() => props.block.tabs.f
 
 <template>
   <UiStack :gap="UiGap.Md" data-testid="plugin-tabs">
-    <UiStack direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
+    <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
       <UiTabs v-model="active" :items="tabs" class="min-w-0 flex-1" />
       <PluginActionBlock v-for="(action, position) in block.actions ?? []" :key="`${position}-${action.label}`" :block="action" />
     </UiStack>

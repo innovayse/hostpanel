@@ -117,11 +117,14 @@ describe('ClientLayout', () => {
     expect(wrapper.get('[data-testid="client-tab-summary"]').attributes('aria-selected')).toBe('true')
   })
 
-  it('returns to the clients list with the back pill in the header card', async () => {
+  it('returns to the clients list with the back pill on a row of its own above the identity row', async () => {
     const wrapper = await mountLoaded()
     const back = wrapper.get('[data-testid="client-layout-back"]')
 
     expect(back.attributes('href')).toBe('/clients')
     expect(back.text()).toBe('Clients')
+    const identityRow = back.element.nextElementSibling
+    expect(identityRow?.contains(wrapper.get('[data-testid="client-layout-avatar"]').element)).toBe(true)
+    expect(identityRow?.contains(back.element)).toBe(false)
   })
 })

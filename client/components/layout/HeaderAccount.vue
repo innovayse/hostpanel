@@ -34,7 +34,7 @@
         <UiAvatar :first-name="firstName" :last-name="lastName" :email="email" />
         <UiStack gap="none" class="min-w-0">
           <UiText
-            as="span"
+            :as="UiTextTag.Span"
             size="sm"
             weight="semibold"
             tone="inherit"
@@ -44,7 +44,7 @@
           >
             {{ displayName }}
           </UiText>
-          <UiText as="span" size="xs" tone="inherit" truncate class="text-classic-muted">{{ email }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="inherit" truncate class="text-classic-muted">{{ email }}</UiText>
         </UiStack>
       </UiStack>
 
@@ -62,7 +62,7 @@
         @click="close"
       >
         <component :is="link.icon" :size="16" :stroke-width="2" class="shrink-0 text-classic-muted" aria-hidden="true" />
-        <UiText as="span" size="sm" tone="inherit" truncate>{{ link.label }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" truncate>{{ link.label }}</UiText>
       </UiLink>
 
       <UiDivider class="my-1" />
@@ -75,7 +75,7 @@
         @click="onSignOut"
       >
         <LogOut :size="16" :stroke-width="2" class="shrink-0" aria-hidden="true" />
-        <UiText as="span" size="sm" tone="inherit" truncate>{{ t('client.nav.signOut') }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" truncate>{{ t('common.signOut') }}</UiText>
       </UiButton>
     </UiStack>
   </UiStack>
@@ -97,6 +97,7 @@ import type { ComponentPublicInstance } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { HEADER_CONTROL, HEADER_MENU_ROW } from '~/utils/headerControl'
 import { buildAccountLinks } from '~/utils/headerAccountLinks'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Id of the panel, referenced by the trigger's `aria-controls`. */
 const PANEL_ID = 'header-account-panel'

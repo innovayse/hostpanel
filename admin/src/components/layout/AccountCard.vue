@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
  * The signed-in account at the foot of the sidebar: an initials avatar, the name, the role, and
- * the account menu (settings, sign-out) behind the avatar.
+ * the account menu (settings, sign-out) behind a "more" button, sized and padded like a navigation entry.
  *
  * Naming the account lets an operator tell which account they are acting as, which matters on a panel
- * where several people share one screen. In the icon rail only the avatar is drawn, sized (32px) to sit inside the
- * rail's 40px tile with its border and padding.
+ * where several people share one screen. In the icon rail only the avatar is drawn, and it is the menu trigger.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import AccountAvatar from '@/components/layout/AccountAvatar.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -17,9 +17,10 @@ import { AppRoute } from '@/lib/routes'
 import { useAuthStore } from '@/stores/auth'
 import { initialsOf } from '@/lib/format'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
 import { FloatingAlign } from '@/utils/ui/floating'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 
 /** Props of the account card. */
 defineProps<{
@@ -61,34 +62,29 @@ const signOut = async (): Promise<void> => {
 /** The account menu: the settings page, then the sign-out action (the menu puts the destructive one last). */
 const accountActions = computed<UiMenuAction[]>(() => [
   { label: t('nav.settings'), icon: Icon.Settings, to: AppRoute.Settings, testid: 'sidebar-settings' },
-  { label: t('common.signOut'), icon: Icon.SignOut, danger: true, onSelect: signOut, testid: 'sidebar-sign-out' },
+  { label: t('shared.signOut'), icon: Icon.SignOut, danger: true, onSelect: signOut, testid: 'sidebar-sign-out' },
 ])
 </script>
 
 <template>
   <UiStack
-    direction="row"
-    align="center"
-    gap="none"
-    class="gap-2.5 border-border bg-surface-row"
-    :class="rail ? 'justify-center rounded-control border p-0.5' : 'rounded-2xl border p-3'"
+    :direction="UiDirection.Row"
+    :align="UiAlignItems.Center"
+    :gap="UiGap.None"
+    class="border-border bg-surface-row"
+    :class="rail ? 'justify-center rounded-control border p-0.5' : 'gap-3 rounded-control border px-3 py-1'"
     data-testid="account-card"
   >
-    <!-- The avatar is the menu trigger (settings, sign-out), so the folded rail reaches them too. -->
-    <UiMenu :actions="accountActions" :align="FloatingAlign.Start" :aria-label="t('layout.userMenu')" testid="sidebar-user-menu">
-      <UiText
-        :as="UiTextTag.Span"
-        :tone="UiTextTone.Plain"
-        class="grid shrink-0 place-items-center rounded-full bg-avatar-bg font-bold text-avatar-fg"
-        :class="rail ? 'size-8 text-xs' : 'size-9 text-[0.8125rem]'"
-        data-testid="account-avatar"
-      >
-        {{ initials }}
-      </UiText>
-    </UiMenu>
-    <UiStack v-if="!rail" gap="none" class="min-w-0 flex-1">
+    <AccountAvatar v-if="!rail" :initials="initials" />
+    <UiStack v-if="!rail" :gap="UiGap.None" class="min-w-0 flex-1">
       <UiText :size="UiTextSize.Sm" class="truncate font-semibold" :title="accountEmail" data-testid="account-name">{{ accountLabel }}</UiText>
       <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="truncate" :title="roleLabel" data-testid="account-role">{{ roleLabel }}</UiText>
     </UiStack>
+    <!-- The kit's "more" button opens the account menu; the folded rail has no room beside the avatar, so there the avatar is the trigger. -->
+    <UiMenu :actions="accountActions" :align="rail ? FloatingAlign.Start : FloatingAlign.End" :aria-label="t('layout.userMenu')" testid="sidebar-user-menu">
+      <template v-if="rail" #default>
+        <AccountAvatar :initials="initials" rail />
+      </template>
+    </UiMenu>
   </UiStack>
 </template>

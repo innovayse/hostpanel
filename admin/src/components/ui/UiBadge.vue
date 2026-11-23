@@ -4,7 +4,8 @@
  *
  * A tint of the status colour behind a readable label (12px, semibold, no border), so the status is always named in text and never
  * carried by colour alone. `tone` colours it from the theme tokens; `dot` prepends a status dot; `marker` draws the dot alone, with
- * no text, for a place too small for one (an unread marker on an icon).
+ * no text, for a place too small for one (an unread marker on an icon). A long label wraps inside the pill over several lines at
+ * the width the parent allows; the corner radius keeps a one line badge a capsule without turning a tall one into an oval.
  */
 import { computed } from 'vue'
 import { toneBadgeClasses, toneDotClasses } from '@/utils/ui/tone'
@@ -41,10 +42,10 @@ const sizeClasses = computed<string>(() => (props.small ? 'px-1.5 py-0 text-[0.6
   <span v-if="marker" class="block h-2.5 w-2.5 rounded-full" :class="dotClasses" />
   <span
     v-else
-    class="inline-flex w-fit max-w-full items-center gap-1.5 rounded-pill font-semibold whitespace-nowrap"
+    class="inline-flex w-fit min-w-0 max-w-full items-center gap-1.5 rounded-2xl font-semibold whitespace-normal break-words"
     :class="[toneClasses, sizeClasses]"
   >
-    <span v-if="dot" class="w-1.5 h-1.5 rounded-full" :class="dotClasses" />
+    <span v-if="dot" class="h-1.5 w-1.5 shrink-0 rounded-full" :class="dotClasses" />
     <slot />
   </span>
 </template>

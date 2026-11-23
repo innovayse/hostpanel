@@ -4,12 +4,13 @@
  *
  * Shown in the sidebar footer and on the Settings page. Both read the version store, which the
  * layout loads once; the line stays absent until the version is known, and a failed load leaves
- * it absent, so a refusal never becomes an error.
+ * it absent, so a refusal never becomes an error. A line wider than its place is cut with an ellipsis.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiText from '@/components/ui/UiText.vue'
 import { useVersionStore } from '@/stores/version'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props of the version label. */
 withDefaults(defineProps<{
@@ -30,5 +31,5 @@ const version = computed<string>(() => versionStore.version)
 </script>
 
 <template>
-  <UiText v-if="version" tone="muted" size="sm" :data-testid="testid">{{ t('layout.version.label', { version }) }}</UiText>
+  <UiText v-if="version" truncate :tone="UiTextTone.Muted" :size="UiTextSize.Sm" :data-testid="testid">{{ t('layout.version.label', { version }) }}</UiText>
 </template>

@@ -122,6 +122,11 @@ describe('EmailCampaignFormView, a new campaign', () => {
 
     expect(wrapper.find('[data-testid="email-campaign-segment-1-type"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="email-campaign-save"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="email-campaign-save"]').text()).toBe('Save')
+    expect(wrapper.get('[data-testid="email-campaign-save"]').attributes('title')).toBe('Save draft')
+    expect(wrapper.get('[data-testid="email-campaign-schedule"]').text()).toBe('Schedule')
+    expect(wrapper.get('[data-testid="email-campaign-send-now"]').text()).toBe('Send')
+    expect(wrapper.get('[data-testid="email-campaign-add-segment"]').text()).toBe('Add rule')
 
     await fill(wrapper)
 

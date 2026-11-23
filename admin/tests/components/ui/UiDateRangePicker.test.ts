@@ -230,4 +230,13 @@ describe('UiDateRangePicker on a phone', () => {
     expect(wrapper.find('[data-testid="date-range-prev"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
   })
+
+  it('lets the month and year selects shrink, so the header fits a narrow popup', async () => {
+    const wrapper = mountPicker(null)
+
+    await wrapper.get('input').trigger('click')
+
+    expect(wrapper.get('[data-testid="date-range-next-selects"]').classes()).toContain('min-w-0')
+    expect(wrapper.get('[data-testid="date-range-next-selects"] .w-\\[140px\\]').classes()).toContain('min-w-0')
+  })
 })

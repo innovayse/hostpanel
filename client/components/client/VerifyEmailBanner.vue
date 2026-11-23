@@ -5,7 +5,7 @@
     :title="$t('client.verifyEmail.title')"
     data-testid="verify-email-banner"
   >
-    <span data-testid="verify-email-message">{{ store.resendMessage || $t('client.verifyEmail.body') }}</span>
+    <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" data-testid="verify-email-message">{{ store.resendMessage || $t('client.verifyEmail.body') }}</UiText>
 
     <template #action>
       <UiButton
@@ -31,7 +31,7 @@
  */
 import { useAuthStore } from '~/stores/auth'
 import { ActionOutcome } from '~/types/actionoutcome'
-import { UiAlertVariant } from '~/utils/ui/enums'
+import { UiAlertVariant, UiTextTag } from '~/utils/ui/enums'
 
 /** Auth store; owns the verification state, the resend request and its sentence. */
 const store = useAuthStore()

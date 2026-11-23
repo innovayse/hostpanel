@@ -21,6 +21,9 @@ import UiText from '@/components/ui/UiText.vue'
 import { BRAND_FONT_OPTIONS, previewClass } from '@/lib/brandFonts'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -67,11 +70,11 @@ const fontOptions = computed(() => [
   >
     <template v-for="field in FIELDS" :key="field.key">
       <SettingNotSeeded v-if="!field.draft.setting.value" :setting-key="field.key" :env-name="field.env" />
-      <UiStack v-else gap="xs">
-        <UiText tone="secondary" size="md">
+      <UiStack v-else :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t(field.labelKey) }}
         </UiText>
-        <UiStack direction="row" align="center">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center">
           <UiSelect
             v-model="field.draft.value.value"
             :options="fontOptions"
@@ -85,12 +88,12 @@ const fontOptions = computed(() => [
     </template>
 
     <!-- The pair as the storefront will set it: a heading in the heading face, a line in the body face. -->
-    <UiCard padding="md" elevated class="md:col-span-2" data-testid="typography-preview">
-      <UiStack v-for="sampleKey in SAMPLE_KEYS" :key="sampleKey" gap="xs" class="mb-2 last:mb-0">
-        <UiText tone="primary" size="lg" class="font-bold" :class="previewClass(heading.value.value)">
+    <UiCard :padding="UiCardPadding.Md" elevated class="md:col-span-2" data-testid="typography-preview">
+      <UiStack v-for="sampleKey in SAMPLE_KEYS" :key="sampleKey" :gap="UiGap.Xs" class="mb-2 last:mb-0">
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-bold" :class="previewClass(heading.value.value)">
           {{ t(sampleKey) }}
         </UiText>
-        <UiText tone="secondary" size="md" :class="previewClass(body.value.value)">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" :class="previewClass(body.value.value)">
           {{ t('settings.typography.sampleBody') }}
         </UiText>
       </UiStack>

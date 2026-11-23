@@ -41,10 +41,9 @@ import UiField from '@/components/ui/UiField.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
@@ -53,6 +52,7 @@ import type { PluginActionOutcome } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -81,10 +81,7 @@ const restarting = ref(false)
 const uploadOpen = ref(false)
 
 /** The outcome line of the last purge. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** The processing dialog's state: every install, update and upload runs behind it. */
 const processing = usePluginProcessing()
@@ -95,7 +92,6 @@ const processing = usePluginProcessing()
  * @param id - Id of the plugin whose data to delete.
  */
 const handlePurge = async (id: string): Promise<void> => {
-  feedback.clear()
   purgingId.value = id
   const ok = await store.purge(id)
   purgingId.value = null
@@ -386,7 +382,7 @@ onMounted(() => Promise.all([
 </script>
 
 <template>
-  <UiStack gap="lg" class="w-full">
+  <UiStack :gap="UiGap.Lg">
     <UiPageHeader :actions="headerActions"
       :title="t(navTitleKey(AppRoute.Plugins))"
       :subtitle="store.installed.length > 0
@@ -406,7 +402,6 @@ onMounted(() => Promise.all([
       @update:model-value="selectTab"
     />
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugins-feedback" />
 
     <!-- Browse -->
     <template v-if="tab === PluginsTab.Browse">
@@ -499,7 +494,7 @@ onMounted(() => Promise.all([
       :variant="UiDialogVariant.Confirm"
       :title="t('plugins.plugins.confirmUpdateTitle')"
       :message="t('plugins.plugins.confirmUpdateMessage', { id: pendingUpdate?.id ?? '', version: pendingUpdate?.version ?? '' })"
-      :confirm-label="t('plugins.plugins.confirmUpdate')"
+      :confirm-label="t('shared.update')"
       :loading="pendingUpdate !== null && store.isBusy(pendingUpdate.id)"
       :tone="UiTone.Primary"
       :size="UiDialogSize.Lg"
@@ -520,7 +515,7 @@ onMounted(() => Promise.all([
       :variant="UiDialogVariant.Confirm"
       :title="t('plugins.plugins.confirmDowngradeTitle')"
       :message="store.actionError ?? t('plugins.plugins.confirmDowngradeMessage')"
-      :confirm-label="t('plugins.plugins.forceDowngrade')"
+      :confirm-label="t('pluginDetails.versions.action.older')"
       :tone="UiTone.Warning"
       data-testid="plugins-downgrade-dialog"
       @confirm="handleForceDowngrade"

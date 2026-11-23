@@ -72,7 +72,7 @@ describe('PartnerFormView', () => {
 
     expect((wrapper.get('[data-testid="partner-form-name"]').element as HTMLInputElement).value).toBe('Acme')
     expect((wrapper.get('[data-testid="partner-form-url"]').element as HTMLInputElement).value).toBe('https://acme.example.com')
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save')
 
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
     await vi.waitFor(() => {

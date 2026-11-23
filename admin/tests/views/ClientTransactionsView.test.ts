@@ -17,6 +17,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The one-transaction ledger of client 7. */
 const ledger = () =>
@@ -122,7 +123,7 @@ describe('ClientTransactionsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-transactions-feedback"]').text()).toBe('The transaction is reconciled.')
+    expect(toastMessages()).toContain('The transaction is reconciled.')
     expect(wrapper.find('[data-testid="client-transactions-error"]').exists()).toBe(false)
   })
 

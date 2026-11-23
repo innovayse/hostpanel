@@ -39,6 +39,11 @@ import { AppRoute } from '@/lib/routes'
 import { REDIRECT_QUERY_PARAM, safeRedirectTarget } from '@/lib/redirectTarget'
 import { UiActionKind } from '@/utils/ui/actions'
 import { Icon } from '@/lib/icons'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -221,11 +226,11 @@ onMounted(async () => {
     <template #banner>
       <DemoBanner />
     </template>
-    <UiStack gap="md">
+    <UiStack :gap="UiGap.Md">
       <!-- First-run notice: shown before and after sign-in, because it is true either way. -->
       <UiAlert
         v-if="authStore.setupRequired && !offerBootstrap"
-        variant="warning"
+        :variant="UiTone.Warning"
         data-testid="login-setup-notice"
       >
         {{ t('auth.login.noAccountHoldsTheAdmin') }}
@@ -234,14 +239,14 @@ onMounted(async () => {
       <!-- Signed in, but not as an Admin: say so and offer a way out instead of the panel. -->
       <UiAlert
         v-if="authStore.isAuthenticated && !authStore.isAdmin && !authStore.setupRequired"
-        variant="error"
+        :variant="UiTone.Danger"
         data-testid="login-not-admin"
       >
         {{ t('auth.login.notAnAdmin') }}
       </UiAlert>
 
       <!-- Whatever went wrong, in the API's own words. -->
-      <UiAlert v-if="authStore.error" data-testid="login-error" variant="error">
+      <UiAlert v-if="authStore.error" data-testid="login-error" :variant="UiTone.Danger">
         {{ authStore.error }}
       </UiAlert>
 
@@ -251,18 +256,18 @@ onMounted(async () => {
       <!-- Mode lookup failed. Retry is the recovery action; it re-requests, not reloads. -->
       <UiButton :action="UiActionKind.Refresh"
         v-else-if="authStore.mode === null"
-        variant="secondary"
+        :variant="UiButtonVariant.Secondary"
         block
-        type="button"
+        :type="UiButtonType.Button"
         data-testid="login-retry"
         @click="handleRetryMode"
       >
-        {{ t('auth.login.tryAgain') }}
+        {{ t('shared.retry') }}
       </UiButton>
 
       <!-- Signed in, Admin unclaimed: the one call that claims it. -->
-      <UiStack v-else-if="offerBootstrap" gap="md">
-        <UiText tone="secondary" size="md">
+      <UiStack v-else-if="offerBootstrap" :gap="UiGap.Md">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t('auth.login.signedInAsEmailNobody', { email: authStore.user?.email }) }}
         </UiText>
 
@@ -272,7 +277,7 @@ onMounted(async () => {
           whoever claimed first would own a box that was reachable before its owner had
           finished configuring it.
         -->
-        <UiText tone="secondary" size="md">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t('auth.login.theApiPrintedASetup') }}
           {{ t('auth.login.logsCommand') }}
           {{ t('auth.login.andPasteItHereRestarting') }}
@@ -288,9 +293,9 @@ onMounted(async () => {
         />
 
         <UiButton :icon="Icon.ShieldCheck"
-          variant="primary"
+          :variant="UiButtonVariant.Primary"
           block
-          type="button"
+          :type="UiButtonType.Button"
           :loading="authStore.loading"
           data-testid="login-claim-admin"
           @click="handleClaimAdmin"
@@ -298,9 +303,9 @@ onMounted(async () => {
           {{ t('auth.login.claimTheAdminRole') }}
         </UiButton>
         <UiButton :action="UiActionKind.Next"
-          variant="secondary"
+          :variant="UiButtonVariant.Secondary"
           block
-          type="button"
+          :type="UiButtonType.Button"
           data-testid="login-skip"
           @click="handleSkip"
         >
@@ -314,7 +319,7 @@ onMounted(async () => {
         stacked
         @submit.prevent="handleTwoFactor"
       >
-        <UiText tone="secondary" size="md">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t('auth.login.enterTheCurrentCodeFrom') }}
         </UiText>
         <UiInput
@@ -330,22 +335,24 @@ onMounted(async () => {
           data-testid="login-totp"
         />
         <UiButton :action="UiActionKind.Confirm"
-          variant="primary"
+          :variant="UiButtonVariant.Primary"
           block
-          type="submit"
+          :type="UiButtonType.Submit"
           :loading="authStore.loading"
           data-testid="login-totp-submit"
         >
           {{ t('auth.login.verifyCode') }}
         </UiButton>
         <UiButton :action="UiActionKind.Cancel"
-          variant="secondary"
+          :variant="UiButtonVariant.Secondary"
           block
-          type="button"
+          :type="UiButtonType.Button"
           data-testid="login-totp-cancel"
+          :title="t('auth.login.useADifferentAccount')"
+          :aria-label="t('auth.login.useADifferentAccount')"
           @click="handleCancelTwoFactor"
         >
-          {{ t('auth.login.useADifferentAccount') }}
+          {{ t('auth.login.switchAccount') }}
         </UiButton>
       </UiForm>
 
@@ -359,7 +366,7 @@ onMounted(async () => {
           v-model="email"
           data-testid="login-email"
           :label="t('auth.login.emailAddress')"
-          type="email"
+          :type="UiInputType.Email"
           autocomplete="username"
           :placeholder="t('auth.login.emailPlaceholder')"
           required
@@ -370,7 +377,7 @@ onMounted(async () => {
           v-model="password"
           data-testid="login-password"
           :label="t('shared.password')"
-          type="password"
+          :type="UiInputType.Password"
           autocomplete="current-password"
           :placeholder="t('auth.login.yourPassword')"
           required
@@ -385,13 +392,13 @@ onMounted(async () => {
         />
 
         <UiButton :action="UiActionKind.Next"
-          variant="primary"
+          :variant="UiButtonVariant.Primary"
           block
           data-testid="login-submit"
-          type="submit"
+          :type="UiButtonType.Submit"
           :loading="authStore.loading"
         >
-          {{ t('auth.login.signIn') }}
+          {{ t('shared.signIn') }}
         </UiButton>
 
         <!--
@@ -401,27 +408,29 @@ onMounted(async () => {
         -->
         <UiButton :action="UiActionKind.Add"
           v-if="authStore.setupRequired"
-          variant="secondary"
+          :variant="UiButtonVariant.Secondary"
           block
-          type="button"
+          :type="UiButtonType.Button"
           data-testid="login-go-setup"
           @click="handleGoToSetup"
         >
-          {{ t('auth.login.setUpTheFirstAccount') }}
+          {{ t('auth.setup.createAccount') }}
         </UiButton>
       </UiForm>
 
       <!-- SSO mode: one button that hands the browser to the SSO. -->
       <UiButton :action="UiActionKind.Next"
         v-else
-        variant="primary"
+        :variant="UiButtonVariant.Primary"
         block
-        type="button"
+        :type="UiButtonType.Button"
         :loading="authStore.loading"
         data-testid="login-sso"
+        :title="t('auth.login.signInWithSso')"
+        :aria-label="t('auth.login.signInWithSso')"
         @click="handleSsoLogin"
       >
-        {{ t('auth.login.signInWithSso') }}
+        {{ t('auth.login.sso') }}
       </UiButton>
     </UiStack>
   </AuthShell>

@@ -19,7 +19,7 @@
       :aria-describedby="descriptionId"
       :disabled="disabled"
       :data-testid="testid"
-      class="ui-check flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 transition-all duration-150 flex items-center justify-center"
+      class="ui-check relative before:absolute before:-inset-3 flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 transition-all duration-150 flex items-center justify-center"
       :class="[
         FOCUS_RING,
         modelValue

@@ -17,9 +17,12 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { isReportChartEmpty, useReportPartEmpty } from '@/lib/reportEmpty'
 import { NOT_LOADING, REPORT_LOADING } from '@/lib/reportLoading'
+import { UiCardPadding } from '@/utils/ui/card'
 import { UiChartHeight } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
+import { UiAlignItems, UiDirection, UiJustify } from '@/utils/ui/layout'
 import type { SkeletonChart } from '@/utils/ui/skeletonSchema'
+import { UiHeadingVariant } from '@/utils/ui/text'
 
 /** Props for ReportChartCard. */
 const props = withDefaults(defineProps<{
@@ -60,10 +63,10 @@ const collapsed = useReportPartEmpty(empty)
 <template>
   <template v-if="collapsed" />
   <ReportEmptyState v-else-if="empty" testid="report-chart-empty" />
-  <UiCard v-else padding="md" :aria-busy="loading ? 'true' : undefined" data-testid="report-chart">
+  <UiCard v-else :padding="UiCardPadding.Md" :aria-busy="loading ? 'true' : undefined" data-testid="report-chart">
     <template v-if="title" #header>
-      <UiStack direction="row" justify="between" align="center" wrap class="mb-4">
-        <UiHeading :level="2" variant="card">
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" wrap class="mb-4">
+        <UiHeading :level="2" :variant="UiHeadingVariant.Card">
           {{ title }}
         </UiHeading>
         <slot name="actions" />

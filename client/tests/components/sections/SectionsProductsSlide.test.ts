@@ -114,6 +114,8 @@ describe('SectionsProductsSlide', () => {
     const demo = withDemo.find('[data-testid="slider-demo-7"]')
     expect(demo.attributes('href')).toBe('https://demo.test')
     expect(demo.attributes('rel')).toBe('noopener noreferrer')
+    expect(without.find('[data-testid="slider-cta-7"]').text()).toBe('common.learnMore')
+    expect(demo.text()).toBe('products.pricing.cta.viewDemo')
   })
 
   it('offers no demo button for an address with an unsafe scheme', () => {

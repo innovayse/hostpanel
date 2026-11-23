@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <UiStack gap="none">
     <UiStack direction="row" wrap align="center" gap="sm">
       <UiText
-        as="span"
+        :as="UiTextTag.Span"
         size="inherit"
         tone="inherit"
         weight="semibold"
@@ -27,7 +27,7 @@
     >
       {{ lead }}
     </UiText>
-  </div>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -38,6 +38,7 @@
  * heading changes in one place. The `badge` slot sits beside the eyebrow (the migration
  * section's "free" marker). The heading is always an h2: the hero owns the page's only h1.
  */
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of NovaSectionHeader. */
 interface Props {

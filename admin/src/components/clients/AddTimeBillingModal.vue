@@ -20,10 +20,13 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { nextRowKey } from '@/lib/rowKey'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -129,9 +132,9 @@ onMounted(() => fetchServices())
 </script>
 
 <template>
-  <UiDialog :title="t('clients.addTimeBilling.addTimeBillingEntries')" size="xl" @close="emit('close')">
+  <UiDialog :title="t('clients.addTimeBilling.addTimeBillingEntries')" :size="UiDialogSize.Xl" @close="emit('close')">
     <UiStack>
-      <UiAlert v-if="saveError" variant="error" data-testid="clients-time-billing-error">
+      <UiAlert v-if="saveError" :variant="UiTone.Danger" data-testid="clients-time-billing-error">
         {{ saveError }}
       </UiAlert>
 
@@ -157,7 +160,7 @@ onMounted(() => fetchServices())
             <UiTableCell>
               <UiInput
                 v-model="row.description"
-                type="text"
+                :type="UiInputType.Text"
                 :placeholder="t('shared.description')"
                 :data-testid="`clients-time-billing-description-${idx}`"
               />
@@ -175,7 +178,7 @@ onMounted(() => fetchServices())
     </UiStack>
     <template #footer>
       <UiButton :action="UiActionKind.Cancel"
-        type="button"
+        :type="UiButtonType.Button"
         :variant="UiButtonVariant.Secondary"
         data-testid="clients-time-billing-cancel"
         @click="emit('close')"
@@ -183,13 +186,13 @@ onMounted(() => fetchServices())
         {{ t('shared.cancel') }}
       </UiButton>
       <UiButton :action="UiActionKind.Save"
-        type="button"
+        :type="UiButtonType.Button"
         :variant="UiButtonVariant.Primary"
         :loading="internalSaving"
         data-testid="clients-time-billing-save"
         @click="handleSave"
       >
-        {{ t('clients.addTimeBilling.saveEntries') }}
+        {{ t('shared.save') }}
       </UiButton>
     </template>
   </UiDialog>

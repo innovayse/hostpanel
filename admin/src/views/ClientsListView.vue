@@ -4,7 +4,7 @@
  *
  * The filters, the search text and the page live in the address (`useFilterQuery`), so a reload, a shared link and
  * the back button restore the same list; the view loads whenever the address changes. The table scrolls inside its
- * card under a sticky header and the pager sits under it.
+ * card and the pager sits in the card's footer.
  */
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -22,20 +22,18 @@ import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
 import ClientGroupSelect from '@/components/clients/ClientGroupSelect.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -43,7 +41,7 @@ import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientsListView.schema'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems } from '@/utils/ui/layout'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, clientPath } from '@/lib/routes'
@@ -55,7 +53,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('clients.clientsList.addClient'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'clients-list-add', to: AppRoute.ClientsAdd },
+  { label: t('clients.clientsList.createClient'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'clients-list-add', to: AppRoute.ClientsAdd },
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `ClientFilters` member. */
@@ -267,95 +265,87 @@ onMounted(() => {
       @retry="load"
     />
 
-    <UiCard v-else-if="initialLoading || store.clients.length > 0" clip>
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :scrollable="false"
-        :loading="initialLoading"
-        data-testid="clients-list-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="client in store.clients"
-            :key="client.id"
-            hoverable
-            class="cursor-pointer"
-            data-testid="client-row"
-            @click="openClient(client.id)"
-          >
-            <UiTableCell muted hide-below="md">{{ client.id }}</UiTableCell>
-            <UiTableCell>
-              <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-                <UiBadge :tone="UiTone.Primary" small class="shrink-0">
-                  {{ client.firstName.charAt(0) }}{{ client.lastName.charAt(0) }}
-                </UiBadge>
-                <UiStack gap="none" class="min-w-0">
-                  <UiText class="truncate">{{ client.firstName }} {{ client.lastName }}</UiText>
-                  <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="truncate lg:hidden">{{ client.email }}</UiText>
-                </UiStack>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell muted hide-below="lg">{{ client.email }}</UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ client.companyName || EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge v-if="client.isUserDeleted" :tone="UiTone.Danger" small>
-                {{ t('clients.clientsList.userDeleted') }}
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!initialLoading && store.clients.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      :page-size-options="PAGE_SIZE_OPTIONS"
+      pagination-testid="clients-list-pagination"
+      data-testid="clients-list-table"
+      @update:page="setPage"
+      @update:page-size="changePageSize"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="client in store.clients"
+          :key="client.id"
+          clickable
+          data-testid="client-row"
+          @click="openClient(client.id)"
+        >
+          <UiTableCell muted hide-below="md">{{ client.id }}</UiTableCell>
+          <UiTableCell>
+            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
+              <UiBadge :tone="UiTone.Primary" small class="shrink-0">
+                {{ client.firstName.charAt(0) }}{{ client.lastName.charAt(0) }}
               </UiBadge>
-              <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell hide-below="xl">
-              <ClientGroupBadge
-                v-if="client.clientGroupName && client.clientGroupColor"
-                :name="client.clientGroupName"
-                :color="client.clientGroupColor"
-              />
-              <template v-else>{{ EMPTY_VALUE }}</template>
-            </UiTableCell>
-            <UiTableCell hide-below="xl">
-              <UiStatusIcon
-                :state="client.twoFactorEnabled"
-                :on-icon="Icon.ShieldCheck"
-                :off-icon="Icon.ShieldOff"
-                :on-label="t('clients.clientsList.twoFactorAuthenticationEnabled')"
-                :off-label="t('clients.clientsList.twoFactorAuthenticationDisabled')"
-              />
-            </UiTableCell>
-            <UiTableCell muted hide-below="lg">{{ formatDate(client.createdAt) }}</UiTableCell>
-            <UiTableCell actions @click.stop>
-              <UiRowActions :actions="rowActions(client.id)" :testid="`client-row-actions-${client.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-      <template #footer>
-        <UiPagination
-          :page="page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          :page-size-options="PAGE_SIZE_OPTIONS"
-          :loading="initialLoading"
-          testid="clients-list-pagination"
-          @update:page="setPage"
-          @update:page-size="changePageSize"
-        />
+              <UiStack :gap="UiGap.None" class="min-w-0">
+                <UiText truncate>{{ client.firstName }} {{ client.lastName }}</UiText>
+                <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" truncate class="lg:hidden">{{ client.email }}</UiText>
+              </UiStack>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell muted hide-below="lg">{{ client.email }}</UiTableCell>
+          <UiTableCell muted hide-below="xl">{{ client.companyName || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge v-if="client.isUserDeleted" :tone="UiTone.Danger" small>
+              {{ t('clients.clientsList.userDeleted') }}
+            </UiBadge>
+            <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell hide-below="xl">
+            <ClientGroupBadge
+              v-if="client.clientGroupName && client.clientGroupColor"
+              :name="client.clientGroupName"
+              :color="client.clientGroupColor"
+            />
+            <template v-else>{{ EMPTY_VALUE }}</template>
+          </UiTableCell>
+          <UiTableCell hide-below="xl">
+            <UiStatusIcon
+              :state="client.twoFactorEnabled"
+              :on-icon="Icon.ShieldCheck"
+              :off-icon="Icon.ShieldOff"
+              :on-label="t('clients.clientsList.twoFactorAuthenticationEnabled')"
+              :off-label="t('clients.clientsList.twoFactorAuthenticationDisabled')"
+            />
+          </UiTableCell>
+          <UiTableCell muted hide-below="lg">{{ formatDate(client.createdAt) }}</UiTableCell>
+          <UiTableCell actions @click.stop>
+            <UiRowActions :actions="rowActions(client.id)" :testid="`client-row-actions-${client.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('clients.clientsList.noClientsMatchYourFilters') : t('clients.clientsList.noClientsFound')"
+        >
+          <template v-if="narrowed" #actions>
+            <UiButton
+              :variant="UiButtonVariant.Link"
+              data-testid="clients-list-clear-empty"
+              @click="clearAll"
+            >
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('clients.clientsList.noClientsMatchYourFilters') : t('clients.clientsList.noClientsFound')"
-      >
-        <template v-if="narrowed" #actions>
-          <UiButton
-            :variant="UiButtonVariant.Link"
-            data-testid="clients-list-clear-empty"
-            @click="clearAll"
-          >
-            {{ t('clients.clientsList.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
   </UiStack>
 </template>

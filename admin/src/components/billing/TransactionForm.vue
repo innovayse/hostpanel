@@ -24,6 +24,10 @@ import type { TransactionFormValues } from '@/types/transaction'
 import type { SkeletonSection } from '@/utils/ui/skeletonSchema'
 import { AppRoute } from '@/lib/routes'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -96,7 +100,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
       />
     </template>
     <template #field-clientId>
-      <UiText v-if="lockClient" tone="primary" size="md" data-testid="billing-transaction-client-locked">
+      <UiText v-if="lockClient" :tone="UiTextTone.Primary" :size="UiTextSize.Md" data-testid="billing-transaction-client-locked">
         {{ lockedClientName }}
       </UiText>
       <UiClientSelect
@@ -132,7 +136,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
       <UiInput
         :id="id"
         :model-value="values.description"
-        type="text"
+        :type="UiInputType.Text"
         :invalid="invalid"
         :placeholder="t('billing.addTransaction.whatIsThisTransactionFor')"
         data-testid="billing-transaction-description"
@@ -152,7 +156,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
       <UiInput
         :id="id"
         :model-value="values.transactionId"
-        type="text"
+        :type="UiInputType.Text"
         :invalid="invalid"
         :placeholder="t('billing.addTransaction.externalTransactionId')"
         @update:model-value="patch({ transactionId: $event })"
@@ -170,7 +174,7 @@ const patch = (change: Partial<TransactionFormValues>): void => {
       <UiInput
         :id="id"
         :model-value="values.invoiceIds"
-        type="text"
+        :type="UiInputType.Text"
         :invalid="invalid"
         :placeholder="t('billing.addTransaction.invoiceIdsExample')"
         @update:model-value="patch({ invoiceIds: $event })"
@@ -184,17 +188,17 @@ const patch = (change: Partial<TransactionFormValues>): void => {
       />
     </template>
 
-    <UiAlert v-if="error" variant="error" data-testid="billing-transaction-error">
+    <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="billing-transaction-error">
       {{ error }}
     </UiAlert>
 
     <UiFormActions>
-      <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingTransactions" variant="ghost" data-testid="billing-transaction-cancel">
+      <UiLink :action="UiActionKind.Cancel" :to="AppRoute.BillingTransactions" :variant="UiButtonVariant.Ghost" data-testid="billing-transaction-cancel">
         {{ t('shared.cancel') }}
       </UiLink>
       <UiButton :action="UiActionKind.Save"
-        type="submit"
-        variant="primary"
+        :type="UiButtonType.Submit"
+        :variant="UiButtonVariant.Primary"
         :loading="loading"
         data-testid="billing-transaction-submit"
       >

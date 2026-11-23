@@ -12,6 +12,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import { usePluginCondition } from '@/composables/usePluginView'
 import type { PluginChatResultAction } from '@/types/pluginview'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -50,8 +51,8 @@ watch(visible, (shown) => emit('visibility', shown), { immediate: true })
 <template>
   <template v-if="visible">
     <PluginActionBlock v-if="action.block" :block="action.block" />
-    <UiButton :action="UiActionKind.Refresh" v-else-if="action.resend" :size="UiSize.Sm" :disabled="disabled" data-testid="plugin-chat-result-resend" @click="emit('resend')">{{ action.label }}</UiButton>
-    <UiLink v-else-if="action.link?.external" :href="action.link.href" external data-testid="plugin-chat-result-link">{{ action.label }}</UiLink>
-    <UiLink v-else-if="action.link" :to="action.link.href" data-testid="plugin-chat-result-link">{{ action.label }}</UiLink>
+    <UiButton :action="UiActionKind.Refresh" v-else-if="action.resend" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" :disabled="disabled" data-testid="plugin-chat-result-resend" @click="emit('resend')">{{ action.label }}</UiButton>
+    <UiLink v-else-if="action.link?.external" :href="action.link.href" external :action="UiActionKind.Open" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-chat-result-link">{{ action.label }}</UiLink>
+    <UiLink v-else-if="action.link" :to="action.link.href" :action="UiActionKind.Open" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="plugin-chat-result-link">{{ action.label }}</UiLink>
   </template>
 </template>

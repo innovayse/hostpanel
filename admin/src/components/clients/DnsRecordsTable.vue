@@ -8,7 +8,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDomainsStore } from '@/stores/domains'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { DNS_RECORD_TYPE_OPTIONS } from '@/lib/constants'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -19,7 +19,6 @@ import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
@@ -29,9 +28,12 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
-import { UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { DnsRecordItem } from '@/types/domain'
 import { DnsRecordType } from '@/types/domain'
@@ -78,10 +80,7 @@ const store = useDomainsStore()
 const saving = ref(false)
 
 /** The outcome line of the last change, shown under the heading. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Shows the outcome of one change: the success sentence, or the API's sentence of the refusal.
@@ -213,7 +212,6 @@ const saveDraft = async (): Promise<void> => {
     return
   }
   const id = editingId.value
-  feedback.clear()
   saving.value = true
   const ok = id === null
     ? await store.addDnsRecord(props.domainId, draftPayload())
@@ -256,7 +254,6 @@ const confirmDelete = async (): Promise<void> => {
   if (recordId === null) {
     return
   }
-  feedback.clear()
   saving.value = true
   deleting.value = true
   const deleted = await store.deleteDnsRecord(props.domainId, recordId)
@@ -314,9 +311,9 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
 </script>
 
 <template>
-  <UiCard padding="md">
+  <UiCard :padding="UiCardPadding.Md">
     <UiStack>
-      <UiSectionHeader :level="2" variant="section">
+      <UiSectionHeader :level="2" :variant="UiHeadingVariant.Section">
         {{ t('clients.dnsRecordsTable.dnsRecords') }}
 
         <template #actions>
@@ -331,7 +328,6 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
         </template>
       </UiSectionHeader>
 
-      <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-dns-feedback" />
 
       <UiTable :empty-text="t('clients.dnsRecordsTable.noDnsRecordsFound')" :density="UiTableDensity.Compact" :scrollable="false" :empty="isEmpty" data-testid="clients-dns-table">
         <UiTableHead>
@@ -344,7 +340,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow v-for="row in tableRows" :key="row.key" :hoverable="!row.draft" :selected="row.draft">
             <template v-if="row.draft">
               <UiTableCell>
@@ -353,7 +349,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
               <UiTableCell>
                 <UiInput
                   v-model="draftHost"
-                  type="text"
+                  :type="UiInputType.Text"
                   placeholder="@"
                   data-testid="clients-dns-draft-host"
                 />
@@ -361,7 +357,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
               <UiTableCell>
                 <UiInput
                   v-model="draftValue"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('shared.value')"
                   data-testid="clients-dns-draft-value"
                 />
@@ -369,7 +365,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
               <UiTableCell>
                 <UiInput
                   v-model="draftTtl"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="DEFAULT_TTL"
                   data-testid="clients-dns-draft-ttl"
                 />
@@ -379,7 +375,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
                 <UiText v-else :tone="UiTextTone.Muted">{{ EMPTY_VALUE }}</UiText>
               </UiTableCell>
               <UiTableCell actions>
-                <UiStack direction="row" gap="xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
+                <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
                   <UiIconButton
                     :label="t('shared.save')"
                     :size="UiSize.Sm"
@@ -417,12 +413,12 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
 
     <UiDialog
       v-if="deleteTargetId !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.dnsRecordsTable.deleteDnsRecord')"
       :message="t('clients.dnsRecordsTable.deleteThisDnsRecord')"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmDelete"
       @close="dismissDelete"
     />

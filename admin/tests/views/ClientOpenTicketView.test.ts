@@ -1,7 +1,7 @@
 /**
  * Tests for ClientOpenTicketView: a failed departments load shows the error state with a Retry and
- * hides the form until it loads, a refused create shows the API's sentence next to the submit
- * button, and a created ticket opens its detail page, through the real stores and transport with
+ * hides the form until it loads, a refused create toasts the API's sentence
+ * and a created ticket opens its detail page, through the real stores and transport with
  * `fetch` stubbed.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -13,6 +13,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 import { fieldsOf } from '../helpers/schemaParity'
 
 /** Route pattern the view is mounted under. */
@@ -60,7 +61,7 @@ describe('ClientOpenTicketView', () => {
     expect(wrapper.find('[data-testid="client-open-ticket-submit"]').exists()).toBe(true)
   })
 
-  it('shows the API sentence next to the submit button when the create is refused', async () => {
+  it('toasts the API sentence when the create is refused', async () => {
     stubRoutes({
       'GET /api/tickets/departments': () => json(DEPARTMENTS),
       'POST /api/tickets': () => problem('The client is closed.', 409),
@@ -73,7 +74,7 @@ describe('ClientOpenTicketView', () => {
     await wrapper.get('[data-testid="client-open-ticket-submit"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-open-ticket-error"]').text()).toBe('The client is closed.')
+    expect(toastMessages()).toEqual(['The client is closed.'])
     expect(wrapper.find('[data-testid="client-open-ticket-departments-error"]').exists()).toBe(false)
     expect(router.currentRoute.value.path).toBe(URL)
   })

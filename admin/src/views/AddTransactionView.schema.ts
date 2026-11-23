@@ -28,7 +28,7 @@ export const TRANSACTION_SECTION: SkeletonSection = {
 const schema: FormSkeletonSchema = {
   kind: SkeletonKind.Form,
   header: {
-    title: 'billing.addTransaction.addTransaction',
+    title: 'billing.addTransaction.createTransaction',
     subtitle: 'billing.addTransaction.recordANewPaymentTransaction',
   },
   columns: [[TRANSACTION_SECTION]],

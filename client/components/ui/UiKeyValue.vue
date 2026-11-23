@@ -1,7 +1,7 @@
 <template>
   <div class="flex items-start justify-between gap-4 text-sm" data-testid="ui-key-value">
     <span class="text-gray-600 dark:text-gray-400">{{ label }}</span>
-    <span :class="strong ? 'text-gray-900 dark:text-white font-semibold text-right' : 'text-gray-900 dark:text-white font-medium text-right'">
+    <span :class="strong ? 'min-w-0 break-words text-gray-900 dark:text-white font-semibold text-right' : 'min-w-0 break-words text-gray-900 dark:text-white font-medium text-right'">
       <slot>{{ value }}</slot>
     </span>
   </div>

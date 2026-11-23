@@ -7,7 +7,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { pendingJob } from './fixtures/migration'
 import type { MigrationJob } from '../src/types/migration'
-import { fieldOf } from './support/locators'
+import { fieldOf, toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 test('creating a migration posts the source and shows the secret key', async ({ page }) => {
@@ -45,7 +45,7 @@ test('creating a migration posts the source and shows the secret key', async ({ 
   expect(created?.body).toMatchObject({ sourceUrl: pendingJob.sourceUrl, label: pendingJob.label })
 })
 
-test('a refused creation shows the API sentence', async ({ page }) => {
+test('a refused creation toasts the API sentence', async ({ page }) => {
   const sentence = 'The source URL is not reachable.'
   await stubApi(page, {
     signedIn: true,
@@ -60,7 +60,7 @@ test('a refused creation shows the API sentence', async ({ page }) => {
   await fieldOf(page, 'migration-source-url').fill('https://old.example.test')
   await page.getByTestId('migration-create').click()
 
-  await expect(page.getByTestId('migration-create-error')).toContainText(sentence)
+  await expect(toastWith(page, sentence)).toBeVisible()
 })
 
 test('an existing job is listed in the history and selecting it shows its setup', async ({ page }) => {

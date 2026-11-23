@@ -53,11 +53,11 @@
         <ClientDomainsDomainContactForm :values="form" :disabled="useExisting" @change="editField" />
         <template #actions>
           <UiButton type="button" size="sm" variant="ghost" data-testid="domain-contact-cancel" @click="cancel">
-            {{ $t('client.domains.cancelChanges') }}
+            {{ $t('common.cancel') }}
           </UiButton>
-          <UiButton type="submit" size="sm" :loading="whoisSaving" data-testid="domain-contact-save">
+          <UiButton variant="primary" type="submit" size="sm" :loading="whoisSaving" data-testid="domain-contact-save">
             <Save v-if="!whoisSaving" :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ $t('client.domains.saveChanges') }}
+            {{ $t('common.save') }}
           </UiButton>
         </template>
       </UiForm>

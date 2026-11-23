@@ -96,7 +96,7 @@ onMounted(() => {
       :columns="schema.columns"
       lock-client
       :clients="clients"
-      :submit-label="t('billing.editTransaction.updateTransaction')"
+      :submit-label="t('shared.save')"
       :loading="store.loading"
       :error="store.error"
       :field-errors="store.fieldErrors"

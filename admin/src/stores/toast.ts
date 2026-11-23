@@ -1,9 +1,10 @@
 /**
- * The toasts on screen: short confirmations of what an action just did (saved, deleted, sent) that dismiss
- * themselves after a few seconds. A refusal or a warning is never a toast; it stays inline beside the thing that
- * failed, where the reader can act on it.
+ * The toasts on screen: short reports of what an action just did (saved, deleted, sent, or refused with the API's own
+ * sentence) that dismiss themselves after a few seconds. The toast is the one channel for the outcome of an action,
+ * fixed on the window so it is seen wherever the page is scrolled and above an open dialog; only a validation error tied
+ * to a form field stays inline beside that field.
  *
- * `UiToastHost` draws the list; any screen reaches it through `useResultBanner().show(text, false)`.
+ * `UiToastHost` draws the list; any screen reaches it through `useOutcomeToast().show(text, failed)`.
  */
 
 import { defineStore } from 'pinia'

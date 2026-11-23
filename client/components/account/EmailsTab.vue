@@ -1,29 +1,27 @@
 <template>
-  <div data-testid="account-emails-tab">
-    <UiStack v-if="emailsLoading" gap="sm" data-testid="account-emails-loading">
-      <UiSkeleton v-for="index in 5" :key="index" shape="block" class="h-16" />
+  <UiStack gap="md" data-testid="account-emails-tab">
+    <UiStack direction="row" align="center" justify="between" gap="sm" wrap>
+      <UiText size="sm" tone="muted">
+        {{ $t('ui.pagination.showing', { from, to, total: filtered.length }) }}
+      </UiText>
+      <UiSearchInput
+        v-model="search"
+        :placeholder="$t('client.emails.search')"
+        class="sm:w-64"
+        testid="account-emails-search"
+      />
     </UiStack>
 
-    <UiStack v-else gap="md">
-      <UiStack direction="row" align="center" justify="between" gap="sm" wrap>
-        <UiText size="sm" tone="muted">
-          {{ $t('ui.pagination.showing', { from, to, total: filtered.length }) }}
-        </UiText>
-        <UiSearchInput
-          v-model="search"
-          :placeholder="$t('client.emails.search')"
-          class="sm:w-64"
-          testid="account-emails-search"
-        />
-      </UiStack>
-
-      <UiEmptyState
-        v-if="!filtered.length"
-        :icon="Mail"
-        :title="search ? $t('client.emails.noResults') : $t('client.emails.empty')"
-      />
-
-      <UiTable v-else>
+    <UiTable
+      scrollable
+      :label="$t('client.emails.colSubject')"
+      :columns="3"
+      :loading="emailsLoading"
+      :empty="!filtered.length"
+      :empty-text="search ? $t('client.emails.noResults') : $t('client.emails.empty')"
+      :empty-icon="Mail"
+    >
+      <template #head>
         <UiTableHead>
           <UiTableRow :hoverable="false">
             <UiTableTh>{{ $t('client.emails.colDate') }}</UiTableTh>
@@ -31,27 +29,27 @@
             <UiTableTh />
           </UiTableRow>
         </UiTableHead>
-        <UiTableBody>
-          <UiTableRow v-for="email in paged" :key="email.id" :data-testid="`account-email-${email.id}`">
-            <UiTableTd class="text-gray-500 dark:text-gray-400 whitespace-nowrap text-sm">{{ formatDateTime(email.sentAt) }}</UiTableTd>
-            <UiTableTd class="text-gray-900 dark:text-white font-medium">{{ email.subject }}</UiTableTd>
-            <UiTableTd align="right">
-              <UiButton data-testid="emails-view" size="sm" variant="subtle" :to="clientEmailPath(email.id)">
-                {{ $t('client.emails.view') }}
-              </UiButton>
-            </UiTableTd>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
+      </template>
+      <UiTableBody>
+        <UiTableRow v-for="email in paged" :key="email.id" :data-testid="`account-email-${email.id}`">
+          <UiTableTd class="text-gray-500 dark:text-gray-400 whitespace-nowrap text-sm">{{ formatDateTime(email.sentAt) }}</UiTableTd>
+          <UiTableTd class="text-gray-900 dark:text-white font-medium">{{ email.subject }}</UiTableTd>
+          <UiTableTd align="right">
+            <UiButton data-testid="emails-view" size="sm" variant="subtle" :to="clientEmailPath(email.id)">
+              {{ $t('common.view') }}
+            </UiButton>
+          </UiTableTd>
+        </UiTableRow>
+      </UiTableBody>
+    </UiTable>
 
-      <UiPagination
-        v-if="filtered.length > 0"
-        v-model="page"
-        v-model:per-page="perPage"
-        :total-pages="totalPages"
-      />
-    </UiStack>
-  </div>
+    <UiPagination
+      v-if="!emailsLoading && filtered.length > 0"
+      v-model="page"
+      v-model:per-page="perPage"
+      :total-pages="totalPages"
+    />
+  </UiStack>
 </template>
 
 <script setup lang="ts">

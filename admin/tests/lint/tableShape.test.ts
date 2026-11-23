@@ -3,6 +3,10 @@
  *
  * Under `src/views` and `src/components` (the kit in `components/ui` excepted) a template must not:
  * - render raw `table`, `thead`, `tbody`, `tfoot`, `tr`, `td` or `th` markup (UiTable and its parts draw those);
+ * - frame a UiTable in a UiCard of their own (UiDataTable is the one card, table and pager of a list);
+ * - style the rows themselves: a `divided` or `bordered` attribute, or a `cursor-pointer` class, on a table part (the body
+ *   always draws its dividers, and a row that opens its record says `clickable`);
+ * - listen to a click on a UiTableRow without `clickable` (the row then shows no pointer);
  * - put two or more UiIconButton or UiButton controls in one UiTableCell (row actions go through UiRowActions);
  * - caption a column "Actions" without the `actions` prop on its UiTableHeader (the shared compact actions column);
  * - put a text action in any cell, not only an `actions` cell: a button or link (UiButton, UiLink, RouterLink, a) with
@@ -32,6 +36,12 @@ const KIT = join(SRC, 'components', 'ui')
 enum TableRule {
   /** Raw table markup instead of UiTable and its parts. */
   RawMarkup = 'raw-markup',
+  /** A UiCard of the screen around a UiTable instead of UiDataTable. */
+  CardTable = 'card-table',
+  /** Row dividers or a pointer cursor set by the screen instead of the kit. */
+  RowStyle = 'row-style',
+  /** A click listener on a UiTableRow that is not `clickable`. */
+  RowClick = 'row-click',
   /** Two or more buttons in one cell instead of UiRowActions. */
   CellButtons = 'cell-buttons',
   /** An "Actions" column header without the `actions` prop. */
@@ -127,6 +137,21 @@ const templateOf = (source: string): string => {
 /** A raw table element opening tag. */
 const RAW_TAG = /<(table|thead|tbody|tfoot|tr|td|th)[\s>/]/g
 
+/** A UiCard whose first child is a UiTable. */
+const CARD_TABLE = /<UiCard\b(?:[^>"']|"[^"]*"|'[^']*')*>\s*<UiTable\b/
+
+/** One opening tag of a table part with its attributes (group 2). */
+const PART = /<(UiTable|UiTableBody|UiTableRow|UiTableCell)\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g
+
+/** A divider or border prop a part no longer takes, or the pointer cursor class. */
+const ROW_STYLE = /(?:^|\s)(?:divided|bordered)(?=\s|$|\/)|class="[^"]*\bcursor-pointer\b/
+
+/** A click listener among a tag's attributes (not a modifier-only listener such as `.stop` on a cell). */
+const CLICK = /@click(?![\w.])/
+
+/** The bare `clickable` prop among a tag's attributes. */
+const CLICKABLE_PROP = /(?:^|\s)clickable(?=\s|$|\/)/
+
 /** One UiTableCell with its content (cells do not nest). */
 const CELL = /<UiTableCell\b[^>]*>([\s\S]*?)<\/UiTableCell>/g
 
@@ -177,6 +202,18 @@ const brokenRules = (template: string): TableRule[] => {
   const broken = new Set<TableRule>()
   if (template.match(RAW_TAG)) {
     broken.add(TableRule.RawMarkup)
+  }
+  if (CARD_TABLE.test(template)) {
+    broken.add(TableRule.CardTable)
+  }
+  for (const part of template.matchAll(PART)) {
+    const attrs = part[2] ?? ''
+    if (ROW_STYLE.test(attrs) && part[1] !== 'UiTable') {
+      broken.add(TableRule.RowStyle)
+    }
+    if (part[1] === 'UiTableRow' && CLICK.test(attrs) && !CLICKABLE_PROP.test(attrs)) {
+      broken.add(TableRule.RowClick)
+    }
   }
   for (const cell of template.matchAll(CELL)) {
     if ((cell[1]?.match(BUTTON)?.length ?? 0) >= 2) {
@@ -241,6 +278,25 @@ describe('table shape', () => {
     it('catches raw table markup', () => {
       expect(brokenRules('<table><tr><td>1</td></tr></table>')).toEqual([TableRule.RawMarkup])
       expect(brokenRules('<UiStack><th class="x">A</th></UiStack>')).toEqual([TableRule.RawMarkup])
+    })
+
+    it('catches a screen card around a table', () => {
+      expect(brokenRules('<UiCard clip>\n  <UiTable><UiTableBody /></UiTable></UiCard>')).toEqual([TableRule.CardTable])
+      expect(brokenRules('<UiCard><UiHeading /><UiTable /></UiCard>')).toEqual([])
+      expect(brokenRules('<UiDataTable><UiSchemaTableHead /></UiDataTable>')).toEqual([])
+    })
+
+    it('catches row styling in a screen', () => {
+      expect(brokenRules('<UiTableBody divided><UiTableRow /></UiTableBody>')).toEqual([TableRule.RowStyle])
+      expect(brokenRules('<UiTableRow hoverable bordered />')).toEqual([TableRule.RowStyle])
+      expect(brokenRules('<UiTableRow class="cursor-pointer" />')).toEqual([TableRule.RowStyle])
+      expect(brokenRules('<UiTableRow hoverable class="x" />')).toEqual([])
+    })
+
+    it('catches a click on a row that is not clickable', () => {
+      expect(brokenRules('<UiTableRow hoverable @click="open(1)" />')).toEqual([TableRule.RowClick])
+      expect(brokenRules('<UiTableRow clickable @click="open(1)" />')).toEqual([])
+      expect(brokenRules('<UiTableRow><UiTableCell actions @click.stop /></UiTableRow>')).toEqual([])
     })
 
     it('catches two buttons in one cell', () => {

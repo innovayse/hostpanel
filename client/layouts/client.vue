@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed inset-0 flex flex-col overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white" data-testid="client-layout">
+  <UiStack gap="none" class="fixed inset-0 overflow-hidden bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-white" data-testid="client-layout">
     <!-- Demo-mode notice; renders nothing outside a demo -->
     <LayoutDemoBanner />
 
@@ -18,7 +18,7 @@
 
     <!-- Body row: sidebar + main, fills the remaining height. Positioned, so the mobile drawer and
          its backdrop cover this row only and leave the banner and top bar (with the X) visible. -->
-    <div class="relative flex flex-1 overflow-hidden">
+    <UiStack direction="row" gap="none" class="relative flex-1 overflow-hidden">
       <ClientLayoutSidebar
         :items="visibleNavItems"
         :open="sidebarOpen"
@@ -34,7 +34,7 @@
         enter-from-class="opacity-0"
         leave-to-class="opacity-0"
       >
-        <div
+        <UiBlock
           v-if="sidebarOpen"
           class="absolute inset-0 z-10 bg-black/50 lg:hidden"
           data-testid="client-sidebar-backdrop"
@@ -43,9 +43,9 @@
       </Transition>
 
       <!-- Main: only this scrolls -->
-      <main class="flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <UiStack :as="UiStackTag.Main" gap="none" class="min-w-0 flex-1 overflow-y-auto">
         <!-- A workspace page fills the row itself, without the gutter. -->
-        <div :class="workspace ? 'flex flex-1 flex-col md:min-h-0' : 'p-6 lg:p-8'">
+        <UiBlock :class="workspace ? 'flex flex-1 flex-col md:min-h-0' : 'p-4 sm:p-6 lg:p-8'">
           <ClientVerifyEmailBanner class="mb-6" />
           <Suspense>
             <template #default>
@@ -55,13 +55,13 @@
               <UiSkeleton shape="block" class="min-h-[40dvh]" />
             </template>
           </Suspense>
-        </div>
-      </main>
-    </div>
+        </UiBlock>
+      </UiStack>
+    </UiStack>
 
     <!-- Consent bar; its spacer shrinks the scrolling area so the bar never covers content -->
     <UiCookieBanner />
-  </div>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -95,6 +95,7 @@ import { PluginPageLayout } from '~/types/pluginpagelayout'
 import { pluginIcon } from '~/utils/plugins'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
 import { SITE_ANNOUNCEMENTS_PATH, SITE_KNOWLEDGEBASE_PATH } from '~/constants/siteRoutes'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** How often the widget script is polled for, in milliseconds, until it has loaded. */
 const WIDGET_POLL_MS = 200

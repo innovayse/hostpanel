@@ -483,7 +483,7 @@ describe('PluginsView', () => {
 
     await openTab(wrapper, 'browse')
 
-    expect(wrapper.get('[data-testid="plugin-card-example-pay"]').text()).toContain('Example Pay')
+    expect(wrapper.get('[data-testid="plugin-registry-list"]').text()).toContain('Example Pay')
     expect(wrapper.find('[data-testid="plugin-registry-trust"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="plugins-list"]').exists()).toBe(false)
   })

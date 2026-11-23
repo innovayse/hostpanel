@@ -14,6 +14,7 @@ import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Mounts the list at an address and waits for its first load.
@@ -139,7 +140,7 @@ describe('CancellationRequestsView', () => {
     await wrapper.get('[data-testid="cancellations-delete-dialog"] [data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="cancellations-feedback"]').text()).toBe('The request is being processed.')
+    expect(toastMessages()).toContain('The request is being processed.')
     expect(wrapper.find('[data-testid="cancellations-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="cancellations-row-5"]').exists()).toBe(true)
   })

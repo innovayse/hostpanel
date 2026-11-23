@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The product bundles list. */
 const schema: ListSkeletonSchema = {
@@ -19,7 +19,7 @@ const schema: ListSkeletonSchema = {
       { key: 'components', label: 'settings.productBundles.components' },
       { key: 'domain', label: 'settings.productBundles.domain' },
       { key: 'discount', label: 'settings.productBundles.discount' },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

@@ -1,23 +1,23 @@
 <template>
-  <section class="py-14 md:py-20 bg-classic-surface-2 border-y border-classic-border" data-testid="sections-cta">
+  <UiSection :contained="false" padding="lg" class="bg-classic-surface-2 border-y border-classic-border" data-testid="sections-cta">
     <UiContainer>
-      <div class="text-center animate-reveal-up motion-reduce:animate-none">
+      <UiStack align="center" gap="none" class="text-center animate-reveal-up motion-reduce:animate-none">
         <UiHeading :level="2" class="text-3xl md:text-4xl mb-4 text-classic-ink">{{ $t('cta.title') }}</UiHeading>
 
         <UiText size="lg" class="mb-8 max-w-[75ch] mx-auto text-classic-muted">{{ $t('cta.subtitle') }}</UiText>
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <UiButton :to="localePath(SITE_HOSTING_PATH)" size="lg" data-testid="cta-plans">
-            <span>{{ $t('cta.button') }}</span>
+        <UiStack align="center" justify="center" class="sm:flex-row">
+          <UiButton :to="localePath(SITE_HOSTING_PATH)" variant="primary" size="lg" data-testid="cta-plans">
+            {{ $t('cta.button') }}
             <ArrowRight :size="18" :stroke-width="2" class="ml-2" />
           </UiButton>
           <UiButton :to="localePath(SITE_CONTACT_PATH)" variant="outline" size="lg" data-testid="cta-contact">
-            <span>{{ $t('cta.secondary') }}</span>
+            {{ $t('common.contactUs') }}
           </UiButton>
-        </div>
-      </div>
+        </UiStack>
+      </UiStack>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

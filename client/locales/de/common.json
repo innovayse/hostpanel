@@ -2,6 +2,9 @@
   "ui": {
     "selectPlaceholder": "Option auswählen",
     "noOptions": "Keine Optionen verfügbar",
+    "pageHeader": {
+      "actions": "Seitenaktionen"
+    },
     "theme": {
       "switchDark": "Zum dunklen Modus wechseln",
       "switchLight": "Zum hellen Modus wechseln"
@@ -42,7 +45,35 @@
     "goToSlide": "Zu Folie {n} wechseln",
     "scrollHorizontal": "Zum Entdecken scrollen",
     "retry": "Erneut versuchen",
-    "breadcrumb": "Brotkrumennavigation"
+    "breadcrumb": "Brotkrumennavigation",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "create": "Erstellen",
+    "remove": "Entfernen",
+    "download": "Herunterladen",
+    "view": "Anzeigen",
+    "back": "Zurück",
+    "continue": "Fortfahren",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "send": "Senden",
+    "refresh": "Aktualisieren",
+    "update": "Aktualisieren",
+    "apply": "Anwenden",
+    "clear": "Leeren",
+    "reply": "Antworten",
+    "select": "Auswählen",
+    "details": "Details",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "pdf": "PDF",
+    "learnMore": "Mehr erfahren",
+    "pay": "Bezahlen",
+    "manage": "Verwalten",
+    "getStarted": "Jetzt starten",
+    "contactUs": "Kontakt aufnehmen"
   },
   "fallback": {
     "unknown": "Unbekannt"

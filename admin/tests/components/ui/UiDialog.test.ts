@@ -137,7 +137,8 @@ describe('UiDialog', () => {
     const wrapper = mountDialog({ variant: 'confirm', title: 'Delete', message: 'Are you sure?', tone: 'danger' })
 
     expect(wrapper.text()).toContain('Are you sure?')
-    expect(wrapper.get('[data-testid="dialog-confirm"]').classes()).toContain('bg-status-red')
+    expect(wrapper.get('[data-testid="dialog-confirm"]').classes()).toContain('bg-tint-red')
+    expect(mountDialog({ variant: 'confirm', title: 'Save', message: 'Sure?' }).get('[data-testid="dialog-confirm"]').classes()).toContain('text-text-on-primary')
     expect(wrapper.get('[data-testid="dialog-confirm"]').text()).toBe('Confirm')
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -178,7 +179,7 @@ describe('UiDialog on a phone and while work runs', () => {
     expect(classes).toEqual(expect.arrayContaining(['max-w-[calc(100vw-2rem)]', 'sm:max-w-md']))
   })
 
-  it('is a bottom sheet on a phone for a plain dialog, with its slots, attributes and footer', () => {
+  it('is a full-screen sheet on a phone for a plain dialog, with its slots, attributes and footer', () => {
     stubPhone(true)
     const wrapper = mount(UiDialog, {
       props: { title: 'Edit client' },
@@ -188,11 +189,27 @@ describe('UiDialog on a phone and while work runs', () => {
     })
 
     expect(wrapper.findComponent(UiDrawer).props('presentation')).toBe(UiDrawerPresentation.Sheet)
-    expect(wrapper.get('[data-testid="edit-dialog"]').classes()).toContain('rounded-t-panel')
+    expect(wrapper.findComponent(UiDrawer).props('fullscreen')).toBe(true)
+    expect(wrapper.get('[data-testid="edit-dialog"]').classes()).toEqual(expect.arrayContaining(['inset-0', 'h-dvh']))
+    expect(wrapper.get('[data-testid="edit-dialog"]').classes()).not.toContain('rounded-t-panel')
     expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
     expect(wrapper.get('h2').text()).toBe('Edit client')
     expect(wrapper.find('[data-testid="body"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="footer"]').exists()).toBe(true)
+  })
+
+  it('makes the body an inline-size container in the panel and in the phone sheet, so a container grid counts by the dialog width', () => {
+    stubPhone(false)
+    const panel = mountDialog({ title: 'x' }, { default: '<p>Body</p>' })
+    expect(panel.get('[data-testid="dialog-body"]').classes()).toContain('@container')
+
+    stubPhone(true)
+    const sheet = mount(UiDialog, {
+      props: { title: 'x' },
+      slots: { default: '<p>Body</p>' },
+      global: { plugins: [createTestI18n()], stubs: { teleport: true } },
+    })
+    expect(sheet.get('[data-testid="dialog-body"]').classes()).toContain('@container')
   })
 
   it('stays a centred card on a phone for a confirm prompt and on a wide screen for a plain dialog', () => {

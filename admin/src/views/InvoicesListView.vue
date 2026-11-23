@@ -18,11 +18,11 @@ import { useFilterDateRange } from '@/composables/useFilterDateRange'
 import { InvoiceFilterKey, useInvoiceFilters } from '@/composables/useInvoiceFilters'
 import { useListQuery } from '@/composables/useListQuery'
 import { useRowSelection } from '@/composables/useRowSelection'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -30,13 +30,10 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -48,12 +45,13 @@ import { bucketAmountText, summarizeInvoices } from '@/lib/invoices'
 import { invoiceStatusTone } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
-import { pageFirstRow, pageLastRow } from '@/lib/paging'
 import type { InvoiceBulkAction } from '@/types/invoice'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoiceEditPath, invoiceViewPath } from '@/lib/routes'
-import { UiTone } from '@/utils/ui/tone'
 import { Icon } from '@/lib/icons'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTone } from '@/utils/ui/tone'
 import { schemaHeader } from '@/lib/schemaHeader'
 
 const { t } = useI18n()
@@ -91,12 +89,9 @@ const processing = ref(false)
 const loadError = ref<string | null>(null)
 
 /** The outcome line of the last action. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
 const { guideUrl } = useDocsGuide()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /** The invoice-date range of the filter draft; the picker edits the pair, the address keeps its two ends. */
 const draftRange = useFilterDateRange(list.draft, FilterKey.From, FilterKey.To)
@@ -119,12 +114,6 @@ const summary = computed(() => summarizeInvoices(store.invoices))
 /** The selected invoices of the shown rows. */
 const selection = useRowSelection(() => store.invoices.map((invoice) => invoice.id))
 
-/** First row number on the page, for the record count. */
-const firstShown = computed<number>(() => pageFirstRow(list.page.value, LEDGER_PAGE_SIZE))
-
-/** Last row number on the page, for the record count. */
-const lastShown = computed<number>(() => pageLastRow(list.page.value, LEDGER_PAGE_SIZE, store.totalCount))
-
 /**
  * Loads the page the address names, with the search text and filters it holds; the selection of the previous page is dropped.
  *
@@ -144,7 +133,6 @@ const load = async (): Promise<void> => {
  * @returns Resolves when the request (and the reload) has settled.
  */
 const runCommand = async (command: () => Promise<boolean>, successKey: string): Promise<void> => {
-  feedback.clear()
   processing.value = true
   const ok = await command()
   processing.value = false
@@ -240,21 +228,21 @@ onMounted(loadClients)
         :label="t('clients.clientSummary.paid')"
         :value="bucketAmountText(summary.paid)"
         :hint="t('billing.invoicesList.summaryHint', { count: summary.paid.count }, summary.paid.count)"
-        tone="success"
+        :tone="UiTone.Success"
         data-testid="billing-invoices-summary-paid"
       />
       <UiStatTile
         :label="t('billing.invoicesList.due')"
         :value="bucketAmountText(summary.due)"
         :hint="t('billing.invoicesList.summaryHint', { count: summary.due.count }, summary.due.count)"
-        tone="warning"
+        :tone="UiTone.Warning"
         data-testid="billing-invoices-summary-due"
       />
       <UiStatTile
         :label="t('clients.clientSummary.overdue')"
         :value="bucketAmountText(summary.overdue)"
         :hint="t('billing.invoicesList.summaryHint', { count: summary.overdue.count }, summary.overdue.count)"
-        tone="danger"
+        :tone="UiTone.Danger"
         data-testid="billing-invoices-summary-overdue"
       />
     </UiGrid>
@@ -272,7 +260,7 @@ onMounted(loadClients)
       @remove="list.remove"
       @clear="list.clearAll"
     >
-      <UiStack gap="md">
+      <UiStack :gap="UiGap.Md">
         <UiField :label="t('shared.client')">
           <UiClientSelect
             v-model="list.draft.value.clientId"
@@ -289,7 +277,6 @@ onMounted(loadClients)
       </UiStack>
     </UiListToolbar>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-invoices-feedback" />
 
     <UiErrorState
       v-if="loadError !== null"
@@ -299,68 +286,59 @@ onMounted(loadClients)
       @retry="load"
     />
 
-    <UiText v-if="store.invoices.length > 0" tone="secondary" size="md" data-testid="billing-invoices-count">
-      {{ t('billing.invoicesList.totalcountRecordsFoundShowingValue', { totalCount: store.totalCount, value: firstShown, value2: lastShown }) }}
-    </UiText>
-
-    <UiCard clip>
-      <UiTable
-        :loading="store.loading && store.invoices.length === 0"
-        :empty="!store.loading && store.invoices.length === 0"
-        :scrollable="false"
-        :selection="selection"
-        select-all-testid="billing-invoices-select-all"
-        data-testid="billing-invoices-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="invoice in store.invoices"
-            :key="invoice.id"
-            hoverable
-            :row-id="invoice.id"
-            :select-testid="`billing-invoice-select-${invoice.id}`"
-          >
-            <UiTableCell muted>
-              #{{ invoice.id }}
-            </UiTableCell>
-            <UiTableCell hide-below="sm">
-              <UiText class="truncate">{{ invoice.clientName }}</UiText>
-            </UiTableCell>
-            <UiTableCell muted hide-below="md">{{ formatDate(invoice.createdAt) }}</UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ formatDate(invoice.dueDate) }}</UiTableCell>
-            <UiTableCell numeric hide-below="sm">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="invoiceActions(invoice.id)" :testid="`billing-invoice-actions-${invoice.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-        <template #empty>
-          <UiEmptyState :title="t('shared.noInvoicesFound')" data-testid="billing-invoices-empty" />
-        </template>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      :loading="store.loading && store.invoices.length === 0"
+      :empty="!store.loading && store.invoices.length === 0"
+      :scrollable="false"
+      :selection="selection"
+      select-all-testid="billing-invoices-select-all"
       :page="list.page.value"
       :total="store.totalCount"
       :page-size="LEDGER_PAGE_SIZE"
-      testid="billing-invoices-pagination"
+      pagination-testid="billing-invoices-pagination"
+      data-testid="billing-invoices-table"
       @update:page="list.setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="invoice in store.invoices"
+          :key="invoice.id"
+          hoverable
+          :row-id="invoice.id"
+          :select-testid="`billing-invoice-select-${invoice.id}`"
+        >
+          <UiTableCell muted>
+            #{{ invoice.id }}
+          </UiTableCell>
+          <UiTableCell hide-below="sm">
+            <UiText class="truncate">{{ invoice.clientName }}</UiText>
+          </UiTableCell>
+          <UiTableCell muted hide-below="md">{{ formatDate(invoice.createdAt) }}</UiTableCell>
+          <UiTableCell muted hide-below="xl">{{ formatDate(invoice.dueDate) }}</UiTableCell>
+          <UiTableCell numeric hide-below="sm">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
+          <UiTableCell muted hide-below="xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="invoiceActions(invoice.id)" :testid="`billing-invoice-actions-${invoice.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState :title="t('shared.noInvoicesFound')" data-testid="billing-invoices-empty" />
+      </template>
+    </UiDataTable>
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="pendingDeleteId !== null"
       :title="t('billing.invoicesList.deleteInvoice')"
       :message="t('billing.invoicesList.deleteInvoiceMessage', { id: pendingDeleteId ?? 0 })"
       :confirm-label="t('shared.delete')"
       :loading="processing"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmDelete"
       @close="dismissDelete"
     />

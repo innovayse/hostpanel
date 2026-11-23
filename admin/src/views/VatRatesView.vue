@@ -12,9 +12,8 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import VatRateFormModal from '@/components/settings/VatRateFormModal.vue'
-import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -22,18 +21,15 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatDate } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { reportCountryName } from '@/lib/reportsCountry'
@@ -44,9 +40,10 @@ import type { SaveVatRatePayload, VatRateDto, VatRateListFilters } from '@/types
 import { UiTableDensity } from '@/utils/ui/injection'
 import schema from '@/views/VatRatesView.schema'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiSize } from '@/utils/ui/size'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
@@ -125,7 +122,7 @@ const hasRows = computed<boolean>(() => store.vatRates.length > 0)
 const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /** The result banner for a delete. */
-const banner = useResultBanner()
+const banner = useOutcomeToast()
 
 /** Whether the add/edit dialog is visible. */
 const showModal = ref(false)
@@ -247,13 +244,6 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
-    <UiAlert
-      v-if="banner.message.value"
-      :variant="UiTone.Danger"
-      data-testid="vat-rates-result"
-    >
-      {{ banner.message.value }}
-    </UiAlert>
 
     <UiListToolbar
       v-model:search="search"
@@ -302,17 +292,27 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" clip>
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="vat-rates-table">
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!store.loading && !hasRows"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="vat-rates-pagination"
+      data-testid="vat-rates-table"
+      @update:page="setPage"
+    >
         <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow
             v-for="rate in store.vatRates"
             :key="rate.id"
             hoverable
             :data-testid="`vat-rate-row-${rate.id}`"
           >
-            <UiTableCell class="font-semibold text-text-primary">{{ reportCountryName(rate.country, locale) }}</UiTableCell>
+            <UiTableCell strong>{{ reportCountryName(rate.country, locale) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="rate.kind === VatRateKind.Standard ? UiTone.Success : UiTone.Info" small>
                 {{ t(`vatRates.kind.${rate.kind}`) }}
@@ -325,34 +325,17 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-            {{ t('vatRates.totalCount', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            testid="vat-rates-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('vatRates.noMatches') : t('vatRates.empty')"
+          data-testid="vat-rates-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Flag" :size="UiSize.Lg" />
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('vatRates.noMatches') : t('vatRates.empty')"
-        data-testid="vat-rates-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Flag" size="lg" />
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
 
     <!-- Add/edit VAT rate dialog -->
     <VatRateFormModal
@@ -367,14 +350,14 @@ const rateActions = (rate: VatRateDto): UiMenuAction[] => [
     <!-- Delete confirmation -->
     <UiDialog
       v-if="deleteTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('vatRates.deleteModal.title')"
       :message="t('vatRates.deleteModal.message', {
         kind: t(`vatRates.kind.${deleteTarget.kind}`),
         country: reportCountryName(deleteTarget.country, locale),
         validFrom: formatDate(deleteTarget.validFrom),
       })"
-      :confirm-label="t('vatRates.deleteModal.confirmLabel')"
+      :confirm-label="t('shared.delete')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

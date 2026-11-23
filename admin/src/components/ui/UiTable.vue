@@ -26,15 +26,15 @@
  * (indeterminate over a partial selection) and every body row that has a `rowId` draws its own, so a screen writes no checkbox column.
  * The rows toggle through the selection (Shift extends a range); the bulk actions live in a `UiBulkBar`.
  *
- * Below the `sm` breakpoint the table is drawn as cards: each body row is a card, the column
+ * Below the `md` breakpoint the table is drawn as cards: each body row is a card, the column
  * whose header says `card-role="title"` its heading (by default the `Grow` column) and the `badge` one a chip at the top right, the `subtitle` one a muted
  * line under the heading, every other column a label/value pair under the caption its header registered (`card-role="hidden"` leaves a column out, a
  * `hideBelow` column is a field like any other), the actions column the "…" trigger at the end of the first line and the checkbox the start of it. The loading placeholders take the same card shape, and the empty row, selection and a row's
- * click work as they do in the table. The width of a column is the `size` of its header: `Compact`, `Auto` (the default, one line) or the one `Grow`
- * column, which takes the rest of the width and truncates its content (a second `Grow` is a screen mistake, warned about in development).  A column whose cells hold a form control says `card-role="control"`: the caption goes over the control,
+ * click work as they do in the table. The width of a column is the `size` of its header: `Compact` (shrinks to its content), `Auto` (one whole line), `Fixed` (a `width`) or `Grow` (shares the
+ * remaining width equally with the other `Grow` columns and truncates its content, with the full text as a tooltip); a header that names no size follows its `kind`: free text grows, a status, a date or an id shrinks, so a table needs no width classes.  A column whose cells hold a form control says `card-role="control"`: the caption goes over the control,
  * which takes the full width of the card.
  *
- * The phone layout is a `UiCardList` of `UiRecordCard`s, not the table markup restyled: below `sm` (a media query read from script) the table renders the
+ * The phone layout is a `UiCardList` of `UiRecordCard`s, not the table markup restyled: below `md` (a media query read from script) the table renders the
  * list in place of its `<table>`, and its head, body, foot, rows and cells draw card parts from the very same header columns and row slots (see
  * `UiTableRow`). The header captions that hold the sort buttons are not drawn there, so when a header is `sortable` the list's header offers a
  * select of the sortable columns and a direction button, which ask the screen to sort through the same `sort` event the header's button emits, and a
@@ -43,7 +43,7 @@
  * The table gives the semantics of its parts as explicit roles (table, rowgroup, row, columnheader, cell), because a part
  * drawn as a block would otherwise lose them for assistive technology.
  */
-import { computed, provide, ref, watch } from 'vue'
+import { computed, provide, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -52,13 +52,13 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useScrollEdges } from '@/composables/useScrollEdges'
 import { Icon } from '@/lib/icons'
-import { UI_BELOW_SM_QUERY } from '@/utils/ui/breakpoints'
+import { UI_BELOW_MD_QUERY } from '@/utils/ui/breakpoints'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
 import type { RowSelection } from '@/composables/useRowSelection'
 import type { UiSelectOption } from '@/utils/ui/select'
 import { UiSize } from '@/utils/ui/size'
-import { cardSkeletonOf, cellDensityClasses, columnClasses, columnSizeOf, scrollBoxClasses, stickyHeadFill, tableMaxHeightClasses, UiColumnSize, UiSortDirection, withCardTitle } from '@/utils/ui/table'
+import { cardSkeletonOf, cellDensityClasses, columnClasses, columnSizeOf, scrollBoxClasses, stickyHeadFill, tableMaxHeightClasses, UiSortDirection, withCardTitle } from '@/utils/ui/table'
 import type { UiTableMaxHeight } from '@/utils/ui/table'
 
 /** The attributes a screen sets (classes, test ids) belong on the table; the box around it only scrolls. */
@@ -135,27 +135,11 @@ const placeholderCells = computed<PlaceholderCell[]>(() =>
   columns.value.map(({ index, column }) => ({ index, classes: [columnSizeOf(column), ...columnClasses(column)] })),
 )
 
-/** True below `sm`, where the table is a list of cards. */
-const phone = useMediaQuery(UI_BELOW_SM_QUERY)
+/** True below `md`, where the table is a list of cards. */
+const phone = useMediaQuery(UI_BELOW_MD_QUERY)
 
 /** The shape of the placeholder cards the phone layout draws while loading. */
 const cardSkeleton = computed(() => cardSkeletonOf(columns.value.map(({ column }) => column)))
-
-/** How many header columns are `Grow`: more than one fight for the same remaining width. */
-const growCount = computed<number>(() => columns.value.filter(({ column }) => column.size === UiColumnSize.Grow).length)
-
-// Development guard: two columns cannot both take the rest of the width, so the second is a screen mistake to fix, not to ship.
-if (import.meta.env.DEV) {
-  watch(
-    growCount,
-    (count) => {
-      if (count > 1) {
-        console.warn(`UiTable: ${count} columns are sized UiColumnSize.Grow, a table has at most one.`)
-      }
-    },
-    { immediate: true },
-  )
-}
 
 /** Width of the status row: every header column (at least one). */
 const columnCount = computed<number>(() => Math.max(columns.value.length, 1))

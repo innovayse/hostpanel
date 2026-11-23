@@ -12,7 +12,7 @@
     </UiAlert>
 
     <UiCard>
-      <UiGrid as="dl" cols="2" gap="lg">
+      <UiGrid :as="UiGridTag.Dl" cols="2" gap="lg">
         <UiDescriptionItem :label="$t('client.domains.fieldDomain')" :value="fullName" value-class="font-medium" />
         <UiDescriptionItem :label="$t('client.domains.fieldFirstPayment')" :value="domain.firstPaymentAmount ? money(domain.firstPaymentAmount) : null" />
         <UiDescriptionItem :label="$t('client.domains.fieldRegistrationDate')" :value="formatDate(domain.registeredAt)" />
@@ -59,6 +59,7 @@ import { useClientStore } from '~/stores/client'
 import { DomainTab } from '~/types/domaintab'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
+import { UiGridTag } from '~/utils/ui/enums'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -87,12 +88,12 @@ const emit = defineEmits<{
 /** The client store, which knows what the signed-in person may do. */
 const store = useClientStore()
 
-/** The shortcuts the person may use: the panel each opens and its sentence. */
+/** The shortcuts the person may use: the panel each opens and its label. */
 const actions = computed(() => [
-  { tab: DomainTab.Nameservers, label: t('client.domains.quickNameservers'), permission: Permission.ManageDomainSettings },
-  { tab: DomainTab.Contact, label: t('client.domains.quickContact'), permission: Permission.ManageDomainSettings },
-  { tab: DomainTab.Lock, label: t('client.domains.quickLock'), permission: Permission.ManageDomainSettings },
-  { tab: DomainTab.Renew, label: t('client.domains.quickRenew'), permission: Permission.PlaceNewOrders },
+  { tab: DomainTab.Nameservers, label: t('client.domains.tabNameservers'), permission: Permission.ManageDomainSettings },
+  { tab: DomainTab.Contact, label: t('client.domains.tabContactInfo'), permission: Permission.ManageDomainSettings },
+  { tab: DomainTab.Lock, label: t('client.domains.tabRegistrarLock'), permission: Permission.ManageDomainSettings },
+  { tab: DomainTab.Renew, label: t('client.domains.tabRenew'), permission: Permission.PlaceNewOrders },
 ].filter(action => store.mayDo(action.permission)))
 
 /**

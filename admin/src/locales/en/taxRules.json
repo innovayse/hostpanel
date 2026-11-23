@@ -1,12 +1,11 @@
 {
   "title": "Tax Rules",
   "description": "Set the tax rate new invoices are taxed at, per country or per region of a country",
-  "addRule": "Add Tax Rule",
+  "addRule": "Create tax rule",
   "empty": "No tax rules yet. Add a rule to tax new invoices automatically.",
   "searchPlaceholder": "Search by name, country or region",
   "noMatches": "No tax rules match your filters",
   "clearFilters": "Clear filters",
-  "totalCount": "Tax rules: {totalCount}",
   "table": {
     "name": "Name",
     "country": "Country",
@@ -20,14 +19,12 @@
   "disabledBadge": "Disabled",
   "deleteModal": {
     "title": "Delete Tax Rule",
-    "message": "Delete the tax rule {name}? Invoices already issued keep the rate they were taxed at.",
-    "confirmLabel": "Delete"
+    "message": "Delete the tax rule {name}? Invoices already issued keep the rate they were taxed at."
   },
   "toasts": {
     "deleted": "The tax rule was deleted."
   },
   "form": {
-    "addTitle": "Add Tax Rule",
     "editTitle": "Edit Tax Rule",
     "name": {
       "label": "Name",
@@ -50,8 +47,6 @@
       "label": "Enabled",
       "hint": "Only enabled rules are used on new invoices."
     },
-    "cancel": "Cancel",
-    "add": "Add",
-    "save": "Save"
+    "cancel": "Cancel"
   }
 }

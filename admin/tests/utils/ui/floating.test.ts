@@ -3,7 +3,7 @@
  * place reaches the element as CSS variables.
  */
 import { describe, expect, it } from 'vitest'
-import { FLOATING_PANEL_CLASSES, FloatingAlign, applyFloatingPlace, computeFloatingPlace } from '@/utils/ui/floating'
+import { FLOATING_PANEL_CLASSES, FLOATING_PLACE_CLASSES, FloatingAlign, applyFloatingPlace, computeFloatingPlace } from '@/utils/ui/floating'
 
 /** A trigger 200px wide near the top left of a 1000x800 viewport. */
 const anchor = { left: 100, right: 300, top: 100, bottom: 140, width: 200 }
@@ -14,19 +14,19 @@ const viewport = { width: 1000, height: 800 }
 describe('computeFloatingPlace', () => {
   it('hangs a start aligned panel from the left edge, below the trigger, as wide as the trigger', () => {
     expect(computeFloatingPlace(anchor, viewport, { align: FloatingAlign.Start, minRoom: 160, gap: 6 }))
-      .toEqual({ left: 100, top: 146, width: 200 })
+      .toEqual({ left: 100, top: 146, width: 200, maxHeight: 646 })
   })
 
   it('hangs an end aligned panel from the right edge', () => {
     expect(computeFloatingPlace(anchor, viewport, { align: FloatingAlign.End, minRoom: 160, gap: 4 }))
-      .toEqual({ right: 700, top: 144, width: 200 })
+      .toEqual({ right: 700, top: 144, width: 200, maxHeight: 648 })
   })
 
   it('opens above the trigger when there is little room below and more above', () => {
     const low = { left: 100, right: 300, top: 700, bottom: 740, width: 200 }
 
     expect(computeFloatingPlace(low, viewport, { align: FloatingAlign.Start, minRoom: 160, gap: 4 }))
-      .toEqual({ left: 100, bottom: 104, width: 200 })
+      .toEqual({ left: 100, bottom: 104, width: 200, maxHeight: 688 })
   })
 
   it('stays below when there is little room on both sides, the larger one wins', () => {
@@ -43,16 +43,36 @@ describe('computeFloatingPlace', () => {
   })
 })
 
+describe('the room a panel may fill', () => {
+  it('is the free height on the side it opens to, less the gap and the screen margin', () => {
+    const low = { left: 100, right: 300, top: 700, bottom: 740, width: 200 }
+
+    expect(computeFloatingPlace(anchor, viewport, { align: FloatingAlign.Start, minRoom: 160, gap: 6 }).maxHeight).toBe(800 - 140 - 6 - 8)
+    expect(computeFloatingPlace(low, viewport, { align: FloatingAlign.Start, minRoom: 160, gap: 4 }).maxHeight).toBe(700 - 4 - 8)
+  })
+
+  it('never goes below zero on a screen with no room at all', () => {
+    const squeezed = { left: 0, right: 100, top: 0, bottom: 40, width: 100 }
+
+    expect(computeFloatingPlace(squeezed, { width: 1000, height: 40 }, { align: FloatingAlign.Start, minRoom: 0, gap: 4 }).maxHeight).toBe(0)
+  })
+
+  it('is bounded in the panel classes, which scroll inside themselves', () => {
+    expect(FLOATING_PLACE_CLASSES.split(' ')).toEqual(expect.arrayContaining(['max-h-[var(--fp-max-h,none)]', 'overflow-y-auto']))
+  })
+})
+
 describe('applyFloatingPlace', () => {
   it('writes the used edges as CSS variables and removes the unused ones', () => {
     const element = document.createElement('div')
     element.style.setProperty('--fp-bottom', '9px')
 
-    applyFloatingPlace(element, { left: 10, top: 20, width: 30 })
+    applyFloatingPlace(element, { left: 10, top: 20, width: 30, maxHeight: 40 })
 
     expect(element.style.getPropertyValue('--fp-left')).toBe('10px')
     expect(element.style.getPropertyValue('--fp-top')).toBe('20px')
     expect(element.style.getPropertyValue('--fp-width')).toBe('30px')
+    expect(element.style.getPropertyValue('--fp-max-h')).toBe('40px')
     expect(element.style.getPropertyValue('--fp-bottom')).toBe('')
     expect(element.style.getPropertyValue('--fp-right')).toBe('')
   })
@@ -72,7 +92,7 @@ describe('computeFloatingPlace with the measured panel width', () => {
     const corner = { left: 16, right: 52, top: 700, bottom: 736, width: 36 }
 
     expect(computeFloatingPlace(corner, viewport, { align: FloatingAlign.End, minRoom: 160, gap: 4 }, 192))
-      .toEqual({ left: 16, bottom: 104, width: 36 })
+      .toEqual({ left: 16, bottom: 104, width: 36, maxHeight: 688 })
     expect(computeFloatingPlace(anchor, viewport, { align: FloatingAlign.End, minRoom: 160, gap: 4 }, 192).right).toBe(700)
   })
 

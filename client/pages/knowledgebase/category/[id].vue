@@ -7,10 +7,12 @@
         tone="muted"
         :underline="false"
         class="inline-flex items-center gap-2 self-start text-sm"
+        :title="t('kb.backToKb')"
+        :aria-label="t('kb.backToKb')"
         testid="kb-back"
       >
         <ArrowLeft :size="15" :stroke-width="2" />
-        {{ t('kb.backToKb') }}
+        {{ t('common.back') }}
       </UiLink>
 
       <!-- Category header; absent while the categories could not be read -->

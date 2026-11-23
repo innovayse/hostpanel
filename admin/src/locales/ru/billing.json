@@ -7,7 +7,6 @@
     "creditRemoved": "Кредит снят со счёта.",
     "confirmRemoveCreditTitle": "Снять кредит?",
     "confirmRemoveCreditMessage": "Снять {amount} кредита со счёта #{id}?",
-    "removeCredit": "Снять кредит",
     "topUpNoCredit": "Это счёт на пополнение баланса. К нему нельзя применить кредит: он оплачивается полностью, а его сумма зачисляется на баланс клиента после оплаты."
   },
   "invoiceNotesTab": {
@@ -21,7 +20,6 @@
   "invoicePaymentTab": {
     "publishTheInvoiceBeforeAdding": "Опубликуйте счёт, прежде чем добавлять платежи.",
     "invoiceIsCancelledPleaseMark": "Счёт отменён: сначала отметьте его как неоплаченный, чтобы применить платёж.",
-    "addPayment": "Добавить платёж",
     "gatewayReference": "Ссылка на платёж в шлюзе",
     "paymentAdded": "Платёж записан."
   },
@@ -50,11 +48,10 @@
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "Это черновик счёта. Клиент не видит этот счёт и не имеет к нему доступа, пока он не опубликован.",
-    "viewInvoices": "(Посмотреть счета)",
+    "viewInvoices": "Посмотреть счета",
     "invoiceAmount": "Сумма счёта",
     "paymentMethod": "Способ оплаты:",
     "publish": "Опубликовать",
-    "markPaid": "Отметить оплаченным",
     "published": "Счёт опубликован.",
     "cancelled": "Счёт отменён.",
     "markedPaid": "Счёт отмечен как оплаченный.",
@@ -74,7 +71,6 @@
     "createQuote": "Создать предложение",
     "createANewQuoteFor": "Создайте новое предложение для клиента",
     "generalInformation": "Общая информация",
-    "deleteRow": "Удалить строку",
     "proposalText": "Текст предложения",
     "displayedAtTheTopOf": "(отображается в начале предложения)",
     "enterProposalText": "Введите текст предложения",
@@ -91,7 +87,7 @@
     "dead": "Неактуально"
   },
   "addTransaction": {
-    "addTransaction": "Добавить транзакцию",
+    "createTransaction": "Создать транзакцию",
     "recordANewPaymentTransaction": "Записать новую платёжную транзакцию",
     "relatedClient": "Связанный клиент",
     "whatIsThisTransactionFor": "Для чего эта транзакция?",
@@ -114,7 +110,8 @@
     "clearFilters": "Сбросить фильтры",
     "deleteItems": "Удалить начисления",
     "deleteItemsMessage": "Удалить {count} выбранное начисление? Это действие нельзя отменить. | Удалить {count} выбранных начисления? Это действие нельзя отменить. | Удалить {count} выбранных начислений? Это действие нельзя отменить.",
-    "itemsDeleted": "Оплачиваемые позиции удалены."
+    "itemsDeleted": "Оплачиваемые позиции удалены.",
+    "create": "Создать оплачиваемую позицию"
   },
   "disputes": {
     "listDisputes": "Список споров",
@@ -124,8 +121,7 @@
   },
   "editTransaction": {
     "editTransaction": "Редактировать транзакцию",
-    "updatePaymentTransactionDetails": "Обновите данные платёжной транзакции",
-    "updateTransaction": "Обновить транзакцию"
+    "updatePaymentTransactionDetails": "Обновите данные платёжной транзакции"
   },
   "gatewayLog": {
     "gatewayTransactionLog": "Журнал транзакций шлюза",
@@ -175,7 +171,6 @@
     "reference": "Референс",
     "requested": "Выбрано",
     "empty": "Нет банковских переводов, ожидающих решения.",
-    "confirm": "Подтвердить",
     "reject": "Отклонить",
     "confirmTitle": "Подтвердить банковский перевод",
     "confirmMessage": "Подтвердить, что {amount} поступили по счёту №{id} (референс {reference})? Счёт будет отмечен оплаченным.",
@@ -218,8 +213,7 @@
     "tabCredit": "Кредит",
     "tabRefund": "Возврат",
     "tabCreditNotes": "Кредит-ноты",
-    "tabFulfilment": "Выполнение заказов",
-    "downloadPdf": "Скачать PDF"
+    "tabFulfilment": "Выполнение заказов"
   },
   "invoicesList": {
     "manageBillingInvoices": "Управление счетами на оплату",
@@ -227,13 +221,7 @@
     "summaryHint": "{count} счёт на странице | {count} счета на странице | {count} счетов на странице",
     "dateRefunded": "Дата возврата",
     "totalcountRecordsFoundShowingValue": "Найдено записей: {totalCount}, показаны {value}-{value2}",
-    "markPaid": "Отметить оплаченным",
-    "markUnpaid": "Отметить неоплаченным",
     "duplicateInvoice": "Дублировать счёт",
-    "bulkPaid": "Оплачен",
-    "bulkUnpaid": "Не оплачен",
-    "bulkCancelled": "Отменён",
-    "bulkDuplicate": "Дублировать",
     "collections": "Взыскание",
     "paymentPending": "Ожидает оплаты",
     "searchInvoices": "Поиск по номеру счёта или способу оплаты",
@@ -259,11 +247,9 @@
     "quoteSubject": "Тема предложения",
     "selectStage": "Выберите этап",
     "dateCreated": "Дата создания",
-    "duplicate": "Дублировать",
     "convertToInvoice": "Преобразовать в счёт",
     "unitPrice": "Цена за единицу",
     "discount": "Скидка %",
-    "addItem": "Добавить позицию",
     "proposalText": "Текст предложения",
     "proposalTextVisibleToThe": "Текст предложения, видимый клиенту",
     "customerNotes": "Заметки для клиента",
@@ -279,7 +265,6 @@
   },
   "quotesList": {
     "customerQuotesAndProposals": "Предложения и коммерческие проекты для клиентов",
-    "createQuote": "Создать предложение",
     "validityPeriod": "Срок действия",
     "created": "Создано",
     "noQuotesFound": "Предложения не найдены.",
@@ -289,7 +274,6 @@
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Платёжные транзакции и записи",
-    "addTransaction": "Добавить транзакцию",
     "show": "Показать",
     "netRevenueUsd": "Чистая выручка (USD)",
     "totalIncome": "Общий доход",
@@ -315,7 +299,6 @@
     "attempts": "Попытки",
     "lastError": "Последняя ошибка",
     "when": "Завершено / следующая попытка",
-    "retry": "Повторить",
     "empty": "Для этого счёта нет записей выполнения.",
     "statusPending": "Ожидает",
     "statusProcessing": "Выполняется",
@@ -343,7 +326,6 @@
     "lines": "Возвращаемые строки",
     "useInvoiceLines": "Взять строки счёта",
     "addLine": "Добавить строку",
-    "removeLine": "Удалить",
     "descriptionPlaceholder": "Что возвращается",
     "pricePlaceholder": "Цена",
     "quantityPlaceholder": "Кол-во",
@@ -382,7 +364,6 @@
       "Voided": "Аннулирована"
     },
     "detailTitle": "Кредит-нота {number}",
-    "downloadPdf": "Скачать PDF",
     "voidButton": "Аннулировать",
     "voidTitle": "Аннулировать кредит-ноту",
     "voidMessage": "Аннулировать кредит-ноту {number}? Она сохранит номер и останется в учёте. Кредит на баланс, который она дала, будет снят с баланса клиента, а по счёту снова можно будет выписать кредит-ноту.",
@@ -395,5 +376,13 @@
     "quantity": "Кол-во",
     "unitPrice": "Цена",
     "amount": "Сумма"
+  },
+  "actions": {
+    "addItem": "Добавить позицию",
+    "duplicate": "Дублировать",
+    "markPaid": "Отметить оплаченным",
+    "markUnpaid": "Отметить неоплаченным",
+    "markCancelled": "Отметить отменённым",
+    "downloadPdf": "Скачать PDF"
   }
 }

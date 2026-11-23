@@ -10,7 +10,7 @@ import { AppRoute } from '@/lib/routes'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema, SkeletonColumn } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** One compact money column per billing cycle, captioned by the product form's own cycle label. */
 const priceColumns: readonly SkeletonColumn[] = PRODUCT_PRICE_CYCLES.map((cycle) => ({
@@ -32,7 +32,7 @@ const schema: ListSkeletonSchema = {
       { key: 'group', label: 'settings.products.group' },
       { key: 'type', label: 'shared.type' },
       ...priceColumns,
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

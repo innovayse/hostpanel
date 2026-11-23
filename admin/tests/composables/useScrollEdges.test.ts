@@ -2,7 +2,7 @@
  * Tests for the scroll edge detector: a strip that fits shows no fade, one that overflows fades its end, and
  * scrolling moves the fade to the start and then to both sides.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { useScrollEdges } from '@/composables/useScrollEdges'
@@ -63,5 +63,54 @@ describe('useScrollEdges', () => {
     expect(edges.hasBefore.value).toBe(true)
     expect(edges.hasAfter.value).toBe(false)
     expect(edges.fadeClass.value).toContain('to_left')
+  })
+})
+
+describe('useScrollEdges resize callback', () => {
+  it('calls the callback after a size change, and not after a scroll', async () => {
+    /** Callbacks of the observers created, so the test can play a resize. */
+    const callbacks: ResizeObserverCallback[] = []
+    vi.stubGlobal('ResizeObserver', class {
+      /**
+       * Keeps the callback to play later.
+       *
+       * @param callback - The detector's resize callback.
+       */
+      constructor(callback: ResizeObserverCallback) {
+        callbacks.push(callback)
+      }
+
+      /** Not used by the test. */
+      observe = (): void => {}
+
+      /** Not used by the test. */
+      unobserve = (): void => {}
+
+      /** Not used by the test. */
+      disconnect = (): void => {}
+    })
+    try {
+      let resized = 0
+      const Strip = defineComponent({
+        setup() {
+          /** The strip element the edges are read from. */
+          const element = ref<HTMLElement | null>(null)
+          useScrollEdges(element, () => {
+            resized += 1
+          })
+          return () => h('div', { ref: element })
+        },
+      })
+      const wrapper = mount(Strip, { attachTo: document.body })
+      await nextTick()
+
+      wrapper.element.dispatchEvent(new Event('scroll'))
+      expect(resized).toBe(0)
+
+      callbacks[0]?.([], {} as ResizeObserver)
+      expect(resized).toBe(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

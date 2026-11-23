@@ -305,7 +305,7 @@
       "label": "Շեշտադրող",
       "hint": "Gradient-ներ, badge-եր և երկրորդական ընդգծումներ։"
     },
-    "reset": "Վերականգնել",
+    "reset": "Վերականգնել լռելյայն արժեքը",
     "previewButton": "Կոճակ",
     "previewLink": "Հղում",
     "contrastOk": "Սպիտակ տեքստը այս գույնի վրա՝ {ratio}:1, համապատասխանում է WCAG AA-ին։",
@@ -369,8 +369,7 @@
   "productGroups": {
     "manage": "Ապրանքների խմբեր",
     "title": "Ապրանքների խմբեր",
-    "add": "Ավելացնել խումբ",
-    "addTitle": "Ավելացնել ապրանքների խումբ",
+    "addTitle": "Ստեղծել ապրանքների խումբ",
     "editTitle": "Խմբագրել ապրանքների խումբը",
     "edit": "Խմբագրել խումբը",
     "name": "Անվանում",
@@ -387,7 +386,6 @@
   },
   "productForm": {
     "editProduct": "Խմբագրել ապրանքը",
-    "createNewProduct": "Ստեղծել նոր ապրանք",
     "productType": "Ապրանքի տեսակ",
     "productGroup": "Ապրանքների խումբ",
     "selectAGroup": "Ընտրեք խումբը",
@@ -516,15 +514,12 @@
   },
   "products": {
     "manageHostingPlansAndServices": "Գնման համար հասանելի հոսթինգ պլանների և ծառայությունների կառավարում",
-    "createProduct": "Ստեղծել ապրանք",
     "group": "Խումբ",
     "editSpecification": "Խմբագրել սպեցիֆիկացիան",
-    "editProduct": "Խմբագրել ապրանքը",
     "noProductsFoundCreateYour": "Ապրանքներ չեն գտնվել։ Սկսելու համար ստեղծեք առաջին ապրանքը։",
     "searchPlaceholder": "Որոնում ըստ անվանման, SKU-ի կամ slug-ի",
     "noProductsMatchYourFilters": "Ֆիլտրերին համապատասխանող ապրանքներ չկան",
     "clearFilters": "Մաքրել ֆիլտրերը",
-    "totalCount": "Ապրանքներ՝ {totalCount}",
     "typeSharedHosting": "Ընդհանուր հոսթինգ",
     "typeDedicated": "Հատկացված",
     "typeDomain": "Դոմեյն",
@@ -635,13 +630,11 @@
   },
   "slides": {
     "manageHomepageHeroSlidesDrag": "Գլխավոր էջի սլայդների կառավարում։ Քաշեք՝ հերթականությունը փոխելու համար։",
-    "addSlide": "Ավելացնել սլայդ",
     "image": "Պատկեր",
     "audience": "Լսարան",
     "visibility": "Տեսանելիություն",
     "slide": "Սլայդ",
     "editSlide": "Խմբագրել սլայդը",
-    "deleteSlide": "Ջնջել սլայդը",
     "noSlidesFoundAddYour": "Սլայդներ չեն գտնվել։ Սկսելու համար ավելացրեք առաջին սլայդը։",
     "deleteSlide2": "Ջնջել սլայդը",
     "always": "Միշտ",
@@ -688,7 +681,6 @@
     "nameAm": "Name.am",
     "namecheap": "Namecheap",
     "syncPrices": "Համաժամեցնել գները",
-    "addTld": "Ավելացնել TLD",
     "searchTlds": "TLD-ների որոնում",
     "tld": "TLD",
     "provider": "Պրովայդեր",
@@ -697,12 +689,9 @@
     "margin": "Մարժա",
     "marginUnavailable": "Մարժա չկա՝ գինը նշված չէ կամ ինքնարժեքի և վաճառքի արժույթների միջև փոխարժեք չկա",
     "lastSynced": "Վերջին համաժամեցում",
-    "editTld": "Խմբագրել TLD-ն",
-    "deleteTld": "Ջնջել TLD-ն",
     "noTldConfigurationsFoundAdd": "TLD կարգավորումներ չեն գտնվել։ Ավելացրեք առաջին TLD-ն կամ ներմուծեք պրովայդերից։",
     "noTldsMatchYourFilters": "Ֆիլտրերին համապատասխանող TLD չկա",
     "clearFilters": "Մաքրել ֆիլտրերը",
-    "totalcountTldValue": "TLD՝ {totalCount}",
     "deleteTldConfiguration": "Ջնջել TLD կարգավորումը",
     "priceSyncComplete": "Գների համաժամեցումն ավարտվեց։",
     "deleteMessage": "Ջնջե՞լ «.{tld}» TLD կոնֆիգուրացիան։ Այս գործողությունը հնարավոր չէ չեղարկել։",
@@ -794,8 +783,6 @@
   },
   "saveBar": {
     "unsaved": "{count} չպահպանված փոփոխություն | {count} չպահպանված փոփոխություն",
-    "clean": "Չպահպանված փոփոխություններ չկան",
-    "save": "Պահպանել",
-    "discard": "Չեղարկել"
+    "clean": "Չպահպանված փոփոխություններ չկան"
   }
 }

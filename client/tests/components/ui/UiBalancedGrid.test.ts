@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiBalancedGrid from '~/components/ui/UiBalancedGrid.vue'
 import { balancedColumns, lastRowSize } from '~/utils/balancedGrid'
+import { UiGridTag } from '~/utils/ui/enums'
 
 /**
  * Mounts the grid with `count` cells.
@@ -40,7 +41,7 @@ describe('UiBalancedGrid', () => {
   })
 
   it('renders the requested tag', () => {
-    const wrapper = mountWithKit(UiBalancedGrid, { props: { count: 1, as: 'ul' }, slots: { default: '<li>a</li>' } })
+    const wrapper = mountWithKit(UiBalancedGrid, { props: { count: 1, as: UiGridTag.Ul }, slots: { default: '<li>a</li>' } })
 
     expect(wrapper.element.tagName).toBe('UL')
   })

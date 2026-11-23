@@ -34,6 +34,8 @@ describe('UiBackLink', () => {
     expect(classes).toContain('text-text-secondary')
     expect(classes).toContain('hover:bg-surface-hover')
     expect(classes).toContain('whitespace-nowrap')
+    expect(classes).toContain('shrink-0')
+    expect(classes).toContain('max-w-full')
     expect(classes).not.toContain('underline')
   })
 

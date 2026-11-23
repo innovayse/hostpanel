@@ -37,6 +37,14 @@ describe('VersionLabel', () => {
     expect(wrapper.get('[data-testid="sidebar-version"]').text()).toBe('Hostpanel 1.4.0')
   })
 
+  it('cuts a line wider than its place instead of overflowing', async () => {
+    const { wrapper } = await mountScreen(VersionLabel)
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="version-label"]').classes()).toContain('truncate')
+  })
+
   it('draws nothing while the version is unknown', async () => {
     const { wrapper } = await mountScreen(VersionLabel)
 
@@ -51,7 +59,7 @@ describe('VersionLabel', () => {
     await flushPromises()
 
     expect(mock).not.toHaveBeenCalled()
-    expect(wrapper.get('[data-testid="first"]').text()).toBe('Hostpanel 1.4.0')
+    expect(wrapper.get('[data-testid="version-label"]').text()).toBe('Hostpanel 1.4.0')
     expect(wrapper.get('[data-testid="second"]').text()).toBe('Hostpanel 1.4.0')
   })
 })

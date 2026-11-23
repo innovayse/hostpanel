@@ -1,97 +1,103 @@
 <template>
-  <UiStack gap="none" class="bg-ui-page py-10 md:py-16" data-testid="bundle-configure">
+  <UiSection :padding="UiSectionPadding.Md" :contained="false" class="bg-ui-page" data-testid="bundle-configure">
     <UiContainer>
-      <div>
-        <UiLink :to="localePath(SITE_PRODUCTS_PATH)" tone="muted" :underline="false" class="mb-8 inline-flex items-center gap-2 text-sm" testid="bundle-back">
-          <ArrowLeft :size="16" :stroke-width="2" />
-          {{ $t('bundles.back') }}
-        </UiLink>
+      <UiBackLink :to="localePath(SITE_PRODUCTS_PATH)" :label="$t('common.backToProducts')" testid="bundle-back" class="mb-8" />
 
-        <!-- Loading -->
-        <div v-if="pending" class="grid gap-8 md:grid-cols-[1fr_360px]" data-testid="bundle-loading">
-          <UiSkeleton shape="block" class="h-64" />
-          <UiSkeleton shape="block" class="h-80" />
-        </div>
+      <!-- Loading -->
+      <UiSplit v-if="pending" :ratio="UiSplitRatio.StartWide" :gap="UiGap.Xl" data-testid="bundle-loading">
+        <template #start>
+          <UiSkeleton :shape="UiSkeletonShape.Block" class="h-64" />
+        </template>
+        <template #end>
+          <UiSkeleton :shape="UiSkeletonShape.Block" class="h-80" />
+        </template>
+      </UiSplit>
 
-        <!-- Not found -->
-        <UiEmptyState v-else-if="!bundle" :icon="AlertCircle" :title="$t('bundles.notFound')" data-testid="bundle-missing">
-          <UiLink :to="localePath(SITE_PRODUCTS_PATH)" testid="bundle-missing-back">{{ $t('bundles.back') }}</UiLink>
-        </UiEmptyState>
+      <!-- Not found -->
+      <UiEmptyState v-else-if="!bundle" :icon="AlertCircle" :title="$t('bundles.notFound')" data-testid="bundle-missing">
+        <UiLink :to="localePath(SITE_PRODUCTS_PATH)" :tone="UiLinkTone.Primary" testid="bundle-missing-back">{{ $t('common.backToProducts') }}</UiLink>
+      </UiEmptyState>
 
-        <div v-else class="grid items-start gap-8 md:grid-cols-[1fr_360px]">
-          <!-- What the bundle is made of -->
-          <div class="space-y-6">
-            <div>
-              <UiHeading :level="1" class="text-2xl md:text-3xl" data-testid="bundle-name">{{ bundle.name }}</UiHeading>
-              <UiText v-if="bundle.description" tone="muted" class="mt-3 leading-relaxed">{{ bundle.description }}</UiText>
-              <UiBadge v-if="discountLabel" class="mt-3" data-testid="bundle-discount">{{ discountLabel }}</UiBadge>
-            </div>
+      <UiSplit v-else :ratio="UiSplitRatio.StartWide" :gap="UiGap.Xl">
+        <!-- What the bundle is made of -->
+        <template #start>
+          <UiStack :gap="UiGap.Lg">
+            <UiStack :gap="UiGap.Sm" :align="UiCrossAlign.Start">
+              <UiHeading :level="UiHeadingLevel.H1" :size="UiHeadingSize.Section" data-testid="bundle-name">{{ bundle.name }}</UiHeading>
+              <UiText v-if="bundle.description" :tone="UiTextTone.Muted" class="leading-relaxed">{{ bundle.description }}</UiText>
+              <UiBadge v-if="discountLabel" data-testid="bundle-discount">{{ discountLabel }}</UiBadge>
+            </UiStack>
 
             <UiCard
               v-for="row in rows"
               :key="row.productId"
-              class="space-y-3"
               :data-testid="`bundle-component-${row.productId}`"
             >
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <UiHeading :level="2" size="subsection">{{ row.name }}</UiHeading>
-                <UiBadge v-if="row.isPrimary" variant="info">{{ $t('bundles.primary') }}</UiBadge>
-              </div>
-              <UiSelect
-                v-if="row.options.length > 0"
-                :label="$t('bundles.cycle')"
-                :placeholder="$t('bundles.cyclePlaceholder')"
-                :model-value="row.selected?.cycle"
-                :options="cycleOptions(row)"
-                :testid="`bundle-cycle-${row.productId}`"
-                @update:model-value="value => emit('update:cycle', row.productId, value as PricingCycle)"
-              />
-              <UiAlert v-else variant="warning" :data-testid="`bundle-unpriced-${row.productId}`">{{ $t('bundles.unpriced') }}</UiAlert>
+              <UiStack :gap="UiGap.Sm">
+                <UiStack :direction="UiDirection.Row" wrap :align="UiCrossAlign.Center" :justify="UiJustify.Between" :gap="UiGap.Xs">
+                  <UiHeading :level="UiHeadingLevel.H2" :size="UiHeadingSize.Subsection">{{ row.name }}</UiHeading>
+                  <UiBadge v-if="row.isPrimary" :variant="UiTone.Info">{{ $t('bundles.primary') }}</UiBadge>
+                </UiStack>
+                <UiSelect
+                  v-if="row.options.length > 0"
+                  :label="$t('bundles.cycle')"
+                  :placeholder="$t('bundles.cyclePlaceholder')"
+                  :model-value="row.selected?.cycle"
+                  :options="cycleOptions(row)"
+                  :testid="`bundle-cycle-${row.productId}`"
+                  @update:model-value="value => emit('update:cycle', row.productId, value as PricingCycle)"
+                />
+                <UiAlert v-else :variant="UiAlertVariant.Warning" :data-testid="`bundle-unpriced-${row.productId}`">{{ $t('bundles.unpriced') }}</UiAlert>
+              </UiStack>
             </UiCard>
 
             <!-- The domain step, when the bundle includes a domain -->
             <slot name="domain" />
-          </div>
+          </UiStack>
+        </template>
 
-          <!-- Order summary -->
-          <div class="sticky top-24">
-            <UiCard padding="none" class="overflow-hidden" data-testid="bundle-summary">
-              <div class="border-b border-gray-200 bg-white px-6 py-4 dark:border-white/10 dark:bg-white/5">
-                <UiHeading :level="2" size="subsection">{{ $t('bundles.orderSummary') }}</UiHeading>
-              </div>
+        <!-- Order summary -->
+        <template #end>
+          <UiCard class="sticky top-24" data-testid="bundle-summary">
+            <UiCardHeader :title="$t('bundles.orderSummary')" />
 
-              <div class="space-y-4 p-6">
-                <div class="space-y-2">
-                  <div v-for="line in lines" :key="line.id" class="flex justify-between gap-3 text-sm" data-testid="bundle-line">
-                    <span class="min-w-0 text-gray-600 dark:text-gray-400">
-                      {{ line.name }}
-                      <span class="block text-xs">{{ line.detail }}</span>
-                    </span>
-                    <span class="whitespace-nowrap text-gray-900 dark:text-white">{{ line.price }}</span>
-                  </div>
-                </div>
+            <UiStack>
+              <UiStack :gap="UiGap.Xs">
+                <UiStack
+                  v-for="line in lines"
+                  :key="line.id"
+                  :direction="UiDirection.Row"
+                  :justify="UiJustify.Between"
+                  :gap="UiGap.Sm"
+                  data-testid="bundle-line"
+                >
+                  <UiStack :gap="UiGap.None" class="min-w-0">
+                    <UiText :size="UiTextSize.Sm" :tone="UiTextTone.Muted">{{ line.name }}</UiText>
+                    <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Muted">{{ line.detail }}</UiText>
+                  </UiStack>
+                  <UiText :as="UiTextTag.Span" :size="UiTextSize.Sm" class="whitespace-nowrap">{{ line.price }}</UiText>
+                </UiStack>
+              </UiStack>
 
-                <div class="space-y-2 border-t border-gray-200 pt-3 dark:border-white/10">
-                  <CheckoutBundleSummary :name="bundle.name" :offer="discountLabel" :discount="discount" />
-                  <div class="flex justify-between">
-                    <span class="text-2xl font-bold text-gray-900 dark:text-white" data-testid="bundle-total">{{ total }}</span>
-                  </div>
-                  <UiText size="xs" tone="subtle" class="text-right">{{ $t('bundles.summary.estimate') }}</UiText>
-                </div>
+              <UiDivider />
 
-                <UiText v-if="!complete" size="xs" tone="subtle" data-testid="bundle-incomplete">{{ $t('bundles.summary.incomplete') }}</UiText>
+              <UiStack :gap="UiGap.Xs">
+                <CheckoutBundleSummary :name="bundle.name" :offer="discountLabel" :discount="discount" />
+                <UiText :size="UiTextSize.Inherit" :weight="UiTextWeight.Bold" class="text-2xl" data-testid="bundle-total">{{ total }}</UiText>
+                <UiText :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" class="text-right">{{ $t('bundles.summary.estimate') }}</UiText>
+              </UiStack>
 
-                <UiButton size="lg" full-width :disabled="!complete" data-testid="bundle-continue" @click="emit('continue')">
-                  {{ $t('bundles.continue') }}
-                  <ArrowRight :size="18" :stroke-width="2.5" class="ml-2" />
-                </UiButton>
-              </div>
-            </UiCard>
-          </div>
-        </div>
-      </div>
+              <UiText v-if="!complete" :size="UiTextSize.Xs" :tone="UiTextTone.Subtle" data-testid="bundle-incomplete">{{ $t('bundles.summary.incomplete') }}</UiText>
+
+              <UiButton :variant="UiButtonVariant.Primary" :size="UiSize.Lg" full-width icon="mdi:arrow-right" :disabled="!complete" data-testid="bundle-continue" @click="emit('continue')">
+                {{ $t('common.continue') }}
+              </UiButton>
+            </UiStack>
+          </UiCard>
+        </template>
+      </UiSplit>
     </UiContainer>
-  </UiStack>
+  </UiSection>
 </template>
 
 <script setup lang="ts">
@@ -104,7 +110,8 @@
  * component shows a skeleton while `pending`, a notice when the bundle was not found, and the
  * screen otherwise. The total is an estimate; the backend applies the real discount.
  */
-import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-vue-next'
+import { UiAlertVariant, UiButtonVariant, UiCrossAlign, UiDirection, UiGap, UiHeadingLevel, UiHeadingSize, UiJustify, UiLinkTone, UiSectionPadding, UiSize, UiSkeletonShape, UiSplitRatio, UiTextSize, UiTextTag, UiTextTone, UiTextWeight, UiTone } from '~/utils/ui/enums'
+import { AlertCircle } from 'lucide-vue-next'
 import type { BundleComponentRow } from '~/types/bundlecomponentrow'
 import type { BundleSummaryLine } from '~/types/bundlesummaryline'
 import type { CatalogBundle } from '~/types/catalogbundle'

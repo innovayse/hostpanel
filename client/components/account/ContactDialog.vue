@@ -73,9 +73,9 @@
       <UiButton type="button" variant="outline" data-testid="account-contact-cancel" @click="emit('update:modelValue', false)">
         {{ $t('common.cancel') }}
       </UiButton>
-      <UiButton type="submit" form="account-contact-form" :loading="contactSaving" data-testid="account-contact-save">
+      <UiButton variant="primary" type="submit" form="account-contact-form" :loading="contactSaving" data-testid="account-contact-save">
         <Check v-if="!contactSaving" :size="14" :stroke-width="2.5" class="mr-1.5" />
-        {{ $t('client.contacts.save') }}
+        {{ $t('common.save') }}
       </UiButton>
     </template>
   </UiDialog>

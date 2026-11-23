@@ -16,8 +16,8 @@
       >
         <UiStack gap="sm">
           <UiTile size="lg" :icon="service.icon" :class="[service.tint, 'text-white']" :data-testid="`service-icon-${service.key}`" />
-          <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ service.title }}</UiText>
-          <UiText as="span" size="inherit" tone="inherit" class="text-[15px] leading-relaxed text-mut">{{ service.body }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ service.title }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[15px] leading-relaxed text-mut">{{ service.body }}</UiText>
         </UiStack>
       </UiCard>
     </UiGrid>
@@ -44,6 +44,7 @@ import { HomeSectionId } from '~/types/homesectionid'
 import { LINE_BUTTON } from '~/templates/aurora/buttons'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import { SITE_PRODUCTS_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

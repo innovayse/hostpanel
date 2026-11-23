@@ -49,7 +49,7 @@
           <UiList v-if="freePlan.features.length" list-style="bare" class="mt-5 flex flex-wrap gap-x-6 gap-y-2.5">
             <UiListItem v-for="line in freePlan.features" :key="line" class="flex items-center gap-2">
               <Icon name="lucide:check" class="h-4 w-4 shrink-0 text-ok" />
-              <UiText as="span" size="sm" tone="inherit" class="text-tx2">{{ line }}</UiText>
+              <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="text-tx2">{{ line }}</UiText>
             </UiListItem>
           </UiList>
         </UiStack>
@@ -57,7 +57,7 @@
         <UiStack align="start" gap="md" class="min-w-[220px]">
           <UiStack gap="none">
             <UiText
-              as="span"
+              :as="UiTextTag.Span"
               size="inherit"
               tone="inherit"
               weight="bold"
@@ -65,7 +65,7 @@
             >
               {{ freePlan.priceMonthly }}
             </UiText>
-            <UiText as="span" size="inherit" tone="inherit" class="mt-1 text-[13px] uppercase tracking-[0.1em] text-mut2">
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="mt-1 text-[13px] uppercase tracking-[0.1em] text-mut2">
               {{ t('aurora.plans.freeForever') }}
             </UiText>
           </UiStack>
@@ -103,14 +103,14 @@
         >
           {{ t('aurora.plans.recommended') }}
         </UiBadge>
-        <UiText as="span" size="inherit" tone="inherit" weight="bold" class="break-words text-[17px] text-tx">{{ plan.name }}</UiText>
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="break-words text-[17px] text-tx">{{ plan.name }}</UiText>
         <!-- Clamped so a long description never makes one card taller than its row. -->
         <UiText v-if="plan.description" size="sm" tone="inherit" class="mt-1.5 line-clamp-2 break-words text-mut2">{{ plan.description }}</UiText>
 
         <UiList v-if="plan.features.length" list-style="bare" class="mt-3.5 flex flex-col gap-2">
           <UiListItem v-for="line in visibleFeatures(plan)" :key="line" class="flex items-start gap-2">
             <Icon name="lucide:check" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-ok" />
-            <UiText as="span" size="inherit" tone="inherit" class="min-w-0 break-words text-[13px] text-tx2">{{ line }}</UiText>
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="min-w-0 break-words text-[13px] text-tx2">{{ line }}</UiText>
           </UiListItem>
           <UiListItem v-if="hiddenFeatureCount(plan) > 0" :data-testid="`plan-more-${plan.id}`">
             <NuxtLink :to="plan.href" class="text-[13px] text-ac1 hover:underline">
@@ -122,10 +122,10 @@
         <!-- mt-auto pins price and button to the card bottom so they align across cards of unequal height. -->
         <UiStack gap="none" class="mt-auto pt-[22px]">
           <UiStack direction="row" align="end" gap="xs">
-            <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[38px] -tracking-[0.02em] text-tx">
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[38px] -tracking-[0.02em] text-tx">
               {{ cardCyclePrice(plan, activeCycle) }}
             </UiText>
-            <UiText as="span" size="sm" tone="inherit" class="pb-2 text-mut2">
+            <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="pb-2 text-mut2">
               {{ perMonthLabel }}
             </UiText>
           </UiStack>
@@ -156,13 +156,13 @@
       data-testid="plans-included"
       class="mt-8 border-line bg-surf shadow-card"
     >
-      <UiText as="span" size="inherit" tone="inherit" :class="[EYEBROW_CLASS, 'tracking-[0.1em] text-ac1']">
+      <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" :class="[EYEBROW_CLASS, 'tracking-[0.1em] text-ac1']">
         {{ t('aurora.plans.includedTitle') }}
       </UiText>
       <UiGrid cols="auto" gap="md" class="mt-4">
         <UiStack v-for="line in included" :key="line" direction="row" align="center" gap="xs">
           <Icon name="lucide:check" class="h-4 w-4 shrink-0 text-ok" />
-          <UiText as="span" size="inherit" tone="inherit" class="text-[15px] text-tx2">{{ line }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[15px] text-tx2">{{ line }}</UiText>
         </UiStack>
       </UiGrid>
     </UiCard>
@@ -184,6 +184,7 @@ import type { PlanCard } from '~/types/plancard'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { SegmentedOption } from '~/types/segmentedoption'
 import { cardCyclePrice, cycleSegments, effectiveCycle, planCardCycles } from '~/utils/planCycles'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props with their defaults applied. */
 const props = withDefaults(defineProps<{

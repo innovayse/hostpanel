@@ -151,4 +151,14 @@ describe('UiBulkBar', () => {
 
     expect(wrapper.emitted('clear')).toBeUndefined()
   })
+
+  it('leaves room for the fixed bar where it stands, only while rows are selected', async () => {
+    const wrapper = mountBar(2)
+
+    expect(Array.from(document.body.querySelector('[data-testid="ui-bulk-bar-spacer"]')?.classList ?? [])).toEqual(expect.arrayContaining(['h-24', 'max-sm:h-32']))
+
+    await wrapper.setProps({ count: 0 })
+
+    expect(document.body.querySelector('[data-testid="ui-bulk-bar-spacer"]')).toBeNull()
+  })
 })

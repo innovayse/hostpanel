@@ -47,6 +47,13 @@ import { ContentLanguage } from '@/locales/contentLanguage'
 import { AppRoute } from '@/lib/routes'
 import { withoutFields } from '@/lib/formSchema'
 import schema, { SLIDE_LEARN_MORE_FIELD } from '@/views/SlideFormView.schema'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiLabelVariant } from '@/utils/ui/text'
+import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
@@ -383,7 +390,7 @@ const handleCancel = (): void => {
 </script>
 
 <template>
-  <UiStack gap="none" class="pb-24" data-testid="slide-form-view">
+  <UiStack :gap="UiGap.None" class="pb-24" data-testid="slide-form-view">
     <UiPageHeader :title="isEditMode ? t('settings.slides.editSlide') : t('settings.slideForm.createSlide')" />
 
 
@@ -392,14 +399,14 @@ const handleCancel = (): void => {
     <template v-else>
       <UiSchemaForm :columns="columns" :loading="loadingSlide" :errors="slidesStore.fieldErrors" :hints="hints" class="mb-5">
         <template #field-iconName>
-          <UiStack gap="sm">
-            <UiStack direction="row" wrap gap="xs">
+          <UiStack :gap="UiGap.Sm">
+            <UiStack :direction="UiDirection.Row" wrap :gap="UiGap.Xs">
               <UiButton
                 v-for="preset in ICON_PRESETS"
                 :key="preset.name"
-                type="button"
-                size="sm"
-                :variant="iconName === preset.name ? 'primary' : 'secondary'"
+                :type="UiButtonType.Button"
+                :size="UiSize.Sm"
+                :variant="iconName === preset.name ? UiButtonVariant.Primary : UiButtonVariant.Secondary"
                 :aria-pressed="iconName === preset.name"
                 :title="preset.name"
                 :data-testid="`slide-form-icon-${preset.name}`"
@@ -409,11 +416,11 @@ const handleCancel = (): void => {
                 {{ t(preset.labelKey) }}
               </UiButton>
             </UiStack>
-            <UiStack direction="row" align="center" gap="sm">
+            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
               <MdiIcon v-if="iconName" :icon="`mdi:${iconName}`" class="text-xl text-text-primary" />
               <UiInput
                 v-model="iconName"
-                type="text"
+                :type="UiInputType.Text"
                 :placeholder="t('settings.slideForm.orTypeMdiIconName')"
                 data-testid="slide-form-icon-name"
                 class="flex-1"
@@ -445,7 +452,7 @@ const handleCancel = (): void => {
           <UiInput
             :id="id"
             v-model="demoUrl"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('settings.slideForm.demoUrlPlaceholder')"
             :aria-describedby="describedby"
             data-testid="slide-form-demo-url"
@@ -456,7 +463,7 @@ const handleCancel = (): void => {
           <UiInput
             :id="id"
             v-model="learnMoreUrl"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('settings.slideForm.productsExampleOrHttpsExample')"
             :aria-describedby="describedby"
             data-testid="slide-form-learn-more-url"
@@ -486,8 +493,8 @@ const handleCancel = (): void => {
         </template>
 
         <template #field-targetAudience>
-          <UiStack direction="row" align="center" wrap>
-            <UiLabel v-for="option in AUDIENCE_OPTIONS" :key="option.value" variant="inline">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+            <UiLabel v-for="option in AUDIENCE_OPTIONS" :key="option.value" :variant="UiLabelVariant.Inline">
               <UiRadio
                 v-model="targetAudience"
                 name="slide-target-audience"
@@ -519,7 +526,7 @@ const handleCancel = (): void => {
           <UiInput
             :id="id"
             v-model="translations[activeLocale].title"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('settings.slideForm.slideTitle')"
             data-testid="slide-form-title"
           />
@@ -529,7 +536,7 @@ const handleCancel = (): void => {
           <UiInput
             :id="id"
             v-model="translations[activeLocale].tagline"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('settings.slideForm.shortSubtitle')"
             data-testid="slide-form-tagline"
           />
@@ -547,39 +554,40 @@ const handleCancel = (): void => {
         </template>
 
         <template #field-features>
-          <UiStack gap="sm">
+          <UiStack :gap="UiGap.Sm">
             <UiStack
               v-for="(feature, featureIndex) in translations[activeLocale].features"
               :key="feature.key"
-              direction="row"
-              align="center"
-              gap="sm"
+              :direction="UiDirection.Row"
+              :align="UiAlignItems.Center"
+              :gap="UiGap.Sm"
             >
               <UiInput
                 v-model="feature.text"
-                type="text"
+                :type="UiInputType.Text"
                 :placeholder="t('settings.slideForm.featureNumber', { number: featureIndex + 1 })"
                 :data-testid="`slide-form-feature-${featureIndex}`"
                 class="flex-1"
               />
               <UiIconButton
                 :label="t('settings.slideForm.removeFeature')"
-                size="sm"
+                :variant="UiButtonVariant.Ghost"
+                :size="UiSize.Sm"
                 :data-testid="`slide-form-feature-remove-${featureIndex}`"
                 @click="removeFeature(activeLocale, featureIndex)"
               >
-                <UiIcon :markup="Icon.Close" size="sm" />
+                <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
               </UiIconButton>
             </UiStack>
             <UiButton
-              type="button"
-              variant="link"
-              size="sm"
+              :type="UiButtonType.Button"
+              :variant="UiButtonVariant.Link"
+              :action="UiActionKind.Add"
+              :size="UiSize.Sm"
               class="self-start"
               data-testid="slide-form-feature-add"
               @click="addFeature(activeLocale)"
             >
-              <UiIcon :markup="Icon.Add" size="sm" />
               {{ t('settings.slideForm.addFeature') }}
             </UiButton>
           </UiStack>
@@ -589,7 +597,7 @@ const handleCancel = (): void => {
           <UiInput
             :id="id"
             v-model="translations[activeLocale].ctaText"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('settings.slideForm.getStarted')"
             data-testid="slide-form-cta-text"
           />
@@ -599,7 +607,7 @@ const handleCancel = (): void => {
           <UiInput
             :id="id"
             v-model="translations[activeLocale].ctaUrl"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('shared.examples.internalPath')"
             data-testid="slide-form-cta-url"
           />
@@ -609,7 +617,7 @@ const handleCancel = (): void => {
       <UiStatusMessage :message="saveError" :tone="UiTone.Danger" class="mb-5" data-testid="slide-form-error" />
 
       <SettingsFormFooter
-        :save-label="isEditMode ? t('shared.saveChanges') : t('settings.slideForm.createSlide')"
+        :save-label="isEditMode ? t('shared.save') : t('settings.slideForm.createSlide')"
         :saving="saving"
         :dirty="!loadingSlide"
         @cancel="handleCancel"
@@ -620,11 +628,11 @@ const handleCancel = (): void => {
     <!-- Unsaved-changes question, asked while the route change waits -->
     <UiDialog
       v-if="leaveGuard.pending.value"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('settings.slideForm.unsavedChanges')"
       :message="t('settings.slideForm.youHaveUnsavedChangesAre')"
       :confirm-label="t('settings.slideForm.leave')"
-      tone="warning"
+      :tone="UiTone.Warning"
       @confirm="leaveGuard.confirmLeave"
       @close="leaveGuard.cancelLeave"
     />

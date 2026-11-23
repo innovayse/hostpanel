@@ -8,12 +8,12 @@
  */
 import { SkeletonKind, SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, SkeletonTable } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The uninvoiced items table: selectable, with the row actions. */
 export const UNINVOICED_ITEMS_TABLE: SkeletonTable = {
   columns: [
-    { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+    { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
     { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
     { key: 'actions', label: 'shared.actions', actions: true },
@@ -24,10 +24,10 @@ export const UNINVOICED_ITEMS_TABLE: SkeletonTable = {
 export const INVOICED_ITEMS_TABLE: SkeletonTable = {
   pagination: true,
   columns: [
-    { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+    { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
     { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
-    { key: 'invoice', label: 'shared.invoice', size: UiColumnSize.Compact },
+    { key: 'invoice', label: 'shared.invoice', kind: UiColumnKind.Id },
   ],
 }
 

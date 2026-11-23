@@ -10,6 +10,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { useToastStore } from '@/stores/toast'
 import { migrationJob } from '../helpers/migrationFixtures'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Mounts the screen and waits for the history.
@@ -54,6 +55,7 @@ describe('MigrationView', () => {
 
     expect(wrapper.get('[data-testid="migration-none-selected"]').text()).not.toContain('Select a migration from the history')
     expect(wrapper.find('[data-testid="migration-start-first"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="migration-start-first"]').text()).toBe('Create migration')
   })
 
   it('highlights the selected job in the history', async () => {
@@ -163,7 +165,7 @@ describe('MigrationView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="migration-feedback"]').text()).toBe('The migration is running.')
+    expect(toastMessages()).toContain('The migration is running.')
     expect(wrapper.find('[data-testid="migration-error"]').exists()).toBe(false)
   })
 

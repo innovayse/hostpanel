@@ -5,14 +5,12 @@
     "announcementTitle": "Announcement title",
     "announcement": "Announcement",
     "announcementContent": "Announcement content",
-    "updateAnnouncement": "Update Announcement",
-    "saveAnnouncement": "Save Announcement",
     "pageTitleEdit": "Edit Announcement",
     "pageTitleCreate": "Add Announcement"
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Manage client-facing announcements",
-    "addNewAnnouncement": "New Announcement",
+    "createAnnouncement": "Create announcement",
     "noAnnouncementsFound": "No announcements found",
     "createYourFirstAnnouncementTo": "Create your first announcement to get started.",
     "deleteAnnouncement": "Delete Announcement",
@@ -32,7 +30,7 @@
     "clientsOnly": "Clients Only",
     "productDownload": "Product Download",
     "clientsOnlyRestrictsToLogged": "Clients Only restricts to logged-in clients. Product Download requires a product or addon purchase. Hidden removes from client area.",
-    "addDownload": "Add Download",
+    "createDownload": "Create download",
     "downloadHome": "Download Home",
     "files": "Files",
     "noDownloadsFound": "No Downloads Found",
@@ -68,10 +66,9 @@
     "articleTitle": "Article title",
     "content": "Content",
     "articleContent": "Article content",
-    "saveArticle": "Save Article",
     "deleteCategory": "Delete Category",
     "areYouSureYouWant": "Are you sure you want to delete this category? A category that still holds articles cannot be deleted.",
-    "addArticle": "Add Article",
+    "createArticle": "Create article",
     "categorySaved": "Category saved.",
     "categoryDeleted": "Category deleted.",
     "articleSaved": "Article saved.",
@@ -96,8 +93,7 @@
     "endDate": "End Date",
     "selectEndDate": "Select end date",
     "describeTheIssueInDetail": "Describe the issue in detail",
-    "updateIssue": "Update Issue",
-    "createIssue": "Create Issue",
+    "createIssue": "Create issue",
     "other": "Other",
     "low": "Low",
     "medium": "Medium",
@@ -112,7 +108,6 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Manage network status and incident reports",
-    "createNew": "Create New",
     "startDate": "Start Date",
     "endDate": "End Date",
     "deleteNetworkIssue": "Delete Network Issue",
@@ -140,14 +135,14 @@
     "areYouSureYouWant": "Are you sure you want to delete this category? All replies in this category may be affected.",
     "deletePredefinedReply": "Delete Predefined Reply",
     "areYouSureYouWant2": "Are you sure you want to delete this predefined reply? This action cannot be undone.",
-    "addPredefinedReply": "Add Predefined Reply"
+    "addCategory": "Add category",
+    "addReply": "Add reply"
   },
   "supportOpenTicket": {
     "searchByNameEmailOr": "Search by name, email, or ID",
     "autoFilledFromSelectedClient": "Auto-filled from selected client",
     "ticketSubject": "Ticket subject",
-    "describeTheIssue": "Describe the issue",
-    "openTicket": "Open Ticket"
+    "describeTheIssue": "Describe the issue"
   },
   "supportOverview": {
     "supportOverview": "Support Overview",

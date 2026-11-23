@@ -3,51 +3,66 @@
     <UiCardHeader :title="$t('client.contacts.title')">
       <UiButton size="sm" variant="subtle" data-testid="account-contact-add" @click="openAdd">
         <Plus :size="12" :stroke-width="2" class="mr-1" />
-        {{ $t('client.contacts.addNew') }}
+        {{ $t('client.contacts.add') }}
       </UiButton>
     </UiCardHeader>
 
-    <UiStack v-if="contactsLoading" gap="sm" data-testid="account-contacts-loading">
-      <UiSkeleton v-for="index in 2" :key="index" shape="block" class="h-16" />
-    </UiStack>
-
-    <UiEmptyState
-      v-else-if="!contacts.length"
-      :icon="Users"
-      :title="$t('client.contacts.empty')"
-      :description="$t('client.contacts.emptyDesc')"
+    <UiTable
+      scrollable
+      :label="$t('client.contacts.title')"
+      :columns="5"
+      :loading="contactsLoading"
+      :empty="!contacts.length"
+      :empty-text="$t('client.contacts.empty')"
+      :empty-description="$t('client.contacts.emptyDesc')"
+      :empty-icon="Users"
     >
-      <UiButton data-testid="contacts-add" size="sm" variant="subtle" @click="openAdd">{{ $t('client.contacts.addNew') }}</UiButton>
-    </UiEmptyState>
-
-    <UiList v-else list-style="divided">
-      <UiListItem v-for="contact in contacts" :key="contact.id" :data-testid="`account-contact-${contact.id}`">
-        <UiStack direction="row" align="center" justify="between" gap="sm" wrap class="py-2">
-          <UiStack direction="row" align="center" gap="sm">
-            <UiAvatar :first-name="contact.firstName" :last-name="contact.lastName" :email="contact.email" />
-            <UiStack gap="none">
-              <UiStack direction="row" align="center" gap="xs" wrap>
-                <UiText size="sm" weight="medium">{{ contact.firstName }} {{ contact.lastName }}</UiText>
-                <UiText v-if="contact.companyName" size="sm" tone="subtle">· {{ contact.companyName }}</UiText>
-              </UiStack>
-              <UiText size="xs" tone="subtle">
-                {{ contact.email }}<template v-if="contact.phone"> · {{ contact.phone }}</template>
-              </UiText>
+      <template #head>
+        <UiTableHead>
+          <UiTableRow :hoverable="false">
+            <UiTableTh>{{ $t('client.contacts.colName') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.contacts.colCompany') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.contacts.colEmail') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.contacts.colPhone') }}</UiTableTh>
+            <UiTableTh />
+          </UiTableRow>
+        </UiTableHead>
+      </template>
+      <template #empty>
+        <UiButton data-testid="contacts-add" size="sm" variant="subtle" @click="openAdd">{{ $t('client.contacts.add') }}</UiButton>
+      </template>
+      <UiTableBody>
+        <UiTableRow v-for="contact in contacts" :key="contact.id" :data-testid="`account-contact-${contact.id}`">
+          <UiTableTd>
+            <UiStack direction="row" align="center" gap="sm">
+              <UiAvatar :first-name="contact.firstName" :last-name="contact.lastName" :email="contact.email" />
+              <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ contact.firstName }} {{ contact.lastName }}</UiText>
             </UiStack>
-          </UiStack>
-          <UiStack direction="row" align="center" gap="xs">
-            <UiButton size="sm" variant="subtle" :data-testid="`account-contact-edit-${contact.id}`" @click="openEdit(contact)">
-              <Pencil :size="13" :stroke-width="2" class="mr-1" />
-              {{ $t('client.profile.edit') }}
-            </UiButton>
-            <UiButton size="sm" variant="subtle" :data-testid="`account-contact-delete-${contact.id}`" @click="pendingDelete = contact">
-              <Trash2 :size="13" :stroke-width="2" class="mr-1" />
-              {{ $t('client.contacts.delete') }}
-            </UiButton>
-          </UiStack>
-        </UiStack>
-      </UiListItem>
-    </UiList>
+          </UiTableTd>
+          <UiTableTd>
+            <UiText :as="UiTextTag.Span" size="sm" tone="subtle">{{ contact.companyName || EMPTY_DATE }}</UiText>
+          </UiTableTd>
+          <UiTableTd>
+            <UiText :as="UiTextTag.Span" size="sm">{{ contact.email }}</UiText>
+          </UiTableTd>
+          <UiTableTd>
+            <UiText :as="UiTextTag.Span" size="sm" tone="subtle">{{ contact.phone || EMPTY_DATE }}</UiText>
+          </UiTableTd>
+          <UiTableTd align="right">
+            <UiStack direction="row" align="center" justify="end" gap="xs">
+              <UiButton size="sm" variant="subtle" :data-testid="`account-contact-edit-${contact.id}`" @click="openEdit(contact)">
+                <Pencil :size="13" :stroke-width="2" class="mr-1" />
+                {{ $t('common.edit') }}
+              </UiButton>
+              <UiButton size="sm" variant="subtle" :data-testid="`account-contact-delete-${contact.id}`" @click="pendingDelete = contact">
+                <Trash2 :size="13" :stroke-width="2" class="mr-1" />
+                {{ $t('common.delete') }}
+              </UiButton>
+            </UiStack>
+          </UiTableTd>
+        </UiTableRow>
+      </UiTableBody>
+    </UiTable>
 
     <AccountContactDialog v-model="dialogOpen" :contact="editing" @saved="account.loadContacts()" />
 
@@ -55,7 +70,7 @@
       :open="pendingDelete !== null"
       :title="$t('client.contacts.deleteConfirm', { name: `${pendingDelete?.firstName ?? ''} ${pendingDelete?.lastName ?? ''}` })"
       :description="$t('client.contacts.deleteConfirmDesc')"
-      :confirm-label="$t('client.contacts.delete')"
+      :confirm-label="$t('common.delete')"
       :loading="deleting"
       variant="danger"
       @confirm="onConfirmDelete"
@@ -66,7 +81,7 @@
 
 <script setup lang="ts">
 /**
- * ContactsTab. The "Contacts" tab: the account's sub-contacts with add, edit and delete.
+ * ContactsTab. The "Contacts" tab: the account's sub-contacts as a table with add, edit and delete.
  *
  * The list lives in the account store. Add and edit share one dialog; delete asks first.
  *
@@ -78,6 +93,8 @@ import { storeToRefs } from 'pinia'
 import { useAccountStore } from '~/stores/account'
 import { ActionOutcome } from '~/types/actionoutcome'
 import type { AccountContact } from '~/types/accountcontact'
+import { EMPTY_DATE } from '~/utils/formatDate'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** The account store that holds and changes the contacts. */
 const account = useAccountStore()

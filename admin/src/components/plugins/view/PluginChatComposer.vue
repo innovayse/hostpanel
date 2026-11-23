@@ -91,7 +91,7 @@ defineExpose({ focus })
     >
       <template #action>
         <UiIconButton
-          :label="streaming ? t('plugins.pluginPage.chatStop') : t('plugins.pluginPage.chatSend')"
+          :label="streaming ? t('shared.stop') : t('shared.send')"
           :variant="UiButtonVariant.Primary"
           :size="UiSize.Sm"
           :disabled="!streaming && !canSend"

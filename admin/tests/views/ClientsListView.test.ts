@@ -137,6 +137,34 @@ describe('ClientsListView', () => {
     expect(wrapper.get('[data-testid="client-row-open-8"]').attributes('href')).toBe('/clients/8')
   })
 
+  it('opens a client from its whole row, a pointer target', async () => {
+    const { wrapper, router } = await mountGrouped()
+
+    expect(wrapper.get('[data-testid="client-row"]').classes()).toContain('cursor-pointer')
+    await wrapper.get('[data-testid="client-row"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/clients/8')
+  })
+
+  it('answers an empty narrowed list with an empty state in the table and a way to clear the filters', async () => {
+    stubPathRoutes([
+      { path: '/api/clients', body: { items: [], totalCount: 0 } },
+      { path: '/api/admin/client-groups', body: [] },
+    ])
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }],
+    })
+    await router.push('/clients?status=Active')
+    await router.isReady()
+    const wrapper = mount(ClientsListView, { global: { plugins: [createTestI18n(), createPinia(), router], stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="client-row"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="clients-list-table"]').text()).toContain('No clients match your filters')
+    expect(wrapper.find('[data-testid="clients-list-clear-empty"]').exists()).toBe(true)
+  })
+
   it('restores the filters, the search and the page from the address and sends them', async () => {
     const { wrapper, fetchMock } = await mountGrouped('/clients?search=ada&status=Active&clientGroupId=4&page=2')
 

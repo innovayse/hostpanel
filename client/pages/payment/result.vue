@@ -19,8 +19,8 @@
         <CheckCircle2 :size="48" class="mx-auto text-green-600 dark:text-green-400 mb-4" />
         <UiHeading :level="1" size="subsection" class="text-xl mb-2" data-testid="payment-title">{{ $t('paymentResult.successTitle') }}</UiHeading>
         <UiText tone="muted" class="mb-8">{{ $t('paymentResult.successBody') }}</UiText>
-        <UiButton :to="continueTarget" size="lg" class="font-bold" data-testid="payment-continue">
-          {{ orderId ? $t('paymentResult.goToOrder') : $t('paymentResult.goToInvoice') }}
+        <UiButton variant="primary" :to="continueTarget" size="lg" class="font-bold" data-testid="payment-continue">
+          {{ orderId ? $t('common.continue') : $t('invoicePay.viewInvoice') }}
         </UiButton>
       </template>
 
@@ -30,7 +30,7 @@
         <UiHeading :level="1" size="subsection" class="text-xl mb-2" data-testid="payment-title">{{ $t('paymentResult.pendingTitle') }}</UiHeading>
         <UiText tone="muted" class="mb-8">{{ $t('paymentResult.pendingBody') }}</UiText>
         <UiButton variant="subtle" size="lg" class="font-bold" :disabled="checking" data-testid="payment-retry" @click="check">
-          {{ $t('paymentResult.retry') }}
+          {{ $t('common.refresh') }}
         </UiButton>
       </template>
 
@@ -40,7 +40,7 @@
         <UiHeading :level="1" size="subsection" class="text-xl mb-2" data-testid="payment-title">{{ $t('paymentResult.declinedTitle') }}</UiHeading>
         <UiText tone="muted" class="mb-8">{{ $t('paymentResult.declinedBody') }}</UiText>
         <UiButton variant="subtle" size="lg" :to="retryTarget" class="font-bold" data-testid="payment-try-again">
-          {{ $t('paymentResult.tryAgain') }}
+          {{ $t('common.retry') }}
         </UiButton>
       </template>
 
@@ -61,10 +61,10 @@
         <UiHeading :level="1" size="subsection" class="text-xl mb-2" data-testid="payment-title">{{ $t('paymentResult.unknownTitle') }}</UiHeading>
         <UiText tone="muted" class="mb-8">{{ $t('paymentResult.unknownBody') }}</UiText>
         <UiButton variant="subtle" size="lg" class="font-bold" :disabled="checking" data-testid="payment-retry" @click="check">
-          {{ $t('paymentResult.retry') }}
+          {{ $t('common.refresh') }}
         </UiButton>
-        <UiLink :to="statusTarget" :underline="false" class="block mt-4 text-sm hover:underline" testid="payment-status">
-          {{ orderId ? $t('paymentResult.goToOrder') : $t('paymentResult.goToInvoice') }}
+        <UiLink tone="primary" :to="statusTarget" :underline="false" class="block mt-4 text-sm hover:underline" testid="payment-status">
+          {{ orderId ? $t('common.continue') : $t('invoicePay.viewInvoice') }}
         </UiLink>
       </template>
     </UiCard>

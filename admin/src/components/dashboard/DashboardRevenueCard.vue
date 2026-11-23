@@ -17,6 +17,7 @@ import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import type { DashboardIncome } from '@/types/dashboardcharts'
 import { UiChartVariant } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -68,7 +69,7 @@ const formatValue = (value: number): string => formatCurrencyWhole(value, props.
 <template>
   <DashboardChartCard :title="t('dashboard.revenue.title')" :note="t('dashboard.revenue.note')" data-testid="dashboard-revenue">
     <template #aside>
-      <UiStack direction="row" align="center" gap="sm">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
         <UiBadge v-if="change" :tone="changeTone" small data-testid="dashboard-revenue-change">{{ change }}</UiBadge>
         <UiMetric :value="total" :size="UiSize.Sm" :loading="waiting" data-testid="dashboard-revenue-total" />
       </UiStack>

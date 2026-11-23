@@ -172,7 +172,7 @@ onMounted(async () => {
           </template>
         </UiField>
 
-        <UiGrid :columns="2">
+        <UiGrid :columns="2" container>
           <UiField
             :label="t('shared.amount')"
             :error="store.fieldErrors.amount"
@@ -194,7 +194,7 @@ onMounted(async () => {
           </UiField>
         </UiGrid>
 
-        <UiGrid :columns="2">
+        <UiGrid :columns="2" container>
           <UiField :label="t('shared.type')" :error="store.fieldErrors.type" error-testid="clients-add-billable-item-type-error">
             <UiSelect
               v-model="type"

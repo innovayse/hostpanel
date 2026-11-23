@@ -1,7 +1,8 @@
 /**
- * Unit tests for UiTabs: tablist semantics, selection and arrow-key navigation.
+ * Unit tests for UiTabs: tablist semantics, selection, arrow-key navigation and keeping the selected tab in view.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { UiTabMarker } from '@/utils/ui/tabs'
@@ -118,5 +119,111 @@ describe('UiTabs', () => {
     expect(withSlot.get('[data-testid="ui-tabs-panel"]').classes()).toContain('mt-5.5')
     expect(withSlot.find('[data-testid="ui-tabs-panel"] [data-testid="body"]').exists()).toBe(true)
     expect(without.find('[data-testid="ui-tabs-panel"]').exists()).toBe(false)
+  })
+})
+
+describe('UiTabs reveal of the selected tab', () => {
+  /**
+   * Replaces `scrollIntoView` with a recorder for the duration of one test.
+   *
+   * @returns The ids of the tabs scrolled into view, in order, and the restore function.
+   */
+  const recordScrolls = () => {
+    const scrolled: string[] = []
+    const options: ScrollIntoViewOptions[] = []
+    const original = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = function scrollIntoView(this: HTMLElement, arg?: boolean | ScrollIntoViewOptions) {
+      scrolled.push(this.getAttribute('data-testid') ?? '')
+      options.push(typeof arg === 'object' ? arg : {})
+    }
+    return { scrolled, options, restore: () => { HTMLElement.prototype.scrollIntoView = original } }
+  }
+
+  it('scrolls the selected tab to the middle of the strip on mount, never the page', () => {
+    const { scrolled, options, restore } = recordScrolls()
+    try {
+      mount(UiTabs, { props: { items, modelValue: 'c' } })
+
+      expect(scrolled).toEqual(['tab-c'])
+      expect(options[0]).toEqual({ inline: 'center', block: 'nearest' })
+    } finally {
+      restore()
+    }
+  })
+
+  it('scrolls the newly selected tab into view when the selection changes', async () => {
+    const { scrolled, restore } = recordScrolls()
+    try {
+      const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
+      scrolled.length = 0
+
+      await wrapper.setProps({ modelValue: 'c' })
+      await nextTick()
+
+      expect(scrolled).toEqual(['tab-c'])
+    } finally {
+      restore()
+    }
+  })
+
+  it('moves nothing when no tab is selected (a loading strip)', () => {
+    const { scrolled, restore } = recordScrolls()
+    try {
+      mount(UiTabs, { props: { items, modelValue: '' } })
+
+      expect(scrolled).toEqual([])
+    } finally {
+      restore()
+    }
+  })
+
+  it('brings the selected tab back into view when the strip or a tab changes size, and watches every tab', async () => {
+    /** Callbacks of the observers created, so the test can play a resize. */
+    const callbacks: ResizeObserverCallback[] = []
+    /** Every element an observer was asked to watch. */
+    const observed: Element[] = []
+    vi.stubGlobal('ResizeObserver', class {
+      /**
+       * Keeps the callback to play later.
+       *
+       * @param callback - The strip's resize callback.
+       */
+      constructor(callback: ResizeObserverCallback) {
+        callbacks.push(callback)
+      }
+
+      /**
+       * Records the observed element.
+       *
+       * @param target - The element the strip watches.
+       */
+      observe = (target: Element): void => {
+        observed.push(target)
+      }
+
+      /** Not used by the strip. */
+      unobserve = (): void => {}
+
+      /** Not used by the test. */
+      disconnect = (): void => {}
+    })
+    const { scrolled, restore } = recordScrolls()
+    try {
+      const wrapper = mount(UiTabs, { props: { items, modelValue: 'c' } })
+      await nextTick()
+      scrolled.length = 0
+
+      expect(observed).toContain(wrapper.get('[role="tablist"]').element)
+      for (const tab of wrapper.findAll('[role="tab"]')) {
+        expect(observed).toContain(tab.element)
+      }
+
+      callbacks[0]?.([], {} as ResizeObserver)
+
+      expect(scrolled).toEqual(['tab-c'])
+    } finally {
+      restore()
+      vi.unstubAllGlobals()
+    }
   })
 })

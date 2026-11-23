@@ -1,7 +1,7 @@
 <template>
   <UiCard data-testid="service-details">
     <UiCardHeader :title="$t('client.services.serviceDetails')" :icon="LayoutGrid" />
-    <UiGrid as="dl" cols="2" gap="lg">
+    <UiGrid :as="UiGridTag.Dl" cols="2" gap="lg">
       <UiDescriptionItem :label="$t('client.services.plan')" :value="service.productName" value-class="font-medium" />
       <UiDescriptionItem :label="$t('client.services.domain')" :value="service.domain || null" />
       <UiDescriptionItem :label="$t('client.services.status')">
@@ -28,6 +28,7 @@ import type { ClientService } from '~/types/clientservice'
 import type { CurrencyInfo } from '~/utils/formatCurrency'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
+import { UiGridTag } from '~/utils/ui/enums'
 
 /** Props of ServiceDetailsCard. */
 interface Props {

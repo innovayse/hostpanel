@@ -17,6 +17,12 @@ describe('OrderRejectReviewDialog', () => {
     expect(wrapper.emitted('submit')).toBeUndefined()
   })
 
+  it('labels the submit button Reject', () => {
+    const wrapper = mountWithApp(OrderRejectReviewDialog, { props: { loading: false } })
+
+    expect(wrapper.get('[data-testid="order-reject-submit"]').text()).toBe('Reject')
+  })
+
   it('emits the typed reason trimmed', async () => {
     const wrapper = mountWithApp(OrderRejectReviewDialog, { props: { loading: false } })
 

@@ -28,6 +28,7 @@ import { AppRoute } from '@/lib/routes'
 import { withoutFields } from '@/lib/formSchema'
 import schema, { NETWORK_ISSUE_STATUS_FIELD } from '@/views/NetworkIssueFormView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -240,7 +241,7 @@ onMounted(() => {
         />
       </template>
 
-      <UiStack direction="row" gap="sm">
+      <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm">
         <UiButton :action="UiActionKind.Add"
           :variant="UiButtonVariant.Primary"
           :loading="saving"
@@ -248,7 +249,7 @@ onMounted(() => {
           data-testid="network-issue-form-save"
           @click="handleSave"
         >
-          {{ isEditMode ? t('support.networkIssueForm.updateIssue') : t('support.networkIssueForm.createIssue') }}
+          {{ isEditMode ? t('shared.save') : t('support.networkIssueForm.createIssue') }}
         </UiButton>
         <UiLink :action="UiActionKind.Cancel"
           :to="AppRoute.SupportNetworkIssues"

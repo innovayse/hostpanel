@@ -225,4 +225,11 @@ describe('UiMenu on a phone', () => {
     expect(wrapper.find('[data-testid="ui-menu-panel"]').exists()).toBe(true)
     wrapper.unmount()
   })
+
+  it('makes the default trigger a 44px target on a phone', () => {
+    const wrapper = mountIt()
+
+    expect(wrapper.get('[data-testid="ui-menu-trigger"] span').classes()).toEqual(expect.arrayContaining(['size-8', 'max-sm:size-11']))
+    wrapper.unmount()
+  })
 })

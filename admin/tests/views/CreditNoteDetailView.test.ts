@@ -13,6 +13,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -30,14 +31,15 @@ const mountNote = async () => {
 }
 
 describe('CreditNoteDetailView', () => {
-  it('draws the cards of its schema as placeholders while the note is read', async () => {
+  it('draws the facts card and the lines table as placeholders while the note is read', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountNote()
 
-    expect(wrapper.findAll('[data-testid^="ui-detail-card-"]')).toHaveLength(schema.columns.flat().length)
+    expect(wrapper.findAll('[data-testid^="ui-detail-card-"]')).toHaveLength(schema.columns.flat().length - 1)
     expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Qty')
-    expect(wrapper.find('[data-testid="billing-credit-note-items"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-credit-note-items"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-credit-note-totals"]').exists()).toBe(false)
   })
 
   it('draws the columns of the lines table from its schema', async () => {
@@ -107,7 +109,7 @@ describe('CreditNoteDetailView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-credit-note-feedback"]').text()).toBe('The client has already spent the credit this note gave.')
+    expect(toastMessages()).toContain('The client has already spent the credit this note gave.')
   })
 
   it('offers no void for a note paid out as a gateway refund and says why', async () => {
@@ -137,7 +139,7 @@ describe('CreditNoteDetailView', () => {
     await wrapper.get('[data-testid="billing-credit-note-download"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-credit-note-download-feedback"]').text()).toBe('The renderer is busy.')
+    expect(toastMessages()).toContain('The renderer is busy.')
   })
 
   it('shows the API sentence with a Retry when the load is refused', async () => {

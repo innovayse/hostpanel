@@ -305,7 +305,7 @@
       "label": "Акцентный",
       "hint": "Градиенты, бейджи и второстепенные акценты."
     },
-    "reset": "Сбросить",
+    "reset": "Сбросить до значения по умолчанию",
     "previewButton": "Кнопка",
     "previewLink": "Ссылка",
     "contrastOk": "Белый текст на этом цвете даёт контраст {ratio}:1, это соответствует WCAG AA.",
@@ -369,8 +369,7 @@
   "productGroups": {
     "manage": "Группы товаров",
     "title": "Группы товаров",
-    "add": "Добавить группу",
-    "addTitle": "Новая группа товаров",
+    "addTitle": "Создать группу товаров",
     "editTitle": "Редактирование группы товаров",
     "edit": "Изменить группу",
     "name": "Название",
@@ -387,7 +386,6 @@
   },
   "productForm": {
     "editProduct": "Редактировать продукт",
-    "createNewProduct": "Создать новый продукт",
     "productType": "Тип продукта",
     "productGroup": "Группа продуктов",
     "selectAGroup": "Выберите группу",
@@ -516,15 +514,12 @@
   },
   "products": {
     "manageHostingPlansAndServices": "Управление тарифами хостинга и услугами, доступными для покупки",
-    "createProduct": "Создать продукт",
     "group": "Группа",
     "editSpecification": "Редактировать спецификацию",
-    "editProduct": "Редактировать продукт",
     "noProductsFoundCreateYour": "Продукты не найдены. Создайте первый продукт, чтобы начать.",
     "searchPlaceholder": "Поиск по названию, SKU или слагу",
     "noProductsMatchYourFilters": "Нет продуктов, подходящих под фильтры",
     "clearFilters": "Сбросить фильтры",
-    "totalCount": "Продуктов: {totalCount}",
     "typeSharedHosting": "Общий хостинг",
     "typeDedicated": "Выделенный",
     "typeDomain": "Домен",
@@ -602,7 +597,7 @@
     "shortSubtitle": "Короткий подзаголовок",
     "slideBodyText": "Основной текст слайда",
     "features": "Особенности",
-    "removeFeature": "Удалить особенность",
+    "removeFeature": "Убрать особенность",
     "addFeature": "Добавить особенность",
     "ctaText": "Текст кнопки",
     "getStarted": "Начать",
@@ -635,13 +630,11 @@
   },
   "slides": {
     "manageHomepageHeroSlidesDrag": "Управление слайдами главной страницы. Перетащите, чтобы изменить порядок.",
-    "addSlide": "Добавить слайд",
     "image": "Изображение",
     "audience": "Аудитория",
     "visibility": "Видимость",
     "slide": "Слайд",
     "editSlide": "Редактировать слайд",
-    "deleteSlide": "Удалить слайд",
     "noSlidesFoundAddYour": "Слайды не найдены. Добавьте первый слайд, чтобы начать.",
     "deleteSlide2": "Удалить слайд",
     "always": "Всегда",
@@ -687,8 +680,7 @@
     "import": "Импорт",
     "nameAm": "Name.am",
     "namecheap": "Namecheap",
-    "syncPrices": "Синхр. цены",
-    "addTld": "Добавить TLD",
+    "syncPrices": "Синхронизировать цены",
     "searchTlds": "Поиск TLD",
     "tld": "TLD",
     "provider": "Провайдер",
@@ -697,12 +689,9 @@
     "margin": "Маржа",
     "marginUnavailable": "Маржи нет: не задана цена или нет курса между валютой себестоимости и валютой продажи",
     "lastSynced": "Последняя синхронизация",
-    "editTld": "Редактировать TLD",
-    "deleteTld": "Удалить TLD",
     "noTldConfigurationsFoundAdd": "Настройки TLD не найдены. Добавьте первый TLD или импортируйте у провайдера.",
     "noTldsMatchYourFilters": "Нет TLD, подходящих под фильтры",
     "clearFilters": "Сбросить фильтры",
-    "totalcountTldValue": "TLD: {totalCount}",
     "deleteTldConfiguration": "Удалить настройки TLD",
     "priceSyncComplete": "Синхронизация цен завершена.",
     "deleteMessage": "Удалить конфигурацию TLD «.{tld}»? Это действие нельзя отменить.",
@@ -794,8 +783,6 @@
   },
   "saveBar": {
     "unsaved": "{count} несохранённое изменение | {count} несохранённых изменения | {count} несохранённых изменений",
-    "clean": "Нет несохранённых изменений",
-    "save": "Сохранить",
-    "discard": "Отменить"
+    "clean": "Нет несохранённых изменений"
   }
 }

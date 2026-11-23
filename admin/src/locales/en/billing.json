@@ -7,7 +7,6 @@
     "creditRemoved": "Credit removed from the invoice.",
     "confirmRemoveCreditTitle": "Remove credit?",
     "confirmRemoveCreditMessage": "Remove {amount} of credit from invoice #{id}?",
-    "removeCredit": "Remove credit",
     "topUpNoCredit": "This is a credit top-up invoice. Credit cannot be applied to it: it is paid in full, and its amount is added to the client's credit balance once it is paid."
   },
   "invoiceNotesTab": {
@@ -21,7 +20,6 @@
   "invoicePaymentTab": {
     "publishTheInvoiceBeforeAdding": "Publish the invoice before adding payments.",
     "invoiceIsCancelledPleaseMark": "Invoice is Cancelled: Please Mark Unpaid first to apply a payment.",
-    "addPayment": "Add Payment",
     "gatewayReference": "Gateway reference",
     "paymentAdded": "Payment recorded."
   },
@@ -50,11 +48,10 @@
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "This is a Draft Invoice. The client is not able to see or access this invoice until it is published.",
-    "viewInvoices": "(View Invoices)",
+    "viewInvoices": "View invoices",
     "invoiceAmount": "Invoice Amount",
     "paymentMethod": "Payment Method:",
     "publish": "Publish",
-    "markPaid": "Mark Paid",
     "published": "Invoice published.",
     "cancelled": "Invoice cancelled.",
     "markedPaid": "Invoice marked as paid.",
@@ -71,10 +68,9 @@
     "recurringPeriod": "Recurring Period"
   },
   "addQuote": {
-    "createQuote": "Create Quote",
+    "createQuote": "Create quote",
     "createANewQuoteFor": "Create a new quote for a client",
     "generalInformation": "General Information",
-    "deleteRow": "Delete row",
     "proposalText": "Proposal Text",
     "displayedAtTheTopOf": "(Displayed at the Top of the Quote)",
     "enterProposalText": "Enter proposal text",
@@ -91,7 +87,7 @@
     "dead": "Dead"
   },
   "addTransaction": {
-    "addTransaction": "Add Transaction",
+    "createTransaction": "Create transaction",
     "recordANewPaymentTransaction": "Record a new payment transaction",
     "relatedClient": "Related Client",
     "whatIsThisTransactionFor": "What is this transaction for?",
@@ -114,7 +110,8 @@
     "clearFilters": "Clear filters",
     "deleteItems": "Delete billable items",
     "deleteItemsMessage": "Delete {count} selected billable item? This action cannot be undone. | Delete {count} selected billable items? This action cannot be undone.",
-    "itemsDeleted": "Billable items deleted."
+    "itemsDeleted": "Billable items deleted.",
+    "create": "Create billable item"
   },
   "disputes": {
     "listDisputes": "List Disputes",
@@ -124,8 +121,7 @@
   },
   "editTransaction": {
     "editTransaction": "Edit Transaction",
-    "updatePaymentTransactionDetails": "Update payment transaction details",
-    "updateTransaction": "Update Transaction"
+    "updatePaymentTransactionDetails": "Update payment transaction details"
   },
   "gatewayLog": {
     "gatewayTransactionLog": "Gateway Transaction Log",
@@ -175,7 +171,6 @@
     "reference": "Reference",
     "requested": "Chosen",
     "empty": "No bank transfers are waiting.",
-    "confirm": "Confirm",
     "reject": "Reject",
     "confirmTitle": "Confirm bank transfer",
     "confirmMessage": "Confirm that {amount} arrived for invoice #{id} (reference {reference})? The invoice will be marked paid.",
@@ -207,19 +202,18 @@
   "invoiceDetail": {
     "invoiceId": "Invoice #{id}",
     "manageAndViewInvoiceDetails": "Manage and view invoice details",
-    "viewInvoice": "View Invoice",
-    "manageInvoice": "Manage Invoice",
+    "viewInvoice": "View invoice",
+    "manageInvoice": "Manage invoice",
     "theClientIsNotAble": "The client is not able to see or access this invoice until it is published.",
     "thisIsADraftInvoice": "This is a Draft Invoice.",
-    "addPayment": "Add Payment",
+    "addPayment": "Add payment",
     "options": "Options",
     "unpaid": "Unpaid",
     "tabSummary": "Summary",
     "tabCredit": "Credit",
     "tabRefund": "Refund",
     "tabCreditNotes": "Credit notes",
-    "tabFulfilment": "Fulfilment",
-    "downloadPdf": "Download PDF"
+    "tabFulfilment": "Fulfilment"
   },
   "invoicesList": {
     "manageBillingInvoices": "Manage billing invoices",
@@ -227,13 +221,7 @@
     "summaryHint": "{count} invoice on this page | {count} invoices on this page",
     "dateRefunded": "Date Refunded",
     "totalcountRecordsFoundShowingValue": "{totalCount} Records Found, Showing {value} to {value2}",
-    "markPaid": "Mark Paid",
-    "markUnpaid": "Mark Unpaid",
-    "duplicateInvoice": "Duplicate Invoice",
-    "bulkPaid": "Paid",
-    "bulkUnpaid": "Unpaid",
-    "bulkCancelled": "Cancelled",
-    "bulkDuplicate": "Duplicate",
+    "duplicateInvoice": "Duplicate invoice",
     "collections": "Collections",
     "paymentPending": "Payment Pending",
     "searchInvoices": "Search by invoice number or payment method",
@@ -259,11 +247,9 @@
     "quoteSubject": "Quote subject",
     "selectStage": "Select stage",
     "dateCreated": "Date Created",
-    "duplicate": "Duplicate",
-    "convertToInvoice": "Convert to Invoice",
+    "convertToInvoice": "Convert to invoice",
     "unitPrice": "Unit Price",
     "discount": "Discount %",
-    "addItem": "Add Item",
     "proposalText": "Proposal Text",
     "proposalTextVisibleToThe": "Proposal text visible to the client",
     "customerNotes": "Customer Notes",
@@ -279,7 +265,6 @@
   },
   "quotesList": {
     "customerQuotesAndProposals": "Customer quotes and proposals",
-    "createQuote": "Create Quote",
     "validityPeriod": "Validity Period",
     "created": "Created",
     "noQuotesFound": "No quotes found.",
@@ -289,7 +274,6 @@
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Payment transactions and records",
-    "addTransaction": "Add Transaction",
     "show": "Show",
     "netRevenueUsd": "Net Revenue (USD)",
     "totalIncome": "Total Income",
@@ -315,7 +299,6 @@
     "attempts": "Attempts",
     "lastError": "Last error",
     "when": "Completed / next attempt",
-    "retry": "Retry",
     "empty": "No fulfilment records for this invoice.",
     "statusPending": "Pending",
     "statusProcessing": "Processing",
@@ -341,9 +324,8 @@
     "blockedNotPaid": "A credit note can only be issued on an invoice that was paid.",
     "blockedNothingLeft": "Earlier credit notes and refunds already cover the whole invoice.",
     "lines": "Lines credited",
-    "useInvoiceLines": "Use the invoice lines",
-    "addLine": "Add a line",
-    "removeLine": "Remove",
+    "useInvoiceLines": "Use invoice lines",
+    "addLine": "Add line",
     "descriptionPlaceholder": "What is credited",
     "pricePlaceholder": "Price",
     "quantityPlaceholder": "Qty",
@@ -382,7 +364,6 @@
       "Voided": "Voided"
     },
     "detailTitle": "Credit note {number}",
-    "downloadPdf": "Download PDF",
     "voidButton": "Void",
     "voidTitle": "Void credit note",
     "voidMessage": "Void credit note {number}? It keeps its number and stays on record. Account credit it gave comes off the client's balance, and the invoice can be credited again.",
@@ -395,5 +376,13 @@
     "quantity": "Qty",
     "unitPrice": "Unit price",
     "amount": "Amount"
+  },
+  "actions": {
+    "addItem": "Add item",
+    "duplicate": "Duplicate",
+    "markPaid": "Mark paid",
+    "markUnpaid": "Mark unpaid",
+    "markCancelled": "Mark cancelled",
+    "downloadPdf": "Download PDF"
   }
 }

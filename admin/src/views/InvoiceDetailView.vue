@@ -44,7 +44,7 @@ const { t } = useI18n()
 const headerActions = computed<UiHeaderAction[]>(() => [
   { label: manageMode.value ? t('billing.invoiceDetail.viewInvoice') : t('billing.invoiceDetail.manageInvoice'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Primary, testid: 'billing-invoice-toggle-mode', onSelect: toggleMode },
   { label: t('shared.print'), icon: actionIcons[UiActionKind.Print], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-print', onSelect: print },
-  { label: t('billing.invoiceDetail.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf },
+  { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf },
 ])
 
 /** Route action that opens the invoice for editing. */
@@ -157,7 +157,7 @@ watch(invoiceId, load)
       <UiDetailCards v-if="invoice === null" :columns="schema.columns" loading />
 
       <template v-else>
-        <UiAlert v-if="showDraftNotice" variant="info" data-testid="billing-invoice-draft-banner">
+        <UiAlert v-if="showDraftNotice" :variant="UiTone.Info" data-testid="billing-invoice-draft-banner">
           {{ t('billing.invoiceDetail.thisIsADraftInvoice') }} {{ t('billing.invoiceDetail.theClientIsNotAble') }}
         </UiAlert>
 

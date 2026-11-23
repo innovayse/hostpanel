@@ -5,15 +5,15 @@
     "titleHighlight": "Web Hosting",
     "subtitle": "Choose the perfect hosting plan for your website. SSD storage, free SSL, support included.",
     "recommended": "Recommended",
-    "getStarted": "Get Started",
-    "addToCart": "Add to Cart",
-    "inCart": "In Cart",
-    "orderNow": "Order Now",
+    "getStarted": "Get started",
+    "addToCart": "Add to cart",
+    "inCart": "In cart",
+    "orderNow": "Order",
     "custom": "Custom",
     "loadError": "Unable to load hosting plans. Please try again later.",
     "planNotFound": "Plan not found.",
     "viewAllPlans": "View all plans",
-    "backToPlans": "Back to Hosting Plans",
+    "backToPlans": "Back to hosting plans",
     "billingCycles": "Billing Cycles",
     "includedFeatures": "Included Features",
     "cycles": {
@@ -38,7 +38,6 @@
     "premiumSolutions": "Premium Hosting Solutions",
     "enterpriseSolutions": "Agency & Enterprise Solutions",
     "agencyBadge": "Ultimate Performance",
-    "select": "Select",
     "free": "Free"
   }
 }

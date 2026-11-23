@@ -15,14 +15,15 @@
  * padding override on or around it: a narrower reading column belongs on an inner
  * element, never on the container itself.
  */
+import { UiBlockTag } from '~/utils/ui/enums'
 
 /** Props of the container. */
 interface Props {
   /** HTML tag to render; defaults to a plain `div`. */
-  as?: string
+  as?: `${UiBlockTag}`
 }
 
 withDefaults(defineProps<Props>(), {
-  as: 'div',
+  as: UiBlockTag.Div,
 })
 </script>

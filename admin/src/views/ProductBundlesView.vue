@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import ProductBundleFormDialog from '@/components/settings/ProductBundleFormDialog.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -18,7 +18,6 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -34,7 +33,8 @@ import { useSettingsStore } from '@/stores/settings'
 import type { ProductBundle, ProductBundlePayload } from '@/types/productbundle'
 import { BundleDiscountType } from '@/types/productenums'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTableDensity } from '@/utils/ui/injection'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
 import { schemaHeader } from '@/lib/schemaHeader'
@@ -254,38 +254,40 @@ onMounted(async () => {
       @retry="loadAll"
     />
 
-    <UiCard v-else-if="store.loading || store.bundles.length > 0">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading" data-testid="product-bundles-table">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="bundle in store.bundles" :key="bundle.id" data-testid="product-bundle-row">
-            <UiTableCell>
-              <UiText tone="primary" size="lg" class="font-medium">{{ bundle.name }}</UiText>
-              <UiText v-if="bundle.description" tone="muted" size="xs">{{ bundle.description }}</UiText>
-            </UiTableCell>
-            <UiTableCell muted>{{ componentsLabel(bundle) }}</UiTableCell>
-            <UiTableCell muted>{{ domainLabel(bundle) }}</UiTableCell>
-            <UiTableCell>{{ discountLabel(bundle) }}</UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="bundle.isActive"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('shared.active')"
-                :off-label="t('shared.inactive')"
-              />
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="rowActions(bundle)" :testid="`product-bundle-actions-${bundle.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState :title="t('settings.productBundles.empty')" />
-    </UiCard>
+    <UiDataTable
+      v-else
+      :loading="store.loading"
+      :empty="!store.loading && store.bundles.length === 0"
+      data-testid="product-bundles-table"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="bundle in store.bundles" :key="bundle.id" data-testid="product-bundle-row">
+          <UiTableCell>
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-medium">{{ bundle.name }}</UiText>
+            <UiText v-if="bundle.description" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ bundle.description }}</UiText>
+          </UiTableCell>
+          <UiTableCell muted>{{ componentsLabel(bundle) }}</UiTableCell>
+          <UiTableCell muted>{{ domainLabel(bundle) }}</UiTableCell>
+          <UiTableCell>{{ discountLabel(bundle) }}</UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="bundle.isActive"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('shared.active')"
+              :off-label="t('shared.inactive')"
+            />
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="rowActions(bundle)" :testid="`product-bundle-actions-${bundle.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState :title="t('settings.productBundles.empty')" />
+      </template>
+    </UiDataTable>
 
     <ProductBundleFormDialog
       :open="formOpen"
@@ -301,7 +303,7 @@ onMounted(async () => {
 
     <UiDialog
       v-if="deleteTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('settings.productBundles.deleteTitle')"
       :message="deleteMessage"
       :confirm-label="t('shared.delete')"

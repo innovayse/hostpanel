@@ -182,6 +182,8 @@ describe('LayoutHeader', () => {
 
     expect(wrapper.find('[data-testid="layout-sign-in"]').attributes('href')).toBe(CLIENT_LOGIN_PATH)
     expect(wrapper.find('[data-testid="layout-get-started"]').attributes('href')).toBe(SITE_HOSTING_PATH)
+    expect(wrapper.find('[data-testid="layout-sign-in"]').text()).toBe('common.signIn')
+    expect(wrapper.find('[data-testid="layout-get-started"]').text()).toBe('common.getStarted')
     expect(wrapper.find('[data-testid="header-account"]').exists()).toBe(false)
   })
 

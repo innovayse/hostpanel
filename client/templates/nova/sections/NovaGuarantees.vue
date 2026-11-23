@@ -6,12 +6,10 @@
       :lead="t('nova.guarantees.lead')"
     />
 
-    <UiBalancedGrid as="ul" :count="items.length" class="mt-10" data-testid="nova-guarantees-grid">
-      <li v-for="item in items" :key="item.key" class="h-full" :data-testid="`nova-guarantee-${item.key}`">
+    <UiBalancedGrid :as="UiGridTag.Ul" :count="items.length" class="mt-10" data-testid="nova-guarantees-grid">
+      <UiStack v-for="item in items" :key="item.key" :as="UiStackTag.Li" gap="none" class="h-full" :data-testid="`nova-guarantee-${item.key}`">
         <UiCard padding="lg" class="flex h-full flex-col !border-nova-border !bg-nova-bg">
-          <span class="grid h-11 w-11 place-items-center rounded-xl bg-nova-surface-2 text-nova-brand">
-            <Icon :name="GUARANTEE_CARDS[item.key].icon" class="h-[22px] w-[22px]" aria-hidden="true" />
-          </span>
+          <UiIconTile :icon="GUARANTEE_CARDS[item.key].icon" size="lg" tone="nova" />
           <UiHeading :level="3" size="bare" class="mt-5 text-[17px] font-bold text-nova-ink">
             {{ t(GUARANTEE_CARDS[item.key].titleKey) }}
           </UiHeading>
@@ -19,7 +17,7 @@
             {{ t(GUARANTEE_CARDS[item.key].bodyKey ?? '', { days: item.days ?? 0 }) }}
           </UiText>
         </UiCard>
-      </li>
+      </UiStack>
     </UiBalancedGrid>
   </UiSection>
 </template>
@@ -32,6 +30,7 @@
  */
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { GUARANTEE_CARDS } from '~/templates/nova/content'
+import { UiGridTag, UiStackTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

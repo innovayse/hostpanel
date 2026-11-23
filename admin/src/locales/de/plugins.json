@@ -2,7 +2,6 @@
   "pluginCard": {
     "builtIn": "Integriert",
     "pendingRestart": "Neustart ausstehend",
-    "remove": "Entfernen",
     "refused": "Abgelehnt",
     "loadFailed": "Laden fehlgeschlagen",
     "staged": "Version {version} bereitgestellt, wird nach dem Neustart angewendet",
@@ -10,8 +9,7 @@
     "updateAvailable": "Update verfügbar: {version}"
   },
   "pluginUploader": {
-    "valueKbReadyToInstall": "{value} KB · Bereit zur Installation",
-    "installPlugin": "Plugin installieren"
+    "valueKbReadyToInstall": "{value} KB · Bereit zur Installation"
   },
   "pluginInstallDialog": {
     "title": "{name} {version} installieren?",
@@ -41,6 +39,7 @@
   "restartBanner": {
     "restartRequired": "Neustart erforderlich",
     "pluginChangesWillTakeEffect": "Plugin-Änderungen werden nach einem Neustart des Servers wirksam.",
+    "restart": "Neu starten",
     "restartServer": "Server neu starten"
   },
   "pluginSigning": {
@@ -65,13 +64,11 @@
     "confirmPurgeMessage": "Alle Einstellungen und gespeicherten Daten des Plugins {id} werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
     "confirmDowngradeTitle": "Eine ältere Version installieren?",
     "confirmDowngradeMessage": "Diese Version ist älter als die installierte. Ein Downgrade kann von der neueren Version geschriebene Daten beschädigen.",
-    "forceDowngrade": "Trotzdem downgraden",
     "pluginStaged": "Version {version} hochgeladen und bereitgestellt. Sie ersetzt die installierte Version nach dem Neustart des Servers.",
     "tabInstalled": "Installiert",
     "tabBrowse": "Durchsuchen",
     "confirmUpdateTitle": "Dieses Plugin aktualisieren?",
     "confirmUpdateMessage": "{id} auf Version {version} aktualisieren? Die Änderung wird nach einem Neustart des Servers angewendet.",
-    "confirmUpdate": "Aktualisieren",
     "tabSettings": "Einstellungen",
     "uploadPlugin": "Plugin hochladen",
     "uploadTitle": "Plugin-Paket hochladen",
@@ -101,7 +98,7 @@
   "keptData": {
     "title": "Entfernte Plugins mit beibehaltenen Daten",
     "description": "Beim Entfernen eines Plugins bleiben seine Einstellungen und gespeicherten Daten erhalten. Löschen Sie die Daten nur dann endgültig, wenn Sie das Plugin nicht erneut installieren werden.",
-    "purge": "Daten endgültig löschen"
+    "purge": "Löschen"
   },
   "pluginRegistry": {
     "categoryPlaceholder": "Kategorie",
@@ -202,9 +199,6 @@
     "chatEmpty": "Starten Sie die Unterhaltung.",
     "chatJumpToLatest": "Zum Neuesten springen",
     "chatHint": "Eingabetaste zum Senden, Umschalt+Eingabe für eine neue Zeile",
-    "chatCopy": "Antwort kopieren",
-    "chatCopyCode": "Code kopieren",
-    "chatCopied": "Kopiert",
     "chatRetry": "Erneut versuchen",
     "chatWriting": "Antwort wird verfasst",
     "openUrlBlocked": "Dieser Browser hat den neuen Tab blockiert. Erlauben Sie Pop-ups für diese Website und versuchen Sie es erneut.",

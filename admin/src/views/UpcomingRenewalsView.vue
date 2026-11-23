@@ -10,18 +10,17 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Icon } from '@/lib/icons'
-import UiDetailCards from '@/components/ui/UiDetailCards.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
+import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
@@ -37,13 +36,13 @@ import { schemaHeader } from '@/lib/schemaHeader'
 import { RenewalNotice, useRenewalsStore } from '@/stores/renewals'
 import type { RenewalWindow } from '@/types/renewal'
 import type { ClaimedDomainRenewal } from '@/types/renewal'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import schema, {
-  RENEWALS_CLAIMS_PART,
   RENEWALS_CLAIMS_TABLE,
-  RENEWALS_DOMAINS_PART,
   RENEWALS_DOMAINS_TABLE,
-  RENEWALS_SERVICES_PART,
   RENEWALS_SERVICES_TABLE,
   RENEWALS_WINDOW_TABS_PART,
 } from '@/views/UpcomingRenewalsView.schema'
@@ -176,18 +175,25 @@ onMounted(() => store.fetchAll())
     <UiStatusMessage :message="noticeMessage" :tone="UiTone.Success" data-testid="renewals-notice" />
 
     <template v-if="!store.error">
-      <UiDetailCards :columns="RENEWALS_SERVICES_PART.columns" :loading="store.loading && store.services.length === 0">
-        <template #card-services>
-          <UiTable
-            :empty-text="t('billing.renewals.emptyServices')"
-            :empty="store.services.length === 0"
-            data-testid="renewals-services-table"
-          >
+      <UiDataTable
+        :loading="store.loading && store.services.length === 0"
+        :empty="!store.loading && store.services.length === 0"
+        :empty-text="t('billing.renewals.emptyServices')"
+        :page="store.servicesPage"
+        :total="store.servicesTotal"
+        :page-size="store.pageSize"
+        pagination-testid="renewals-services-pagination"
+        data-testid="renewals-services-table"
+        @update:page="store.fetchServices"
+      >
+        <template #header>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('billing.renewals.servicesHeading') }}</UiHeading>
+        </template>
             <UiSchemaTableHead :columns="RENEWALS_SERVICES_TABLE.columns" />
-            <UiTableBody divided>
+            <UiTableBody>
               <UiTableRow v-for="service in store.services" :key="service.id" hoverable>
                 <UiTableCell>
-                  <UiLink variant="link" :to="clientPath(service.clientId)" :data-testid="`renewals-service-client-${service.id}`">
+                  <UiLink :variant="UiButtonVariant.Link" :to="clientPath(service.clientId)" :data-testid="`renewals-service-client-${service.id}`">
                     {{ service.clientName }}
                   </UiLink>
                 </UiTableCell>
@@ -208,29 +214,27 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
-          </UiTable>
-          <UiPagination
-            :page="store.servicesPage"
-            :total="store.servicesTotal"
-            :page-size="store.pageSize"
-            testid="renewals-services-pagination"
-            @update:page="store.fetchServices"
-          />
-        </template>
-      </UiDetailCards>
+      </UiDataTable>
 
-      <UiDetailCards :columns="RENEWALS_DOMAINS_PART.columns" :loading="store.loading && store.domains.length === 0">
-        <template #card-domains>
-          <UiTable
-            :empty-text="t('billing.renewals.emptyDomains')"
-            :empty="store.domains.length === 0"
-            data-testid="renewals-domains-table"
-          >
+      <UiDataTable
+        :loading="store.loading && store.domains.length === 0"
+        :empty="!store.loading && store.domains.length === 0"
+        :empty-text="t('billing.renewals.emptyDomains')"
+        :page="store.domainsPage"
+        :total="store.domainsTotal"
+        :page-size="store.pageSize"
+        pagination-testid="renewals-domains-pagination"
+        data-testid="renewals-domains-table"
+        @update:page="store.fetchDomains"
+      >
+        <template #header>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('billing.renewals.domainsHeading') }}</UiHeading>
+        </template>
             <UiSchemaTableHead :columns="RENEWALS_DOMAINS_TABLE.columns" />
-            <UiTableBody divided>
+            <UiTableBody>
               <UiTableRow v-for="domain in store.domains" :key="domain.id" hoverable>
                 <UiTableCell>
-                  <UiLink variant="link" :to="clientPath(domain.clientId)" :data-testid="`renewals-domain-client-${domain.id}`">
+                  <UiLink :variant="UiButtonVariant.Link" :to="clientPath(domain.clientId)" :data-testid="`renewals-domain-client-${domain.id}`">
                     {{ domain.clientName }}
                   </UiLink>
                 </UiTableCell>
@@ -250,35 +254,28 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
-          </UiTable>
-          <UiPagination
-            :page="store.domainsPage"
-            :total="store.domainsTotal"
-            :page-size="store.pageSize"
-            testid="renewals-domains-pagination"
-            @update:page="store.fetchDomains"
-          />
-        </template>
-      </UiDetailCards>
+      </UiDataTable>
 
-      <UiDetailCards :columns="RENEWALS_CLAIMS_PART.columns" :loading="store.loading && store.claims.length === 0">
-        <template #card-claims>
-          <UiText tone="muted" size="sm">{{ t('billing.renewals.claimsNote') }}</UiText>
-          <UiTable
-            :empty-text="t('billing.renewals.emptyClaims')"
-            :empty="store.claims.length === 0"
-            data-testid="renewals-claims-table"
-          >
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('billing.renewals.claimsNote') }}</UiText>
+      <UiDataTable
+        :loading="store.loading && store.claims.length === 0"
+        :empty="!store.loading && store.claims.length === 0"
+        :empty-text="t('billing.renewals.emptyClaims')"
+        data-testid="renewals-claims-table"
+      >
+        <template #header>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('billing.renewals.claimsHeading') }}</UiHeading>
+        </template>
             <UiSchemaTableHead :columns="RENEWALS_CLAIMS_TABLE.columns" />
-            <UiTableBody divided>
+            <UiTableBody>
               <UiTableRow v-for="claim in store.claims" :key="claim.itemId" hoverable>
                 <UiTableCell>
-                  <UiLink variant="link" :to="invoicePath(claim.invoiceId)" :data-testid="`renewals-claim-invoice-${claim.itemId}`">
+                  <UiLink :variant="UiButtonVariant.Link" :to="invoicePath(claim.invoiceId)" :data-testid="`renewals-claim-invoice-${claim.itemId}`">
                     #{{ claim.invoiceId }}
                   </UiLink>
                 </UiTableCell>
                 <UiTableCell>
-                  <UiLink variant="link" :to="clientPath(claim.clientId)" :data-testid="`renewals-claim-client-${claim.itemId}`">
+                  <UiLink :variant="UiButtonVariant.Link" :to="clientPath(claim.clientId)" :data-testid="`renewals-claim-client-${claim.itemId}`">
                     {{ claim.clientName }}
                   </UiLink>
                 </UiTableCell>
@@ -289,19 +286,17 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
-          </UiTable>
-        </template>
-      </UiDetailCards>
+      </UiDataTable>
     </template>
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="releaseTarget !== null"
       :title="t('billing.renewals.releaseTitle')"
       :message="t('billing.renewals.releaseMessage', { line: releaseTarget?.description ?? '' })"
       :confirm-label="t('billing.renewals.releaseClaim')"
       :loading="store.acting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmRelease"
       @close="releaseTarget = null"
     />

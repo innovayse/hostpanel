@@ -60,8 +60,8 @@ describe('SlideFormView', () => {
 
     expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
     expect(wrapper.findAll('h1')).toHaveLength(1)
-    expect(wrapper.get('h1').text()).toBe('Create Slide')
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create Slide')
+    expect(wrapper.get('h1').text()).toBe('Create slide')
+    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Create slide')
     expect((wrapper.get('[data-testid="slide-form-title"]').element as HTMLInputElement).value).toBe('')
   })
 
@@ -100,7 +100,7 @@ describe('SlideFormView', () => {
 
     expect((wrapper.get('[data-testid="slide-form-title"]').element as HTMLInputElement).value).toBe('Hello')
     expect((wrapper.get('[data-testid="slide-form-icon-name"]').element as HTMLInputElement).value).toBe('star')
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save')
     await wrapper.get('[data-testid="slide-form-tab-ru"]').trigger('click')
     expect((wrapper.get('[data-testid="slide-form-title"]').element as HTMLInputElement).value).toBe('Привет')
 

@@ -1,6 +1,6 @@
 /**
- * Unit tests for the theme store: reading the stored choice, persisting a new one, following the
- * system scheme while on "system", and tolerating storage that throws.
+ * Unit tests for the theme store: following the system scheme until a choice is made, reading a stored choice, switching
+ * between light and dark and persisting it, and tolerating storage that throws.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -20,13 +20,12 @@ describe('theme store', () => {
     vi.restoreAllMocks()
   })
 
-  it('starts on "system" with nothing stored and resolves it from the system', () => {
+  it('follows the system with nothing stored', () => {
     stubSchemeQuery(true)
     const store = useThemeStore()
 
     store.init()
 
-    expect(store.choice).toBe(AdminTheme.System)
     expect(store.isLight).toBe(true)
     expect(document.documentElement.classList.contains('light')).toBe(true)
   })
@@ -38,23 +37,28 @@ describe('theme store', () => {
 
     store.init()
 
-    expect(store.choice).toBe(AdminTheme.Dark)
     expect(store.isLight).toBe(false)
   })
 
-  it('stores and applies a new choice', () => {
+  it('toggles from the applied scheme, stores the choice and applies it', () => {
     stubSchemeQuery(false)
     const store = useThemeStore()
     store.init()
 
-    store.setTheme(AdminTheme.Light)
+    store.toggle()
 
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
     expect(store.isLight).toBe(true)
     expect(document.documentElement.classList.contains('light')).toBe(true)
+
+    store.toggle()
+
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Dark)
+    expect(store.isLight).toBe(false)
+    expect(document.documentElement.classList.contains('light')).toBe(false)
   })
 
-  it('follows a system scheme change on "system" but not on an explicit choice', () => {
+  it('follows a system scheme change until a choice is made, not after', () => {
     const scheme = stubSchemeQuery(false)
     const store = useThemeStore()
     store.init()
@@ -62,7 +66,8 @@ describe('theme store', () => {
     scheme.setLight(true)
     expect(store.isLight).toBe(true)
 
-    store.setTheme(AdminTheme.Dark)
+    store.toggle()
+    expect(store.isLight).toBe(false)
     scheme.setLight(true)
     expect(store.isLight).toBe(false)
   })
@@ -78,7 +83,7 @@ describe('theme store', () => {
     expect(addEventListener).toHaveBeenCalledTimes(1)
   })
 
-  it('still applies a choice when storage throws', () => {
+  it('still applies and keeps a choice for the page when storage throws', () => {
     stubSchemeQuery(false)
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked')
@@ -87,10 +92,12 @@ describe('theme store', () => {
       throw new Error('blocked')
     })
     const store = useThemeStore()
+    store.init()
 
-    expect(store.choice).toBe(AdminTheme.System)
-    store.setTheme(AdminTheme.Light)
+    store.toggle()
+    expect(store.isLight).toBe(true)
 
-    expect(store.choice).toBe(AdminTheme.Light)
+    store.toggle()
+    expect(store.isLight).toBe(false)
   })
 })

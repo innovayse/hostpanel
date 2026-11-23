@@ -55,7 +55,7 @@ onMounted(loadClients)
       v-model="values"
       :columns="schema.columns"
       :clients="clients"
-      :submit-label="t('billing.addTransaction.addTransaction')"
+      :submit-label="t('billing.addTransaction.createTransaction')"
       :loading="store.loading"
       :error="store.error"
       :field-errors="store.fieldErrors"

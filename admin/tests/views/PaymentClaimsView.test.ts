@@ -1,7 +1,7 @@
 /**
  * Tests for PaymentClaimsView: it asks the API for held claims, shows the empty state when there
  * are none, renders the invoice link, client, amount, gateway module, date and status of each claim,
- * and on a refused load shows the error without the empty state or the count and loads again from Retry.
+ * and on a refused load shows the error without the empty state and loads again from Retry.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -48,7 +48,6 @@ describe('PaymentClaimsView', () => {
 
     expect(wrapper.text()).toContain('Held Payment Claims')
     expect(wrapper.get('[data-testid="billing-payment-claims-table"]').text()).toContain('No held payment claims.')
-    expect(wrapper.get('[data-testid="billing-payment-claims-count"]').text()).toContain('0 Records Found')
   })
 
   it('asks for held claims and renders each row', async () => {
@@ -83,7 +82,6 @@ describe('PaymentClaimsView', () => {
     const wrapper = (await mountRouted(PaymentClaimsView, '/billing/payment-claims', '/billing/payment-claims')).wrapper
     await flushPromises()
     expect(wrapper.get('[data-testid="billing-payment-claims-error"]').text()).toContain('Not allowed.')
-    expect(wrapper.find('[data-testid="billing-payment-claims-count"]').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('No held payment claims.')
     const fetchMock = vi.mocked(fetch)
     const before = fetchMock.mock.calls.length

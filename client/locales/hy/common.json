@@ -2,6 +2,9 @@
   "ui": {
     "selectPlaceholder": "Ընտրեք տարբերակ",
     "noOptions": "Տարբերակներ չկան",
+    "pageHeader": {
+      "actions": "Էջի գործողություններ"
+    },
     "theme": {
       "switchDark": "Մուգ ռեժիմ",
       "switchLight": "Բաց ռեժիմ"
@@ -38,11 +41,39 @@
     "previous": "Նախորդ",
     "home": "Գլխավոր",
     "products": "Ապրանքներ",
-    "backToProducts": "Վերադառնալ ապրանքներ",
+    "backToProducts": "Վերադառնալ ապրանքներին",
     "goToSlide": "Անցնել {n}-րդ սլայդին",
     "scrollHorizontal": "Ոլորեք տեսնելու համար",
     "retry": "Կրկնել",
-    "breadcrumb": "Նավիգացիոն շղթա"
+    "breadcrumb": "Նավիգացիոն շղթա",
+    "save": "Պահպանել",
+    "delete": "Ջնջել",
+    "edit": "Խմբագրել",
+    "add": "Ավելացնել",
+    "create": "Ստեղծել",
+    "remove": "Հեռացնել",
+    "download": "Ներբեռնել",
+    "view": "Դիտել",
+    "back": "Հետ",
+    "continue": "Շարունակել",
+    "copy": "Պատճենել",
+    "copied": "Պատճենվեց",
+    "send": "Ուղարկել",
+    "refresh": "Թարմացնել",
+    "update": "Թարմացնել",
+    "apply": "Կիրառել",
+    "clear": "Մաքրել",
+    "reply": "Պատասխանել",
+    "select": "Ընտրել",
+    "details": "Մանրամասներ",
+    "signIn": "Մուտք",
+    "signOut": "Ելք",
+    "pdf": "PDF",
+    "learnMore": "Իմանալ ավելին",
+    "pay": "Վճարել",
+    "manage": "Կառավարել",
+    "getStarted": "Սկսել",
+    "contactUs": "Կապվել մեզ հետ"
   },
   "fallback": {
     "unknown": "Անհայտ"

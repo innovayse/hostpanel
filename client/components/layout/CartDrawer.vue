@@ -56,7 +56,7 @@
         </UiStack>
         <UiIconButton
           :icon="Trash2"
-          :label="$t('cart.remove')"
+          :label="$t('common.remove')"
           size="sm"
           variant="danger"
           class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
@@ -85,7 +85,6 @@
             variant="primary"
             size="lg"
             full-width
-            class="!h-14 font-black uppercase tracking-widest shadow-xl shadow-cyan-500/20 [html[data-template=classic]_&]:!h-12 [html[data-template=classic]_&]:font-semibold [html[data-template=classic]_&]:normal-case [html[data-template=classic]_&]:tracking-normal [html[data-template=classic]_&]:shadow-none"
             data-testid="cart-drawer-checkout"
             @click="handleCheckout"
           >
@@ -95,7 +94,6 @@
           <UiButton
             variant="ghost"
             size="sm"
-            class="text-xs font-bold text-gray-600 dark:text-gray-400 hover:text-red-400 uppercase tracking-widest [html[data-template=classic]_&]:normal-case [html[data-template=classic]_&]:tracking-normal"
             data-testid="cart-drawer-clear"
             @click="cart.clear()"
           >

@@ -7,7 +7,7 @@
     The floating contact button sits above both at z-[60]; it shares no space
     with the header, so the order between them never shows.
   -->
-  <header class="tpl-nova sticky top-0 z-[55] border-b border-nova-border bg-nova-bg/95 font-nova backdrop-blur">
+  <UiText :as="UiTextTag.Header" size="inherit" tone="inherit" class="tpl-nova sticky top-0 z-[55] border-b border-nova-border bg-nova-bg/95 font-nova backdrop-blur">
     <UiLink
       :href="`#${MAIN_CONTENT_ID}`"
       tone="inherit"
@@ -42,7 +42,15 @@
         row has no shrink path: it would run past the edge and give the page a
         horizontal scrollbar. Below xl the links live in the menu panel.
       -->
-      <nav :aria-label="t('nova.nav.menu')" class="hidden flex-auto items-center justify-center gap-1 xl:flex">
+      <UiStack
+        :as="UiStackTag.Nav"
+        direction="row"
+        align="center"
+        justify="center"
+        gap="none"
+        :aria-label="t('nova.nav.menu')"
+        class="hidden flex-auto gap-1 xl:flex"
+      >
         <UiLink
           v-for="item in NAV_ITEMS"
           :key="item.key"
@@ -56,7 +64,7 @@
         >
           {{ t(item.labelKey) }}
         </UiLink>
-      </nav>
+      </UiStack>
 
       <UiStack direction="row" align="center" gap="none" class="ml-auto gap-1.5 xl:ml-0">
         <!--
@@ -82,11 +90,15 @@
           class="relative grid h-11 w-11 place-items-center rounded-xl border border-nova-border text-nova-ink hover:border-nova-brand"
         >
           <Icon name="lucide:shopping-cart" class="h-5 w-5" aria-hidden="true" />
-          <span
+          <UiStack
             v-if="cartCount > 0"
-            class="absolute -right-1 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-nova-accent px-1 text-[11px] font-extrabold text-nova-on-accent"
+            :as="UiStackTag.Span"
+            align="center"
+            justify="center"
+            gap="none"
+            class="absolute -right-1 -top-1 h-[18px] min-w-[18px] rounded-full bg-nova-accent px-1 text-[11px] font-extrabold text-nova-on-accent"
             data-testid="nova-nav-cart-count"
-          >{{ cartCount }}</span>
+          >{{ cartCount }}</UiStack>
         </UiLink>
 
         <!--
@@ -101,7 +113,7 @@
           class="hidden px-3 sm:inline-flex"
           data-testid="nova-nav-login"
         >
-          {{ t('nova.nav.login') }}
+          {{ t('common.signIn') }}
         </NovaCta>
 
         <NovaCta
@@ -110,7 +122,7 @@
           class="hidden whitespace-nowrap px-5 sm:inline-flex"
           data-testid="nova-nav-get-started"
         >
-          {{ t('nova.nav.getStarted') }}
+          {{ t('nova.cta.getStarted') }}
         </NovaCta>
 
         <UiButton
@@ -128,14 +140,15 @@
       </UiStack>
     </UiContainer>
 
-    <div
+    <UiStack
       v-if="menuOpen"
       :id="MENU_ID"
       ref="menuRef"
+      gap="none"
       class="border-t border-nova-border bg-nova-surface px-4 pb-5 pt-2 sm:px-6 xl:hidden"
       @keydown="onMenuKeydown"
     >
-      <nav :aria-label="t('nova.nav.menu')" class="flex flex-col">
+      <UiStack :as="UiStackTag.Nav" gap="none" :aria-label="t('nova.nav.menu')">
         <UiLink
           v-for="item in NAV_ITEMS"
           :key="item.key"
@@ -149,7 +162,7 @@
         >
           {{ t(item.labelKey) }}
         </UiLink>
-      </nav>
+      </UiStack>
 
       <UiStack
         direction="row"
@@ -158,7 +171,7 @@
         gap="sm"
         class="mt-3 border-t border-nova-border pt-3"
       >
-        <UiText as="span" size="inherit" tone="inherit" class="text-sm text-nova-muted">
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-sm text-nova-muted">
           {{ t('nova.nav.preferences') }}
         </UiText>
         <!--
@@ -189,7 +202,7 @@
           data-testid="nova-mobile-login"
           @click="closeMenu"
         >
-          {{ t('nova.nav.login') }}
+          {{ t('common.signIn') }}
         </NovaCta>
         <NovaCta
           :to="localePath(SITE_HOSTING_PATH)"
@@ -197,11 +210,11 @@
           data-testid="nova-mobile-get-started"
           @click="closeMenu"
         >
-          {{ t('nova.nav.getStarted') }}
+          {{ t('nova.cta.getStarted') }}
         </NovaCta>
       </UiStack>
-    </div>
-  </header>
+    </UiStack>
+  </UiText>
 </template>
 
 <script setup lang="ts">
@@ -223,6 +236,7 @@ import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import { NAV_ITEMS } from '~/templates/nova/content'
 import { useCartStore } from '~/stores/cart'
 import { SITE_CART_PATH, SITE_HOME_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of NovaHeader. */
 const props = withDefaults(defineProps<{
@@ -256,8 +270,8 @@ const { signInHref } = useAuthMode()
 /** Whether the mobile panel is open. */
 const menuOpen = ref(false)
 
-/** The open panel, searched for focusable entries. */
-const menuRef = ref<HTMLElement | null>(null)
+/** The open panel (a kit stack), whose element is searched for focusable entries. */
+const menuRef = ref<ComponentPublicInstance | null>(null)
 /** The button that opens the panel; focus returns to it on close. */
 const toggleRef = ref<ComponentPublicInstance | null>(null)
 
@@ -270,7 +284,7 @@ const cartCount = computed(() => cart.items.length)
  * @returns The focusable links and enabled buttons; empty while the panel is not mounted.
  */
 const focusables = (): HTMLElement[] =>
-  Array.from(menuRef.value?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? [])
+  Array.from((menuRef.value?.$el as HTMLElement | undefined)?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? [])
 
 /**
  * Puts keyboard focus back on the button that opens the panel.

@@ -12,7 +12,7 @@ import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { RouteLocationRaw } from 'vue-router'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -22,18 +22,20 @@ import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { StorefrontListOutcome } from '@/types/storefront'
 import type { StorefrontEntity, StorefrontListTestIds, StorefrontOrderItem } from '@/types/storefront'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import { UiTableDensity } from '@/utils/ui/injection'
+import { UiAlignItems, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiTextTag } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
@@ -61,10 +63,6 @@ const props = withDefaults(defineProps<{
   emptyLabel: string
   /** Title of the delete question (already translated). */
   deleteTitle: string
-  /** Label of the edit action (already translated). */
-  editLabel: string
-  /** Label of the delete action (already translated). */
-  deleteLabel: string
   /** Label of the move-up action (already translated). */
   moveUpLabel: string
   /** Label of the move-down action (already translated). */
@@ -189,8 +187,8 @@ const rowActions = (item: T, index: number): UiMenuAction[] => {
   return [
     { label: props.moveUpLabel, icon: Icon.ArrowUp, disabled: index === 0, testid: `${props.testids.moveUp}-${item.id}`, onSelect: onMoveUp },
     { label: props.moveDownLabel, icon: Icon.ArrowDown, disabled: index === local.value.length - 1, testid: `${props.testids.moveDown}-${item.id}`, onSelect: onMoveDown },
-    { label: props.editLabel, icon: Icon.Edit, testid: `${props.testids.edit}-${item.id}`, to: props.editTo(item) },
-    { label: props.deleteLabel, icon: Icon.Trash, danger: true, testid: `${props.testids.delete}-${item.id}`, onSelect: onDelete },
+    { label: t('shared.edit'), icon: Icon.Edit, testid: `${props.testids.edit}-${item.id}`, to: props.editTo(item) },
+    { label: t('shared.delete'), icon: Icon.Trash, danger: true, testid: `${props.testids.delete}-${item.id}`, onSelect: onDelete },
   ]
 }
 
@@ -201,7 +199,7 @@ const onDragEnd = (): void => {
 </script>
 
 <template>
-  <UiStack gap="none" :data-testid="testids.view">
+  <UiStack :gap="UiGap.None" :data-testid="testids.view">
     <UiStatusMessage :message="outcomeMessage" :tone="outcomeTone" class="mb-4" :data-testid="testids.actionError" />
 
     <UiPageHeader :actions="headerActions" :title="title" :subtitle="subtitle">
@@ -209,44 +207,42 @@ const onDragEnd = (): void => {
 
     <UiErrorState v-if="error" :message="error" :testid="testids.error" @retry="emit('retry')" />
 
-    <UiCard v-else clip>
-      <UiTable
-        :empty-text="emptyLabel"
-        :density="UiTableDensity.Comfortable"
-        :loading="loading || savingOrder"
-        :empty="!loading && local.length === 0"
+    <UiDataTable
+      v-else
+      :empty-text="emptyLabel"
+      :loading="loading || savingOrder"
+      :empty="!loading && local.length === 0"
+    >
+      <UiTableHead>
+        <UiTableRow>
+          <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Hidden"><UiText :as="UiTextTag.Span" class="sr-only">{{ t('storefront.list.reorder') }}</UiText></UiTableHeader>
+          <UiTableHeader v-for="(column, index) in columns" :key="column" :size="index === 0 ? UiColumnSize.Grow : undefined">{{ column }}</UiTableHeader>
+          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+        </UiTableRow>
+      </UiTableHead>
+      <UiSortableRows
+        v-if="!loading && !savingOrder"
+        v-model="local"
+        item-key="id"
+        @end="onDragEnd"
       >
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Hidden"><span class="sr-only">{{ t('storefront.list.reorder') }}</span></UiTableHeader>
-            <UiTableHeader v-for="(column, index) in columns" :key="column" :size="index === 0 ? UiColumnSize.Grow : undefined">{{ column }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+        <template #item="{ element, index }">
+          <UiTableRow hoverable :data-testid="`${testids.row}-${element.id}`">
+            <UiTableCell>
+              <UiStack :align="UiAlignItems.Center" :justify="UiJustify.Center" :gap="UiGap.None" class="drag-handle h-6 w-6 cursor-grab text-text-muted active:cursor-grabbing">
+                <UiIcon :markup="Icon.Grip" :size="UiSize.Sm" />
+              </UiStack>
+            </UiTableCell>
+
+            <slot name="row" :item="element" />
+
+            <UiTableCell actions>
+              <UiRowActions :actions="rowActions(element, index)" :testid="`${testids.actions}-${element.id}`" />
+            </UiTableCell>
           </UiTableRow>
-        </UiTableHead>
-        <UiSortableRows
-          v-if="!loading && !savingOrder"
-          v-model="local"
-          item-key="id"
-          @end="onDragEnd"
-        >
-          <template #item="{ element, index }">
-            <UiTableRow hoverable :data-testid="`${testids.row}-${element.id}`">
-              <UiTableCell>
-                <UiStack align="center" justify="center" gap="none" class="drag-handle h-6 w-6 cursor-grab text-text-muted active:cursor-grabbing">
-                  <UiIcon :markup="Icon.Grip" size="sm" />
-                </UiStack>
-              </UiTableCell>
-
-              <slot name="row" :item="element" />
-
-              <UiTableCell actions>
-                <UiRowActions :actions="rowActions(element, index)" :testid="`${testids.actions}-${element.id}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </template>
-        </UiSortableRows>
-      </UiTable>
-    </UiCard>
+        </template>
+      </UiSortableRows>
+    </UiDataTable>
 
     <!-- Delete confirmation -->
     <UiDialog

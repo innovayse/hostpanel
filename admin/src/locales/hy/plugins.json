@@ -2,7 +2,6 @@
   "pluginCard": {
     "builtIn": "Ներկառուցված",
     "pendingRestart": "Սպասում է վերագործարկման",
-    "remove": "Հեռացնել",
     "refused": "Մերժված",
     "loadFailed": "Չբեռնվեց",
     "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
@@ -10,8 +9,7 @@
     "updateAvailable": "Հասանելի է թարմացում՝ {version}"
   },
   "pluginUploader": {
-    "valueKbReadyToInstall": "{value} ԿԲ · պատրաստ է տեղադրման",
-    "installPlugin": "Տեղադրել պլագին"
+    "valueKbReadyToInstall": "{value} ԿԲ · պատրաստ է տեղադրման"
   },
   "pluginInstallDialog": {
     "title": "Տեղադրե՞լ {name} {version}",
@@ -41,6 +39,7 @@
   "restartBanner": {
     "restartRequired": "Անհրաժեշտ է վերագործարկում",
     "pluginChangesWillTakeEffect": "Պլագինների փոփոխությունները ուժի մեջ կմտնեն սերվերի վերագործարկումից հետո։",
+    "restart": "Վերագործարկել",
     "restartServer": "Վերագործարկել սերվերը"
   },
   "pluginSigning": {
@@ -65,13 +64,11 @@
     "confirmPurgeMessage": "{id} պլագինի բոլոր կարգավորումներն ու պահված տվյալները կջնջվեն անվերադարձ։",
     "confirmDowngradeTitle": "Տեղադրե՞լ ավելի հին տարբերակ",
     "confirmDowngradeMessage": "Այս տարբերակը ավելի հին է, քան տեղադրվածը։ Իջեցումը կարող է վնասել նոր տարբերակի գրած տվյալները։",
-    "forceDowngrade": "Այնուհանդերձ իջեցնել",
     "pluginStaged": "{version} տարբերակը բեռնվեց և պատրաստ է։ Այն կփոխարինի տեղադրվածին սերվերի վերագործարկումից հետո։",
     "tabInstalled": "Տեղադրված",
     "tabBrowse": "Կատալոգ",
     "confirmUpdateTitle": "Թարմացնե՞լ այս պլագինը",
     "confirmUpdateMessage": "Թարմացնե՞լ {id} պլագինը մինչև {version} տարբերակ։ Փոփոխությունը կգործի սերվերի վերագործարկումից հետո։",
-    "confirmUpdate": "Թարմացնել",
     "tabSettings": "Կարգավորումներ",
     "uploadPlugin": "Վերբեռնել պլագին",
     "uploadTitle": "Պլագինի փաթեթի վերբեռնում",
@@ -101,7 +98,7 @@
   "keptData": {
     "title": "Հեռացված պլագիններ՝ պահպանված տվյալներով",
     "description": "Պլագինը հեռացնելիս նրա կարգավորումներն ու տվյալները պահպանվում են։ Ջնջեք դրանք միայն եթե այլևս չեք տեղադրելու պլագինը։",
-    "purge": "Ջնջել տվյալները"
+    "purge": "Ջնջել"
   },
   "pluginRegistry": {
     "categoryPlaceholder": "Կատեգորիա",
@@ -202,9 +199,6 @@
     "chatEmpty": "Սկսեք զրույցը։",
     "chatJumpToLatest": "Անցնել վերջին հաղորդագրությանը",
     "chatHint": "Enter՝ ուղարկելու, Shift+Enter՝ նոր տողի համար",
-    "chatCopy": "Պատճենել պատասխանը",
-    "chatCopyCode": "Պատճենել կոդը",
-    "chatCopied": "Պատճենվեց",
     "openUrlBlocked": "Դիտարկիչը արգելափակեց նոր ներդիրը։ Թույլատրեք pop-up-ները այս կայքի համար և կրկնեք։",
     "openUrlRefused": "Պլագինը վերադարձրեց հասցե, որը հնարավոր չէ բացել։",
     "chatRetry": "Կրկնել",

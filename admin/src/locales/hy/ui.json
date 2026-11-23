@@ -45,20 +45,15 @@
   },
   "uiFieldSelector": {
     "fields": "Դաշտեր",
-    "selectedCount": "{count} / {total} դաշտ",
-    "clearAll": "Մաքրել բոլորը"
+    "selectedCount": "{count} / {total} դաշտ"
   },
   "uiFilterTrigger": {
     "filters": "Ֆիլտրներ",
-    "title": "Ֆիլտրներ",
-    "apply": "Կիրառել",
-    "reset": "Մաքրել",
-    "cancel": "Չեղարկել"
+    "title": "Ֆիլտրներ"
   },
   "uiFilterChips": {
     "label": "Ակտիվ ֆիլտրներ",
-    "remove": "Հեռացնել ֆիլտրը {label}՝ {value}",
-    "clearAll": "Մաքրել բոլորը"
+    "remove": "Հեռացնել ֆիլտրը {label}՝ {value}"
   },
   "uiSelect": {
     "choose": "Ընտրեք արժեք",
@@ -71,14 +66,9 @@
     "countryCode": "Երկրի կոդ"
   },
   "selectCountry": "Ընտրեք երկիրը",
-  "dialog": {
-    "close": "Փակել",
-    "confirm": "Հաստատել"
-  },
   "pagination": {
     "navigation": "Էջավորում",
     "previous": "Նախորդ",
-    "next": "Հաջորդ",
     "page": "Էջ",
     "range": "{from} - {to} / {total}",
     "pageOf": "Էջ {page} / {count}",
@@ -110,9 +100,6 @@
     "showPassword": "Ցուցադրել գաղտնաբառը",
     "hidePassword": "Թաքցնել գաղտնաբառը",
     "clearSearch": "Մաքրել"
-  },
-  "errorState": {
-    "retry": "Կրկնել"
   },
   "uiLocalizedField": {
     "emptyTab": "Լրացված չէ",

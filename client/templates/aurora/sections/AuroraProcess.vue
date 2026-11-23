@@ -15,7 +15,7 @@
               data-testid="process-start"
               :class="[BRAND_BUTTON, 'px-6 py-3 text-[15px]']"
             >
-              {{ t('aurora.process.start') }}
+              {{ t('aurora.actions.getStarted') }}
             </UiButton>
             <UiButton
               variant="bare"
@@ -23,7 +23,7 @@
               data-testid="process-talk"
               :class="[LINE_BUTTON, 'px-6 py-3 text-[15px]']"
             >
-              {{ t('aurora.process.talk') }}
+              {{ t('aurora.actions.talkToSpecialist') }}
             </UiButton>
           </UiStack>
           <UiText tone="inherit" class="mt-5 text-[14px] leading-relaxed text-mut" data-testid="process-note">
@@ -44,7 +44,7 @@
           >
             <UiStack direction="row" align="start" gap="md">
               <UiText
-                as="span"
+                :as="UiTextTag.Span"
                 size="inherit"
                 tone="inherit"
                 class="w-[46px] shrink-0 bg-hero-grad bg-clip-text font-mono text-[26px] font-medium text-transparent"
@@ -52,8 +52,8 @@
                 {{ step.n }}
               </UiText>
               <UiStack gap="none" class="min-w-0">
-                <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[17px] text-tx">{{ step.title }}</UiText>
-                <UiText as="span" size="inherit" tone="inherit" class="mt-1.5 text-[15px] leading-relaxed text-mut">{{ step.body }}</UiText>
+                <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[17px] text-tx">{{ step.title }}</UiText>
+                <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="mt-1.5 text-[15px] leading-relaxed text-mut">{{ step.body }}</UiText>
               </UiStack>
             </UiStack>
           </UiCard>
@@ -71,6 +71,7 @@ import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
 import { STICKY_COLUMN_CLASS } from '~/templates/aurora/layoutClasses'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import { SITE_CONTACT_PATH, SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

@@ -13,6 +13,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { serverDto, serverGroupDto, serverModuleOptionDtos, serverOptionDto, serverSshSettingsDto, serverSshSetupDto } from '../helpers/serverFixtures'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address the screen is registered under. */
 const PATH = '/servers'
@@ -70,7 +71,7 @@ describe('ServersView', () => {
     expect(row.text()).toContain('host1')
     expect(row.text()).toContain('12 / 100')
     expect(wrapper.get('[data-testid="server-state-1"]').text()).toBe('Online')
-    expect(wrapper.get('[data-testid="servers-module-Cwp7"]').text()).not.toBe('')
+    expect(wrapper.get('[data-testid="servers-module-CPanel"]').text()).not.toBe('')
     expect(wrapper.get('progress').attributes('value')).toBe('12')
   })
 
@@ -309,7 +310,7 @@ describe('ServersView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('The server has services.')
+    expect(toastMessages()).toContain('The server has services.')
     expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
   })
 
@@ -431,7 +432,7 @@ describe('ServersView', () => {
     expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(true)
     await wrapper.get('[data-testid="server-ssh-cancel"]').trigger('click')
     expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('')
+    expect(toastMessages()).toEqual([])
   })
 
   it('keeps the SSH dialog open after a save, with the confirmation inside it', async () => {
@@ -455,7 +456,7 @@ describe('ServersView', () => {
 
     expect(wrapper.find('[data-testid="server-ssh-hostname"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="server-ssh-saved"]').text()).toBe('Saved')
-    expect(wrapper.get('[data-testid="servers-feedback"]').text()).toBe('')
+    expect(toastMessages()).toEqual([])
   })
 
   it('keeps the page header, the toolbar and the card grid and draws placeholder cards while the servers load', async () => {

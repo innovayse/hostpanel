@@ -25,7 +25,7 @@
       </UiStack>
 
       <UiStack v-for="(_, index) in servers" :key="index" direction="row" align="center">
-        <UiText as="span" size="sm" tone="muted" class="w-24 flex-shrink-0">{{ $t('client.domains.nameserverN', { n: index + 1 }) }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" tone="muted" class="w-24 flex-shrink-0">{{ $t('client.domains.nameserverN', { n: index + 1 }) }}</UiText>
         <UiInput
           v-model="servers[index]"
           :placeholder="$t('client.domains.nameserverPlaceholder', { n: index + 1 })"
@@ -37,9 +37,9 @@
       </UiStack>
 
       <template #actions>
-        <UiButton type="submit" size="sm" :loading="nsSaving" full-width data-testid="domain-ns-save">
+        <UiButton variant="primary" type="submit" size="sm" :loading="nsSaving" full-width data-testid="domain-ns-save">
           <Save v-if="!nsSaving" :size="14" :stroke-width="2" class="mr-1.5" />
-          {{ $t('client.domains.saveNameservers') }}
+          {{ $t('common.save') }}
         </UiButton>
       </template>
     </UiForm>
@@ -58,6 +58,7 @@ import { Network, Save } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useDomainsStore } from '~/stores/domains'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** How many nameserver fields the form offers. */
 const NAMESERVER_COUNT = 5

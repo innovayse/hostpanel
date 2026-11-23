@@ -43,12 +43,12 @@ export const bankTransferDetail: IntegrationDetailDto = {
 }
 
 /** An installed, loaded provisioning plugin. */
-export const cwpPlugin: PluginListItemDto = {
-  id: 'innovayse-cwp',
-  name: 'CWP provisioning',
+export const panelPlugin: PluginListItemDto = {
+  id: 'example-panel',
+  name: 'Panel provisioning',
   version: '1.0.0',
   author: 'Hostpanel',
-  description: 'Provisions hosting accounts on CWP servers.',
+  description: 'Provisions hosting accounts on panel servers.',
   type: 'provisioning',
   category: 'Hosting / Provisioning',
   color: '#1a73e8',

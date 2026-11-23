@@ -15,6 +15,7 @@ import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import schema from '@/views/EmailCampaignsListView.schema'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address the screen is registered under. */
 const PATH = '/support/email-campaigns'
@@ -241,7 +242,7 @@ describe('EmailCampaignsListView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="email-campaigns-feedback"]').text()).toBe('Only a draft can be deleted.')
+    expect(toastMessages()).toContain('Only a draft can be deleted.')
     expect(wrapper.find('[data-testid="email-campaigns-row-3"]').exists()).toBe(true)
   })
 

@@ -31,10 +31,6 @@
     "fieldPort": "Պորտ",
     "fieldApiToken": "API թոքեն"
   },
-  "cwp": {
-    "shortDescription": "Կառավարեք հոսթինգ հաշիվները CentOS Web Panel սերվերների վրա։",
-    "fieldHost": "CWP հոսթ"
-  },
   "smtp": {
     "shortDescription": "Կարգավորեք ելքային նամակների առաքումը ձեր SMTP սերվերի միջոցով։",
     "fieldHost": "SMTP հոսթ",

@@ -116,7 +116,7 @@ const flow = useStorefrontForm<ServerLocation, ServerLocationPayload>({ store, f
   <StorefrontFormShell
     testid="location"
     :title="flow.isEditMode.value ? t('storefront.locations.edit') : t('storefront.locations.create')"
-    :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.locations.create')"
+    :save-label="flow.isEditMode.value ? t('shared.save') : t('storefront.locations.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"
     :dirty="flow.isDirty.value"

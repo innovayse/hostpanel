@@ -19,10 +19,10 @@
 
         <UiText size="sm" tone="muted">{{ $t('client.credit.add.note') }}</UiText>
 
-        <UiStack direction="row" gap="sm" justify="end">
-          <UiButton :to="CLIENT_CREDIT_PATH" variant="subtle" data-testid="credit-add-cancel">{{ $t('client.credit.add.cancel') }}</UiButton>
-          <UiButton type="submit" :loading="busy" :disabled="busy" data-testid="credit-add-submit">
-            {{ $t('client.credit.add.submit') }}
+        <UiStack direction="row" gap="sm" justify="end" wrap>
+          <UiButton :to="CLIENT_CREDIT_PATH" variant="subtle" data-testid="credit-add-cancel">{{ $t('common.cancel') }}</UiButton>
+          <UiButton variant="primary" type="submit" :loading="busy" :disabled="busy" :hint="$t('client.credit.add.submit')" data-testid="credit-add-submit">
+            {{ $t('common.continue') }}
           </UiButton>
         </UiStack>
       </UiStack>

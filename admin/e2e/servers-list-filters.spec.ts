@@ -16,14 +16,14 @@ import type { StubApi } from './support/stubApi'
 /** The list endpoint the screen reads. */
 const LIST_PATH = '/api/admin/servers'
 
-/** A Cwp7 server that has never been tested. */
-const cwp7Server: ServerDto = { ...hostServer, id: 1, name: 'cwp7-alpha', module: 'Cwp7', isOnline: null }
+/** A cPanel server that has never been tested. */
+const cpanelServer: ServerDto = { ...hostServer, id: 1, name: 'cpanel-alpha', module: 'CPanel', isOnline: null }
 
 /** A DirectAdmin server whose last test failed, the one the module and state filters must keep. */
 const directadminServer: ServerDto = { ...hostServer, id: 2, name: 'directadmin-beta', module: 'DirectAdmin', isOnline: false }
 
 /** Every server the stubbed list holds. */
-const allServers: ServerDto[] = [cwp7Server, directadminServer]
+const allServers: ServerDto[] = [cpanelServer, directadminServer]
 
 /**
  * Stubs the server list so it narrows by the same query parameters the real API takes.

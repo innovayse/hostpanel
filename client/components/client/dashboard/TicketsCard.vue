@@ -3,7 +3,7 @@
     <UiCardHeader :title="$t('client.dashboard.recentTickets')">
       <UiButton size="sm" variant="primary" :to="CLIENT_TICKET_NEW_PATH" data-testid="dashboard-ticket-new">
         <Plus :size="12" :stroke-width="2" class="mr-1" />
-        {{ $t('client.dashboard.openNewTicket') }}
+        {{ $t('client.tickets.create') }}
       </UiButton>
     </UiCardHeader>
 
@@ -13,7 +13,7 @@
 
     <UiEmptyState v-else-if="!store.tickets.length" :icon="MessageSquare" :title="$t('client.dashboard.noTickets')" class="!py-6" data-testid="dashboard-tickets-empty">
       <UiButton size="sm" variant="subtle" :to="CLIENT_TICKET_NEW_PATH" data-testid="dashboard-ticket-open">
-        {{ $t('client.dashboard.openTicketLink') }}
+        {{ $t('client.tickets.create') }}
       </UiButton>
     </UiEmptyState>
 
@@ -24,10 +24,10 @@
         :to="clientTicketPath(ticket.id)"
         :testid="`dashboard-ticket-${ticket.id}`"
       >
-        <div class="min-w-0 flex-1">
+        <UiStack gap="none" class="min-w-0 flex-1">
           <UiText size="sm" weight="medium" truncate>{{ ticket.subject }}</UiText>
           <UiText size="xs" tone="subtle">{{ ticket.departmentName }}</UiText>
-        </div>
+        </UiStack>
         <ClientStatusBadge :status="ticket.status" class="flex-shrink-0" />
       </ClientDashboardListRow>
     </UiStack>

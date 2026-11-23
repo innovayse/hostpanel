@@ -1,5 +1,5 @@
 <template>
-  <section class="py-14 md:py-20 bg-classic-page" data-testid="sections-apps">
+  <UiSection :contained="false" padding="lg" class="bg-classic-page" data-testid="sections-apps">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-6"
@@ -26,7 +26,7 @@
         </ClassicCard>
       </UiBalancedGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

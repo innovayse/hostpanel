@@ -1,6 +1,4 @@
 {
-  "save": "Save",
-  "signOut": "Sign out",
   "admin": "Admin",
   "notifications": "Notifications",
   "notificationsWithCount": "Notifications, {count} new",

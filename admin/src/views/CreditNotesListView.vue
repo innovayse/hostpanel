@@ -13,18 +13,15 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CreditNoteStatusBadge from '@/components/billing/CreditNoteStatusBadge.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -39,6 +36,9 @@ import { clientPath, creditNotePath, invoicePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { useCreditNotesStore } from '@/stores/creditNotes'
 import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -130,7 +130,7 @@ onMounted(loadClients)
   <UiStack data-testid="billing-credit-notes-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
 
-    <UiAlert variant="info" data-testid="billing-credit-notes-explain">{{ t('billing.creditNotes.explain') }}</UiAlert>
+    <UiAlert :variant="UiTone.Info" data-testid="billing-credit-notes-explain">{{ t('billing.creditNotes.explain') }}</UiAlert>
 
     <UiErrorState v-if="loadError !== null" :message="loadError" :loading="store.loading" testid="billing-credit-notes-error" @retry="load" />
 
@@ -147,7 +147,7 @@ onMounted(loadClients)
       @remove="list.remove"
       @clear="list.clearAll"
     >
-      <UiStack gap="md">
+      <UiStack :gap="UiGap.Md">
         <UiField :label="t('shared.client')">
           <UiClientSelect
             v-model="list.draft.value.clientId"
@@ -181,46 +181,37 @@ onMounted(loadClients)
       </UiStack>
     </UiListToolbar>
 
-    <UiResultCount v-if="loadError === null" :loading="store.loading && store.notes.length === 0" data-testid="billing-credit-notes-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiCard>
-      <UiTable
-        :empty-text="t('billing.creditNotes.empty')"
-        :loading="store.loading && store.notes.length === 0"
-        :empty="!store.loading && loadError === null && store.notes.length === 0"
-        data-testid="billing-credit-notes-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="note in store.notes" :key="note.id" hoverable>
-            <UiTableCell>
-              <UiLink :to="creditNotePath(note.id)" variant="link" :data-testid="`billing-credit-note-${note.id}`">
-                {{ note.number ?? `#${note.id}` }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiLink :to="invoicePath(note.invoiceId)" variant="link">#{{ note.invoiceId }}</UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiLink :to="clientPath(note.clientId)" variant="link">{{ note.clientName }}</UiLink>
-            </UiTableCell>
-            <UiTableCell><CreditNoteStatusBadge :status="note.status" /></UiTableCell>
-            <UiTableCell>{{ t(`billing.creditNotes.method.${note.method}`) }}</UiTableCell>
-            <UiTableCell numeric>{{ formatPlainAmount(note.total, note.currency) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDateTime(note.issuedAt) }}</UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      :empty-text="t('billing.creditNotes.empty')"
+      :loading="store.loading && store.notes.length === 0"
+      :empty="!store.loading && loadError === null && store.notes.length === 0"
       :page="list.page.value"
       :total="store.totalCount"
       :page-size="DEFAULT_PAGE_SIZE"
-      testid="billing-credit-notes-pagination"
+      pagination-testid="billing-credit-notes-pagination"
+      data-testid="billing-credit-notes-table"
       @update:page="list.setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="note in store.notes" :key="note.id" hoverable>
+          <UiTableCell>
+            <UiLink :to="creditNotePath(note.id)" :variant="UiButtonVariant.Link" :data-testid="`billing-credit-note-${note.id}`">
+              {{ note.number ?? `#${note.id}` }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiLink :to="invoicePath(note.invoiceId)" :variant="UiButtonVariant.Link">#{{ note.invoiceId }}</UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiLink :to="clientPath(note.clientId)" :variant="UiButtonVariant.Link">{{ note.clientName }}</UiLink>
+          </UiTableCell>
+          <UiTableCell><CreditNoteStatusBadge :status="note.status" /></UiTableCell>
+          <UiTableCell>{{ t(`billing.creditNotes.method.${note.method}`) }}</UiTableCell>
+          <UiTableCell numeric>{{ formatPlainAmount(note.total, note.currency) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDateTime(note.issuedAt) }}</UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

@@ -2,6 +2,9 @@
   "ui": {
     "selectPlaceholder": "Выберите вариант",
     "noOptions": "Нет доступных вариантов",
+    "pageHeader": {
+      "actions": "Действия страницы"
+    },
     "theme": {
       "switchDark": "Тёмная тема",
       "switchLight": "Светлая тема"
@@ -42,7 +45,35 @@
     "goToSlide": "Перейти к слайду {n}",
     "scrollHorizontal": "Прокрутите вбок",
     "retry": "Повторить",
-    "breadcrumb": "Навигационная цепочка"
+    "breadcrumb": "Навигационная цепочка",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Изменить",
+    "add": "Добавить",
+    "create": "Создать",
+    "remove": "Убрать",
+    "download": "Скачать",
+    "view": "Посмотреть",
+    "back": "Назад",
+    "continue": "Продолжить",
+    "copy": "Копировать",
+    "copied": "Скопировано",
+    "send": "Отправить",
+    "refresh": "Обновить",
+    "update": "Обновить",
+    "apply": "Применить",
+    "clear": "Очистить",
+    "reply": "Ответить",
+    "select": "Выбрать",
+    "details": "Подробности",
+    "signIn": "Войти",
+    "signOut": "Выйти",
+    "pdf": "PDF",
+    "learnMore": "Узнать больше",
+    "pay": "Оплатить",
+    "manage": "Управлять",
+    "getStarted": "Начать",
+    "contactUs": "Связаться с нами"
   },
   "fallback": {
     "unknown": "Неизвестно"

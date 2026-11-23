@@ -13,6 +13,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { BillingCycle } from '@/types/service'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** A pending order with one line and a linked invoice. */
 const pendingOrder = {
@@ -152,7 +153,7 @@ describe('OrderDetailView', () => {
     await wrapper.get('[data-testid="order-accept"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('The invoice is not paid.')
+    expect(toastMessages().join(' ')).toContain('The invoice is not paid.')
     expect(wrapper.find('[data-testid="order-header"]').exists()).toBe(true)
   })
 
@@ -192,7 +193,7 @@ describe('OrderDetailView', () => {
     await wrapper.get('[data-testid="order-accept"]').trigger('click')
     await flushPromises()
 
-    const feedback = wrapper.get('[data-testid="order-action-feedback"]').text()
+    const feedback = toastMessages().join(' ')
     expect(feedback).toContain('could not be fulfilled')
     expect(feedback).toContain('taken.example')
   })
@@ -252,7 +253,7 @@ describe('OrderDetailView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('The order is already active.')
+    expect(toastMessages().join(' ')).toContain('The order is already active.')
   })
 
   it('keeps the order when the cancel confirmation is dismissed', async () => {
@@ -297,7 +298,7 @@ describe('OrderDetailView', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/orders/8')
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('The order has an invoice.')
+    expect(toastMessages().join(' ')).toContain('The order has an invoice.')
   })
 
   it('shows the API sentence when the order cannot be loaded', async () => {
@@ -360,8 +361,8 @@ describe('OrderDetailView', () => {
     await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('could not be fulfilled again')
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('taken.example')
+    expect(toastMessages().join(' ')).toContain('could not be fulfilled again')
+    expect(toastMessages().join(' ')).toContain('taken.example')
   })
 
   it('shows the API sentence when the retry is refused', async () => {
@@ -375,7 +376,7 @@ describe('OrderDetailView', () => {
     await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('cannot be retried now')
+    expect(toastMessages().join(' ')).toContain('cannot be retried now')
   })
 
   it('loads the order again from the retry of a refused load', async () => {

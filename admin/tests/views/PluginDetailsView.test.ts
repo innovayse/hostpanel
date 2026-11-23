@@ -16,6 +16,7 @@ import { integrationDetail, integrationDto } from '../helpers/integrationFixture
 import { makeDetails, makeInstalled, makeVersion } from '../helpers/pluginDetails'
 import { stubRoutes as stubAllRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address of the fixture plugin's details. */
 const DETAILS_URL = 'GET /api/admin/plugins/registry/example-pay'
@@ -568,7 +569,7 @@ describe('PluginDetailsView', () => {
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('The key is not valid.')
+    expect(toastMessages().join(' ')).toContain('The key is not valid.')
   })
 
   it('empties the key field after a key replaces one that is already saved', async () => {

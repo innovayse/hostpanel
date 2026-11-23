@@ -15,7 +15,9 @@
       :size="UiSize.Sm"
       data-testid="plugin-chat-result-details-toggle"
       @click="emit('toggleDetails')"
-    >{{ $t('plugins.chatResultDetails') }}</UiButton>
+    :title="$t('plugins.chatResultDetails')"
+      :aria-label="$t('plugins.chatResultDetails')"
+    >{{ $t('common.details') }}</UiButton>
   </UiStack>
 </template>
 

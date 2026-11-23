@@ -21,14 +21,14 @@ const mountCard = (props: Record<string, unknown> = {}) =>
 const LINK = { provider: 'crm', id: 'acct-1' }
 
 describe('ClientExternalAccountCard', () => {
-  it('says there is no link and offers no Clear while the client is not linked', () => {
+  it('says there is no link and offers no Remove while the client is not linked', () => {
     const wrapper = mountCard()
 
     expect(wrapper.get('[data-testid="client-external-account-current"]').text()).toBe('Not linked to an external account.')
     expect(wrapper.find('[data-testid="client-external-account-clear"]').exists()).toBe(false)
   })
 
-  it('shows the current link and offers Clear while the client is linked', () => {
+  it('shows the current link and offers Remove while the client is linked', () => {
     const wrapper = mountCard({ linked: LINK })
 
     expect(wrapper.get('[data-testid="client-external-account-current"]').text()).toBe('Linked to crm, account acct-1.')
@@ -82,12 +82,6 @@ describe('ClientExternalAccountCard', () => {
       .toBe('This account is already linked to another client.')
   })
 
-  it('shows the outcome line when nothing was refused', () => {
-    const wrapper = mountCard({ notice: 'External account link saved.' })
-
-    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('External account link saved.')
-  })
-
   it('shows the API field messages under their inputs', () => {
     const wrapper = mountCard({ fieldErrors: { provider: 'Provider is required.', accountId: 'Account id is too long.' } })
 
@@ -105,7 +99,7 @@ describe('ClientExternalAccountCard', () => {
     expect(wrapper.emitted('clearFieldError')).toEqual([['provider']])
   })
 
-  it('disables Save and Clear while a call is in flight', () => {
+  it('disables Save and Remove while a call is in flight', () => {
     const wrapper = mountCard({ saving: true, provider: 'crm', linked: LINK })
 
     expect(wrapper.get('[data-testid="client-external-account-save"]').attributes('disabled')).toBeDefined()

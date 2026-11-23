@@ -13,7 +13,8 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate } from '@/lib/format'
 import type { RegistryPluginVersionDto } from '@/types/plugin'
-import { UiTextTag } from '@/utils/ui/text'
+import { UiTextTag, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -42,12 +43,12 @@ const heading = computed<string>(() =>
 </script>
 
 <template>
-  <UiStack v-if="changes.length > 0" gap="sm" data-testid="plugin-update-changes">
-    <UiText tone="secondary" size="sm" class="font-semibold" data-testid="plugin-update-changes-heading">{{ heading }}</UiText>
-    <UiStack v-for="entry in changes" :key="entry.version" gap="xs" :data-testid="`plugin-update-change-${entry.version}`">
-      <UiText tone="primary" size="sm" class="font-semibold">
+  <UiStack v-if="changes.length > 0" :gap="UiGap.Sm" data-testid="plugin-update-changes">
+    <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" class="font-semibold" data-testid="plugin-update-changes-heading">{{ heading }}</UiText>
+    <UiStack v-for="entry in changes" :key="entry.version" :gap="UiGap.Xs" :data-testid="`plugin-update-change-${entry.version}`">
+      <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Sm" class="font-semibold">
         <UiText :as="UiTextTag.Span" class="font-mono">{{ entry.version }}</UiText>
-        <UiText :as="UiTextTag.Span" tone="muted" size="sm" class="font-normal"> · {{ formatDate(entry.publishedAt) }}</UiText>
+        <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="font-normal"> · {{ formatDate(entry.publishedAt) }}</UiText>
       </UiText>
       <UiMarkdown :source="entry.changelog" :empty="t('pluginDetails.versions.noChangelog')" />
     </UiStack>

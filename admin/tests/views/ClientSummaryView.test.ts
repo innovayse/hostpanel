@@ -5,9 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import ClientSummaryView from '@/views/ClientSummaryView.vue'
-import schema, { SUMMARY_DOMAINS_TABLE, SUMMARY_QUOTES_TABLE, SUMMARY_SERVICES_TABLE } from '@/views/ClientSummaryView.schema'
-import { partsOf } from '@/utils/ui/skeletonParts'
-import { SkeletonPartKind } from '@/utils/ui/skeletonSchema'
+import { SUMMARY_CARDS_PART, SUMMARY_DOMAINS_TABLE, SUMMARY_QUOTES_TABLE, SUMMARY_SERVICES_TABLE } from '@/views/ClientSummaryView.schema'
 import { useClientsStore } from '@/stores/clients'
 import { mountClientView } from '../helpers/clientViews'
 import { createTestI18n } from '../helpers/i18n'
@@ -22,6 +20,7 @@ import type { ClientExternalAccount } from '@/types/clientexternalaccount'
 import { ClientVatStatus } from '@/types/clientvat'
 import type { ClientVat } from '@/types/clientvat'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** A client's tax ID with the last completed check of it, as the detail endpoint carries them. */
 interface ClientVatCase {
@@ -130,8 +129,8 @@ const mountSummary = async () => {
   return wrapper
 }
 
-/** Every card of the schema, the information cards and the cards of the three tables. */
-const schemaCards = partsOf(schema).flatMap((part) => (part.kind === SkeletonPartKind.Cards ? part.columns.flat() : []))
+/** Every information card of the schema; the three tables are tables of their own, not cards. */
+const schemaCards = SUMMARY_CARDS_PART.columns.flat()
 
 /** The English catalogue, to read the titles the schema names. */
 const english = createTestI18n()
@@ -252,6 +251,21 @@ describe('ClientSummaryView', () => {
     }
   })
 
+  it('titles the services, domains and quotes tables in their card header, with a link to the whole list', async () => {
+    stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
+    const wrapper = await mountSummary()
+
+    for (const [testid, title] of [
+      ['client-summary-services', 'Products/Services'],
+      ['client-summary-domains', 'Domains'],
+      ['client-summary-quotes', 'Current Quotes'],
+    ] as const) {
+      const card = wrapper.get(`[data-testid="${testid}"]`).element.closest('.overflow-clip')
+      expect(card?.textContent).toContain(title)
+    }
+    expect(wrapper.find('[data-testid="client-summary-services-all"]').exists()).toBe(true)
+  })
+
   it('mounts without throwing', async () => {
     const wrapper = await mountClientView(ClientSummaryView)
 
@@ -324,7 +338,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-summary-notes-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-summary-notes-feedback"]').text()).toBe('Notes are too long.')
+    expect(toastMessages()).toContain('Notes are too long.')
   })
 
   it('links the external account and reports it inside its card', async () => {
@@ -361,7 +375,7 @@ describe('ClientSummaryView', () => {
     expect(wrapper.get('[data-testid="client-external-account-current"]').text()).toBe('Linked to crm, account acct-9.')
   })
 
-  it('offers no Clear link while the client has no link', async () => {
+  it('offers no Remove link while the client has no link', async () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
     const wrapper = await mountSummary()
 

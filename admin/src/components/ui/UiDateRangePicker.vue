@@ -533,7 +533,7 @@ watch(isOpen, (opened) => {
       @close="hide(true)"
       @panel="panel = $event"
     >
-      <div class="flex flex-col md:flex-row md:h-[400px]">
+      <div class="flex flex-col md:h-[400px] md:flex-row">
         <div class="shrink-0 min-h-0 md:w-max flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible md:overflow-y-auto border-b md:border-b-0 md:border-r border-border p-3 md:p-4">
           <button
             v-for="item in dateRangePresets"
@@ -542,7 +542,7 @@ watch(isOpen, (opened) => {
             :data-testid="`date-range-preset-${item.preset}`"
             :class="item.preset === activePreset ? datePresetActiveClasses : datePresetIdleClasses"
             :aria-pressed="item.preset === activePreset"
-            class="shrink-0 whitespace-nowrap text-left px-3 py-2 rounded-lg text-sm transition-colors"
+            class="shrink-0 whitespace-nowrap text-left px-3 py-2 max-sm:py-3 rounded-lg text-sm transition-colors"
             @click="selectPreset(item.preset)"
           >
             {{ t(item.labelKey) }}
@@ -559,20 +559,20 @@ watch(isOpen, (opened) => {
         <div class="flex-1 min-w-0 p-3 md:p-4">
           <div class="flex items-center justify-between mb-4">
             <button type="button" data-testid="date-range-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
-            <div class="flex min-w-0 gap-8">
+            <div class="flex min-w-0 gap-4 lg:gap-8">
               <div class="flex min-w-0 items-center gap-2">
                 <div class="w-[140px] min-w-0">
                   <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
                 </div>
-                <div class="w-[100px]">
+                <div class="w-[100px] min-w-0">
                   <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
                 </div>
               </div>
-              <div class="flex items-center gap-2 max-md:hidden" data-testid="date-range-next-selects">
-                <div class="w-[140px]">
+              <div class="flex min-w-0 items-center gap-2 max-md:hidden" data-testid="date-range-next-selects">
+                <div class="w-[140px] min-w-0">
                   <UiSelect v-model="nextMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
                 </div>
-                <div class="w-[100px]">
+                <div class="w-[100px] min-w-0">
                   <UiSelect v-model="nextYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
                 </div>
               </div>
@@ -580,7 +580,7 @@ watch(isOpen, (opened) => {
             <button type="button" data-testid="date-range-next" :class="dateArrowClasses" @click="nextMonth">›</button>
           </div>
 
-          <div class="flex gap-8">
+          <div class="flex gap-4 lg:gap-8">
             <div v-for="(month, idx) in months" :key="formatIsoDate(month)" class="min-w-0 flex-1" :class="idx > 0 ? 'max-md:hidden' : ''" :data-testid="`date-range-month-${idx}`">
               <div class="grid grid-cols-7 gap-1 mb-2">
                 <div v-for="name in dayNames" :key="name" class="text-center text-xs font-semibold text-text-secondary">{{ name }}</div>

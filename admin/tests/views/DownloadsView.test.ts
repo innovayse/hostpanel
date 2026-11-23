@@ -11,6 +11,7 @@ import { mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** One top-level category as the endpoint returns it. */
 const category = { id: 1, name: 'Drivers', description: 'Hardware drivers', isHidden: false, parentCategoryId: null, downloadCount: 2 }
@@ -61,8 +62,8 @@ describe('DownloadsView', () => {
     }
     expect(wrapper.find('[data-testid="ui-form-section-category"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="ui-form-section-download"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="ui-detail-card-categories"]').findAll('[role="columnheader"]')).toHaveLength(DOWNLOAD_CATEGORIES_TABLE.columns.length)
-    expect(wrapper.get('[data-testid="ui-detail-card-files"]').findAll('[role="columnheader"]')).toHaveLength(DOWNLOAD_FILES_TABLE.columns.length)
+    expect(wrapper.get('[data-testid="downloads-categories"]').findAll('[role="columnheader"]')).toHaveLength(DOWNLOAD_CATEGORIES_TABLE.columns.length)
+    expect(wrapper.get('[data-testid="downloads-files"]').findAll('[role="columnheader"]')).toHaveLength(DOWNLOAD_FILES_TABLE.columns.length)
 
     await wrapper.get('[data-testid="downloads-tab-download"]').trigger('click')
 
@@ -161,7 +162,7 @@ describe('DownloadsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="downloads-feedback"]').text()).toBe('The file is in use.')
+    expect(toastMessages()).toContain('The file is in use.')
     expect(wrapper.find('[data-testid="downloads-error"]').exists()).toBe(false)
   })
 

@@ -22,6 +22,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { usePluginUiStore } from '@/stores/pluginUi'
 import { PluginBlockKind } from '@/types/pluginview'
 import { UiGap } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
 
 /** Translation function and the active locale. */
 const { t, locale } = useI18n()
@@ -71,11 +72,11 @@ watch(locale, load)
 </script>
 
 <template>
-  <UiStack :gap="UiGap.Lg" class="w-full" data-testid="plugin-page">
+  <UiStack :gap="UiGap.Lg" data-testid="plugin-page">
     <template v-if="store.pageLoading">
       <UiPageHeader v-if="!ownHeader" loading data-testid="plugin-page-loading-header" />
       <!-- The blocks of the page are defined by the plugin, so the shape is only known once its view has arrived -->
-      <UiCard padding="md" loading data-testid="plugin-page-loading" />
+      <UiCard :padding="UiCardPadding.Md" loading data-testid="plugin-page-loading" />
     </template>
     <UiEmptyState
       v-else-if="store.pageNotFound"

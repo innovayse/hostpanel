@@ -5,12 +5,12 @@
       <UiContainer>
         <UiStack direction="row" align="center" gap="xs" class="inline-flex px-3 py-1.5 mb-4 rounded-md bg-classic-brand-soft">
           <Server :size="14" :stroke-width="2" class="text-classic-brand" />
-          <UiText as="span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-brand">{{ $t('hosting.badge') }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-brand">{{ $t('hosting.badge') }}</UiText>
         </UiStack>
 
         <UiHeading :level="UiHeadingLevel.H1" size="title" class="mb-3 text-3xl font-semibold leading-tight text-classic-ink md:text-4xl" data-testid="classic-hosting-title">
           {{ $t('hosting.title') }}
-          <UiText as="span" size="inherit" tone="inherit" weight="semibold" class="text-classic-brand">{{ $t('hosting.titleHighlight') }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="semibold" class="text-classic-brand">{{ $t('hosting.titleHighlight') }}</UiText>
         </UiHeading>
         <UiText tone="inherit" class="max-w-[75ch] text-classic-muted md:text-lg">
           {{ $t('hosting.subtitle') }}
@@ -53,7 +53,7 @@
                 <UiStack gap="none" class="flex-1 text-center lg:text-left">
                   <UiStack direction="row" align="center" gap="xs" class="inline-flex self-center lg:self-start px-2.5 py-1 rounded-md bg-classic-brand-soft mb-4">
                     <CheckCircle :size="14" class="text-classic-brand" />
-                    <UiText as="span" size="xs" tone="inherit" weight="semibold" class="uppercase tracking-wider text-classic-brand">{{ $t('hosting.getStartedForFree') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="uppercase tracking-wider text-classic-brand">{{ $t('hosting.getStartedForFree') }}</UiText>
                   </UiStack>
                   <UiHeading :level="UiHeadingLevel.H2" size="title" class="mb-3 text-2xl font-semibold text-classic-ink md:text-3xl">
                     {{ formatPlanName(freePlan.name) }}
@@ -78,8 +78,8 @@
                 </UiStack>
                 <UiStack align="center" gap="md" class="w-full lg:w-[280px] lg:items-end text-center lg:text-right">
                   <UiStack gap="none">
-                    <UiText as="span" tone="inherit" weight="bold" class="block text-4xl text-classic-ink">{{ $t('hosting.free') }}</UiText>
-                    <UiText as="span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-muted">{{ $t('hosting.foreverFree') }}</UiText>
+                    <UiText :as="UiTextTag.Span" tone="inherit" weight="bold" class="block text-4xl text-classic-ink">{{ $t('hosting.free') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-muted">{{ $t('hosting.foreverFree') }}</UiText>
                   </UiStack>
                   <UiStack gap="sm" class="w-full">
                     <UiButton variant="primary" size="lg" full-width data-testid="classic-hosting-free-add" @click="addToCart(freePlan)">
@@ -97,7 +97,7 @@
 
             <!-- Separator -->
             <UiStack align="center" gap="none" class="text-center mt-12 mb-2">
-              <UiText as="span" size="xs" tone="inherit" weight="semibold" class="block uppercase tracking-wider text-classic-muted">{{ $t('hosting.premiumSolutions') }}</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="block uppercase tracking-wider text-classic-muted">{{ $t('hosting.premiumSolutions') }}</UiText>
             </UiStack>
           </UiStack>
 
@@ -113,7 +113,7 @@
             >
               <!-- Outside the card: the card clips its overflow, which hid a badge sitting on its edge. -->
               <UiStack v-if="isFeatured(plan)" gap="none" class="absolute -top-3 left-1/2 -translate-x-1/2 z-20" data-testid="classic-hosting-recommended">
-                <UiText as="span" size="xs" tone="inherit" weight="semibold" class="px-3 py-1 bg-classic-fill text-classic-on-brand rounded-md uppercase tracking-wider whitespace-nowrap">
+                <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="px-3 py-1 bg-classic-fill text-classic-on-brand rounded-md uppercase tracking-wider whitespace-nowrap">
                   {{ $t('hosting.recommended') }}
                 </UiText>
               </UiStack>
@@ -140,16 +140,16 @@
 
                 <UiStack gap="none" class="mb-5 p-4 rounded-md bg-classic-surface-2 border border-classic-border">
                   <UiStack v-if="planPrice(plan, selectedCycle) !== null" direction="row" align="start" gap="none" class="mb-3 gap-1 items-baseline">
-                    <UiText v-if="activeCurrencyPrefix" as="span" tone="inherit" weight="semibold" class="text-lg text-classic-muted">{{ activeCurrencyPrefix }}</UiText>
-                    <UiText as="span" tone="inherit" weight="bold" class="text-4xl tabular-nums text-classic-ink" data-testid="classic-hosting-price">
+                    <UiText v-if="activeCurrencyPrefix" :as="UiTextTag.Span" tone="inherit" weight="semibold" class="text-lg text-classic-muted">{{ activeCurrencyPrefix }}</UiText>
+                    <UiText :as="UiTextTag.Span" tone="inherit" weight="bold" class="text-4xl tabular-nums text-classic-ink" data-testid="classic-hosting-price">
                       {{ formatAmount(planPrice(plan, selectedCycle)) }}
                     </UiText>
-                    <UiText v-if="payerCurrency.suffix" as="span" tone="inherit" weight="semibold" class="text-lg ml-1 text-classic-muted">{{ payerCurrency.suffix }}</UiText>
-                    <UiText as="span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-muted">/ {{ cycleLabel(selectedCycle) }}</UiText>
+                    <UiText v-if="payerCurrency.suffix" :as="UiTextTag.Span" tone="inherit" weight="semibold" class="text-lg ml-1 text-classic-muted">{{ payerCurrency.suffix }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-muted">/ {{ cycleLabel(selectedCycle) }}</UiText>
                   </UiStack>
                   <UiStack v-else gap="none" class="mb-3">
-                    <UiText as="span" tone="inherit" weight="bold" class="text-xl text-classic-ink">{{ $t('hosting.custom') }}</UiText>
-                    <UiText as="span" size="xs" tone="inherit" class="mt-1 text-classic-muted">{{ $t('hosting.customContact') }}</UiText>
+                    <UiText :as="UiTextTag.Span" tone="inherit" weight="bold" class="text-xl text-classic-ink">{{ $t('hosting.custom') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="mt-1 text-classic-muted">{{ $t('hosting.customContact') }}</UiText>
                   </UiStack>
 
                   <!-- Mini price list -->
@@ -167,8 +167,8 @@
                       :data-testid="`classic-hosting-mini-${c.key}`"
                       @click="selectedCycle = c.key"
                     >
-                      <UiText as="span" tone="inherit" size="inherit" weight="medium">{{ cycleLabel(c.key) }}</UiText>
-                      <UiText as="span" tone="inherit" size="inherit" weight="medium" class="font-mono">{{ c.price }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" size="inherit" weight="medium">{{ cycleLabel(c.key) }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" size="inherit" weight="medium" class="font-mono">{{ c.price }}</UiText>
                     </UiButton>
                   </UiStack>
                 </UiStack>
@@ -205,7 +205,7 @@
           <!-- Agency section -->
           <UiStack v-if="agencyPlan" gap="none" class="mb-16" data-testid="classic-hosting-agency">
             <UiStack align="center" gap="none" class="text-center mb-6">
-              <UiText as="span" size="xs" tone="inherit" weight="semibold" class="block uppercase tracking-wider text-classic-muted">{{ $t('hosting.enterpriseSolutions') }}</UiText>
+              <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="block uppercase tracking-wider text-classic-muted">{{ $t('hosting.enterpriseSolutions') }}</UiText>
             </UiStack>
 
             <UiCard padding="none" class="p-6 md:p-8 bg-classic-surface-2 animate-reveal-up motion-reduce:animate-none">
@@ -213,7 +213,7 @@
                 <UiStack gap="none" class="flex-1 text-center lg:text-left">
                   <UiStack direction="row" align="center" gap="xs" class="inline-flex self-center lg:self-start px-2.5 py-1 rounded-md bg-classic-brand-soft mb-4">
                     <CheckCircle :size="14" class="text-classic-brand" />
-                    <UiText as="span" size="xs" tone="inherit" weight="semibold" class="uppercase tracking-wider text-classic-brand">{{ $t('hosting.agencyBadge') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="uppercase tracking-wider text-classic-brand">{{ $t('hosting.agencyBadge') }}</UiText>
                   </UiStack>
                   <UiHeading :level="UiHeadingLevel.H2" size="title" class="mb-3 text-2xl font-semibold text-classic-ink md:text-3xl">
                     {{ formatPlanName(agencyPlan.name) }}
@@ -239,11 +239,11 @@
                 <UiStack align="center" gap="lg" class="w-full lg:w-[280px] lg:items-end text-center lg:text-right">
                   <UiStack gap="none">
                     <UiStack v-if="planPrice(agencyPlan, selectedCycle) !== null" direction="row" align="start" justify="center" gap="none" class="lg:justify-end gap-1 items-baseline">
-                      <UiText v-if="activeCurrencyPrefix" as="span" tone="inherit" weight="semibold" class="text-xl text-classic-muted">{{ activeCurrencyPrefix }}</UiText>
-                      <UiText as="span" tone="inherit" weight="bold" class="text-5xl tabular-nums leading-none text-classic-ink">
+                      <UiText v-if="activeCurrencyPrefix" :as="UiTextTag.Span" tone="inherit" weight="semibold" class="text-xl text-classic-muted">{{ activeCurrencyPrefix }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" weight="bold" class="text-5xl tabular-nums leading-none text-classic-ink">
                         {{ formatAmount(planPrice(agencyPlan, selectedCycle)) }}
                       </UiText>
-                      <UiText v-if="payerCurrency.suffix" as="span" tone="inherit" weight="semibold" class="text-2xl ml-2 text-classic-muted">{{ payerCurrency.suffix }}</UiText>
+                      <UiText v-if="payerCurrency.suffix" :as="UiTextTag.Span" tone="inherit" weight="semibold" class="text-2xl ml-2 text-classic-muted">{{ payerCurrency.suffix }}</UiText>
                     </UiStack>
                     <UiText size="xs" tone="inherit" weight="medium" class="mt-2 uppercase tracking-wider text-classic-muted">/ {{ cycleLabel(selectedCycle) }}</UiText>
                   </UiStack>
@@ -270,7 +270,7 @@
 
             <UiCard padding="none" class="relative overflow-hidden">
               <UiStack gap="none" class="overflow-x-auto no-scrollbar scroll-smooth">
-                <UiTable class="min-w-[320px] md:min-w-[1100px] border-0 rounded-none bg-transparent">
+                <UiTable flush class="min-w-[320px] md:min-w-[1100px]">
                   <UiTableHead>
                     <UiTableRow :hoverable="false" class="bg-classic-surface-2">
                       <UiTableTh class="!p-4 md:!p-6 !text-xs font-semibold sticky left-0 bg-classic-surface-2 text-classic-ink z-30 min-w-[140px] md:min-w-[260px]">
@@ -317,7 +317,7 @@
                           data-testid="classic-hosting-compare-add"
                           @click="addToCart(plan)"
                         >
-                          {{ cart.hasItem(plan.id, selectedCycle) ? $t('hosting.inCart') : $t('hosting.select') }}
+                          {{ cart.hasItem(plan.id, selectedCycle) ? $t('hosting.inCart') : $t('common.select') }}
                         </UiButton>
                       </UiTableTd>
                     </UiTableRow>
@@ -327,7 +327,7 @@
               <!-- Mobile scroll info -->
               <UiStack direction="row" align="center" justify="center" gap="xs" class="md:hidden py-3 bg-classic-surface-2 border-t border-classic-border">
                 <ArrowRight :size="10" class="text-classic-muted" />
-                <UiText as="span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-muted">{{ $t('common.scrollHorizontal') }}</UiText>
+                <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-muted">{{ $t('common.scrollHorizontal') }}</UiText>
               </UiStack>
             </UiCard>
           </UiStack>
@@ -359,7 +359,7 @@ import { formatMoney, formatMoneyDigits } from '~/utils/formatMoney'
 import { cycleAmount, pricedCycles } from '~/utils/productFamilies'
 import { parseDescription } from '~/utils/catalogGroups'
 import { isFreePlan } from '~/utils/isFreePlan'
-import { UiHeadingLevel } from '~/utils/ui/enums'
+import { UiHeadingLevel, UiTextTag } from '~/utils/ui/enums'
 import type { HostingPlan } from '~/types/hostingplan'
 import type { SegmentedOption } from '~/types/segmentedoption'
 import { PricingCycle } from '~/types/pricingcycle'

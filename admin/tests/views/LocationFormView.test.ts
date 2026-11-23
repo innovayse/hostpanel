@@ -97,7 +97,7 @@ describe('LocationFormView', () => {
     expect((wrapper.get('[data-testid="location-form-name"]').element as HTMLInputElement).value).toBe('Frankfurt')
     expect((wrapper.get('[data-testid="location-form-city"]').element as HTMLInputElement).value).toBe('Frankfurt am Main')
     expect((wrapper.get('[data-testid="location-form-latency-note"]').element as HTMLInputElement).value).toBe('')
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save')
 
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
     await vi.waitFor(() => {

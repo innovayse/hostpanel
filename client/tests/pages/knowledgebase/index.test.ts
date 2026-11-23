@@ -165,6 +165,7 @@ describe('pages/knowledgebase/index', () => {
     await submitSearch(wrapper, 'dns')
     await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-results"]').exists()).toBe(true))
 
+    expect(wrapper.find('[data-testid="kb-clear-search"]').text()).toBe('common.clear')
     await wrapper.find('[data-testid="kb-clear-search"]').trigger('click')
 
     expect(router.replace).toHaveBeenLastCalledWith({ query: {} })

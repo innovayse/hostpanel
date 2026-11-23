@@ -5,14 +5,12 @@
     "announcementTitle": "Заголовок объявления",
     "announcement": "Объявление",
     "announcementContent": "Текст объявления",
-    "updateAnnouncement": "Обновить объявление",
-    "saveAnnouncement": "Сохранить объявление",
     "pageTitleEdit": "Редактирование объявления",
     "pageTitleCreate": "Добавление объявления"
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Управление объявлениями для клиентов",
-    "addNewAnnouncement": "Новое объявление",
+    "createAnnouncement": "Создать объявление",
     "noAnnouncementsFound": "Объявления не найдены",
     "createYourFirstAnnouncementTo": "Создайте первое объявление, чтобы начать.",
     "deleteAnnouncement": "Удалить объявление",
@@ -32,7 +30,7 @@
     "clientsOnly": "Только для клиентов",
     "productDownload": "Загрузка по продукту",
     "clientsOnlyRestrictsToLogged": "«Только для клиентов» ограничивает доступ вошедшими клиентами. «Загрузка по продукту» требует покупки продукта или дополнения. «Скрыто» убирает из клиентской зоны.",
-    "addDownload": "Добавить загрузку",
+    "createDownload": "Создать загрузку",
     "downloadHome": "Главная страница загрузок",
     "files": "Файлы",
     "noDownloadsFound": "Загрузки не найдены",
@@ -68,10 +66,9 @@
     "articleTitle": "Заголовок статьи",
     "content": "Содержание",
     "articleContent": "Текст статьи",
-    "saveArticle": "Сохранить статью",
     "deleteCategory": "Удалить категорию",
     "areYouSureYouWant": "Вы уверены, что хотите удалить эту категорию? Категорию, в которой остались статьи, удалить нельзя.",
-    "addArticle": "Добавить статью",
+    "createArticle": "Создать статью",
     "categorySaved": "Категория сохранена.",
     "categoryDeleted": "Категория удалена.",
     "articleSaved": "Статья сохранена.",
@@ -96,7 +93,6 @@
     "endDate": "Дата окончания",
     "selectEndDate": "Выберите дату окончания",
     "describeTheIssueInDetail": "Подробно опишите проблему",
-    "updateIssue": "Обновить проблему",
     "createIssue": "Создать проблему",
     "other": "Другое",
     "low": "Низкий",
@@ -112,7 +108,6 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Управление статусом сети и отчётами об инцидентах",
-    "createNew": "Создать",
     "startDate": "Дата начала",
     "endDate": "Дата окончания",
     "deleteNetworkIssue": "Удалить сетевую проблему",
@@ -140,14 +135,14 @@
     "areYouSureYouWant": "Вы уверены, что хотите удалить эту категорию? Это может затронуть все ответы в ней.",
     "deletePredefinedReply": "Удалить готовый ответ",
     "areYouSureYouWant2": "Вы уверены, что хотите удалить этот готовый ответ? Это действие нельзя отменить.",
-    "addPredefinedReply": "Добавить готовый ответ"
+    "addCategory": "Добавить категорию",
+    "addReply": "Добавить ответ"
   },
   "supportOpenTicket": {
     "searchByNameEmailOr": "Поиск по имени, почте или ID",
     "autoFilledFromSelectedClient": "Заполняется автоматически по выбранному клиенту",
     "ticketSubject": "Тема тикета",
-    "describeTheIssue": "Опишите проблему",
-    "openTicket": "Открыть тикет"
+    "describeTheIssue": "Опишите проблему"
   },
   "supportOverview": {
     "supportOverview": "Обзор поддержки",

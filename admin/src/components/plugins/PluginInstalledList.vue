@@ -34,7 +34,8 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import type { PluginCardModel, PluginListItemDto } from '@/types/plugin'
 import type { UiFilterChip } from '@/utils/ui/filter'
-import { UiActionKind } from '@/utils/ui/actions'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** How many card placeholders the grid draws while the list loads (two rows of the three-column grid). */
 const PLUGIN_CARD_PLACEHOLDERS = 6
@@ -162,7 +163,7 @@ const openPlugin = (id: string): void => {
     data-testid="plugins-empty"
   />
 
-  <UiStack v-else gap="sm" :aria-busy="initialLoading ? 'true' : undefined" data-testid="plugins-list">
+  <UiStack v-else :gap="UiGap.Sm" :aria-busy="initialLoading ? 'true' : undefined" data-testid="plugins-list">
     <UiListToolbar
       v-model:search="filters.search"
       :active-count="filters.activeCount"
@@ -202,25 +203,25 @@ const openPlugin = (id: string): void => {
       </UiStack>
     </UiListToolbar>
     <UiEmptyState v-if="!initialLoading && cards.length === 0" :title="t('plugins.plugins.noPluginsMatch')" data-testid="plugins-no-match" />
-    <UiGrid v-else :columns="3" gap="md">
+    <UiGrid v-else :columns="3" :gap="UiGap.Md">
       <template v-if="initialLoading">
         <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
         <PluginCardSkeleton v-for="placeholder in PLUGIN_CARD_PLACEHOLDERS" :key="placeholder" />
       </template>
       <PluginCard v-for="card in cards" :key="card.id" :plugin="card" :to="pluginPath(card.id)">
         <template v-if="card.refusal" #notice>
-          <UiStack gap="xs" :data-testid="`plugin-refusal-${card.id}`">
-            <UiText tone="danger" size="sm">{{ t(`plugins.rules.${card.refusal.rule}`) }}</UiText>
-            <UiText tone="muted" size="xs" class="font-mono">
+          <UiStack :gap="UiGap.Xs" :data-testid="`plugin-refusal-${card.id}`">
+            <UiText :tone="UiTextTone.Danger" :size="UiTextSize.Sm">{{ t(`plugins.rules.${card.refusal.rule}`) }}</UiText>
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-mono">
               {{ t('plugins.pluginCard.brokenRule', { id: card.id, rule: card.refusal.rule }) }}
             </UiText>
-            <UiText v-if="card.refusal.detail" tone="muted" size="xs" class="font-mono break-all">
+            <UiText v-if="card.refusal.detail" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-mono break-all">
               {{ card.refusal.detail }}
             </UiText>
           </UiStack>
         </template>
         <template #action>
-          <UiButton :action="UiActionKind.Refresh"
+          <UiButton :icon="Icon.Download"
             v-if="card.updateVersion"
             type="button"
             :variant="UiButtonVariant.Primary"
@@ -234,11 +235,12 @@ const openPlugin = (id: string): void => {
           <UiIconButton
             v-else
             :label="t('plugins.pluginRegistry.settings')"
+            :variant="UiButtonVariant.Ghost"
             :size="UiSize.Sm"
             :data-testid="`plugin-settings-${card.id}`"
             @click="openPlugin(card.id)"
           >
-            <UiIcon :markup="Icon.Settings" size="sm" />
+            <UiIcon :markup="Icon.Settings" :size="UiSize.Sm" />
           </UiIconButton>
         </template>
       </PluginCard>

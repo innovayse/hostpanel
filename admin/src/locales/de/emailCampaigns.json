@@ -1,7 +1,7 @@
 {
   "list": {
     "subtitle": "Eine E-Mail einmal verfassen und an ausgewählte Kunden senden",
-    "add": "Neue Kampagne",
+    "create": "Kampagne erstellen",
     "scheduledAt": "Geplant für",
     "sentAt": "Gesendet",
     "delivery": "Zustellung",
@@ -11,7 +11,6 @@
     "emptyDescription": "Erstellen Sie eine Kampagne, um eine E-Mail an eine Kundengruppe zu senden.",
     "searchPlaceholder": "Nach Betreff suchen",
     "noMatches": "Keine Kampagnen entsprechen Ihren Filtern",
-    "clearFilters": "Filter zurücksetzen",
     "totalCount": "Kampagnen: {totalCount}",
     "deleteTitle": "Kampagne löschen",
     "deleteMessage": "Sind Sie sicher, dass Sie diese Kampagne im Entwurfsstatus löschen möchten? Dies kann nicht rückgängig gemacht werden."
@@ -45,7 +44,6 @@
   "daysPlaceholder": "Tage",
   "daysSuffix": "Tage im Voraus",
   "daysAgoSuffix": "Tage oder mehr",
-  "removeSegment": "Entfernen",
   "stats": {
     "total": "Empfänger",
     "pending": "Ausstehend",
@@ -80,9 +78,6 @@
     "audienceCount": "Passende Kunden: {count}",
     "audienceIncomplete": "Vervollständigen Sie jede Regel, um die Anzahl der passenden Kunden zu sehen.",
     "saveDraft": "Entwurf speichern",
-    "preview": "Vorschau",
-    "schedule": "Planen",
-    "sendNow": "Jetzt senden",
     "cancelSchedule": "Planung abbrechen",
     "sendNowTitle": "Kampagne jetzt senden",
     "sendNowMessage": "Die Kampagne wird gespeichert und sofort an alle passenden Kunden gesendet. Dies kann nicht rückgängig gemacht werden.",

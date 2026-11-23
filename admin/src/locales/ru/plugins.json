@@ -2,7 +2,6 @@
   "pluginCard": {
     "builtIn": "Встроенный",
     "pendingRestart": "Ожидает перезапуска",
-    "remove": "Удалить",
     "refused": "Отклонён",
     "loadFailed": "Не загрузился",
     "staged": "Версия {version} подготовлена, применится после перезапуска",
@@ -10,8 +9,7 @@
     "updateAvailable": "Доступно обновление: {version}"
   },
   "pluginUploader": {
-    "valueKbReadyToInstall": "{value} КБ · готово к установке",
-    "installPlugin": "Установить плагин"
+    "valueKbReadyToInstall": "{value} КБ · готово к установке"
   },
   "pluginInstallDialog": {
     "title": "Установить {name} {version}?",
@@ -41,6 +39,7 @@
   "restartBanner": {
     "restartRequired": "Требуется перезапуск",
     "pluginChangesWillTakeEffect": "Изменения плагинов вступят в силу после перезапуска сервера.",
+    "restart": "Перезапустить",
     "restartServer": "Перезапустить сервер"
   },
   "pluginSigning": {
@@ -65,13 +64,11 @@
     "confirmPurgeMessage": "Все настройки и сохранённые данные плагина {id} будут удалены безвозвратно.",
     "confirmDowngradeTitle": "Установить более старую версию?",
     "confirmDowngradeMessage": "Эта версия старше установленной. Понижение версии может повредить данные, записанные новой версией.",
-    "forceDowngrade": "Всё равно понизить",
     "pluginStaged": "Версия {version} загружена и подготовлена. Она заменит установленную после перезапуска сервера.",
     "tabInstalled": "Установленные",
     "tabBrowse": "Каталог",
     "confirmUpdateTitle": "Обновить плагин?",
     "confirmUpdateMessage": "Обновить {id} до версии {version}? Изменение вступит в силу после перезапуска сервера.",
-    "confirmUpdate": "Обновить",
     "tabSettings": "Настройки",
     "uploadPlugin": "Загрузить плагин",
     "uploadTitle": "Загрузка пакета плагина",
@@ -101,7 +98,7 @@
   "keptData": {
     "title": "Удалённые плагины с сохранёнными данными",
     "description": "При удалении плагина его настройки и данные сохраняются. Удаляйте данные, только если не будете устанавливать плагин снова.",
-    "purge": "Удалить данные"
+    "purge": "Стереть"
   },
   "pluginRegistry": {
     "categoryPlaceholder": "Категория",
@@ -202,9 +199,6 @@
     "chatEmpty": "Начните разговор.",
     "chatJumpToLatest": "К последнему сообщению",
     "chatHint": "Enter отправляет, Shift+Enter переносит строку",
-    "chatCopy": "Скопировать ответ",
-    "chatCopyCode": "Скопировать код",
-    "chatCopied": "Скопировано",
     "openUrlBlocked": "Браузер заблокировал новую вкладку. Разрешите всплывающие окна для этого сайта и повторите.",
     "openUrlRefused": "Плагин вернул адрес, который нельзя открыть.",
     "chatRetry": "Повторить",

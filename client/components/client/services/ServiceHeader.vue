@@ -1,14 +1,14 @@
 <template>
   <UiStack direction="row" align="center" justify="between" wrap data-testid="service-header">
-    <UiStack direction="row" align="center">
+    <UiStack direction="row" align="center" class="min-w-0 max-w-full">
       <UiTile :icon="Server" tone="primary" size="xl" />
-      <UiStack gap="none">
+      <UiStack gap="none" class="min-w-0">
         <UiHeading :level="1" size="subsection">{{ service.productName }}</UiHeading>
-        <UiText size="sm" tone="muted">{{ service.domain || $t('client.dashboard.noDomain') }}</UiText>
+        <UiText size="sm" tone="muted" class="break-all">{{ service.domain || $t('client.dashboard.noDomain') }}</UiText>
       </UiStack>
     </UiStack>
     <UiStack direction="row" align="center" gap="sm">
-      <UiButton
+      <UiButton variant="primary"
         v-if="canLogin"
         size="sm"
         :loading="ssoLoading"

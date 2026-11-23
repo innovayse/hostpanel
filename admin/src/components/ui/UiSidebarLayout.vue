@@ -3,10 +3,10 @@
  * Layout of a section that has an inner sidebar.
  *
  * The `sidebar` slot sits against the edge of the shell (the layout cancels the shell gutter so the
- * sidebar meets it, on every side by exactly the gutter `AppLayout` sets, so the sidebar starts on the
+ * sidebar meets it, on every side by exactly the gutter `MainLayout` sets, so the sidebar starts on the
  * top bar's hairline) and the default slot is the content, which scrolls on its own beside it.
  *
- * The layout is exactly as tall as the scroller it sits in (`100cqh`, the `<main>` of `AppLayout`, which is a size
+ * The layout is exactly as tall as the scroller it sits in (`100cqh`, the `<main>` of `MainLayout`, which is a size
  * container), never as tall as its content: the shell's gutter wrapper only has a minimum height, so `h-full` has nothing
  * to resolve against and the whole page would scroll. With a definite height the inner sidebar scrolls by itself and so
  * does the content pane. Both columns may shrink (`min-w-0`), so a wide report never widens the shell sideways.

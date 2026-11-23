@@ -5,7 +5,7 @@
     size="sm"
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <UiStack as="nav" gap="none" :aria-label="t('nav.primary')" data-testid="header-drawer-nav">
+    <UiStack :as="UiStackTag.Nav" gap="none" :aria-label="t('nav.primary')" data-testid="header-drawer-nav">
       <template v-for="item in items" :key="item.key">
         <!-- A plain link. -->
         <UiLink
@@ -24,7 +24,7 @@
         <!-- A group: its heading, then every link, so nothing hides behind a second tap. -->
         <UiStack v-else gap="none" class="mt-2" :data-testid="`header-drawer-${item.key}`">
           <UiText
-            as="span"
+            :as="UiTextTag.Span"
             size="xs"
             weight="semibold"
             tone="inherit"
@@ -60,10 +60,10 @@
       <UiStack direction="row" align="center" gap="sm" class="min-w-0 px-3 pb-2">
         <UiAvatar :first-name="user?.firstName ?? ''" :last-name="user?.lastName ?? ''" :email="user?.email ?? ''" />
         <UiStack gap="none" class="min-w-0">
-          <UiText as="span" size="sm" weight="semibold" tone="inherit" truncate class="text-classic-ink">
+          <UiText :as="UiTextTag.Span" size="sm" weight="semibold" tone="inherit" truncate class="text-classic-ink">
             {{ accountName }}
           </UiText>
-          <UiText as="span" size="xs" tone="inherit" truncate class="text-classic-muted">{{ user?.email ?? '' }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="inherit" truncate class="text-classic-muted">{{ user?.email ?? '' }}</UiText>
         </UiStack>
       </UiStack>
       <UiLink
@@ -83,7 +83,7 @@
 
     <!-- Preferences: language and currency. -->
     <UiStack gap="sm" class="mt-4 border-t border-classic-border pt-4" data-testid="header-drawer-preferences">
-      <UiText as="span" size="xs" weight="semibold" tone="inherit" class="px-3 uppercase tracking-wide text-classic-muted">
+      <UiText :as="UiTextTag.Span" size="xs" weight="semibold" tone="inherit" class="px-3 uppercase tracking-wide text-classic-muted">
         {{ t('nav.preferences') }}
       </UiText>
       <UiStack class="px-3" gap="sm">
@@ -96,37 +96,37 @@
       <!-- Signed in: sign out. -->
       <UiButton
         v-if="isLoggedIn"
-        variant="bare"
+        variant="danger"
+        size="md"
         full-width
-        :class="[HEADER_CONTROL, 'gap-2 px-4 text-sm font-semibold text-red-600 dark:text-red-400']"
         data-testid="header-drawer-sign-out"
         @click="onSignOut"
       >
         <LogOut :size="16" :stroke-width="2" aria-hidden="true" />
-        {{ t('client.nav.signOut') }}
+        {{ t('common.signOut') }}
       </UiButton>
 
       <!-- Signed out: the two entries the bar shows on a wide screen. -->
       <UiStack v-else gap="sm">
         <UiButton
-          variant="bare"
+          variant="outline"
+          size="md"
           :href="signInHref"
           full-width
-          :class="[HEADER_CONTROL, 'px-4 text-sm font-semibold']"
           data-testid="header-drawer-sign-in"
           @click="close"
         >
-          {{ t('nav.signIn') }}
+          {{ t('common.signIn') }}
         </UiButton>
         <UiButton
-          variant="bare"
+          variant="primary"
+          size="md"
           :to="getStartedTo"
           full-width
-          :class="HEADER_PRIMARY"
           data-testid="header-drawer-get-started"
           @click="close"
         >
-          {{ t('nav.getStarted') }}
+          {{ t('common.getStarted') }}
         </UiButton>
       </UiStack>
     </template>
@@ -146,10 +146,11 @@ import { storeToRefs } from 'pinia'
 import { LogOut } from 'lucide-vue-next'
 import type { HeaderNavItem } from '~/types/headernavitem'
 import { useAuthStore } from '~/stores/auth'
-import { HEADER_CONTROL, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_PRIMARY } from '~/utils/headerControl'
+import { HEADER_CONTROL, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE } from '~/utils/headerControl'
 import { buildAccountLinks } from '~/utils/headerAccountLinks'
 import { activeHeaderKey, isHeaderPathActive } from '~/utils/headerNav'
 import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of LayoutHeaderDrawer. */
 const props = defineProps<{

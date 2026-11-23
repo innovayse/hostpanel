@@ -17,7 +17,7 @@ export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
   id: 1,
   name: 'host1',
   endpoint: { hostname: 'host1.example.com', ipAddress: '203.0.113.10', assignedIpAddresses: null, useSSL: true, acceptsSelfSignedCertificate: false },
-  module: 'Cwp7',
+  module: 'CPanel',
   username: 'root',
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   hosting: { datacenter: null, serverStatusAddress: null, monthlyCost: 20 },
@@ -53,7 +53,6 @@ export const serverDto = (overrides: Partial<ServerDto> = {}): ServerDto => ({
 export const serverModuleOptionDtos = (overrides: ServerModuleOptionDto[] = []): ServerModuleOptionDto[] => [
   { id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn },
   { id: 'DirectAdmin', name: 'DirectAdmin', source: ServerModuleSource.BuiltIn },
-  { id: 'Cwp7', name: 'Cwp7', source: ServerModuleSource.BuiltIn },
   { id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin },
   ...overrides,
 ]

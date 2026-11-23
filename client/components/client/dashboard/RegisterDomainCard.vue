@@ -7,8 +7,8 @@
       testid="dashboard-domain-query"
       @keydown.enter="registerDomain"
     />
-    <UiStack direction="row" gap="xs" class="mt-3">
-      <UiButton full-width data-testid="dashboard-domain-register" @click="registerDomain">
+    <UiStack direction="row" gap="xs" wrap class="mt-3">
+      <UiButton variant="primary" full-width data-testid="dashboard-domain-register" @click="registerDomain">
         {{ $t('client.dashboard.registerBtn') }}
       </UiButton>
       <UiButton variant="subtle" full-width data-testid="dashboard-domain-transfer" @click="transferDomain">

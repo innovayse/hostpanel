@@ -15,7 +15,6 @@ import { computed, onMounted, provide, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -27,7 +26,7 @@ import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -45,6 +44,11 @@ import { useServersStore } from '@/stores/servers'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle, ProductTrial, ProductTrialDefaults } from '@/types/product'
 import { ProductField, ProductStatus, ProductType } from '@/types/productenums'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -536,20 +540,20 @@ const handleSubmit = (): void => {
 
 <template>
   <UiDialog
-    :title="isEditMode ? t('settings.productForm.editProduct') : t('settings.productForm.createNewProduct')"
-    size="lg"
+    :title="isEditMode ? t('settings.productForm.editProduct') : t('settings.productForm.createProduct')"
+    :size="UiDialogSize.Lg"
     @close="emit('close')"
   >
     <UiForm stacked data-testid="product-form" @submit="handleSubmit">
       <!-- Product type (create mode only) -->
       <UiField v-if="!isEditMode" :label="t('settings.productForm.productType')">
-        <UiGrid :columns="2" gap="sm">
+        <UiGrid :columns="2" :gap="UiGap.Sm" container>
           <UiButton
             v-for="pt in productTypes"
             :key="pt.value"
-            type="button"
+            :type="UiButtonType.Button"
             :icon="pt.icon"
-            :variant="type === pt.value ? 'primary' : 'secondary'"
+            :variant="type === pt.value ? UiButtonVariant.Primary : UiButtonVariant.Secondary"
             :aria-pressed="type === pt.value"
             :data-testid="`product-form-type-${pt.value}`"
             @click="type = pt.value"
@@ -574,7 +578,7 @@ const handleSubmit = (): void => {
             :id="id"
             v-model="name"
             required
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('settings.productForm.eGStarterHosting')"
             data-testid="product-form-name"
           />
@@ -586,7 +590,7 @@ const handleSubmit = (): void => {
           <UiInput
             :id="id"
             :model-value="slug"
-            type="text"
+            :type="UiInputType.Text"
             :aria-describedby="describedby"
             :placeholder="t('settings.productForm.eGStarterHosting2')"
             data-testid="product-form-slug"
@@ -600,7 +604,7 @@ const handleSubmit = (): void => {
           <UiInput
             :id="id"
             v-model="packageName"
-            type="text"
+            :type="UiInputType.Text"
             :aria-describedby="describedby"
             :placeholder="t('settings.productForm.eGStarterProBusiness')"
             data-testid="product-form-package"
@@ -645,7 +649,7 @@ const handleSubmit = (): void => {
           <UiInput
             :id="id"
             v-model="sku"
-            type="text"
+            :type="UiInputType.Text"
             :invalid="invalid"
             :aria-describedby="describedby"
             :placeholder="t('settings.productForm.skuPlaceholder')"
@@ -690,10 +694,10 @@ const handleSubmit = (): void => {
       </UiField>
 
       <!-- Free trial -->
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('settings.productForm.trial') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productForm.trialHint') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.trial') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.trialHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="trialEnabled" data-testid="product-form-trial-enabled" />
       </UiStack>
@@ -715,7 +719,7 @@ const handleSubmit = (): void => {
             <UiInput
               :id="id"
               v-model="trialReminders"
-              type="text"
+              :type="UiInputType.Text"
               :aria-describedby="describedby"
               :placeholder="t('settings.productForm.trialReminderDaysPlaceholder')"
               data-testid="product-form-trial-reminders"
@@ -734,90 +738,88 @@ const handleSubmit = (): void => {
           />
         </UiField>
 
-        <UiStack direction="row" align="center" justify="between">
-          <UiStack gap="xs">
-            <UiText tone="primary" size="md">{{ t('settings.productForm.trialAutoConvert') }}</UiText>
-            <UiText tone="muted" size="sm">{{ t('settings.productForm.trialAutoConvertHint') }}</UiText>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+          <UiStack :gap="UiGap.Xs">
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.trialAutoConvert') }}</UiText>
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.trialAutoConvertHint') }}</UiText>
           </UiStack>
           <UiToggle v-model="trialAutoConvert" data-testid="product-form-trial-auto-convert" />
         </UiStack>
 
       </template>
 
-      <UiText tone="muted" size="sm" data-testid="product-form-trial-notice">{{ t('settings.productForm.trialNotice') }}</UiText>
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="product-form-trial-notice">{{ t('settings.productForm.trialNotice') }}</UiText>
       <UiStatusMessage :message="trialMessage ?? props.fieldErrors[ProductField.Trial] ?? null" :tone="UiTone.Danger" data-testid="product-form-trial-error" />
 
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
-        <UiCard clip>
-          <UiTable :density="UiTableDensity.Compact" data-testid="product-form-prices">
-            <UiTableHead>
-              <UiTableRow>
-                <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.enabled') }}</UiTableHeader>
-                <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.currency') }}</UiTableHeader>
-                <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric :card-role="UiCardRole.Control">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
-              </UiTableRow>
-            </UiTableHead>
-            <UiTableBody divided>
-              <UiTableRow v-for="currency in currencyRows" :key="currency.code" :data-testid="`product-form-price-${currency.code}`">
-                <UiTableCell>
-                  <UiCheckbox
-                    v-if="!currency.isBase"
-                    :model-value="rowFor(currency.code).enabled"
-                    :aria-label="currency.code"
-                    @update:model-value="rowFor(currency.code).enabled = $event"
-                  />
-                  <UiText v-else tone="primary" size="xs">{{ t('settings.productForm.base') }}</UiText>
-                </UiTableCell>
-                <UiTableCell class="font-medium text-text-primary">{{ currency.code }}</UiTableCell>
-                <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>
-                  <UiNumberInput
-                    v-model="rowFor(currency.code)[cycle]"
-                    :min="0"
-                    :step="0.01"
-                    :disabled="!rowFor(currency.code).enabled"
-                    placeholder="0.00"
-                    :data-testid="`product-form-price-${currency.code}-${cycle}`"
-                  />
-                </UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
-        </UiCard>
+        <UiDataTable :density="UiTableDensity.Compact" data-testid="product-form-prices">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.enabled') }}</UiTableHeader>
+              <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.currency') }}</UiTableHeader>
+              <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric :card-role="UiCardRole.Control">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody>
+            <UiTableRow v-for="currency in currencyRows" :key="currency.code" :data-testid="`product-form-price-${currency.code}`">
+              <UiTableCell>
+                <UiCheckbox
+                  v-if="!currency.isBase"
+                  :model-value="rowFor(currency.code).enabled"
+                  :aria-label="currency.code"
+                  @update:model-value="rowFor(currency.code).enabled = $event"
+                />
+                <UiText v-else :tone="UiTextTone.Primary" :size="UiTextSize.Xs">{{ t('settings.productForm.base') }}</UiText>
+              </UiTableCell>
+              <UiTableCell strong>{{ currency.code }}</UiTableCell>
+              <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>
+                <UiNumberInput
+                  v-model="rowFor(currency.code)[cycle]"
+                  :min="0"
+                  :step="0.01"
+                  :disabled="!rowFor(currency.code).enabled"
+                  placeholder="0.00"
+                  :data-testid="`product-form-price-${currency.code}-${cycle}`"
+                />
+              </UiTableCell>
+            </UiTableRow>
+          </UiTableBody>
+        </UiDataTable>
       </UiField>
 
       <!-- Recommended-plan toggle -->
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('settings.productForm.featured') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productForm.featuredHint') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.featured') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.featuredHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="isFeatured" data-testid="product-form-featured" />
       </UiStack>
 
       <!-- Digital service (VAT) toggle -->
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('settings.productForm.digitalService') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productForm.digitalServiceHint') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.digitalService') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.digitalServiceHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="isDigitalService" data-testid="product-form-digital-service" />
       </UiStack>
 
       <!-- Hidden toggle -->
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('shared.hidden') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productForm.hideThisProductFromThe') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('shared.hidden') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.hideThisProductFromThe') }}</UiText>
         </UiStack>
         <UiToggle v-model="isHidden" data-testid="product-form-hidden" />
       </UiStack>
 
       <!-- One-per-client toggle -->
-      <UiStack direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('settings.productForm.onePerClient') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productForm.onePerClientHint') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.onePerClient') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.onePerClientHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="onePerClient" data-testid="product-form-one-per-client" />
       </UiStack>
@@ -825,11 +827,11 @@ const handleSubmit = (): void => {
       <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />
 
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="product-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="product-form-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="product-form-save">
-          {{ isEditMode ? t('shared.saveChanges') : t('settings.productForm.createProduct') }}
+        <UiButton :action="UiActionKind.Save" :type="UiButtonType.Submit" :variant="UiButtonVariant.Primary" :loading="saving" data-testid="product-form-save">
+          {{ isEditMode ? t('shared.save') : t('settings.productForm.createProduct') }}
         </UiButton>
       </UiFormActions>
     </UiForm>

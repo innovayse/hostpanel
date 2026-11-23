@@ -44,6 +44,14 @@ describe('UiLink', () => {
     expect(wrapper.findComponent(RouterLinkStub).props('to')).toBe('/clients')
   })
 
+  it('is an accent text link when no look is given', () => {
+    const anchor = mount(UiLink, { props: { href: '/a' } })
+    const route = mount(UiLink, { props: { to: '/a' }, global: { stubs: { RouterLink: RouterLinkStub } } })
+
+    expect(anchor.classes()).toContain('text-text-accent')
+    expect(route.classes()).toContain('text-text-accent')
+  })
+
   it('takes the accent look', () => {
     const wrapper = mount(UiLink, { props: { href: '/a', variant: 'link' } })
 

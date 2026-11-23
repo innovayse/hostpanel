@@ -31,6 +31,12 @@ import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { EMPTY_VALUE } from '@/lib/format'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** How many checklist rows the loading card draws. */
 const PLACEHOLDER_ROWS = 3
@@ -186,51 +192,51 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <UiCard padding="md" :aria-busy="job === null ? 'true' : undefined" :data-testid="job === null ? 'migration-loading' : 'migration-progress-card'">
-    <UiStack gap="md">
+  <UiCard :padding="UiCardPadding.Md" container :aria-busy="job === null ? 'true' : undefined" :data-testid="job === null ? 'migration-loading' : 'migration-progress-card'">
+    <UiStack :gap="UiGap.Md">
       <!-- Header -->
-      <UiStack v-if="job === null" direction="row" align="center" justify="between" aria-hidden="true">
-        <UiStack gap="xs">
+      <UiStack v-if="job === null" :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" aria-hidden="true">
+        <UiStack :gap="UiGap.Xs">
           <UiSkeletonBar class="h-6 w-48 rounded-md" />
           <UiSkeletonBar class="h-3 w-20 rounded-md" />
         </UiStack>
         <UiMetric value="" loading />
       </UiStack>
-      <UiStack v-else direction="row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiStack direction="row" align="center" gap="sm">
-            <UiHeading :level="3" variant="card">
+      <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
+            <UiHeading :level="3" :variant="UiHeadingVariant.Card">
               {{ job.label ?? t('migration.migrationProgressCard.migration') }}
             </UiHeading>
             <UiBadge :tone="migrationStatusTone[job.status]" small data-testid="migration-job-status">
               {{ t(migrationStatusLabelKey[job.status]) }}
             </UiBadge>
           </UiStack>
-          <UiText tone="muted" size="xs">{{ t('migration.migrationProgressCard.jobId', { id: job.id }) }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('migration.migrationProgressCard.jobId', { id: job.id }) }}</UiText>
         </UiStack>
         <UiMetric :value="`${job.overallPercent}%`" data-testid="migration-job-percent" />
       </UiStack>
 
       <!-- Entity checklist -->
-      <UiStack v-if="job === null" gap="xs" aria-hidden="true">
-        <UiStack v-for="row in PLACEHOLDER_ROWS" :key="row" direction="row" align="center" justify="between">
+      <UiStack v-if="job === null" :gap="UiGap.Xs" aria-hidden="true">
+        <UiStack v-for="row in PLACEHOLDER_ROWS" :key="row" :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
           <UiSkeletonBar class="h-4 w-32 rounded-md" />
           <UiSkeletonBar class="h-4 w-12 rounded-md" />
         </UiStack>
       </UiStack>
-      <UiStack v-else gap="xs" data-testid="migration-entities">
+      <UiStack v-else :gap="UiGap.Xs" data-testid="migration-entities">
         <UiStack
           v-for="key in activeKeys"
           :key="key"
-          direction="row"
-          align="center"
-          justify="between"
+          :direction="UiDirection.Row"
+          :align="UiAlignItems.Center"
+          :justify="UiJustify.Between"
           :data-testid="`migration-entity-${key}`"
         >
-          <UiText :tone="job.progress[key].done ? 'primary' : 'secondary'" size="md">
+          <UiText :tone="job.progress[key].done ? UiTextTone.Primary : UiTextTone.Secondary" :size="UiTextSize.Md">
             {{ t(`migrationEntities.${key}`) }}
           </UiText>
-          <UiText :tone="job.progress[key].done ? 'success' : 'muted'" size="sm" class="font-semibold tabular-nums">
+          <UiText :tone="job.progress[key].done ? UiTextTone.Success : UiTextTone.Muted" :size="UiTextSize.Sm" class="font-semibold tabular-nums">
             <template v-if="job.progress[key].total > 0">
               {{ job.progress[key].imported + job.progress[key].skipped }}/{{ job.progress[key].total }}
             </template>
@@ -240,53 +246,53 @@ onUnmounted(() => {
       </UiStack>
 
       <!-- KPI tiles -->
-      <UiGrid :columns="2" gap="sm">
-        <UiStatTile :label="t('migration.migrationProgressCard.migrated')" :value="totalMigrated" tone="success" :loading="job === null" />
-        <UiStatTile :label="t('migration.migrationProgressCard.skipped')" :value="totalSkipped" tone="warning" :loading="job === null" />
+      <UiGrid :columns="2" :gap="UiGap.Sm" container>
+        <UiStatTile :label="t('migration.migrationProgressCard.migrated')" :value="totalMigrated" :tone="UiTone.Success" :loading="job === null" />
+        <UiStatTile :label="t('migration.migrationProgressCard.skipped')" :value="totalSkipped" :tone="UiTone.Warning" :loading="job === null" />
         <UiStatTile
           :label="t('migration.migrationProgressCard.failed')"
           :value="totalFailed"
-          :tone="totalFailed > 0 ? 'danger' : 'neutral'"
+          :tone="totalFailed > 0 ? UiTone.Danger : UiTone.Neutral"
           :loading="job === null"
         />
         <UiStatTile :label="t('shared.total')" :value="totalRecords" :loading="job === null" />
       </UiGrid>
 
       <!-- Failure message the server recorded for the job -->
-      <UiAlert v-if="job?.status === MigrationStatus.Failed && job.failure" variant="error" data-testid="migration-job-error">
+      <UiAlert v-if="job?.status === MigrationStatus.Failed && job.failure" :variant="UiTone.Danger" data-testid="migration-job-error">
         {{ t(migrationJobFailureLabelKey[job.failure]) }}
       </UiAlert>
-      <UiStack v-if="job?.status === MigrationStatus.Failed" direction="row" gap="sm">
+      <UiStack v-if="job?.status === MigrationStatus.Failed" :direction="UiDirection.Row" :gap="UiGap.Sm">
         <UiButton :action="UiActionKind.Refresh"
           type="button"
-          variant="primary"
-          size="sm"
+          :variant="UiButtonVariant.Primary"
+          :size="UiSize.Sm"
           :loading="starting"
           data-testid="migration-retry"
           @click="retryImport"
         >
-          {{ t('migration.migrationProgressCard.retryImport') }}
+          {{ t('shared.retry') }}
         </UiButton>
       </UiStack>
 
       <!-- Plugin connection + start -->
-      <UiStack v-if="job !== null && isJobActive(job.status)" direction="row" align="center" gap="sm" wrap>
-        <UiBadge :tone="job.pluginConnected ? 'success' : 'neutral'" dot data-testid="migration-plugin-state">
+      <UiStack v-if="job !== null && isJobActive(job.status)" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
+        <UiBadge :tone="job.pluginConnected ? UiTone.Success : UiTone.Neutral" dot data-testid="migration-plugin-state">
           {{ job.pluginConnected ? t('migration.migrationProgressCard.pluginConnected') : t('migration.migrationProgressCard.waitingForPlugin') }}
         </UiBadge>
         <UiButton :action="UiActionKind.Test"
           type="button"
-          variant="secondary"
-          size="sm"
+          :variant="UiButtonVariant.Secondary"
+          :size="UiSize.Sm"
           :loading="checking"
           data-testid="migration-check"
           @click="checkConnection"
         >
-          {{ t('migration.migrationProgressCard.check') }}
+          {{ t('shared.test') }}
         </UiButton>
         <UiBadge
           v-if="checkOutcome === CheckOutcome.Reachable || checkOutcome === CheckOutcome.Unreachable"
-          :tone="checkOutcome === CheckOutcome.Reachable ? 'success' : 'danger'"
+          :tone="checkOutcome === CheckOutcome.Reachable ? UiTone.Success : UiTone.Danger"
           data-testid="migration-check-result"
         >
           {{ checkOutcome === CheckOutcome.Reachable ? t('shared.connected') : t('migration.migrationProgressCard.notReachable') }}
@@ -294,8 +300,8 @@ onUnmounted(() => {
         <UiButton :action="UiActionKind.Generate"
           v-if="job.status === MigrationStatus.Pending && job.pluginConnected"
           type="button"
-          variant="primary"
-          size="sm"
+          :variant="UiButtonVariant.Primary"
+          :size="UiSize.Sm"
           :loading="starting"
           data-testid="migration-start"
           @click="startImport"
@@ -303,10 +309,10 @@ onUnmounted(() => {
           {{ t('migration.migrationProgressCard.startImport') }}
         </UiButton>
       </UiStack>
-      <UiAlert v-if="checkOutcome === CheckOutcome.Refused && checkError" variant="error" data-testid="migration-check-error">
+      <UiAlert v-if="checkOutcome === CheckOutcome.Refused && checkError" :variant="UiTone.Danger" data-testid="migration-check-error">
         {{ checkError }}
       </UiAlert>
-      <UiAlert v-if="startError" variant="error" data-testid="migration-start-error">
+      <UiAlert v-if="startError" :variant="UiTone.Danger" data-testid="migration-start-error">
         {{ startError }}
       </UiAlert>
     </UiStack>

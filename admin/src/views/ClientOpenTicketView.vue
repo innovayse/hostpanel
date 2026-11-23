@@ -24,6 +24,7 @@ import { ClientSection, clientItemPath, clientSectionPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema from '@/views/ClientOpenTicketView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiDirection } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -129,7 +130,7 @@ onMounted(() => {
         />
       </template>
 
-      <UiStack direction="row">
+      <UiStack :direction="UiDirection.Row">
         <UiButton :action="UiActionKind.Add"
           type="button"
           :variant="UiButtonVariant.Primary"
@@ -138,7 +139,7 @@ onMounted(() => {
           data-testid="client-open-ticket-submit"
           @click="handleSubmit"
         >
-          {{ t('clients.clientOpenTicket.openTicket') }}
+          {{ t('clients.clientOpenTicket.createTicket') }}
         </UiButton>
       </UiStack>
       <UiStatusMessage :message="store.error" :tone="UiTone.Danger" data-testid="client-open-ticket-error" />

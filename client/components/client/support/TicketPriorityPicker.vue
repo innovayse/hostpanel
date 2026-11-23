@@ -1,7 +1,7 @@
 <template>
   <UiStack gap="xs" data-testid="ticket-priority">
-    <UiText as="span" size="sm" weight="medium">{{ $t('client.tickets.priorityLabel') }}</UiText>
-    <UiStack direction="row" gap="sm">
+    <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ $t('client.tickets.priorityLabel') }}</UiText>
+    <UiStack direction="row" gap="sm" wrap>
       <UiButton
         v-for="option in options"
         :key="option.value"
@@ -23,6 +23,7 @@
  */
 import { computed } from 'vue'
 import { TicketPriority } from '~/types/ticketpriority'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()

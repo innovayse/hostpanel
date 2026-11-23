@@ -1,28 +1,35 @@
 <template>
   <UiStack gap="sm" data-testid="plugin-table">
     <UiHeading v-if="block.title" :level="3" size="subsection">{{ block.title }}</UiHeading>
-    <UiSkeleton v-if="loading" shape="block" class="h-32" />
-    <UiText v-else-if="error" size="sm" tone="muted" data-testid="plugin-table-error">{{ error }}</UiText>
-    <UiText v-else-if="rows.length === 0" size="sm" tone="muted" data-testid="plugin-table-empty">{{ $t('plugins.tableEmpty') }}</UiText>
-    <UiStack v-else-if="block.display === PluginTableDisplay.Cards" gap="sm" data-testid="plugin-table-cards">
+    <UiText v-if="!loading && error" size="sm" tone="muted" data-testid="plugin-table-error">{{ error }}</UiText>
+    <UiStack v-else-if="showCards" gap="sm" data-testid="plugin-table-cards">
       <UiCard v-for="row in visibleRows" :key="row.key" padding="sm" data-testid="plugin-table-card">
         <UiStack direction="row" gap="sm" align="center" wrap>
           <template v-for="cell in row.cells" :key="cell.key">
             <UiBadge v-if="cell.badge" size="sm">{{ cell.text }}</UiBadge>
-            <UiText v-else-if="cell.first" as="span" size="sm" weight="semibold" class="font-mono">{{ cell.text }}</UiText>
-            <UiText v-else as="span" size="xs" tone="muted">{{ cell.text }}</UiText>
+            <UiText v-else-if="cell.first" :as="UiTextTag.Span" size="sm" weight="semibold" class="font-mono">{{ cell.text }}</UiText>
+            <UiText v-else :as="UiTextTag.Span" size="xs" tone="muted">{{ cell.text }}</UiText>
           </template>
         </UiStack>
       </UiCard>
       <UiPagination v-if="pageCount > 1" v-model="page" :total-pages="pageCount" :per-page="perPage" />
     </UiStack>
     <template v-else>
-      <UiTable scrollable :label="block.title">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableTh v-for="column in block.columns" :key="column.field">{{ column.label }}</UiTableTh>
-          </UiTableRow>
-        </UiTableHead>
+      <UiTable
+        scrollable
+        :label="block.title"
+        :columns="block.columns.length"
+        :loading="loading"
+        :empty="rows.length === 0"
+        :empty-text="$t('plugins.tableEmpty')"
+      >
+        <template #head>
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableTh v-for="column in block.columns" :key="column.field">{{ column.label }}</UiTableTh>
+            </UiTableRow>
+          </UiTableHead>
+        </template>
         <UiTableBody>
           <UiTableRow v-for="row in visibleRows" :key="row.key" :hoverable="Boolean(block.rowLink)" data-testid="plugin-table-row">
             <UiTableTd v-for="cell in row.cells" :key="cell.key">
@@ -58,6 +65,7 @@ import type { PluginTableBlock } from '~/types/pluginblock'
 import { PluginTableDisplay } from '~/types/plugintabledisplay'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import { formatPluginValue, readPluginField } from '~/utils/plugins'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of PluginTableBlock. */
 interface Props {
@@ -115,6 +123,9 @@ const rows = computed<TableRow[]>(() => (Array.isArray(value.value) ? value.valu
     })),
   }
 }))
+
+/** Whether the rows are drawn as cards: the view asked for them and there are rows to draw; loading and empty stay with the table. */
+const showCards = computed(() => props.block.display === PluginTableDisplay.Cards && !loading.value && rows.value.length > 0)
 
 /** Rows per page: the view's size, or every row on one page. */
 const perPage = computed(() => (props.block.pageSize && props.block.pageSize > 0 ? props.block.pageSize : Math.max(rows.value.length, 1)))

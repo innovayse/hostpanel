@@ -10,12 +10,19 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import World from '@svg-maps/world'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiLegendSwatch from '@/components/ui/UiLegendSwatch.vue'
+import UiStack from '@/components/ui/UiStack.vue'
+import UiSvgMap from '@/components/ui/UiSvgMap.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { reportCountryName } from '@/lib/reportsCountry'
 import { MAP_ACTIVE_FILL, MAP_FILL_STEPS, MAP_NO_DATA_FILL, MAP_NO_DATA_SWATCH, mapFillClass } from '@/lib/reports'
+import { UiLegendSwatchShape } from '@/utils/ui/svgMap'
+import type { UiMapShape } from '@/utils/ui/svgMap'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import type { ReportCountryRow } from '@/types/reportcountry'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 
 const { t, locale } = useI18n()
 
@@ -102,59 +109,44 @@ const activate = (code: string): void => {
 const deactivate = (): void => {
   active.value = null
 }
+
+/** Every outline the map draws: the neutral ones first, then the countries with data over them (each filled by its own state). */
+const shapes = computed<UiMapShape[]>(() => [
+  ...emptyPaths.value.map(empty => ({ id: empty.id, path: empty.path, fill: MAP_NO_DATA_FILL })),
+  ...dataCountries.value.map(country => ({
+    id: country.code,
+    path: country.path,
+    fill: fillOf(country),
+    label: country.label,
+    testid: `report-map-country-${country.code}`,
+  })),
+])
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="report-world-map">
+  <UiCard :padding="UiCardPadding.Md" data-testid="report-world-map">
     <UiTooltip class="w-full" :text="activeCountry?.label ?? ''" :open="activeCountry !== null">
-      <svg
-        :viewBox="World.viewBox"
-        class="w-full aspect-[1010/666]"
-        role="group"
-        :aria-label="t('reports.clientsByCountry.clientsByCountry')"
-      >
-        <path
-          v-for="empty in emptyPaths"
-          :key="empty.id"
-          :d="empty.path"
-          :class="MAP_NO_DATA_FILL"
-          class="stroke-surface-card"
-          stroke-width="0.3"
-          aria-hidden="true"
-        />
-        <path
-          v-for="country in dataCountries"
-          :key="country.code"
-          :d="country.path"
-          :class="fillOf(country)"
-          class="stroke-surface-card cursor-pointer outline-none"
-          stroke-width="0.3"
-          role="button"
-          tabindex="0"
-          :aria-label="country.label"
-          :data-testid="`report-map-country-${country.code}`"
-          @mouseenter="activate(country.code)"
-          @mouseleave="deactivate"
-          @focus="activate(country.code)"
-          @blur="deactivate"
-          @click="emit('select-country', country.code)"
-          @keydown.enter.prevent="emit('select-country', country.code)"
-          @keydown.space.prevent="emit('select-country', country.code)"
-        />
-      </svg>
+      <UiSvgMap
+        :view-box="World.viewBox"
+        :label="t('reports.clientsByCountry.clientsByCountry')"
+        :shapes="shapes"
+        @activate="activate"
+        @deactivate="deactivate"
+        @select="emit('select-country', $event)"
+      />
     </UiTooltip>
-    <ul class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1" data-testid="report-map-legend">
-      <li class="flex items-center gap-1.5">
-        <span class="size-3 rounded-sm" :class="MAP_NO_DATA_SWATCH" aria-hidden="true" />
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Center" :gap="UiGap.Md" wrap role="list" class="mt-3 gap-y-1" data-testid="report-map-legend">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" role="listitem">
+        <UiLegendSwatch :fill="MAP_NO_DATA_SWATCH" />
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('reports.clientsByCountry.legendNoData') }}</UiText>
-      </li>
-      <li class="flex items-center gap-1.5">
+      </UiStack>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" role="listitem">
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('reports.clientsByCountry.legendFewer') }}</UiText>
-        <span class="flex" aria-hidden="true">
-          <span v-for="step in MAP_FILL_STEPS" :key="step.swatch" class="h-3 w-5 first:rounded-l-sm last:rounded-r-sm" :class="step.swatch" />
-        </span>
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.None" aria-hidden="true">
+          <UiLegendSwatch v-for="step in MAP_FILL_STEPS" :key="step.swatch" :fill="step.swatch" :shape="UiLegendSwatchShape.Step" />
+        </UiStack>
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('reports.clientsByCountry.legendMore', { count: maxCount }) }}</UiText>
-      </li>
-    </ul>
+      </UiStack>
+    </UiStack>
   </UiCard>
 </template>

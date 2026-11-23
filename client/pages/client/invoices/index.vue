@@ -4,53 +4,59 @@
 
     <UiTabs v-model="activeTab" :tabs="tabs" />
 
-    <UiStack v-if="store.invoicesLoading" gap="sm">
-      <UiSkeleton v-for="i in 5" :key="i" shape="block" class="h-16" />
-    </UiStack>
-
     <!-- Not a customer account. Checked before the failure branch: this is a state the
          API reported, not a fault, and it carries its own explanation and a way out. -->
-    <ClientNoProfileNotice v-else-if="store.clientProfileMissing" />
+    <ClientNoProfileNotice v-if="!store.invoicesLoading && store.clientProfileMissing" />
 
-    <!-- Failed. Checked before the empty state, which a failure is otherwise
+    <!-- Failed. Checked before the table, whose empty state a failure is otherwise
          indistinguishable from: the list is empty either way. -->
     <UiAlert v-else-if="store.invoicesError" variant="error" data-testid="invoices-error">{{ store.invoicesError }}</UiAlert>
 
-    <UiEmptyState v-else-if="!filteredInvoices.length" :icon="FileText" :title="$t('client.invoices.empty')" />
-
-    <UiTable v-else data-testid="invoices-table">
-      <UiTableHead>
-        <UiTableRow :hoverable="false">
-          <UiTableTh>{{ $t('client.invoices.colHash') }}</UiTableTh>
-          <UiTableTh>{{ $t('client.invoices.colDate') }}</UiTableTh>
-          <UiTableTh>{{ $t('client.invoices.colDueDate') }}</UiTableTh>
-          <UiTableTh align="right">{{ $t('client.invoices.colAmount') }}</UiTableTh>
-          <UiTableTh align="center">{{ $t('client.invoices.colStatus') }}</UiTableTh>
-          <UiTableTh />
-        </UiTableRow>
-      </UiTableHead>
+    <UiTable
+      v-else
+      scrollable
+      :label="$t('client.invoices.title')"
+      :columns="6"
+      :loading="store.invoicesLoading"
+      :empty="!filteredInvoices.length"
+      :empty-text="$t('client.invoices.empty')"
+      :empty-icon="FileText"
+      data-testid="invoices-table"
+    >
+      <template #head>
+        <UiTableHead>
+          <UiTableRow :hoverable="false">
+            <UiTableTh>{{ $t('client.invoices.colHash') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.invoices.colDate') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.invoices.colDueDate') }}</UiTableTh>
+            <UiTableTh align="right">{{ $t('client.invoices.colAmount') }}</UiTableTh>
+            <UiTableTh align="center">{{ $t('client.invoices.colStatus') }}</UiTableTh>
+            <UiTableTh />
+          </UiTableRow>
+        </UiTableHead>
+      </template>
       <UiTableBody>
         <UiTableRow v-for="invoice in filteredInvoices" :key="invoice.id" :data-testid="`invoice-row-${invoice.id}`">
           <UiTableTd>
-            <UiText as="span" size="sm" weight="medium">#{{ invoice.id }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" weight="medium">#{{ invoice.id }}</UiText>
           </UiTableTd>
           <UiTableTd>
-            <UiText as="span" size="sm" tone="subtle">{{ formatDate(invoice.invoiceDate) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" tone="subtle">{{ formatDate(invoice.invoiceDate) }}</UiText>
           </UiTableTd>
           <UiTableTd>
-            <UiText as="span" size="sm" :tone="isOverdue(invoice) ? 'danger' : 'subtle'" :weight="isOverdue(invoice) ? 'medium' : 'normal'">
+            <UiText :as="UiTextTag.Span" size="sm" :tone="isOverdue(invoice) ? 'danger' : 'subtle'" :weight="isOverdue(invoice) ? 'medium' : 'normal'">
               {{ formatDate(invoice.dueDate) }}
             </UiText>
           </UiTableTd>
           <UiTableTd align="right">
-            <UiText as="span" size="sm" weight="semibold">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" weight="semibold">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiText>
           </UiTableTd>
           <UiTableTd align="center">
             <ClientStatusBadge :status="invoice.status" />
           </UiTableTd>
           <UiTableTd align="right">
             <UiButton :to="clientInvoicePath(invoice.id)" variant="subtle" size="sm" :data-testid="`invoice-view-${invoice.id}`">
-              {{ $t('client.invoices.view') }}
+              {{ $t('common.view') }}
             </UiButton>
           </UiTableTd>
         </UiTableRow>
@@ -72,6 +78,7 @@ import { ListFilter } from '~/types/listfilter'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
 import { isInvoiceOutstanding, isInvoiceOverdue as isOverdue, isInvoicePaid } from '~/utils/invoice'
+import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

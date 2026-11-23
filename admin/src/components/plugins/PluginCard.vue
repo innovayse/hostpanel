@@ -23,8 +23,12 @@ import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { PluginCardBadge } from '@/types/plugin'
 import type { PluginCardModel } from '@/types/plugin'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -104,31 +108,32 @@ const metaParts = computed<string[]>(() =>
 
 <template>
   <UiCard
-    padding="md"
+    :padding="UiCardPadding.Md"
     class="relative flex h-full flex-col gap-3 border border-transparent transition-colors hover:border-border-strong has-[a:focus-visible]:border-text-accent"
     :data-testid="`plugin-card-${plugin.id}`"
   >
-    <UiStack direction="row" align="center" justify="between" gap="sm">
-      <UiStack direction="row" align="center" gap="sm" class="min-w-0">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Sm">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="min-w-0">
         <UiPluginAvatar :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color ?? undefined" :size="UiSize.Lg" />
         <UiLink
           :to="to"
-          class="min-w-0 truncate rounded-control outline-none after:absolute after:inset-0 after:content-['']"
+          :variant="UiButtonVariant.Link"
+          class="min-w-0 after:absolute after:inset-0 after:content-['']"
           :data-testid="`plugin-card-link-${plugin.id}`"
         >
-          <UiText as="span" tone="primary" size="lg" class="font-semibold">{{ plugin.name }}</UiText>
+          <UiText :as="UiTextTag.Span" :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="min-w-0 truncate font-semibold">{{ plugin.name }}</UiText>
         </UiLink>
         <UiIcon
           v-if="plugin.verified"
           :markup="Icon.CheckCircle"
-          size="sm"
+          :size="UiSize.Sm"
           class="shrink-0 text-status-green"
           role="img"
           :aria-label="t('plugins.pluginRegistry.verified')"
           :data-testid="`plugin-card-verified-${plugin.id}`"
         />
       </UiStack>
-      <UiStack direction="row" align="center" gap="xs" class="shrink-0">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" class="shrink-0">
         <UiBadge
           v-for="badge in plugin.badges"
           :key="badge"
@@ -142,19 +147,19 @@ const metaParts = computed<string[]>(() =>
       </UiStack>
     </UiStack>
 
-    <UiText v-if="metaParts.length > 0" tone="muted" size="xs" class="truncate" :data-testid="`plugin-card-meta-${plugin.id}`">
+    <UiText v-if="metaParts.length > 0" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="truncate" :data-testid="`plugin-card-meta-${plugin.id}`">
       {{ metaParts.join(' · ') }}
     </UiText>
 
-    <UiText tone="muted" size="sm" class="line-clamp-2" :data-testid="`plugin-card-description-${plugin.id}`">
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="line-clamp-2" :data-testid="`plugin-card-description-${plugin.id}`">
       {{ plugin.description }}
     </UiText>
 
     <UiStack
       v-if="plugin.tags.length > 0"
-      direction="row"
-      align="center"
-      gap="xs"
+      :direction="UiDirection.Row"
+      :align="UiAlignItems.Center"
+      :gap="UiGap.Xs"
       class="overflow-hidden"
       :data-testid="`plugin-card-tags-${plugin.id}`"
     >
@@ -167,19 +172,19 @@ const metaParts = computed<string[]>(() =>
       <slot name="notice" />
     </UiStack>
 
-    <UiStack direction="row" align="center" justify="between" gap="sm" class="mt-auto border-t border-border pt-3">
-      <UiStack direction="row" align="center" gap="md" class="min-w-0">
-        <UiStack v-if="plugin.downloads !== null" direction="row" align="center" gap="xs" :data-testid="`plugin-card-downloads-${plugin.id}`">
-          <UiIcon :markup="Icon.Download" size="sm" />
-          <UiText tone="muted" size="xs">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Sm" class="mt-auto border-t border-border pt-3">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" class="min-w-0">
+        <UiStack v-if="plugin.downloads !== null" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" :data-testid="`plugin-card-downloads-${plugin.id}`">
+          <UiIcon :markup="Icon.Download" :size="UiSize.Sm" />
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">
             {{ t('plugins.pluginRegistry.downloads', { count: downloadFormat.format(plugin.downloads) }) }}
           </UiText>
         </UiStack>
-        <UiText tone="muted" size="xs" class="font-mono" :data-testid="`plugin-card-version-${plugin.id}`">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-mono" :data-testid="`plugin-card-version-${plugin.id}`">
           {{ t('plugins.pluginRegistry.version', { version: plugin.version }) }}
         </UiText>
       </UiStack>
-      <UiStack v-if="$slots.action" direction="row" align="center" gap="sm" class="relative shrink-0">
+      <UiStack v-if="$slots.action" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="relative shrink-0">
         <slot name="action" />
       </UiStack>
     </UiStack>

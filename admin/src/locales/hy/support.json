@@ -5,14 +5,12 @@
     "announcementTitle": "Հայտարարության վերնագիր",
     "announcement": "Հայտարարություն",
     "announcementContent": "Հայտարարության տեքստ",
-    "updateAnnouncement": "Թարմացնել հայտարարությունը",
-    "saveAnnouncement": "Պահպանել հայտարարությունը",
     "pageTitleEdit": "Հայտարարության խմբագրում",
     "pageTitleCreate": "Հայտարարության ավելացում"
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Հաճախորդների համար հայտարարությունների կառավարում",
-    "addNewAnnouncement": "Նոր հայտարարություն",
+    "createAnnouncement": "Ստեղծել հայտարարություն",
     "noAnnouncementsFound": "Հայտարարություններ չեն գտնվել",
     "createYourFirstAnnouncementTo": "Սկսելու համար ստեղծեք առաջին հայտարարությունը։",
     "deleteAnnouncement": "Ջնջել հայտարարությունը",
@@ -32,7 +30,7 @@
     "clientsOnly": "Միայն հաճախորդների համար",
     "productDownload": "Ապրանքի ներբեռնում",
     "clientsOnlyRestrictsToLogged": "«Միայն հաճախորդների համար» սահմանափակում է մուտքը՝ միայն մուտք գործած հաճախորդներին։ «Ապրանքի ներբեռնում» պահանջում է ապրանքի կամ հավելման գնում։ «Թաքնված» հեռացնում է հաճախորդի գոտուց։",
-    "addDownload": "Ավելացնել ներբեռնում",
+    "createDownload": "Ստեղծել ներբեռնում",
     "downloadHome": "Ներբեռնումների գլխավոր էջ",
     "files": "Ֆայլեր",
     "noDownloadsFound": "Ներբեռնումներ չեն գտնվել",
@@ -68,10 +66,9 @@
     "articleTitle": "Հոդվածի վերնագիր",
     "content": "Բովանդակություն",
     "articleContent": "Հոդվածի տեքստ",
-    "saveArticle": "Պահպանել հոդվածը",
     "deleteCategory": "Ջնջել կատեգորիան",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս կատեգորիան։ Կատեգորիան, որում դեռ կան հոդվածներ, հնարավոր չէ ջնջել։",
-    "addArticle": "Ավելացնել հոդված",
+    "createArticle": "Ստեղծել հոդված",
     "categorySaved": "Կատեգորիան պահպանվեց։",
     "categoryDeleted": "Կատեգորիան ջնջվեց։",
     "articleSaved": "Հոդվածը պահպանվեց։",
@@ -96,7 +93,6 @@
     "endDate": "Ավարտի ամսաթիվ",
     "selectEndDate": "Ընտրեք ավարտի ամսաթիվը",
     "describeTheIssueInDetail": "Մանրամասն նկարագրեք խնդիրը",
-    "updateIssue": "Թարմացնել խնդիրը",
     "createIssue": "Ստեղծել խնդիր",
     "other": "Այլ",
     "low": "Ցածր",
@@ -112,7 +108,6 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Ցանցի կարգավիճակի և միջադեպերի հաշվետվությունների կառավարում",
-    "createNew": "Ստեղծել",
     "startDate": "Սկզբի ամսաթիվ",
     "endDate": "Ավարտի ամսաթիվ",
     "deleteNetworkIssue": "Ջնջել ցանցային խնդիրը",
@@ -140,14 +135,14 @@
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս կատեգորիան։ Դա կարող է ազդել դրա բոլոր պատասխանների վրա։",
     "deletePredefinedReply": "Ջնջել պատրաստի պատասխանը",
     "areYouSureYouWant2": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս պատրաստի պատասխանը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
-    "addPredefinedReply": "Ավելացնել պատրաստի պատասխան"
+    "addCategory": "Ավելացնել կատեգորիա",
+    "addReply": "Ավելացնել պատասխան"
   },
   "supportOpenTicket": {
     "searchByNameEmailOr": "Որոնում ըստ անվան, էլ. փոստի կամ ID-ի",
     "autoFilledFromSelectedClient": "Լրացվում է ավտոմատ կերպով ընտրված հաճախորդից",
     "ticketSubject": "Տոմսի թեմա",
-    "describeTheIssue": "Նկարագրեք խնդիրը",
-    "openTicket": "Բացել տոմս"
+    "describeTheIssue": "Նկարագրեք խնդիրը"
   },
   "supportOverview": {
     "supportOverview": "Աջակցության ակնարկ",

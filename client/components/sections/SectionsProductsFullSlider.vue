@@ -2,7 +2,7 @@
   <!-- The panel is the page colour in either mode; the cover beside each slide carries the picture. -->
   <!-- No slides configured: the text hero, so the top of the home page is never an empty viewport. -->
   <SectionsHero v-if="!sliderItems.length" />
-  <section v-else class="relative h-[90dvh] sm:h-[85dvh] md:h-[calc(100dvh-4.5rem)] md:max-h-[44rem] w-full overflow-hidden bg-classic-page" data-testid="products-slider">
+  <UiSection v-else :contained="false" padding="none" class="relative h-[90dvh] sm:h-[85dvh] md:h-[calc(100dvh-4.5rem)] md:max-h-[44rem] w-full overflow-hidden bg-classic-page" data-testid="products-slider">
     <ClientOnly>
       <!-- Before hydration: the first slide, rendered at once so the page is never blank -->
       <template #fallback>
@@ -41,6 +41,7 @@
         v-show="sliderItems.length > 1"
         :icon="ChevronLeft"
         :label="$t('common.previous')"
+        variant="subtle"
         size="lg"
         class="swiper-button-prev-custom absolute left-4 md:left-8 top-1/2 z-20 -translate-y-1/2 rounded-md hidden md:flex"
         testid="slider-prev"
@@ -49,12 +50,13 @@
         v-show="sliderItems.length > 1"
         :icon="ChevronRight"
         :label="$t('common.next')"
+        variant="subtle"
         size="lg"
         class="swiper-button-next-custom absolute right-4 md:right-8 top-1/2 z-20 -translate-y-1/2 rounded-md hidden md:flex"
         testid="slider-next"
       />
     </ClientOnly>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

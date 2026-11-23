@@ -55,10 +55,10 @@
     </UiForm>
 
     <template #footer>
-      <UiText as="span" size="sm" tone="muted">
+      <UiText :as="UiTextTag.Span" size="sm" tone="muted">
         {{ $t('client.register.haveAccount') }}
-        <UiLink :to="CLIENT_LOGIN_PATH" :underline="false" testid="register-signin" class="font-medium">
-          {{ $t('client.register.signIn') }}
+        <UiLink tone="primary" :to="CLIENT_LOGIN_PATH" :underline="false" testid="register-signin" class="font-medium">
+          {{ $t('common.signIn') }}
         </UiLink>
       </UiText>
     </template>
@@ -77,6 +77,7 @@ import { UserPlus } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '~/stores/auth'
 import { ActionOutcome } from '~/types/actionoutcome'
+import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: false, middleware: 'client-auth' })
 

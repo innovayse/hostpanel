@@ -4,7 +4,7 @@
  *
  * `to` renders a router link (in-app navigation without a reload); `href` renders a plain anchor,
  * and `external` opens it in a new tab with the safe `rel`. `variant` reuses the button looks, so
- * a link can read as plain text, as an accent link or as a button. A link that looks like a button is an action and
+ * a link can read as an accent text link (the default `link` look, so a link with no `variant` is never raw) or as a button. A link that looks like a button is an action and
  * takes `action` (`UiActionKind`) or its own `icon`, drawn before the label as `UiButton` does.
  */
 import { computed } from 'vue'
@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<{
   href?: string
   /** Opens the address in a new tab. */
   external?: boolean
-  /** Visual look; `plain` adds no colours. */
+  /** Visual look; `link` when omitted. */
   variant?: UiButtonVariant
   /** Padding for the button-like looks, type size for the text-link look. */
   size?: UiSize
@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<{
   to: undefined,
   href: undefined,
   external: false,
-  variant: UiButtonVariant.Plain,
+  variant: UiButtonVariant.Link,
   size: 'md',
   pill: false,
   action: undefined,
@@ -51,9 +51,6 @@ const glyph = computed<string | undefined>(() => resolveActionIcon(props.icon, p
 
 /** Class list for the chosen look. */
 const classes = computed<string[]>(() => {
-  if (props.variant === UiButtonVariant.Plain) {
-    return []
-  }
   const isTextLink = props.variant === UiButtonVariant.Link
   const sizing = isTextLink ? buttonLinkSizeClasses[props.size] : buttonSizeClasses[props.size]
   const radius = isTextLink ? '' : buttonRadiusClasses(props.variant, props.size, props.pill)

@@ -11,10 +11,6 @@
     "unknownBody": "Wir konnten die Bank derzeit nicht erreichen, um den Status Ihrer Zahlung zu bestätigen. Falls sie durchgegangen ist, werden Ihre Bestellung oder Rechnung in Kürze automatisch aktualisiert. Bitte zahlen Sie bis dahin nicht erneut. Prüfen Sie unten erneut.",
     "missingTitle": "Keine Zahlung zu prüfen",
     "missingBody": "Diese Seite hat keine Zahlungsreferenz erhalten, daher gibt es hier nichts zu prüfen. Wenn Sie nach einer Zahlung hierher geleitet wurden, sehen Sie unten Ihre Rechnungen ein.",
-    "retry": "Erneut prüfen",
-    "goToOrder": "Weiter",
-    "goToInvoice": "Zurück zur Rechnung",
-    "viewInvoices": "Rechnungen ansehen",
-    "tryAgain": "Erneut bezahlen"
+    "viewInvoices": "Rechnungen ansehen"
   }
 }

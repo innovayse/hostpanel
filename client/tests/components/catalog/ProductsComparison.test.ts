@@ -62,6 +62,13 @@ describe('ProductsComparison', () => {
     expect(wrapper.find('[data-testid="comparison-row-0"]').text()).toContain('20 GB')
   })
 
+  it('is built from the kit table parts: a header cell per plan and a cell per value', () => {
+    const wrapper = mountTable([group(1, ['Alpha', 'Beta'])])
+
+    expect(wrapper.findAll('thead th')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="comparison-row-0"]').findAll('td')).toHaveLength(3)
+  })
+
   it('shows a placeholder where a plan lacks a line', () => {
     const wrapper = mountTable([group(1, ['Alpha', 'Beta'])])
 

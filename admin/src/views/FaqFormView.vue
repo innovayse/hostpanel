@@ -104,7 +104,7 @@ const flow = useStorefrontForm<Faq, FaqPayload>({ store, form, listPath: AppRout
   <StorefrontFormShell
     testid="faq"
     :title="flow.isEditMode.value ? t('storefront.faqs.edit') : t('storefront.faqs.create')"
-    :save-label="flow.isEditMode.value ? t('shared.saveChanges') : t('storefront.faqs.create')"
+    :save-label="flow.isEditMode.value ? t('shared.save') : t('storefront.faqs.create')"
     :loading="flow.loadingEntry.value"
     :saving="flow.saving.value"
     :dirty="flow.isDirty.value"

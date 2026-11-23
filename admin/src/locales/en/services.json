@@ -5,7 +5,6 @@
     "totalcountServiceValue": "Services: {totalCount}",
     "noServicesFound": "No services found",
     "searchServices": "Search by domain, product or ID",
-    "noServicesMatchYourFilters": "No services match your filters",
-    "clearFilters": "Clear filters"
+    "noServicesMatchYourFilters": "No services match your filters"
   }
 }

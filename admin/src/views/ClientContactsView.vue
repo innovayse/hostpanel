@@ -14,20 +14,22 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import schema from '@/views/ClientContactsView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiHeadingVariant } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -222,14 +224,14 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
 
 <template>
   <UiStack>
-    <UiAlert v-if="contactSuccess" variant="success" data-testid="client-contacts-success">
+    <UiAlert v-if="contactSuccess" :variant="UiTone.Success" data-testid="client-contacts-success">
       {{ contactSuccess }}
     </UiAlert>
-    <UiAlert v-if="contactError" variant="error" data-testid="client-contacts-error">
+    <UiAlert v-if="contactError" :variant="UiTone.Danger" data-testid="client-contacts-error">
       {{ contactError }}
     </UiAlert>
 
-    <UiSectionHeader :level="2" variant="section">
+    <UiSectionHeader :level="2" :variant="UiHeadingVariant.Section">
       {{ t('clients.clientContacts.contactsLength', { length: contacts.length }) }}
 
       <template #actions>
@@ -243,38 +245,35 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
       </template>
     </UiSectionHeader>
 
-    <UiCard v-if="contacts.length > 0" class="overflow-x-auto">
-      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-contacts-table">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="contact in contacts" :key="contact.id" hoverable>
-            <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
-            <UiTableCell muted>{{ contact.email }}</UiTableCell>
-            <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="contactActions(contact)" :testid="`client-contacts-actions-${contact.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState :title="t('clients.clientContacts.noContactsAddedYet')">
-        <template #actions>
-          <UiButton :action="UiActionKind.Add"
-            :variant="UiButtonVariant.Primary"
-            data-testid="client-contacts-add-empty"
-            @click="openCreateModal"
-          >
-            {{ t('clients.clientContacts.addContact') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    <UiDataTable :density="UiTableDensity.Comfortable" :empty="contacts.length === 0" data-testid="client-contacts-table">
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="contact in contacts" :key="contact.id" hoverable>
+          <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
+          <UiTableCell muted>{{ contact.email }}</UiTableCell>
+          <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="contactActions(contact)" :testid="`client-contacts-actions-${contact.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState :title="t('clients.clientContacts.noContactsAddedYet')">
+          <template #actions>
+            <UiButton :action="UiActionKind.Add"
+              :variant="UiButtonVariant.Primary"
+              data-testid="client-contacts-add-empty"
+              @click="openCreateModal"
+            >
+              {{ t('clients.clientContacts.addContact') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
+      </template>
+    </UiDataTable>
 
     <ContactFormModal
       v-if="showCreateModal"
@@ -295,12 +294,12 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
 
     <UiDialog
       v-if="deleteContactTarget !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientContacts.deleteContact')"
       :message="t('clients.clientContacts.areYouSureYouWant')"
       :confirm-label="t('shared.delete')"
       :loading="deletingContact"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmDeleteContact"
       @close="deleteContactTarget = null"
     />

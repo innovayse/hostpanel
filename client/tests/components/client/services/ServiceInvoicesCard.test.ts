@@ -76,13 +76,13 @@ describe('ServiceInvoicesCard', () => {
     await stub.close()
   })
 
-  it('shows skeletons while loading', async () => {
+  it('shows placeholder rows while loading', async () => {
     const held = heldReply()
     const { wrapper, read } = mountCard(held.reply)
     // Released only after the request reached the stub: a release before that answers nothing and the read never ends.
     await waitUntil(() => expect(held.waiting()).toBe(1))
 
-    expect(wrapper.findAll('[data-testid="ui-skeleton"]')).toHaveLength(3)
+    expect(wrapper.find('[data-testid="ui-table-loading"]').exists()).toBe(true)
 
     held.release({ body: { invoices: [], unattributedInvoiceCount: 0 } })
     await read
@@ -92,13 +92,13 @@ describe('ServiceInvoicesCard', () => {
     const wrapper = await mountLoaded({ status: 400, body: { detail: 'Could not read invoices.' } })
 
     expect(wrapper.find('[data-testid="service-invoices-error"]').text()).toBe('Could not read invoices.')
-    expect(wrapper.find('[data-testid="service-invoices-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(false)
   })
 
   it('says nothing is recorded against the service when the list is empty', async () => {
     const wrapper = await mountLoaded({ body: { invoices: [], unattributedInvoiceCount: 0 } })
 
-    expect(wrapper.find('[data-testid="service-invoices-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').text()).toContain('client.services.noInvoices')
   })
 
   it('lists the invoices with a link to each', async () => {

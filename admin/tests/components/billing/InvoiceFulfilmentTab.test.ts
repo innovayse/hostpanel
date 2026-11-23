@@ -13,6 +13,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -93,14 +94,13 @@ describe('InvoiceFulfilmentTab', () => {
     await wrapper.get('[data-testid="billing-invoice-fulfilment-retry-31"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
-    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-feedback"]').exists()).toBe(true)
+    expect(toastMessages()).toHaveLength(1)
     await wrapper.get('[data-testid="billing-invoice-fulfilment-retry-31"]').trigger('click')
     expect(wrapper.find('[data-testid="dialog-body"]').exists()).toBe(true)
 
     await wrapper.setProps({ invoice: invoiceFixture({ id: 2 }) })
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-feedback"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="dialog-body"]').exists()).toBe(false)
   })
 
@@ -188,7 +188,7 @@ describe('InvoiceFulfilmentTab', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-feedback"]').text()).toBe('This record cannot be retried.')
+    expect(toastMessages()).toContain('This record cannot be retried.')
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-error"]').exists()).toBe(false)
   })
 
@@ -269,7 +269,7 @@ describe('InvoiceFulfilmentTab', () => {
     refuseRetry()
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-feedback"]').exists()).toBe(false)
+    expect(toastMessages()).toEqual([])
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-41"]').exists()).toBe(true)
   })
 
@@ -302,7 +302,7 @@ describe('InvoiceFulfilmentTab', () => {
     acceptRetry()
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-feedback"]').exists()).toBe(false)
+    expect(toastMessages()).toEqual([])
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-41"]').exists()).toBe(true)
   })
 

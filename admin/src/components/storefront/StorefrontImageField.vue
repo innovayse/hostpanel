@@ -19,6 +19,9 @@ import UiUploadZone from '@/components/ui/UiUploadZone.vue'
 import { Icon } from '@/lib/icons'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { ILLUSTRATION_ACCEPT } from '@/lib/mimeTypes'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 
 const { t } = useI18n()
 
@@ -71,12 +74,12 @@ const onSelect = async (file: File): Promise<void> => {
 
 <template>
   <UiField :label="label" :error="shownError">
-    <UiStack direction="row" align="start" wrap class="max-sm:flex-col max-sm:items-stretch">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Start" wrap class="max-sm:flex-col max-sm:items-stretch">
       <UiStack
         v-if="modelValue"
-        align="center"
-        justify="center"
-        gap="none"
+        :align="UiAlignItems.Center"
+        :justify="UiJustify.Center"
+        :gap="UiGap.None"
         class="group relative h-20 w-32 shrink-0 overflow-hidden rounded-lg border border-border"
       >
         <UiImagePreview
@@ -87,16 +90,17 @@ const onSelect = async (file: File): Promise<void> => {
         />
         <UiIconButton
           :label="t('storefront.form.removeImage')"
-          size="sm"
+          :variant="UiButtonVariant.Ghost"
+          :size="UiSize.Sm"
           class="absolute right-1 top-1 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
           :data-testid="`${testid}-remove`"
           @click="emit('update:modelValue', '')"
         >
-          <UiIcon :markup="Icon.Close" size="sm" />
+          <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
         </UiIconButton>
       </UiStack>
 
-      <UiStack gap="sm" class="flex-1 sm:min-w-56">
+      <UiStack :gap="UiGap.Sm" class="flex-1 sm:min-w-56">
         <UiUploadZone
           :accept="ILLUSTRATION_ACCEPT"
           :uploading="uploading"
@@ -107,7 +111,7 @@ const onSelect = async (file: File): Promise<void> => {
         <UiInput
           :model-value="modelValue"
           type="text"
-          size="sm"
+          :size="UiSize.Sm"
           :placeholder="t('storefront.form.pasteImageUrl')"
           :data-testid="`${testid}-url`"
           @update:model-value="emit('update:modelValue', $event)"

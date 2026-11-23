@@ -52,8 +52,6 @@ const baseProps = {
   editTo: (item: { id: number }): string => `/storefront/faqs/${item.id}/edit`,
   emptyLabel: 'No widgets.',
   deleteTitle: 'Delete widget',
-  editLabel: 'Edit widget',
-  deleteLabel: 'Remove widget',
   moveUpLabel: 'Move widget up',
   moveDownLabel: 'Move widget down',
   testids: {

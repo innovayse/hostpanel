@@ -9,18 +9,15 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -38,10 +35,10 @@ import { useKnowledgebaseStore } from '@/stores/knowledgebase'
 import type { KbArticle, KbArticleListFilters, KbCategory } from '@/types/kbarticle'
 import { PublishedFilter } from '@/types/publishedfilter'
 import { Icon } from '@/lib/icons'
-import { UiTableDensity } from '@/utils/ui/injection'
+import { UiGap } from '@/utils/ui/layout'
 import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import { UiTextSize } from '@/utils/ui/text'
 
 const { t, locale } = useI18n()
 
@@ -204,74 +201,66 @@ defineExpose({
       @retry="load"
     />
 
-    <UiCard v-else-if="store.articlesLoading || store.articles.length > 0" data-testid="knowledgebase-articles">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.title') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
-            <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="article in store.articles"
-            :key="article.id"
-            hoverable
-            :data-testid="`knowledgebase-article-${article.id}`"
-          >
-            <UiTableCell>
-              <UiStack gap="xs">
-                <UiText tone="primary" size="md">{{ titleOf(article) }}</UiText>
-                <UiText tone="muted" size="sm">{{ article.slug }}</UiText>
-              </UiStack>
-            </UiTableCell>
-            <UiTableCell muted>{{ article.categoryName }}</UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="article.isPublished"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('shared.published')"
-                :off-label="t('support.knowledgebase.draft')"
-              />
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="articleActions(article)" :testid="`knowledgebase-article-${article.id}-actions`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs" data-testid="knowledgebase-articles-count">
-            {{ t('shared.totalcountRecordsFound', { totalCount: store.articlesTotalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.articlesTotalCount"
-            :page-size="store.pageSize"
-            testid="knowledgebase-articles-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+    <UiDataTable
+      v-else
+      :loading="initialLoading"
+      :empty="!store.articlesLoading && store.articles.length === 0"
+      :page="page"
+      :total="store.articlesTotalCount"
+      :page-size="store.pageSize"
+      pagination-testid="knowledgebase-articles-pagination"
+      data-testid="knowledgebase-articles"
+      @update:page="setPage"
+    >
+      <UiTableHead>
+        <UiTableRow>
+          <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.title') }}</UiTableHeader>
+          <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
+          <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
+          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+        </UiTableRow>
+      </UiTableHead>
+      <UiTableBody>
+        <UiTableRow
+          v-for="article in store.articles"
+          :key="article.id"
+          hoverable
+          :data-testid="`knowledgebase-article-${article.id}`"
+        >
+          <UiTableCell>
+            <UiStack :gap="UiGap.Xs">
+              <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ titleOf(article) }}</UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ article.slug }}</UiText>
+            </UiStack>
+          </UiTableCell>
+          <UiTableCell muted>{{ article.categoryName }}</UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="article.isPublished"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('shared.published')"
+              :off-label="t('support.knowledgebase.draft')"
+            />
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="articleActions(article)" :testid="`knowledgebase-article-${article.id}-actions`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          v-if="narrowed"
+          :title="t('shared.noRecordsFound')"
+          data-testid="knowledgebase-articles-empty-narrowed"
+        />
+        <UiEmptyState
+          v-else
+          :title="t('support.knowledgebase.noArticlesFound')"
+          :description="t('support.knowledgebase.createYourFirstArticleAbove')"
+          data-testid="knowledgebase-articles-empty"
+        />
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        v-if="narrowed"
-        :title="t('shared.noRecordsFound')"
-        data-testid="knowledgebase-articles-empty-narrowed"
-      />
-      <UiEmptyState
-        v-else
-        :title="t('support.knowledgebase.noArticlesFound')"
-        :description="t('support.knowledgebase.createYourFirstArticleAbove')"
-        data-testid="knowledgebase-articles-empty"
-      />
-    </UiCard>
+    </UiDataTable>
   </UiStack>
 </template>

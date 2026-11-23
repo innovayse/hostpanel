@@ -11,8 +11,11 @@ import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
+import { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { useStorefrontList } from '@/composables/useStorefrontList'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
 import { storefrontColumnCaptions } from '@/lib/storefrontList'
@@ -74,11 +77,9 @@ const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartner
     :testids="testids"
     :title="t(navTitleKey(AppRoute.StorefrontPartners))"
     :subtitle="t('storefront.partners.subtitle')"
-    :add-label="t('storefront.partners.add')"
+    :add-label="t('storefront.partners.create')"
     :empty-label="t('storefront.partners.empty')"
     :delete-title="t('storefront.partners.deleteTitle')"
-    :edit-label="t('storefront.partners.edit')"
-    :delete-label="t('storefront.partners.delete')"
     :move-up-label="t('storefront.list.moveUp')"
     :move-down-label="t('storefront.list.moveDown')"
     :columns="columns"
@@ -104,18 +105,18 @@ const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartner
         <UiImage
           :src="item.logoUrl ? storefrontAssetUrl(item.logoUrl) : undefined"
           :alt="nameOf(item)"
-          fit="contain"
-          rounded="md"
-          class="h-10 w-16 border border-border"
+          :fit="UiImageFit.Contain"
+          :rounded="UiImageRounded.Md"
+          :size="UiImageSize.ThumbWide"
           fallback
         />
       </UiTableCell>
       <UiTableCell>
-        <UiText tone="primary" size="lg" class="font-medium">{{ nameOf(item) }}</UiText>
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-medium">{{ nameOf(item) }}</UiText>
       </UiTableCell>
       <UiTableCell muted>{{ item.url || EMPTY_VALUE }}</UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? 'success' : 'neutral'" small>
+        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
           {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
         </UiBadge>
       </UiTableCell>

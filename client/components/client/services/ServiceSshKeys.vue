@@ -10,7 +10,7 @@
     <UiStack v-else-if="loadError" gap="sm">
       <UiAlert variant="error" data-testid="service-ssh-load-error">{{ loadError }}</UiAlert>
       <UiButton variant="outline" size="sm" data-testid="service-ssh-retry" @click="load">
-        {{ $t('client.services.ssh.retry') }}
+        {{ $t('common.retry') }}
       </UiButton>
     </UiStack>
 
@@ -28,13 +28,10 @@
       <UiStack v-if="access.connectCommand" gap="xs">
         <UiText size="xs" tone="muted">{{ $t('client.services.ssh.connectCommand') }}</UiText>
         <UiStack direction="row" gap="sm" align="stretch">
-          <code
-            class="flex-1 min-w-0 overflow-x-auto whitespace-nowrap rounded-lg bg-gray-900 text-gray-100 px-3 py-2 text-xs font-mono"
-            data-testid="service-ssh-command"
-          >{{ access.connectCommand }}</code>
+          <UiCodeBlock class="min-w-0 flex-1 whitespace-nowrap !rounded-lg" data-testid="service-ssh-command">{{ access.connectCommand }}</UiCodeBlock>
           <UiButton variant="secondary" size="sm" data-testid="service-ssh-copy" @click="copy(access.connectCommand)">
             <component :is="copied ? Check : Copy" :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ copied ? $t('client.services.ssh.copied') : $t('client.services.ssh.copy') }}
+            {{ copied ? $t('common.copied') : $t('common.copy') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -63,7 +60,7 @@
             @click="pendingRevoke = key"
           >
             <Trash2 :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ $t('client.services.ssh.revoke') }}
+            {{ $t('common.remove') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -91,7 +88,7 @@
             required
           />
           <template #actions>
-            <UiButton type="submit" :loading="adding" data-testid="service-ssh-add">
+            <UiButton variant="primary" type="submit" :loading="adding" data-testid="service-ssh-add">
               <Plus v-if="!adding" :size="14" :stroke-width="2" class="mr-1.5" />
               {{ $t('client.services.ssh.add') }}
             </UiButton>
@@ -103,9 +100,9 @@
         <template #content-0>
           <UiStack gap="sm">
             <UiText size="sm">{{ $t('client.services.ssh.howToGenerate') }}</UiText>
-            <code class="block overflow-x-auto rounded bg-gray-900 text-gray-100 px-3 py-2 text-xs font-mono">{{ GENERATE_COMMAND }}</code>
+            <UiCodeBlock>{{ GENERATE_COMMAND }}</UiCodeBlock>
             <UiText size="sm">{{ $t('client.services.ssh.howToCopy') }}</UiText>
-            <code class="block overflow-x-auto rounded bg-gray-900 text-gray-100 px-3 py-2 text-xs font-mono">{{ SHOW_PUBLIC_KEY_COMMAND }}</code>
+            <UiCodeBlock>{{ SHOW_PUBLIC_KEY_COMMAND }}</UiCodeBlock>
             <UiText size="sm">{{ $t('client.services.ssh.howToNeverPrivate') }}</UiText>
           </UiStack>
         </template>
@@ -116,13 +113,10 @@
               <UiText size="sm" weight="semibold">{{ $t(`client.services.ssh.deploy.${step.key}`, { secret: DEPLOY_SECRET_NAME }) }}</UiText>
               <UiText v-if="step.hint" size="xs" tone="muted">{{ $t(`client.services.ssh.deploy.${step.hint}`, { secret: DEPLOY_SECRET_NAME }) }}</UiText>
               <UiStack v-if="step.code" direction="row" gap="sm" align="start">
-                <pre
-                  class="flex-1 min-w-0 overflow-x-auto rounded bg-gray-900 text-gray-100 px-3 py-2 text-xs font-mono"
-                  :data-testid="`service-ssh-deploy-${step.key}`"
-                >{{ step.code }}</pre>
+                <UiCodeBlock :as="UiCodeBlockTag.Pre" class="min-w-0 flex-1" :data-testid="`service-ssh-deploy-${step.key}`">{{ step.code }}</UiCodeBlock>
                 <UiButton variant="secondary" size="sm" :data-testid="`service-ssh-deploy-copy-${step.key}`" @click="copySnippet(step.key, step.code)">
                   <component :is="copiedSnippet === step.key ? Check : Copy" :size="14" :stroke-width="2" class="mr-1.5" />
-                  {{ copiedSnippet === step.key ? $t('client.services.ssh.copied') : $t('client.services.ssh.copy') }}
+                  {{ copiedSnippet === step.key ? $t('common.copied') : $t('common.copy') }}
                 </UiButton>
               </UiStack>
             </UiStack>
@@ -135,7 +129,7 @@
       :open="Boolean(pendingRevoke)"
       :title="$t('client.services.ssh.revokeConfirmTitle')"
       :description="$t('client.services.ssh.revokeConfirmDesc', { label: pendingRevoke?.label ?? '', fingerprint: pendingRevoke?.fingerprint ?? '' })"
-      :confirm-label="$t('client.services.ssh.revoke')"
+      :confirm-label="$t('common.remove')"
       variant="danger"
       :loading="Boolean(revokingId)"
       @confirm="confirmRevoke"
@@ -162,7 +156,7 @@ import { SshKeySyncState } from '~/types/sshkeysyncstate'
 import { formatDate } from '~/utils/formatDate'
 import { suggestedLabel } from '~/utils/sshKey'
 import { DEPLOY_KEYGEN_COMMAND, DEPLOY_SECRET_NAME, githubDeployWorkflow, gitlabDeployJob } from '~/utils/sshDeploy'
-import { UiAlertVariant } from '~/utils/ui/enums'
+import { UiAlertVariant, UiCodeBlockTag } from '~/utils/ui/enums'
 
 /** The command that generates an ED25519 key pair. */
 const GENERATE_COMMAND = 'ssh-keygen -t ed25519 -C "you@example.com"'

@@ -35,4 +35,8 @@ describe('UiStatusMessage', () => {
     expect(wrapper.attributes('data-tone')).toBe('danger')
     expect(wrapper.classes()).toContain('text-status-red')
   })
+
+  it('breaks a long unbroken word instead of widening the row', () => {
+    expect(mount(UiStatusMessage, { props: { message: 'Saved.' } }).classes()).toContain('break-words')
+  })
 })

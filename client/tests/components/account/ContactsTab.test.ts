@@ -70,18 +70,19 @@ afterEach(async () => {
 })
 
 describe('ContactsTab', () => {
-  it('shows a skeleton while loading', async () => {
+  it('shows placeholder rows while loading', async () => {
     const wrapper = mountAccount(ContactsTab)
     useAccountStore().contactsLoading = true
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.find('[data-testid="account-contacts-loading"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-loading"]').exists()).toBe(true)
   })
 
   it('shows the empty state without contacts', () => {
     const wrapper = mountAccount(ContactsTab)
 
-    expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.contacts.empty')
+    expect(wrapper.find('[data-testid="ui-table-empty"]').text()).toContain('client.contacts.empty')
+    expect(wrapper.find('[data-testid="contacts-add"]').exists()).toBe(true)
   })
 
   it('lists the contacts of the store', async () => {
@@ -91,6 +92,15 @@ describe('ContactsTab', () => {
 
     expect(wrapper.find('[data-testid="account-contact-7"]').text()).toContain('Ann Lee')
     expect(wrapper.find('[data-testid="account-contact-7"]').text()).toContain('Acme')
+  })
+
+  it('draws the contacts as table rows under name, company, email, phone and action columns', async () => {
+    const wrapper = mountAccount(ContactsTab)
+    useAccountStore().contacts = [contact]
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.findAll('thead th')).toHaveLength(5)
+    expect(wrapper.find('[data-testid="account-contact-7"]').findAll('td')).toHaveLength(5)
   })
 
   it('opens the dialog empty from "add"', async () => {

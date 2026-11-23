@@ -7,11 +7,10 @@
     "item": "Позиция",
     "rate": "Ставка",
     "service": "Услуга",
-    "saveEntries": "Сохранить записи",
     "pleaseFillInAtLeastOne": "Заполните хотя бы одну строку с описанием и часами."
   },
   "addTransaction": {
-    "addNewTransaction": "Добавить новую транзакцию",
+    "title": "Добавить транзакцию",
     "transactionDescription": "Описание транзакции",
     "externalReference": "Внешняя ссылка",
     "invoiceIdOptional": "Счёт (необязательно)",
@@ -27,7 +26,6 @@
     "passwordIsRequired": "Требуется пароль"
   },
   "clientExport": {
-    "exportData": "Экспорт данных",
     "chooseWhichDataPointsTo": "Выберите данные, которые нужно включить в экспорт.",
     "generatingAnExportForA": "Экспорт данных клиента с большой историей может занять некоторое время.",
     "profileData": "Данные профиля",
@@ -108,7 +106,6 @@
     "transferOwnershipToThisUser": "Передать владение этому пользователю",
     "owner": "Владелец",
     "noAccountsLinked": "Связанных аккаунтов нет",
-    "permanentlyDelete": "Удалить безвозвратно",
     "deleteUser": "Удалить пользователя",
     "firstNamePlaceholder": "Имя",
     "lastNamePlaceholder": "Фамилия",
@@ -132,24 +129,22 @@
   "cancellationRequests": {
     "cancellationRequests": "Запросы на отмену",
     "reviewAndProcessServiceCancellation": "Просмотр и обработка запросов на отмену услуг",
-    "deleteRequest": "Удалить запрос",
     "totalcountRequestValue": "Запросов: {totalCount}",
     "noCancellationRequestsFound": "Запросы на отмену не найдены",
     "searchRequests": "Поиск по причине или номеру",
     "noRequestsMatchYourFilters": "Нет запросов на отмену, подходящих под фильтры",
-    "clearFilters": "Сбросить фильтры",
     "deleteCancellationRequest": "Удалить запрос на отмену",
     "areYouSureYouWant": "Вы уверены, что хотите удалить этот запрос на отмену?",
     "requestDeleted": "Запрос на отмену удалён."
   },
   "clientBillableItems": {
     "billableItems": "Оплачиваемые позиции",
-    "addTimeBillingEntries": "Добавить записи учёта времени",
+    "addTimeBillingEntries": "Добавить учёт времени",
     "addBillableItem": "Добавить оплачиваемую позицию",
     "uninvoicedItemsLength": "Невыставленные позиции ({length})",
     "uninvoicedItemsAmountLength": "Невыставленные позиции: {amount} ({length})",
     "invoiceSelectedItems": "Выставить счёт по выбранным позициям",
-    "invoiceSelected": "Счёт",
+    "invoiceSelected": "Выставить счёт",
     "noUninvoicedBillableItems": "Нет невыставленных оплачиваемых позиций.",
     "invoicedItems": "Выставленные позиции",
     "invoicedtotalcountItemValue": "Позиций: {invoicedTotalCount}",
@@ -197,7 +192,7 @@
     "registrarCommands": "Команды регистратора",
     "register": "Зарегистрировать",
     "renew": "Продлить",
-    "modifyContactDetails": "Изменить контактные данные",
+    "modifyContactDetails": "Изменить контакт",
     "getEppCode": "Получить EPP-код",
     "disableIdProtection": "Отключить защиту данных владельца",
     "enableIdProtection": "Включить защиту данных владельца",
@@ -248,7 +243,6 @@
     "selectDueDate": "Выберите срок оплаты",
     "createAsDraft": "Создать как черновик",
     "addItem": "Добавить позицию",
-    "createInvoice2": "Создать счёт",
     "allStatuses": "Все статусы",
     "clientinvoicestotalInvoiceValue": "Счетов: {clientInvoicesTotal}",
     "deleteInvoice": "Удалить счёт",
@@ -258,9 +252,6 @@
   },
   "clientNav": {
     "strip": "Вкладки разделов клиента"
-  },
-  "clientLayout": {
-    "exportData": "Экспорт данных"
   },
   "clientLog": {
     "activityLog": "Журнал активности",
@@ -272,7 +263,7 @@
   "clientOpenTicket": {
     "ticketSubject": "Тема тикета",
     "describeTheIssue": "Опишите проблему",
-    "openTicket": "Открыть тикет"
+    "createTicket": "Создать тикет"
   },
   "clientProfile": {
     "statusEffects": {
@@ -302,19 +293,17 @@
     "noContactsAddedYet": "Контакты пока не добавлены"
   },
   "clientQuotes": {
-    "createNewQuote": "Создать новое предложение",
     "createDate": "Дата создания",
     "noQuotesFound": "Предложения не найдены.",
     "clientquotestotalQuoteValue": "Предложений: {clientQuotesTotal}",
     "deleteQuote": "Удалить предложение",
     "confirmDeleteQuote": "Вы уверены, что хотите удалить предложение #{id}?",
     "quoteDeleted": "Предложение удалено.",
-    "noQuotesMatchYourFilters": "Предложения по вашим фильтрам не найдены",
-    "clearFilters": "Сбросить фильтры"
+    "noQuotesMatchYourFilters": "Предложения по вашим фильтрам не найдены"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Услуга №{id}: {productName}",
-    "loginToControlPanel": "Открыть панель",
+    "loginToControlPanel": "Открыть панель управления",
     "serviceInfo": "Сведения об услуге",
     "order": "Заказ №",
     "server": "Сервер",
@@ -322,12 +311,10 @@
     "dedicatedIp": "Выделенный IP",
     "moduleCommands": "Команды модуля",
     "serviceTerminated": "Услуга завершена",
-    "create": "Создать",
     "terminate": "Завершить",
     "suspend": "Приостановить",
     "changePackage": "Сменить тариф",
     "unsuspend": "Возобновить",
-    "changeStatus": "Изменить статус",
     "addons": "Дополнения",
     "noAddonsFound": "Дополнения не найдены.",
     "billing": "Оплата",
@@ -347,7 +334,6 @@
     "enterANewPasswordFor": "Введите новый пароль для хостинг-аккаунта.",
     "newPassword": "Новый пароль",
     "enterNewPassword": "Введите новый пароль",
-    "confirm": "Подтвердить",
     "enterTheNewHostingPackage": "Введите название нового хостинг-пакета.",
     "packageName": "Название пакета",
     "eGStarterPlan": "например, starter_plan",
@@ -355,11 +341,6 @@
     "areYouSureYouWant": "Вы уверены, что хотите приостановить эту услугу? Клиент потеряет доступ, пока услуга не будет возобновлена.",
     "terminateService": "Завершить услугу",
     "thisActionCannotBeUndone": "Это действие нельзя отменить. Услуга будет завершена безвозвратно.",
-    "saveServiceInfo": "Сохранить данные услуги",
-    "saveBilling": "Сохранить оплату",
-    "saveAutomation": "Сохранить автоматизацию",
-    "saveNotes": "Сохранить заметки",
-    "saveTerminationDate": "Сохранить дату прекращения",
     "changeStatusTo": "Сменить статус на {status}",
     "provisioned": "Услуга создана на сервере.",
     "passwordChanged": "Пароль изменён.",
@@ -373,13 +354,12 @@
     "totalcountServiceValue": "Услуг: {totalCount}",
     "noServicesFoundForThis": "Для этого клиента услуги не найдены",
     "searchServices": "Поиск по домену, продукту или ID",
-    "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам",
-    "clearFilters": "Сбросить фильтры"
+    "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам"
   },
   "clientsList": {
     "manageYourClientAccounts": "Управление аккаунтами клиентов",
     "searchPlaceholder": "Поиск по имени, компании или ID",
-    "addClient": "Добавить клиента",
+    "createClient": "Создать клиента",
     "searchByEmail": "Поиск по почте",
     "searchByPhone": "Поиск по телефону",
     "2fa": "2FA",
@@ -391,7 +371,6 @@
     "off": "Выкл.",
     "noClientsMatchYourFilters": "Нет клиентов, соответствующих фильтрам",
     "noClientsFound": "Клиенты не найдены",
-    "clearFilters": "Сбросить фильтры",
     "suspended": "Приостановлено",
     "closed": "Закрыто"
   },
@@ -407,7 +386,6 @@
     "twoFactorAuth": "Двухфакторная аутентификация",
     "contacts": "Контакты",
     "noAdditionalContacts": "Дополнительных контактов нет",
-    "viewAll": "Показать все →",
     "invoicesBilling": "Счета / оплата",
     "paid": "Оплачено",
     "draft": "Черновик",
@@ -420,8 +398,6 @@
     "clientExpenses": "Расходы клиента",
     "netIncome": "Чистый доход",
     "creditBalance": "Кредитный баланс",
-    "createInvoice": "Создать счёт",
-    "createNewQuote": "Создать новое предложение",
     "productsServices": "Продукты / услуги",
     "activeServices": "Активные услуги",
     "activeservicescountTotalservicescountTotal": "{activeServicesCount} (всего {totalServicesCount})",
@@ -447,7 +423,6 @@
     "ticketSettings": "Настройки тикета",
     "noRepliesYet": "Ответов пока нет",
     "typeYourReply": "Введите ваш ответ",
-    "reply": "Ответить",
     "conversation": "Переписка",
     "staff": "Сотрудник",
     "deleteTicket": "Удалить тикет",
@@ -459,7 +434,6 @@
   },
   "clientTickets": {
     "tickets": "Тикеты",
-    "openNewTicket": "Открыть новый тикет +",
     "openedThisMonth": "Открыто в этом месяце",
     "openedLastMonth": "Открыто в прошлом месяце",
     "openedThisYear": "Открыто в этом году",
@@ -467,11 +441,10 @@
     "dateOpened": "Дата открытия",
     "noDataAvailableInTable": "В таблице нет данных",
     "noTicketsMatchYourFilters": "Нет тикетов, соответствующих фильтрам",
-    "clearFilters": "Сбросить фильтры",
     "totalcountTicketValue": "Тикетов: {totalCount}"
   },
   "clientTransactions": {
-    "addNewTransaction": "Добавить новую транзакцию",
+    "addTransaction": "Добавить транзакцию",
     "totalIn": "Всего поступлений",
     "totalFees": "Всего комиссий",
     "totalOut": "Всего расходов",
@@ -480,24 +453,20 @@
     "confirmDeleteTransaction": "Вы уверены, что хотите удалить транзакцию #{id}?",
     "transactionAdded": "Транзакция добавлена.",
     "transactionDeleted": "Транзакция удалена.",
-    "noTransactionsMatchYourFilters": "Транзакции по вашим фильтрам не найдены",
-    "clearFilters": "Сбросить фильтры"
+    "noTransactionsMatchYourFilters": "Транзакции по вашим фильтрам не найдены"
   },
   "clientUsers": {
     "usersLength": "Пользователи ({length})",
-    "addUser": "Добавить пользователя",
     "addUserToAccount": "Добавить пользователя в аккаунт",
     "searchExisting": "Найти существующего",
     "inviteByEmail": "Пригласить по почте",
     "permissions": "Права доступа",
-    "addUser2": "Добавить пользователя",
     "sendInvite": "Отправить приглашение",
     "role": "Роль",
     "lastLogin": "Последний вход",
     "owner": "Владелец",
     "user": "Пользователь",
     "manage": "Управление",
-    "remove": "Удалить",
     "noUsersLinkedToThis": "К этому клиенту не привязано ни одного пользователя.",
     "transferOwnership": "Передача владения",
     "transfer": "Передать",
@@ -522,11 +491,9 @@
   "manageUsers": {
     "manageUsers": "Управление пользователями",
     "viewAndManageUserAccounts": "Просмотр учётных записей пользователей и управление ими",
-    "addClient": "Добавить клиента",
     "searchByNameOrEmail": "Поиск по имени или почте",
     "lastLogin": "Последний вход",
-    "manageUser": "Управление пользователем",
-    "sendPasswordResetEmail": "Отправить письмо для сброса пароля",
+    "sendPasswordResetEmail": "Отправить письмо для сброса",
     "totalcountUserValue": "Пользователей: {totalCount}",
     "noUsersFound": "Пользователи не найдены",
     "noUsersMatchYourSearch": "Нет пользователей, подходящих под поиск",
@@ -534,7 +501,8 @@
     "never": "Никогда",
     "userSaved": "Пользователь сохранён.",
     "userDeleted": "Пользователь удалён.",
-    "passwordChanged": "Пароль изменён."
+    "passwordChanged": "Пароль изменён.",
+    "passwordsManagedBySso": "Паролями управляет служба единого входа, поэтому изменить или сбросить их здесь нельзя."
   },
   "serviceAddons": {
     "serviceAddons": "Дополнения к услугам",
@@ -547,19 +515,18 @@
     "log": "Журнал"
   },
   "addExistingService": {
-    "open": "Добавить существующий аккаунт",
+    "open": "Добавить аккаунт",
     "title": "Добавить существующий хостинг-аккаунт",
     "intro": "Для аккаунта, который уже есть на сервере: восстановлен, перенесён с другого сервера или создан вручную. Услуга сразу активна; на панели ничего не создаётся, письмо не отправляется.",
     "username": "Имя пользователя на панели",
     "recurringAmount": "Сумма продления",
     "startedAt": "Начало текущего периода",
-    "today": "Сегодня",
-    "add": "Добавить услугу"
+    "today": "Сегодня"
   },
   "vat": {
     "title": "Номер плательщика НДС",
     "none": "Номер плательщика НДС не указан. Укажите его как налоговый номер в профиле клиента.",
-    "check": "Проверить снова",
+    "check": "Проверить номер НДС",
     "checked": "Номер плательщика НДС проверен.",
     "checkedAt": "Проверено {date}",
     "status": {
@@ -576,7 +543,7 @@
     "accountId": "Идентификатор аккаунта",
     "accountIdHint": "Идентификатор, который эта система присвоила клиенту.",
     "accountIdPlaceholder": "Введите идентификатор аккаунта",
-    "clear": "Убрать связь",
+    "remove": "Убрать связь",
     "clearConfirmTitle": "Убрать связь с внешним аккаунтом?",
     "clearConfirmMessage": "Клиент больше не будет связан с аккаунтом в другой системе. Связь можно создать снова позже.",
     "saved": "Связь с внешним аккаунтом сохранена.",
@@ -619,8 +586,8 @@
   "clientGroups": {
     "title": "Группы клиентов",
     "subtitle": "Сегменты клиентов со скидкой и цветом.",
-    "add": "Добавить группу",
-    "createTitle": "Новая группа клиентов",
+    "add": "Создать группу",
+    "createTitle": "Создать группу клиентов",
     "editTitle": "Изменение группы клиентов",
     "empty": "Групп клиентов пока нет.",
     "namePlaceholder": "Например, Реселлеры",

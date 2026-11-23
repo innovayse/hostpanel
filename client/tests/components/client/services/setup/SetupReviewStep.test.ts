@@ -28,6 +28,10 @@ describe('SetupReviewStep', () => {
     expect(mountStep({ error: 'Provisioning failed.' }).find('[data-testid="setup-error"]').text()).toBe('Provisioning failed.')
   })
 
+  it('labels the back button with the shared back key', () => {
+    expect(mountStep().find('[data-testid="setup-change"]').text()).toBe('common.back')
+  })
+
   it('starts provisioning and goes back', async () => {
     const wrapper = mountStep()
 

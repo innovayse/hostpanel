@@ -21,7 +21,7 @@ import ClientStatusConfirmDialog from '@/components/clients/ClientStatusConfirmD
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiDetailCards from '@/components/ui/UiDetailCards.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPhoneInput from '@/components/ui/UiPhoneInput.vue'
@@ -29,20 +29,21 @@ import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiButtonVariant, UiButtonType } from '@/utils/ui/button'
+import { UiAlignItems, UiJustify, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone, UiHeadingVariant } from '@/utils/ui/text'
 import { CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH, CLIENT_TAX_ID_MAX_LENGTH, NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { PROFILE_CONTACTS_PART, PROFILE_CONTACTS_TABLE, PROFILE_FORM_PART } from '@/views/ClientProfileView.schema'
+import { PROFILE_CONTACTS_TABLE, PROFILE_FORM_PART } from '@/views/ClientProfileView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiInputType } from '@/utils/ui/input'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -348,7 +349,7 @@ onBeforeUnmount(() => {
   <UiStack v-if="store.current">
     <UiSchemaForm :columns="PROFILE_FORM_PART.columns" :errors="errors" :hints="hints" @submit="handleSave">
       <template #field-identity>
-        <UiStack direction="row" gap="lg">
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg">
           <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
             {{ t('clients.clientProfile.clientId') }} {{ id }}
           </UiText>
@@ -361,7 +362,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="email"
-          type="email"
+          :type="UiInputType.Email"
           :placeholder="t('shared.examples.email')"
           data-testid="client-profile-email"
         />
@@ -370,7 +371,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="firstName"
-          type="text"
+          :type="UiInputType.Text"
           :invalid="invalid"
           :placeholder="t('shared.firstName')"
           data-testid="client-profile-first-name"
@@ -381,7 +382,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="lastName"
-          type="text"
+          :type="UiInputType.Text"
           :invalid="invalid"
           :placeholder="t('shared.lastName')"
           data-testid="client-profile-last-name"
@@ -392,7 +393,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="companyName"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('shared.company')"
           data-testid="client-profile-company"
         />
@@ -423,7 +424,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="street"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('clients.clientProfile.streetAddress')"
           data-testid="client-profile-street"
         />
@@ -432,7 +433,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="address2"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('clients.clientProfile.suiteAptEtc')"
           data-testid="client-profile-address2"
         />
@@ -441,7 +442,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="city"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('shared.city')"
           data-testid="client-profile-city"
         />
@@ -450,7 +451,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="state"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('shared.state')"
           data-testid="client-profile-state"
         />
@@ -459,7 +460,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="postCode"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('shared.postcode')"
           data-testid="client-profile-postcode"
         />
@@ -475,7 +476,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="paymentMethod"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('shared.creditCardBankTransfer')"
           data-testid="client-profile-payment-method"
         />
@@ -484,7 +485,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="billingContact"
-          type="text"
+          :type="UiInputType.Text"
           :placeholder="t('clients.clientProfile.billingContactName')"
           data-testid="client-profile-billing-contact"
         />
@@ -534,7 +535,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="settings.taxId"
-          type="text"
+          :type="UiInputType.Text"
           :maxlength="CLIENT_TAX_ID_MAX_LENGTH"
           :placeholder="t('shared.taxIdPlaceholder')"
           data-testid="client-profile-tax-id"
@@ -544,7 +545,7 @@ onBeforeUnmount(() => {
         <UiInput
           :id="fieldId"
           v-model="settings.taxExemptionReason"
-          type="text"
+          :type="UiInputType.Text"
           :maxlength="CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH"
           :placeholder="t('shared.taxExemptionReasonPlaceholder')"
           data-testid="client-profile-tax-exemption-reason"
@@ -562,15 +563,15 @@ onBeforeUnmount(() => {
       </template>
 
       <!-- Below md the notice and both buttons are one full-width column, so Cancel and Save are the same size; from md up they are a row at the right. -->
-      <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" gap="sm" reflow-below-md>
-        <UiAlert v-if="saveSuccess" variant="success" class="flex-1" data-testid="client-profile-saved">
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm" reflow-below-md>
+        <UiAlert v-if="saveSuccess" :variant="UiTone.Success" class="flex-1" data-testid="client-profile-saved">
           {{ t('shared.changesSavedSuccessfully') }}
         </UiAlert>
-        <UiAlert v-if="saveError" variant="error" class="flex-1" data-testid="client-profile-error">
+        <UiAlert v-if="saveError" :variant="UiTone.Danger" class="flex-1" data-testid="client-profile-error">
           {{ saveError }}
         </UiAlert>
         <UiButton :action="UiActionKind.Cancel"
-          type="button"
+          :type="UiButtonType.Button"
           :variant="UiButtonVariant.Secondary"
           data-testid="client-profile-cancel"
           @click="handleCancel"
@@ -578,43 +579,39 @@ onBeforeUnmount(() => {
           {{ t('shared.cancel') }}
         </UiButton>
         <UiButton :action="UiActionKind.Save"
-          type="submit"
+          :type="UiButtonType.Submit"
           :variant="UiButtonVariant.Primary"
           :loading="saving"
           data-testid="client-profile-save"
         >
-          {{ t('shared.saveChanges') }}
+          {{ t('shared.save') }}
         </UiButton>
       </UiStack>
     </UiSchemaForm>
 
-    <UiDetailCards :columns="PROFILE_CONTACTS_PART.columns" data-testid="client-profile-contacts-card">
-      <template #card-contacts>
-        <UiStack>
-          <UiHeading :level="2" variant="card">
-            {{ t('clients.clientProfile.contactsLength', { length: store.current.contacts.length }) }}
-          </UiHeading>
-          <UiTable
-            :empty-text="t('clients.clientProfile.noContactsAddedYet')"
-            :density="UiTableDensity.Comfortable"
-            :empty="store.current.contacts.length === 0"
-            data-testid="client-profile-contacts"
-          >
-            <UiSchemaTableHead :columns="PROFILE_CONTACTS_TABLE.columns" />
-            <UiTableBody divided>
-              <UiTableRow v-for="contact in store.current.contacts" :key="contact.id" hoverable>
-                <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
-                <UiTableCell muted>{{ contact.email }}</UiTableCell>
-                <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
-                <UiTableCell>
-                  <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
-                </UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
-        </UiStack>
+    <UiDataTable
+      :empty-text="t('clients.clientProfile.noContactsAddedYet')"
+      :density="UiTableDensity.Comfortable"
+      :empty="store.current.contacts.length === 0"
+      data-testid="client-profile-contacts"
+    >
+      <template #header>
+        <UiHeading :level="2" :variant="UiHeadingVariant.Card" data-testid="client-profile-contacts-title">
+          {{ t('clients.clientProfile.contactsLength', { length: store.current.contacts.length }) }}
+        </UiHeading>
       </template>
-    </UiDetailCards>
+      <UiSchemaTableHead :columns="PROFILE_CONTACTS_TABLE.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="contact in store.current.contacts" :key="contact.id" hoverable>
+          <UiTableCell>{{ contact.firstName }} {{ contact.lastName }}</UiTableCell>
+          <UiTableCell muted>{{ contact.email }}</UiTableCell>
+          <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
 
     <ClientStatusConfirmDialog
       v-if="pendingStatus"

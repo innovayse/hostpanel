@@ -2,7 +2,6 @@
   "plugins": {
     "tableEmpty": "Nothing here yet.",
     "chatMessage": "Your message",
-    "chatSend": "Send",
     "chatStop": "Stop",
     "unavailable": "This part is not available right now.",
     "workspaceBack": "Back",
@@ -11,10 +10,8 @@
     "previewDesktop": "Desktop",
     "previewPhone": "Phone",
     "previewOpen": "Open",
-    "previewSelect": "Select",
     "previewSelectDone": "Finish selecting",
     "previewSelectHint": "Selection mode: click or tap an element. Click it again to remove it. Press Esc to leave.",
-    "chatSelectionRemove": "Remove",
     "chatSelectionStale": "This page changed after you selected these elements. Select them again, then send your message.",
     "previewEmpty": "Nothing to preview yet.",
     "previewInsecure": "The preview needs a secure connection. Over plain http this browser hides what the panel checks before showing a site, so the preview stays off. Open the panel over https.",
@@ -27,10 +24,8 @@
     "chatHint": "Enter to send, Shift+Enter for a new line",
     "chatCopy": "Copy reply",
     "chatCopyCode": "Copy code",
-    "chatCopied": "Copied",
     "openUrlBlocked": "This browser blocked the new tab. Allow pop-ups for this site and try again.",
     "openUrlRefused": "The plugin answered with an address that cannot be opened.",
-    "chatRetry": "Retry",
     "chatWriting": "Writing a reply"
   }
 }

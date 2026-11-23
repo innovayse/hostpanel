@@ -25,6 +25,7 @@ describe('DomainRemindersTable', () => {
     })
 
     expect(wrapper.findAll('tbody tr')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Domain Reminder History')
     expect(wrapper.text()).toContain('30 days before expiry')
     expect(wrapper.text()).toContain('a@example.com')
   })

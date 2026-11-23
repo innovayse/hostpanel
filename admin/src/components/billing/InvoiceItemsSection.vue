@@ -14,7 +14,6 @@ import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -24,15 +23,19 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatPlainAmount } from '@/lib/money'
 import { nextRowKey } from '@/lib/rowKey'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
-import { UiTone } from '@/utils/ui/tone'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -95,10 +98,7 @@ const lines = ref<EditableLine[]>([])
 const saving = ref(false)
 
 /** The outcome line of the last save, shown next to the save button. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** Ids of existing lines the operator removed; they are sent as deletions on save. */
 const removedIds = ref<number[]>([])
@@ -199,7 +199,6 @@ const deleteSelected = (): void => {
  * @returns Resolves when the request has settled.
  */
 const save = async (): Promise<void> => {
-  feedback.clear()
   saving.value = true
   // The API changes only the lines it is told about, so a removed line must be sent as a deletion.
   const kept: InvoiceItemUpdate[] = lines.value.map((line) => ({
@@ -265,9 +264,9 @@ watch(
 
 <template>
   <UiStack>
-    <UiCard padding="md" data-testid="billing-invoice-items">
-      <UiStack gap="sm">
-        <UiHeading :level="3" variant="card">
+    <UiCard :padding="UiCardPadding.Md" data-testid="billing-invoice-items">
+      <UiStack :gap="UiGap.Sm">
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">
           {{ t('shared.invoiceItems') }}
         </UiHeading>
 
@@ -280,7 +279,7 @@ watch(
           data-testid="billing-invoice-items-table"
         >
           <UiSchemaTableHead :columns="INVOICE_ITEMS_TABLE.columns" />
-          <UiTableBody divided>
+          <UiTableBody>
             <UiTableRow v-for="item in invoice.items" :key="item.id" hoverable>
               <UiTableCell>{{ item.description }}</UiTableCell>
               <UiTableCell numeric>{{ formatPlainAmount(item.amount, props.invoice.currency) }}</UiTableCell>
@@ -307,7 +306,7 @@ watch(
               <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
-          <UiTableBody divided>
+          <UiTableBody>
             <UiTableRow
               v-for="(line, index) in lines"
               :key="line.key"
@@ -350,12 +349,12 @@ watch(
           </UiTableBody>
         </UiTable>
 
-        <UiStack v-if="!readonly" direction="row" justify="between" align="center" wrap>
-          <UiStack direction="row" gap="sm" align="center">
-            <UiText tone="secondary" size="md">{{ t('shared.withSelected') }}</UiText>
+        <UiStack v-if="!readonly" :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" wrap>
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
+            <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('shared.withSelected') }}</UiText>
             <UiButton :action="UiActionKind.Delete"
-              variant="danger"
-              size="sm"
+              :variant="UiButtonVariant.Danger"
+              :size="UiSize.Sm"
               :disabled="selection.count.value === 0"
               data-testid="billing-invoice-items-delete-selected"
               @click="deleteSelected"
@@ -363,15 +362,15 @@ watch(
               {{ t('shared.delete') }}
             </UiButton>
           </UiStack>
-          <UiButton :action="UiActionKind.Add" variant="secondary" size="sm" data-testid="billing-invoice-items-add" @click="addLine">
-            {{ t('shared.addItem') }}
+          <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-invoice-items-add" @click="addLine">
+            {{ t('billing.actions.addItem') }}
           </UiButton>
         </UiStack>
 
-        <UiStack align="end" gap="xs" data-testid="billing-invoice-totals">
-          <UiStack v-for="row in totalRows" :key="row.key" direction="row" gap="lg" align="center">
-            <UiText :tone="row.strong ? 'primary' : 'muted'" size="md">{{ row.label }}</UiText>
-            <UiText :tone="row.strong ? 'primary' : 'secondary'" size="md" :data-testid="`billing-invoice-total-${row.key}`">
+        <UiStack :align="UiAlignItems.End" :gap="UiGap.Xs" data-testid="billing-invoice-totals">
+          <UiStack v-for="row in totalRows" :key="row.key" :direction="UiDirection.Row" :gap="UiGap.Lg" :align="UiAlignItems.Center">
+            <UiText :tone="row.strong ? UiTextTone.Primary : UiTextTone.Muted" :size="UiTextSize.Md">{{ row.label }}</UiText>
+            <UiText :tone="row.strong ? UiTextTone.Primary : UiTextTone.Secondary" :size="UiTextSize.Md" :data-testid="`billing-invoice-total-${row.key}`">
               {{ formatPlainAmount(row.value, props.invoice.currency) }}
             </UiText>
           </UiStack>
@@ -379,20 +378,19 @@ watch(
       </UiStack>
     </UiCard>
 
-    <UiStack v-if="!readonly" direction="row" justify="center" gap="sm">
+    <UiStack v-if="!readonly" :direction="UiDirection.Row" :justify="UiJustify.Center" :gap="UiGap.Sm">
       <UiButton :action="UiActionKind.Save"
-        variant="primary"
+        :variant="UiButtonVariant.Primary"
         :loading="saving"
         :disabled="saving"
         data-testid="billing-invoice-items-save"
         @click="save"
       >
-        {{ t('shared.saveChanges') }}
+        {{ t('shared.save') }}
       </UiButton>
-      <UiButton :action="UiActionKind.Cancel" variant="secondary" data-testid="billing-invoice-items-cancel" @click="populate">
-        {{ t('shared.cancelChanges') }}
+      <UiButton :action="UiActionKind.Cancel" :variant="UiButtonVariant.Secondary" data-testid="billing-invoice-items-cancel" @click="populate">
+        {{ t('shared.cancel') }}
       </UiButton>
     </UiStack>
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-invoice-items-feedback" />
   </UiStack>
 </template>

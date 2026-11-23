@@ -11,6 +11,9 @@ import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
+import { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
@@ -73,11 +76,9 @@ const editRoute = (item: Project): string => editPath(AppRoute.StorefrontProject
     :testids="testids"
     :title="t(navTitleKey(AppRoute.StorefrontProjects))"
     :subtitle="t('storefront.projects.subtitle')"
-    :add-label="t('storefront.projects.add')"
+    :add-label="t('storefront.projects.create')"
     :empty-label="t('storefront.projects.empty')"
     :delete-title="t('storefront.projects.deleteTitle')"
-    :edit-label="t('storefront.projects.edit')"
-    :delete-label="t('storefront.projects.delete')"
     :move-up-label="t('storefront.list.moveUp')"
     :move-down-label="t('storefront.list.moveDown')"
     :columns="columns"
@@ -103,21 +104,21 @@ const editRoute = (item: Project): string => editPath(AppRoute.StorefrontProject
         <UiImage
           :src="item.imageUrls[0] ? storefrontAssetUrl(item.imageUrls[0]) : undefined"
           :alt="projectName(item)"
-          fit="cover"
-          rounded="md"
-          class="h-10 w-16 border border-border"
+          :fit="UiImageFit.Cover"
+          :rounded="UiImageRounded.Md"
+          :size="UiImageSize.ThumbWide"
           fallback
         />
       </UiTableCell>
       <UiTableCell>
-        <UiText tone="primary" size="lg" class="font-medium">{{ projectName(item) }}</UiText>
-        <UiText v-if="displayTranslation(item.translations)?.summary" tone="muted" size="xs">
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="font-medium">{{ projectName(item) }}</UiText>
+        <UiText v-if="displayTranslation(item.translations)?.summary" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">
           {{ displayTranslation(item.translations)?.summary }}
         </UiText>
       </UiTableCell>
       <UiTableCell muted class="font-mono">{{ item.slug }}</UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? 'success' : 'neutral'" small>
+        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
           {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
         </UiBadge>
       </UiTableCell>

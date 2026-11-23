@@ -13,7 +13,7 @@ import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -21,14 +21,11 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -45,10 +42,10 @@ import type { DomainListFilters, DomainRegistration } from '@/types/domain'
 import { RegistrarModule } from '@/types/registrarmodule'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiSize } from '@/utils/ui/size'
 import { useListQuery } from '@/composables/useListQuery'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiTextSize } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -187,91 +184,79 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading">
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="initialLoading"
-        data-testid="domains-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody>
-          <UiTableRow
-            v-for="domain in store.domains"
-            :key="domain.id"
-            hoverable
-            bordered
-            :data-testid="`domains-row-${domain.id}`"
-          >
-            <UiTableCell>
-              <UiLink
-                variant="link"
-                :to="clientItemPath(domain.clientId, ClientSection.Domains, domain.id)"
-                :data-testid="`domains-name-${domain.id}`"
-              >
-                {{ domain.name }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiLink variant="link" :to="clientPath(domain.clientId)" :data-testid="`domains-client-${domain.id}`">
-                {{ domain.clientName }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell muted hide-below="lg">{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ yearsLabel(domain.regPeriodYears) }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="domainStatusTone(domain.status)" small>
-                {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
-              </UiBadge>
-            </UiTableCell>
-            <UiTableCell muted hide-below="xl">{{ formatDate(domain.nextDueDate) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
-            <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="domain.autoRenew"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('shared.yes')"
-                :off-label="t('shared.no')"
-              />
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="domainActions(domain)" :testid="`domains-actions-${domain.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-            {{ t('shared.totalcountDomainValue', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            testid="domains-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!hasRows && !store.loading"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="domains-pagination"
+      data-testid="domains-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="domain in store.domains"
+          :key="domain.id"
+          hoverable
+          :data-testid="`domains-row-${domain.id}`"
+        >
+          <UiTableCell>
+            <UiLink
+              :variant="UiButtonVariant.Link"
+              :to="clientItemPath(domain.clientId, ClientSection.Domains, domain.id)"
+              :data-testid="`domains-name-${domain.id}`"
+            >
+              {{ domain.name }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiLink :variant="UiButtonVariant.Link" :to="clientPath(domain.clientId)" :data-testid="`domains-client-${domain.id}`">
+              {{ domain.clientName }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell muted hide-below="lg">{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell muted hide-below="xl">{{ yearsLabel(domain.regPeriodYears) }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="domainStatusTone(domain.status)" small>
+              {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
+            </UiBadge>
+          </UiTableCell>
+          <UiTableCell muted hide-below="xl">{{ formatDate(domain.nextDueDate) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
+          <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="domain.autoRenew"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('shared.yes')"
+              :off-label="t('shared.no')"
+            />
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="domainActions(domain)" :testid="`domains-actions-${domain.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('domains.domainsList.noDomainsMatchYourFilters') : t('domains.domainsList.noDomainsFound')"
+          data-testid="domains-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Globe" :size="UiSize.Lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="domains-clear-empty" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('domains.domainsList.noDomainsMatchYourFilters') : t('domains.domainsList.noDomainsFound')"
-        data-testid="domains-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Globe" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="domains-clear-empty" @click="clearAll">
-            {{ t('domains.domainsList.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
   </UiStack>
 </template>

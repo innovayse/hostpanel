@@ -33,6 +33,15 @@ describe('UiIconButton', () => {
   })
 })
 
+describe('UiIconButton position', () => {
+  it('is not its own positioning context without a badge, so a caller can place it absolutely', () => {
+    const wrapper = mount(UiIconButton, { props: { label: 'a' }, attrs: { class: 'absolute right-1 top-1' } })
+
+    expect(wrapper.classes()).toContain('absolute')
+    expect(wrapper.classes()).not.toContain('relative')
+  })
+})
+
 describe('UiIconButton badge', () => {
   it('lays the badge on the top-right corner, a dot below sm and the count from sm up, and draws none without one', () => {
     const plain = mount(UiIconButton, { props: { label: 'a' } })

@@ -1,5 +1,5 @@
 <template>
-  <section :id="HomeSectionId.Services" :class="[HOME_SECTION_SCROLL_MARGIN_CLASS, 'py-14 md:py-20 bg-classic-page']" data-testid="sections-products">
+  <UiSection :id="HomeSectionId.Services" :contained="false" padding="lg" :class="[HOME_SECTION_SCROLL_MARGIN_CLASS, 'bg-classic-page']" data-testid="sections-products">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -14,14 +14,14 @@
       </UiBalancedGrid>
 
       <!-- View all -->
-      <div class="mt-12 text-center">
-        <UiButton variant="primary" :to="localePath(SITE_PRODUCTS_PATH)" data-testid="home-products-all">
-          <span>{{ $t('hostingSections.plans.viewAll') }}</span>
+      <UiStack align="center" gap="none" class="mt-12">
+        <UiButton variant="primary" size="md" :to="localePath(SITE_PRODUCTS_PATH)" data-testid="home-products-all">
+          {{ $t('hostingSections.plans.viewAll') }}
           <ArrowRight :size="20" :stroke-width="2" class="ml-2" />
         </UiButton>
-      </div>
+      </UiStack>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

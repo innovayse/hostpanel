@@ -95,7 +95,7 @@ describe('ProductFormModal', () => {
     stubRouteTable(lists)
     const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
 
-    expect(wrapper.get('h2').text()).toBe('Create New Product')
+    expect(wrapper.get('h2').text()).toBe('Create product')
     expect(wrapper.get('[data-testid="product-form-type-SharedHosting"]').attributes('aria-pressed')).toBe('true')
     expect(wrapper.find('[data-testid="product-form-type-Vps"]').exists()).toBe(true)
   })
@@ -411,7 +411,7 @@ describe('ProductFormModal', () => {
     stubRouteTable(lists)
     const { wrapper } = await mountScreen(ProductFormModal, { product: stored, groups, saving: false })
 
-    expect(wrapper.get('h2').text()).toBe('Edit Product')
+    expect(wrapper.get('h2').text()).toBe('Edit product')
     expect(wrapper.find('[data-testid="product-form-type-Vps"]').exists()).toBe(false)
     expect((wrapper.get('[data-testid="product-form-name"]').element as HTMLInputElement).value).toBe('Pro Plan')
     expect(wrapper.get('[data-testid="product-form-hidden"]').attributes('aria-checked')).toBe('true')

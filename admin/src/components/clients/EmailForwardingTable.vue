@@ -8,7 +8,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDomainsStore } from '@/stores/domains'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -16,7 +16,6 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiSectionHeader from '@/components/ui/UiSectionHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
@@ -27,9 +26,12 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiInputType } from '@/utils/ui/input'
 import { UiSize } from '@/utils/ui/size'
-import { UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { EmailForwardingRuleItem } from '@/types/domain'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -66,10 +68,7 @@ const store = useDomainsStore()
 const saving = ref(false)
 
 /** The outcome line of the last change, shown under the heading. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /**
  * Shows the outcome of one change: the success sentence, or the API's sentence of the refusal.
@@ -163,7 +162,6 @@ const saveDraft = async (): Promise<void> => {
     return
   }
   const id = editingId.value
-  feedback.clear()
   saving.value = true
   const ok = id === null
     ? await store.addForwardingRule(props.domainId, source, destination)
@@ -183,7 +181,6 @@ const saveDraft = async (): Promise<void> => {
  * @returns Promise that resolves when the toggle completes.
  */
 const toggleActive = async (rule: EmailForwardingRuleItem): Promise<void> => {
-  feedback.clear()
   saving.value = true
   const updated = await store.updateForwardingRule(props.domainId, rule.id, {
     source: rule.source,
@@ -227,7 +224,6 @@ const confirmDelete = async (): Promise<void> => {
   if (ruleId === null) {
     return
   }
-  feedback.clear()
   saving.value = true
   deleting.value = true
   const deleted = await store.deleteForwardingRule(props.domainId, ruleId)
@@ -285,9 +281,9 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
 </script>
 
 <template>
-  <UiCard padding="md">
+  <UiCard :padding="UiCardPadding.Md">
     <UiStack>
-      <UiSectionHeader :level="2" variant="section">
+      <UiSectionHeader :level="2" :variant="UiHeadingVariant.Section">
         {{ t('clients.emailForwardingTable.emailForwardingRules') }}
 
         <template #actions>
@@ -302,7 +298,6 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
         </template>
       </UiSectionHeader>
 
-      <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-forwarding-feedback" />
 
       <UiTable :empty-text="t('clients.emailForwardingTable.noEmailForwardingRulesFound')" :density="UiTableDensity.Compact" :empty="isEmpty" data-testid="clients-forwarding-table">
         <UiTableHead>
@@ -313,13 +308,13 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
             <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow v-for="row in tableRows" :key="row.key" :hoverable="!row.draft" :selected="row.draft">
             <template v-if="row.draft">
               <UiTableCell>
                 <UiInput
                   v-model="draftSource"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('shared.examples.emailLocalPart')"
                   data-testid="clients-forwarding-draft-source"
                 />
@@ -327,7 +322,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
               <UiTableCell>
                 <UiInput
                   v-model="draftDestination"
-                  type="text"
+                  :type="UiInputType.Text"
                   :placeholder="t('shared.examples.email')"
                   data-testid="clients-forwarding-draft-destination"
                 />
@@ -336,7 +331,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
                 <UiText :tone="UiTextTone.Muted">{{ EMPTY_VALUE }}</UiText>
               </UiTableCell>
               <UiTableCell actions>
-                <UiStack direction="row" gap="xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
+                <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
                   <UiIconButton
                     :label="t('shared.save')"
                     :size="UiSize.Sm"
@@ -378,12 +373,12 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
 
     <UiDialog
       v-if="deleteTargetId !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.emailForwardingTable.deleteForwardingRule')"
       :message="t('clients.emailForwardingTable.deleteThisEmailForwardingRule')"
       :confirm-label="t('shared.delete')"
       :loading="deleting"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmDelete"
       @close="dismissDelete"
     />

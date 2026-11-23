@@ -6,7 +6,6 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import type { VueWrapper } from '@vue/test-utils'
 import OrderDetailView from '@/views/OrderDetailView.vue'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { BillingCycle } from '@/types/service'
@@ -14,9 +13,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { useToastStore } from '@/stores/toast'
-
-/** Test id of the region that shows the outcome of an order action. */
-const FEEDBACK = '[data-testid="order-action-feedback"]'
+import { toastMessages } from '../helpers/toasts'
 
 /** The states a line may be closed as refunded by hand from, as the API decides `canClose`. */
 const CLOSABLE: readonly OrderItemFulfilmentState[] = [
@@ -102,28 +99,11 @@ const mountDetail = async () => {
 }
 
 /**
- * Reads the sentence the outcome region shows now.
+ * Reads the sentences the outcome toasts show now.
  *
- * @param wrapper - The mounted detail.
- * @returns The text on show, empty while the region is hidden.
+ * @returns Every toast sentence on screen, joined.
  */
-const feedbackText = (wrapper: VueWrapper): string => wrapper.get(FEEDBACK).text()
-
-/**
- * Starts recording every text the outcome region takes, so a sentence shown only for a moment is
- * caught as well as the one that stays.
- *
- * @param wrapper - The mounted detail.
- * @returns The texts the region took, in order; it fills as the page changes.
- */
-const recordFeedback = (wrapper: VueWrapper): string[] => {
-  const region = wrapper.get(FEEDBACK).element
-  const seen: string[] = []
-  new MutationObserver(() => {
-    seen.push(region.textContent ?? '')
-  }).observe(region, { childList: true, characterData: true, subtree: true })
-  return seen
-}
+const feedbackText = (): string => toastMessages().join(' ')
 
 describe('OrderDetailView line retry', () => {
   afterEach(() => {
@@ -211,7 +191,7 @@ describe('OrderDetailView line retry', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(feedbackText(wrapper)).toContain('cannot be refunded now')
+    expect(feedbackText()).toContain('cannot be refunded now')
   })
 
   it('offers the close button on a failed and a stuck refunding line, with no partial refund note, but not on a refunded one', async () => {
@@ -331,12 +311,10 @@ describe('OrderDetailView line retry', () => {
       'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.Failed, 5)])),
     })
     const wrapper = await mountDetail()
-    const seen = recordFeedback(wrapper)
-
     await wrapper.get('[data-testid="order-item-retry-1"]').trigger('click')
     await flushPromises()
 
-    expect(seen).not.toContain('Line retried and fulfilled.')
-    expect(feedbackText(wrapper)).toContain('could not be fulfilled again')
+    expect(toastMessages()).not.toContain('Line retried and fulfilled.')
+    expect(feedbackText()).toContain('could not be fulfilled again')
   })
 })

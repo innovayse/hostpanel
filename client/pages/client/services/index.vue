@@ -15,7 +15,7 @@
     <UiAlert v-else-if="store.servicesError" variant="error" data-testid="services-error">{{ store.servicesError }}</UiAlert>
 
     <UiEmptyState v-else-if="!store.services.length" :icon="Server" :title="$t('client.services.empty')">
-      <UiButton :to="SITE_HOSTING_PATH" data-testid="services-browse-hosting">{{ $t('client.services.browseHosting') }}</UiButton>
+      <UiButton variant="primary" :to="SITE_HOSTING_PATH" data-testid="services-browse-hosting">{{ $t('client.services.browseHosting') }}</UiButton>
     </UiEmptyState>
 
     <template v-else>

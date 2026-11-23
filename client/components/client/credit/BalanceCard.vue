@@ -8,10 +8,10 @@
           <UiHeading v-else :level="2" size="section" data-testid="credit-balance">{{ amount }}</UiHeading>
         </UiStack>
         <UiStack direction="row" gap="sm" align="center">
-          <UiButton v-if="compact" :to="CLIENT_CREDIT_PATH" variant="subtle" size="sm" data-testid="credit-view">
-            {{ $t('client.credit.view') }}
+          <UiButton v-if="compact" :to="CLIENT_CREDIT_PATH" variant="subtle" size="sm" :hint="$t('client.credit.view')" data-testid="credit-view">
+            {{ $t('common.view') }}
           </UiButton>
-          <UiButton :to="CLIENT_CREDIT_ADD_PATH" size="sm" data-testid="credit-add-funds">
+          <UiButton variant="primary" :to="CLIENT_CREDIT_ADD_PATH" size="sm" data-testid="credit-add-funds">
             <Plus :size="14" :stroke-width="2" class="mr-1.5" />
             {{ $t('client.credit.addFunds') }}
           </UiButton>

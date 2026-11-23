@@ -32,7 +32,10 @@ import type { ProductBundle, ProductBundleItem, ProductBundlePayload } from '@/t
 import { nextRowKey } from '@/lib/rowKey'
 import { BundleDiscountType, ProductType } from '@/types/productenums'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiDirection } from '@/utils/ui/layout'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -248,7 +251,7 @@ watch(
   <UiDialog
     :open="open"
     :title="bundle ? t('settings.productBundles.editTitle') : t('settings.productBundles.createTitle')"
-    size="lg"
+    :size="UiDialogSize.Lg"
     data-testid="product-bundle-form"
     @close="emit('close')"
   >
@@ -301,13 +304,13 @@ watch(
         :error="fieldErrors.items"
         required
       >
-        <UiStack gap="sm">
+        <UiStack :gap="UiGap.Sm">
           <UiStack
             v-for="row in rows"
             :key="row.key"
             :direction="UiDirection.Row"
-            gap="sm"
-            align="center"
+            :gap="UiGap.Sm"
+            :align="UiAlignItems.Center"
             data-testid="product-bundle-form-row"
           >
             <UiRadio
@@ -327,17 +330,17 @@ watch(
             />
             <UiButton :action="UiActionKind.Remove"
               :variant="UiButtonVariant.Ghost"
-              size="sm"
+              :size="UiSize.Sm"
               data-testid="product-bundle-form-remove"
               @click="removeRow(row.key)"
             >
-              {{ t('settings.productBundles.removeComponent') }}
+              {{ t('shared.remove') }}
             </UiButton>
           </UiStack>
           <UiStack :direction="UiDirection.Row">
             <UiButton :action="UiActionKind.Add"
               :variant="UiButtonVariant.Secondary"
-              size="sm"
+              :size="UiSize.Sm"
               data-testid="product-bundle-form-add-component"
               @click="addRow"
             >
@@ -347,10 +350,10 @@ watch(
         </UiStack>
       </UiField>
 
-      <UiStack :direction="UiDirection.Row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('settings.productBundles.includesDomain') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productBundles.includesDomainHint') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productBundles.includesDomain') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productBundles.includesDomainHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="includesDomain" data-testid="product-bundle-form-includes-domain" />
       </UiStack>
@@ -382,7 +385,7 @@ watch(
         />
       </UiField>
 
-      <UiGrid v-if="discountType !== BundleDiscountType.None" :columns="2" gap="sm">
+      <UiGrid v-if="discountType !== BundleDiscountType.None" :columns="2" :gap="UiGap.Sm" container>
         <UiField :label="t('settings.productBundles.discountAmount')" :error="fieldErrors.discountAmount">
           <template #default="{ id, invalid }">
             <UiNumberInput
@@ -411,10 +414,10 @@ watch(
         </UiField>
       </UiGrid>
 
-      <UiStack v-if="bundle" :direction="UiDirection.Row" align="center" justify="between">
-        <UiStack gap="xs">
-          <UiText tone="primary" size="md">{{ t('shared.active') }}</UiText>
-          <UiText tone="muted" size="sm">{{ t('settings.productBundles.activeHint') }}</UiText>
+      <UiStack v-if="bundle" :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.Xs">
+          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('shared.active') }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productBundles.activeHint') }}</UiText>
         </UiStack>
         <UiToggle v-model="isActive" data-testid="product-bundle-form-active" />
       </UiStack>

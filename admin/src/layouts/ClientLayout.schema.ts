@@ -20,11 +20,10 @@ export const ClientStatKey = {
 /** One of the keys of the header figures. */
 export type ClientStatKey = (typeof ClientStatKey)[keyof typeof ClientStatKey]
 
-/** The client layout: the header card (identity, the export button, five key figures in a row of six) over the section tabs. */
+/** The client layout: the header card (identity, the export button, five key figures) over the section tabs. */
 const schema: TabsSkeletonSchema = {
   kind: SkeletonKind.Tabs,
   actions: 1,
-  statColumns: 6,
   stats: [
     { key: ClientStatKey.Id, label: 'shared.id' },
     { key: ClientStatKey.Email, label: 'shared.email' },

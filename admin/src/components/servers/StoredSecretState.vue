@@ -11,6 +11,10 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -37,35 +41,35 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UiStack v-if="props.hasValue" direction="row" align="center" gap="sm" wrap>
+  <UiStack v-if="props.hasValue" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
     <template v-if="props.cleared">
-      <UiText tone="muted" size="sm" :data-testid="`${props.testid}-pending-clear`">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" :data-testid="`${props.testid}-pending-clear`">
         {{ t('settings.secret.pendingClear') }}
       </UiText>
       <UiButton :action="UiActionKind.Cancel"
-        type="button"
-        variant="ghost"
-        size="sm"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Ghost"
+        :size="UiSize.Sm"
         :disabled="props.disabled"
         :data-testid="`${props.testid}-cancel-clear`"
         @click="emit('cancel')"
       >
-        {{ t('settings.secret.cancel') }}
+        {{ t('shared.cancel') }}
       </UiButton>
     </template>
     <template v-else>
-      <UiText tone="muted" size="sm" class="font-mono" :data-testid="`${props.testid}-stored`">
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="font-mono" :data-testid="`${props.testid}-stored`">
         {{ t('settings.secret.set') }}
       </UiText>
       <UiButton :action="UiActionKind.Clear"
-        type="button"
-        variant="ghost"
-        size="sm"
+        :type="UiButtonType.Button"
+        :variant="UiButtonVariant.Ghost"
+        :size="UiSize.Sm"
         :disabled="props.disabled"
         :data-testid="`${props.testid}-clear`"
         @click="emit('clear')"
       >
-        {{ t('settings.secret.clear') }}
+        {{ t('shared.clear') }}
       </UiButton>
     </template>
   </UiStack>

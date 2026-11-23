@@ -16,14 +16,16 @@ import TransactionChart from '@/components/billing/TransactionChart.vue'
 import TransactionFilterFields from '@/components/billing/TransactionFilterFields.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useFilterDateRange } from '@/composables/useFilterDateRange'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { TransactionFilterKey, useTransactionFilters } from '@/composables/useTransactionFilters'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -31,13 +33,11 @@ import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -58,7 +58,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('billing.transactionsList.addTransaction'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-transactions-add', to: AppRoute.BillingAddTransaction },
+  { label: t('billing.addTransaction.createTransaction'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-transactions-add', to: AppRoute.BillingAddTransaction },
 ])
 
 /** The filter fields kept in the address: the transaction filters every transaction list has, and the client this list adds. */
@@ -127,10 +127,7 @@ loadOnChange(load)
 onMounted(loadClients)
 
 /** The outcome line of the last delete. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** Deletes the transaction that waits for confirmation, shows the outcome and reads the list again on success. */
 const confirmDelete = async (): Promise<void> => {
@@ -138,7 +135,6 @@ const confirmDelete = async (): Promise<void> => {
   if (id === null) {
     return
   }
-  feedback.clear()
   const deleted = await store.remove(id)
   pendingDeleteId.value = null
   if (deleted) {
@@ -192,10 +188,10 @@ const transactionActions = (id: number): UiMenuAction[] => [
     </UiPageHeader>
 
     <UiGrid :columns="4">
-      <UiStatTile :label="t('billing.transactionsList.totalIncome')" :value="formatPlainAmount(store.summary.totalIn, store.summary.currency)" tone="success" data-testid="billing-transactions-total-in" />
-      <UiStatTile :label="t('billing.transactionsList.totalExpenditure')" :value="formatPlainAmount(store.summary.totalOut, store.summary.currency)" tone="danger" data-testid="billing-transactions-total-out" />
+      <UiStatTile :label="t('billing.transactionsList.totalIncome')" :value="formatPlainAmount(store.summary.totalIn, store.summary.currency)" :tone="UiTone.Success" data-testid="billing-transactions-total-in" />
+      <UiStatTile :label="t('billing.transactionsList.totalExpenditure')" :value="formatPlainAmount(store.summary.totalOut, store.summary.currency)" :tone="UiTone.Danger" data-testid="billing-transactions-total-out" />
       <UiStatTile :label="t('billing.transactionsList.totalFees')" :value="formatPlainAmount(store.summary.totalFees, store.summary.currency)" data-testid="billing-transactions-total-fees" />
-      <UiStatTile :label="t('shared.balance')" :value="formatPlainAmount(store.summary.balance, store.summary.currency)" tone="primary" data-testid="billing-transactions-balance" />
+      <UiStatTile :label="t('shared.balance')" :value="formatPlainAmount(store.summary.balance, store.summary.currency)" :tone="UiTone.Primary" data-testid="billing-transactions-balance" />
     </UiGrid>
 
     <UiListToolbar
@@ -211,7 +207,7 @@ const transactionActions = (id: number): UiMenuAction[] => [
       @remove="remove"
       @clear="clearAll"
     >
-      <UiStack gap="md">
+      <UiStack :gap="UiGap.Md">
         <UiField :label="t('shared.client')">
           <UiClientSelect
             v-model="draft.clientId"
@@ -229,7 +225,6 @@ const transactionActions = (id: number): UiMenuAction[] => [
       </UiStack>
     </UiListToolbar>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-transactions-feedback" />
 
     <UiErrorState
       v-if="store.error"
@@ -239,38 +234,38 @@ const transactionActions = (id: number): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard padding="md">
-      <UiStack gap="sm">
-        <UiHeading :level="3" variant="card">
+    <UiCard :padding="UiCardPadding.Md">
+      <UiStack :gap="UiGap.Sm">
+        <UiHeading :level="3" :variant="UiHeadingVariant.Card">
           {{ t('billing.transactionsList.netRevenueUsd') }}
         </UiHeading>
         <TransactionChart :transactions="store.transactions" :loading="store.loading && store.transactions.length === 0" />
       </UiStack>
     </UiCard>
 
-    <UiResultCount :loading="store.loading && store.transactions.length === 0" data-testid="billing-transactions-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiCard>
-      <UiTable
-        :loading="store.loading && store.transactions.length === 0"
-        :empty="!store.loading && store.transactions.length === 0"
-        data-testid="billing-transactions-table"
-      >
+    <UiDataTable
+      :loading="store.loading && store.transactions.length === 0"
+      :empty="!store.loading && store.transactions.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="billing-transactions-pagination"
+      data-testid="billing-transactions-table"
+      @update:page="setPage"
+    >
         <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow v-for="transaction in store.transactions" :key="transaction.id" hoverable>
             <UiTableCell>{{ transaction.clientName }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
             <UiTableCell>{{ transaction.paymentMethod || t('billing.transactionsList.manual') }}</UiTableCell>
             <UiTableCell>{{ transaction.description }}</UiTableCell>
             <UiTableCell numeric>
-              <UiText :tone="transaction.amountIn > 0 ? 'success' : 'muted'">{{ cell(transaction.amountIn, transaction.currency) }}</UiText>
+              <UiText :tone="transaction.amountIn > 0 ? UiTextTone.Success : UiTextTone.Muted">{{ cell(transaction.amountIn, transaction.currency) }}</UiText>
             </UiTableCell>
             <UiTableCell numeric>{{ formatPlainAmount(transaction.fees, transaction.currency) }}</UiTableCell>
             <UiTableCell numeric>
-              <UiText :tone="transaction.amountOut > 0 ? 'danger' : 'muted'">{{ cell(transaction.amountOut, transaction.currency) }}</UiText>
+              <UiText :tone="transaction.amountOut > 0 ? UiTextTone.Danger : UiTextTone.Muted">{{ cell(transaction.amountOut, transaction.currency) }}</UiText>
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="transactionActions(transaction.id)" :testid="`billing-transaction-actions-${transaction.id}`" />
@@ -280,16 +275,7 @@ const transactionActions = (id: number): UiMenuAction[] => [
         <template #empty>
           <UiEmptyState :title="t('billing.transactionsList.noTransactionsFound')" data-testid="billing-transactions-empty" />
         </template>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
-      :page="page"
-      :total="store.totalCount"
-      :page-size="store.pageSize"
-      testid="billing-transactions-pagination"
-      @update:page="setPage"
-    />
+    </UiDataTable>
 
     <UiDialog
       :variant="UiDialogVariant.Confirm"

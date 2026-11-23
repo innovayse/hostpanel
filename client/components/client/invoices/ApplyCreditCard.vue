@@ -20,12 +20,12 @@
           @blur="touched = true"
         />
 
-        <UiStack direction="row" gap="sm" justify="end">
-          <UiButton variant="subtle" type="button" data-testid="apply-credit-max" @click="useMost">
-            {{ $t('client.credit.apply.useMost') }}
+        <UiStack direction="row" gap="sm" justify="end" wrap>
+          <UiButton variant="subtle" type="button" :hint="$t('client.credit.apply.useMost')" data-testid="apply-credit-max" @click="useMost">
+            {{ $t('client.credit.apply.max') }}
           </UiButton>
-          <UiButton type="submit" :loading="store.applyBusy" :disabled="store.applyBusy" data-testid="apply-credit-submit">
-            {{ $t('client.credit.apply.submit') }}
+          <UiButton variant="primary" type="submit" :loading="store.applyBusy" :disabled="store.applyBusy" :hint="$t('client.credit.apply.submit')" data-testid="apply-credit-submit">
+            {{ $t('common.apply') }}
           </UiButton>
         </UiStack>
       </UiStack>

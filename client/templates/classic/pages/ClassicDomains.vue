@@ -12,12 +12,12 @@
 
           <UiStack direction="row" align="center" gap="xs" class="inline-flex self-start px-3 py-1.5 mb-4 rounded-md bg-classic-brand-soft">
             <Globe :size="14" :stroke-width="2" class="text-classic-brand" />
-            <UiText as="span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-brand">{{ $t('domains.badge') }}</UiText>
+            <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="medium" class="uppercase tracking-wider text-classic-brand">{{ $t('domains.badge') }}</UiText>
           </UiStack>
 
           <UiHeading :level="UiHeadingLevel.H1" size="title" class="mb-3 text-3xl font-semibold leading-tight text-classic-ink md:text-4xl" data-testid="classic-domains-title">
             {{ $t('domains.title') }}
-            <UiText as="span" size="inherit" tone="inherit" weight="semibold" class="text-classic-brand">{{ $t('domains.titleHighlight') }}</UiText>
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="semibold" class="text-classic-brand">{{ $t('domains.titleHighlight') }}</UiText>
           </UiHeading>
 
           <!-- Register: search bar -->
@@ -136,7 +136,7 @@
       <UiContainer>
         <UiStack gap="none">
           <UiStack gap="none" class="mb-8">
-            <UiText as="span" size="xs" tone="inherit" weight="semibold" class="block mb-2 uppercase tracking-wider text-classic-brand">{{ $t('domains.pricing.browseByCategory') }}</UiText>
+            <UiText :as="UiTextTag.Span" size="xs" tone="inherit" weight="semibold" class="block mb-2 uppercase tracking-wider text-classic-brand">{{ $t('domains.pricing.browseByCategory') }}</UiText>
             <UiHeading :level="UiHeadingLevel.H2" size="title" class="text-2xl font-semibold text-classic-ink md:text-3xl">{{ $t('domains.pricing.title') }}</UiHeading>
           </UiStack>
 
@@ -158,7 +158,7 @@
 
             <!-- Desktop: table -->
             <UiCard padding="none" class="hidden md:block overflow-hidden">
-              <UiTable class="border-0 rounded-none">
+              <UiTable flush>
                 <UiTableHead>
                   <UiTableRow :hoverable="false" class="bg-classic-surface-2">
                     <UiTableTh class="!py-4 !px-6 text-xs font-semibold uppercase tracking-wider text-classic-muted">{{ $t('domains.pricing.extension') }}</UiTableTh>
@@ -171,19 +171,19 @@
                 <UiTableBody>
                   <UiTableRow v-for="[ext, tld] in displayedTlds" :key="ext" group class="hover:bg-classic-surface-2" data-testid="classic-domains-row">
                     <UiTableTd class="!py-4 !px-6">
-                      <UiText as="span" tone="inherit" weight="semibold" class="text-xl text-classic-ink group-hover:text-classic-brand transition-colors">.{{ ext }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" weight="semibold" class="text-xl text-classic-ink group-hover:text-classic-brand transition-colors">.{{ ext }}</UiText>
                     </UiTableTd>
                     <UiTableTd align="center">
-                      <UiText as="span" tone="inherit" weight="semibold" class="block text-lg tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.register, DEFAULT_YEARS)) }}</UiText>
-                      <UiText as="span" size="xs" tone="inherit" class="text-classic-muted">{{ $t('domains.pricing.perYear') }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" weight="semibold" class="block text-lg tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.register, DEFAULT_YEARS)) }}</UiText>
+                      <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="text-classic-muted">{{ $t('domains.pricing.perYear') }}</UiText>
                     </UiTableTd>
                     <UiTableTd align="center">
-                      <UiText as="span" tone="inherit" weight="semibold" class="block text-lg tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.transfer, DEFAULT_YEARS)) }}</UiText>
-                      <UiText as="span" size="xs" tone="inherit" class="text-classic-muted">{{ $t('domains.pricing.perYear') }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" weight="semibold" class="block text-lg tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.transfer, DEFAULT_YEARS)) }}</UiText>
+                      <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="text-classic-muted">{{ $t('domains.pricing.perYear') }}</UiText>
                     </UiTableTd>
                     <UiTableTd align="center">
-                      <UiText as="span" tone="inherit" weight="semibold" class="block text-lg tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.renew, DEFAULT_YEARS)) }}</UiText>
-                      <UiText as="span" size="xs" tone="inherit" class="text-classic-muted">{{ $t('domains.pricing.perYear') }}</UiText>
+                      <UiText :as="UiTextTag.Span" tone="inherit" weight="semibold" class="block text-lg tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.renew, DEFAULT_YEARS)) }}</UiText>
+                      <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="text-classic-muted">{{ $t('domains.pricing.perYear') }}</UiText>
                     </UiTableTd>
                     <UiTableTd align="right" class="!pr-6">
                       <UiButton
@@ -216,22 +216,22 @@
                 data-testid="classic-domains-card"
               >
                 <UiStack direction="row" align="center" justify="between" gap="none" class="mb-4">
-                  <UiText as="span" tone="inherit" weight="semibold" class="text-xl text-classic-ink">.{{ ext }}</UiText>
+                  <UiText :as="UiTextTag.Span" tone="inherit" weight="semibold" class="text-xl text-classic-ink">.{{ ext }}</UiText>
                   <Globe :size="16" class="text-classic-muted" />
                 </UiStack>
 
                 <UiStack direction="row" gap="xs" class="mb-4 p-3 rounded-md bg-classic-surface-2 border border-classic-border">
                   <UiStack gap="none" class="flex-1 text-center">
-                    <UiText as="span" size="xs" tone="inherit" class="block mb-1 text-classic-muted">{{ $t('domains.pricing.register') }}</UiText>
-                    <UiText as="span" size="sm" tone="inherit" weight="semibold" class="block tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.register, DEFAULT_YEARS)) }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="block mb-1 text-classic-muted">{{ $t('domains.pricing.register') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="semibold" class="block tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.register, DEFAULT_YEARS)) }}</UiText>
                   </UiStack>
                   <UiStack gap="none" class="flex-1 text-center border-x border-classic-border">
-                    <UiText as="span" size="xs" tone="inherit" class="block mb-1 text-classic-muted">{{ $t('domains.pricing.transfer') }}</UiText>
-                    <UiText as="span" size="sm" tone="inherit" weight="semibold" class="block tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.transfer, DEFAULT_YEARS)) }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="block mb-1 text-classic-muted">{{ $t('domains.pricing.transfer') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="semibold" class="block tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.transfer, DEFAULT_YEARS)) }}</UiText>
                   </UiStack>
                   <UiStack gap="none" class="flex-1 text-center">
-                    <UiText as="span" size="xs" tone="inherit" class="block mb-1 text-classic-muted">{{ $t('domains.pricing.renew') }}</UiText>
-                    <UiText as="span" size="sm" tone="inherit" weight="semibold" class="block tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.renew, DEFAULT_YEARS)) }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="xs" tone="inherit" class="block mb-1 text-classic-muted">{{ $t('domains.pricing.renew') }}</UiText>
+                    <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="semibold" class="block tabular-nums text-classic-ink">{{ formatPrice(priceForYears(tld.renew, DEFAULT_YEARS)) }}</UiText>
                   </UiStack>
                 </UiStack>
 
@@ -327,7 +327,7 @@ import { formatMoney } from '~/utils/formatMoney'
 import { tldOf } from '~/utils/domainTld'
 import { tldPriceEntry } from '~/utils/tldPriceEntry'
 import { ONE_YEAR, priceForYears } from '~/utils/tldPeriodPrice'
-import { UiHeadingLevel } from '~/utils/ui/enums'
+import { UiHeadingLevel, UiTextTag } from '~/utils/ui/enums'
 import { DOMAIN_BILLING_CYCLE } from '~/constants/pricingCycle'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'

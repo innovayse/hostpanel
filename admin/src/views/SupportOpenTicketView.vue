@@ -24,7 +24,9 @@ import { useSupportStore } from '@/stores/support'
 import { TicketPriority } from '@/types/ticket'
 import type { ClientListItem } from '@/types/client'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import schema from '@/views/SupportOpenTicketView.schema'
@@ -170,7 +172,7 @@ onMounted(() => {
 
     <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors">
       <template #field-clientId>
-        <UiStack class="relative" gap="xs">
+        <UiStack class="relative" :gap="UiGap.Xs">
           <UiInput
             :model-value="clientSearch"
             :placeholder="t('support.supportOpenTicket.searchByNameEmailOr')"
@@ -178,7 +180,7 @@ onMounted(() => {
             @update:model-value="handleClientSearch"
             @focus="showClientDropdown = clientResults.length > 0"
           />
-          <UiStack v-if="selectedClientId !== null" direction="row" justify="end">
+          <UiStack v-if="selectedClientId !== null" :direction="UiDirection.Row" :justify="UiJustify.End">
             <UiButton
               :variant="UiButtonVariant.Link"
               :size="UiSize.Sm"
@@ -197,14 +199,15 @@ onMounted(() => {
             <UiButton
               v-for="client in clientResults"
               :key="client.id"
+              :variant="UiButtonVariant.Ghost"
               block
               class="justify-start"
               :data-testid="`support-open-ticket-client-${client.id}`"
               @click="selectClient(client)"
             >
-              <UiText tone="primary" size="md">{{ client.firstName }} {{ client.lastName }}</UiText>
-              <UiText tone="muted" size="md">#{{ client.id }}</UiText>
-              <UiText tone="muted" size="md">{{ client.email }}</UiText>
+              <UiText :as="UiTextTag.Span" :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ client.firstName }} {{ client.lastName }}</UiText>
+              <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Md">#{{ client.id }}</UiText>
+              <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ client.email }}</UiText>
             </UiButton>
           </UiCard>
         </UiStack>
@@ -264,7 +267,7 @@ onMounted(() => {
         />
       </template>
 
-      <UiStack direction="row">
+      <UiStack :direction="UiDirection.Row">
         <UiButton :action="UiActionKind.Add"
           :variant="UiButtonVariant.Primary"
           :loading="store.loading"
@@ -272,7 +275,7 @@ onMounted(() => {
           data-testid="support-open-ticket-submit"
           @click="handleSubmit"
         >
-          {{ t('support.supportOpenTicket.openTicket') }}
+          {{ t('shared.createTicket') }}
         </UiButton>
       </UiStack>
       <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="support-open-ticket-error" />

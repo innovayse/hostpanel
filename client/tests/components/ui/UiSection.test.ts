@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiSection from '~/components/ui/UiSection.vue'
-import { UiSectionPadding, UiSectionTone } from '~/utils/ui/enums'
+import { UiBlockTag, UiSectionPadding, UiSectionTone } from '~/utils/ui/enums'
 
 describe('UiSection', () => {
   it('is a section whose content sits in the page container', () => {
@@ -37,12 +37,18 @@ describe('UiSection', () => {
     expect(mountWithKit(UiSection, { props: { padding } }).classes()).toContain(expected)
   })
 
+  it('adds no vertical padding for the none step', () => {
+    const classes = mountWithKit(UiSection, { props: { padding: UiSectionPadding.None } }).classes()
+
+    expect(classes.some((name) => name.startsWith('py-') || name.startsWith('md:py-'))).toBe(false)
+  })
+
   it('tints the muted tone only', () => {
     expect(mountWithKit(UiSection, { props: { tone: UiSectionTone.Muted } }).classes()).toContain('bg-gray-50')
     expect(mountWithKit(UiSection).classes()).not.toContain('bg-gray-50')
   })
 
   it('renders the requested tag', () => {
-    expect(mountWithKit(UiSection, { props: { as: 'article' } }).element.tagName).toBe('ARTICLE')
+    expect(mountWithKit(UiSection, { props: { as: UiBlockTag.Article } }).element.tagName).toBe('ARTICLE')
   })
 })

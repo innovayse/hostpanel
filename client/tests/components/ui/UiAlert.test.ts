@@ -64,4 +64,17 @@ describe('UiAlert', () => {
 
     expect(wrapper.find('svg').attributes('width')).toBe('24')
   })
+
+  it('lets the banner wrap and drops the action under the text on a phone', () => {
+    const wrapper = mountWithKit(UiAlert, { slots: { action: 'Retry' } })
+
+    expect(wrapper.classes()).toContain('flex-wrap')
+    expect(wrapper.find('div.max-sm\:w-full').text()).toBe('Retry')
+  })
+
+  it('draws no action wrapper without the slot', () => {
+    const wrapper = mountWithKit(UiAlert)
+
+    expect(wrapper.find('div.max-sm\:w-full').exists()).toBe(false)
+  })
 })

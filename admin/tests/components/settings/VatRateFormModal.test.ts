@@ -17,7 +17,7 @@ describe('VatRateFormModal', () => {
   it('opens empty in add mode, with the Add label', async () => {
     const { wrapper } = await mountScreen(VatRateFormModal, { rate: null, saving: false, error: null })
 
-    expect(wrapper.get('h2').text()).toBe('Add VAT Rate')
+    expect(wrapper.get('h2').text()).toBe('Create VAT rate')
     expect(wrapper.getComponent(UiCountrySelect).props('modelValue')).toBe('')
     expect(wrapper.getComponent(UiDatePicker).props('modelValue')).toBeNull()
     expect(wrapper.get('[data-testid="vat-rate-form-save"]').text()).toBe('Add')

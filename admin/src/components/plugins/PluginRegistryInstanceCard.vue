@@ -23,6 +23,10 @@ import type { RegistryInstanceDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -63,39 +67,41 @@ const problem = computed<string | null>(() => props.error ?? props.instance?.mes
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-registry-instance">
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="section">{{ t('plugins.registryInstance.title') }}</UiHeading>
-      <UiText tone="secondary" size="md">{{ t('plugins.registryInstance.description') }}</UiText>
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-registry-instance">
+    <UiStack :gap="UiGap.Sm">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('plugins.registryInstance.title') }}</UiHeading>
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('plugins.registryInstance.description') }}</UiText>
 
-      <UiStack direction="row" align="center" wrap>
-        <UiText tone="primary" size="md">{{ t('plugins.registryInstance.stateLabel') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('plugins.registryInstance.stateLabel') }}</UiText>
         <UiBadge :tone="stateTones[state]" data-testid="plugin-registry-instance-state">
           {{ t(`plugins.registryInstance.states.${state}`) }}
         </UiBadge>
         <UiButton :action="UiActionKind.Refresh"
           v-if="canRetry"
+          :title="t('plugins.registryInstance.retry')"
+          :aria-label="t('plugins.registryInstance.retry')"
           :variant="UiButtonVariant.Secondary"
-          size="sm"
+          :size="UiSize.Sm"
           :loading="busy"
           data-testid="plugin-registry-instance-retry"
           @click="emit('retry')"
         >
-          {{ t('plugins.registryInstance.retry') }}
+          {{ t('shared.retry') }}
         </UiButton>
       </UiStack>
 
-      <UiText v-if="instance?.verifiedAt" tone="muted" size="sm" data-testid="plugin-registry-instance-verified-at">
+      <UiText v-if="instance?.verifiedAt" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-registry-instance-verified-at">
         {{ t('plugins.registryInstance.verifiedAt', { date: formatDateTime(instance.verifiedAt) }) }}
       </UiText>
-      <UiText v-if="instance?.baseUrl" tone="muted" size="sm" data-testid="plugin-registry-instance-address">
+      <UiText v-if="instance?.baseUrl" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-registry-instance-address">
         {{ t('plugins.registryInstance.address', { address: instance.baseUrl }) }}
       </UiText>
 
-      <UiAlert v-if="problem" variant="warning" data-testid="plugin-registry-instance-problem">
+      <UiAlert v-if="problem" :variant="UiTone.Warning" data-testid="plugin-registry-instance-problem">
         {{ problem }}
       </UiAlert>
-      <UiText v-if="instance?.nextAttemptAt && state === RegistryInstanceState.Error" tone="muted" size="sm" data-testid="plugin-registry-instance-next">
+      <UiText v-if="instance?.nextAttemptAt && state === RegistryInstanceState.Error" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-registry-instance-next">
         {{ t('plugins.registryInstance.nextAttempt', { date: formatDateTime(instance.nextAttemptAt) }) }}
       </UiText>
     </UiStack>

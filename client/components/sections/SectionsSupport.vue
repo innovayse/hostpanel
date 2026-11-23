@@ -1,5 +1,5 @@
 <template>
-  <section class="py-14 md:py-20 bg-classic-page" data-testid="sections-support">
+  <UiSection :contained="false" padding="lg" class="bg-classic-page" data-testid="sections-support">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -22,14 +22,14 @@
             <UiBadge v-if="item.responseTime" variant="success" rounded :data-testid="`support-response-${item.channel}`">
               {{ $t('hostingSections.support.responseTime', { time: item.responseTime }) }}
             </UiBadge>
-            <UiLink v-if="item.href" :href="item.href" :underline="false" :testid="`support-link-${item.channel}`">
+            <UiLink v-if="item.href" :href="item.href" tone="primary" :underline="false" :testid="`support-link-${item.channel}`">
               {{ item.value ?? $t(`hostingSections.support.channels.${item.channel}.action`) }}
             </UiLink>
           </UiStack>
         </ClassicCard>
       </UiBalancedGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import { ClientStatus } from '@/types/client'
 import type { RestrictiveClientStatus } from '@/lib/clientStatus'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -32,7 +33,7 @@ const emit = defineEmits<{
 
 <template>
   <UiDialog
-    variant="confirm"
+    :variant="UiDialogVariant.Confirm"
     :title="t(`clients.clientProfile.statusConfirm.${status}.title`)"
     :message="t(`clients.clientProfile.statusEffects.${status}`)"
     :confirm-label="t(`clients.clientProfile.statusConfirm.${status}.action`)"

@@ -1,19 +1,21 @@
 <template>
-  <div
-    class="grid flex-1 grid-cols-1 gap-4 md:min-h-0 md:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]"
+  <UiGrid
+    cols="1"
+    class="flex-1 md:min-h-0 md:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]"
     data-testid="plugin-split"
   >
-    <div
+    <UiStack
       v-for="(pane, position) in block.panes"
       :key="position"
+      gap="none"
       class="min-w-0 md:min-h-0 md:overflow-y-auto"
       :data-testid="`plugin-split-pane-${position}`"
     >
       <UiStack gap="md" class="md:h-full">
         <PluginBlocks :blocks="pane.blocks" :scope="`${position}:`" />
       </UiStack>
-    </div>
-  </div>
+    </UiStack>
+  </UiGrid>
 </template>
 
 <script setup lang="ts">

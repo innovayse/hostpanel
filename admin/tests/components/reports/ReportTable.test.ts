@@ -244,4 +244,17 @@ describe('ReportTable', () => {
 
     expect(wrapper.get('th span[title]').attributes('title')).toBe('What it counts.')
   })
+
+  it('draws the pager of a paged report in the card footer and tells the page chosen', async () => {
+    const wrapper = mountTable({ pagination: { page: 1, total: 120, pageSize: 50, testid: 'rt-pager' } })
+
+    await wrapper.get('[data-testid="rt-pager-next"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="ui-card-footer"]').find('[data-testid="rt-pager-next"]').exists()).toBe(true)
+    expect(wrapper.emitted('page')).toEqual([[2]])
+  })
+
+  it('draws no footer for a report that is not paged', () => {
+    expect(mountTable().find('[data-testid="ui-card-footer"]').exists()).toBe(false)
+  })
 })

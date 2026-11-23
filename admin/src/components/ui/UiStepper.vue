@@ -3,7 +3,8 @@
  * Money-style number field with press-and-hold stepper buttons.
  *
  * Shows the value with two decimals (empty while 0) and keeps stepping at 100 ms intervals while
- * a stepper is held. The hold timer is cleared on release, on leave and on unmount.
+ * a stepper is held. The hold timer is cleared on release, on leave and on unmount. The steppers are 16px tall, too small for a finger,
+ * so a phone hides them and the reader types the value on the number keyboard.
  */
 import { computed, onUnmounted } from 'vue'
 import { fieldBaseClasses, fieldWidthClasses } from '@/utils/ui/input'
@@ -37,7 +38,7 @@ const inputClasses = [
   fieldWidthClasses,
   fieldBaseClasses,
   fieldSizeClasses.md,
-  'pr-[68px] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&]:[-moz-appearance:textfield]',
+  'pr-[68px] max-sm:pr-3.5 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&]:[-moz-appearance:textfield]',
 ]
 
 /** Interval id while a stepper is held. */
@@ -139,7 +140,7 @@ onUnmounted(stopHold)
       @input="handleInput"
       @blur="handleBlur"
     >
-    <div class="absolute right-0 top-0 bottom-0 flex flex-col items-center justify-center gap-0.5 pr-1">
+    <div class="absolute right-0 top-0 bottom-0 flex flex-col max-sm:hidden items-center justify-center gap-0.5 pr-1">
       <button
         type="button"
         aria-hidden="true"

@@ -5,7 +5,8 @@
  * A radio group (`role="radiogroup"`) of buttons: the selected one is raised on the active surface in the
  * primary text colour, the others stay muted. Sized as the concept toggle: a 4px padded frame with 6px gaps,
  * 32px high buttons with 13px medium text. Left/Right arrow keys move between enabled options, and only the
- * selected one is in the tab order.
+ * selected one is in the tab order. The group never outgrows its row: a long set scrolls sideways inside it (the scrollbar is hidden), and on a phone the
+ * buttons are 44px high, a comfortable touch target.
  */
 import { neighbourValue } from '@/utils/ui/tabs'
 import type { UiTabItem } from '@/utils/ui/tabs'
@@ -43,7 +44,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
 </script>
 
 <template>
-  <div role="radiogroup" :aria-label="ariaLabel" class="inline-flex gap-1.5 rounded-control bg-surface-field p-1">
+  <div role="radiogroup" :aria-label="ariaLabel" class="inline-flex max-w-full gap-1.5 overflow-x-auto rounded-control bg-surface-field p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
     <button
       v-for="(item, index) in items"
       :key="item.value"
@@ -53,7 +54,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
       :tabindex="item.value === modelValue ? 0 : -1"
       :disabled="item.disabled"
       :data-testid="item.testid"
-      class="h-8 cursor-pointer rounded-[9px] px-3.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-40"
+      class="h-8 shrink-0 cursor-pointer max-sm:h-11 rounded-[9px] px-3.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-40"
       :class="item.value === modelValue ? 'bg-surface-active text-text-primary' : 'text-text-muted hover:text-text-primary'"
       @click="emit('update:modelValue', item.value)"
       @keydown="onKeydown($event, index)"

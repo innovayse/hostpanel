@@ -111,6 +111,13 @@ describe('ClientUsersView', () => {
     expect(wrapper.find('[data-testid="client-users-remove-u2"]').exists()).toBe(true)
   })
 
+  it('answers a client without users with an empty state in the table', async () => {
+    stubRoutes({ 'GET /api/clients/7/users': () => json([]) })
+    const wrapper = await mountUsers()
+
+    expect(wrapper.get('[data-testid="client-users-table"]').text()).toContain('No users linked to this client')
+  })
+
   it('draws the table skeleton under the schema head while the first load is in flight', async () => {
     stubPendingFetch()
     const { wrapper } = await mountRouted(ClientUsersView, '/clients/:id/users', '/clients/7/users')

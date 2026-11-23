@@ -16,6 +16,8 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -67,21 +69,21 @@ const rangeText = computed<string>(() => {
     data-testid="plugin-install-dialog"
     @close="emit('close')"
   >
-    <UiStack gap="md">
-      <UiText tone="secondary" size="sm">{{ t('plugins.pluginInstallDialog.byAuthor', { author: preview.author }) }}</UiText>
+    <UiStack :gap="UiGap.Md">
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('plugins.pluginInstallDialog.byAuthor', { author: preview.author }) }}</UiText>
 
       <UiAlert v-if="!preview.compatible" :variant="UiTone.Danger" data-testid="plugin-install-incompatible">
         {{ t('plugins.pluginInstallDialog.incompatible', { range: rangeText, host: preview.hostVersion }) }}
       </UiAlert>
 
-      <UiStack gap="xs">
-        <UiText tone="secondary" size="sm" class="font-semibold">{{ t('plugins.pluginInstallDialog.requests') }}</UiText>
-        <UiStack v-if="asksForAnything" gap="xs" data-testid="plugin-install-requests">
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" class="font-semibold">{{ t('plugins.pluginInstallDialog.requests') }}</UiText>
+        <UiStack v-if="asksForAnything" :gap="UiGap.Xs" data-testid="plugin-install-requests">
           <UiText
             v-for="access in preview.hostAccess"
             :key="`access-${access}`"
-            tone="primary"
-            size="sm"
+            :tone="UiTextTone.Primary"
+            :size="UiTextSize.Sm"
             :data-testid="`plugin-install-access-${access}`"
           >
             {{ t(`plugins.pluginInstallDialog.hostAccess.${access}`) }}
@@ -89,32 +91,32 @@ const rangeText = computed<string>(() => {
           <UiText
             v-for="capability in preview.capabilities"
             :key="`capability-${capability}`"
-            tone="primary"
-            size="sm"
+            :tone="UiTextTone.Primary"
+            :size="UiTextSize.Sm"
             :data-testid="`plugin-install-capability-${capability}`"
           >
             {{ t(`plugins.pluginInstallDialog.capabilities.${capability}`) }}
           </UiText>
         </UiStack>
-        <UiText v-else tone="muted" size="sm" data-testid="plugin-install-no-requests">
+        <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-install-no-requests">
           {{ t('plugins.pluginInstallDialog.noRequests') }}
         </UiText>
       </UiStack>
 
-      <UiStack gap="xs">
-        <UiText tone="secondary" size="sm" class="font-semibold">{{ t('plugins.pluginInstallDialog.changelog') }}</UiText>
-        <UiText v-if="hasChangelog" tone="muted" size="sm" class="whitespace-pre-line" data-testid="plugin-install-changelog">
+      <UiStack :gap="UiGap.Xs">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" class="font-semibold">{{ t('plugins.pluginInstallDialog.changelog') }}</UiText>
+        <UiText v-if="hasChangelog" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="whitespace-pre-line" data-testid="plugin-install-changelog">
           {{ preview.changelog }}
         </UiText>
-        <UiText v-else tone="muted" size="sm" data-testid="plugin-install-no-changelog">
+        <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-install-no-changelog">
           {{ t('plugins.pluginInstallDialog.noChangelog') }}
         </UiText>
       </UiStack>
 
-      <UiText v-if="rangeText !== '' && preview.compatible" tone="muted" size="sm" data-testid="plugin-install-range">
+      <UiText v-if="rangeText !== '' && preview.compatible" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-install-range">
         {{ rangeText }}
       </UiText>
-      <UiText v-if="preview.sdkPackageVersion" tone="muted" size="sm" data-testid="plugin-install-sdk">
+      <UiText v-if="preview.sdkPackageVersion" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-install-sdk">
         {{ t('plugins.pluginInstallDialog.sdk', { version: preview.sdkPackageVersion }) }}
       </UiText>
     </UiStack>
@@ -130,7 +132,7 @@ const rangeText = computed<string>(() => {
         data-testid="plugin-install-confirm"
         @click="emit('confirm')"
       >
-        {{ t('plugins.pluginInstallDialog.install') }}
+        {{ t('shared.install') }}
       </UiButton>
     </template>
   </UiDialog>

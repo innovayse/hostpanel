@@ -1,5 +1,5 @@
 <template>
-  <div data-testid="account-payment-tab">
+  <UiStack gap="none" data-testid="account-payment-tab">
     <!-- The API refuses every stored-method request of a member without the invoices permission, so
          the tab offers nothing and says why. -->
     <UiAlert v-if="!maySeePaymentMethods" variant="warning" data-testid="account-payment-denied">
@@ -7,7 +7,7 @@
     </UiAlert>
 
     <AccountStoredMethodsCard v-else />
-  </div>
+  </UiStack>
 </template>
 
 <script setup lang="ts">

@@ -53,7 +53,7 @@ const PANEL_GAP_PX = 6
 const PANEL_WIDTH_PX = 320
 
 /** Shape of the popover: the kit's card look at a fixed width (the place and the surface are the floating surface's). */
-const panelClasses = 'rounded-[10px] w-[320px] overflow-hidden'
+const panelClasses = 'rounded-[10px] w-[320px]'
 
 /** Trigger classes: the kit's md field with a quiet label that brightens on hover. */
 const triggerClasses = `w-full flex items-center gap-2 ${fieldBaseClasses} ${fieldSizeClasses.md} text-text-secondary hover:text-text-primary hover:border-text-secondary`
@@ -120,7 +120,7 @@ const summary = computed<string>(() =>
           </button>
           <span class="text-border-strong">|</span>
           <button type="button" data-testid="field-selector-clear-all" class="text-[0.72rem] text-text-secondary hover:text-text-primary rounded outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-colors" @click="emit('clearAll')">
-            {{ t('ui.uiFieldSelector.clearAll') }}
+            {{ t('shared.clear') }}
           </button>
         </div>
       </div>

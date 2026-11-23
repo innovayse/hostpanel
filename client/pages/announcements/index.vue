@@ -32,8 +32,8 @@
           :description="t('announcements.signInRequiredDesc')"
           data-testid="announcements-sign-in"
         >
-          <UiButton :to="localePath(`${CLIENT_LOGIN_PATH}?${CLIENT_REDIRECT_QUERY}=${SITE_ANNOUNCEMENTS_PATH}`)" data-testid="announcements-sign-in-link">
-            {{ t('announcements.signIn') }}
+          <UiButton variant="primary" :to="localePath(`${CLIENT_LOGIN_PATH}?${CLIENT_REDIRECT_QUERY}=${SITE_ANNOUNCEMENTS_PATH}`)" data-testid="announcements-sign-in-link">
+            {{ t('common.signIn') }}
           </UiButton>
         </UiEmptyState>
 
@@ -59,7 +59,7 @@
             :testid="`announcement-${item.id}`"
           >
             <UiText
-              as="span"
+              :as="UiTextTag.Span"
               size="xs"
               tone="muted"
               class="mb-3 flex items-center gap-2"
@@ -75,7 +75,7 @@
               {{ item.title }}
             </UiHeading>
             <UiText
-              as="span"
+              :as="UiTextTag.Span"
               size="xs"
               tone="primary"
               weight="medium"
@@ -105,6 +105,7 @@ import { formatDate } from '~/utils/formatDate'
 import type { PublishedAnnouncement } from '~/types/publishedannouncement'
 import type { ChipTab } from '~/types/chiptab'
 import { SITE_ANNOUNCEMENTS_PATH, siteAnnouncementPath } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Month-filter value that shows every announcement. */
 const ALL_MONTHS = 'all'

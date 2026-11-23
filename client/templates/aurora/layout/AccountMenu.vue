@@ -25,7 +25,7 @@
         <UiAvatar :first-name="firstName" :last-name="lastName" :email="email" />
         <UiStack gap="none" class="min-w-0">
           <UiText
-            as="span"
+            :as="UiTextTag.Span"
             size="sm"
             weight="semibold"
             tone="inherit"
@@ -35,11 +35,11 @@
           >
             {{ displayName }}
           </UiText>
-          <UiText as="span" size="xs" tone="inherit" truncate class="text-mut2">{{ email }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="inherit" truncate class="text-mut2">{{ email }}</UiText>
         </UiStack>
       </UiStack>
 
-      <div class="my-1 h-px bg-line2" />
+      <UiDivider class="my-1 !bg-line2" />
 
       <UiButton
         v-for="item in menuItems"
@@ -54,11 +54,11 @@
         <!-- The row is its own flex box: the button centres its content, and a utility on the button alone loses to that. -->
         <UiStack direction="row" align="center" gap="sm" class="w-full min-w-0">
           <component :is="item.icon" :size="16" :stroke-width="2" class="shrink-0 text-mut2" aria-hidden="true" />
-          <UiText as="span" size="sm" tone="inherit" truncate>{{ item.label }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" tone="inherit" truncate>{{ item.label }}</UiText>
         </UiStack>
       </UiButton>
 
-      <div class="my-1 h-px bg-line2" />
+      <UiDivider class="my-1 !bg-line2" />
 
       <UiButton
         variant="bare"
@@ -69,7 +69,7 @@
       >
         <UiStack direction="row" align="center" gap="sm" class="w-full min-w-0">
           <LogOut :size="16" :stroke-width="2" class="shrink-0" aria-hidden="true" />
-          <UiText as="span" size="sm" tone="inherit" truncate>{{ t('client.nav.signOut') }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" tone="inherit" truncate>{{ t('common.signOut') }}</UiText>
         </UiStack>
       </UiButton>
     </template>
@@ -91,6 +91,7 @@ import { FileText, Globe, LayoutDashboard, LogOut, Server, UserCog } from 'lucid
 import {
   CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH
 } from '~/constants/clientRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 const { t } = useI18n()
 
 /**

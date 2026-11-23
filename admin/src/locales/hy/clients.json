@@ -7,11 +7,10 @@
     "item": "Դիրք",
     "rate": "Դրույք",
     "service": "Ծառայություն",
-    "saveEntries": "Պահպանել գրառումները",
     "pleaseFillInAtLeastOne": "Լրացրեք գոնե մեկ տող՝ նկարագրությամբ և ժամերով։"
   },
   "addTransaction": {
-    "addNewTransaction": "Ավելացնել նոր գործարք",
+    "title": "Ավելացնել գործարք",
     "transactionDescription": "Գործարքի նկարագրություն",
     "externalReference": "Արտաքին հղում",
     "invoiceIdOptional": "Հաշիվ (ոչ պարտադիր)",
@@ -27,7 +26,6 @@
     "passwordIsRequired": "Գաղտնաբառը պարտադիր է"
   },
   "clientExport": {
-    "exportData": "Տվյալների արտահանում",
     "chooseWhichDataPointsTo": "Ընտրեք տվյալները, որոնք պետք է ներառվեն արտահանման մեջ։",
     "generatingAnExportForA": "Մեծ պատմություն ունեցող հաճախորդի տվյալների արտահանումը կարող է որոշ ժամանակ տևել։",
     "profileData": "Պրոֆիլի տվյալներ",
@@ -108,7 +106,6 @@
     "transferOwnershipToThisUser": "Փոխանցել սեփականությունը այս օգտատիրոջը",
     "owner": "Սեփականատեր",
     "noAccountsLinked": "Կապված հաշիվներ չկան",
-    "permanentlyDelete": "Ջնջել ընդմիշտ",
     "deleteUser": "Ջնջել օգտատիրոջը",
     "firstNamePlaceholder": "Անուն",
     "lastNamePlaceholder": "Ազգանուն",
@@ -132,24 +129,22 @@
   "cancellationRequests": {
     "cancellationRequests": "Չեղարկման հայտեր",
     "reviewAndProcessServiceCancellation": "Ծառայությունների չեղարկման հայտերի դիտում և մշակում",
-    "deleteRequest": "Ջնջել հայտը",
     "totalcountRequestValue": "Հայտեր՝ {totalCount}",
     "noCancellationRequestsFound": "Չեղարկման հայտեր չեն գտնվել",
     "searchRequests": "Որոնում ըստ պատճառի կամ համարի",
     "noRequestsMatchYourFilters": "Ֆիլտրերին համապատասխան չեղարկման հայտեր չկան",
-    "clearFilters": "Մաքրել ֆիլտրերը",
     "deleteCancellationRequest": "Ջնջել չեղարկման հայտը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս չեղարկման հայտը։",
     "requestDeleted": "Չեղարկման հայտը ջնջվեց։"
   },
   "clientBillableItems": {
     "billableItems": "Վճարվող դիրքեր",
-    "addTimeBillingEntries": "Ավելացնել ժամանակի հաշվառման գրառումներ",
+    "addTimeBillingEntries": "Ավելացնել ժամանակի հաշվառում",
     "addBillableItem": "Ավելացնել վճարվող դիրք",
     "uninvoicedItemsLength": "Չհաշվարկված դիրքեր ({length})",
     "uninvoicedItemsAmountLength": "Չհաշվարկված կետեր՝ {amount} ({length})",
     "invoiceSelectedItems": "Հաշիվ դուրս գրել ընտրված դիրքերի համար",
-    "invoiceSelected": "Հաշիվ",
+    "invoiceSelected": "Դուրս գրել հաշիվ",
     "noUninvoicedBillableItems": "Չհաշվարկված վճարվող դիրքեր չկան։",
     "invoicedItems": "Հաշվարկված դիրքեր",
     "invoicedtotalcountItemValue": "Դիրքեր՝ {invoicedTotalCount}",
@@ -197,7 +192,7 @@
     "registrarCommands": "Գրանցողի հրամաններ",
     "register": "Գրանցել",
     "renew": "Երկարաձգել",
-    "modifyContactDetails": "Փոփոխել կոնտակտային տվյալները",
+    "modifyContactDetails": "Խմբագրել կոնտակտը",
     "getEppCode": "Ստանալ EPP կոդը",
     "disableIdProtection": "Անջատել սեփականատիրոջ տվյալների պաշտպանությունը",
     "enableIdProtection": "Միացնել սեփականատիրոջ տվյալների պաշտպանությունը",
@@ -248,7 +243,6 @@
     "selectDueDate": "Ընտրեք վճարման ժամկետը",
     "createAsDraft": "Ստեղծել որպես սևագիր",
     "addItem": "Ավելացնել դիրք",
-    "createInvoice2": "Ստեղծել հաշիվ",
     "allStatuses": "Բոլոր կարգավիճակները",
     "clientinvoicestotalInvoiceValue": "Հաշիվներ՝ {clientInvoicesTotal}",
     "deleteInvoice": "Ջնջել հաշիվը",
@@ -258,9 +252,6 @@
   },
   "clientNav": {
     "strip": "Հաճախորդի բաժինների ներդիրներ"
-  },
-  "clientLayout": {
-    "exportData": "Տվյալների արտահանում"
   },
   "clientLog": {
     "activityLog": "Գործունեության մատյան",
@@ -272,7 +263,7 @@
   "clientOpenTicket": {
     "ticketSubject": "Տոմսի թեմա",
     "describeTheIssue": "Նկարագրեք խնդիրը",
-    "openTicket": "Բացել տոմս"
+    "createTicket": "Ստեղծել տոմս"
   },
   "clientProfile": {
     "statusEffects": {
@@ -302,19 +293,17 @@
     "noContactsAddedYet": "Կոնտակտներ դեռ չեն ավելացվել"
   },
   "clientQuotes": {
-    "createNewQuote": "Ստեղծել նոր առաջարկ",
     "createDate": "Ստեղծման ամսաթիվ",
     "noQuotesFound": "Առաջարկներ չեն գտնվել։",
     "clientquotestotalQuoteValue": "Առաջարկներ՝ {clientQuotesTotal}",
     "deleteQuote": "Ջնջել առաջարկը",
     "confirmDeleteQuote": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} առաջարկը։",
     "quoteDeleted": "Առաջարկը ջնջվեց։",
-    "noQuotesMatchYourFilters": "Ձեր զտիչներին համապատասխան առաջարկներ չկան",
-    "clearFilters": "Մաքրել զտիչները"
+    "noQuotesMatchYourFilters": "Ձեր զտիչներին համապատասխան առաջարկներ չկան"
   },
   "clientServiceDetail": {
     "serviceIdProductname": "Ծառայություն №{id}՝ {productName}",
-    "loginToControlPanel": "Բացել վահանակը",
+    "loginToControlPanel": "Բացել կառավարման վահանակը",
     "serviceInfo": "Տեղեկություններ ծառայության մասին",
     "order": "Պատվեր №",
     "server": "Սերվեր",
@@ -322,12 +311,10 @@
     "dedicatedIp": "Հատկացված IP",
     "moduleCommands": "Մոդուլի հրամաններ",
     "serviceTerminated": "Ծառայությունը դադարեցված է",
-    "create": "Ստեղծել",
     "terminate": "Դադարեցնել",
     "suspend": "Կասեցնել",
     "changePackage": "Փոխել փաթեթը",
     "unsuspend": "Վերսկսել",
-    "changeStatus": "Փոխել կարգավիճակը",
     "addons": "Հավելումներ",
     "noAddonsFound": "Հավելումներ չեն գտնվել։",
     "billing": "Վճարում",
@@ -347,7 +334,6 @@
     "enterANewPasswordFor": "Մուտքագրեք հոսթինգ հաշվի նոր գաղտնաբառը։",
     "newPassword": "Նոր գաղտնաբառ",
     "enterNewPassword": "Մուտքագրեք նոր գաղտնաբառը",
-    "confirm": "Հաստատել",
     "enterTheNewHostingPackage": "Մուտքագրեք հոսթինգի նոր փաթեթի անվանումը։",
     "packageName": "Փաթեթի անվանում",
     "eGStarterPlan": "օրինակ՝ starter_plan",
@@ -355,11 +341,6 @@
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք կասեցնել այս ծառայությունը։ Հաճախորդը կկորցնի հասանելիությունը, մինչև ծառայությունը վերսկսվի։",
     "terminateService": "Դադարեցնել ծառայությունը",
     "thisActionCannotBeUndone": "Այս գործողությունը հնարավոր չէ չեղարկել։ Ծառայությունը կդադարեցվի ընդմիշտ։",
-    "saveServiceInfo": "Պահպանել ծառայության տվյալները",
-    "saveBilling": "Պահպանել վճարումները",
-    "saveAutomation": "Պահպանել ավտոմատացումը",
-    "saveNotes": "Պահպանել նշումները",
-    "saveTerminationDate": "Պահպանել դադարեցման ամսաթիվը",
     "changeStatusTo": "Փոխել կարգավիճակը՝ {status}",
     "provisioned": "Ծառայությունը ստեղծված է սերվերում։",
     "passwordChanged": "Գաղտնաբառը փոխված է։",
@@ -373,13 +354,12 @@
     "totalcountServiceValue": "Ծառայություններ՝ {totalCount}",
     "noServicesFoundForThis": "Այս հաճախորդի համար ծառայություններ չեն գտնվել",
     "searchServices": "Որոնում ըստ դոմենի, արտադրանքի կամ ID-ի",
-    "noServicesMatchYourFilters": "Ֆիլտրերին համապատասխան ծառայություններ չկան",
-    "clearFilters": "Մաքրել ֆիլտրերը"
+    "noServicesMatchYourFilters": "Ֆիլտրերին համապատասխան ծառայություններ չկան"
   },
   "clientsList": {
     "manageYourClientAccounts": "Հաճախորդների հաշիվների կառավարում",
     "searchPlaceholder": "Որոնել ըստ անվան, ընկերության կամ ID-ի",
-    "addClient": "Ավելացնել հաճախորդ",
+    "createClient": "Ստեղծել հաճախորդ",
     "searchByEmail": "Որոնում ըստ էլ. փոստի",
     "searchByPhone": "Որոնում ըստ հեռախոսի",
     "2fa": "2FA",
@@ -391,7 +371,6 @@
     "off": "Անջ.",
     "noClientsMatchYourFilters": "Ֆիլտրերին համապատասխան հաճախորդներ չկան",
     "noClientsFound": "Հաճախորդներ չեն գտնվել",
-    "clearFilters": "Մաքրել ֆիլտրերը",
     "suspended": "Կասեցված",
     "closed": "Փակված"
   },
@@ -407,7 +386,6 @@
     "twoFactorAuth": "Երկգործոն նույնականացում",
     "contacts": "Կոնտակտներ",
     "noAdditionalContacts": "Լրացուցիչ կոնտակտներ չկան",
-    "viewAll": "Դիտել բոլորը →",
     "invoicesBilling": "Հաշիվներ / վճարում",
     "paid": "Վճարված",
     "draft": "Սևագիր",
@@ -420,8 +398,6 @@
     "clientExpenses": "Հաճախորդի ծախսեր",
     "netIncome": "Զուտ եկամուտ",
     "creditBalance": "Կրեդիտային մնացորդ",
-    "createInvoice": "Ստեղծել հաշիվ",
-    "createNewQuote": "Ստեղծել նոր առաջարկ",
     "productsServices": "Ապրանքներ / ծառայություններ",
     "activeServices": "Ակտիվ ծառայություններ",
     "activeservicescountTotalservicescountTotal": "{activeServicesCount} (ընդամենը՝ {totalServicesCount})",
@@ -447,7 +423,6 @@
     "ticketSettings": "Տոմսի կարգավորումներ",
     "noRepliesYet": "Պատասխաններ դեռ չկան",
     "typeYourReply": "Մուտքագրեք ձեր պատասխանը",
-    "reply": "Պատասխանել",
     "conversation": "Նամակագրություն",
     "staff": "Աշխատակից",
     "deleteTicket": "Ջնջել տոմսը",
@@ -459,7 +434,6 @@
   },
   "clientTickets": {
     "tickets": "Տոմսեր",
-    "openNewTicket": "Բացել նոր տոմս +",
     "openedThisMonth": "Բացվել է այս ամիս",
     "openedLastMonth": "Բացվել է անցյալ ամիս",
     "openedThisYear": "Բացվել է այս տարի",
@@ -467,11 +441,10 @@
     "dateOpened": "Բացման ամսաթիվ",
     "noDataAvailableInTable": "Աղյուսակում տվյալներ չկան",
     "noTicketsMatchYourFilters": "Ֆիլտրերին համապատասխան տոմսեր չկան",
-    "clearFilters": "Մաքրել ֆիլտրերը",
     "totalcountTicketValue": "Տոմսեր՝ {totalCount}"
   },
   "clientTransactions": {
-    "addNewTransaction": "Ավելացնել նոր գործարք",
+    "addTransaction": "Ավելացնել գործարք",
     "totalIn": "Ընդհանուր մուտք",
     "totalFees": "Ընդհանուր միջնորդավճարներ",
     "totalOut": "Ընդհանուր ելք",
@@ -480,24 +453,20 @@
     "confirmDeleteTransaction": "Վստա՞հ եք, որ ուզում եք ջնջել #{id} գործարքը։",
     "transactionAdded": "Գործարքը ավելացվեց։",
     "transactionDeleted": "Գործարքը ջնջվեց։",
-    "noTransactionsMatchYourFilters": "Ձեր զտիչներին համապատասխան գործարքներ չկան",
-    "clearFilters": "Մաքրել զտիչները"
+    "noTransactionsMatchYourFilters": "Ձեր զտիչներին համապատասխան գործարքներ չկան"
   },
   "clientUsers": {
     "usersLength": "Օգտատերեր ({length})",
-    "addUser": "Ավելացնել օգտատեր",
     "addUserToAccount": "Ավելացնել օգտատեր հաշվին",
     "searchExisting": "Գտնել առկա օգտատիրոջը",
     "inviteByEmail": "Հրավիրել էլ. փոստով",
     "permissions": "Թույլտվություններ",
-    "addUser2": "Ավելացնել օգտատեր",
     "sendInvite": "Ուղարկել հրավեր",
     "role": "Դեր",
     "lastLogin": "Վերջին մուտք",
     "owner": "Սեփականատեր",
     "user": "Օգտատեր",
     "manage": "Կառավարում",
-    "remove": "Հեռացնել",
     "noUsersLinkedToThis": "Այս հաճախորդին կապված օգտատերեր չկան։",
     "transferOwnership": "Սեփականության փոխանցում",
     "transfer": "Փոխանցել",
@@ -522,11 +491,9 @@
   "manageUsers": {
     "manageUsers": "Օգտատերերի կառավարում",
     "viewAndManageUserAccounts": "Օգտատերերի հաշիվների դիտում և կառավարում",
-    "addClient": "Ավելացնել հաճախորդ",
     "searchByNameOrEmail": "Որոնում ըստ անվան կամ էլ. փոստի",
     "lastLogin": "Վերջին մուտք",
-    "manageUser": "Օգտատիրոջ կառավարում",
-    "sendPasswordResetEmail": "Ուղարկել գաղտնաբառի վերականգնման նամակ",
+    "sendPasswordResetEmail": "Ուղարկել վերականգնման նամակ",
     "totalcountUserValue": "Օգտատերեր՝ {totalCount}",
     "noUsersFound": "Օգտատերեր չեն գտնվել",
     "noUsersMatchYourSearch": "Որոնմանը համապատասխան օգտատերեր չկան",
@@ -534,7 +501,8 @@
     "never": "Երբեք",
     "userSaved": "Օգտատերը պահպանվեց։",
     "userDeleted": "Օգտատերը ջնջվեց։",
-    "passwordChanged": "Գաղտնաբառը փոխվեց։"
+    "passwordChanged": "Գաղտնաբառը փոխվեց։",
+    "passwordsManagedBySso": "Գաղտնաբառերը կառավարվում են միասնական մուտքի ծառայության կողմից, ուստի դրանք այստեղ հնարավոր չէ փոխել կամ վերականգնել։"
   },
   "serviceAddons": {
     "serviceAddons": "Ծառայությունների հավելումներ",
@@ -547,19 +515,18 @@
     "log": "Մատյան"
   },
   "addExistingService": {
-    "open": "Ավելացնել գոյություն ունեցող հաշիվ",
+    "open": "Ավելացնել հաշիվ",
     "title": "Ավելացնել գոյություն ունեցող hosting հաշիվ",
     "intro": "Server-ում արդեն գոյություն ունեցող հաշվի համար՝ վերականգնված, այլ server-ից տեղափոխված կամ ձեռքով ստեղծված։ Ծառայությունը միանգամից Active է, panel-ում ոչինչ չի ստեղծվում և նամակ չի ուղարկվում։",
     "username": "Panel-ի username",
     "recurringAmount": "Կրկնվող վճար",
     "startedAt": "Ընթացիկ ժամանակաշրջանի սկիզբ",
-    "today": "Այսօր",
-    "add": "Ավելացնել ծառայություն"
+    "today": "Այսօր"
   },
   "vat": {
     "title": "ԱԱՀ համար",
     "none": "ԱԱՀ համար նշված չէ։ Նշեք այն հաճախորդի պրոֆիլում՝ որպես հարկային համար։",
-    "check": "Ստուգել կրկին",
+    "check": "Ստուգել ԱԱՀ համարը",
     "checked": "ԱԱՀ համարը ստուգվել է։",
     "checkedAt": "Ստուգվել է {date}",
     "status": {
@@ -576,7 +543,7 @@
     "accountId": "Հաշվի ID",
     "accountIdHint": "Այն նույնացուցիչը, որ այդ համակարգը տվել է հաճախորդին։",
     "accountIdPlaceholder": "Մուտքագրեք հաշվի ID-ն",
-    "clear": "Հեռացնել կապը",
+    "remove": "Հեռացնել կապը",
     "clearConfirmTitle": "Հեռացնե՞լ արտաքին հաշվի կապը։",
     "clearConfirmMessage": "Հաճախորդն այլևս կապված չի լինի մյուս համակարգի հաշվի հետ։ Կապը կարելի է կրկին ստեղծել ավելի ուշ։",
     "saved": "Արտաքին հաշվի կապը պահպանվեց։",
@@ -619,8 +586,8 @@
   "clientGroups": {
     "title": "Հաճախորդների խմբեր",
     "subtitle": "Հաճախորդների սեգմենտներ զեղչով և գույնով։",
-    "add": "Ավելացնել խումբ",
-    "createTitle": "Նոր հաճախորդների խումբ",
+    "add": "Ստեղծել խումբ",
+    "createTitle": "Ստեղծել հաճախորդների խումբ",
     "editTitle": "Խմբագրել հաճախորդների խումբը",
     "empty": "Հաճախորդների խմբեր դեռ չկան։",
     "namePlaceholder": "Օրինակ՝ Ռեսելլերներ",

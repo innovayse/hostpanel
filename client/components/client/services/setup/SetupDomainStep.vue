@@ -12,8 +12,8 @@
     <UiText size="xs" :tone="hasPurchasedDomain ? 'primary' : 'subtle'">
       {{ hasPurchasedDomain ? $t('client.setup.domainHintPurchased') : $t('client.setup.domainHintNew') }}
     </UiText>
-    <UiButton full-width size="lg" :disabled="!domain || Boolean(domainError)" data-testid="setup-domain-next" @click="emit('next')">
-      {{ $t('client.setup.continue') }}
+    <UiButton variant="primary" full-width size="lg" :disabled="!domain || Boolean(domainError)" data-testid="setup-domain-next" @click="emit('next')">
+      {{ $t('common.continue') }}
       <ArrowRight :size="18" class="ml-2" />
     </UiButton>
   </ClientServicesSetupStepCard>

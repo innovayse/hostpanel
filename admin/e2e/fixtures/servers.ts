@@ -12,7 +12,6 @@ import { SshAgentProfile } from '../../src/types/sshenums'
 export const serverModules: ServerModuleOptionDto[] = [
   { id: 'CPanel', name: 'CPanel', source: ServerModuleSource.BuiltIn },
   { id: 'DirectAdmin', name: 'DirectAdmin', source: ServerModuleSource.BuiltIn },
-  { id: 'Cwp7', name: 'Cwp7', source: ServerModuleSource.BuiltIn },
   { id: 'hestiacp', name: 'Hestia Control Panel', source: ServerModuleSource.Plugin },
 ]
 
@@ -27,7 +26,7 @@ export const hostServer: ServerDto = {
     useSSL: true,
     acceptsSelfSignedCertificate: false,
   },
-  module: 'Cwp7',
+  module: 'CPanel',
   username: 'root',
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   hosting: { datacenter: null, serverStatusAddress: null, monthlyCost: 20 },
@@ -81,9 +80,9 @@ export const hostServerSsh: ServerSshSettingsDto = {
   serverId: hostServer.id,
   isSupported: true,
   isEnabled: false,
-  sshHostname: 'cwp1.example.test',
+  sshHostname: 'host1.example.test',
   sshPort: 2222,
-  agentHost: 'cwp1.internal.test',
+  agentHost: 'host1.internal.test',
   agentPort: 22,
   agentUsername: 'hpsshkeys',
   hasAgentPrivateKey: true,

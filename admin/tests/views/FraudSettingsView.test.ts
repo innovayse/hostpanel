@@ -14,6 +14,7 @@ import { useToastStore } from '@/stores/toast'
 import { invalid, json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** The settings the API starts with. */
 const stored: FraudSettings = {
@@ -205,7 +206,7 @@ describe('FraudSettingsView', () => {
     await flushPromises()
 
     expect(errorOf(wrapper, 'velocityWindowMinutes').text()).toBe('The window is too long for this plan.')
-    expect(wrapper.find('[data-testid="fraud-settings-result"]').exists()).toBe(false)
+    expect(toastMessages()).toEqual([])
   })
 
   it('shows a refusal that names no field in the banner', async () => {
@@ -218,7 +219,7 @@ describe('FraudSettingsView', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="fraud-settings-result"]').text()).toBe('Not available in the demo.')
+    expect(toastMessages()).toContain('Not available in the demo.')
   })
 
   it('loads again from the Retry of a refused load', async () => {

@@ -56,12 +56,12 @@ describe('serversStore', () => {
     const mock = stubFetch(json([{ id: 1, name: 'host1' }]))
     const store = useServersStore()
 
-    const pending = store.fetchServerOptions(ServerModule.Cwp7)
+    const pending = store.fetchServerOptions(ServerModule.DirectAdmin)
     expect(store.optionsLoading).toBe(true)
     expect(store.loading).toBe(false)
     await pending
     expect(store.optionsLoading).toBe(false)
-    expect(urlOf(mock)).toBe('/api/admin/servers/options?module=Cwp7')
+    expect(urlOf(mock)).toBe('/api/admin/servers/options?module=DirectAdmin')
     expect(store.serverOptions).toEqual([{ id: 1, name: 'host1' }])
 
     const every = stubFetch(json([]))

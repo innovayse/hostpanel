@@ -5,7 +5,6 @@
     "totalcountServiceValue": "Ծառայություններ՝ {totalCount}",
     "noServicesFound": "Ծառայություններ չեն գտնվել",
     "searchServices": "Որոնում ըստ դոմենի, արտադրանքի կամ ID-ի",
-    "noServicesMatchYourFilters": "Ֆիլտրերին համապատասխան ծառայություններ չկան",
-    "clearFilters": "Մաքրել ֆիլտրերը"
+    "noServicesMatchYourFilters": "Ֆիլտրերին համապատասխան ծառայություններ չկան"
   }
 }

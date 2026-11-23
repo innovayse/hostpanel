@@ -87,4 +87,12 @@ describe('UiSelect', () => {
     expect(wrapper.find('button').attributes('data-testid')).toBe('plan-select')
     expect(wrapper.find('button').attributes('aria-invalid')).toBe('true')
   })
+
+  it('scrolls a long list inside its own height instead of running off the screen', async () => {
+    const wrapper = mountWithKit(UiSelect, { props: { options: OPTIONS, placeholder: 'Pick' } })
+
+    await wrapper.find('button').trigger('click')
+
+    expect(wrapper.find('[role="listbox"]').classes()).toEqual(expect.arrayContaining(['max-h-60', 'overflow-y-auto']))
+  })
 })

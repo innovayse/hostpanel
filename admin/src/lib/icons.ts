@@ -36,7 +36,6 @@ export const Icon = {
   /** A crescent moon, for the dark theme. */
   Moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/>',
   /** A screen on a short stand, for the theme that follows the system. */
-  Monitor: '<path d="M4 5h16v11H4zM9 20h6m-3-4v4"/>',
   Globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   /** A monitor on a stand. */
   Server: '<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',

@@ -12,6 +12,7 @@ import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Builds the page of the article list the API answers.
@@ -62,7 +63,7 @@ describe('KnowledgebaseView', () => {
     for (const field of KB_CATEGORY_FORM_PART.columns.flat().flatMap((section) => section.fields)) {
       expect(wrapper.find(`[data-testid="ui-form-field-${field.key}"]`).exists()).toBe(true)
     }
-    expect(wrapper.get('[data-testid="ui-detail-card-categories"]').findAll('[role="columnheader"]')).toHaveLength(KB_CATEGORIES_TABLE.columns.length)
+    expect(wrapper.get('[data-testid="knowledgebase-categories"]').findAll('[role="columnheader"]')).toHaveLength(KB_CATEGORIES_TABLE.columns.length)
   })
 
   it('adds a category from the form', async () => {
@@ -143,7 +144,7 @@ describe('KnowledgebaseView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="knowledgebase-feedback"]').text()).toBe('The category still has articles.')
+    expect(toastMessages()).toContain('The category still has articles.')
     expect(wrapper.find('[data-testid="knowledgebase-error"]').exists()).toBe(false)
   })
 
@@ -289,7 +290,7 @@ describe('KnowledgebaseView article form', () => {
     await wrapper.get('[data-testid="knowledgebase-article-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="knowledgebase-feedback"]').text()).toBe('Check the form.')
+    expect(toastMessages()).toContain('Check the form.')
     expect((wrapper.get('[data-testid="knowledgebase-article-title"]').element as HTMLInputElement).value).toBe('How to pay')
     expect(mock).toHaveBeenCalled()
   })
@@ -335,13 +336,13 @@ describe('KnowledgebaseView article list loading', () => {
     expect(wrapper.get('[data-testid="knowledgebase-articles-error"]').text()).toContain('Not allowed.')
   })
 
-  it('labels the save button Save Article for a new article and Save Changes while editing', async () => {
+  it('labels the save button Create article for a new article and Save while editing', async () => {
     const { wrapper } = await mountArticles([STORED_ARTICLE])
-    expect(wrapper.get('[data-testid="knowledgebase-article-save"]').text()).toBe('Save Article')
+    expect(wrapper.get('[data-testid="knowledgebase-article-save"]').text()).toBe('Create article')
 
     await wrapper.get('[data-testid="knowledgebase-article-11-edit"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="knowledgebase-article-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="knowledgebase-article-save"]').text()).toBe('Save')
   })
 })
 

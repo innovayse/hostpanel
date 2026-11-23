@@ -29,7 +29,7 @@
         >
           <div class="flex shrink-0 items-center justify-between gap-3 p-5 border-b border-gray-200 dark:border-white/10">
             <slot name="header">
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 class="min-w-0 break-words text-lg font-semibold text-gray-900 dark:text-white">
                 {{ title }}
               </h2>
             </slot>
@@ -46,7 +46,7 @@
             <slot />
           </div>
 
-          <div v-if="$slots.footer" class="shrink-0 p-5 border-t border-gray-200 dark:border-white/10">
+          <div v-if="$slots.footer" class="flex shrink-0 flex-wrap items-center gap-3 p-5 border-t border-gray-200 dark:border-white/10">
             <slot name="footer" />
           </div>
         </aside>
@@ -100,11 +100,11 @@ const emit = defineEmits<{
 
 /** Panel width utility per size. */
 const SIZE_CLASSES: Record<UiPanelSize, string> = {
-  [UiPanelSize.Sm]: 'max-w-xs',
-  [UiPanelSize.Md]: 'max-w-md',
-  [UiPanelSize.Lg]: 'max-w-lg',
-  [UiPanelSize.Xl]: 'max-w-2xl',
-  [UiPanelSize.Full]: 'max-w-full',
+  [UiPanelSize.Sm]: 'sm:max-w-xs',
+  [UiPanelSize.Md]: 'sm:max-w-md',
+  [UiPanelSize.Lg]: 'sm:max-w-lg',
+  [UiPanelSize.Xl]: 'sm:max-w-2xl',
+  [UiPanelSize.Full]: 'sm:max-w-full',
 }
 
 /** Class list of the panel. */

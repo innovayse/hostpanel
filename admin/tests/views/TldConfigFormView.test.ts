@@ -152,7 +152,7 @@ describe('TldConfigFormView', () => {
     // The stored cost is in one currency and the sell price in another, so no margin is worked out on the raw numbers.
     expect(wrapper.get('[data-testid="tld-register-margin-1"]').text()).toBe('—')
     expect(wrapper.get('[role="tooltip"]').text()).toContain('different currencies')
-    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="settings-form-save"]').text()).toBe('Save')
 
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
     await vi.waitFor(() => {

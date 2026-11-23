@@ -17,12 +17,12 @@
     <UiAlert v-if="error" variant="error" class="mb-6" data-testid="setup-error">{{ error }}</UiAlert>
 
     <UiStack gap="sm">
-      <UiButton full-width size="lg" :loading="submitting" data-testid="setup-build" @click="emit('build')">
+      <UiButton variant="primary" full-width size="lg" :loading="submitting" data-testid="setup-build" @click="emit('build')">
         <Zap v-if="!submitting" :size="18" class="mr-2" />
         {{ $t('client.setup.build') }}
       </UiButton>
       <UiButton variant="ghost" full-width :disabled="submitting" data-testid="setup-change" @click="emit('back')">
-        {{ $t('client.setup.change') }}
+        {{ $t('common.back') }}
       </UiButton>
     </UiStack>
 

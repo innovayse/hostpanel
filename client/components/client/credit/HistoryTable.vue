@@ -2,42 +2,44 @@
   <UiCard data-testid="credit-history">
     <UiCardHeader :title="$t('client.credit.history.title')" />
 
-    <UiEmptyState
-      v-if="entries.length === 0"
-      :icon="History"
-      :title="$t('client.credit.history.empty')"
-      :description="$t('client.credit.history.emptyHint')"
-      class="!py-6"
-      data-testid="credit-history-empty"
-    />
-
-    <UiTable v-else data-testid="credit-history-table">
-      <UiTableHead>
-        <UiTableRow :hoverable="false">
-          <UiTableTh>{{ $t('client.credit.history.colDate') }}</UiTableTh>
-          <UiTableTh>{{ $t('client.credit.history.colType') }}</UiTableTh>
-          <UiTableTh>{{ $t('client.credit.history.colInvoice') }}</UiTableTh>
-          <UiTableTh align="right">{{ $t('client.credit.history.colChange') }}</UiTableTh>
-          <UiTableTh align="right">{{ $t('client.credit.history.colBalance') }}</UiTableTh>
-        </UiTableRow>
-      </UiTableHead>
+    <UiTable
+      scrollable
+      :label="$t('client.credit.history.title')"
+      :columns="5"
+      :empty="entries.length === 0"
+      :empty-text="$t('client.credit.history.empty')"
+      :empty-description="$t('client.credit.history.emptyHint')"
+      :empty-icon="History"
+      data-testid="credit-history-table"
+    >
+      <template #head>
+        <UiTableHead>
+          <UiTableRow :hoverable="false">
+            <UiTableTh>{{ $t('client.credit.history.colDate') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.credit.history.colType') }}</UiTableTh>
+            <UiTableTh>{{ $t('client.credit.history.colInvoice') }}</UiTableTh>
+            <UiTableTh align="right">{{ $t('client.credit.history.colChange') }}</UiTableTh>
+            <UiTableTh align="right">{{ $t('client.credit.history.colBalance') }}</UiTableTh>
+          </UiTableRow>
+        </UiTableHead>
+      </template>
       <UiTableBody>
         <UiTableRow v-for="entry in entries" :key="entry.id" :data-testid="`credit-entry-${entry.id}`">
           <UiTableTd>
-            <UiText as="span" size="sm" :tone="UiTextTone.Subtle">{{ formatDateTime(entry.date) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" :tone="UiTextTone.Subtle">{{ formatDateTime(entry.date) }}</UiText>
           </UiTableTd>
           <UiTableTd>
-            <UiText as="span" size="sm" :data-testid="`credit-entry-type-${entry.id}`">{{ $t(`client.credit.movement.${entry.movement}`) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" :data-testid="`credit-entry-type-${entry.id}`">{{ $t(`client.credit.movement.${entry.movement}`) }}</UiText>
           </UiTableTd>
           <UiTableTd>
-            <UiLink v-if="entry.invoiceId !== null" :to="clientInvoicePath(entry.invoiceId)" :data-testid="`credit-entry-invoice-${entry.id}`">
+            <UiLink tone="primary" v-if="entry.invoiceId !== null" :to="clientInvoicePath(entry.invoiceId)" :data-testid="`credit-entry-invoice-${entry.id}`">
               #{{ entry.invoiceId }}
             </UiLink>
-            <UiText v-else as="span" size="sm" :tone="UiTextTone.Subtle">{{ EMPTY_DATE }}</UiText>
+            <UiText v-else :as="UiTextTag.Span" size="sm" :tone="UiTextTone.Subtle">{{ EMPTY_DATE }}</UiText>
           </UiTableTd>
           <UiTableTd align="right">
             <UiText
-              as="span"
+              :as="UiTextTag.Span"
               size="sm"
               weight="semibold"
               :tone="entry.change >= 0 ? UiTextTone.Success : UiTextTone.Danger"
@@ -47,7 +49,7 @@
             </UiText>
           </UiTableTd>
           <UiTableTd align="right">
-            <UiText as="span" size="sm" :data-testid="`credit-entry-balance-${entry.id}`">{{ money(entry.balanceAfter) }}</UiText>
+            <UiText :as="UiTextTag.Span" size="sm" :data-testid="`credit-entry-balance-${entry.id}`">{{ money(entry.balanceAfter) }}</UiText>
           </UiTableTd>
         </UiTableRow>
       </UiTableBody>
@@ -67,7 +69,7 @@ import { clientInvoicePath } from '~/constants/clientRoutes'
 import type { ClientCreditEntry } from '~/types/clientcreditentry'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { EMPTY_DATE, formatDateTime } from '~/utils/formatDate'
-import { UiTextTone } from '~/utils/ui/enums'
+import { UiTextTag, UiTextTone } from '~/utils/ui/enums'
 
 /** Props of HistoryTable. */
 interface Props {

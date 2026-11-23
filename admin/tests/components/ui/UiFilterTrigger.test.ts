@@ -78,7 +78,7 @@ describe('UiFilterTrigger', () => {
     expect(wrapper.find('[data-testid="drawer-grip"]').exists()).toBe(true)
     expect(wrapper.get('h2').text()).toBe('Filters')
     expect(wrapper.get('[data-testid="filter-apply"]').text()).toBe('Apply')
-    expect(wrapper.get('[data-testid="filter-reset"]').text()).toBe('Clear')
+    expect(wrapper.get('[data-testid="filter-reset"]').text()).toBe('Reset')
     expect(wrapper.get('[data-testid="filter-cancel"]').classes()).toContain('max-sm:hidden')
   })
 

@@ -52,7 +52,7 @@ describe('TldTable', () => {
     await loadGlobals()
     const wrapper = mountWithKit(TldTable, { props: { rows: ROWS, active: 'Unknown' } })
 
-    expect(wrapper.find('[data-testid="tld-empty"]').text()).toBe('aurora.tldTable.empty')
-    expect(wrapper.find('[data-testid="tld-empty"]').attributes('colspan')).toBe('5')
+    expect(wrapper.find('[data-testid="ui-table-empty"]').text()).toContain('aurora.tldTable.empty')
+    expect(wrapper.find('[data-testid="ui-table-empty"] td').attributes('colspan')).toBe('5')
   })
 })

@@ -2,7 +2,7 @@
   "description": "Abrechnungswährungen, Wechselkurse und die Basiswährung konfigurieren",
   "updateRates": "Wechselkurse aktualisieren",
   "updateProductPrices": "Produktpreise aktualisieren",
-  "addCurrency": "Währung hinzufügen",
+  "addCurrency": "Währung erstellen",
   "rateProvider": {
     "title": "Wechselkursquelle",
     "description": "Wählen Sie die Bank, von der die Wechselkurse bezogen werden. Die tägliche Aktualisierung und die Schaltfläche „Wechselkurse aktualisieren“ verwenden beide diese Quelle. Die Europäische Zentralbank notiert gegenüber dem Euro, daher muss die Basiswährung eine von ihr veröffentlichte Währung sein.",
@@ -32,8 +32,7 @@
   "empty": "Noch keine Währungen konfiguriert. Fügen Sie Ihre erste Währung hinzu, um zu beginnen.",
   "makeBaseModal": {
     "title": "Basiswährung festlegen",
-    "message": "{code} als Basiswährung festlegen? Die Kurse aller anderen Währungen werden auf die neue Basis umgerechnet.",
-    "confirmLabel": "Als Basis festlegen"
+    "message": "{code} als Basiswährung festlegen? Die Kurse aller anderen Währungen werden auf die neue Basis umgerechnet."
   },
   "pricesPicker": {
     "title": "Produktpreise aktualisieren",
@@ -55,7 +54,6 @@
   },
   "form": {
     "editTitle": "Währung bearbeiten",
-    "addTitle": "Währung hinzufügen",
     "code": {
       "label": "ISO-Code",
       "placeholder": "z. B. USD"
@@ -81,8 +79,6 @@
       "baseHint": "Die Basiswährung ist immer aktiviert.",
       "hint": "Ob Zahler in dieser Währung abgerechnet werden dürfen"
     },
-    "cancel": "Abbrechen",
-    "save": "Änderungen speichern",
-    "add": "Währung hinzufügen"
+    "cancel": "Abbrechen"
   }
 }

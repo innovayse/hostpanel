@@ -66,8 +66,8 @@ test('the menu sheet opens from the top bar with a grip, leads to a list and clo
   await stubApi(page, { signedIn: true, routes: [json(HttpMethod.Get, '/api/clients', clientsPage)] })
 
   await page.goto('/')
-  await expect(page.getByTestId('app-sidebar-desktop')).toHaveCount(1)
-  await expect(page.getByTestId('app-sidebar-desktop')).toBeHidden()
+  await expect(page.getByTestId('sidebar-desktop')).toHaveCount(1)
+  await expect(page.getByTestId('sidebar-desktop')).toBeHidden()
 
   await page.getByTestId('topbar-toggle-sidebar').click()
   await expect(page.getByTestId('drawer')).toBeVisible()

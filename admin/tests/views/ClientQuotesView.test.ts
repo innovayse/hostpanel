@@ -16,6 +16,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The one-quote page of client 7. */
 const listPage = () => json({ items: [quoteRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 })
@@ -126,7 +127,7 @@ describe('ClientQuotesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-quotes-feedback"]').text()).toBe('The quote was accepted.')
+    expect(toastMessages()).toContain('The quote was accepted.')
     expect(wrapper.find('[data-testid="client-quotes-error"]').exists()).toBe(false)
   })
 

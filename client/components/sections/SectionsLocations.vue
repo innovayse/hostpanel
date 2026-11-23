@@ -1,5 +1,5 @@
 <template>
-  <section v-if="locations.length" class="py-14 md:py-20 bg-classic-surface border-y border-classic-border" data-testid="sections-locations">
+  <UiSection v-if="locations.length" :contained="false" padding="lg" class="bg-classic-surface border-y border-classic-border" data-testid="sections-locations">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"
@@ -17,16 +17,16 @@
         >
           <UiStack direction="row" align="center" gap="md">
             <UiBadge variant="primary" size="lg" class="font-mono tracking-wider flex-shrink-0 !rounded-md !bg-classic-brand-soft !text-classic-brand" :data-testid="`location-code-${location.id}`">{{ location.countryCode }}</UiBadge>
-            <div class="min-w-0">
+            <UiStack gap="none" class="min-w-0">
               <UiHeading :level="3" size="bare" class="truncate text-lg font-semibold text-classic-ink">{{ location.name }}</UiHeading>
               <UiText v-if="location.city" tone="inherit" size="sm" class="truncate text-classic-muted" :data-testid="`location-city-${location.id}`">{{ location.city }}</UiText>
               <UiText v-if="location.latencyNote" tone="inherit" size="sm" class="text-classic-muted" :data-testid="`location-latency-${location.id}`">{{ location.latencyNote }}</UiText>
-            </div>
+            </UiStack>
           </UiStack>
         </ClassicCard>
       </UiBalancedGrid>
     </UiContainer>
-  </section>
+  </UiSection>
 </template>
 
 <script setup lang="ts">

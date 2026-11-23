@@ -1,6 +1,6 @@
 <template>
   <UiStack gap="sm" class="flex-1 md:min-h-0" data-testid="plugin-preview">
-    <UiText v-if="block.title" as="p" weight="semibold" data-testid="plugin-preview-title">{{ block.title }}</UiText>
+    <UiText v-if="block.title" :as="UiTextTag.P" weight="semibold" data-testid="plugin-preview-title">{{ block.title }}</UiText>
     <UiStack direction="row" gap="sm" align="center" wrap data-testid="plugin-preview-bar">
       <UiSegmentedControl
         v-if="block.sources.length > 1"
@@ -17,7 +17,7 @@
         :aria-pressed="selection?.active.value"
         data-testid="plugin-preview-select"
         @click="toggleMode"
-      >{{ selection?.active.value ? $t('plugins.previewSelectDone') : $t('plugins.previewSelect') }}</UiButton>
+      >{{ selection?.active.value ? $t('plugins.previewSelectDone') : $t('common.select') }}</UiButton>
       <UiText
         v-if="address"
         size="xs"
@@ -32,14 +32,15 @@
         size="sm"
         testid="plugin-preview-size"
       />
-      <UiLink
+      <UiButton
         v-if="showFrame && address"
+        :variant="UiButtonVariant.Outline"
+        size="sm"
         :href="address"
-        external
-        :underline="false"
-        class="rounded-md border border-gray-200 px-3 py-1 text-xs dark:border-white/10"
-        testid="plugin-preview-open"
-      >{{ $t('plugins.previewOpen') }}</UiLink>
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="plugin-preview-open"
+      >{{ $t('plugins.previewOpen') }}</UiButton>
     </UiStack>
     <UiText v-if="canSelect && selection?.active.value" size="sm" role="status" data-testid="plugin-preview-select-hint">{{ $t('plugins.previewSelectHint') }}</UiText>
     <UiStack align="center" class="relative min-h-[420px] flex-1" data-testid="plugin-preview-canvas">
@@ -91,7 +92,7 @@ import type { PluginPreviewBlock } from '~/types/pluginblock'
 import { PluginPreviewSize } from '~/types/pluginpreviewsize'
 import { PluginSelectionEvent } from '~/types/pluginselectionevent'
 import { parsePluginSelectionMessage, pluginDocumentLoaded, pluginFrameAddress, pluginFrameRevisionAddress, readPluginField } from '~/utils/plugins'
-import { UiAlertVariant, UiButtonVariant } from '~/utils/ui/enums'
+import { UiAlertVariant, UiButtonVariant, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of PluginPreviewBlock. */
 interface Props {

@@ -11,11 +11,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import UpcomingRenewalsView from '@/views/UpcomingRenewalsView.vue'
 import { useRenewalsStore } from '@/stores/renewals'
 import {
-  RENEWALS_CLAIMS_CARD,
   RENEWALS_CLAIMS_TABLE,
-  RENEWALS_DOMAINS_CARD,
   RENEWALS_DOMAINS_TABLE,
-  RENEWALS_SERVICES_CARD,
   RENEWALS_SERVICES_TABLE,
   RENEWALS_WINDOW_TABS_PART,
 } from '@/views/UpcomingRenewalsView.schema'
@@ -78,20 +75,21 @@ describe('UpcomingRenewalsView', () => {
     expect(wrapper.get('[data-testid="renewals-claims-table"]').findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
   })
 
-  it('draws the window tabs and the three cards with the columns of its schema', async () => {
+  it('draws the window tabs and the three tables with the columns of its schema, each under its heading', async () => {
     stubRoutes(lists)
     const wrapper = await mountView()
 
     for (const tab of RENEWALS_WINDOW_TABS_PART.tabs) {
       expect(wrapper.find(`[data-testid="renewals-window-${tab.key}"]`).exists()).toBe(true)
     }
-    for (const [card, testid, table] of [
-      [RENEWALS_SERVICES_CARD, 'renewals-services-table', RENEWALS_SERVICES_TABLE],
-      [RENEWALS_DOMAINS_CARD, 'renewals-domains-table', RENEWALS_DOMAINS_TABLE],
-      [RENEWALS_CLAIMS_CARD, 'renewals-claims-table', RENEWALS_CLAIMS_TABLE],
+    for (const [testid, table] of [
+      ['renewals-services-table', RENEWALS_SERVICES_TABLE],
+      ['renewals-domains-table', RENEWALS_DOMAINS_TABLE],
+      ['renewals-claims-table', RENEWALS_CLAIMS_TABLE],
     ] as const) {
-      expect(wrapper.get(`[data-testid="ui-detail-card-${card}"] [data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
+      expect(wrapper.get(`[data-testid="${testid}"]`).findAll('[role="columnheader"]')).toHaveLength(table.columns.length)
     }
+    expect(wrapper.text()).toContain('Domain renewals waiting for staff')
   })
 
   it('shows the empty states', async () => {

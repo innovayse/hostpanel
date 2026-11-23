@@ -7,7 +7,7 @@
     :sections="sections"
     :contact-title="t('privacy.contact.title')"
     :contact-description="t('privacy.contact.description', { site: siteName })"
-    :contact-link="t('privacy.contact.link')"
+    :contact-link="t('common.contactUs')"
   />
 </template>
 

@@ -145,7 +145,7 @@ const railEntries = computed(() => (tabs.value?.tabs ?? []).map((tab) => ({ key:
           </UiStack>
           <UiSkeletonActions :count="tabs.actions ?? 0" compact />
         </UiStack>
-        <UiStatRow v-if="tabs.stats" :stats="tabs.stats" :columns="tabs.statColumns" :variant="UiStatRowVariant.Inline" loading />
+        <UiStatRow v-if="tabs.stats" :stats="tabs.stats" :variant="UiStatRowVariant.Inline" loading />
       </UiStack>
     </UiCard>
 
@@ -168,7 +168,7 @@ const railEntries = computed(() => (tabs.value?.tabs ?? []).map((tab) => ({ key:
         <UiSkeletonTable :table="part.table" />
       </UiCard>
       <UiGrid v-else-if="part.kind === SkeletonPartKind.Tiles" min-item-width="md" gap="md" data-testid="ui-skeleton-tiles">
-        <UiCard v-for="n in part.count" :key="n" padding="md" aria-hidden="true">
+        <UiCard v-for="n in part.count" :key="n" padding="md" container aria-hidden="true">
           <UiStack gap="md">
             <UiStack gap="xs">
               <UiSkeletonBar class="h-3 w-16 rounded" />
@@ -176,7 +176,7 @@ const railEntries = computed(() => (tabs.value?.tabs ?? []).map((tab) => ({ key:
               <UiSkeletonBar class="h-3.5 w-28 rounded-md" />
             </UiStack>
             <UiProgress :value="0" label="" loading />
-            <UiGrid :columns="2" gap="sm">
+            <UiGrid :columns="2" gap="sm" container>
               <UiStack v-for="fact in part.facts" :key="fact" direction="row" align="center" gap="sm">
                 <UiSkeletonBar class="h-4 w-4 shrink-0 rounded" />
                 <UiStack gap="xs" class="min-w-0 flex-1">

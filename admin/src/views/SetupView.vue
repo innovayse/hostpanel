@@ -36,6 +36,11 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 import { Icon } from '@/lib/icons'
 
 /** Translation function. */
@@ -149,9 +154,9 @@ onMounted(() => {
 
 <template>
   <AuthShell :title="t('auth.setup.initialSetup')" :subtitle="subtitle">
-    <UiStack gap="md">
+    <UiStack :gap="UiGap.Md">
       <!-- Whatever went wrong, in the API's own words. -->
-      <UiAlert v-if="authStore.error" variant="error" data-testid="setup-error">
+      <UiAlert v-if="authStore.error" :variant="UiTone.Danger" data-testid="setup-error">
         {{ authStore.error }}
       </UiAlert>
 
@@ -162,7 +167,7 @@ onMounted(() => {
         data-testid="setup-account-form"
         @submit.prevent="handleCreateAccount"
       >
-        <UiGrid :columns="2" gap="sm">
+        <UiGrid :columns="2" :gap="UiGap.Sm">
           <UiInput
             v-model="firstName"
             :label="t('auth.setup.firstName')"
@@ -187,7 +192,7 @@ onMounted(() => {
         <UiInput
           v-model="email"
           :label="t('auth.setup.emailAddress')"
-          type="email"
+          :type="UiInputType.Email"
           autocomplete="username"
           :placeholder="t('auth.login.emailPlaceholder')"
           required
@@ -198,7 +203,7 @@ onMounted(() => {
         <UiInput
           v-model="password"
           :label="t('shared.password')"
-          type="password"
+          :type="UiInputType.Password"
           autocomplete="new-password"
           :placeholder="t('auth.setup.chooseAPassword')"
           required
@@ -207,9 +212,9 @@ onMounted(() => {
         />
 
         <UiButton :action="UiActionKind.Add"
-          variant="primary"
+          :variant="UiButtonVariant.Primary"
           block
-          type="submit"
+          :type="UiButtonType.Submit"
           :loading="authStore.loading"
           data-testid="setup-create-account"
         >
@@ -224,7 +229,7 @@ onMounted(() => {
         data-testid="setup-claim-form"
         @submit.prevent="handleClaimAdmin"
       >
-        <UiText tone="secondary" size="md">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t('auth.setup.signedInAsEmail', { email: authStore.user?.email }) }}
         </UiText>
 
@@ -234,7 +239,7 @@ onMounted(() => {
           is reachable before its owner has finished configuring it, whoever claimed first
           would own the installation.
         -->
-        <UiText tone="secondary" size="md">
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{ t('auth.setup.theApiPrintedASetup') }}
           {{ t('auth.login.logsCommand') }}
           {{ t('auth.setup.andPasteItHereRestarting') }}
@@ -251,13 +256,13 @@ onMounted(() => {
         />
 
         <UiButton :icon="Icon.ShieldCheck"
-          variant="primary"
+          :variant="UiButtonVariant.Primary"
           block
-          type="submit"
+          :type="UiButtonType.Submit"
           :loading="authStore.loading"
           data-testid="setup-claim-admin"
         >
-          {{ t('auth.setup.claimTheAdministratorRole') }}
+          {{ t('auth.login.claimTheAdminRole') }}
         </UiButton>
       </UiForm>
     </UiStack>

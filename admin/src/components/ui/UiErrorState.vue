@@ -49,7 +49,7 @@ const emit = defineEmits<{
       :data-testid="`${testid}-retry`"
       @click="emit('retry')"
     >
-      {{ t('ui.errorState.retry') }}
+      {{ t('shared.retry') }}
     </UiButton>
   </UiStack>
 </template>

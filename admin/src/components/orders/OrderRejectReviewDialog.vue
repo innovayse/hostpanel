@@ -98,7 +98,7 @@ const close = (): void => {
         data-testid="order-reject-submit"
         @click="submit"
       >
-        {{ t('orders.fraud.rejectSubmit') }}
+        {{ t('orders.fraud.reject') }}
       </UiButton>
     </template>
   </UiDialog>

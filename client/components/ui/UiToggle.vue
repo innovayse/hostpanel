@@ -56,9 +56,9 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean]
 }>()
 
-/** Class list of the track: primary when on; a clearly bordered grey when off so it reads on a white and on a dark page. */
+/** Class list of the track (its `before` pseudo-element widens the touch area to 44px without changing the drawn size): primary when on; a clearly bordered grey when off so it reads on a white and on a dark page. */
 const trackClasses = computed(() => [
-  'ui-toggle relative w-12 h-6 rounded-full border transition-all duration-300 flex-shrink-0 disabled:cursor-not-allowed disabled:opacity-70',
+  'ui-toggle relative w-12 h-6 before:absolute before:inset-x-0 before:-inset-y-2.5 rounded-full border transition-all duration-300 flex-shrink-0 disabled:cursor-not-allowed disabled:opacity-70',
   FOCUS_RING,
   props.modelValue
     ? 'ui-toggle-on bg-primary-500 border-primary-600 dark:border-primary-400'

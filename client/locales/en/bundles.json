@@ -3,15 +3,13 @@
     "title": "Bundles",
     "subtitle": "Services that belong together, ordered at once and priced with a discount.",
     "domainIncluded": "Domain included: {years}",
-    "choose": "Choose this bundle",
-    "back": "Back to Products",
+    "choose": "Choose bundle",
     "notFound": "Bundle not found.",
     "primary": "Main service",
     "cycle": "Billing cycle",
     "cyclePlaceholder": "Select a billing cycle",
     "unpriced": "This service has no price right now, so the bundle cannot be ordered.",
     "orderSummary": "Bundle Summary",
-    "continue": "Continue",
     "discount": {
       "percentage": "{amount}% off",
       "fixed": "{amount} off"
@@ -24,8 +22,7 @@
     "domain": {
       "title": "Domain included",
       "actionLabel": "Register a new domain or transfer one in",
-      "pick": "Select",
-      "useTransfer": "Use this domain",
+      "useTransfer": "Use domain",
       "change": "Change",
       "unavailable": "Domains cannot be ordered right now."
     }

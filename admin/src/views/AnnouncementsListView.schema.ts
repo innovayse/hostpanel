@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The announcements list. */
 const schema: ListSkeletonSchema = {
@@ -17,9 +17,9 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date', size: UiColumnSize.Compact },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'title', label: 'shared.title', size: UiColumnSize.Grow },
-      { key: 'published', label: 'shared.published', size: UiColumnSize.Compact },
+      { key: 'published', label: 'shared.published', kind: UiColumnKind.Status },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

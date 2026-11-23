@@ -5,14 +5,12 @@
     "announcementTitle": "Titel der Ankündigung",
     "announcement": "Ankündigung",
     "announcementContent": "Inhalt der Ankündigung",
-    "updateAnnouncement": "Ankündigung aktualisieren",
-    "saveAnnouncement": "Ankündigung speichern",
     "pageTitleEdit": "Ankündigung bearbeiten",
     "pageTitleCreate": "Ankündigung hinzufügen"
   },
   "announcementsList": {
     "manageClientFacingAnnouncements": "Ankündigungen für Kunden verwalten",
-    "addNewAnnouncement": "Neue Ankündigung hinzufügen",
+    "createAnnouncement": "Ankündigung erstellen",
     "noAnnouncementsFound": "Keine Ankündigungen gefunden",
     "createYourFirstAnnouncementTo": "Erstellen Sie Ihre erste Ankündigung, um zu beginnen.",
     "deleteAnnouncement": "Ankündigung löschen",
@@ -32,7 +30,7 @@
     "clientsOnly": "Nur Kunden",
     "productDownload": "Produkt-Download",
     "clientsOnlyRestrictsToLogged": "„Nur Kunden“ beschränkt den Zugriff auf angemeldete Kunden. „Produkt-Download“ erfordert den Kauf eines Produkts oder Addons. „Ausgeblendet“ entfernt den Eintrag aus dem Kundenbereich.",
-    "addDownload": "Download hinzufügen",
+    "createDownload": "Download erstellen",
     "downloadHome": "Download-Startseite",
     "files": "Dateien",
     "noDownloadsFound": "Keine Downloads gefunden",
@@ -68,10 +66,9 @@
     "articleTitle": "Artikeltitel",
     "content": "Inhalt",
     "articleContent": "Artikelinhalt",
-    "saveArticle": "Artikel speichern",
     "deleteCategory": "Kategorie löschen",
     "areYouSureYouWant": "Möchten Sie diese Kategorie wirklich löschen? Eine Kategorie, die noch Artikel enthält, kann nicht gelöscht werden.",
-    "addArticle": "Artikel hinzufügen",
+    "createArticle": "Artikel erstellen",
     "categorySaved": "Kategorie gespeichert.",
     "categoryDeleted": "Kategorie gelöscht.",
     "articleSaved": "Artikel gespeichert.",
@@ -96,7 +93,6 @@
     "endDate": "Enddatum",
     "selectEndDate": "Enddatum auswählen",
     "describeTheIssueInDetail": "Beschreiben Sie die Störung ausführlich",
-    "updateIssue": "Störung aktualisieren",
     "createIssue": "Störung erstellen",
     "other": "Sonstige",
     "low": "Niedrig",
@@ -112,7 +108,6 @@
   },
   "networkIssues": {
     "manageNetworkStatusAndIncident": "Netzwerkstatus und Störungsmeldungen verwalten",
-    "createNew": "Neu erstellen",
     "startDate": "Startdatum",
     "endDate": "Enddatum",
     "deleteNetworkIssue": "Netzwerkstörung löschen",
@@ -140,14 +135,14 @@
     "areYouSureYouWant": "Möchten Sie diese Kategorie wirklich löschen? Alle Antworten in dieser Kategorie können betroffen sein.",
     "deletePredefinedReply": "Vordefinierte Antwort löschen",
     "areYouSureYouWant2": "Möchten Sie diese vordefinierte Antwort wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "addPredefinedReply": "Vordefinierte Antwort hinzufügen"
+    "addCategory": "Kategorie hinzufügen",
+    "addReply": "Antwort hinzufügen"
   },
   "supportOpenTicket": {
     "searchByNameEmailOr": "Nach Name, E-Mail oder ID suchen",
     "autoFilledFromSelectedClient": "Automatisch aus dem ausgewählten Kunden übernommen",
     "ticketSubject": "Betreff des Tickets",
-    "describeTheIssue": "Beschreiben Sie das Problem",
-    "openTicket": "Ticket eröffnen"
+    "describeTheIssue": "Beschreiben Sie das Problem"
   },
   "supportOverview": {
     "supportOverview": "Support-Übersicht",

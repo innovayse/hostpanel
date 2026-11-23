@@ -30,6 +30,11 @@ describe('UiForm', () => {
     expect(wrapper.emitted('submit')).toHaveLength(1)
   })
 
+  it('caps its width when asked and fills its parent otherwise', () => {
+    expect(mount(UiForm, { props: { maxWidth: 'form' } }).classes()).toContain('max-w-3xl')
+    expect(mount(UiForm).classes().some((name) => name.startsWith('max-w-'))).toBe(false)
+  })
+
   it('stacks its fields when asked', () => {
     expect(mount(UiForm, { props: { stacked: true } }).classes()).toEqual(expect.arrayContaining(['flex', 'flex-col', 'gap-4']))
   })

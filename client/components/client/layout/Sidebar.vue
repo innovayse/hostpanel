@@ -6,14 +6,16 @@
     internally.
   -->
   <!-- Drawer width on a phone: intrinsically small UI. -->
-  <aside
+  <UiStack
     ref="asideRef"
-    class="absolute inset-y-0 left-0 z-20 flex w-64 max-w-[85vw] flex-col border-r border-gray-200 bg-ui-surface transition-[transform,visibility] duration-300 dark:border-white/10 lg:relative lg:inset-y-auto lg:z-auto lg:max-w-none lg:flex-shrink-0 lg:translate-x-0 lg:visible"
+    :as="UiStackTag.Aside"
+    gap="none"
+    class="absolute inset-y-0 left-0 z-20 w-64 max-w-[85vw] border-r border-gray-200 bg-ui-surface transition-[transform,visibility] duration-300 dark:border-white/10 lg:relative lg:inset-y-auto lg:z-auto lg:max-w-none lg:flex-shrink-0 lg:translate-x-0 lg:visible"
     :class="open ? 'translate-x-0' : '-translate-x-full invisible'"
     data-testid="client-sidebar"
   >
     <!-- Navigation: scrolls when the items overflow -->
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+    <UiStack :as="UiStackTag.Nav" gap="none" class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
       <ClientLayoutNavItem
         v-for="item in items"
         :key="item.to"
@@ -21,29 +23,38 @@
         :active="isActive(item.to)"
         @navigate="emit('close')"
       />
-    </nav>
+    </UiStack>
 
     <!-- Documentation link: shown only when docsUrl is configured -->
-    <div v-if="docsUrl" class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
-      <UiLink
+    <UiStack v-if="docsUrl" gap="none" class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
+      <UiButton
+        variant="ghost"
         :href="docsUrl"
-        external
-        class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600 no-underline hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+        target="_blank"
+        rel="noopener noreferrer"
+        full-width
+        class="!justify-start gap-3"
         data-testid="client-nav-documentation"
       >
         <BookOpen :size="18" :stroke-width="2" aria-hidden="true" />
         {{ $t('client.nav.documentation') }}
-      </UiLink>
-    </div>
+      </UiButton>
+    </UiStack>
+
+    <!-- Theme and language: the top bar carries them from `lg` up, so on a phone they live here -->
+    <UiStack gap="sm" class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5 lg:hidden" data-testid="client-sidebar-preferences">
+      <UiThemeToggle class="self-start" />
+      <UiLanguageSwitcher layout="responsive" />
+    </UiStack>
 
     <!-- Sign out: always at the bottom -->
-    <div class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
+    <UiStack gap="none" class="flex-shrink-0 border-t border-gray-100 px-3 py-3 dark:border-white/5">
       <UiButton variant="ghost" full-width class="!justify-start gap-3 hover:!text-red-500" data-testid="client-sign-out" @click="emit('signOut')">
         <LogOut :size="18" :stroke-width="2" />
-        {{ $t('client.nav.signOut') }}
+        {{ $t('common.signOut') }}
       </UiButton>
-    </div>
-  </aside>
+    </UiStack>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -52,9 +63,11 @@
  *
  * On mobile it is a drawer that traps focus, closes on Escape and locks the page scroll while open.
  */
+import type { ComponentPublicInstance } from 'vue'
 import { BookOpen, LogOut } from 'lucide-vue-next'
 import { useOverlay } from '~/utils/ui/overlay'
 import type { ClientNavItem } from '~/types/clientnavitem'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of ClientLayoutSidebar. */
 interface Props {
@@ -78,10 +91,10 @@ const emit = defineEmits<{
 /** Documentation URL from runtime config; empty when the docs site is not configured. */
 const { public: { docsUrl } } = useRuntimeConfig()
 
-/** The drawer element; while open on mobile it traps focus and holds the page scroll lock. */
-const asideRef = ref<HTMLElement | null>(null)
+/** The drawer component; its root element traps focus and holds the page scroll lock while open on mobile. */
+const asideRef = ref<ComponentPublicInstance | null>(null)
 
-useOverlay(() => props.open, () => emit('close'), () => asideRef.value)
+useOverlay(() => props.open, () => emit('close'), () => (asideRef.value?.$el as HTMLElement | undefined) ?? null)
 
 /** The current route, read for its query and path. */
 const route = useRoute()

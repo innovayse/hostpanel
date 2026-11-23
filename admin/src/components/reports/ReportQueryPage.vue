@@ -3,7 +3,7 @@
  * Screen of a filterable query report (clients, domains, invoices, services, transactions).
  *
  * Draws the shared layout: the header with the buttons of its schema (export, print), the column picker and date ranges, the advanced filters, the actions, the
- * found-count line, the table of the chosen columns and the pager. The state and the loading live
+ * found-count line and the table of the chosen columns, whose card footer holds the pager. The state and the loading live
  * in `useQueryReport`, which the screen calls and passes in as `report`.
  */
 import { computed } from 'vue'
@@ -16,17 +16,13 @@ import UiAdvancedFilters from '@/components/ui/UiAdvancedFilters.vue'
 import type { FieldOption } from '@/components/ui/UiAdvancedFilters.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiFieldSelector from '@/components/ui/UiFieldSelector.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportQueryRange, ReportQueryView } from '@/types/reportquery'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
-
-/** The reports store, read for the loading flag the pager follows. */
-const reports = useReportsStore()
 
 /** Props for ReportQueryPage. */
 const props = defineProps<{
@@ -78,19 +74,16 @@ const activeCount = computed<number>(() => Object.values(props.report.ranges).fi
       </ReportFilterBar>
     </template>
 
-    <UiText tone="secondary" size="sm" data-testid="report-found">
+    <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" data-testid="report-found">
       {{ foundText }}
     </UiText>
 
-    <ReportTable :columns="report.activeColumns" :rows="report.rows" row-key="id" />
-
-    <UiPagination
-      :page="report.page"
-      :total="report.totalCount"
-      :page-size="report.pageSize"
-      :loading="reports.loading"
-      testid="report-pagination"
-      @update:page="report.goToPage"
+    <ReportTable
+      :columns="report.activeColumns"
+      :rows="report.rows"
+      row-key="id"
+      :pagination="{ page: report.page, total: report.totalCount, pageSize: report.pageSize, testid: 'report-pagination' }"
+      @page="report.goToPage"
     />
   </ReportPage>
 </template>

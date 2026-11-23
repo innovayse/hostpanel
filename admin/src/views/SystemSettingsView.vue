@@ -33,6 +33,8 @@ import { schemaHeader } from '@/lib/schemaHeader'
 import { useSettingsStore } from '@/stores/settings'
 import { SettingsTab } from '@/types/setting'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/SystemSettingsView.schema'
 
 const { t } = useI18n()
@@ -79,7 +81,7 @@ const onSelect = (value: string): void => {
 </script>
 
 <template>
-  <UiStack gap="none" class="flex-1" data-testid="system-settings-view">
+  <UiStack :gap="UiGap.None" class="flex-1" data-testid="system-settings-view">
     <UiPageHeader v-bind="schemaHeader(schema, t)" />
     <!-- The installed version, quietly under the title; absent when it could not be loaded. -->
     <VersionLabel testid="settings-version" class="-mt-4 mb-4" />
@@ -108,11 +110,11 @@ const onSelect = (value: string): void => {
           :data-testid="`settings-panel-${entry.key}`"
         >
           <template v-if="entry.key === SettingsTab.Advanced">
-            <UiStack gap="xs" class="mb-4">
-              <UiHeading :level="2" variant="section">
+            <UiStack :gap="UiGap.Xs" class="mb-4">
+              <UiHeading :level="2" :variant="UiHeadingVariant.Section">
                 {{ t('settings.advanced.title') }}
               </UiHeading>
-              <UiText tone="secondary" size="lg">
+              <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Lg">
                 {{ t('settings.advanced.description') }}
               </UiText>
             </UiStack>

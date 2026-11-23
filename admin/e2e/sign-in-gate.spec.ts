@@ -62,7 +62,7 @@ test('signing out ends the session and returns to the login page', async ({ page
   })
 
   await page.goto('/dashboard')
-  await expect(page.getByTestId('app-topbar')).toBeVisible()
+  await expect(page.getByTestId('topbar')).toBeVisible()
 
   await page.getByTestId('sidebar-user-menu').click()
   await page.getByTestId('sidebar-sign-out').click()

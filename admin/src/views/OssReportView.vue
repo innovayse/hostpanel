@@ -23,6 +23,7 @@ import type { ReportColumnExtra } from '@/types/reportcolumn'
 import type { ReportOss, ReportOssRow } from '@/types/reportoss'
 import type { ReportTableData } from '@/types/reporttabledata'
 import { ReportFieldWidth } from '@/utils/ui/reportField'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/OssReportView.schema'
 
 const { t, locale } = useI18n()
@@ -102,7 +103,7 @@ const table = computed<ReportTableData<ReportOssRow & { countryName: string }>>(
     :retry="load"
     :schema="schema"
     :widths="FILTER_WIDTHS"
-    :generate-label="t('shared.generateReport')"
+    :generate-label="t('shared.generate')"
     :table="table"
     @generate="load"
   >
@@ -111,12 +112,12 @@ const table = computed<ReportTableData<ReportOssRow & { countryName: string }>>(
     </template>
 
     <template #summary>
-      <UiText v-if="data" tone="secondary" size="md" data-testid="report-period-label">
+      <UiText v-if="data" :tone="UiTextTone.Secondary" :size="UiTextSize.Md" data-testid="report-period-label">
         {{ t('reports.oss.period', { from: formatDate(data.periodStart), to: formatDate(data.periodEnd) }) }}
       </UiText>
     </template>
 
-    <UiText tone="muted" size="sm">
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
       {{ t('reports.oss.ifACountryDoesNot') }}
     </UiText>
   </ReportPage>

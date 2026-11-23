@@ -15,6 +15,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /**
  * Builds a billable item as the list endpoint returns it.
@@ -124,14 +125,14 @@ describe('BillableItemsView', () => {
     expect(renderedCaptions(wrapper)).toEqual(schemaCaptions(schema.table.columns))
   })
 
-  it('counts every match the API reports, not only the rows on the page', async () => {
+  it('ranges over every match the API reports, not only the rows on the page', async () => {
     stubRoutes({
       'GET /api/billing/billable-items': () => json({ items: [item()], pageNumber: 1, pageSize: 20, totalCount: 250, totalPages: 13 }),
       'GET /api/clients': noClients,
     })
     const wrapper = await mountList()
 
-    expect(wrapper.get('[data-testid="billing-billable-items-count"]').text()).toContain('250 Records Found')
+    expect(wrapper.get('[data-testid="billing-billable-items-pagination-range"]').text()).toContain('250')
   })
 
   it('asks the API for the first page with no filters', async () => {
@@ -320,7 +321,7 @@ describe('BillableItemsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-billable-items-feedback"]').text()).toBe('The item is already invoiced.')
+    expect(toastMessages()).toContain('The item is already invoiced.')
     expect(wrapper.find('[data-testid="billing-billable-items-error"]').exists()).toBe(false)
   })
 

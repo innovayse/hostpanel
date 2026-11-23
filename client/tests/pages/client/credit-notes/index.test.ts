@@ -84,8 +84,8 @@ describe('credit notes page', () => {
 
     const wrapper = await mountRenderedClientPage(CreditNotesPage, PAGE_ROOT)
 
-    expect(wrapper.find('[data-testid="credit-notes-empty"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="credit-notes-table"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="credit-notes-table"]').exists()).toBe(true)
   })
 
   it('shows the failure and no table when the read is refused', async () => {
@@ -95,7 +95,7 @@ describe('credit notes page', () => {
 
     expect(wrapper.find('[data-testid="credit-notes-error"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="credit-notes-table"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="credit-notes-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(false)
   })
 
   it('downloads the PDF of the note whose button is pressed', async () => {

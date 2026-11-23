@@ -14,6 +14,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** Route pattern of the screen, with the optional mode segment. */
 const PATTERN = '/billing/:id/:action?'
@@ -138,7 +139,7 @@ describe('InvoiceDetailView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-feedback"]').text()).toBe('This record cannot be retried.')
+    expect(toastMessages()).toContain('This record cannot be retried.')
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
@@ -154,7 +155,7 @@ describe('InvoiceDetailView', () => {
     await wrapper.get('[data-testid="billing-invoice-notes-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-notes-feedback"]').text()).toBe('Notes are too long.')
+    expect(toastMessages()).toContain('Notes are too long.')
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
@@ -170,7 +171,7 @@ describe('InvoiceDetailView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-summary-feedback"]').text()).toContain('Cannot cancel.')
+    expect(toastMessages().join(' ')).toContain('Cannot cancel.')
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 
@@ -191,7 +192,7 @@ describe('InvoiceDetailView', () => {
     await button.trigger('click')
     await flushPromises()
 
-    expect(button.text()).toContain('Download PDF')
+    expect(button.text()).toBe('PDF')
     expect(saved).toHaveLength(1)
     expect(saved[0]?.fileName).toBe('invoice-1.pdf')
     expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text()).toBe('')

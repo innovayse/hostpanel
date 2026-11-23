@@ -8,8 +8,9 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiCardRadius } from '@/utils/ui/card'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiCardPadding, UiCardRadius } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for DashboardChartCard. */
 defineProps<{
@@ -21,11 +22,11 @@ defineProps<{
 </script>
 
 <template>
-  <UiCard padding="none" :radius="UiCardRadius.Panel" class="p-5.5">
-    <UiStack gap="md">
-      <UiStack direction="row" align="start" justify="between">
-        <UiStack gap="none">
-          <UiHeading :level="2" variant="card">{{ title }}</UiHeading>
+  <UiCard :padding="UiCardPadding.None" :radius="UiCardRadius.Panel" class="p-5.5">
+    <UiStack :gap="UiGap.Md">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Start" :justify="UiJustify.Between">
+        <UiStack :gap="UiGap.None">
+          <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ title }}</UiHeading>
           <UiText v-if="note" :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ note }}</UiText>
         </UiStack>
         <slot name="aside" />

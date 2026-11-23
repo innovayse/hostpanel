@@ -17,4 +17,10 @@ describe('ClientContactsView', () => {
 
     expect(wrapper.find('[data-testid="client-contacts-add"]').exists()).toBe(true)
   })
+
+  it('draws the empty state with its add action inside the table when there are no contacts', async () => {
+    const wrapper = await mountClientView(ClientContactsView)
+
+    expect(wrapper.find('[data-testid="client-contacts-table"] [data-testid="client-contacts-add-empty"]').exists()).toBe(true)
+  })
 })

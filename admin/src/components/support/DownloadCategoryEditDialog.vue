@@ -125,7 +125,7 @@ watch(
         data-testid="downloads-edit-category-save"
         @click="submit"
       >
-        {{ t('shared.saveChanges') }}
+        {{ t('shared.save') }}
       </UiButton>
     </template>
   </UiDialog>

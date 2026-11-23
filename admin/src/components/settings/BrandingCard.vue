@@ -12,18 +12,25 @@ import { useI18n } from 'vue-i18n'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingsSection from '@/components/settings/SettingsSection.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiUploadZone from '@/components/ui/UiUploadZone.vue'
+import { Icon } from '@/lib/icons'
 import { useSettingsStore } from '@/stores/settings'
 import { SettingKey } from '@/types/setting'
 import type { Setting, SettingSave, SettingSaveResult } from '@/types/setting'
 import { BrandingImageKind } from '@/types/upload'
 import { FAVICON_ACCEPT, LOGO_ACCEPT } from '@/lib/mimeTypes'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -196,18 +203,18 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
     :title="t('settings.branding.title')"
     :description="t('settings.branding.description')"
   >
-    <UiStack v-for="field in FIELDS" :key="field.key" gap="sm">
-      <UiText tone="secondary" size="md">
+    <UiStack v-for="field in FIELDS" :key="field.key" :gap="UiGap.Sm">
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
         {{ t(field.labelKey) }}
       </UiText>
 
-      <UiStack direction="row" align="start">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Start">
         <!-- Preview -->
         <UiStack
           v-if="valueOf(field)"
-          align="center"
-          justify="center"
-          gap="none"
+          :align="UiAlignItems.Center"
+          :justify="UiJustify.Center"
+          :gap="UiGap.None"
           class="group relative shrink-0 overflow-hidden rounded-lg border border-border"
           :class="[field.previewClass, field.previewBg]"
         >
@@ -220,18 +227,17 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
           />
           <UiIconButton
             :label="t('settings.branding.remove')"
-            size="sm"
+            :variant="UiButtonVariant.Ghost"
+            :size="UiSize.Sm"
             class="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100"
             :data-testid="`branding-remove-${field.kind}`"
             @click="edit(field, '')"
           >
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <UiIcon :markup="Icon.Close" :size="UiSize.Xs" />
           </UiIconButton>
         </UiStack>
 
-        <UiStack gap="sm" class="min-w-56 flex-1">
+        <UiStack :gap="UiGap.Sm" class="min-w-56 flex-1">
           <UiUploadZone
             compact
             :accept="field.accept"
@@ -241,11 +247,11 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
             @select="uploadFile(field, $event)"
           />
 
-          <UiStack direction="row" align="center" gap="sm">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
             <UiInput
               :model-value="valueOf(field)"
-              type="text"
-              size="sm"
+              :type="UiInputType.Text"
+              :size="UiSize.Sm"
               :placeholder="t('settings.branding.pasteUrl')"
               :data-testid="`branding-url-${field.kind}`"
               class="flex-1"
@@ -253,21 +259,21 @@ const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
             />
             <UiButton :action="UiActionKind.Save"
               v-if="isDirty(field)"
-              type="button"
-              variant="primary"
-              size="sm"
+              :type="UiButtonType.Button"
+              :variant="UiButtonVariant.Primary"
+              :size="UiSize.Sm"
               :loading="savingField[field.key] === true"
               :data-testid="`branding-save-${field.kind}`"
               @click="saveField(field)"
             >
-              {{ t('common.save') }}
+              {{ t('shared.save') }}
             </UiButton>
             <SettingOutcome :outcome="outcome[field.key] ?? null" />
           </UiStack>
           <UiText
             v-if="uploadError[field.key]"
-            tone="danger"
-            size="sm"
+            :tone="UiTextTone.Danger"
+            :size="UiTextSize.Sm"
             :data-testid="`branding-error-${field.kind}`"
           >
             {{ uploadError[field.key] }}

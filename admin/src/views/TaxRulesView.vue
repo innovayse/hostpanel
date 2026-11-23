@@ -11,9 +11,8 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TaxRuleFormModal from '@/components/settings/TaxRuleFormModal.vue'
-import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -21,20 +20,17 @@ import UiField from '@/components/ui/UiField.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useListQuery } from '@/composables/useListQuery'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { ENABLED_FILTER_OPTIONS } from '@/lib/constants'
 import { enabledOfFilter } from '@/lib/enabledFilter'
 import { Icon } from '@/lib/icons'
@@ -45,9 +41,10 @@ import { useTaxRulesStore } from '@/stores/taxRules'
 import { EnabledFilter } from '@/types/enabledfilter'
 import type { SaveTaxRulePayload, TaxRuleDto, TaxRuleListFilters } from '@/types/taxrule'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiSize } from '@/utils/ui/size'
 import schema from '@/views/TaxRulesView.schema'
-import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
@@ -108,7 +105,7 @@ const hasRows = computed<boolean>(() => store.taxRules.length > 0)
 const initialLoading = computed<boolean>(() => store.loading && !hasRows.value)
 
 /** The result banner for a delete. */
-const banner = useResultBanner()
+const banner = useOutcomeToast()
 
 /** Whether the add/edit tax rule dialog is visible. */
 const showModal = ref(false)
@@ -230,13 +227,6 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
-    <UiAlert
-      v-if="banner.message.value"
-      :variant="UiTone.Danger"
-      data-testid="tax-rules-result"
-    >
-      {{ banner.message.value }}
-    </UiAlert>
 
     <UiListToolbar
       v-model:search="search"
@@ -274,17 +264,27 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
       @retry="load"
     />
 
-    <UiCard v-else-if="hasRows || store.loading" clip>
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="tax-rules-table">
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!store.loading && !hasRows"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="tax-rules-pagination"
+      data-testid="tax-rules-table"
+      @update:page="setPage"
+    >
         <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
+        <UiTableBody>
           <UiTableRow
             v-for="rule in store.taxRules"
             :key="rule.id"
             hoverable
             :data-testid="`tax-rule-row-${rule.id}`"
           >
-            <UiTableCell class="font-semibold text-text-primary">{{ rule.name }}</UiTableCell>
+            <UiTableCell strong>{{ rule.name }}</UiTableCell>
             <UiTableCell muted>{{ reportCountryName(rule.country, locale) }}</UiTableCell>
             <UiTableCell muted>{{ rule.region ?? t('taxRules.wholeCountry') }}</UiTableCell>
             <UiTableCell numeric muted>{{ rule.ratePercent }}%</UiTableCell>
@@ -302,39 +302,22 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>
-      </UiTable>
-
-      <template #footer>
-        <UiStack direction="row" justify="between" align="center" wrap>
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Xs">
-            {{ t('taxRules.totalCount', { totalCount: store.totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="store.totalCount"
-            :page-size="store.pageSize"
-            testid="tax-rules-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('taxRules.noMatches') : t('taxRules.empty')"
+          data-testid="tax-rules-empty"
+        >
+          <template #icon>
+            <UiIcon :markup="Icon.Dollar" :size="UiSize.Lg" />
+          </template>
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="tax-rules-clear-empty" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('taxRules.noMatches') : t('taxRules.empty')"
-        data-testid="tax-rules-empty"
-      >
-        <template #icon>
-          <UiIcon :markup="Icon.Dollar" size="lg" />
-        </template>
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="tax-rules-clear-empty" @click="clearAll">
-            {{ t('taxRules.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
 
     <!-- Add/edit tax rule dialog -->
     <TaxRuleFormModal
@@ -349,10 +332,10 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
     <!-- Delete confirmation -->
     <UiDialog
       v-if="deleteTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('taxRules.deleteModal.title')"
       :message="t('taxRules.deleteModal.message', { name: deleteTarget.name })"
-      :confirm-label="t('taxRules.deleteModal.confirmLabel')"
+      :confirm-label="t('shared.delete')"
       :loading="deleting"
       :tone="UiTone.Danger"
       @confirm="confirmDelete"

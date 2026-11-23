@@ -74,7 +74,7 @@ describe('UiDrawer', () => {
   })
 
   it('sizes the panel', () => {
-    expect(open({ size: UiPanelSize.Lg }).find('[role="dialog"]').classes()).toContain('max-w-lg')
+    expect(open({ size: UiPanelSize.Lg }).find('[role="dialog"]').classes()).toContain('sm:max-w-lg')
   })
 
   it('renders the footer slot only when given', () => {

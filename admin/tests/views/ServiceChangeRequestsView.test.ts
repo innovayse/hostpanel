@@ -12,6 +12,7 @@ import { mountRouted, mountRoutedSettled } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -125,7 +126,7 @@ describe('ServiceChangeRequestsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plan-changes-feedback"]').text()).toBe('Already resolved.')
+    expect(toastMessages()).toContain('Already resolved.')
     expect(wrapper.find('[data-testid="plan-changes-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plan-changes-row-5"]').exists()).toBe(true)
   })

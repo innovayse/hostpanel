@@ -29,10 +29,9 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import {
   areSegmentsComplete,
   CAMPAIGN_BODY_MAX_LENGTH,
@@ -54,10 +53,14 @@ import { useSettingsStore } from '@/stores/settings'
 import { AuthMode } from '@/types/auth'
 import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import type { EmailCampaignSegment, EmailCampaignSegmentDraft } from '@/types/emailcampaign'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiTone } from '@/utils/ui/tone'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import schema from '@/views/EmailCampaignFormView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiWidth } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -123,7 +126,7 @@ const acting = ref(false)
 const actionError = ref<string | null>(null)
 
 /** The outcome line of the last successful save or action. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 
 /** Whether the Send now confirmation is open. */
 const sendNowOpen = ref(false)
@@ -294,7 +297,6 @@ const persist = async (): Promise<number | null> => {
  */
 const perform = async (step: (id: number) => Promise<boolean>, successText: string | null, reload: boolean): Promise<void> => {
   actionError.value = null
-  feedback.clear()
   acting.value = true
   const wasNew = campaignId.value === null
   const id = await persist()
@@ -374,7 +376,6 @@ const cancelSchedule = async (): Promise<void> => {
     return
   }
   actionError.value = null
-  feedback.clear()
   acting.value = true
   const cancelled = await store.cancel(campaignId.value)
   if (cancelled) {
@@ -415,23 +416,22 @@ onBeforeUnmount(cancelCount)
       @retry="load"
     />
 
-    <UiStatusMessage :message="feedback.message.value" :tone="UiTone.Success" data-testid="email-campaign-feedback" />
-    <UiAlert v-if="actionError" variant="error" data-testid="email-campaign-error">{{ actionError }}</UiAlert>
+    <UiAlert v-if="actionError" :variant="UiTone.Danger" data-testid="email-campaign-error">{{ actionError }}</UiAlert>
 
     <template v-if="loadError === null">
-      <UiCard v-if="store.current && readOnly" padding="md">
+      <UiCard v-if="store.current && readOnly" :padding="UiCardPadding.Md">
         <UiStack>
-          <UiStack direction="row" gap="sm" align="center" wrap>
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap>
             <UiBadge :tone="campaignStatusTone[store.current.status]" data-testid="email-campaign-status">
               {{ t(`emailCampaigns.status.${store.current.status}`) }}
             </UiBadge>
-            <UiText v-if="store.current.scheduledAt" tone="muted" size="sm" data-testid="email-campaign-scheduled-at">
+            <UiText v-if="store.current.scheduledAt" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="email-campaign-scheduled-at">
               {{ t('emailCampaigns.form.scheduledFor', { at: formatDateTimeCompact(store.current.scheduledAt) }) }}
             </UiText>
-            <UiText v-if="store.current.sentAt" tone="muted" size="sm" data-testid="email-campaign-sent-at">
+            <UiText v-if="store.current.sentAt" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="email-campaign-sent-at">
               {{ t('emailCampaigns.form.sentOn', { at: formatDateTimeCompact(store.current.sentAt) }) }}
             </UiText>
-            <UiText tone="muted" size="sm" data-testid="email-campaign-created">
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="email-campaign-created">
               {{ t('emailCampaigns.form.createdBy', { by: store.current.createdBy, at: formatDateTimeCompact(store.current.createdAt) }) }}
             </UiText>
           </UiStack>
@@ -479,8 +479,8 @@ onBeforeUnmount(cancelCount)
             <UiText
               v-for="(segment, index) in store.current.segments"
               :key="segmentKey(segment)"
-              tone="secondary"
-              size="md"
+              :tone="UiTextTone.Secondary"
+              :size="UiTextSize.Md"
               :data-testid="`email-campaign-segment-summary-${index}`"
             >
               {{ describeSegment(segment) }}
@@ -497,35 +497,37 @@ onBeforeUnmount(cancelCount)
               @update:model-value="replaceSegment(index, $event)"
               @remove="removeSegment(index)"
             />
-            <UiStack direction="row">
-              <UiButton :action="UiActionKind.Add" type="button" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-add-segment" @click="addSegment">
+            <UiStack :direction="UiDirection.Row">
+              <UiButton :action="UiActionKind.Add" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-add-segment" @click="addSegment">
                 {{ t('emailCampaigns.form.addSegment') }}
               </UiButton>
             </UiStack>
-            <UiText v-if="!rulesComplete" tone="muted" size="sm" data-testid="email-campaign-audience">
+            <UiText v-if="!rulesComplete" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="email-campaign-audience">
               {{ t('emailCampaigns.form.audienceIncomplete') }}
             </UiText>
-            <UiText v-else-if="store.audienceError" tone="danger" size="sm" data-testid="email-campaign-audience">
+            <UiText v-else-if="store.audienceError" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" data-testid="email-campaign-audience">
               {{ store.audienceError }}
             </UiText>
-            <UiSkeletonBar v-else-if="store.audienceCount === null" class="h-4 w-40 rounded-md" aria-busy="true" data-testid="email-campaign-audience" />
-            <UiText v-else tone="secondary" size="sm" data-testid="email-campaign-audience">
+            <UiSkeletonBar v-else-if="store.audienceCount === null" :width="UiWidth.Md" class="h-4 rounded-md" aria-busy="true" data-testid="email-campaign-audience" />
+            <UiText v-else :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" data-testid="email-campaign-audience">
               {{ t('emailCampaigns.form.audienceCount', { count: store.audienceCount }) }}
             </UiText>
           </UiStack>
         </template>
 
         <template #section-campaign>
-          <UiStack direction="row" gap="sm" wrap>
+          <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
             <template v-if="!readOnly">
               <UiButton :action="UiActionKind.Save"
                 :variant="UiButtonVariant.Primary"
                 :loading="acting"
                 :disabled="!canSave"
+                :title="t('emailCampaigns.form.saveDraft')"
+                :aria-label="t('emailCampaigns.form.saveDraft')"
                 data-testid="email-campaign-save"
                 @click="saveDraft"
               >
-                {{ t('emailCampaigns.form.saveDraft') }}
+                {{ t('shared.save') }}
               </UiButton>
               <UiButton :action="UiActionKind.View"
                 :variant="UiButtonVariant.Secondary"
@@ -533,7 +535,7 @@ onBeforeUnmount(cancelCount)
                 data-testid="email-campaign-preview"
                 @click="openPreview"
               >
-                {{ t('emailCampaigns.form.preview') }}
+                {{ t('shared.preview') }}
               </UiButton>
               <UiButton :action="UiActionKind.Send"
                 :variant="UiButtonVariant.Secondary"
@@ -541,15 +543,17 @@ onBeforeUnmount(cancelCount)
                 data-testid="email-campaign-schedule"
                 @click="scheduleOpen = true"
               >
-                {{ t('emailCampaigns.form.schedule') }}
+                {{ t('emailCampaigns.schedule') }}
               </UiButton>
               <UiButton :action="UiActionKind.Send"
                 :variant="UiButtonVariant.Secondary"
                 :disabled="!canSave || acting"
+                :title="t('emailCampaigns.form.sendNowTitle')"
+                :aria-label="t('emailCampaigns.form.sendNowTitle')"
                 data-testid="email-campaign-send-now"
                 @click="sendNowOpen = true"
               >
-                {{ t('emailCampaigns.form.sendNow') }}
+                {{ t('shared.send') }}
               </UiButton>
             </template>
             <template v-else>
@@ -559,7 +563,7 @@ onBeforeUnmount(cancelCount)
                 data-testid="email-campaign-preview"
                 @click="openPreview"
               >
-                {{ t('emailCampaigns.form.preview') }}
+                {{ t('shared.preview') }}
               </UiButton>
               <UiButton :action="UiActionKind.Cancel"
                 v-if="store.current?.status === CampaignStatus.Scheduled"
@@ -580,22 +584,22 @@ onBeforeUnmount(cancelCount)
     </template>
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="sendNowOpen"
       :title="t('emailCampaigns.form.sendNowTitle')"
       :message="sendNowMessage"
-      :confirm-label="t('emailCampaigns.form.sendNow')"
+      :confirm-label="t('shared.send')"
       @confirm="sendNow"
       @close="sendNowOpen = false"
     />
 
     <UiDialog
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :open="cancelOpen"
       :title="t('emailCampaigns.form.cancelScheduleTitle')"
       :message="t('emailCampaigns.form.cancelScheduleMessage')"
       :confirm-label="t('emailCampaigns.form.cancelSchedule')"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="cancelSchedule"
       @close="cancelOpen = false"
     />

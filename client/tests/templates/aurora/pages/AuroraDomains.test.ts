@@ -59,7 +59,7 @@ describe('AuroraDomains', () => {
       props: { priceRows: [ROW], categories: [ALL_CATEGORY, 'Popular'], activeCategory: 'Country' },
     })
 
-    expect(wrapper.find('[data-testid="tld-empty"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(true)
 
     await wrapper.find('[data-testid="domain-category-Popular"]').trigger('click')
     expect(wrapper.emitted('update:category')).toEqual([['Popular']])

@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiSkeleton from '~/components/ui/UiSkeleton.vue'
-import { UiSkeletonShape } from '~/utils/ui/enums'
+import { UiSkeletonShape, UiSkeletonWidth } from '~/utils/ui/enums'
 
 describe('UiSkeleton', () => {
   it('is one pulsing line by default and announces loading', () => {
@@ -35,6 +35,14 @@ describe('UiSkeleton', () => {
     const wrapper = mountWithKit(UiSkeleton, { props: { shape: UiSkeletonShape.Circle } })
 
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['rounded-full', 'h-10', 'w-10']))
+  })
+
+  it.each([
+    [UiSkeletonWidth.ThreeQuarters, 'w-3/4'],
+    [UiSkeletonWidth.Heading, 'w-64'],
+  ])('takes the %s width on a block and a line', (width, expected) => {
+    expect(mountWithKit(UiSkeleton, { props: { shape: UiSkeletonShape.Block, width } }).classes()).toContain(expected)
+    expect(mountWithKit(UiSkeleton, { props: { width } }).classes()).toContain(expected)
   })
 
   it('ignores lines for a block', () => {

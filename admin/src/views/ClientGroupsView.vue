@@ -11,15 +11,13 @@ import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
 import ClientGroupFormDialog from '@/components/clients/ClientGroupFormDialog.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
-import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -28,6 +26,7 @@ import schema from '@/views/ClientGroupsView.schema'
 import { useClientGroupsStore } from '@/stores/clientGroups'
 import type { ClientGroup, ClientGroupPayload } from '@/types/clientgroup'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
@@ -208,29 +207,30 @@ onMounted(async () => {
       @retry="store.fetchAll()"
     />
 
-    <UiCard v-else-if="initialLoading || store.groups.length > 0">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-groups-table">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="group in store.groups" :key="group.id" data-testid="client-group-row">
-            <UiTableCell><ClientGroupBadge :name="group.name" :color="group.color" /></UiTableCell>
-            <UiTableCell muted>{{ group.description || EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell>{{ group.discountPercent }}%</UiTableCell>
-            <UiTableCell muted>{{ group.clientCount }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge v-if="group.isDefault" :tone="UiTone.Success" small>{{ t('shared.default') }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="rowActions(group)" :testid="`client-group-actions-${group.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState :title="t('clients.clientGroups.empty')" />
-    </UiCard>
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!initialLoading && store.groups.length === 0"
+      :empty-text="t('clients.clientGroups.empty')"
+      data-testid="client-groups-table"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="group in store.groups" :key="group.id" data-testid="client-group-row">
+          <UiTableCell><ClientGroupBadge :name="group.name" :color="group.color" /></UiTableCell>
+          <UiTableCell muted>{{ group.description || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell>{{ group.discountPercent }}%</UiTableCell>
+          <UiTableCell muted>{{ group.clientCount }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge v-if="group.isDefault" :tone="UiTone.Success" small>{{ t('shared.default') }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="rowActions(group)" :testid="`client-group-actions-${group.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
 
     <ClientGroupFormDialog
       :open="formOpen"
@@ -244,7 +244,7 @@ onMounted(async () => {
 
     <UiDialog
       v-if="deleteTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientGroups.deleteTitle')"
       :message="deleteMessage"
       :confirm-label="t('shared.delete')"

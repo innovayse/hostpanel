@@ -8,7 +8,7 @@
       :message="$t('client.forgot.successMessage', { email: submittedEmail })"
     >
       <UiBackLink :to="CLIENT_LOGIN_PATH" testid="forgot-sent-back" class="mt-4" compact>
-        {{ $t('client.forgot.backToSignIn') }}
+        {{ $t('client.login.backToSignIn') }}
       </UiBackLink>
     </ClientOutcomePanel>
 
@@ -28,11 +28,11 @@
         <Send v-if="!loading" :size="18" :stroke-width="2" class="mr-2" />
         {{ $t('client.forgot.submit') }}
       </UiButton>
-      <div class="text-center">
+      <UiStack align="center" gap="none">
         <UiBackLink :to="CLIENT_LOGIN_PATH" testid="forgot-back" compact>
-          {{ $t('client.forgot.backToSignIn') }}
+          {{ $t('client.login.backToSignIn') }}
         </UiBackLink>
-      </div>
+      </UiStack>
     </UiForm>
   </ClientAuthShell>
 </template>

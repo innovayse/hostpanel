@@ -8,7 +8,7 @@
 
     <UiText
       v-if="installer.count"
-      as="p"
+      :as="UiTextTag.P"
       size="inherit"
       tone="inherit"
       class="mt-5 text-[15px] font-semibold text-nova-brand"
@@ -17,7 +17,7 @@
       {{ t('nova.apps.count', { count: installer.count }) }}
     </UiText>
 
-    <UiBalancedGrid as="ul" :count="installer.categories.length" class="mt-8" data-testid="nova-apps-grid">
+    <UiBalancedGrid :as="UiGridTag.Ul" :count="installer.categories.length" class="mt-8" data-testid="nova-apps-grid">
       <NovaFeatureCard
         v-for="category in installer.categories"
         :key="category"
@@ -36,6 +36,7 @@
 import NovaFeatureCard from '~/templates/nova/sections/FeatureCard.vue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { INSTALLER_CATEGORY_CARDS } from '~/templates/nova/content'
+import { UiGridTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

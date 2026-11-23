@@ -25,8 +25,8 @@ import type { UiMenuAction } from '@/utils/ui/menu'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
-import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
@@ -35,7 +35,6 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -44,8 +43,10 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiAlignItems, UiDirection, UiGap, UiJustify, UiWidth } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { MS_PER_SECOND, NOTICE_VISIBLE_MS } from '@/lib/limits'
@@ -436,17 +437,17 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
   const onRemove = (): void => handleRemoveUser(u)
   return [
     { label: t('clients.clientUsers.manage'), icon: Icon.Settings, testid: `client-users-manage-${u.userId}`, onSelect: onManage },
-    ...(!u.isOwner ? [{ label: t('clients.clientUsers.remove'), icon: Icon.Trash, testid: `client-users-remove-${u.userId}`, onSelect: onRemove, danger: true }] : []),
+    ...(!u.isOwner ? [{ label: t('shared.remove'), icon: Icon.Trash, testid: `client-users-remove-${u.userId}`, onSelect: onRemove, danger: true }] : []),
   ]
 }
 </script>
 
 <template>
   <UiStack>
-    <UiAlert v-if="successMessage" variant="success" data-testid="client-users-success">
+    <UiAlert v-if="successMessage" :variant="UiTone.Success" data-testid="client-users-success">
       {{ successMessage }}
     </UiAlert>
-    <UiAlert v-if="error" variant="error" data-testid="client-users-error">
+    <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="client-users-error">
       {{ error }}
     </UiAlert>
 
@@ -459,9 +460,9 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
     />
 
     <template v-else>
-      <UiStack direction="row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-        <UiSkeletonBar v-if="initialLoading" class="h-6 w-32 rounded-md" aria-hidden="true" />
-        <UiHeading v-else :level="2" variant="section">
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
+        <UiSkeletonBar v-if="initialLoading" :width="UiWidth.Sm" class="h-6 rounded-md" aria-hidden="true" />
+        <UiHeading v-else :level="2" :variant="UiHeadingVariant.Section">
           {{ t('clients.clientUsers.usersLength', { length: users.length }) }}
         </UiHeading>
         <UiButton :action="UiActionKind.Add"
@@ -469,14 +470,14 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
           data-testid="client-users-toggle-add"
           @click="showAddUser = !showAddUser"
         >
-          {{ showAddUser ? t('shared.cancel') : t('clients.clientUsers.addUser') }}
+          {{ showAddUser ? t('shared.cancel') : t('shared.add') }}
         </UiButton>
       </UiStack>
 
       <UiCollapse :open="showAddUser">
-        <UiCard padding="md" data-testid="client-users-add-panel">
+        <UiCard :padding="UiCardPadding.Md" container data-testid="client-users-add-panel">
           <UiStack>
-            <UiHeading :level="3" variant="card">{{ t('clients.clientUsers.addUserToAccount') }}</UiHeading>
+            <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('clients.clientUsers.addUserToAccount') }}</UiHeading>
             <UiTabs v-model="addMode" :items="modeTabs" data-testid="client-users-add-mode" />
 
             <UiField v-if="addMode === AddUserMode.Search" :label="t('clients.clientUsers.searchExisting')">
@@ -502,7 +503,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
                   />
                 </template>
               </UiField>
-              <UiGrid :columns="2" gap="sm">
+              <UiGrid :columns="2" :gap="UiGap.Sm" container>
                 <UiField :label="t('shared.firstName')" required>
                   <template #default="{ id }">
                     <UiInput
@@ -529,8 +530,8 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
             </UiStack>
 
             <UiStack v-if="addMode === AddUserMode.Invite || selectedUserToAdd">
-              <UiHeading :level="4" variant="card">{{ t('clients.clientUsers.permissions') }}</UiHeading>
-              <UiGrid :columns="2" gap="sm">
+              <UiHeading :level="4" :variant="UiHeadingVariant.Card">{{ t('clients.clientUsers.permissions') }}</UiHeading>
+              <UiGrid :columns="2" :gap="UiGap.Sm" container>
                 <UiLabel v-for="perm in PERMISSION_LABELS" :key="perm.flag" :variant="UiLabelVariant.Inline">
                   <UiCheckbox
                     :model-value="hasPermission(perm.flag)"
@@ -541,7 +542,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
                   {{ perm.label }}
                 </UiLabel>
               </UiGrid>
-              <UiStack direction="row" :justify="UiJustify.End">
+              <UiStack :direction="UiDirection.Row" :justify="UiJustify.End">
                 <UiButton :action="UiActionKind.Add"
                   v-if="addMode === AddUserMode.Search"
                   :variant="UiButtonVariant.Primary"
@@ -549,7 +550,7 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
                   data-testid="client-users-add-submit"
                   @click="handleAddUser"
                 >
-                  {{ t('clients.clientUsers.addUser2') }}
+                  {{ t('shared.add') }}
                 </UiButton>
                 <UiButton :action="UiActionKind.Add"
                   v-else
@@ -567,34 +568,34 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
         </UiCard>
       </UiCollapse>
 
-      <UiCard v-if="initialLoading || users.length > 0" class="overflow-x-auto">
-        <UiTable :density="UiTableDensity.Comfortable" :loading="initialLoading" data-testid="client-users-table">
-          <UiSchemaTableHead :columns="schema.table.columns" />
-          <UiTableBody divided>
-            <UiTableRow v-for="u in users" :key="u.userId" hoverable>
-              <UiTableCell>
-                <UiStack direction="row" :align="UiAlignItems.Center" gap="sm">
-                  <UiBadge :tone="UiTone.Primary" small>{{ getInitials(u.firstName, u.lastName) }}</UiBadge>
-                  {{ u.firstName }} {{ u.lastName }}
-                </UiStack>
-              </UiTableCell>
-              <UiTableCell muted>{{ u.email }}</UiTableCell>
-              <UiTableCell>
-                <UiBadge v-if="u.isOwner" :tone="UiTone.Success" small>{{ t('clients.clientUsers.owner') }}</UiBadge>
-                <UiText v-else :tone="UiTextTone.Secondary">{{ t('clients.clientUsers.user') }}</UiText>
-              </UiTableCell>
-              <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
-              <UiTableCell actions>
-                <UiRowActions :actions="clientUserActions(u)" :testid="`client-users-actions-${u.userId}`" />
-              </UiTableCell>
-            </UiTableRow>
-          </UiTableBody>
-        </UiTable>
-      </UiCard>
-
-      <UiCard v-else>
-        <UiEmptyState :title="t('clients.clientUsers.noUsersLinkedToThis')" />
-      </UiCard>
+      <UiDataTable
+        :density="UiTableDensity.Comfortable"
+        :loading="initialLoading"
+        :empty="!initialLoading && users.length === 0"
+        :empty-text="t('clients.clientUsers.noUsersLinkedToThis')"
+        data-testid="client-users-table"
+      >
+        <UiSchemaTableHead :columns="schema.table.columns" />
+        <UiTableBody>
+          <UiTableRow v-for="u in users" :key="u.userId" hoverable>
+            <UiTableCell>
+              <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
+                <UiBadge :tone="UiTone.Primary" small>{{ getInitials(u.firstName, u.lastName) }}</UiBadge>
+                {{ u.firstName }} {{ u.lastName }}
+              </UiStack>
+            </UiTableCell>
+            <UiTableCell muted>{{ u.email }}</UiTableCell>
+            <UiTableCell>
+              <UiBadge v-if="u.isOwner" :tone="UiTone.Success" small>{{ t('clients.clientUsers.owner') }}</UiBadge>
+              <UiText v-else :tone="UiTextTone.Secondary">{{ t('clients.clientUsers.user') }}</UiText>
+            </UiTableCell>
+            <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
+            <UiTableCell actions>
+              <UiRowActions :actions="clientUserActions(u)" :testid="`client-users-actions-${u.userId}`" />
+            </UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+      </UiDataTable>
     </template>
 
     <Teleport to="body">
@@ -615,24 +616,24 @@ const clientUserActions = (u: ClientUserItem): UiMenuAction[] => {
 
     <UiDialog
       v-if="makeOwnerTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientUsers.transferOwnership')"
       :message="t('clients.clientUsers.confirmTransferOwnership', { email: makeOwnerTarget.email })"
       :confirm-label="t('clients.clientUsers.transfer')"
       :loading="transferringOwnership"
-      tone="warning"
+      :tone="UiTone.Warning"
       @confirm="confirmMakeOwner"
       @close="makeOwnerTarget = null"
     />
 
     <UiDialog
       v-if="removeUserTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('clients.clientUsers.removeUser')"
       :message="t('clients.clientUsers.confirmRemoveUser', { email: removeUserTarget.email })"
-      :confirm-label="t('clients.clientUsers.remove')"
+      :confirm-label="t('shared.remove')"
       :loading="removingUser"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="confirmRemoveUser"
       @close="removeUserTarget = null"
     />

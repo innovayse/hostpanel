@@ -10,22 +10,19 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -43,7 +40,12 @@ import { useServiceChangeRequestsStore } from '@/stores/serviceChangeRequests'
 import { ServiceChangeDecision, ServiceChangeStatus } from '@/types/servicechangerequest'
 import type { ServiceChangeRequestItem } from '@/types/servicechangerequest'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiAlignItems, UiDirection, UiWidth } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -63,10 +65,7 @@ const note = ref('')
 const deciding = ref(false)
 
 /** The outcome line of the last decision. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** Whether the current page has any request to list. */
 const hasRows = computed<boolean>(() => store.requests.length > 0)
@@ -144,7 +143,6 @@ const handleDecision = async (): Promise<void> => {
   if (target === null) {
     return
   }
-  feedback.clear()
   deciding.value = true
   const text = note.value.trim() === '' ? null : note.value.trim()
   const approving = target.decision === ServiceChangeDecision.Approve
@@ -226,24 +224,29 @@ onMounted(() => {
       data-testid="plan-changes-header"
     />
 
-    <UiStack direction="row" align="center">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center">
       <UiSelect
         :model-value="store.status"
         :options="statusOptions"
         :placeholder="t('serviceChangeRequests.filterStatus')"
         data-testid="plan-changes-status-filter"
-        class="w-48"
+        :width="UiWidth.Lg"
         @update:model-value="setStatus"
       />
       <template v-if="store.serviceId !== null">
         <UiBadge small>{{ t('serviceChangeRequests.serviceFilter', { id: store.serviceId }) }}</UiBadge>
-        <UiLink variant="link" :to="AppRoute.ClientsPlanChanges" data-testid="plan-changes-clear-service">
-          {{ t('serviceChangeRequests.clearServiceFilter') }}
+        <UiLink
+          :variant="UiButtonVariant.Link"
+          :to="AppRoute.ClientsPlanChanges"
+          :title="t('serviceChangeRequests.clearServiceFilter')"
+          :aria-label="t('serviceChangeRequests.clearServiceFilter')"
+          data-testid="plan-changes-clear-service"
+        >
+          {{ t('shared.clearFilters') }}
         </UiLink>
       </template>
     </UiStack>
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plan-changes-feedback" />
 
     <UiErrorState
       v-if="store.error !== null"
@@ -253,85 +256,79 @@ onMounted(() => {
       @retry="load"
     />
 
-    <UiCard v-if="hasRows || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" data-testid="plan-changes-table">
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody>
-          <UiTableRow
-            v-for="item in store.requests"
-            :key="item.id"
-            hoverable
-            bordered
-            :data-testid="`plan-changes-row-${item.id}`"
-          >
-            <UiTableCell muted>{{ formatDate(item.createdAt) }}</UiTableCell>
-            <UiTableCell>
-              <UiLink
-                variant="link"
-                :to="clientItemPath(item.clientId, ClientSection.Services, item.serviceId)"
-                :data-testid="`plan-changes-service-${item.id}`"
-              >
-                #{{ item.serviceId }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiLink variant="link" :to="clientPath(item.clientId)" :data-testid="`plan-changes-client-${item.id}`">
-                {{ item.clientName }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiText class="min-w-0 truncate">{{ item.fromProductName }} → {{ item.toProductName }}</UiText>
-              <UiText v-if="item.note" tone="muted" size="xs" class="min-w-0 truncate">{{ t('serviceChangeRequests.note') }}: {{ item.note }}</UiText>
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="serviceChangeTypeTone(item.type)" small>{{ serviceChangeTypeLabel(item.type) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell>
-              <UiText>{{ formatPrice(item.prorationAmount, item.currencyCode) }}</UiText>
-              <UiLink
-                v-if="item.invoiceId !== null"
-                variant="link"
-                :to="invoicePath(item.invoiceId)"
-                :data-testid="`plan-changes-invoice-${item.id}`"
-              >
-                {{ t('serviceChangeRequests.invoice', { id: item.invoiceId }) }}
-              </UiLink>
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="serviceChangeStatusTone(item.status)" small>{{ serviceChangeStatusLabel(item.status) }}</UiBadge>
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="requestActions(item)" :testid="`plan-changes-actions-${item.id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-
-      <UiStack direction="row" justify="between" align="center" class="p-3">
-        <UiText tone="muted" size="xs">
-          {{ t('serviceChangeRequests.totalCount', { totalCount: store.totalCount }) }}
-        </UiText>
-        <UiPagination
-          :page="store.page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="plan-changes-pagination"
-          @update:page="goToPage"
-        />
-      </UiStack>
-    </UiCard>
-
-    <UiCard v-else-if="!store.error">
-      <UiEmptyState :title="t('serviceChangeRequests.empty')" data-testid="plan-changes-empty">
-        <template #icon>
-          <UiIcon :markup="Icon.Remove" size="lg" />
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    <UiDataTable
+      v-if="hasRows || !store.error"
+      :density="UiTableDensity.Comfortable"
+      :loading="store.loading && !hasRows"
+      :empty="!store.loading && !hasRows"
+      :page="store.page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="plan-changes-pagination"
+      data-testid="plan-changes-table"
+      @update:page="goToPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="item in store.requests"
+          :key="item.id"
+          hoverable
+          :data-testid="`plan-changes-row-${item.id}`"
+        >
+          <UiTableCell muted>{{ formatDate(item.createdAt) }}</UiTableCell>
+          <UiTableCell>
+            <UiLink
+              :variant="UiButtonVariant.Link"
+              :to="clientItemPath(item.clientId, ClientSection.Services, item.serviceId)"
+              :data-testid="`plan-changes-service-${item.id}`"
+            >
+              #{{ item.serviceId }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiLink :variant="UiButtonVariant.Link" :to="clientPath(item.clientId)" :data-testid="`plan-changes-client-${item.id}`">
+              {{ item.clientName }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiText truncate>{{ item.fromProductName }} → {{ item.toProductName }}</UiText>
+            <UiText v-if="item.note" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" truncate>{{ t('serviceChangeRequests.note') }}: {{ item.note }}</UiText>
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="serviceChangeTypeTone(item.type)" small>{{ serviceChangeTypeLabel(item.type) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell>
+            <UiText>{{ formatPrice(item.prorationAmount, item.currencyCode) }}</UiText>
+            <UiLink
+              v-if="item.invoiceId !== null"
+              :variant="UiButtonVariant.Link"
+              :to="invoicePath(item.invoiceId)"
+              :data-testid="`plan-changes-invoice-${item.id}`"
+            >
+              {{ t('serviceChangeRequests.invoice', { id: item.invoiceId }) }}
+            </UiLink>
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="serviceChangeStatusTone(item.status)" small>{{ serviceChangeStatusLabel(item.status) }}</UiBadge>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="requestActions(item)" :testid="`plan-changes-actions-${item.id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState :title="t('serviceChangeRequests.empty')" data-testid="plan-changes-empty">
+          <template #icon>
+            <UiIcon :markup="Icon.Remove" :size="UiSize.Lg" />
+          </template>
+        </UiEmptyState>
+      </template>
+    </UiDataTable>
 
     <UiDialog
       v-if="staged !== null"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="rejecting ? t('serviceChangeRequests.rejectTitle') : t('serviceChangeRequests.approveTitle')"
       :message="rejecting ? t('serviceChangeRequests.rejectMessage') : t('serviceChangeRequests.approveMessage')"
       :confirm-label="rejecting ? t('serviceChangeRequests.reject') : t('serviceChangeRequests.approve')"

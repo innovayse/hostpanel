@@ -22,8 +22,11 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import type { PaymentMethodOption, ProductGroup, ProductGroupPayload } from '@/types/product'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
-import { UiLabelVariant } from '@/utils/ui/text'
+import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
@@ -103,7 +106,7 @@ const handleSubmit = (): void => {
 <template>
   <UiDialog
     :title="isEditMode ? t('settings.productGroups.editTitle') : t('settings.productGroups.addTitle')"
-    size="md"
+    :size="UiDialogSize.Md"
     @close="emit('close')"
   >
     <UiForm stacked data-testid="product-group-form" @submit="handleSubmit">
@@ -134,9 +137,9 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiStack gap="xs" data-testid="product-group-form-methods">
-        <UiText tone="primary" size="md">{{ t('settings.productGroups.allowedMethods') }}</UiText>
-        <UiText tone="muted" size="sm">{{ t('settings.productGroups.allowedMethodsHint') }}</UiText>
+      <UiStack :gap="UiGap.Xs" data-testid="product-group-form-methods">
+        <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productGroups.allowedMethods') }}</UiText>
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productGroups.allowedMethodsHint') }}</UiText>
         <UiLabel v-for="choice in choices" :key="choice.module" :variant="UiLabelVariant.Inline">
           <UiCheckbox
             :model-value="allowed.includes(choice.module)"
@@ -151,11 +154,11 @@ const handleSubmit = (): void => {
       <UiStatusMessage :message="error" :tone="UiTone.Danger" data-testid="product-group-form-error" />
 
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="product-group-form-cancel" @click="emit('close')">
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="product-group-form-cancel" @click="emit('close')">
           {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" data-testid="product-group-form-save">
-          {{ isEditMode ? t('shared.saveChanges') : t('settings.productGroups.create') }}
+        <UiButton :action="UiActionKind.Save" :type="UiButtonType.Submit" :variant="UiButtonVariant.Primary" :loading="saving" data-testid="product-group-form-save">
+          {{ isEditMode ? t('shared.save') : t('settings.productGroups.create') }}
         </UiButton>
       </UiFormActions>
     </UiForm>

@@ -1,13 +1,7 @@
 {
-  "cwpBrandHeader": {
-    "centosWebPanel": "CentOS Web Panel",
-    "provisioningProvider": "Провайдер провижининга",
-    "connectionError": "Ошибка соединения",
-    "unknown": "Неизвестно"
-  },
   "integrationCard": {
     "plugin": "Плагин",
-    "configure": "Настроить →",
+    "configure": "Настроить",
     "notConfigured": "Не настроено"
   },
   "categories": {
@@ -56,15 +50,6 @@
     "noIntegrationsInThisCategory": "В этой категории нет интеграций",
     "emptyHint": "Установите плагин из каталога или загрузите пакет плагина, чтобы добавить его.",
     "browsePlugins": "Каталог плагинов"
-  },
-  "common": {
-    "never": "Никогда"
-  },
-  "providerStatus": {
-    "notConnected": "Не подключено",
-    "statusUnknown": "Статус неизвестен",
-    "lastTested": "Последняя проверка",
-    "cwpVersion": "Версия CWP"
   },
   "integrationConfigForm": {
     "enterValue": "Введите: {label}",

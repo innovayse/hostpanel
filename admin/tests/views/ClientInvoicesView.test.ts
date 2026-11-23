@@ -16,6 +16,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The one-invoice page of client 7. */
 const listPage = () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 })
@@ -86,7 +87,7 @@ describe('ClientInvoicesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-invoices-feedback"]').text()).toBe('The invoice has payments.')
+    expect(toastMessages()).toContain('The invoice has payments.')
     expect(wrapper.find('[data-testid="client-invoices-error"]').exists()).toBe(false)
   })
 

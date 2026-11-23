@@ -9,7 +9,9 @@ import { useI18n } from 'vue-i18n'
 import ReportPage from '@/components/reports/ReportPage.vue'
 import WorldMap from '@/components/reports/WorldMap.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
 import UiText from '@/components/ui/UiText.vue'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UNKNOWN_COUNTRY, reportCountryName } from '@/lib/reportsCountry'
 import { useReportsStore } from '@/stores/reports'
 import type { ReportChartData } from '@/types/reportchartdata'
@@ -117,11 +119,11 @@ onMounted(load)
       <WorldMap v-if="countries.length > 0" :country-data="countries" @select-country="toggleCountry" />
     </template>
     <template #chart-actions>
-      <UiButton v-if="selectedCountry" variant="link" data-testid="report-clear-country" @click="clearSelection">
-        {{ t('reports.clientsByCountry.clearSelection') }}
+      <UiButton v-if="selectedCountry" :variant="UiButtonVariant.Link" :title="t('reports.clientsByCountry.clearSelection')" :aria-label="t('reports.clientsByCountry.clearSelection')" data-testid="report-clear-country" @click="clearSelection">
+        {{ t('shared.clear') }}
       </UiButton>
     </template>
-    <UiText tone="secondary" size="md" data-testid="report-total-clients">
+    <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" data-testid="report-total-clients">
       {{ t('reports.clientsByCountry.totalClients') }} {{ totalClients }}
     </UiText>
   </ReportPage>

@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiCardRole, UiColumnSize } from '@/utils/ui/table'
 
 /** The quotes list. */
 const schema: ListSkeletonSchema = {
@@ -17,13 +17,13 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'client', label: 'shared.clientName', cardRole: UiCardRole.Subtitle },
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, size: UiColumnSize.Compact },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'total', label: 'shared.total', numeric: true, size: UiColumnSize.Compact },
-      { key: 'expiry', label: 'shared.expiryDate', size: UiColumnSize.Compact },
-      { key: 'created', label: 'billing.quotesList.created', size: UiColumnSize.Compact },
+      { key: 'expiry', label: 'shared.expiryDate', kind: UiColumnKind.Date },
+      { key: 'created', label: 'billing.quotesList.created', kind: UiColumnKind.Date },
     ],
   },
 }

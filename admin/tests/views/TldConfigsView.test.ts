@@ -17,6 +17,7 @@ import { mountRouted } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/tld-pricing'
@@ -146,6 +147,8 @@ describe('TldConfigsView', () => {
     stubRoutes({ 'GET /api/admin/tld-configs': () => json(page([item('com')], 45)) })
     const { wrapper, router } = await mountListAt()
 
+    expect(wrapper.find('[data-testid="ui-card-footer"] [data-testid="tld-configs-pagination-next"]').exists()).toBe(true)
+
     await wrapper.get('[data-testid="tld-configs-pagination-next"]').trigger('click')
     await flushPromises()
 
@@ -238,7 +241,7 @@ describe('TldConfigsView', () => {
     await wrapper.get('[data-testid="tld-configs-sync"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tld-configs-result"]').text()).toBe('The registrar did not answer.')
+      expect(toastMessages()).toContain('The registrar did not answer.')
     })
   })
 
@@ -306,7 +309,7 @@ describe('TldConfigsView', () => {
     await wrapper.get('[data-testid="tld-delete-com"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tld-configs-result"]').text()).toBe('The TLD has domains.')
+      expect(toastMessages()).toContain('The TLD has domains.')
     })
   })
 

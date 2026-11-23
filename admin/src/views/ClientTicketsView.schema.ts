@@ -6,7 +6,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema, SkeletonStat } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The four opened-tickets tiles. */
 export const CLIENT_TICKETS_STATS: readonly SkeletonStat[] = [
@@ -28,12 +28,12 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'dateOpened', label: 'clients.clientTickets.dateOpened' },
+      { key: 'dateOpened', label: 'clients.clientTickets.dateOpened', kind: UiColumnKind.Date },
       { key: 'department', label: 'shared.department' },
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
-      { key: 'priority', label: 'shared.priority', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
-      { key: 'lastReply', label: 'shared.lastReply' },
+      { key: 'priority', label: 'shared.priority', kind: UiColumnKind.Status },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
+      { key: 'lastReply', label: 'shared.lastReply', kind: UiColumnKind.Date },
     ],
   },
 }

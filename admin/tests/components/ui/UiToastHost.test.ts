@@ -47,6 +47,16 @@ describe('UiToastHost', () => {
     expect(toasts.map((toast) => toast.attributes('data-tone'))).toEqual([UiTone.Success, UiTone.Warning])
   })
 
+  it('announces a danger toast as an alert and leaves the other tones to the polite region', async () => {
+    const wrapper = mountHost()
+    useToastStore().push('Saved')
+    useToastStore().push('Refused', UiTone.Danger)
+    await wrapper.vm.$nextTick()
+
+    const toasts = wrapper.findAll('[data-testid="ui-toast"]')
+    expect(toasts.map((toast) => toast.attributes('role'))).toEqual([undefined, 'alert'])
+  })
+
   it('dismisses a toast through its close button', async () => {
     const wrapper = mountHost()
     useToastStore().push('Saved')

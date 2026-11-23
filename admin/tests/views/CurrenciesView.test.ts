@@ -13,6 +13,7 @@ import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { flushPromises } from '@vue/test-utils'
 import { pickOption } from '../helpers/select'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The base currency. */
 const usd: CurrencyDto = {
@@ -184,9 +185,8 @@ describe('CurrenciesView', () => {
     await wrapper.get('[data-testid="currencies-update-rates"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="currencies-result"]').text()).toBe('The rate source did not answer.')
+      expect(toastMessages()).toContain('The rate source did not answer.')
     })
-    expect(wrapper.get('[data-testid="currencies-result"]').attributes('role')).toBe('alert')
   })
 
   it('walks the price recompute: pick currencies, confirm the overwrite, report the count', async () => {

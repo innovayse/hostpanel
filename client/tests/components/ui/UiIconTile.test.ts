@@ -1,5 +1,5 @@
 /**
- * Unit tests for UiIconTile: the icon, the tones and the size steps, all from classic tokens.
+ * Unit tests for UiIconTile: the icon or slot text, the tones and the size steps.
  */
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
@@ -25,15 +25,32 @@ describe('UiIconTile', () => {
   it.each([
     [UiIconTileTone.Solid, 'bg-classic-fill'],
     [UiIconTileTone.Inverse, 'bg-classic-on-brand/20'],
+    [UiIconTileTone.Nova, 'bg-nova-surface-2'],
   ])('paints the %s tone', (tone, expected) => {
     expect(mountWithKit(UiIconTile, { props: { icon: 'mdi:server', tone } }).classes()).toContain(expected)
   })
 
   it.each([
     [UiIconTileSize.Sm, 'size-8'],
+    [UiIconTileSize.Compact, 'size-9'],
     [UiIconTileSize.Md, 'size-10'],
+    [UiIconTileSize.Lg, 'size-11'],
   ])('sizes the %s tile', (size, expected) => {
     expect(mountWithKit(UiIconTile, { props: { icon: 'mdi:server', size } }).classes()).toContain(expected)
+  })
+
+  it('rounds the large tile more than the others and sizes its icon in pixels', () => {
+    const wrapper = mountWithKit(UiIconTile, { props: { icon: 'mdi:server', size: UiIconTileSize.Lg, tone: UiIconTileTone.Nova } })
+
+    expect(wrapper.classes()).toContain('rounded-xl')
+    expect(wrapper.find('[data-icon="mdi:server"]').classes()).toContain('text-[22px]')
+  })
+
+  it('shows slot text instead of an icon', () => {
+    const wrapper = mountWithKit(UiIconTile, { slots: { default: 'DE' } })
+
+    expect(wrapper.text()).toBe('DE')
+    expect(wrapper.find('[data-icon]').exists()).toBe(false)
   })
 
   it('is a medium soft tile by default', () => {

@@ -25,6 +25,22 @@ describe('Ui enums', () => {
     expect(Object.values(kit.UiRichNodeType)).toEqual(['text', 'element'])
   })
 
+  it('keeps the tags each layout component may be drawn as', () => {
+    expect(Object.values(kit.UiStackTag)).toEqual(['div', 'span', 'section', 'article', 'aside', 'nav', 'main', 'header', 'footer', 'figure', 'figcaption', 'ul', 'ol', 'li'])
+    expect(Object.values(kit.UiGridTag)).toEqual(['div', 'ul', 'ol', 'dl'])
+    expect(Object.values(kit.UiDecorTag)).toEqual(['div', 'span'])
+    expect(Object.values(kit.UiGradientTextTag)).toEqual(['span', 'div', 'p', 'h1', 'h2', 'h3'])
+    expect(Object.values(kit.UiAccentTag)).toEqual(['div', 'span', 'li', 'section', 'article'])
+    expect(Object.values(kit.UiRichTextTag)).toEqual(['div', 'section', 'article'])
+  })
+
+  it('keeps the text tags, member names matching their values', () => {
+    for (const [member, value] of Object.entries(kit.UiTextTag)) {
+      expect(member.toLowerCase()).toBe(value)
+    }
+    expect(kit.UiTextTag.P).toBe('p')
+  })
+
   it('has no duplicated value inside any string enum', () => {
     for (const [name, members] of Object.entries(kit)) {
       const values = Object.values(members as Record<string, string | number>).filter(value => typeof value === 'string')

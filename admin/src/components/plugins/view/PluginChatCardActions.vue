@@ -11,7 +11,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import type { PluginChatResult } from '@/types/pluginview'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiGap } from '@/utils/ui/layout'
+import { UiAlignItems, UiGap, UiDirection } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiActionKind } from '@/utils/ui/actions'
 
@@ -63,7 +63,7 @@ const shown = computed<boolean>(() =>
 </script>
 
 <template>
-  <UiStack v-show="shown" direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap data-testid="plugin-chat-result-actions">
+  <UiStack v-show="shown" :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap data-testid="plugin-chat-result-actions">
     <PluginChatCardAction
       v-for="action in result.actions"
       :key="action.key"
@@ -79,6 +79,6 @@ const shown = computed<boolean>(() =>
       :size="UiSize.Sm"
       data-testid="plugin-chat-result-details-toggle"
       @click="emit('toggleDetails')"
-    >{{ t('plugins.pluginPage.chatResultDetails') }}</UiButton>
+    >{{ t('shared.details') }}</UiButton>
   </UiStack>
 </template>

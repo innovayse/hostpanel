@@ -80,7 +80,6 @@ describe('FraudLogView', () => {
     expect(row).toContain('Proxy, VPN or hosting IP address')
     expect(row).toContain('203.0.113.7')
     expect(row).toContain('buyer@example.test')
-    expect(wrapper.get('[data-testid="fraud-log-count"]').text()).toContain('1 Records Found')
   })
 
   it('links the client and the order to their screens', async () => {
@@ -108,7 +107,6 @@ describe('FraudLogView', () => {
     const { wrapper } = await mountScreen(FraudLogView)
 
     expect(wrapper.get('[data-testid="fraud-log-table"]').text()).toContain('No Records Found')
-    expect(wrapper.get('[data-testid="fraud-log-count"]').text()).toContain('0 Records Found')
   })
 
   it('puts an applied decision in the address, shows its chip and sends it', async () => {

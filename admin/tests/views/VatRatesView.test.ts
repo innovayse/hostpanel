@@ -16,6 +16,7 @@ import { applyListFilter } from '../helpers/listFilter'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
+import { toastMessages } from '../helpers/toasts'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/vat-rates'
@@ -143,6 +144,8 @@ describe('VatRatesView', () => {
     stubRoutes({ 'GET /api/admin/vat-rates?': () => json(page([germany], 45)) })
     const { wrapper, router } = await mountListAt()
 
+    expect(wrapper.find('[data-testid="ui-card-footer"] [data-testid="vat-rates-pagination-next"]').exists()).toBe(true)
+
     await wrapper.get('[data-testid="vat-rates-pagination-next"]').trigger('click')
     await flushPromises()
 
@@ -252,7 +255,6 @@ describe('VatRatesView', () => {
     await vi.waitFor(() => {
       expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['The VAT rate was deleted.'])
     })
-    expect(wrapper.find('[data-testid="vat-rates-result"]').exists()).toBe(false)
     expect(requestsOf(mock)).toContain('DELETE /api/admin/vat-rates/1')
     expect(listUrls(mock).length).toBe(before + 1)
   })
@@ -290,7 +292,7 @@ describe('VatRatesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="vat-rates-result"]').text()).toBe('The VAT rate does not exist.')
+      expect(toastMessages()).toContain('The VAT rate does not exist.')
     })
   })
 })

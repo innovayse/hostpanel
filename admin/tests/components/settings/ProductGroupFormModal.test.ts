@@ -22,7 +22,7 @@ describe('ProductGroupFormModal', () => {
   it('lists every offered method, none ticked, when creating', async () => {
     const { wrapper } = await mountScreen(ProductGroupFormModal, { group: null, methods, saving: false })
 
-    expect(wrapper.get('h2').text()).toBe('Add product group')
+    expect(wrapper.get('h2').text()).toBe('Create product group')
     expect(wrapper.get('[data-testid="product-group-form-method-bank_transfer"]').attributes('aria-checked')).toBe('false')
     expect(wrapper.get('[data-testid="product-group-form-method-gateway-a"]').attributes('aria-checked')).toBe('false')
     expect(wrapper.get('[data-testid="product-group-form-methods"]').text()).toContain('Bank Card (Gateway A)')

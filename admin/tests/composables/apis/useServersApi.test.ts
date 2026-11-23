@@ -35,9 +35,9 @@ describe('useServersApi servers', () => {
     const api = useServersApi()
 
     expect(await api.listServerOptions()).toEqual([{ id: 1 }])
-    await api.listServerOptions(ServerModule.Cwp7)
+    await api.listServerOptions(ServerModule.DirectAdmin)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/servers/options', method: 'GET' })
-    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/servers/options?module=Cwp7', method: 'GET' })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/servers/options?module=DirectAdmin', method: 'GET' })
   })
 
   it('listServerModules reads the control panel modules a server can be given', async () => {

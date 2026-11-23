@@ -16,9 +16,11 @@ import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiSize } from '@/utils/ui/size'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTextSize, UiTextTone, UiHeadingVariant } from '@/utils/ui/text'
 import type { PluginSlotWidgetBindingDto } from '@/types/plugin'
 import type { Product } from '@/types/product'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -72,12 +74,12 @@ const saveWidget = async (widget: PluginSlotWidgetBindingDto, productIds: number
 </script>
 
 <template>
-  <UiCard padding="md" :data-testid="`plugin-slot-widgets-${pluginId}`">
-    <UiStack gap="md">
-      <UiStack gap="sm">
-        <UiStack direction="row" align="center" gap="sm">
+  <UiCard :padding="UiCardPadding.Md" :data-testid="`plugin-slot-widgets-${pluginId}`">
+    <UiStack :gap="UiGap.Md">
+      <UiStack :gap="UiGap.Sm">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
           <UiPluginAvatar :name="pluginName" :icon-url="pluginIconUrl" :color="pluginColor" :size="UiSize.Sm" />
-          <UiHeading :level="2" variant="section">{{ t('plugins.pluginSlotWidgets.title', { plugin: pluginName }) }}</UiHeading>
+          <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('plugins.pluginSlotWidgets.title', { plugin: pluginName }) }}</UiHeading>
         </UiStack>
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('plugins.pluginSlotWidgets.description') }}</UiText>
       </UiStack>

@@ -1,7 +1,7 @@
 /**
  * Mount tests for ManageUsersView: rows render with their actions, the search and the page live in the address and
- * are sent to the API, the password-reset action confirms with a success message, deleting a user is confirmed first
- * and reports its outcome, and a refused load shows the API's sentence with a Retry instead of the table.
+ * are sent to the API, the password actions confirm with a success toast and report a refusal as a toast, they are not offered when the sign-on service owns the passwords, deleting a user is confirmed first and
+ * reports its outcome, and a refused load shows the API's sentence with a Retry instead of the table.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -11,6 +11,10 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import schema from '@/views/ManageUsersView.schema'
+import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
+import { AuthMode } from '@/types/auth'
+import { UiTone } from '@/utils/ui/tone'
 
 /** One user as the list endpoint returns it. */
 const user = {
@@ -50,6 +54,13 @@ const mountUsers = async () => (await mountUsersAt('/clients/users')).wrapper
  * @returns One URL per call, in order.
  */
 const urlsOf = (mock: ReturnType<typeof stubRoutes>): string[] => mock.mock.calls.map(([url]) => url as string)
+
+/**
+ * The toasts on screen as sentence and tone pairs.
+ *
+ * @returns One pair per toast, oldest first.
+ */
+const toastsOnScreen = (): Array<[string, UiTone]> => useToastStore().toasts.map((toast) => [toast.message, toast.tone])
 
 describe('ManageUsersView', () => {
   afterEach(() => {
@@ -118,6 +129,21 @@ describe('ManageUsersView', () => {
     expect(urlsOf(mock).at(-1)).toBe('/api/admin/users?page=3&pageSize=20&search=ada')
   })
 
+  it('offers no header action: new clients are added from the top bar, not from the users page', async () => {
+    stubRoutes({ 'GET /api/admin/users': () => json({ items: [user], totalCount: 1 }) })
+    const wrapper = await mountUsers()
+
+    expect(wrapper.find('[data-testid="users-add-client"]').exists()).toBe(false)
+  })
+
+  it('draws the pager in the table card', async () => {
+    stubRoutes({ 'GET /api/admin/users': () => json({ items: [user], totalCount: 45 }) })
+    const wrapper = await mountUsers()
+
+    expect(wrapper.get('[data-testid="users-table"]').element.closest('[data-testid="users-pagination"]')).toBeNull()
+    expect(wrapper.find('[data-testid="users-pagination-page-3"]').exists()).toBe(true)
+  })
+
   it('confirms a sent password reset email', async () => {
     stubRoutes({
       'GET /api/admin/users': () => json({ items: [user], totalCount: 1 }),
@@ -129,7 +155,71 @@ describe('ManageUsersView', () => {
     await wrapper.get('[data-testid="users-reset-u1"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="users-action-success"]').text()).toContain('Password reset email sent.')
+    expect(toastsOnScreen()).toEqual([['Password reset email sent.', UiTone.Success]])
+  })
+
+  /**
+   * Opens the change-password dialog of the user and submits a new password.
+   *
+   * @param wrapper - The mounted screen.
+   * @returns Resolves when the request has settled.
+   */
+  const changePassword = async (wrapper: Awaited<ReturnType<typeof mountUsersAt>>['wrapper']): Promise<void> => {
+    await wrapper.get('[data-testid="users-actions-u1"]').trigger('click')
+    await wrapper.get('[data-testid="users-password-u1"]').trigger('click')
+    await wrapper.get('[data-testid="clients-change-password-input"]').setValue('s3cret-Pass')
+    await wrapper.get('[data-testid="clients-change-password-save"]').trigger('click')
+    await flushPromises()
+  }
+
+  it('confirms a changed password with a toast and closes the dialog', async () => {
+    stubRoutes({
+      'GET /api/admin/users': () => json({ items: [user], totalCount: 1 }),
+      'POST /api/admin/users/u1/change-password': () => new Response(null, { status: 204 }),
+    })
+    const wrapper = await mountUsers()
+
+    await changePassword(wrapper)
+
+    expect(toastsOnScreen()).toEqual([['Password changed.', UiTone.Success]])
+    expect(wrapper.find('[data-testid="clients-change-password-input"]').exists()).toBe(false)
+  })
+
+  it('toasts the API sentence of a refused password change and keeps the dialog open', async () => {
+    stubRoutes({
+      'GET /api/admin/users': () => json({ items: [user], totalCount: 1 }),
+      'POST /api/admin/users/u1/change-password': () => problem('Passwords are managed in the sign-on service.', 400),
+    })
+    const wrapper = await mountUsers()
+
+    await changePassword(wrapper)
+
+    expect(toastsOnScreen()).toEqual([['Passwords are managed in the sign-on service.', UiTone.Danger]])
+    expect(wrapper.find('[data-testid="clients-change-password-input"]').exists()).toBe(true)
+  })
+
+  it('offers no password action and names where passwords are managed when the sign-on service owns the accounts', async () => {
+    stubRoutes({ 'GET /api/admin/users': () => json({ items: [user], totalCount: 1 }) })
+    const wrapper = await mountUsers()
+
+    useAuthStore().mode = AuthMode.Sso
+    await flushPromises()
+
+    // One action left, so the row draws it as a button instead of a menu.
+    expect(wrapper.find('[data-testid="users-manage-u1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="users-reset-u1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="users-password-u1"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="users-passwords-managed-by-sso"]').text()).toContain('managed in the sign-on service')
+  })
+
+  it('shows no sign-on note where the deployment owns its accounts', async () => {
+    stubRoutes({ 'GET /api/admin/users': () => json({ items: [user], totalCount: 1 }) })
+    const wrapper = await mountUsers()
+
+    useAuthStore().mode = AuthMode.Local
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="users-passwords-managed-by-sso"]').exists()).toBe(false)
   })
 
   it('shows the API sentence instead of the table when the load is refused', async () => {
@@ -196,7 +286,7 @@ describe('ManageUsersView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(true)
-    expect(wrapper.get('[data-testid="users-action-success"]').text()).toContain('User deleted.')
+    expect(toastsOnScreen()).toEqual([['User deleted.', UiTone.Success]])
   })
 
   it('steps back a page when deleting the user empties the last one', async () => {
@@ -232,7 +322,7 @@ describe('ManageUsersView', () => {
     await flushPromises()
 
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
-    expect(wrapper.find('[data-testid="users-action-success"]').exists()).toBe(false)
+    expect(toastsOnScreen()).toEqual([])
   })
 
   it('shows the API sentence when the delete is refused', async () => {
@@ -247,7 +337,7 @@ describe('ManageUsersView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="users-action-error"]').text()).toContain('The user owns an account.')
+    expect(toastsOnScreen()).toEqual([['The user owns an account.', UiTone.Danger]])
   })
 
   it('draws the table head from the schema columns while the first load is in flight', async () => {

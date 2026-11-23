@@ -13,6 +13,7 @@ import { mountRouted, mountView } from '../helpers/mount'
 import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** One announcement as the list endpoint returns it. */
 const announcement = { id: 3, title: 'Maintenance window', content: 'Tonight', isPublished: true, createdAt: '2026-10-01T10:30:00Z' }
@@ -63,7 +64,6 @@ describe('AnnouncementsListView', () => {
     expect(row.text()).toContain('Maintenance window')
     expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
     expect(wrapper.findAll('th').some((header) => header.classes().includes('max-w-0'))).toBe(true)
-    expect(wrapper.get('[data-testid="announcements-count"]').text()).toContain('1')
   })
 
   it('asks for confirmation before deleting, then deletes and reloads', async () => {
@@ -122,7 +122,7 @@ describe('AnnouncementsListView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="announcements-feedback"]').text()).toBe('Announcement is locked.')
+    expect(toastMessages()).toContain('Announcement is locked.')
     expect(wrapper.find('[data-testid="announcements-error"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="announcements-row-3"]').exists()).toBe(true)
   })

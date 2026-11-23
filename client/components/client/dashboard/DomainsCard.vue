@@ -24,10 +24,10 @@
       >
         <UiStack direction="row" align="center" gap="sm" class="min-w-0">
           <Globe :size="16" :stroke-width="2" class="flex-shrink-0 text-primary-600 dark:text-primary-400" />
-          <UiText as="span" size="sm" weight="medium" truncate>{{ domain.name }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" weight="medium" truncate>{{ domain.name }}</UiText>
         </UiStack>
         <UiStack direction="row" align="center" gap="xs" class="flex-shrink-0">
-          <UiText as="span" size="xs" tone="subtle">{{ domainDateLabel(domain) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ domainDateLabel(domain) }}</UiText>
           <ClientStatusBadge :status="domain.status" />
         </UiStack>
       </ClientDashboardListRow>
@@ -46,6 +46,7 @@ import { useClientStore } from '~/stores/client'
 import type { ClientDomain } from '~/types/clientdomain'
 import { EMPTY_DATE, formatDate } from '~/utils/formatDate'
 import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the strings this file builds itself. */
 const { t } = useI18n()

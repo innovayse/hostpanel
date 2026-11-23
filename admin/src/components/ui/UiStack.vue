@@ -5,11 +5,13 @@
  * Replaces hand-written `flex flex-col gap-4` wrappers so spacing comes from one scale.
  */
 import { computed } from 'vue'
-import { alignItemsClasses, gapClasses, hiddenFromClasses, justifyClasses, reflowClasses, UiDirection, visibleFromClasses } from '@/utils/ui/layout'
-import type { UiAlignItems, UiBreakpoint, UiGap, UiJustify } from '@/utils/ui/layout'
+import { alignItemsClasses, gapClasses, hiddenFromClasses, justifyClasses, minWidthClasses, reflowClasses, UiDirection, UiStackTag, visibleFromClasses } from '@/utils/ui/layout'
+import type { UiAlignItems, UiBreakpoint, UiGap, UiJustify, UiWidth } from '@/utils/ui/layout'
 
 /** Props for UiStack. */
 const props = withDefaults(defineProps<{
+  /** Element the stack is drawn as; a `div` by default, a landmark or list element where the markup calls for one (a `li` inside a `ul` stack). */
+  as?: UiStackTag
   /** Main axis: `column` stacks vertically, `row` lays out horizontally. */
   direction?: UiDirection
   /** Space between children. */
@@ -26,17 +28,21 @@ const props = withDefaults(defineProps<{
    * children centred on the cross axis.
    */
   reflowBelowMd?: boolean
+  /** Keeps the stack from shrinking below this width, so stacks side by side (a column of amounts) line up. */
+  minWidth?: UiWidth
   /** Shows the stack only from this breakpoint up; below it the stack and its children take no space. */
   visibleFrom?: UiBreakpoint
   /** Shows the stack only below this breakpoint; from it up the stack and its children take no space. */
   hiddenFrom?: UiBreakpoint
 }>(), {
+  as: UiStackTag.Div,
   direction: UiDirection.Column,
   gap: 'md',
   align: 'stretch',
   justify: 'start',
   wrap: false,
   reflowBelowMd: false,
+  minWidth: undefined,
   visibleFrom: undefined,
   hiddenFrom: undefined,
 })
@@ -65,11 +71,12 @@ const classes = computed<string[]>(() => [
   justifyClasses[props.justify],
   props.wrap ? 'flex-wrap' : '',
   props.reflowBelowMd ? reflowClasses[props.direction] : '',
+  props.minWidth === undefined ? '' : minWidthClasses[props.minWidth],
 ])
 </script>
 
 <template>
-  <div :class="classes">
+  <component :is="as" :class="classes">
     <slot />
-  </div>
+  </component>
 </template>

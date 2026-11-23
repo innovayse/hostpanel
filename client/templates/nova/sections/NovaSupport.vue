@@ -6,12 +6,10 @@
       :lead="t('nova.support.lead')"
     />
 
-    <UiBalancedGrid as="ul" :count="channels.length" class="mt-10" data-testid="nova-support-grid">
-      <li v-for="item in channels" :key="item.channel" class="h-full" :data-testid="`nova-support-${item.channel}`">
+    <UiBalancedGrid :as="UiGridTag.Ul" :count="channels.length" class="mt-10" data-testid="nova-support-grid">
+      <UiStack v-for="item in channels" :key="item.channel" :as="UiStackTag.Li" gap="none" class="h-full" :data-testid="`nova-support-${item.channel}`">
         <UiCard padding="lg" class="flex h-full flex-col !border-nova-border !bg-nova-surface">
-          <span class="grid h-11 w-11 place-items-center rounded-xl bg-nova-surface-2 text-nova-brand">
-            <Icon :name="SUPPORT_CHANNEL_CARDS[item.channel].icon" class="h-[22px] w-[22px]" aria-hidden="true" />
-          </span>
+          <UiIconTile :icon="SUPPORT_CHANNEL_CARDS[item.channel].icon" size="lg" tone="nova" />
           <UiHeading :level="3" size="bare" class="mt-5 text-[17px] font-bold text-nova-ink">
             {{ t(SUPPORT_CHANNEL_CARDS[item.channel].titleKey) }}
           </UiHeading>
@@ -20,7 +18,7 @@
           </UiText>
           <UiText
             v-if="item.responseTime"
-            as="p"
+            :as="UiTextTag.P"
             size="inherit"
             tone="inherit"
             class="mt-3 text-[14px] font-semibold text-nova-brand"
@@ -39,7 +37,7 @@
             {{ item.value ?? t('nova.support.open') }}
           </NovaCta>
         </UiCard>
-      </li>
+      </UiStack>
     </UiBalancedGrid>
   </UiSection>
 </template>
@@ -53,6 +51,7 @@
 import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { SUPPORT_CHANNEL_CARDS } from '~/templates/nova/content'
+import { UiGridTag, UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

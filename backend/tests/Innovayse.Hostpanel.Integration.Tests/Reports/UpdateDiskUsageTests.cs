@@ -29,7 +29,7 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    /// <summary>An enabled server of a module the host does not provision and no plugin serves (a stored <c>Cwp7</c> server whose plugin is not installed) is reported as an unsupported module.</summary>
+    /// <summary>An enabled server of a module the host does not provision and no plugin serves (a stored server whose plugin is not installed) is reported as an unsupported module.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ServerOfAModuleWithoutAPlugin_IsAnUnsupportedModuleFailureAsync()
@@ -42,7 +42,7 @@ public sealed class UpdateDiskUsageTests(IntegrationTestFactory factory) : IClas
             Hostname: "usage.example.test",
             IpAddress: null,
             AssignedIpAddresses: null,
-            Module: ServerModules.Cwp7,
+            Module: "UnservedPanel",
             Username: "api",
             Credentials: new ServerCredentials("secret", null, null),
             UseSSL: true,

@@ -42,7 +42,7 @@ public static class SshTestSeeds
         IntegrationTestFactory factory,
         string hostname,
         int port,
-        string module = ServerModules.Cwp7,
+        string module = ServerModules.Linux,
         bool enabled = true,
         ServerCredentials? credentials = null)
     {
@@ -63,7 +63,7 @@ public static class SshTestSeeds
     /// <param name="hostname">Customer-facing hostname.</param>
     /// <param name="module">Control panel module.</param>
     /// <returns>The server id.</returns>
-    public static async Task<int> SeedBareServerAsync(IntegrationTestFactory factory, string hostname, string module = ServerModules.Cwp7)
+    public static async Task<int> SeedBareServerAsync(IntegrationTestFactory factory, string hostname, string module = ServerModules.Linux)
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();

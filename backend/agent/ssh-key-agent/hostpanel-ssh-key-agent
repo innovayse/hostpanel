@@ -315,7 +315,7 @@ def host_key(config):
 def _is_locked(name, getspnam):
     """
     True when the account's password is locked (`usermod -L` prefixes the hash with `!`, which is
-    how CWP suspends an account). `!!`/`*` alone mean "no password set" and are not a lock.
+    how a hosting panel suspends an account). `!!`/`*` alone mean "no password set" and are not a lock.
     """
     if getspnam is None:
         return False

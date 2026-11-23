@@ -9,12 +9,11 @@ generates. Nothing in it is specific to one hosting company, network or server.
 
 | Profile | Status | Account checks on top of the generic ones |
 |---|---|---|
-| `cwp` (CentOS Web Panel) | Supported; adapter, unit tests and isolated lab tests | Account must exist in CWP (`root_cwp.user`, via `providers/cwp/account-check`); suspended (`usermod -L`) accounts cannot receive keys. |
-| `generic-linux` | Agent profile with website and PHP helpers (1.6.0+, `providers/generic-linux/`). **Not selectable in HostPanel yet**: HostPanel has no server module for a plain Linux host. | passwd identity checks and the suspension lock only. |
-| Other hosting panels | **Not supported.** Extension point only. | A provider is a profile in `profiles/<name>.conf` plus, if it needs one, a root-owned helper in `providers/<name>/` that answers `account_check_command`; HostPanel maps the server module to the profile in `SshKeyProviderFactory.AgentProfileFor`. None exists for them yet. |
+| `generic-linux` | Built in agent profile with website and PHP helpers (1.6.0+, `providers/generic-linux/`). HostPanel serves it for the plain Linux server module. | passwd identity checks and the suspension lock only. |
+| A hosting panel | Supported when the panel plugin ships a profile. | The plugin ships `profiles/<name>.conf` plus, if it needs one, root-owned helpers in `providers/<name>/` (one may answer `account_check_command`). HostPanel adds them to the install bundle and maps the server module to the profile the plugin names in its manifest. Nothing panel specific is in this agent. |
 
-HostPanel only offers SSH key management on servers whose module maps to a profile (today: the
-v7 hosting panel module → `cwp`). Every other server answers "not available for this type of
+HostPanel only offers SSH key management on servers whose module maps to a profile (the plain Linux
+module, or a module served by a panel plugin that ships one). Every other server answers "not available for this type of
 hosting" to customers.
 
 ## Setting up a server (HostPanel admin → Servers → *SSH*)
@@ -145,7 +144,7 @@ HostPanel; nobody runs anything on the server by hand. It assumes the customer s
 | `jail_group` | `sftp-ssh` | Group the customer sshd chroots. Leave `ssh_group` empty when this is on. |
 | `jail_sections` | none, the profile sets it (`generic-linux`: `basicshell,extendedshell,editors,netutils,terminfo`) | `jk_init` sections copied into a new jail. No built in default: enrolment with none is refused (`internal_error`). With `jail_enrol` on, `install.sh --check` warns for each section missing from `/etc/jailkit/jk_init.ini`. |
 | `jail_shell` | `/bin/bash` | Login shell set on enrolment. |
-| `jail_extras` | none in `generic-linux` (the `jail-extras` helper lists the deploy tools), the CWP profile lists `uname`, `id`, `hostname`, `dircolors`, `rsync`, `tar`, `gzip`, `unzip`, `/etc/bashrc`, `/etc/profile.d/colorls.sh` and `/etc/DIR_COLORS` | Paths copied into the jail with `jk_cp -f` (binaries bring their libraries) when the jail lacks one or its host copy changed (missing in the jail, another size, or newer in whole seconds); paths missing on the host are skipped, and an entry already in place costs no copy. Added to what the provider's `jail-extras` helper lists (see "A jail for site deployers"), and the private key check covers both. An entry that is or contains (symlinks followed) private key material is refused: a `private` directory (such as `/etc/pki/tls/private`), or a file named `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks`. Enrolment fails with `internal_error` before anything is built, and `install.sh --check` warns (exit 1 of `hostpanel-ssh-key-agent --check-config`; any other exit is reported as a failed check). The safe trust paths for outgoing TLS (git, curl) are listed in `SAFE_TRUST_PATHS` of the agent, which `--check` prints, and in the `jail_extras` entry of [the server documentation](../../../docs/en/servers/ssh-key-agent.md); never list `/etc/pki/tls`. |
+| `jail_extras` | none in `generic-linux` (the `jail-extras` helper lists the deploy tools); a panel plugin's profile sets its own | Paths copied into the jail with `jk_cp -f` (binaries bring their libraries) when the jail lacks one or its host copy changed (missing in the jail, another size, or newer in whole seconds); paths missing on the host are skipped, and an entry already in place costs no copy. Added to what the provider's `jail-extras` helper lists (see "A jail for site deployers"), and the private key check covers both. An entry that is or contains (symlinks followed) private key material is refused: a `private` directory (such as `/etc/pki/tls/private`), or a file named `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks`. Enrolment fails with `internal_error` before anything is built, and `install.sh --check` warns (exit 1 of `hostpanel-ssh-key-agent --check-config`; any other exit is reported as a failed check). The safe trust paths for outgoing TLS (git, curl) are listed in `SAFE_TRUST_PATHS` of the agent, which `--check` prints, and in the `jail_extras` entry of [the server documentation](../../../docs/en/servers/ssh-key-agent.md); never list `/etc/pki/tls`. |
 | `systemd_unit_dir` | `/etc/systemd/system` | Where the home bind-mount unit is written. |
 
 While it is on, an account that passes every other check reports `shell_enabled: true` even
@@ -197,7 +196,7 @@ key check, `unsafe_jail_extras`, over that union, so a key the helper would expo
 configured paths. Run it by hand to see a server's list: `jail-extras /etc/ssl/certs /etc/pki/tls/certs`.
 
 The jail sections are the profile's choice: `profiles/generic-linux.conf` sets
-`jail_sections = basicshell,extendedshell,editors,netutils,terminfo` and `profiles/cwp.conf` keeps its own sections and
+`jail_sections = basicshell,extendedshell,editors,netutils,terminfo`, and a panel plugin's profile sets its own sections and
 extras; the agent has no built in default for either. `install.sh --check` warns, by name, for each configured section
 that `/etc/jailkit/jk_init.ini` does not define (all of them when jailkit is not installed), when `jail_enrol` is on.
 
@@ -214,8 +213,8 @@ terminated on the panel; an older agent answers `unknown_operation`, which HostP
 Four ops that give a hosting account a website (vhost, document root, php-fpm pool) and databases, without HostPanel
 knowing anything about the panel underneath. Each runs a provider helper from `helper_dir` (default
 `/usr/local/libexec/hostpanel-ssh-key-agent`) whose name is the op's name; no helper on the server means the op answers
-`not_supported`, and `ping` lists the ops that have one in `capabilities`. The CWP profile ships all four in
-`providers/cwp/` (plus the shared `hp-common.sh`). Like every op they run after the account checks and under the
+`not_supported`, and `ping` lists the ops that have one in `capabilities`. The `generic-linux` profile ships all four in
+`providers/generic-linux/` (plus the shared `hp-common.sh`), and a panel plugin's profile may ship its own. Like every op they run after the account checks and under the
 account's lock, and they write one audit line each with the outcome and the hostname or label, never a helper's answer.
 Two more helpers are not ops. `php-versions` (no arguments, one `N.N` or `N.N<TAB>/abs/cli` per line on stdout, sorted by the agent) is run by ping to report `php_versions` and `php_cli`; a server without it, or whose helper fails, reports `[]` and `{}`, and `ensure-website` accepts only a `php` the provider also lists there. `capabilities` (optional, no arguments, one op name per line) narrows `capabilities` to the ops whose helper is there AND are listed; a failing one means none.
 
@@ -224,7 +223,7 @@ Two more helpers are not ops. `php-versions` (no arguments, one `N.N` or `N.N<TA
 | Field | Rule |
 |---|---|
 | `account` | as everywhere |
-| `hostname` | a lower case domain name. The CWP helper accepts only the account's own CWP domain or a subdomain of it |
+| `hostname` | a lower case domain name. A helper may accept only the account's own domain or a subdomain of it |
 | `docroot` | relative to the home: 1 to 6 segments of `A-Za-z0-9._-`, no segment starting with a dot (so no `..`, `.ssh`, `.conf`), at most 200 characters. The helper also resolves it and refuses anything that leaves the home through a symlink |
 | `php` (optional) | `8.3` style; the helper maps it to the installed php-fpm of that version. Left out: no php-fpm pool and no handler |
 | `link_root` (optional, boolean) | the document root is a symlink that deploys switch (`current/public`). Needs `php`. Adds the pool lines such a switch needs behind Apache (`opcache.validate_timestamps=1`, `opcache.revalidate_freq=0`, `opcache.revalidate_path=1`, `realpath_cache_size=0`) and leaves the last path component to the deploys instead of creating a directory |
@@ -248,7 +247,7 @@ timeout, a missing or doubled `RESULT` line, or a `RESULT` that fails its schema
 |---|---|---|
 | `not_supported` | all | no helper for the op on this server |
 | `site_not_owned` | all | the hostname is not the account's domain, a vhost or database of that name exists but the agent did not create it, or a vhost belongs to another account |
-| `website_conflict` | ensure-website | a vhost CWP made serves a different document root; it is never rewritten |
+| `website_conflict` | ensure-website | a vhost the panel or the server made serves a different document root; it is never rewritten |
 | `php_version_unsupported` | ensure-website | that php-fpm version is not installed |
 | `website_failed` | website ops | anything else; a configuration test that fails restores every edited file first |
 | `database_limit` | ensure-database | the account already has 10 databases the agent made |
@@ -273,35 +272,6 @@ stderr is discarded. The database password is generated in the helper (`openssl 
 stdin so it is never on a command line, and exists only in that `RESULT` line and the response to the call that created
 the database: it is not written to the registry, the audit log or any other log. A lost password means dropping the
 database (`remove-database`) and creating it again.
-
-`HP_ROOT` is a test seam: it prefixes every path and tool the CWP helpers use. The agent never takes it from a request; it
-reaches a helper only through the agent's own fixed environment (`JAIL_ENV`), which holds `PATH` in production.
-
-### What the CWP helpers do
-
-* **Idempotent and minimal.** Each step is skipped when already done; the answer says `changed: false` when nothing was.
-* **Only what the agent created.** A root-owned registry in `/var/lib/hostpanel-ssh-key-agent/<account>/` (one
-  `website.<hostname>` or `database.<label>` file per thing, mode 0700 directory) records what was made. A `remove-*` for
-  something with no entry, whose vhost or database exists, is `site_not_owned`; with nothing there it succeeds with
-  `changed: false`. A vhost file written by the helper starts with `# hostpanel-ssh-key-agent managed`; the php block it
-  adds to a vhost CWP made is wrapped in `# hostpanel-ssh-key-agent php begin|end`, and removal strips only that. The
-  pool is removed only when it carries the marker and no other registered website of the account uses that php version;
-  a document root directory only when the helper created it and it is empty (customer files are never removed).
-* **Backup, test, restore, graceful.** Every file it edits is copied to `/var/lib/hostpanel-ssh-key-agent/backups/<account>-<time>-<pid>/`
-  first. Apache (`apachectl -t`) and php-fpm (`php-fpm -t`) configuration is tested before any reload, any failure restores
-  the files and answers `website_failed`, and the reload is graceful (`apachectl graceful`, `systemctl reload php-fpm<NN>`).
-* **PHP.** `php: "8.3"` means `/opt/alt/php-fpm83`; a version that is not one of ping's `php_versions` (the installed `/opt/alt/php-fpm<NN>` that hold a php-fpm binary, listed by the `php-versions` helper) is `php_version_unsupported`. The pool
-  (`<account>.conf`, socket `<account>.sock`) is made as CWP shapes its own, and CWP's per-domain record
-  `~/.conf/webservers/<hostname>.conf` is written (when absent) so a later CWP vhost rebuild keeps the version.
-* **Docroot.** Missing directories are created owned by the account with group `nobody` and mode 2750 (Apache serves static
-  files as `nobody`); with `link_root` the last component is left to the deploys. A vhost CWP made for the account's own
-  domain keeps its content and only gets the php block, provided its `DocumentRoot` already is `/home/<account>/<docroot>`;
-  otherwise `website_conflict`. Any other hostname of the account gets a vhost file the helper writes (HTTP; TLS is left to
-  the panel's own certificate handling).
-* **Uninstalling the agent** removes the helpers but keeps `/var/lib/hostpanel-ssh-key-agent/`, so a reinstall still knows
-  what the agent created; the websites and databases themselves stay until removed through the ops or by hand.
-* **Databases.** `CREATE DATABASE` (utf8mb4) and a user for `localhost` and `127.0.0.1` with all privileges on that database
-  only, at most 10 per account.
 
 ## Generic Linux websites and databases (`providers/generic-linux`, agent 1.6.0+)
 The `generic-linux` profile ships the website and database helpers for a plain Linux server with no panel: `ensure-website`,
@@ -349,6 +319,8 @@ runs as, the virtual host directory and every PHP version with its CLI.
   that creates the database (a repeat answers `created` false with none); it is never stored or logged. The registry
   entry `database.<label>` is written before the database is created, and `remove-database` drops only a database with
   an entry (any other answers `site_not_owned`). A failed creation drops what it made and forgets the entry.
+* **Uninstalling the agent** removes the helpers but keeps `/var/lib/hostpanel-ssh-key-agent/`, so a reinstall still knows
+  what the agent created; the websites and databases themselves stay until removed through the ops or by hand.
 
 ## Lifecycle
 
@@ -388,8 +360,7 @@ python3 -m unittest discover -s backend/agent/ssh-key-agent/tests
 ```
 
 They run unprivileged against a temporary home directory (no root, no real accounts).
-`tests/test_ops.py` also runs the CWP helpers for real against a stand-in server tree (`HP_ROOT`) with fake `apachectl`,
-`php-fpm`, `mysql`, `openssl`, `chown`, `chgrp` and `systemctl`, and checks the golden vectors in `tests/contract/*.json`
+`tests/test_ops.py` runs the agent side of the website and database ops against stand-in helpers and checks the golden vectors in `tests/contract/*.json`
 (one file per op: request, what the helper printed, and the response the agent must give), which the HostPanel adapter
 tests reuse as fixtures.
 `tests/test_generic_linux.py` runs the generic-linux helpers the same way over a matrix of servers (Apache on Debian,

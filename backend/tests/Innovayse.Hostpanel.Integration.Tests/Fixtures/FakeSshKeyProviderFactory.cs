@@ -24,7 +24,7 @@ public sealed class FakeSshKeyProviderFactory : ISshKeyProviderFactory
     public bool Supports(string module) => AgentProfileFor(module) is not null;
 
     /// <inheritdoc/>
-    public string? AgentProfileFor(string module) => module is ServerModules.Cwp7 ? "cwp" : null;
+    public string? AgentProfileFor(string module) => module is ServerModules.Linux ? "generic-linux" : null;
 
     /// <inheritdoc/>
     public ISshKeyProvider? CreateFor(ServerSshTargetDto target) =>

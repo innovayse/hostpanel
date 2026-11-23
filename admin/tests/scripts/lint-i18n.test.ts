@@ -44,6 +44,15 @@ describe('checkI18n', () => {
     expect(problems).toContain('extra in ru (absent from en): a.y')
   })
 
+  it('reports a key missing in es and an extra key in es', () => {
+    const problems = checkI18n({
+      catalogues: make(['a.x'], ['a.x'], ['a.x'], ['a.x'], ['a.y']),
+      source: "t('a.x') t('a.y')",
+    })
+    expect(problems).toContain('missing in es: a.x')
+    expect(problems).toContain('extra in es (absent from en): a.y')
+  })
+
   it('reports an unused key', () => {
     const problems = checkI18n({ catalogues: make(['a.x'], ['a.x'], ['a.x']), source: '' })
     expect(problems).toContain('unused key: a.x')

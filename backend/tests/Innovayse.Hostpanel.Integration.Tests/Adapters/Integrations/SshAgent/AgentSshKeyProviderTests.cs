@@ -20,8 +20,12 @@ public sealed class AgentSshKeyProviderTests
     /// <summary>The account every contract vector acts on.</summary>
     private static readonly SshAccount VectorAccount = new(7, "alice");
 
-    /// <summary>Gets the rows of the <c>add</c> vectors.</summary>
-    public static TheoryData<int> AddVectors => AgentContractVectors.Rows("add");
+    /// <summary>
+    /// Gets the rows of the <c>add</c> vectors the host can build. A request with an empty <c>from</c> list is left out:
+    /// the host never sends the field for a key without sources, so only the agent's own tests run that vector.
+    /// </summary>
+    public static TheoryData<int> AddVectors => AgentContractVectors.Rows(
+        "add", vector => vector.Request["from"] is not JsonArray { Count: 0 });
 
     /// <summary>Gets the rows of the <c>ping</c> vectors.</summary>
     public static TheoryData<int> PingVectors => AgentContractVectors.Rows("ping");

@@ -54,7 +54,7 @@ test('the Settings tab lists the servers of the plugin with their status, last t
   await expect(page.getByTestId('plugin-server-11')).toContainText('Frankfurt 1')
   await expect(page.getByTestId('plugin-server-state-11')).toHaveText('Online')
   await expect(page.getByTestId('plugin-server-tested-11')).toContainText('Last tested')
-  await expect(page.getByTestId('plugin-server-link-11')).toHaveAttribute('href', '/servers?search=Frankfurt%201')
+  await expect(page.getByTestId('plugin-server-link-11')).toHaveAttribute('href', '/servers?search=Frankfurt+1')
   await expect(page.getByTestId('plugin-server-state-12')).toHaveText('Not tested')
   await expect(page.getByTestId('plugin-server-tested-12')).toHaveText('Never tested')
   expect(api.callsTo(HttpMethod.Get, SERVERS_PATH)).toHaveLength(1)

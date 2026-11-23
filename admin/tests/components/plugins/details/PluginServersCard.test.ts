@@ -39,7 +39,7 @@ describe('PluginServersCard', () => {
     expect(wrapper.get('[data-testid="plugin-server-state-7"]').text()).toBe('Online')
     expect(wrapper.get('[data-testid="plugin-server-tested-7"]').text()).toContain('Last tested')
     expect(wrapper.get('[role="tooltip"]').text()).toBe(formatDateTime('2026-01-02T10:00:00Z'))
-    expect(wrapper.get('[data-testid="plugin-server-link-7"]').attributes('href')).toBe('/servers?search=Frankfurt%201')
+    expect(wrapper.get('[data-testid="plugin-server-link-7"]').attributes('href')).toBe('/servers?search=Frankfurt+1')
     expect(wrapper.find('[data-testid="plugin-servers-empty"]').exists()).toBe(false)
   })
 

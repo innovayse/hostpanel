@@ -5,7 +5,7 @@
  * Detects edit mode from the route params, loads the configuration when editing, and carries the
  * pricing tables for registration, transfer and renewal across the listed year periods. Asks
  * before leaving with unsaved edits. A refused load shows the API's sentence with a retry instead of
- * the form; a refused save shows next to the save bar, a saved configuration returns to the list.
+ * the form; a refused save toasts its sentence, a saved configuration returns to the list.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,7 +20,6 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStepper from '@/components/ui/UiStepper.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiInputType } from '@/utils/ui/input'
@@ -29,6 +28,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useFormDirty } from '@/composables/useFormDirty'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { useRegistrarModuleOptions } from '@/composables/useRegistrarModuleOptions'
 import { CURRENCY_CODES, currencyLabel, currencySymbol } from '@/lib/money'
@@ -71,8 +71,8 @@ const loadingConfig = ref(false)
 /** True while saving the form. */
 const saving = ref(false)
 
-/** The sentence for the last refused save, null when none. */
-const saveError = ref<string | null>(null)
+/** Toasts the refusal of a save. */
+const feedback = useOutcomeToast()
 
 /** Sentence for a failed load of the configuration being edited, null when none. */
 const loadError = ref<string | null>(null)
@@ -204,12 +204,11 @@ const setPrice = (map: Record<string, number>, period: string, value: number): v
 /** Collects form data and dispatches create or update via the store; returns to the list on success. */
 const handleSave = async (): Promise<void> => {
   if (!tld.value.trim()) {
-    saveError.value = t('settings.tldConfigForm.tldIsRequired')
+    feedback.show(t('settings.tldConfigForm.tldIsRequired'), true)
     return
   }
 
   saving.value = true
-  saveError.value = null
 
   const categories = categoriesInput.value
     .split(',')
@@ -246,7 +245,7 @@ const handleSave = async (): Promise<void> => {
     await settle()
     void router.push(AppRoute.SettingsTldPricing)
   } else {
-    saveError.value = store.actionError
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -370,8 +369,6 @@ const handleCancel = (): void => {
           @update:sell="(period, value) => setPrice(sellRenew, period, value)"
         />
       </template>
-
-      <UiStatusMessage :message="saveError" :tone="UiTone.Danger" class="mb-5" data-testid="tld-config-form-error" />
 
       <SettingsFormFooter
         :save-label="isEditMode ? t('shared.save') : t('settings.tldConfigForm.createTld')"

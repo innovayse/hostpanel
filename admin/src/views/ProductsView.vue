@@ -5,8 +5,8 @@
  * Shows one page of the products in a table with create, edit and specification actions, behind a search box and a
  * filter dialog (group, type, status) with its removable chips. The search, the filters and the page live in the address
  * (`useListQuery`), so a reload, a shared link and the back button restore the same list, and the API applies them before
- * it pages. A refused load offers a retry; a refused save shows inside the product dialog next to its save button, a
- * finished one above the table, and the page the address names is read again.
+ * it pages. A refused load offers a retry; a refused save and a finished one are toasted
+ * (the API's per-field messages stay under their inputs in the dialog), and the page the address names is read again.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -267,7 +267,6 @@ const openGroups = (): void => {
  * @param group - The group to edit, or null to create one.
  */
 const openGroupForm = (group: ProductGroup | null): void => {
-  store.actionError = null
   store.fieldErrors = {}
   editingGroup.value = group
   showGroupForm.value = true
@@ -288,12 +287,13 @@ const handleGroupSave = async (payload: ProductGroupPayload): Promise<void> => {
     showGroupForm.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
     await store.fetchProductGroups()
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
-  store.actionError = null
   store.fieldErrors = {}
   editingProduct.value = null
   showModal.value = true
@@ -305,7 +305,6 @@ const openCreate = (): void => {
  * @param product - The product to edit.
  */
 const openEdit = (product: Product): void => {
-  store.actionError = null
   store.fieldErrors = {}
   editingProduct.value = product
   showModal.value = true
@@ -347,6 +346,8 @@ const handleSave = async (payload: CreateProductPayload): Promise<void> => {
     showModal.value = false
     feedback.show(t('shared.changesSavedSuccessfully'), false)
     await load()
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -509,7 +510,6 @@ const productActions = (product: Product): UiMenuAction[] => {
       :product="editingProduct"
       :groups="store.productGroups"
       :saving="saving"
-      :error="store.actionError"
       :field-errors="store.fieldErrors"
       @save="handleSave"
       @clear-field-error="store.clearFieldError"
@@ -530,7 +530,6 @@ const productActions = (product: Product): UiMenuAction[] => {
       :group="editingGroup"
       :methods="store.paymentMethods"
       :saving="savingGroup"
-      :error="store.actionError"
       @save="handleGroupSave"
       @close="showGroupForm = false"
     />

@@ -1,7 +1,7 @@
 /**
  * Smoke tests for SupportOpenTicketView: the form renders with placeholders, loads departments and
- * cannot be submitted without a client, and a refused create shows the API's sentence next to the
- * submit button, through the real stores and transport with `fetch` stubbed.
+ * cannot be submitted without a client, and a refused create toasts the API's sentence, through the
+ * real stores and transport with `fetch` stubbed.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -10,6 +10,7 @@ import schema from '@/views/SupportOpenTicketView.schema'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 import { fieldsOf } from '../helpers/schemaParity'
 
 afterEach(() => {
@@ -67,7 +68,7 @@ describe('SupportOpenTicketView', () => {
     expect(wrapper.get('[data-testid="support-open-ticket-submit"]').attributes('disabled')).toBeDefined()
   })
 
-  it('shows the API sentence next to the submit button when the create is refused', async () => {
+  it('toasts the API sentence when the create is refused', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     stubRoutes({
       'GET /api/tickets/departments': () => json([{ id: 1, name: 'Support', email: 'support@example.test' }]),
@@ -85,7 +86,7 @@ describe('SupportOpenTicketView', () => {
     await wrapper.get('[data-testid="support-open-ticket-submit"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="support-open-ticket-error"]').text()).toBe('The client is closed.')
+    expect(toastMessages()).toEqual(['The client is closed.'])
   })
 
   it('returns to the tickets list with the back pill in the header', async () => {

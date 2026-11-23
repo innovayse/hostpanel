@@ -12,6 +12,7 @@ import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { renderedCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import { storefrontHeadCaptions } from '../helpers/storefrontList'
+import { toastMessages } from '../helpers/toasts'
 import schema from '@/views/TestimonialsView.schema'
 
 vi.mock('vuedraggable', async () => {
@@ -116,10 +117,10 @@ describe('TestimonialsView', () => {
     await vi.waitFor(() => {
       expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
     })
-    expect(wrapper.get('[data-testid="testimonials-action-error"]').text()).toBe('Record deleted.')
+    expect(toastMessages()).toEqual(['Record deleted.'])
   })
 
-  it('shows the API sentence when a delete is refused', async () => {
+  it('toasts the API sentence when a delete is refused', async () => {
     stubRouteTable({
       'GET /admin/testimonials': () => json(entries),
       'DELETE /admin/testimonials/1': () => problem('The entry is pinned.', 409),
@@ -131,7 +132,7 @@ describe('TestimonialsView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="testimonials-action-error"]').text()).toBe('The entry is pinned.')
+      expect(toastMessages()).toEqual(['The entry is pinned.'])
     })
   })
 

@@ -10,6 +10,7 @@ import type { Slide } from '@/types/slide'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 vi.mock('@iconify/vue', async () => {
   const { defineComponent, h } = await import('vue')
@@ -137,7 +138,7 @@ describe('SlideFormView', () => {
     })
   })
 
-  it('shows the API sentence when saving is refused and stays on the form', async () => {
+  it('toasts the API sentence when saving is refused and stays on the form', async () => {
     stubRouteTable({ ...routes, 'POST /admin/slides': () => problem('A slide needs an image.', 400) })
     const { wrapper, router } = await mountScreen(SlideFormView, {}, '/settings/slides/create', '/settings/slides/create')
 
@@ -145,7 +146,7 @@ describe('SlideFormView', () => {
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="slide-form-error"]').text()).toBe('A slide needs an image.')
+      expect(toastMessages()).toEqual(['A slide needs an image.'])
     })
     expect(router.currentRoute.value.path).toBe('/settings/slides/create')
   })

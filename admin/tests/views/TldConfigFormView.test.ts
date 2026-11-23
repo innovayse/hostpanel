@@ -10,6 +10,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** A stored configuration with a priced first period. */
 const stored: TldConfig = {
@@ -98,7 +99,7 @@ describe('TldConfigFormView', () => {
 
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="tld-config-form-error"]').text()).toBe('TLD is required.')
+    expect(toastMessages()).toEqual(['TLD is required.'])
     expect(requestsOf(mock)).toEqual(['GET /admin/plugins'])
   })
 
@@ -191,7 +192,7 @@ describe('TldConfigFormView', () => {
     })
   })
 
-  it('shows the API sentence when saving is refused and stays on the form', async () => {
+  it('toasts the API sentence when saving is refused and stays on the form', async () => {
     stubRouteTable({ 'POST /admin/tld-configs': () => problem('That TLD already exists.', 409) })
     const { wrapper, router } = await mountScreen(TldConfigFormView, {}, CREATE, CREATE)
 
@@ -199,7 +200,7 @@ describe('TldConfigFormView', () => {
     await wrapper.get('[data-testid="settings-form-save"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tld-config-form-error"]').text()).toBe('That TLD already exists.')
+      expect(toastMessages()).toEqual(['That TLD already exists.'])
     })
     expect(router.currentRoute.value.path).toBe(CREATE)
   })

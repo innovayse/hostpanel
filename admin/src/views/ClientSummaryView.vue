@@ -410,16 +410,18 @@ const externalAccountId = ref('')
 const externalAccountNotice = useOutcomeToast()
 
 /**
- * Sets or clears the external account link and, once the API accepted it, reports it.
+ * Sets or clears the external account link and toasts the outcome.
  *
  * @param payload - The provider and account id; both null clears the link.
  * @param doneKey - Locale key of the outcome line shown on success.
- * @returns Promise that resolves when the call finishes; a refusal shows as the card's error.
+ * @returns Promise that resolves when the call finishes; a refusal is toasted with the API's sentence.
  */
 const writeExternalAccount = async (payload: SetClientExternalAccountPayload, doneKey: string): Promise<void> => {
   const saved = await clientsStore.saveExternalAccount(clientId.value, payload)
   if (saved) {
     externalAccountNotice.show(t(doneKey), false)
+  } else {
+    externalAccountNotice.show(clientsStore.externalAccountError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -444,8 +446,8 @@ const clearExternalAccount = (): Promise<void> =>
 const vatNotice = useOutcomeToast()
 
 /**
- * Runs the VAT number check again and, once the API recorded a verdict, reports it; a refusal (the service gave no verdict
- * included) shows as the card's error and the status stays as it was.
+ * Runs the VAT number check again and toasts the outcome: a recorded verdict is reported; a refusal (the service gave no verdict
+ * included) is toasted with the API's sentence and the status stays as it was.
  *
  * @returns Promise that resolves when the call finishes.
  */
@@ -453,6 +455,8 @@ const checkVat = async (): Promise<void> => {
   const checked = await clientsStore.checkVat(clientId.value)
   if (checked) {
     vatNotice.show(t('clients.vat.checked'), false)
+  } else {
+    vatNotice.show(clientsStore.vatError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -731,7 +735,6 @@ onMounted(() => {
             v-model:account-id="externalAccountId"
             :linked="client?.externalAccount ?? null"
             :saving="clientsStore.externalAccountSaving"
-            :error="clientsStore.externalAccountError"
             :field-errors="clientsStore.externalAccountFieldErrors"
             @save="saveExternalAccount"
             @clear="clearExternalAccount"
@@ -744,7 +747,6 @@ onMounted(() => {
             :tax-id="client?.settings.taxId ?? null"
             :vat="client?.vat ?? null"
             :checking="clientsStore.vatChecking"
-            :error="clientsStore.vatError"
             @check="checkVat"
           />
         </template>

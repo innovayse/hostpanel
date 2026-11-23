@@ -6,7 +6,7 @@
  * package fields, the server group, the description, the SKU, the metadata (a JSON object) and
  * the grace period, a pricing grid with one row per configured currency, and a hidden toggle.
  * Emits `save` with the payload on submit, and `close` on cancel, Escape or a backdrop click. A
- * refused save (the `error` prop) shows next to the save button; the API's per-field messages
+ * refused save is toasted by the screen that saves; the API's per-field messages
  * (the `fieldErrors` prop) show under their inputs and go away, through `clearFieldError`, as
  * soon as the operator changes that field. The API is the only validator. While the lists the form
  * is built from load, every field is drawn as a placeholder under its real caption (`UI_FIELD_LOADING`).
@@ -71,12 +71,9 @@ const props = withDefaults(defineProps<{
   groups: ProductGroup[]
   /** True while the save request is in flight. */
   saving: boolean
-  /** The API's sentence for the last refused save, shown next to the save button; null when none. */
-  error?: string | null
   /** The API's messages for the last refused save, keyed by field name (`sku`, `metadata`, `gracePeriodDays`). */
   fieldErrors?: Record<string, string>
 }>(), {
-  error: null,
   /**
    * Default for the field errors.
    *
@@ -823,8 +820,6 @@ const handleSubmit = (): void => {
         </UiStack>
         <UiToggle v-model="onePerClient" data-testid="product-form-one-per-client" />
       </UiStack>
-
-      <UiStatusMessage :message="error ?? null" :tone="UiTone.Danger" data-testid="product-form-error" />
 
       <UiFormActions>
         <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="product-form-cancel" @click="emit('close')">

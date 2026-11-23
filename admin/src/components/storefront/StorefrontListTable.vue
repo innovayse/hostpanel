@@ -6,7 +6,7 @@
  * The page supplies the column captions and, per row, the cells between the drag handle and the
  * actions (`row` slot). Dragging reports the new order as id + sortOrder pairs; saving it, loading
  * the list and deleting stay with the page's store. A refused load offers a retry; the outcome of a
- * delete or reorder (the success sentence, or the API's refusal) shows above the header.
+ * delete or reorder is toasted by the page's list state (`useStorefrontList`).
  */
 import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
@@ -21,14 +21,12 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
-import { StorefrontListOutcome } from '@/types/storefront'
 import type { StorefrontEntity, StorefrontListTestIds, StorefrontOrderItem } from '@/types/storefront'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
@@ -48,7 +46,7 @@ const headerActions = computed<UiHeaderAction[]>(() => [
 ])
 
 /** Props for StorefrontListTable. */
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   /** Page title (already translated). */
   title: string
   /** Line under the title (already translated). */
@@ -77,8 +75,6 @@ const props = withDefaults(defineProps<{
   loading: boolean
   /** Sentence for a failed load, null when none. */
   error: string | null
-  /** Sentence for a failed create, update, delete or reorder, null when none. */
-  actionError: string | null
   /** True while a new order is being saved: the table then shows its row placeholders until the saved order is back. */
   savingOrder: boolean
   /** The entry staged for deletion, null when no question is open. */
@@ -87,11 +83,7 @@ const props = withDefaults(defineProps<{
   deleting: boolean
   /** The question text for the staged entry (already translated). */
   deleteMessage: string
-  /** What the last successful delete or reorder did, null when there is nothing to report. */
-  outcome?: StorefrontListOutcome | null
-}>(), {
-  outcome: null,
-})
+}>()
 
 const emit = defineEmits<{
   /** Emitted with the entry the operator wants to delete (opens the question). */
@@ -105,23 +97,6 @@ const emit = defineEmits<{
   /** Emitted when the operator asks to load the refused list again. */
   retry: []
 }>()
-
-/** Success sentence of each list outcome. */
-const OUTCOME_KEYS: Record<StorefrontListOutcome, string> = {
-  [StorefrontListOutcome.Deleted]: 'shared.recordDeleted',
-  [StorefrontListOutcome.OrderSaved]: 'storefront.list.orderSaved',
-}
-
-/** The outcome line: the API's refusal first, else the success sentence, else nothing. */
-const outcomeMessage = computed<string | null>(() => {
-  if (props.actionError) {
-    return props.actionError
-  }
-  return props.outcome === null ? null : t(OUTCOME_KEYS[props.outcome])
-})
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const outcomeTone = computed<UiTone>(() => (props.actionError ? UiTone.Danger : UiTone.Success))
 
 defineSlots<{
   /**
@@ -200,8 +175,6 @@ const onDragEnd = (): void => {
 
 <template>
   <UiStack :gap="UiGap.None" :data-testid="testids.view">
-    <UiStatusMessage :message="outcomeMessage" :tone="outcomeTone" class="mb-4" :data-testid="testids.actionError" />
-
     <UiPageHeader :actions="headerActions" :title="title" :subtitle="subtitle">
     </UiPageHeader>
 

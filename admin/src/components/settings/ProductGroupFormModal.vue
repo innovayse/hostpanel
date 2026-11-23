@@ -5,8 +5,8 @@
  * Besides the name and description it carries the payment methods the group may be paid with, as a multiple choice
  * over the methods the checkout offers; none ticked allows every method. A method the group already allows but the
  * checkout does not offer right now (a gateway switched off) stays in the list, ticked, so saving never drops it
- * silently. Emits `save` with the payload and `close` on cancel, Escape or a backdrop click; a refused save shows
- * next to the save button.
+ * silently. Emits `save` with the payload and `close` on cancel, Escape or a backdrop click; a refused save is
+ * toasted by the screen that saves.
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -19,31 +19,25 @@ import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import type { PaymentMethodOption, ProductGroup, ProductGroupPayload } from '@/types/product'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiGap } from '@/utils/ui/layout'
-import { UiTone } from '@/utils/ui/tone'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
 
 /** Props for ProductGroupFormModal. */
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   /** Group to edit, or null when creating a new one. */
   group: ProductGroup | null
   /** The payment methods the checkout offers right now. */
   methods: PaymentMethodOption[]
   /** True while the save request is in flight. */
   saving: boolean
-  /** Sentence for a refused save, shown next to the save button. */
-  error?: string | null
-}>(), {
-  error: null,
-})
+}>()
 
 const emit = defineEmits<{
   /** Emitted when the user submits a valid form, with the group's new data. */
@@ -150,8 +144,6 @@ const handleSubmit = (): void => {
           {{ choice.displayName }}
         </UiLabel>
       </UiStack>
-
-      <UiStatusMessage :message="error" :tone="UiTone.Danger" data-testid="product-group-form-error" />
 
       <UiFormActions>
         <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="product-group-form-cancel" @click="emit('close')">

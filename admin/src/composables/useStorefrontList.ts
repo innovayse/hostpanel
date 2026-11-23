@@ -1,12 +1,13 @@
 /**
  * The delete-confirmation and reorder state of a storefront content list page, over any store
- * built on `useStorefrontCrud`.
+ * built on `useStorefrontCrud`. The outcome of a delete or a reorder, the success sentence or the API's refusal, is toasted.
  */
 
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { Ref } from 'vue'
 import type { StorefrontCrud } from '@/composables/useStorefrontCrud'
-import { StorefrontListOutcome } from '@/types/storefront'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import type { StorefrontEntity, StorefrontOrderItem } from '@/types/storefront'
 
 /** What {@link useStorefrontList} hands the list view. */
@@ -17,8 +18,6 @@ export interface StorefrontList<TItem> {
   deleteTarget: Ref<TItem | null>
   /** True while the staged entry is being deleted. */
   deleting: Ref<boolean>
-  /** What the last successful delete or reorder did; null before one and while one runs or after a refusal. */
-  outcome: Ref<StorefrontListOutcome | null>
   /** Opens the delete question for an entry. */
   stageDelete: (item: TItem) => void
   /** Closes the delete question. */
@@ -32,12 +31,17 @@ export interface StorefrontList<TItem> {
 /**
  * Creates the delete and reorder state of a list page.
  *
- * @param store - The content store (its delete and reorder actions).
+ * @param store - The content store: its delete and reorder actions, and the sentence of the last refused action.
  * @returns The staged delete, the saving flags and their actions.
  */
 export const useStorefrontList = <TItem extends StorefrontEntity>(
-  store: Pick<StorefrontCrud<TItem, unknown>, 'remove' | 'updateOrder'>,
+  store: Pick<StorefrontCrud<TItem, unknown>, 'remove' | 'updateOrder'> & { actionError: string | null },
 ): StorefrontList<TItem> => {
+  const { t } = useI18n()
+
+  /** Toasts how a delete or a reorder ended. */
+  const feedback = useOutcomeToast()
+
   /** True while the new order is being saved after a drag. */
   const savingOrder = ref(false)
 
@@ -46,9 +50,6 @@ export const useStorefrontList = <TItem extends StorefrontEntity>(
 
   /** True while the staged entry is being deleted. */
   const deleting = ref(false)
-
-  /** What the last successful delete or reorder did. */
-  const outcome = ref<StorefrontListOutcome | null>(null)
 
   /**
    * Stages an entry for deletion. Only opens the question; {@link confirmDelete} does the work.
@@ -70,13 +71,14 @@ export const useStorefrontList = <TItem extends StorefrontEntity>(
     if (!target) {
       return
     }
-    outcome.value = null
     deleting.value = true
     const removed = await store.remove(target.id)
     deleting.value = false
     deleteTarget.value = null
     if (removed) {
-      outcome.value = StorefrontListOutcome.Deleted
+      feedback.show(t('shared.recordDeleted'), false)
+    } else {
+      feedback.show(store.actionError ?? t('errors.noAnswer'), true)
     }
   }
 
@@ -86,14 +88,15 @@ export const useStorefrontList = <TItem extends StorefrontEntity>(
    * @param order - Entry ID and new sort order pairs.
    */
   const saveOrder = async (order: StorefrontOrderItem[]): Promise<void> => {
-    outcome.value = null
     savingOrder.value = true
     const saved = await store.updateOrder(order)
     savingOrder.value = false
     if (saved) {
-      outcome.value = StorefrontListOutcome.OrderSaved
+      feedback.show(t('storefront.list.orderSaved'), false)
+    } else {
+      feedback.show(store.actionError ?? t('errors.noAnswer'), true)
     }
   }
 
-  return { savingOrder, deleteTarget, deleting, outcome, stageDelete, cancelDelete, confirmDelete, saveOrder }
+  return { savingOrder, deleteTarget, deleting, stageDelete, cancelDelete, confirmDelete, saveOrder }
 }

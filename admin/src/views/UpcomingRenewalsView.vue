@@ -5,10 +5,11 @@
  * third list shows domain renewal lines left claimed after the registrar gave no clear answer, which staff
  * release once they have checked the registrar. The window tabs, the cards of the three tables and their column heads are
  * the ones of `UpcomingRenewalsView.schema`, which `UiSkeletonOf` also draws while the view downloads. Reads and writes
- * through `stores/renewals`.
+ * through `stores/renewals`; how an action ended, a result or a refusal, is toasted.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { Icon } from '@/lib/icons'
 import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -20,7 +21,6 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
@@ -77,6 +77,43 @@ const noticeMessage = computed<string | null>(() => {
   }
 })
 
+/** Toasts how an action ended. */
+const feedback = useOutcomeToast()
+
+/**
+ * Toasts how a staff action ended: the API's sentence when it was refused, the sentence of what it did when it
+ * has a result to report.
+ *
+ * @param ok - Whether the store accepted the action.
+ */
+const report = (ok: boolean): void => {
+  if (!ok) {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
+  } else if (noticeMessage.value !== null) {
+    feedback.show(noticeMessage.value, false)
+  }
+}
+
+/**
+ * Switches the automatic billing of a listed service and toasts a refusal.
+ *
+ * @param id - Service id.
+ * @param value - The wanted state.
+ */
+const setServiceAutoRenew = async (id: number, value: boolean): Promise<void> => {
+  report(await store.setServiceAutoRenew(id, value))
+}
+
+/**
+ * Switches the automatic renewal of a listed domain and toasts a refusal.
+ *
+ * @param id - Domain id.
+ * @param value - The wanted state.
+ */
+const setDomainAutoRenew = async (id: number, value: boolean): Promise<void> => {
+  report(await store.setDomainAutoRenew(id, value))
+}
+
 /**
  * Moves to another window.
  *
@@ -96,7 +133,7 @@ const confirmRelease = async (): Promise<void> => {
   if (target === null) {
     return
   }
-  await store.releaseClaim(target.invoiceId, target.itemId)
+  report(await store.releaseClaim(target.invoiceId, target.itemId))
   releaseTarget.value = null
 }
 
@@ -120,7 +157,7 @@ const generateActions = (clientId: number, testid: string): UiMenuAction[] => [
      * @returns Nothing.
      */
     onSelect: (): void => {
-      void store.generateInvoices(clientId)
+      void store.generateInvoices(clientId).then(report)
     },
   },
 ]
@@ -171,9 +208,6 @@ onMounted(() => store.fetchAll())
       @retry="store.fetchAll()"
     />
 
-    <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="renewals-action-error" />
-    <UiStatusMessage :message="noticeMessage" :tone="UiTone.Success" data-testid="renewals-notice" />
-
     <template v-if="!store.error">
       <UiDataTable
         :loading="store.loading && store.services.length === 0"
@@ -206,7 +240,7 @@ onMounted(() => store.fetchAll())
                     :model-value="service.autoRenew"
                     :disabled="store.acting"
                     :data-testid="`renewals-service-auto-renew-${service.id}`"
-                    @update:model-value="store.setServiceAutoRenew(service.id, $event)"
+                    @update:model-value="setServiceAutoRenew(service.id, $event)"
                   />
                 </UiTableCell>
                 <UiTableCell actions>
@@ -246,7 +280,7 @@ onMounted(() => store.fetchAll())
                     :model-value="domain.autoRenew"
                     :disabled="store.acting"
                     :data-testid="`renewals-domain-auto-renew-${domain.id}`"
-                    @update:model-value="store.setDomainAutoRenew(domain.id, $event)"
+                    @update:model-value="setDomainAutoRenew(domain.id, $event)"
                   />
                 </UiTableCell>
                 <UiTableCell actions>

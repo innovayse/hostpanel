@@ -1,6 +1,6 @@
 /**
  * Mount tests for ClientExternalAccountCard: the typed values go out trimmed (blank as null), Save
- * needs a value, clearing asks first, the API sentence and field messages show and a field
+ * needs a value, clearing asks first, the API field messages show and a field
  * message is dropped as soon as its input changes.
  */
 import { describe, expect, it } from 'vitest'
@@ -75,12 +75,6 @@ describe('ClientExternalAccountCard', () => {
     expect(wrapper.find('[data-testid="client-external-account-confirm"]').exists()).toBe(false)
   })
 
-  it('shows the API sentence of a conflict', () => {
-    const wrapper = mountCard({ error: 'This account is already linked to another client.' })
-
-    expect(wrapper.get('[data-testid="client-external-account-status"]').text())
-      .toBe('This account is already linked to another client.')
-  })
 
   it('shows the API field messages under their inputs', () => {
     const wrapper = mountCard({ fieldErrors: { provider: 'Provider is required.', accountId: 'Account id is too long.' } })

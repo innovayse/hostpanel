@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Open a new ticket: the staff form that creates a support ticket on behalf of a client, with a
- * client search, department and priority. Opens the ticket's detail page on success; a refusal shows
- * the API's sentence next to the submit button.
+ * client search, department and priority. Opens the ticket's detail page on success; a refusal is toasted
+ * with the API's sentence.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -15,10 +15,10 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useClientsStore } from '@/stores/clients'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority } from '@/types/ticket'
@@ -27,7 +27,6 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import schema from '@/views/SupportOpenTicketView.schema'
 import { AppRoute, supportTicketPath } from '@/lib/routes'
@@ -37,6 +36,9 @@ import { UiActionKind } from '@/utils/ui/actions'
 const { t } = useI18n()
 
 const router = useRouter()
+
+/** Toasts the refusal of the creation. */
+const feedback = useOutcomeToast()
 const store = useSupportStore()
 const clientsStore = useClientsStore()
 
@@ -149,6 +151,8 @@ const handleSubmit = async (): Promise<void> => {
   })
   if (newId) {
     router.push(supportTicketPath(newId))
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -278,7 +282,6 @@ onMounted(() => {
           {{ t('shared.createTicket') }}
         </UiButton>
       </UiStack>
-      <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="support-open-ticket-error" />
     </UiSchemaForm>
   </UiStack>
 </template>

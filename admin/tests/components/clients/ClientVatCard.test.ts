@@ -1,6 +1,6 @@
 /**
  * Mount tests for ClientVatCard: the status badge and the date read from the client's last completed check, the registered
- * name and address, the "not checked" and "no number" states, the check action and the API's refusal sentence.
+ * name and address, the "not checked" and "no number" states, and the check action.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -71,12 +71,6 @@ describe('ClientVatCard', () => {
     expect(wrapper.emitted('check')).toHaveLength(1)
   })
 
-  it('shows the API sentence of a check that gave no verdict, and keeps the status that was read', () => {
-    const wrapper = mountCard({ vat: VALID, error: 'The VAT number service is not answering right now.' })
-
-    expect(wrapper.get('[data-testid="client-vat-feedback"]').text()).toBe('The VAT number service is not answering right now.')
-    expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
-  })
 
   it('disables the button while a check is in flight', () => {
     const wrapper = mountCard({ vat: VALID, checking: true })

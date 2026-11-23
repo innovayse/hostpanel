@@ -1,7 +1,7 @@
 /**
  * Tests for ClientServiceDetailView: it renders against the real kit and settles on an API refusal,
  * each section of a loaded service saves through its own endpoint with only its own fields and
- * shows its outcome beside its own, distinctly named button, a pressed save keeps focus while it
+ * toasts its outcome, a pressed save keeps focus while it
  * runs, a terminal status is confirmed before it is sent, and the sections sit on the account, billing and
  * notes tabs under a header that names the service and its status.
  */
@@ -20,6 +20,7 @@ import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { createTestI18n } from '../helpers/i18n'
 import { stubRoutes } from '../helpers/routes'
+import { toastMessages, toastsOnScreen } from '../helpers/toasts'
 
 /** A loaded service, terminated so every section of the page is shown. */
 const detail: ServiceDetail = {
@@ -210,12 +211,10 @@ describe('ClientServiceDetailView', () => {
     expect(putsOf(mock)).toEqual([
       expect.objectContaining({ url: '/api/services/9/notes', body: { adminNotes: 'New note' } }),
     ])
-    expect(wrapper.get('[data-testid="client-service-outcome-notes"]').text()).toBe('Changes saved successfully.')
-    await openTab(wrapper, 'billing')
-    expect(wrapper.get('[data-testid="client-service-outcome-billing"]').text()).toBe('')
+    expect(toastMessages()).toEqual(['Changes saved successfully.'])
   })
 
-  it('shows a refusal beside the section that failed and clears it when the section is saved again', async () => {
+  it('toasts a refusal as a danger toast, then the success when the section is saved again', async () => {
     let refuse = true
     const { wrapper } = await mountLoaded(detail, () =>
       refuse ? problem('Notes are too long.', 400) : new Response(null, { status: 204 }),
@@ -224,16 +223,15 @@ describe('ClientServiceDetailView', () => {
 
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('[data-testid="client-service-outcome-notes"]').text()).toBe('Notes are too long.')
-    expect(wrapper.get('[data-testid="client-service-outcome-notes"]').attributes('data-tone')).toBe('danger')
-    await openTab(wrapper, 'account')
-    expect(wrapper.get('[data-testid="client-service-outcome-hosting-account"]').text()).toBe('')
+    expect(toastsOnScreen()).toEqual([['Notes are too long.', UiTone.Danger]])
 
     refuse = false
-    await openTab(wrapper, 'notes')
     await wrapper.find('[data-testid="client-service-notes-form"]').trigger('submit')
     await flushPromises()
-    expect(wrapper.get('[data-testid="client-service-outcome-notes"]').text()).toBe('Changes saved successfully.')
+    expect(toastsOnScreen()).toEqual([
+      ['Notes are too long.', UiTone.Danger],
+      ['Changes saved successfully.', UiTone.Success],
+    ])
   })
 
   it('labels every section save button with the shared Save', async () => {

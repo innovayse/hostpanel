@@ -4,8 +4,8 @@
  *
  * Detects edit mode from the route params, loads the slide when editing, and carries
  * locale-tabbed translations with dynamic feature lists. Asks before leaving with unsaved edits.
- * A refused load (or a missing slide) shows with a retry instead of the form; a refused save shows
- * next to the save bar, a saved slide returns to the list.
+ * A refused load (or a missing slide) shows with a retry instead of the form; a refused save toasts
+ * its sentence, a saved slide returns to the list.
  */
 import { Icon as MdiIcon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -29,11 +29,11 @@ import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useFormDirty } from '@/composables/useFormDirty'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { Icon } from '@/lib/icons'
 import { nextRowKey } from '@/lib/rowKey'
@@ -133,8 +133,8 @@ const loadingSlide = ref(false)
 /** True while saving the form. */
 const saving = ref(false)
 
-/** The API's sentence for the last refused save, null when none. */
-const saveError = ref<string | null>(null)
+/** Toasts the refusal of a save. */
+const feedback = useOutcomeToast()
 
 /** Sentence for a failed load of the slide being edited (or its absence), null when none. */
 const loadError = ref<string | null>(null)
@@ -348,7 +348,6 @@ const collectTranslations = (): SlideTranslation[] => {
 /** Collects form data and dispatches create or update via the store; returns to the list on success. */
 const handleSave = async (): Promise<void> => {
   saving.value = true
-  saveError.value = null
 
   const payload: CreateSlidePayload = {
     iconName: iconName.value,
@@ -379,7 +378,7 @@ const handleSave = async (): Promise<void> => {
     await settle()
     void router.push(AppRoute.SettingsSlides)
   } else {
-    saveError.value = slidesStore.actionError
+    feedback.show(slidesStore.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -613,8 +612,6 @@ const handleCancel = (): void => {
           />
         </template>
       </UiSchemaForm>
-
-      <UiStatusMessage :message="saveError" :tone="UiTone.Danger" class="mb-5" data-testid="slide-form-error" />
 
       <SettingsFormFooter
         :save-label="isEditMode ? t('shared.save') : t('settings.slideForm.createSlide')"

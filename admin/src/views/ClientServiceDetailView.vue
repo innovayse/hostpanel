@@ -2,8 +2,7 @@
 /**
  * Editable service detail page. Each section (hosting account, billing, automation, notes, status and
  * the termination date) saves through its own endpoint with its own, distinctly named button, and
- * shows its outcome (success, or the API's sentence) beside that button in a live region that is
- * always rendered. Supports lifecycle actions: Suspend, Unsuspend, Terminate; terminating, and
+ * toasts its outcome (success, or the API's sentence). Supports lifecycle actions: Suspend, Unsuspend, Terminate; terminating, and
  * moving the status to Terminated, is confirmed first.
  */
 import { ref, computed, onMounted, watch } from 'vue'
@@ -12,7 +11,7 @@ import { useI18n } from 'vue-i18n'
 import { useServicesStore } from '@/stores/services'
 import { useServersStore } from '@/stores/servers'
 import { useSettingsStore } from '@/stores/settings'
-import { useToastStore } from '@/stores/toast'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { Icon } from '@/lib/icons'
@@ -35,7 +34,6 @@ import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -101,14 +99,6 @@ enum DangerAction {
   StatusChange = 'status-change',
 }
 
-/** The outcome of one save or command, shown beside its button. */
-interface ActionOutcome {
-  /** True when the request was refused. */
-  failed: boolean
-  /** The finished sentence: the success line or the API's own sentence. */
-  text: string
-}
-
 /** Current route, source of the client and service ids. */
 const route = useRoute()
 
@@ -121,8 +111,8 @@ const store = useServicesStore()
 /** Servers store, source of the server dropdown. */
 const serversStore = useServersStore()
 
-/** Toasts, where a refused control panel sign-in is reported: it has no field or section to stay beside. */
-const toasts = useToastStore()
+/** Toasts how a save, a module command or the control panel sign-in ended. */
+const feedback = useOutcomeToast()
 
 /** Settings store, source of the product dropdown. */
 const settingsStore = useSettingsStore()
@@ -147,12 +137,6 @@ const error = computed(() => store.error)
 
 /** The section whose save is in flight, null when none. */
 const saving = ref<ServiceSection | null>(null)
-
-/** The outcome of the last save of each section, keyed by section. */
-const sectionOutcomes = ref<Partial<Record<ServiceSection, ActionOutcome>>>({})
-
-/** The outcome of the last module command, shown in the module commands card. */
-const commandOutcome = ref<ActionOutcome | null>(null)
 
 /** True while a module command (suspend/unsuspend/terminate) is in flight. */
 const commandLoading = ref(false)
@@ -302,33 +286,14 @@ const dangerConfirmLabel = computed<string>(() =>
 const dangerLoading = computed<boolean>(() => commandLoading.value || saving.value === ServiceSection.Status)
 
 /**
- * The outcome of a section's last save.
- *
- * @param section - The section.
- * @returns The outcome, or undefined when the section has none to show.
- */
-const outcomeOf = (section: ServiceSection): ActionOutcome | undefined => sectionOutcomes.value[section]
-
-/**
- * The tone of an outcome.
- *
- * @param outcome - The outcome, if any.
- * @returns Danger for a refusal, success otherwise.
- */
-const outcomeTone = (outcome: ActionOutcome | null | undefined): UiTone =>
-  outcome?.failed === true ? UiTone.Danger : UiTone.Success
-
-/**
- * The finished outcome of a request that just settled: the success line, or the API's sentence.
+ * Toasts the outcome of a request that just settled: the success line, or the API's sentence.
  *
  * @param ok - Whether the request was accepted.
  * @param successKey - Locale key of the success line.
- * @returns The outcome to show.
  */
-const settle = (ok: boolean, successKey: string): ActionOutcome =>
-  ok
-    ? { failed: false, text: t(successKey) }
-    : { failed: true, text: store.actionError ?? t('errors.noAnswer') }
+const report = (ok: boolean, successKey: string): void => {
+  feedback.show(ok ? t(successKey) : store.actionError ?? t('errors.noAnswer'), !ok)
+}
 
 /**
  * Populates the hosting account fields from the fetched service detail.
@@ -471,22 +436,18 @@ const fetchClientServices = async (): Promise<void> => {
 }
 
 /**
- * Resets form to the last saved state and clears every outcome line.
+ * Resets form to the last saved state.
  *
  * @returns Nothing.
  */
 const handleCancel = (): void => {
   populateForm()
-  sectionOutcomes.value = {}
-  commandOutcome.value = null
 }
 
 /**
- * Runs one section's save with its busy flag and shows the outcome beside that section's button;
- * on success it reloads the service and refreshes only that section's fields. The section's
- * previous outcome is cleared first (the store clears its `actionError` when the request starts),
- * so a stale refusal never sits next to a new attempt. A press while any save runs is ignored:
- * the buttons stay focusable (`aria-disabled`) so keyboard focus is not lost.
+ * Runs one section's save with its busy flag and toasts the outcome; on success it reloads the service and
+ * refreshes only that section's fields. A press while any save runs is ignored: the buttons stay focusable
+ * (`aria-disabled`) so keyboard focus is not lost.
  *
  * @param section - The section being saved.
  * @param save - The store call that saves it.
@@ -496,11 +457,10 @@ const saveSection = async (section: ServiceSection, save: () => Promise<boolean>
   if (saving.value !== null) {
     return
   }
-  sectionOutcomes.value = { ...sectionOutcomes.value, [section]: undefined }
   saving.value = section
   const saved = await save()
   saving.value = null
-  sectionOutcomes.value = { ...sectionOutcomes.value, [section]: settle(saved, 'shared.changesSavedSuccessfully') }
+  report(saved, 'shared.changesSavedSuccessfully')
   if (saved) {
     await refreshSection(section)
   }
@@ -617,26 +577,25 @@ const handleLoginToPanel = async (): Promise<void> => {
   const url = await store.fetchPanelLoginUrl(serviceId.value)
   ssoLoading.value = false
   if (url === null) {
-    toasts.push(store.actionError ?? t('errors.noAnswer'), UiTone.Danger)
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
     return
   }
   window.open(url, '_blank')
 }
 
 /**
- * Runs a provisioning command with the shared busy flag, shows its outcome in the module commands
- * card and reloads the service when it succeeds.
+ * Runs a provisioning command with the shared busy flag, toasts its outcome and reloads the service
+ * when it succeeds.
  *
  * @param command - The store call to run.
  * @param successKey - Locale key of the line shown when the command is accepted.
  * @returns Promise that resolves with whether the command succeeded.
  */
 const runCommand = async (command: () => Promise<boolean>, successKey: string): Promise<boolean> => {
-  commandOutcome.value = null
   commandLoading.value = true
   const ok = await command()
   commandLoading.value = false
-  commandOutcome.value = settle(ok, successKey)
+  report(ok, successKey)
   if (ok) {
     await fetchService()
   }
@@ -885,11 +844,6 @@ onMounted(() => {
               >
                 {{ t('shared.save') }}
               </UiButton>
-              <UiStatusMessage
-                :message="outcomeOf(ServiceSection.HostingAccount)?.text ?? null"
-                :tone="outcomeTone(outcomeOf(ServiceSection.HostingAccount))"
-                data-testid="client-service-outcome-hosting-account"
-              />
             </UiForm>
           </template>
 
@@ -913,11 +867,6 @@ onMounted(() => {
                   {{ t('shared.save') }}
                 </UiButton>
               </UiFieldRow>
-              <UiStatusMessage
-                :message="outcomeOf(ServiceSection.Status)?.text ?? null"
-                :tone="outcomeTone(outcomeOf(ServiceSection.Status))"
-                data-testid="client-service-outcome-status"
-              />
             </UiForm>
 
             <UiForm
@@ -944,11 +893,6 @@ onMounted(() => {
                     {{ t('shared.save') }}
                   </UiButton>
                 </UiFieldRow>
-                <UiStatusMessage
-                  :message="outcomeOf(ServiceSection.TerminationDate)?.text ?? null"
-                  :tone="outcomeTone(outcomeOf(ServiceSection.TerminationDate))"
-                  data-testid="client-service-outcome-termination-date"
-                />
               </UiStack>
             </UiForm>
 
@@ -1036,11 +980,6 @@ onMounted(() => {
                 </UiButton>
               </template>
             </UiStack>
-            <UiStatusMessage
-              :message="commandOutcome?.text ?? null"
-              :tone="outcomeTone(commandOutcome)"
-              data-testid="client-service-command-outcome"
-            />
           </template>
         </UiDetailCards>
 
@@ -1124,11 +1063,6 @@ onMounted(() => {
               >
                 {{ t('shared.save') }}
               </UiButton>
-              <UiStatusMessage
-                :message="outcomeOf(ServiceSection.Billing)?.text ?? null"
-                :tone="outcomeTone(outcomeOf(ServiceSection.Billing))"
-                data-testid="client-service-outcome-billing"
-              />
             </UiForm>
           </template>
 
@@ -1173,11 +1107,6 @@ onMounted(() => {
               >
                 {{ t('shared.save') }}
               </UiButton>
-              <UiStatusMessage
-                :message="outcomeOf(ServiceSection.Automation)?.text ?? null"
-                :tone="outcomeTone(outcomeOf(ServiceSection.Automation))"
-                data-testid="client-service-outcome-automation"
-              />
             </UiForm>
           </template>
 
@@ -1208,11 +1137,6 @@ onMounted(() => {
               >
                 {{ t('shared.save') }}
               </UiButton>
-              <UiStatusMessage
-                :message="outcomeOf(ServiceSection.Notes)?.text ?? null"
-                :tone="outcomeTone(outcomeOf(ServiceSection.Notes))"
-                data-testid="client-service-outcome-notes"
-              />
             </UiForm>
           </template>
         </UiDetailCards>

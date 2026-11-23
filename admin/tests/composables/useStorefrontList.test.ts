@@ -1,16 +1,21 @@
 /**
  * Tests for the list page state: the delete question is staged before anything is sent, a
- * confirmed delete clears it, and a saved order reports its flag.
+ * confirmed delete clears it, and a saved order reports its flag. The outcome of a delete or a reorder is a toast.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
+import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { useStorefrontApi } from '@/composables/apis/useStorefrontApi'
 import { ApiPath } from '@/lib/apiPaths'
 import { useStorefrontCrud } from '@/composables/useStorefrontCrud'
 import { useStorefrontList } from '@/composables/useStorefrontList'
-import { StorefrontListOutcome } from '@/types/storefront'
+import type { StorefrontList } from '@/composables/useStorefrontList'
 import { json, problem } from '../helpers/fetch'
+import { createTestI18n } from '../helpers/i18n'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 /** An entry as the tests use it. */
 interface Widget {
@@ -31,12 +36,28 @@ const widget: Widget = { id: 4, sortOrder: 0 }
 const makeCrud = () => useStorefrontCrud<Widget, unknown>(useStorefrontApi<Widget, unknown>(ApiPath.AdminFaqs))
 
 /**
- * Builds the list state over the `/admin/faqs` endpoint set.
+ * Builds the list state over the `/admin/faqs` endpoint set inside a throwaway component, so the i18n and the toast store
+ * are real. The CRUD state is handed over as a store hands it: its refusal sentence as a plain value.
  *
  * @param crud - The CRUD state to wrap.
  * @returns The list state.
  */
-const makeList = (crud = makeCrud()) => useStorefrontList<Widget>(crud)
+const makeList = (crud = makeCrud()): StorefrontList<Widget> => {
+  let list: StorefrontList<Widget> | undefined
+  mount(defineComponent({
+    setup: () => {
+      list = useStorefrontList<Widget>({
+        remove: crud.remove,
+        updateOrder: crud.updateOrder,
+        get actionError() {
+          return crud.actionError.value
+        },
+      })
+      return () => h('div')
+    },
+  }), { global: { plugins: [createTestI18n(), createPinia()] } })
+  return list as StorefrontList<Widget>
+}
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -65,10 +86,10 @@ describe('useStorefrontList', () => {
     expect(requestsOf(mock)).toContain('DELETE /admin/faqs/4')
     expect(list.deleteTarget.value).toBeNull()
     expect(list.deleting.value).toBe(false)
-    expect(list.outcome.value).toBe(StorefrontListOutcome.Deleted)
+    expect(toastMessages()).toEqual(['Record deleted.'])
   })
 
-  it('a refused confirmDelete closes the question, keeps the sentence and reloads the list', async () => {
+  it('a refused confirmDelete closes the question, toasts the sentence and reloads the list', async () => {
     const mock = stubRouteTable({ 'DELETE /admin/faqs/4': () => problem('Pinned.', 409), 'GET /admin/faqs': () => json([widget]) })
     const crud = makeCrud()
     const list = makeList(crud)
@@ -77,13 +98,13 @@ describe('useStorefrontList', () => {
     await list.confirmDelete()
 
     expect(crud.actionError.value).toBe('Pinned.')
-    expect(list.outcome.value).toBeNull()
+    expect(toastMessages()).toEqual(['Pinned.'])
     expect(crud.items.value).toEqual([widget])
     expect(requestsOf(mock)).toEqual(['DELETE /admin/faqs/4', 'GET /admin/faqs'])
     expect(list.deleteTarget.value).toBeNull()
   })
 
-  it('a refused saveOrder reloads the list and lowers the saving flag', async () => {
+  it('a refused saveOrder toasts the sentence, reloads the list and lowers the saving flag', async () => {
     const mock = stubRouteTable({ 'PUT /admin/faqs/order': () => problem('Locked.', 409), 'GET /admin/faqs': () => json([widget]) })
     const crud = makeCrud()
     const list = makeList(crud)
@@ -91,7 +112,7 @@ describe('useStorefrontList', () => {
     await list.saveOrder([{ id: 4, sortOrder: 3 }])
 
     expect(crud.actionError.value).toBe('Locked.')
-    expect(list.outcome.value).toBeNull()
+    expect(toastMessages()).toEqual(['Locked.'])
     expect(requestsOf(mock)).toContain('GET /admin/faqs')
     expect(list.savingOrder.value).toBe(false)
   })
@@ -112,6 +133,6 @@ describe('useStorefrontList', () => {
 
     expect(requestsOf(mock)).toContain('PUT /admin/faqs/order')
     expect(list.savingOrder.value).toBe(false)
-    expect(list.outcome.value).toBe(StorefrontListOutcome.OrderSaved)
+    expect(toastMessages()).toEqual(['Order saved.'])
   })
 })

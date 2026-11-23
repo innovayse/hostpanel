@@ -101,8 +101,6 @@ const editRoute = (item: Faq): string => editPath(AppRoute.StorefrontFaqs, item.
     :items="store.items"
     :loading="store.loading"
     :error="store.error"
-    :action-error="store.actionError"
-    :outcome="list.outcome.value"
     :saving-order="list.savingOrder.value"
     :delete-target="list.deleteTarget.value"
     :deleting="list.deleting.value"

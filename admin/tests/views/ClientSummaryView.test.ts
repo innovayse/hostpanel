@@ -195,7 +195,7 @@ describe('ClientSummaryView', () => {
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['VAT number checked.'])
   })
 
-  it('shows the API sentence when the service gave no verdict and keeps the status', async () => {
+  it('toasts the API sentence when the service gave no verdict and keeps the status', async () => {
     const valid = { status: ClientVatStatus.Valid, checkedAt: '2026-11-10T09:30:00Z', name: 'Acme GmbH', address: null }
     stubRoutes({
       ...summaryRoutes(
@@ -210,7 +210,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-vat-check"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-vat-feedback"]').text()).toBe('The VAT number service is not answering right now.')
+    expect(toastMessages()).toContain('The VAT number service is not answering right now.')
     expect(wrapper.get('[data-testid="client-vat-status"]').text()).toBe('Valid')
   })
 
@@ -354,7 +354,7 @@ describe('ClientSummaryView', () => {
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['External account link saved.'])
   })
 
-  it('shows the conflict sentence of the API when another client holds the pair', async () => {
+  it('toasts the conflict sentence of the API when another client holds the pair', async () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 }), () => problem('Already linked to another client.', 409)))
     const wrapper = await mountSummary()
 
@@ -363,7 +363,7 @@ describe('ClientSummaryView', () => {
     await wrapper.get('[data-testid="client-external-account-save"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="client-external-account-status"]').text()).toBe('Already linked to another client.')
+    expect(toastMessages()).toContain('Already linked to another client.')
   })
 
   it('fills the card from the link the client holds', async () => {

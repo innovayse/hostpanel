@@ -8,7 +8,6 @@ import { defineComponent, h } from 'vue'
 import type { PropType } from 'vue'
 import type { VueWrapper } from '@vue/test-utils'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
-import { StorefrontListOutcome } from '@/types/storefront'
 import { mountScreen } from '../../helpers/mount'
 
 vi.mock('vuedraggable', async () => {
@@ -58,7 +57,6 @@ const baseProps = {
     view: 'widgets-view',
     add: 'widgets-add',
     error: 'widgets-error',
-    actionError: 'widgets-action-error',
     row: 'widget-row',
     actions: 'widget-actions',
     edit: 'widget-edit',
@@ -70,7 +68,6 @@ const baseProps = {
   items: widgets,
   loading: false,
   error: null,
-  actionError: null,
   savingOrder: false,
   deleteTarget: null,
   deleting: false,
@@ -124,28 +121,12 @@ describe('StorefrontListTable', () => {
     expect(failed.wrapper.get('[data-testid="widgets-error"]').text()).toBe('Could not load.')
   })
 
-  it('shows the action error', async () => {
-    const { wrapper } = await mountScreen(hostWith({ actionError: 'Refused.' }))
-
-    expect(wrapper.get('[data-testid="widgets-action-error"]').text()).toBe('Refused.')
-    expect(wrapper.get('[data-testid="widgets-action-error"]').attributes('data-tone')).toBe('danger')
-  })
-
   it('draws row placeholders in place of the rows while a new order is saved', async () => {
     const saving = await mountScreen(hostWith({ savingOrder: true }))
     const idle = await mountScreen(hostWith({ savingOrder: false }))
 
     expect(saving.wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(true)
     expect(idle.wrapper.find('[data-testid="ui-table-skeleton"]').exists()).toBe(false)
-  })
-
-  it('confirms a finished delete or reorder in the outcome line', async () => {
-    const deleted = await mountScreen(hostWith({ outcome: StorefrontListOutcome.Deleted }))
-    expect(deleted.wrapper.get('[data-testid="widgets-action-error"]').text()).toBe('Record deleted.')
-    expect(deleted.wrapper.get('[data-testid="widgets-action-error"]').attributes('data-tone')).toBe('success')
-
-    const ordered = await mountScreen(hostWith({ outcome: StorefrontListOutcome.OrderSaved }))
-    expect(ordered.wrapper.get('[data-testid="widgets-action-error"]').text()).toBe('Order saved.')
   })
 
   it('asks the page to load again from the retry of a refused load', async () => {

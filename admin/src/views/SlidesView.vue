@@ -5,7 +5,7 @@
  * Shows the slides in a table ordered by sort order, with drag-and-drop reordering through
  * vuedraggable, audience and status badges, and navigation to the dedicated create and edit pages.
  * A refused load offers a retry; a delete (confirmed first in a danger prompt) or a reorder shows its
- * outcome (success, or the API's sentence) above the header.
+ * outcome (success, or the API's sentence) as a toast.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -22,7 +22,6 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
 import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import schema from '@/views/SlidesView.schema'
@@ -30,6 +29,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useSlidesStore } from '@/stores/slides'
 import type { Slide } from '@/types/slide'
 import { SlideAudience } from '@/types/slideaudience'
@@ -87,19 +87,8 @@ const syncLocal = (): void => {
   localSlides.value = [...store.slides].sort((a, b) => a.sortOrder - b.sortOrder)
 }
 
-/** Locale key of the success sentence of the last delete or reorder, null when there is none to show. */
-const successKey = ref<string | null>(null)
-
-/** The outcome line: the API's refusal first, else the success sentence, else nothing. */
-const outcomeMessage = computed<string | null>(() => {
-  if (store.actionError) {
-    return store.actionError
-  }
-  return successKey.value === null ? null : t(successKey.value)
-})
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const outcomeTone = computed<UiTone>(() => (store.actionError ? UiTone.Danger : UiTone.Success))
+/** Toasts how a delete or a reorder ended. */
+const feedback = useOutcomeToast()
 
 /**
  * Loads the slides and syncs the draggable list.
@@ -160,14 +149,15 @@ const confirmDelete = async (): Promise<void> => {
   if (!target) {
     return
   }
-  successKey.value = null
   deleting.value = true
   const deleted = await store.deleteSlide(target.id)
   syncLocal()
   deleting.value = false
   deleteTarget.value = null
   if (deleted) {
-    successKey.value = 'shared.recordDeleted'
+    feedback.show(t('shared.recordDeleted'), false)
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -180,7 +170,6 @@ const dismissDelete = (): void => {
 
 /** Called after a drag ends: saves the new sort order to the backend. */
 const onDragEnd = async (): Promise<void> => {
-  successKey.value = null
   savingOrder.value = true
   const items = localSlides.value.map((slide, index) => ({
     id: slide.id,
@@ -190,7 +179,9 @@ const onDragEnd = async (): Promise<void> => {
   syncLocal()
   savingOrder.value = false
   if (saved) {
-    successKey.value = 'storefront.list.orderSaved'
+    feedback.show(t('storefront.list.orderSaved'), false)
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -243,8 +234,6 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
 
 <template>
   <UiStack :gap="UiGap.None" data-testid="slides-view">
-    <UiStatusMessage :message="outcomeMessage" :tone="outcomeTone" class="mb-4" data-testid="slides-action-error" />
-
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 

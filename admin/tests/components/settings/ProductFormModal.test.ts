@@ -83,13 +83,6 @@ afterEach(() => {
 })
 
 describe('ProductFormModal', () => {
-  it('shows a refused save next to the save button', async () => {
-    stubRouteTable(lists)
-    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false, error: 'That slug is taken.' })
-
-    expect(wrapper.get('[data-testid="product-form-error"]').text()).toBe('That slug is taken.')
-    expect(wrapper.get('[data-testid="product-form-error"]').attributes('data-tone')).toBe('danger')
-  })
 
   it('offers the four product types in create mode and starts on shared hosting', async () => {
     stubRouteTable(lists)

@@ -1,6 +1,6 @@
 /**
  * Tests for ProductGroupFormModal: the multiple choice of payment methods a group may be paid with, the payload it
- * emits (none ticked allows every method), a method the checkout no longer offers staying ticked, and a refused save.
+ * emits (none ticked allows every method), a method the checkout no longer offers staying ticked.
  */
 import { describe, expect, it } from 'vitest'
 import ProductGroupFormModal from '@/components/settings/ProductGroupFormModal.vue'
@@ -62,11 +62,6 @@ describe('ProductGroupFormModal', () => {
     expect(wrapper.emitted('save')).toEqual([[{ name: 'Shared', description: 'Hosting', allowedPaymentMethods: ['gateway-a', 'retired-gateway'] }]])
   })
 
-  it('shows a refused save next to the save button', async () => {
-    const { wrapper } = await mountScreen(ProductGroupFormModal, { group: null, methods, saving: false, error: 'That group is gone.' })
-
-    expect(wrapper.get('[data-testid="product-group-form-error"]').text()).toBe('That group is gone.')
-  })
 
   it('emits close on cancel', async () => {
     const { wrapper } = await mountScreen(ProductGroupFormModal, { group: null, methods, saving: false })

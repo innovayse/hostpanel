@@ -4,7 +4,7 @@
  * `UiDetailCards`): see, set or clear the link between the client and an account in
  * another system. The operator types the system name and the account id; Save sends both,
  * Clear (after a confirmation, shown only while a link exists) removes it. The API is the only validator: its sentence
- * for a refused call (a conflict with another client included) shows under the buttons and its
+ * for a refused call (a conflict with another client included) is toasted by the screen and its
  * per-field messages (the `fieldErrors` prop) show under their inputs, and go away, through
  * `clearFieldError`, as soon as the operator changes that field.
  */
@@ -16,7 +16,6 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { ExternalAccountField } from '@/types/client'
 import type { ClientExternalAccount, SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
@@ -35,14 +34,11 @@ const props = withDefaults(defineProps<{
   linked?: ClientExternalAccount | null
   /** Whether a save or clear is in flight. */
   saving?: boolean
-  /** The API's sentence for the last refused save or clear, null when none. */
-  error?: string | null
   /** The API's per-field messages of the last refused save, keyed by camelCase field name. */
   fieldErrors?: Record<string, string>
 }>(), {
   linked: null,
   saving: false,
-  error: null,
   /**
    * Default for the field errors.
    *
@@ -174,7 +170,6 @@ useFieldErrorClear(
         {{ t('clients.externalAccount.remove') }}
       </UiButton>
     </UiStack>
-    <UiStatusMessage :message="error" :tone="UiTone.Danger" data-testid="client-external-account-status" />
     <UiDialog
       v-if="confirmingClear"
       :variant="UiDialogVariant.Confirm"

@@ -12,6 +12,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import type { MountedScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 vi.mock('vuedraggable', async () => {
   const { defineComponent, h } = await import('vue')
@@ -135,7 +136,7 @@ describe('SlidesView', () => {
     await vi.waitFor(() => {
       expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
     })
-    expect(wrapper.get('[data-testid="slides-action-error"]').text()).toBe('Record deleted.')
+    expect(toastMessages()).toEqual(['Record deleted.'])
   })
 
   it('does not delete when the confirmation is dismissed', async () => {
@@ -173,7 +174,7 @@ describe('SlidesView', () => {
     expect(wrapper.find('[data-testid="slide-delete-1"]').exists()).toBe(true)
   })
 
-  it('shows the API sentence when a delete is refused', async () => {
+  it('toasts the API sentence when a delete is refused', async () => {
     stubRouteTable({
       'GET /admin/slides': () => json(slides),
       'DELETE /admin/slides/1': () => problem('The slide is pinned.', 409),
@@ -185,7 +186,7 @@ describe('SlidesView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="slides-action-error"]').text()).toBe('The slide is pinned.')
+      expect(toastMessages()).toEqual(['The slide is pinned.'])
     })
   })
 

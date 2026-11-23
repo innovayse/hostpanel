@@ -4,14 +4,13 @@
  * badge, the date of the check and the registered name and address the service returned, and the button that runs the check
  * again. A business client with a valid number in another EU country or the UK is invoiced without VAT, so staff read the
  * status here. Without a number the card says where to enter it and the button is off. The API is the only judge: its sentence
- * for a check that could not be completed (the service gave no verdict) shows under the button, and the status stays as it was.
+ * for a check that could not be completed (the service gave no verdict) is toasted by the screen, and the status stays as it was.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDateTime } from '@/lib/format'
 import { clientVatStatusTone } from '@/lib/tones'
@@ -32,13 +31,10 @@ const props = withDefaults(defineProps<{
   vat?: ClientVat | null
   /** Whether a check is in flight. */
   checking?: boolean
-  /** The API's sentence for the last refused check, null when none. */
-  error?: string | null
 }>(), {
   taxId: null,
   vat: null,
   checking: false,
-  error: null,
 })
 
 const emit = defineEmits<{
@@ -97,6 +93,5 @@ const handleCheck = (): void => {
         {{ t('shared.test') }}
       </UiButton>
     </UiStack>
-    <UiStatusMessage :message="error" :tone="UiTone.Danger" data-testid="client-vat-feedback" />
   </UiStack>
 </template>

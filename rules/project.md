@@ -139,8 +139,7 @@ backend/src/
   Innovayse.Hostpanel.Infrastructure/ AppDbContext, migrations, <Capability>/ adapters, Integrations/
   Innovayse.Hostpanel.API/           controllers, Program.cs, composition root
   Hostpanel.Sdk/                     the plugin contract third parties compile against (git submodule, own repository)
-  Innovayse.Providers.CWP/         the legacy CWP provisioning provider (payment gateways and hosting panels are external plugins)
-backend/tests/                       Domain, Integration, Architecture, CWP
+backend/tests/                       Domain, Integration, Architecture
 client/  admin/                    Nuxt 4 portal, Vite admin SPA, each owns its Dockerfile (backend/Dockerfile too)
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example, see docker/README.md
 ```
@@ -166,7 +165,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   header, behind `ICallerAccessToken`, and `API/Identity/HttpCallerClientMemo`, the request's `HttpContext.Items`, behind
   `ICallerClientMemo`). The SDK's `IProvisioningPlugin` is only a marker with no operations; the operations live in
   `IProvisioningPanelPlugin` (capability `provisioningPanel`), which the host calls (#1353, "Panel plugins" below). The
-  providers the host still builds itself are cPanel and the legacy CWP provider, because no plugin serves them yet.
+  provider the host still builds itself is cPanel, because no plugin serves it yet. Every other hosting panel, Control Web Panel included, works only through its plugin.
 - **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
   models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
   by `ProvisioningProviderFactory` and not shipped as a plugin. The reason is that no cPanel plugin exists yet: the SDK
@@ -234,8 +233,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   `AppContext.BaseDirectory/plugins`. No plugin is built or staged with the host: payment gateways (card, bank) are
   external plugins an operator installs from the Plugins page. A plugin package must never carry its own copy of
   `Hostpanel.Sdk.dll` into the load path: `Assembly.LoadFrom` over it would give the process two distinct
-  `IPaymentPlugin` types with the same name, after which every cast in `PluginActivator` fails. The CWP providers are
-  deliberately **not** staged, so they cannot activate at runtime by accident.
+  `IPaymentPlugin` types with the same name, after which every cast in `PluginActivator` fails. Hosting panel plugins such as the
+  Control Web Panel one are installed the same way, and a newly installed plugin is loaded at the next start.
 - **Plugin assembly names.** `PluginAssemblyNames` (the plugin packaging package, "Plugin package checks"; the host's names go in as a `PluginAssemblyOptions`, written once in `Infrastructure/Plugins/PluginHostAssemblies.Options` and used by every caller) reserves `Innovayse.Hostpanel.`, `System.`, `Microsoft.`, the SDK (`Hostpanel.Sdk`, and its former name `Innovayse.SDK`, which a plugin still may not ship) and every
   trusted platform assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`), with one carve-out: `Innovayse.Hostpanel.Plugins.<Name>` is the
   plugin namespace and official plugins are named that way (`Innovayse.Hostpanel.Plugins.Stripe.dll`). The trailing dot is the
@@ -335,8 +334,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
 - **Panel plugins (#1353).** A server's `Module` is an open text id (`Server.Module`, `ServerModules` in Domain: `Known` is the one module the host provisions itself, `CPanel`, so it is the only
-  one offered without a panel plugin, `Centos` and `Cwp7` stay as legacy ids the host still names (the connection test of a stored `Centos` server, the SSH agent profile of
-  `Cwp7`) and are not offered, and `ServerModules.Same` is the one comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and
+  one offered without a panel plugin, `Cwp7` stays as a legacy id the host still names (the SSH agent profile of
+  a stored `Cwp7` server) and is not offered, and `ServerModules.Same` is the one comparison, ordinal and ignoring case); the column was always text, so no row is rewritten and
   a server stored under an older id is served by a plugin that declares it, whatever the case, and stays valid when edited (`IServerModuleCatalog.Canonical` takes the stored id). `IServerModulePluginResolver` (Application port, `ServerModulePluginResolver` in `Infrastructure/Plugins`, general:
   the module id and a capability name, `Served`, `NotServed` or `Conflict`) is the one reader of the plugins' `serverModules` for calls, and
   `IServerModuleCatalog` (`ServerModuleCatalog`) the one for the admin side: `GET /api/admin/servers/modules` feeds the server form and the
@@ -357,7 +356,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   (Application) is the one mapper to `PanelServerConnection`: `UseSsl` is on the DTO, the stored password is read by
   `PanelConnectionReader` for a plugin call only and no built in provider receives it, and `Port` is `null`. Test Connection
   (`ServerConnectionTester`), the disk usage report (`DiskUsageService` with `PanelPluginAccountReader`, paged listing capped at 1000 pages)
-  and the account count cron use the same resolver and caller. No panel that has a plugin keeps a built in provider; cPanel and the legacy CWP provider remain built in until a plugin serves them, and their
+  and the account count cron use the same resolver and caller. No panel that has a plugin keeps a built in provider; cPanel remains built in until a plugin serves it, and its
   `#pragma warning disable CS0618` blocks stay for that reason. `PanelPluginPortTests` keeps the panel contracts out of every other layer.
 - **The panel transport and the server's self signed certificate (SDK 3.7.0 `IPanelTransport`).** `PanelTransport`
   (`Infrastructure/Plugins`, scoped, registered by `AddPanelTransport`, which the tests call as well) is the one `IPanelTransport` a hosting
@@ -490,10 +489,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   referenced only inside `#if INNOVAYSE_SSO`). A deployment-specific plugin is reached through an SDK contract
   loaded by `PluginLoader`, never named by the core. The test proves it bites: the same rule runs on a planted type
   in the test assembly and must report it.
-  The same rule also runs on source text (#650): `PluginNeutralSourceTests` reads the plugin ids and the entry point
-  type names from the in-tree `plugin.json` manifests (`Innovayse.Providers.*`) and fails when a Domain, Application,
-  Infrastructure, API, Shared or SharedKernel file names one, apart from the shrinking `LegacyBuiltIn` list (a stale entry
-  fails too); it is proven on an in-memory planted source. The host interfaces are held to it by vitest,
+  The host interfaces are held to it by vitest,
   `admin/tests/lint/pluginNeutrality.test.ts` (the slot and plugin page components with no exemption) and
   `client/tests/config/pluginNeutrality.test.ts`. With no plugin installed `EmptyPluginsTests` asserts that every slot index
   and both plugin ui indexes (pages and menus) are empty lists, so the panels show only what the core provides. Both
@@ -1605,8 +1601,7 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 - **Architecture tests** (`Architecture.Tests`): `ControllerBase`, `ExplicitConstructor`,
   `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`, `PluginNeutralCore`,
   plus resource coverage, kernel purity, SDK contract and use-case shape. Application types carry
-  no vendor names (`GetControlPanelSsoUrl`,
-  `GetHostingPanelServerInfo`/`V7`).
+  no vendor names (`GetControlPanelSsoUrl`, `TestServerConnection`).
 - **A test per use case, enforced.** `UseCaseShapeTests` fails when
   `Application/<Feature>/{Commands,Queries}/<UseCase>/` has no
   `Integration.Tests/<Feature>/<UseCase>Tests.cs` (crons and event handlers under `Commands`
@@ -2311,7 +2306,7 @@ and `SsoModeAuthenticationSchemeTests`. The cookie scheme name is the one consta
 `backend/Dockerfile` passes `-p:InnovayseSso=true` to restore and publish when `AUTH_MODE=sso`
 is the build arg, so a missing credential fails the build rather than yielding an image that
 refuses to boot. The GitHub workflow `.github/workflows/ci.yml` builds the standalone flavour and
-runs the Domain, Architecture, CWP and Integration suites, plus the migration addon's PHP tests.
+runs the Domain, Architecture and Integration suites, plus the migration addon's PHP tests.
 
 ```bash
 docker compose -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml -f docker/docker-compose.platform.yml up   # start the Hostpanel stack inside a platform checkout
@@ -2346,7 +2341,7 @@ both `-e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` and
 `--add-host=host.docker.internal:host-gateway`. Without them the resource reaper cannot start
 and every test in the suite fails with a stack trace that looks nothing like a networking
 problem. **Do not pass `--no-build` to the integration suite**: it silently produces no output
-and exits 0 whether or not the assembly is there. The Domain, Architecture and CWP suites are fine with it.
+and exits 0 whether or not the assembly is there. The Domain and Architecture suites are fine with it.
 
 Containers: `hostpanel-api` (5148), `hostpanel-client` (3000, published 3001),
 `hostpanel-admin`, `hostpanel-db`, plus `hostpanel-redis`, `hostpanel-rabbitmq`,
@@ -2391,8 +2386,6 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   only the rows: a staff entry typed under a name that is also a gateway (with a reference and a description a gateway
   path writes) is classified as a gateway row, and counts toward a duplicate. A second gateway payment saved under one reference surfaces as `ConcurrencyConflictException`
   (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
-- `scripts/pack-cwp-plugin.sh`: publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
-  PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
 - `scripts/test-install-backup.sh [install.sh]`: runs `install.sh` against a fake `docker` and `curl` (no Docker, no
   network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
   and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
@@ -2876,8 +2869,10 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
     link stays text, because an address renders only through `pluginLinkTarget`, which the `link` event goes through.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** `pages/**`, `layouts/**`
   and `templates/*/{pages,sections,layout}/**` carry no raw tag at all; an area's own components
-  (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive
-  raw element. A new visual need is a new `Ui*` first. Styling is Tailwind classes written out
+  (`components/<area>/`) compose the kit and hold none either. Raw tags live only inside the two
+  ui folders (`admin/src/components/ui/**` and `client/components/ui/**`); a test per app
+  (`admin/tests/lint/noRawHtml.test.ts`, `client/tests/config/noRawHtml.test.ts`) fails on any
+  raw tag in a template elsewhere. A new visual need is a new `Ui*` first. Styling is Tailwind classes written out
   literally and theme tokens (`assets/css/ui.css`, `tailwind.config.ts`); per-item colours that
   are data go through `UiAccent`. No `<style>`, no `style=`, no `bg-[#...]`, no `v-html`,
   operator HTML is rendered by `UiRichText` (`utils/ui/richText.ts`, an allow-list tokenizer that
@@ -3052,8 +3047,8 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
 
 ## Tests
 
-`backend/tests/` has four projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`,
-`Innovayse.CWP.Tests`. **There is no `Application.Tests` or
+`backend/tests/` has three projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`.
+**There is no `Application.Tests` or
 `Infrastructure.Tests`**: use-case tests are `Integration.Tests/<Feature>/<UseCase>Tests.cs`
 (Testcontainers Postgres, fakes in `Fixtures/` for external ports only), and adapter tests live in
 `Integration.Tests/Adapters/{Auth,Billing,Integrations}`. Do not add either project.
@@ -3134,9 +3129,9 @@ Never spread one of these, and never restructure as a side effect of a feature.
   `api/me/payment-methods`) is gone; a ledger row recorded as `Card` with no hosted session behind it is refunded by a
   manual refund (`INVOICE_NOT_GATEWAY_PAID` for a Gateway refund). The plugin's stored `integration:<slug>:*` settings and
   the payment rows are untouched and read by the plugin under the same slug. Manual bank transfer is built into the host (module `bank_transfer`, settings under the `bank-transfer` integration) while bank gateways are plugins.
-- **Vendor names that remain, on purpose.** Integration slugs (`cwp` and so on) in
+- **Vendor names that remain, on purpose.** Integration slugs in
   `IntegrationSlugs` / `BuiltInPaymentModules` and the `Integrations/<Vendor>/` adapter folders are
-  plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/cwp`)
+  plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/<slug>`)
   and chosen in the admin UI, so renaming them would break stored configuration. They are the only
   place a vendor is named. Persisted *data* is neutral: the `GatewayCustomers` rows and the ledger
   payment method `Card` (the `ConformanceFixes` migration renamed the column and rewrote old

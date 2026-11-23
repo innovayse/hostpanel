@@ -23,10 +23,7 @@ public sealed class SaveIntegrationConfigHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>
-    /// Invalidates the cached hosting-panel server-info results a saved credential change would make
-    /// stale.
-    /// </summary>
+    /// <summary>Drops a plugin's cached status check when its switch or settings are replaced.</summary>
     private readonly IMemoryCache _cache;
 
     /// <summary>Encrypts a secret field value before it is stored.</summary>
@@ -55,10 +52,7 @@ public sealed class SaveIntegrationConfigHandler
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    /// <param name="cache">
-    /// Invalidates the cached hosting-panel server-info results a saved credential change would make
-    /// stale.
-    /// </param>
+    /// <param name="cache">Drops a plugin's cached status check when its switch or settings are replaced.</param>
     /// <param name="cipher">Encrypts a secret field value before it is stored.</param>
     /// <param name="plugins">Loaded plugins, whose manifests declare their fields and which of them are secret.</param>
     /// <param name="currentUser">The acting admin, named in the audit line of a secret change.</param>
@@ -215,14 +209,6 @@ public sealed class SaveIntegrationConfigHandler
         if (command.IsEnabled)
         {
             await _migrations.RetryAsync(slug, ct);
-        }
-
-        // A saved hosting-panel credential invalidates the cached live server-info result the
-        // read side serves for 5 minutes, so the operator sees the new credentials take effect
-        // immediately rather than reading the old server's status until the cache expires.
-        if (string.Equals(slug, IntegrationSlugs.Cwp, StringComparison.OrdinalIgnoreCase))
-        {
-            _cache.Remove(HostingPanelCacheKeys.Cwp);
         }
 
         // A plugin's cached status check described the switch and settings just replaced (a no-op for a built-in slug).

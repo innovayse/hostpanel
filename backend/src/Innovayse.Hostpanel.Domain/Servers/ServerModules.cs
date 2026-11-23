@@ -3,16 +3,13 @@ namespace Innovayse.Hostpanel.Domain.Servers;
 /// <summary>
 /// The control panel module ids the host's own code names, spelled exactly as they are stored. A server's module is an open text
 /// id, because a panel plugin declares its own ids (<c>serverModules</c> in its manifest); only <see cref="CPanel"/> is built in,
-/// so <see cref="Known"/> offers nothing else. <see cref="Centos"/> and <see cref="Cwp7"/> are legacy ids: no longer offered,
-/// but a server stored with one keeps the special handling the host still gives it. Compare two ids with <see cref="Same"/>.
+/// so <see cref="Known"/> offers nothing else. <see cref="Cwp7"/> is a legacy id: not offered, but a server stored with it still
+/// maps to its SSH agent profile. Compare two ids with <see cref="Same"/>.
 /// </summary>
 public static class ServerModules
 {
     /// <summary>cPanel/WHM, provisioned by the host itself.</summary>
     public const string CPanel = "CPanel";
-
-    /// <summary>CentOS Web Panel (legacy, stored rows only).</summary>
-    public const string Centos = "Centos";
 
     /// <summary>Control Web Panel 7 (legacy, stored rows only; the SSH agent still maps it to its profile).</summary>
     public const string Cwp7 = "Cwp7";

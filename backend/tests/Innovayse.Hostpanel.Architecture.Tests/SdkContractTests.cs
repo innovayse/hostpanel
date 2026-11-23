@@ -615,7 +615,7 @@ public sealed class SdkContractTests
             .Select(type => type.FullName).Should().BeEmpty("group each type in an area folder");
     }
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>The 2.0.0 move: each released type is in its new namespace.</summary>
     /// <param name="type">The type under inspection.</param>
     /// <param name="expected">The namespace it must be in.</param>
@@ -659,7 +659,7 @@ public sealed class SdkContractTests
     }
 #pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>
     /// The payment, slot, lifecycle and hosting panel records keep the members plugins compile against, so a
     /// rename of a positional record member is a red build.
@@ -741,7 +741,7 @@ public sealed class SdkContractTests
             .Fields.Should().BeEmpty();
     }
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>A panel address is HTTPS on the given port, and an IPv6 literal is bracketed so its colons are not read as the port.</summary>
     /// <param name="host">The host handed to the builder.</param>
     /// <param name="expected">The base URL it must build.</param>
@@ -758,7 +758,7 @@ public sealed class SdkContractTests
     }
 #pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>A panel address needs a host: a null, empty or blank one is refused instead of building a URL without a server.</summary>
     [Fact]
     public void HostingPanelAddress_RefusesAMissingHost()
@@ -769,7 +769,7 @@ public sealed class SdkContractTests
     }
 #pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>The account envelope is a sealed record with init-only members: nothing can change it after it is read.</summary>
     [Fact]
     public void HostingPanelApiWire_IsAnImmutableRecord()

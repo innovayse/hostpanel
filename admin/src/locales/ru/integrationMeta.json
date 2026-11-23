@@ -10,11 +10,6 @@
     "fieldPort": "Порт",
     "fieldApiToken": "API-токен"
   },
-  "cwp": {
-    "shortDescription": "Управляйте хостинг-аккаунтами на серверах CentOS Web Panel.",
-    "fieldHost": "Хост CWP",
-    "fieldApiKey": "Ключ API"
-  },
   "smtp": {
     "shortDescription": "Настройте отправку исходящей почты через ваш SMTP-сервер.",
     "fieldHost": "SMTP-хост",

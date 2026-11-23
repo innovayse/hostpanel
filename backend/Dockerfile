@@ -24,11 +24,9 @@ COPY src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj ./src/Innovayse.
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.csproj ./src/Hostpanel.Sdk/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/Hostpanel.Sdk.Generators.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/Hostpanel.Sdk.Packaging.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/
-COPY src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
 COPY tests/Innovayse.Hostpanel.Domain.Tests/Innovayse.Hostpanel.Domain.Tests.csproj ./tests/Innovayse.Hostpanel.Domain.Tests/
 COPY tests/Innovayse.Hostpanel.Architecture.Tests/Innovayse.Hostpanel.Architecture.Tests.csproj ./tests/Innovayse.Hostpanel.Architecture.Tests/
 COPY tests/Innovayse.Hostpanel.Integration.Tests/Innovayse.Hostpanel.Integration.Tests.csproj ./tests/Innovayse.Hostpanel.Integration.Tests/
-COPY tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
 # AUTH_MODE=sso builds with -p:InnovayseSso=true so a missing registry credential fails here, not at boot.
 ARG AUTH_MODE
 
@@ -67,11 +65,9 @@ COPY src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj ./src/Innovayse.
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.csproj ./src/Hostpanel.Sdk/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/Hostpanel.Sdk.Generators.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Generators/
 COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/Hostpanel.Sdk.Packaging.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/
-COPY src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
 COPY tests/Innovayse.Hostpanel.Domain.Tests/Innovayse.Hostpanel.Domain.Tests.csproj ./tests/Innovayse.Hostpanel.Domain.Tests/
 COPY tests/Innovayse.Hostpanel.Architecture.Tests/Innovayse.Hostpanel.Architecture.Tests.csproj ./tests/Innovayse.Hostpanel.Architecture.Tests/
 COPY tests/Innovayse.Hostpanel.Integration.Tests/Innovayse.Hostpanel.Integration.Tests.csproj ./tests/Innovayse.Hostpanel.Integration.Tests/
-COPY tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
 ARG AUTH_MODE
 
 # The private feed credentials arrive as the BuildKit secret nuget_credentials (docker build --secret

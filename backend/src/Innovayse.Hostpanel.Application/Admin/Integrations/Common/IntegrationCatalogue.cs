@@ -53,13 +53,6 @@ public static class IntegrationCatalogue
                 new("api_token", "API Token", Password, Required: true),
             ],
             ["host", "username", "api_token"]),
-        [IntegrationSlugs.Cwp] = new("CentOS Web Panel", HostingProvisioning,
-            [
-                new("host", "CWP Host", Text, Required: true),
-                new("port", "Port", Text, Required: false),
-                new("api_key", "API Key", Password, Required: true),
-            ],
-            ["host", "api_key"]),
         [IntegrationSlugs.Smtp] = new("SMTP Server", "Email / SMTP",
             [
                 new("host", "SMTP Host", Text, Required: true),

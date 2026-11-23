@@ -62,10 +62,9 @@ jobs:
         run: >-
           sh ../scripts/check-empty-plugins.sh
           tests/Innovayse.Hostpanel.Domain.Tests tests/Innovayse.Hostpanel.Architecture.Tests
-          tests/Innovayse.CWP.Tests
       - name: Unit tests
         run: |
-          for suite in Hostpanel.Domain Hostpanel.Architecture CWP; do
+          for suite in Hostpanel.Domain Hostpanel.Architecture; do
             dotnet test "tests/Innovayse.$suite.Tests" -c Release --no-build
           done
 

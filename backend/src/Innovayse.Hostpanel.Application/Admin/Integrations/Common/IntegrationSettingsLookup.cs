@@ -54,8 +54,7 @@ public sealed class IntegrationSettingsLookup
 
     /// <summary>
     /// Reads the stored value of one integration field. A secret field comes back as stored, that is
-    /// encrypted: this lookup only answers presence for secrets, and a caller that needs a secret's
-    /// plain value reads it through <see cref="IntegrationSettingQueries"/> and the cipher.
+    /// encrypted: this lookup only answers presence for secrets.
     /// </summary>
     /// <param name="slug">The integration slug.</param>
     /// <param name="field">The field key.</param>

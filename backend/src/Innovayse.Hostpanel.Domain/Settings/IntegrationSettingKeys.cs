@@ -23,15 +23,6 @@ public static class IntegrationSettingKeys
     /// <summary>The field name that stores a registrar account's password.</summary>
     public const string PasswordField = "password";
 
-    /// <summary>The field name that stores a hosting panel's host.</summary>
-    public const string HostField = "host";
-
-    /// <summary>The field name that stores a hosting panel's host name.</summary>
-    public const string HostnameField = "hostname";
-
-    /// <summary>The field name that stores a hosting panel's port.</summary>
-    public const string PortField = "port";
-
     /// <summary>The field name that stores a hosting panel's API key.</summary>
     public const string ApiKeyField = "api_key";
 

@@ -1,47 +1,26 @@
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
 
 /// <summary>
-/// Finds the plugin ids and plugin type names that core source text names. The names are read from the
-/// <c>plugin.json</c> manifests under <c>backend/src/Innovayse.Providers.*</c> (the id and the simple name of the
-/// entry point type), so a new in-tree plugin is covered without touching a list. The rule is a plain function
-/// of named sources and names, so a test can run it on an in-memory planted source and on the real files.
+/// Finds the plugin ids and plugin type names that core source text names. The names are a fixed deny list of
+/// plugins that live outside this repository; the rule is a plain function of named sources and names, so a test
+/// can run it on an in-memory planted source and on the real files.
 /// </summary>
 internal static class PluginNeutralSourceScan
 {
     /// <summary>
-    /// The ids and entry point type names of plugins that no longer live in this repository. Their manifests are
-    /// gone from <c>Innovayse.Providers.*</c>, so nothing would derive them any more, yet the core must keep not
-    /// naming them. The list only grows when a plugin moves out of the tree.
+    /// The ids and entry point type names of plugins that live in their own repositories. The core must never name
+    /// them: a plugin is reached through its manifest and an SDK contract. The list grows when a plugin moves out of the tree.
     /// </summary>
-    private static readonly string[] ExternalPluginNames = ["inecobank", "InecobankPaymentGateway", "paypal", "PayPalPaymentGateway", "idram", "IdramPaymentGateway", "ameriabank", "AmeriabankPaymentGateway"];
-
-    /// <summary>The plugin ids and entry point type names every in-tree plugin manifest declares, plus those of plugins moved out of the tree.</summary>
-    /// <param name="backendRoot">The directory that holds the solution file.</param>
-    /// <returns>The distinct names, each a whole token a core source must not contain, including <see cref="ExternalPluginNames"/>.</returns>
-    public static IReadOnlyList<string> PluginNames(string backendRoot)
-    {
-        var names = new SortedSet<string>(ExternalPluginNames, StringComparer.Ordinal);
-        var providers = Directory.EnumerateDirectories(Path.Combine(backendRoot, "src"), "Innovayse.Providers.*");
-        foreach (var manifest in providers.Select(directory => Path.Combine(directory, "plugin.json")).Where(File.Exists))
-        {
-            using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-            var root = document.RootElement;
-            if (root.TryGetProperty("id", out var id) && id.GetString() is { Length: > 0 } pluginId)
-            {
-                names.Add(pluginId);
-            }
-
-            if (root.TryGetProperty("entryPoint", out var entry) && entry.GetString() is { Length: > 0 } entryPoint)
-            {
-                names.Add(entryPoint[(entryPoint.LastIndexOf('.') + 1)..]);
-            }
-        }
-
-        return [.. names];
-    }
+    public static readonly IReadOnlyList<string> PluginNames =
+    [
+        "inecobank", "InecobankPaymentGateway",
+        "paypal", "PayPalPaymentGateway",
+        "idram", "IdramPaymentGateway",
+        "ameriabank", "AmeriabankPaymentGateway",
+        "innovayse-cwp", "CwpProvisioningProvider", "CwpApiClient",
+    ];
 
     /// <summary>The names a text contains as whole tokens. Matching is case sensitive and a name inside a longer identifier or id does not count.</summary>
     /// <param name="text">The source text.</param>

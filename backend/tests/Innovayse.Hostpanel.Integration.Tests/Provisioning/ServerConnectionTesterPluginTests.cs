@@ -156,15 +156,12 @@ public sealed class ServerConnectionTesterPluginTests(IntegrationTestFactory fac
         services.AddLogging();
         services.AddHttpClient();
         var provider = services.BuildServiceProvider();
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the tester still takes the CWP client.
         return new ServerConnectionTester(
-            new FakeHostingPanelApiClient(),
             provider.GetRequiredService<IHttpClientFactory>(),
             provider.GetRequiredService<ILoggerFactory>(),
             Options.Create(new ProvisioningOptions()),
             NullLogger<ServerConnectionTester>.Instance,
             resolver ?? harness.Resolver,
             harness.Caller);
-#pragma warning restore CS0618
     }
 }

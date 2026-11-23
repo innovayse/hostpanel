@@ -381,7 +381,6 @@ backend:test:
     TEST_PROJECTS: >-
       Innovayse.Hostpanel.Domain.Tests
       Innovayse.Hostpanel.Architecture.Tests
-      Innovayse.CWP.Tests
   rules:
     # main is reached only through a GitHub PR whose CI ran these same suites before the
     # merge; running them again here only delayed the deploy by ~20 minutes. Set

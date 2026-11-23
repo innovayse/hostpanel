@@ -16,8 +16,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServersStore } from '@/stores/servers'
-import { FILL_TYPE_LABELS, ServerState, moduleLabel } from '@/types/server'
-import { ServerModuleSource } from '@/types/serverenums'
+import { FILL_TYPE_LABELS, ServerState, moduleNameOf, moduleOptionLabel } from '@/types/server'
 import type { ServerDto, ServerGroupDto, ServerGroupPayload, ServerListFilters, ServerPayload, ServerTestOutcome } from '@/types/server'
 import { UiTone } from '@/utils/ui/tone'
 import ServerCard from '@/components/servers/ServerCard.vue'
@@ -190,7 +189,7 @@ const moduleOptions = computed<UiSelectOption<string>[]>(() => [
   { value: '', label: t('shared.any') },
   ...store.moduleOptions.map(option => ({
     value: option.id,
-    label: option.source === ServerModuleSource.Plugin ? option.name : moduleLabel(option.id),
+    label: moduleOptionLabel(option),
   })),
 ])
 
@@ -205,7 +204,7 @@ const chips = chipsOf(() => [
   {
     key: FilterKey.Module,
     label: t('servers.servers.filterModule'),
-    value: moduleOfAddress.value === undefined ? undefined : moduleLabel(moduleOfAddress.value),
+    value: moduleOfAddress.value === undefined ? undefined : moduleNameOf(moduleOfAddress.value, store.moduleOptions),
   },
   {
     key: FilterKey.State,
@@ -508,6 +507,7 @@ onMounted(() => {
               v-for="server in store.servers"
               :key="server.id"
               :server="server"
+              :module-options="store.moduleOptions"
               :actions="serverActions(server)"
               :testing="testingIds.includes(server.id)"
               :test-outcome="testResults[server.id] ?? null"

@@ -39,7 +39,6 @@ export type IntegrationCategoryName = (typeof IntegrationCategoryName)[keyof typ
 export const IntegrationSlug = {
   BankTransfer: 'bank-transfer',
   Cpanel: 'cpanel',
-  Cwp: 'cwp',
   Smtp: 'smtp',
   Maxmind: 'maxmind',
 } as const

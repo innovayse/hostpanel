@@ -490,7 +490,7 @@ describe('ClientServiceDetailView', () => {
     expect(sync).toMatchObject({ method: 'POST', body: { pushPassword: false } })
     expect(wrapper.get('[data-testid="client-service-sync-outcome-IpAddress"]').text()).toBe('Applied')
     expect((wrapper.get('[data-testid="client-service-dedicated-ip"]').element as HTMLInputElement).value).toBe('203.0.113.9')
-    expect(wrapper.get('[data-testid="client-service-command-outcome"]').text()).toBe('Service synced with the panel.')
+    expect(toastMessages()).toEqual(['Service synced with the panel.'])
 
     await wrapper.get('[data-testid="client-service-sync-close"]').trigger('click')
     expect(wrapper.find('[data-testid="client-service-sync-dialog"]').exists()).toBe(false)
@@ -522,7 +522,7 @@ describe('ClientServiceDetailView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="client-service-sync-dialog"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="client-service-command-outcome"]').text()).toBe('The hosting account could not be read from the control panel.')
+    expect(toastMessages()).toEqual(['The hosting account could not be read from the control panel.'])
   })
 
   it('labels the address as assigned, not dedicated', async () => {

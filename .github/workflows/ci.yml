@@ -152,7 +152,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - run: python3 -m unittest discover -s backend/agent/ssh-key-agent/tests
+      - run: sh scripts/run-agent-tests.sh
       - name: Check the syntax of every helper and lint them with shellcheck
         run: sh scripts/check-agent-helpers.sh
 

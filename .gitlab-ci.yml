@@ -471,13 +471,14 @@ agent:test:
   image: $DOTNET_SDK_IMAGE
   script:
     - apt-get update -qq && apt-get install -y -qq python3 shellcheck
-    - python3 -m unittest discover -s backend/agent/ssh-key-agent/tests
+    - sh scripts/run-agent-tests.sh
     - sh scripts/check-agent-helpers.sh
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
       changes:
         - .gitlab-ci.yml
         - scripts/check-agent-helpers.sh
+        - scripts/run-agent-tests.sh
         - backend/agent/ssh-key-agent/**/*
 
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would

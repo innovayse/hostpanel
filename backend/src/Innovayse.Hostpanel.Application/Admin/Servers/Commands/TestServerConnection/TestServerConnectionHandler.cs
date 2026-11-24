@@ -64,6 +64,7 @@ public sealed class TestServerConnectionHandler
             probe.Connected,
             probe.AccountsCount,
             probe.Version,
+            probe.ErrorCode,
             probe.ErrorCode is null ? null : _messages.Resolve(probe.ErrorCode),
             server.LastTestedAt!.Value));
     }

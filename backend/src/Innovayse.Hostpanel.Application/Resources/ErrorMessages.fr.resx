@@ -405,6 +405,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Le package d'hébergement n'a pas pu être modifié. Veuillez réessayer ou contacter le support.</value>
   </data>
+<data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve">
+    <value>La liste des offres d'hébergement n'a pas pu être lue sur le serveur. Réessayez ou saisissez le nom de l'offre à la main.</value>
+  </data>
 <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
     <value>Le compte d'hébergement n'a pas pu être lu depuis le panneau de contrôle. Veuillez réessayer ou contacter le support.</value>
   </data>
@@ -1656,6 +1659,12 @@
   </data>
 <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Le panneau de contrôle a refusé les identifiants enregistrés.</value>
+  </data>
+<data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
+    <value>Le serveur n'a pas répondu à temps. Vérifiez que le panneau fonctionne et qu'un pare-feu ne le bloque pas.</value>
+  </data>
+<data name="SERVER_CONNECTION_TLS_FAILED" xml:space="preserve">
+    <value>La connexion sécurisée au serveur a échoué. Vérifiez le certificat du panneau ou autorisez son certificat auto-signé dans les réglages du serveur.</value>
   </data>
   <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Le sshAgentProfile du manifeste doit être un identifiant de profil fait de mots en minuscules reliés par des tirets simples, de 32 caractères au plus, et ne peut pas être generic-linux.</value>

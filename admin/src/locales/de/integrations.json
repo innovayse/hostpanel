@@ -22,7 +22,10 @@
     "tested": "Getestet",
     "roundTrip": "Antwortzeit",
     "notTestedYet": "Noch nicht getestet",
-    "setupNote": "Einrichtungshinweis"
+    "setupNote": "Einrichtungshinweis",
+    "serversOnline": "{online} von {total} Servern online",
+    "serversOffline": "{count} offline",
+    "serversUntested": "{count} nicht getestet"
   },
   "integrations": {
     "lengthIntegrationValue": "Integrationen: {length}",

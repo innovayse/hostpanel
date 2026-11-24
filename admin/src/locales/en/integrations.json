@@ -42,7 +42,10 @@
     "tested": "Tested",
     "roundTrip": "Round trip",
     "notTestedYet": "Not tested yet",
-    "setupNote": "Setup Note"
+    "setupNote": "Setup Note",
+    "serversOnline": "{online} of {total} servers online",
+    "serversOffline": "{count} offline",
+    "serversUntested": "{count} not tested"
   },
   "integrations": {
     "lengthIntegrationValue": "Integrations: {length}",

@@ -19,6 +19,9 @@ public sealed class FakeServerConnectionTester : IServerConnectionTester
     /// </summary>
     public bool ShouldFail { get; set; }
 
+    /// <summary>The error code a failed test reports; unreachable unless a test picks another.</summary>
+    public string FailureCode { get; set; } = HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE;
+
     /// <summary>The account count a successful test reports.</summary>
     public int AccountsCount { get; set; } = 3;
 
@@ -31,7 +34,7 @@ public sealed class FakeServerConnectionTester : IServerConnectionTester
         TestedServers.Add(server);
 
         return Task.FromResult(ShouldFail
-            ? ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE)
+            ? ServerConnectionTestResult.Failed(FailureCode)
             : ServerConnectionTestResult.Succeeded(AccountsCount, "fake-1.0"));
     }
 }

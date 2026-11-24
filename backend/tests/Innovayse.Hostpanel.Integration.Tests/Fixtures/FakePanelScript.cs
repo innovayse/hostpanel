@@ -46,6 +46,11 @@ public sealed class FakePanelScript
     public ValueResult<PanelAccount, PanelRefusalReason> Account { get; set; } = ValueResult<PanelAccount, PanelRefusalReason>.Done(
         new PanelAccount("acct-1", "one.example.test", PanelAccountStatus.Active, "basic", null) { IpAddress = "203.0.113.20" });
 
+    /// <summary>Gets what the package listing answers.</summary>
+    public ValueResult<IReadOnlyList<PanelPackageDetails>, PanelRefusalReason> Packages { get; set; } =
+        ValueResult<IReadOnlyList<PanelPackageDetails>, PanelRefusalReason>.Done(
+            [new PanelPackageDetails("basic", null, null, null, null, null, null), new PanelPackageDetails("plus", 1024, null, null, 5, null, null)]);
+
     /// <summary>Gets or sets what every operation throws instead of answering, when set.</summary>
     public Exception? Throw { get; set; }
 

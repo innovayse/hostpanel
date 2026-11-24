@@ -232,6 +232,15 @@ const showChangePackageModal = ref(false)
 /** New package name for change package modal. */
 const newPackage = ref('')
 
+/** The packages the service's server offers; empty when its panel cannot list them, and the dialog then asks for the name by hand. */
+const packageNames = ref<string[]>([])
+
+/** True while the packages are being read, before the change package dialog opens. */
+const packagesLoading = ref(false)
+
+/** Package options for the UiSelect in the change package dialog. */
+const packageOptions = computed(() => packageNames.value.map(name => ({ value: name, label: name })))
+
 /** Whether the suspend confirmation modal is visible. */
 const showSuspendModal = ref(false)
 
@@ -631,6 +640,20 @@ const handleChangePassword = async (): Promise<void> => {
 }
 
 /**
+ * Opens the change package dialog once the server's packages are read, so it opens with a choice to make or, for a panel that cannot
+ * list them, with the field to type in.
+ *
+ * @returns Promise that resolves when the dialog is open.
+ */
+const openChangePackage = async (): Promise<void> => {
+  newPackage.value = ''
+  packagesLoading.value = true
+  packageNames.value = await store.fetchPackages(serviceId.value)
+  packagesLoading.value = false
+  showChangePackageModal.value = true
+}
+
+/**
  * Changes the hosting package via the provisioning server.
  *
  * @returns Promise that resolves when the package is changed.
@@ -967,10 +990,10 @@ onMounted(() => {
                 <UiButton :action="UiActionKind.Edit"
                   :type="UiButtonType.Button"
                   :variant="UiButtonVariant.Secondary"
-                  :loading="commandLoading"
+                  :loading="commandLoading || packagesLoading"
                   :disabled="!service.account.provisioningRef"
                   data-testid="client-service-change-package"
-                  @click="showChangePackageModal = true"
+                  @click="openChangePackage"
                 >
                   {{ t('clients.clientServiceDetail.changePackage') }}
                 </UiButton>
@@ -1229,7 +1252,17 @@ onMounted(() => {
         <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientServiceDetail.enterTheNewHostingPackage') }}</UiText>
         <UiField :label="t('clients.clientServiceDetail.packageName')">
           <template #default="{ id }">
+            <UiSelect
+              v-if="packageOptions.length > 0"
+              :id="id"
+              v-model="newPackage"
+              :options="packageOptions"
+              :placeholder="t('clients.clientServiceDetail.choosePackage')"
+              searchable
+              data-testid="client-service-package-select"
+            />
             <UiInput
+              v-else
               :id="id"
               v-model="newPackage"
               :type="UiInputType.Text"

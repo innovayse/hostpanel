@@ -112,4 +112,16 @@ public interface IProvisioningProvider
     /// </exception>
     /// <returns>The state the panel reports; a field the panel does not report is <see langword="null"/>.</returns>
     public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct);
+
+    /// <summary>
+    /// Lists the names of the hosting packages the provider's server offers, so an admin picks one instead of typing it. Read only:
+    /// nothing is changed on the panel.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="Innovayse.Hostpanel.Domain.DomainRuleException">
+    /// Thrown with <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the provider cannot list its packages, and with the panel's own refusal code
+    /// when it refuses.
+    /// </exception>
+    /// <returns>The package names exactly as the panel knows them, possibly none.</returns>
+    public Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct);
 }

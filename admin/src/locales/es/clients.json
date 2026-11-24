@@ -360,7 +360,8 @@
       "applied": "Aplicado",
       "failed": "Falló",
       "unsupported": "No se puede conciliar"
-    }
+    },
+    "choosePackage": "Elija un paquete"
   },
   "clientServicesList": {
     "nextDue": "Próximo vencimiento",

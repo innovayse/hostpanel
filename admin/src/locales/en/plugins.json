@@ -32,7 +32,28 @@
     "capabilities": {
       "endpoints": "Add its own pages, menus and widgets to the panels",
       "paymentReturn": "Complete a payment from the payer's return from the gateway",
-      "storedCredentials": "Charge saved cards and payment accounts"
+      "provisioningPanel": "Create and manage hosting accounts on a control panel",
+      "provisioningPanelAccount": "Read a single hosting account from a control panel",
+      "provisioningPanelLogin": "Sign clients in to their hosting control panel",
+      "provisioningPanelPackages": "List the packages a control panel offers",
+      "registrarBalance": "Read the balance of the registrar account",
+      "registrarChildNameservers": "Manage the child nameservers of a domain",
+      "registrarDnsManagement": "Switch DNS management of domains on and off",
+      "registrarDnssec": "Manage the DNSSEC records of a domain",
+      "registrarDomainList": "List the domains held at the registrar, for import",
+      "registrarEmailForwarding": "Manage email forwarding for domains",
+      "registrarOperations": "Register, renew and transfer domains",
+      "registrarRestore": "Restore a domain from redemption",
+      "registrarSuggestions": "Suggest domain names",
+      "registrarWhois": "Look up the WHOIS record of a domain",
+      "storedCredentials": "Charge saved cards and payment accounts",
+      "tax": "Calculate the tax of an invoice",
+      "virtualServer": "Create and manage virtual servers",
+      "virtualServerBackups": "Manage backups of virtual servers",
+      "virtualServerConsole": "Open a console to a virtual server",
+      "virtualServerFirewall": "Manage the firewall rules of virtual servers",
+      "virtualServerList": "List the virtual servers of a platform",
+      "virtualServerSnapshots": "Manage snapshots of virtual servers"
     }
   },
   "restartBanner": {

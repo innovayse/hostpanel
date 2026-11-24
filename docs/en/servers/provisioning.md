@@ -74,6 +74,8 @@ The **Login to Control Panel** button (top of the service page) is available on 
 
 **Change Package** and **Change Password** require a provisioning reference to be set (i.e. the account was created successfully). Without one: `SERVICE_NOT_PROVISIONED`. Without a server assigned: `SERVICE_NO_SERVER_ASSIGNED`. Panel refusals return `SERVICE_PACKAGE_UPSTREAM_FAILED` or `SERVICE_PASSWORD_UPSTREAM_FAILED`.
 
+When the plugin that serves the server can list the packages of its panel, **Change Package** offers them in a list to choose from; otherwise the package name is typed in.
+
 **Sync with panel** reads the service's account from its panel once and brings the panel in step with the service. The service is the source of truth: the panel's status is changed to match the service (active or suspended), its package is changed to the product's **Package Name**, and the password stored on the service is set on the panel only when you tick **Also set the panel password**. The IP address the panel reports is recorded on the service as its **Assigned IP**. The domain and the username are never changed on the panel: a difference is only reported. The dialog lists every field as in step, applied, failed or cannot be reconciled. It needs a panel plugin that declares `provisioningPanelAccount`; the built in cPanel provider and a plugin without it answer `PANEL_OPERATION_NOT_SUPPORTED`, and a panel that cannot be read answers `SERVICE_PANEL_SYNC_UPSTREAM_FAILED`. The same read runs once right after an account is created, to fill in the **Assigned IP**; when the panel cannot answer it, the service is still active and the address stays empty.
 
 **Terminate** always shows a confirmation dialog before proceeding.

@@ -101,6 +101,13 @@ describe('useServicesApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/services/4/sync-panel', method: 'POST', body: { pushPassword: true } })
   })
 
+  it('listPackages reads the package names of the service server', async () => {
+    const mock = stubFetch(json({ names: ['Starter', 'Business'] }))
+
+    expect(await useServicesApi().listPackages(4)).toEqual({ names: ['Starter', 'Business'] })
+    expect(callOf(mock)).toMatchObject({ url: '/api/provisioning/4/packages' })
+  })
+
   it('provisioning commands POST to /provisioning with their bodies', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))
     const api = useServicesApi()

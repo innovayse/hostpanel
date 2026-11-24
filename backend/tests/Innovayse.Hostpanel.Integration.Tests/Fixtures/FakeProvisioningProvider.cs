@@ -1,4 +1,6 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 
@@ -63,6 +65,15 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
 
     /// <summary>How many times <see cref="ChangePackageAsync"/> was called.</summary>
     public int ChangePackageCalls { get; private set; }
+
+    /// <summary>The package names <see cref="ListPackagesAsync"/> answers; two by default.</summary>
+    public List<string> Packages { get; } = ["Starter", "Business"];
+
+    /// <summary>When <see langword="true"/>, <see cref="ListPackagesAsync"/> answers that the panel cannot list its packages.</summary>
+    public bool PackagesNotSupported { get; set; }
+
+    /// <summary>How many times <see cref="ListPackagesAsync"/> was called.</summary>
+    public int ListPackagesCalls { get; private set; }
 
     /// <summary>How many times <see cref="GetAccountAsync"/> was called.</summary>
     public int AccountStateCalls { get; private set; }
@@ -157,6 +168,19 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
         }
 
         return Task.FromResult(AccountAnswer);
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct)
+    {
+        ListPackagesCalls++;
+        ThrowIfShouldFail();
+        if (PackagesNotSupported)
+        {
+            throw new DomainRuleException(HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "fake provider cannot list packages");
+        }
+
+        return Task.FromResult<IReadOnlyList<string>>(Packages);
     }
 
     /// <summary>Throws when <see cref="FailChanges"/> is set, simulating a panel that refuses every change.</summary>

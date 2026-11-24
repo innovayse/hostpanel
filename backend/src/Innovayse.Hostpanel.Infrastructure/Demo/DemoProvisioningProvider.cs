@@ -47,4 +47,8 @@ public sealed class DemoProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct) =>
         Task.FromResult(new HostedAccountState(HostedAccountStatus.Active, null, null, ServerIp));
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<string>>(["Starter", "Business"]);
 }

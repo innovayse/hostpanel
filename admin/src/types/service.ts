@@ -289,6 +289,12 @@ export interface ServiceSyncField {
   panelValue: string | null
 }
 
+/** The hosting packages the server of a provisioned service offers, as the API answers it. */
+export interface ServicePackagesDto {
+  /** The package names exactly as the panel knows them, in the panel's order; empty when it has none. */
+  names: string[]
+}
+
 /** The result of reconciling a service's hosting account with its panel, as the API answers it. */
 export interface ServiceSyncResult {
   /** One entry for each field the sync compared. */

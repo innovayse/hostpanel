@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain;
@@ -99,15 +100,39 @@ public sealed class PanelPluginCaller
         catch (OperationCanceledException) when (limit.IsCancellationRequested)
         {
             _logger.LogWarning("Panel plugin {PluginId} gave no answer to {Operation} within the time limit.", pluginId, operation);
-            throw new PanelPluginCallException(pluginId, operation, nameof(TimeoutException));
+            throw new PanelPluginCallException(pluginId, operation, nameof(TimeoutException), PanelPluginFailure.TimedOut);
         }
         catch (Exception ex)
         {
             // The type only: the message is plugin text and may carry a secret or an upstream answer.
             _logger.LogWarning(
                 "Panel plugin {PluginId} failed in {Operation} with {ExceptionType}.", pluginId, operation, ex.GetType().Name);
-            throw new PanelPluginCallException(pluginId, operation, ex.GetType().Name);
+            throw new PanelPluginCallException(pluginId, operation, ex.GetType().Name, Classify(ex));
         }
+    }
+
+    /// <summary>
+    /// Tells the kind of failure from the type of what was thrown and of what it wraps, never from a message: a timeout (a plugin's own
+    /// timeout, or an HTTP client's that wraps one) and a failed secure connection are the two the admin can act on.
+    /// </summary>
+    /// <param name="ex">What the plugin threw.</param>
+    /// <returns>The kind of failure; <see cref="PanelPluginFailure.Failed"/> when it is neither.</returns>
+    private static PanelPluginFailure Classify(Exception ex)
+    {
+        for (var inner = ex; inner is not null; inner = inner.InnerException)
+        {
+            if (inner is TimeoutException)
+            {
+                return PanelPluginFailure.TimedOut;
+            }
+
+            if (inner is AuthenticationException)
+            {
+                return PanelPluginFailure.TlsRejected;
+            }
+        }
+
+        return PanelPluginFailure.Failed;
     }
 
     /// <summary>Builds the refusal every unactivatable plugin answers with.</summary>

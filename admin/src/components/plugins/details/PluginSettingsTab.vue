@@ -69,7 +69,7 @@ const settled = computed<boolean>(() => props.widgetsError === null && !props.wi
 
 <template>
   <UiStack :gap="UiGap.Md" data-testid="plugin-details-settings">
-    <IntegrationConfigPanel v-if="hasConfig" :slug="plugin.id" />
+    <IntegrationConfigPanel v-if="hasConfig" :slug="plugin.id" :servers="servers" />
     <UiErrorState
       v-if="serversError !== null"
       :message="serversError"

@@ -360,7 +360,8 @@
       "applied": "Angewendet",
       "failed": "Fehlgeschlagen",
       "unsupported": "Nicht abgleichbar"
-    }
+    },
+    "choosePackage": "Paket wählen"
   },
   "clientServicesList": {
     "nextDue": "Nächste Fälligkeit",

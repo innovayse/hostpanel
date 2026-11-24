@@ -42,7 +42,10 @@
     "tested": "Ստուգվել է",
     "roundTrip": "Արձագանքի ժամանակ",
     "notTestedYet": "Դեռ չի ստուգվել",
-    "setupNote": "Կարգավորման նշում"
+    "setupNote": "Կարգավորման նշում",
+    "serversOnline": "Առցանց է {online} սերվեր {total}-ից",
+    "serversOffline": "Օֆլայն՝ {count}",
+    "serversUntested": "Չի ստուգվել՝ {count}"
   },
   "integrations": {
     "lengthIntegrationValue": "Ինտեգրացիաներ՝ {length}",

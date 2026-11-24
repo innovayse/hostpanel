@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { EMPTY_VALUE } from '@/lib/format'
-import { SERVER_STATE_KEYS, SERVER_STATE_TONES, ServerFactKey, serverAccountsLabel, serverFacts, serverLoadPercent, serverNameServerHosts, serverState } from '@/lib/servers'
+import { SERVER_STATE_KEYS, SERVER_STATE_TONES, ServerFactKey, serverAccountsLabel, serverFacts, serverLoadPercent, serverNameServerHosts, serverState, summarizeServers } from '@/lib/servers'
 import { ServerState } from '@/types/server'
 import { serverDto, serverOptionDto } from '../helpers/serverFixtures'
 
@@ -50,6 +50,18 @@ describe('server state vocabulary', () => {
       expect(SERVER_STATE_KEYS[state]).toMatch(/^servers\.servers\./)
       expect(SERVER_STATE_TONES[state]).toBeTruthy()
     }
+  })
+})
+
+describe('summarizeServers', () => {
+  it('counts each state and stands for the group with offline first, then online, then untested', () => {
+    const online = serverOptionDto({ id: 1, isOnline: true })
+    const offline = serverOptionDto({ id: 2, isOnline: false })
+    const untested = serverOptionDto({ id: 3, isOnline: null })
+
+    expect(summarizeServers([online, offline, untested])).toEqual({ state: ServerState.Offline, online: 1, offline: 1, untested: 1, total: 3 })
+    expect(summarizeServers([online, untested])).toEqual({ state: ServerState.Online, online: 1, offline: 0, untested: 1, total: 2 })
+    expect(summarizeServers([untested])).toEqual({ state: ServerState.Untested, online: 0, offline: 0, untested: 1, total: 1 })
   })
 })
 

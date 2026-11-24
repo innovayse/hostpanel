@@ -51,6 +51,12 @@ const mountCard = (overrides: Partial<PluginCardModel> = {}, slots: Record<strin
   })
 
 describe('PluginCard', () => {
+  it('names the plugin icon after the plugin so the list is readable without the text beside it', () => {
+    const wrapper = mountCard({ iconUrl: '/api/admin/plugins/example-pay/icon' })
+
+    expect(wrapper.get('[data-testid="plugin-avatar-image"]').attributes('alt')).toBe('Example Pay')
+  })
+
   it('shows the name, the meta line, the description, the tags and the footer', () => {
     const wrapper = mountCard()
 

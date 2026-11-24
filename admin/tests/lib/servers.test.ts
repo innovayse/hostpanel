@@ -3,8 +3,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { EMPTY_VALUE } from '@/lib/format'
-import { SERVER_STATE_KEYS, SERVER_STATE_TONES, ServerFactKey, serverAccountsLabel, serverFacts, serverLoadPercent, serverNameServerHosts, serverState, summarizeServers } from '@/lib/servers'
-import { ServerState } from '@/types/server'
+import { SERVERS_GROUP_STATE_KEYS, SERVERS_GROUP_STATE_TONES, SERVER_STATE_KEYS, SERVER_STATE_TONES, ServerFactKey, serverAccountsLabel, serverFacts, serverLoadPercent, serverNameServerHosts, serverOnlineMessage, serverState, summarizeServers } from '@/lib/servers'
+import { ServerState, ServersGroupState } from '@/types/server'
 import { serverDto, serverOptionDto } from '../helpers/serverFixtures'
 
 describe('serverState', () => {
@@ -53,15 +53,42 @@ describe('server state vocabulary', () => {
   })
 })
 
+describe('server group state vocabulary', () => {
+  it('has a caption key and a tone for every group state', () => {
+    for (const state of Object.values(ServersGroupState)) {
+      expect(SERVERS_GROUP_STATE_KEYS[state]).toMatch(/^servers\.servers\./)
+      expect(SERVERS_GROUP_STATE_TONES[state]).toBeTruthy()
+    }
+  })
+})
+
+describe('serverOnlineMessage', () => {
+  it('writes the state, the account count and the version', () => {
+    expect(serverOnlineMessage({ accountsCount: 15, version: '7.4.2' })).toBe('Online · 15 accounts · 7.4.2')
+  })
+
+  it('keeps a zero count, which is a known count', () => {
+    expect(serverOnlineMessage({ accountsCount: 0, version: null })).toBe('Online · 0 accounts')
+  })
+
+  it('leaves out what the server did not report, with no separator left dangling', () => {
+    expect(serverOnlineMessage({ accountsCount: 15, version: null })).toBe('Online · 15 accounts')
+    expect(serverOnlineMessage({ accountsCount: null, version: '7.4.2' })).toBe('Online · 7.4.2')
+    expect(serverOnlineMessage({ accountsCount: null, version: '' })).toBe('Online')
+  })
+})
+
 describe('summarizeServers', () => {
-  it('counts each state and stands for the group with offline first, then online, then untested', () => {
+  it('counts each state and stands for the group as partial when some servers are online and some offline, then offline, online, untested', () => {
     const online = serverOptionDto({ id: 1, isOnline: true })
     const offline = serverOptionDto({ id: 2, isOnline: false })
     const untested = serverOptionDto({ id: 3, isOnline: null })
 
-    expect(summarizeServers([online, offline, untested])).toEqual({ state: ServerState.Offline, online: 1, offline: 1, untested: 1, total: 3 })
-    expect(summarizeServers([online, untested])).toEqual({ state: ServerState.Online, online: 1, offline: 0, untested: 1, total: 2 })
-    expect(summarizeServers([untested])).toEqual({ state: ServerState.Untested, online: 0, offline: 0, untested: 1, total: 1 })
+    expect(summarizeServers([online, offline, untested])).toEqual({ state: ServersGroupState.Partial, online: 1, offline: 1, untested: 1, total: 3 })
+    expect(summarizeServers([online, untested])).toEqual({ state: ServersGroupState.Online, online: 1, offline: 0, untested: 1, total: 2 })
+    expect(summarizeServers([untested])).toEqual({ state: ServersGroupState.Untested, online: 0, offline: 0, untested: 1, total: 1 })
+    expect(summarizeServers([offline, untested])).toEqual({ state: ServersGroupState.Offline, online: 0, offline: 1, untested: 1, total: 2 })
+    expect(summarizeServers([online, online, offline])).toMatchObject({ state: ServersGroupState.Partial, online: 2, offline: 1 })
   })
 })
 

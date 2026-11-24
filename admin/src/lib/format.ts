@@ -6,6 +6,18 @@
 /** What every screen shows where a value or a date is missing or unreadable: one em dash, defined once. */
 export const EMPTY_VALUE = '—'
 
+/** Separates the segments of one summary line, such as a status followed by its counts and version. */
+export const PART_SEPARATOR = ' · '
+
+/**
+ * Joins the segments of a summary line, leaving out the ones that are missing so no separator dangles.
+ *
+ * @param parts - The segments in order; null, undefined and blank ones are skipped.
+ * @returns The present segments joined with {@link PART_SEPARATOR}, empty when none is present.
+ */
+export const joinParts = (parts: ReadonlyArray<string | null | undefined>): string =>
+  parts.filter((part): part is string => part !== null && part !== undefined && part.trim() !== '').join(PART_SEPARATOR)
+
 /**
  * The letters of an avatar for a name: the first letters of its first two words, or the first two
  * letters of a single word.

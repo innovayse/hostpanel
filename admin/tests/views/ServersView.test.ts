@@ -233,8 +233,25 @@ describe('ServersView', () => {
     await wrapper.get('[data-testid="server-test-1"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="server-test-result-1"]').text()).toContain('14')
+    expect(wrapper.get('[data-testid="server-test-result-1"]').text()).toBe('Online · 14 accounts · 7.1')
     expect(listUrls(mock)).toHaveLength(2)
+  })
+
+  it('leaves an unknown account count and version out of the connection test result instead of writing zero and a dangling separator', async () => {
+    stubRoutes({
+      'GET /api/admin/servers/modules': () => json(serverModuleOptionDtos()),
+      'GET /api/admin/servers?': () => json(page([serverDto()])),
+      'GET /api/admin/server-groups': () => json([]),
+      'POST /api/admin/servers/1/test-connection': () =>
+        json({ connected: true, accountsCount: null, version: null, errorCode: null, errorMessage: null, testedAt: '2026-10-14T00:00:00Z' }),
+    })
+    const { wrapper } = await mountServers()
+
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
+    await wrapper.get('[data-testid="server-test-1"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="server-test-result-1"]').text()).toBe('Online')
   })
 
   it('shows the API sentence when the connection test is refused', async () => {

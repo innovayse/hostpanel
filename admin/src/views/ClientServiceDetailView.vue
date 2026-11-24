@@ -13,6 +13,7 @@ import { useServersStore } from '@/stores/servers'
 import { useSettingsStore } from '@/stores/settings'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
+import { serverAccountsLabel } from '@/lib/servers'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { Icon } from '@/lib/icons'
 import { BillingCycle, ServiceChangeReason, ServiceSection, ServiceStatus } from '@/types/service'
@@ -241,6 +242,13 @@ const packagesLoading = ref(false)
 /** Package options for the UiSelect in the change package dialog. */
 const packageOptions = computed(() => packageNames.value.map(name => ({ value: name, label: name })))
 
+/** The sentence above the package field: asks to choose while the dialog shows the panel's package list, to type the name in free-text mode. */
+const packagePrompt = computed(() =>
+  packageOptions.value.length > 0
+    ? t('clients.clientServiceDetail.chooseTheNewHostingPackage')
+    : t('clients.clientServiceDetail.enterTheNewHostingPackage'),
+)
+
 /** Whether the suspend confirmation modal is visible. */
 const showSuspendModal = ref(false)
 
@@ -264,7 +272,7 @@ const serverOptions = computed(() => [
   { value: 0, label: t('shared.none') },
   ...serverList.value.map(s => ({
     value: s.id,
-    label: `${s.name} (${s.hostname}, ${s.accountsCount ?? 0}/${s.limits.maxAccounts ?? '∞'})`,
+    label: `${s.name} (${s.hostname}, ${serverAccountsLabel(s)})`,
   })),
 ])
 
@@ -1249,7 +1257,7 @@ onMounted(() => {
         :title="t('clients.clientServiceDetail.changePackage')"
         @close="showChangePackageModal = false"
       >
-        <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientServiceDetail.enterTheNewHostingPackage') }}</UiText>
+        <UiText :tone="UiTextTone.Secondary" data-testid="client-service-package-prompt">{{ packagePrompt }}</UiText>
         <UiField :label="t('clients.clientServiceDetail.packageName')">
           <template #default="{ id }">
             <UiSelect

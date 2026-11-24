@@ -1,9 +1,9 @@
 /**
  * Pure helpers of the servers screens: a server's last known state, how full it is, how its account usage reads and the facts of its card.
  */
-import { ServerState } from '@/types/server'
-import type { ServerDto } from '@/types/server'
-import { EMPTY_VALUE } from '@/lib/format'
+import { ServerState, ServersGroupState } from '@/types/server'
+import type { ServerDto, TestConnectionResultDto } from '@/types/server'
+import { EMPTY_VALUE, joinParts } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { formatPlainAmount } from '@/lib/money'
 import { translate } from '@/lib/translate'
@@ -29,6 +29,22 @@ export const SERVER_STATE_TONES: Record<ServerState, UiTone> = {
   [ServerState.Untested]: UiTone.Neutral,
 }
 
+/** Locale key of the caption of each state a group of servers stands in. */
+export const SERVERS_GROUP_STATE_KEYS: Record<ServersGroupState, string> = {
+  [ServersGroupState.Online]: 'servers.servers.online',
+  [ServersGroupState.Partial]: 'servers.servers.partiallyOnline',
+  [ServersGroupState.Offline]: 'servers.servers.offline',
+  [ServersGroupState.Untested]: 'servers.servers.notTested',
+}
+
+/** Badge tone of each state a group of servers stands in. */
+export const SERVERS_GROUP_STATE_TONES: Record<ServersGroupState, UiTone> = {
+  [ServersGroupState.Online]: UiTone.Success,
+  [ServersGroupState.Partial]: UiTone.Warning,
+  [ServersGroupState.Offline]: UiTone.Danger,
+  [ServersGroupState.Untested]: UiTone.Neutral,
+}
+
 /**
  * Last known connection state of a server.
  *
@@ -44,8 +60,8 @@ export const serverState = (server: ServerStateSource): ServerState => {
 
 /** How a group of servers stands together: the counts of each last known state and the one state that stands for the group. */
 export interface ServersConnectionSummary {
-  /** Offline when any server is, online when at least one is and none is offline, untested when none has been tested. */
-  state: ServerState
+  /** Partial when some servers are online and some offline, offline when every tested one is, online when at least one is and none is offline, untested when none has been tested. */
+  state: ServersGroupState
   /** Servers whose last test succeeded. */
   online: number
   /** Servers whose last test failed. */
@@ -54,6 +70,23 @@ export interface ServersConnectionSummary {
   untested: number
   /** All the servers counted. */
   total: number
+}
+
+/**
+ * Decides the one state that stands for a group of servers.
+ *
+ * @param online - Servers whose last test succeeded.
+ * @param offline - Servers whose last test failed.
+ * @returns Partial when both kinds are present, otherwise the kind that is, untested when neither is.
+ */
+const groupState = (online: number, offline: number): ServersGroupState => {
+  if (online > 0 && offline > 0) {
+    return ServersGroupState.Partial
+  }
+  if (offline > 0) {
+    return ServersGroupState.Offline
+  }
+  return online > 0 ? ServersGroupState.Online : ServersGroupState.Untested
 }
 
 /**
@@ -66,9 +99,21 @@ export const summarizeServers = (servers: ServerStateSource[]): ServersConnectio
   const states = servers.map(serverState)
   const online = states.filter((state) => state === ServerState.Online).length
   const offline = states.filter((state) => state === ServerState.Offline).length
-  const state = offline > 0 ? ServerState.Offline : online > 0 ? ServerState.Online : ServerState.Untested
-  return { state, online, offline, untested: servers.length - online - offline, total: servers.length }
+  return { state: groupState(online, offline), online, offline, untested: servers.length - online - offline, total: servers.length }
 }
+
+/**
+ * Words the answer of a successful connection test: the state, then the account count and the version when the server reported them.
+ *
+ * @param result - What the test reported: the account count and the version, each null when the panel gave none.
+ * @returns For example "Online · 15 accounts · 7.4.2"; an unknown count or version is left out rather than written as zero or blank.
+ */
+export const serverOnlineMessage = (result: Pick<TestConnectionResultDto, 'accountsCount' | 'version'>): string =>
+  joinParts([
+    translate('servers.servers.online'),
+    result.accountsCount === null ? null : translate('servers.servers.accountsCount', { count: result.accountsCount }),
+    result.version,
+  ])
 
 /**
  * How full a server is.

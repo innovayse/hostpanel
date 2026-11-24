@@ -44,7 +44,7 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiTableDensity } from '@/utils/ui/injection'
 import type { UiSelectOption } from '@/utils/ui/select'
-import { SERVER_STATE_KEYS } from '@/lib/servers'
+import { SERVER_STATE_KEYS, serverOnlineMessage } from '@/lib/servers'
 import { useListQuery } from '@/composables/useListQuery'
 import UiText from '@/components/ui/UiText.vue'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
@@ -231,13 +231,7 @@ const handleTestConnection = async (id: number): Promise<void> => {
   if (result === null) {
     outcome = { ok: false, message: store.actionError ?? '' }
   } else if (result.connected) {
-    outcome = {
-      ok: true,
-      message: t('servers.servers.onlineDetails', {
-        accounts: result.accountsCount ?? 0,
-        version: result.version ?? '',
-      }),
-    }
+    outcome = { ok: true, message: serverOnlineMessage(result) }
   } else {
     outcome = { ok: false, message: result.errorMessage ?? t('servers.servers.connectionFailed') }
   }

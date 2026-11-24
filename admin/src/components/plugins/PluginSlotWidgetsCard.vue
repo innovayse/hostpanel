@@ -78,7 +78,7 @@ const saveWidget = async (widget: PluginSlotWidgetBindingDto, productIds: number
     <UiStack :gap="UiGap.Md">
       <UiStack :gap="UiGap.Sm">
         <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
-          <UiPluginAvatar :name="pluginName" :icon-url="pluginIconUrl" :color="pluginColor" :size="UiSize.Sm" />
+          <UiPluginAvatar :name="pluginName" :icon-url="pluginIconUrl" :color="pluginColor" :size="UiSize.Sm" decorative />
           <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('plugins.pluginSlotWidgets.title', { plugin: pluginName }) }}</UiHeading>
         </UiStack>
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('plugins.pluginSlotWidgets.description') }}</UiText>

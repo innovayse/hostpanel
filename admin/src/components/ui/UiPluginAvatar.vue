@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
  * A plugin's picture in a fixed square: its icon when the plugin has one, otherwise a colour
- * block with the first letter of its name. The picture is decorative (empty alt, hidden from
- * assistive technology) because the name is always shown next to it; the letter's colour is
- * picked by contrast against the block.
+ * block with the first letter of its name. The picture is named after the plugin (alt text, or an
+ * accessible name on the colour block) so a list of plugins is readable without the text beside
+ * it; a caller whose header already shows the name right next to the picture passes `decorative`,
+ * and the picture is then empty of alt and hidden from assistive technology. The letter's colour
+ * is picked by contrast against the block.
  *
  * The icon is shown with `object-fit: contain` so it is never cropped. When the address is
  * missing, or the browser cannot load the picture, the colour block takes its place. The block is
@@ -18,7 +20,7 @@ import { UiSize } from '@/utils/ui/size'
 
 /** Props for UiPluginAvatar. */
 const props = withDefaults(defineProps<{
-  /** Display name of the plugin: the source of the fallback letter (the picture itself is decorative, the name is shown beside it). */
+  /** Display name of the plugin: the alt text of the picture and the source of the fallback letter. */
   name: string
   /** Address of the plugin's icon; null or omitted when it has none. */
   iconUrl?: string | null
@@ -26,10 +28,13 @@ const props = withDefaults(defineProps<{
   color?: string
   /** Size of the square. */
   size?: UiSize
+  /** True where the plugin's name is shown right beside the picture, so it is hidden from assistive technology instead of named. */
+  decorative?: boolean
 }>(), {
   iconUrl: null,
   color: undefined,
   size: UiSize.Md,
+  decorative: false,
 })
 
 /** True once the browser failed to load the current icon address. */
@@ -45,6 +50,9 @@ const showIcon = computed<boolean>(() => Boolean(props.iconUrl) && !failed.value
 
 /** Colour of the fallback block: the declared colour, or the neutral grey. */
 const fillColor = computed<string>(() => props.color ?? NEUTRAL_COLOR)
+
+/** Alt text of the icon: empty for a decorative picture, the plugin's name otherwise. */
+const imageAlt = computed<string>(() => (props.decorative ? '' : props.name))
 
 /** Colour of the letter, chosen for contrast against the block. */
 const letterColor = computed<string>(() => readableTextColor(fillColor.value))
@@ -71,8 +79,8 @@ const onError = (): void => {
     <UiImage
       v-if="showIcon"
       :src="iconUrl ?? undefined"
-      alt=""
-      aria-hidden="true"
+      :alt="imageAlt"
+      :aria-hidden="decorative ? 'true' : undefined"
       :fit="UiImageFit.Contain"
       :rounded="UiImageRounded.None"
       class="h-full w-full"
@@ -83,7 +91,9 @@ const onError = (): void => {
       v-else
       class="h-full w-full"
       viewBox="0 0 32 32"
-      aria-hidden="true"
+      :role="decorative ? undefined : 'img'"
+      :aria-label="decorative ? undefined : name"
+      :aria-hidden="decorative ? 'true' : undefined"
       data-testid="plugin-avatar-fallback"
     >
       <rect x="0" y="0" width="32" height="32" :fill="fillColor" />

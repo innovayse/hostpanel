@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { formatClock } from '@/lib/format'
 import type { IntegrationConnection, IntegrationTestResult } from '@/types/integration'
 import type { ServerOptionDto } from '@/types/server'
-import { SERVER_STATE_KEYS, SERVER_STATE_TONES, summarizeServers } from '@/lib/servers'
+import { SERVERS_GROUP_STATE_KEYS, SERVERS_GROUP_STATE_TONES, summarizeServers } from '@/lib/servers'
 import { integrationConnectionTone } from '@/lib/tones'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -114,8 +114,8 @@ const formatDuration = (ms: number): string =>
 
       <!-- A panel plugin keeps its connection per server: the card reflects its servers -->
       <UiStack v-else-if="serversSummary" :gap="UiGap.Xs" data-testid="integration-status-servers">
-        <UiBadge :tone="SERVER_STATE_TONES[serversSummary.state]" dot data-testid="integration-status-servers-state">
-          {{ t(SERVER_STATE_KEYS[serversSummary.state]) }}
+        <UiBadge :tone="SERVERS_GROUP_STATE_TONES[serversSummary.state]" dot data-testid="integration-status-servers-state">
+          {{ t(SERVERS_GROUP_STATE_KEYS[serversSummary.state]) }}
         </UiBadge>
         <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
           {{ t('integrations.integrationStatusSidebar.serversOnline', { online: serversSummary.online, total: serversSummary.total }) }}

@@ -68,7 +68,7 @@ const canUninstall = computed<boolean>(() => !props.plugin.isBuiltIn)
 <template>
   <UiCard :padding="UiCardPadding.Md" data-testid="plugin-details-header">
     <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Start" :gap="UiGap.Md" reflow-below-md>
-      <UiPluginAvatar :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color" :size="UiSize.Lg" data-testid="plugin-details-avatar" />
+      <UiPluginAvatar :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color" :size="UiSize.Lg" decorative data-testid="plugin-details-avatar" />
       <UiStack :gap="UiGap.Sm" class="min-w-0 flex-1">
         <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
           <UiBadge v-if="registry !== null && registry.verified" :tone="UiTone.Success" small data-testid="plugin-details-verified">

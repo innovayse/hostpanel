@@ -20,6 +20,7 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { joinParts } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { PluginCardBadge } from '@/types/plugin'
 import type { PluginCardModel } from '@/types/plugin'
@@ -148,7 +149,7 @@ const metaParts = computed<string[]>(() =>
     </UiStack>
 
     <UiText v-if="metaParts.length > 0" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="truncate" :data-testid="`plugin-card-meta-${plugin.id}`">
-      {{ metaParts.join(' · ') }}
+      {{ joinParts(metaParts) }}
     </UiText>
 
     <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="line-clamp-2" :data-testid="`plugin-card-description-${plugin.id}`">

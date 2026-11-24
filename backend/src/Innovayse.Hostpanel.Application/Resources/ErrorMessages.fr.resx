@@ -976,6 +976,12 @@
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Ce service n'est pas actif.</value>
   </data>
+  <data name="SERVICE_NOT_IN_TRIAL" xml:space="preserve">
+    <value>Ce service n'est pas dans un essai gratuit en cours.</value>
+  </data>
+  <data name="SERVICE_TRIAL_DUE_DATE_FIXED" xml:space="preserve">
+    <value>La prochaine date d'échéance d'un service en essai gratuit en cours ne peut pas être modifiée.</value>
+  </data>
   <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
     <value>Ce service est déjà résilié.</value>
   </data>

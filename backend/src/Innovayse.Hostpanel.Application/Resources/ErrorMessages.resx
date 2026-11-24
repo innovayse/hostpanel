@@ -1012,6 +1012,12 @@
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>This service is not active.</value>
   </data>
+  <data name="SERVICE_NOT_IN_TRIAL" xml:space="preserve">
+    <value>This service is not in a running free trial.</value>
+  </data>
+  <data name="SERVICE_TRIAL_DUE_DATE_FIXED" xml:space="preserve">
+    <value>The next due date of a service in a running free trial cannot be changed.</value>
+  </data>
   <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
     <value>This service is already terminated.</value>
   </data>

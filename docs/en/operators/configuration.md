@@ -322,6 +322,16 @@ Order numbering, invoice and retry settings are not in <code>.env</code>. Set th
 | `InvoicePdf__MaxConcurrentRenders` | `4` | Concurrent PDF renders |
 | `InvoicePdf__MaxRenderWaitSeconds` | `10` | Seconds a download waits for a free render slot before answering 503 with Retry-After. |
 
+### Scheduled job hours (compose override only)
+
+<Callout type="note">
+The hour of the daily free trial run is not in <code>.env</code>. To change it, set it directly on the API service in a compose override.
+</Callout>
+
+| Setting | Default | Description |
+|---|---|---|
+| `ScheduledJobs__ProcessTrialsHour` | `6` | UTC hour (0-23) of the daily Process Trials job, which sends trial reminders and converts or terminates ended trials. A value outside this range stops the API at startup. |
+
 ## Client portal look and content
 
 All these settings control the public-facing storefront and have NUXT_PUBLIC_PORTAL_* environment variable fallbacks. The admin panel's Settings section wins over environment variables once set.

@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetRenewableServices;
 using Innovayse.Hostpanel.Application.Services.Queries.GetServiceBillingStates;
+using Innovayse.Hostpanel.Application.Services.Queries.GetTrialConversionService;
 using Innovayse.Hostpanel.Application.Services.Queries.ListOverdueSuspendedServices;
 using Innovayse.Hostpanel.Application.Services.Queries.ListUndatedRenewingServices;
 using Innovayse.Hostpanel.Shared.Models;
@@ -28,6 +29,23 @@ public static class ServiceRenewalBusExtensions
         var result = await bus.InvokeAsync<Result<IReadOnlyList<RenewableServiceDto>>>(new GetRenewableServicesQuery(clientId, dueBy), ct);
 
         return result.Value ?? [];
+    }
+
+    /// <summary>The converted trial awaiting the payment of its first paid period.</summary>
+    /// <param name="bus">The Wolverine bus to dispatch the query through.</param>
+    /// <param name="serviceId">The trial service.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The service, or <see langword="null"/> when it is not an Active service whose trial is awaiting payment, or
+    /// when the input failed validation.
+    /// </returns>
+    public static async Task<RenewableServiceDto?> GetTrialConversionServiceAsync(this IMessageBus bus, int serviceId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+
+        var result = await bus.InvokeAsync<Result<RenewableServiceDto?>>(new GetTrialConversionServiceQuery(serviceId), ct);
+
+        return result.Value;
     }
 
     /// <summary>The suspension-related state of the named services.</summary>

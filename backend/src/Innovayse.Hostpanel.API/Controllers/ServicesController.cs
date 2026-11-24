@@ -1,9 +1,11 @@
 using Innovayse.Hostpanel.Application.Services.Commands.AddExistingService;
 using Innovayse.Hostpanel.Application.Services.Commands.ChangeServiceStatus;
+using Innovayse.Hostpanel.Application.Services.Commands.ConvertTrial;
 using Innovayse.Hostpanel.Application.Services.Commands.CorrectServiceTerminationDate;
 using Innovayse.Hostpanel.Application.Services.Commands.SetServiceAutoRenew;
 using Innovayse.Hostpanel.Application.Services.Commands.SuspendService;
 using Innovayse.Hostpanel.Application.Services.Commands.TerminateService;
+using Innovayse.Hostpanel.Application.Services.Commands.TerminateTrial;
 using Innovayse.Hostpanel.Application.Services.Commands.UnsuspendService;
 using Innovayse.Hostpanel.Application.Services.Commands.UpdateServiceAutomation;
 using Innovayse.Hostpanel.Application.Services.Commands.UpdateServiceBillingTerms;
@@ -85,6 +87,7 @@ public sealed class ServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 when written; 400 when a field is refused; 404 when the id names no service or the product does not exist;
+    /// 409 <c>SERVICE_TRIAL_DUE_DATE_FIXED</c> when the service's free trial is running and the next renewal date is changed;
     /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -92,6 +95,7 @@ public sealed class ServicesController : BaseApiController
     [Authorize(Policy = Policies.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
@@ -292,6 +296,58 @@ public sealed class ServicesController : BaseApiController
     public async Task<IActionResult> TerminateAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new TerminateServiceCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Converts a running free trial into a paid service now: raises the invoice of its first paid period.</summary>
+    /// <param name="id">Service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when converted, or already awaiting payment; 400 when a value is refused, or with <c>SERVICE_NOT_ACTIVE</c> when the trial service is not Active;
+    /// 404 when the id names no service; 409 with <c>SERVICE_NOT_IN_TRIAL</c> when the service is not in a running free trial, or with <c>CANCELLATION_ALREADY_PENDING</c> when a cancellation of the service is pending;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/convert-trial")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ConvertTrialAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new ConvertTrialCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Ends a running free trial without converting it: cancels the unpaid conversion invoice (one that already took part of
+    /// its payment is left open for staff to settle), then terminates the service.
+    /// </summary>
+    /// <param name="id">Service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when terminated; 400 when a value is refused, or with <c>INVOICE_CANCEL_NOT_ALLOWED</c> when the conversion invoice is
+    /// paid or its payment is pending (the payment completes the conversion); 404 when the id names no service;
+    /// 409 with <c>SERVICE_NOT_IN_TRIAL</c> when the service is not in a running free trial;
+    /// 502 with <c>SERVICE_TERMINATE_UPSTREAM_FAILED</c> when the panel refuses;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/terminate-trial")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    public async Task<IActionResult> TerminateTrialAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new TerminateTrialCommand(id), ct);
         return HandleResult(outcome);
     }
 

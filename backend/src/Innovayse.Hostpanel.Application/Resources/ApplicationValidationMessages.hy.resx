@@ -823,6 +823,9 @@
   <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
     <value>Դադարեցման պատճառը նշեք միայն այն դեպքում, երբ ծառայությունն ավարտվում է ցիկլի վերջում։</value>
   </data>
+  <data name="RenewalDueAtWithoutTrialService" xml:space="preserve">
+    <value>Վճարման ժամկետը նշեք միայն փորձաշրջանի փոխարկման հաշվի համար։</value>
+  </data>
   <data name="ServiceTerminatedAtRequired" xml:space="preserve">
     <value>Նշեք ծառայության դադարեցման ամսաթիվը։</value>
   </data>

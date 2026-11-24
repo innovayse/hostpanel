@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.ExtendServiceRenewal;
+using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,62 @@ public sealed class ExtendServiceRenewalTests(IntegrationTestFactory factory) : 
         var result = await InvokeAsync(host, new ExtendServiceRenewalCommand(int.MaxValue, TestMoments.Seeded));
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_NOT_FOUND);
+    }
+
+    /// <summary>Paying the conversion invoice of an awaiting trial marks it converted to paid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ExtendServiceRenewal_OfAnAwaitingPaymentTrial_MarksItConvertedToPaidAsync()
+    {
+        await using var host = RenewalTestSeeds.SuppressedHost(factory);
+        var start = TestMoments.Seeded.AddDays(5);
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, start);
+        await SetTrialAsync(host, seeded.ServiceId, TrialStatus.AwaitingPayment);
+
+        var result = await InvokeAsync(host, new ExtendServiceRenewalCommand(seeded.ServiceId, start.AddMonths(1)));
+
+        result.IsSuccess.Should().BeTrue();
+        (await TrialStatusAsync(host, seeded.ServiceId)).Should().Be(TrialStatus.ConvertedToPaid);
+    }
+
+    /// <summary>Extending a still-running trial leaves its trial status alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ExtendServiceRenewal_OfAnActiveTrial_LeavesTheTrialStatusAsync()
+    {
+        await using var host = RenewalTestSeeds.SuppressedHost(factory);
+        var start = TestMoments.Seeded.AddDays(5);
+        var seeded = await RenewalTestSeeds.SeedActiveServiceAsync(host.Services, start);
+        await SetTrialAsync(host, seeded.ServiceId, TrialStatus.Active);
+
+        var result = await InvokeAsync(host, new ExtendServiceRenewalCommand(seeded.ServiceId, start.AddMonths(1)));
+
+        result.IsSuccess.Should().BeTrue();
+        (await TrialStatusAsync(host, seeded.ServiceId)).Should().Be(TrialStatus.Active);
+    }
+
+    /// <summary>Sets a service's trial status straight in the database.</summary>
+    /// <param name="host">The host to write through.</param>
+    /// <param name="serviceId">The service.</param>
+    /// <param name="status">The status to store.</param>
+    /// <returns>A task.</returns>
+    private static async Task SetTrialAsync(WebApplicationFactory<Program> host, int serviceId, TrialStatus status)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        await context.ClientServices.Where(s => s.Id == serviceId)
+            .ExecuteUpdateAsync(u => u.SetProperty(s => s.TrialStatus, status), CancellationToken.None);
+    }
+
+    /// <summary>Reads a service's trial status back from the database.</summary>
+    /// <param name="host">The host to read through.</param>
+    /// <param name="serviceId">The service.</param>
+    /// <returns>The stored trial status.</returns>
+    private static async Task<TrialStatus?> TrialStatusAsync(WebApplicationFactory<Program> host, int serviceId)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.ClientServices.AsNoTracking().Where(s => s.Id == serviceId).Select(s => s.TrialStatus).SingleAsync();
     }
 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>

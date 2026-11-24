@@ -12,6 +12,7 @@ using Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChan
 using Innovayse.Hostpanel.Application.Services.Commands.RevokeMySshKey;
 using Innovayse.Hostpanel.Application.Services.Commands.SetupMyService;
 using Innovayse.Hostpanel.Application.Services.Commands.StartMyTrial;
+using Innovayse.Hostpanel.Application.Services.Commands.UpgradeMyTrial;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceCancellationStatus;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceHostingInfo;
@@ -240,6 +241,34 @@ public sealed class MyServicesController : BaseApiController
     public async Task<IActionResult> CancelAsync(int id, [FromBody] CancelMyServiceCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);
+        return HandleResultOk(outcome);
+    }
+
+    /// <summary>
+    /// Upgrades one of the caller's running free trials to a paid service now: raises the invoice of its first paid period.
+    /// </summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 on success, or when the trial already awaits payment; 400 with <c>VALIDATION_ERROR</c> for a non-positive id, or with
+    /// <c>SERVICE_NOT_ACTIVE</c> when the trial service is not active; 401 without a session; 403 with
+    /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>PlaceNewOrders</c>, or with <c>CLIENT_SUSPENDED</c> or
+    /// <c>CLIENT_CLOSED</c> when the account may not transact; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the caller's;
+    /// 409 with <c>SERVICE_NOT_IN_TRIAL</c> when the service is not in a running free trial, or with <c>CANCELLATION_ALREADY_PENDING</c> when a cancellation of the service is pending;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/upgrade-trial")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.PlaceNewOrders)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpgradeTrialAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new UpgradeMyTrialCommand(id), ct);
         return HandleResultOk(outcome);
     }
 

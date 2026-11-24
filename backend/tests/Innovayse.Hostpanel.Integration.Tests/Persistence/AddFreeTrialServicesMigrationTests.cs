@@ -74,7 +74,10 @@ public sealed class AddFreeTrialServicesMigrationTests
             await MigrateAsync(connectionString, TargetMigration);
 
             await using var read = NewContext(connectionString);
-            var service = await read.ClientServices.AsNoTracking().SingleAsync(s => s.Id == serviceId);
+            // Projected: the model has columns later migrations add, which this schema does not have yet.
+            var service = await read.ClientServices.AsNoTracking().Where(s => s.Id == serviceId)
+                .Select(s => new { s.TrialStatus, s.TrialEndsAt, s.TrialAutoConvert, s.TrialGracePeriodDays, s.TrialReminderDays })
+                .SingleAsync();
 
             service.TrialStatus.Should().BeNull();
             service.TrialEndsAt.Should().BeNull();

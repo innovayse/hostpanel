@@ -371,6 +371,8 @@
   <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve"><value>Der Versuch, diese Position zu erfüllen, wurde vor seinem Abschluss unterbrochen. Wiederholen Sie die Position.</value></data>
   <data name="ORDER_LINE_SERVICE_CONFLICT" xml:space="preserve"><value>Der für diese Bestellposition bereits gespeicherte Dienst gehört zu einem anderen Kunden oder Produkt, daher kann die Position ihn nicht wiederverwenden. Prüfen Sie die Position und ihren Dienst.</value></data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve"><value>Dieser Dienst ist nicht aktiv.</value></data>
+  <data name="SERVICE_NOT_IN_TRIAL" xml:space="preserve"><value>Dieser Dienst befindet sich nicht in einer laufenden kostenlosen Testphase.</value></data>
+  <data name="SERVICE_TRIAL_DUE_DATE_FIXED" xml:space="preserve"><value>Das nächste Fälligkeitsdatum eines Dienstes in einer laufenden kostenlosen Testphase kann nicht geändert werden.</value></data>
   <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve"><value>Dieser Dienst ist bereits beendet.</value></data>
   <data name="SERVICE_NOT_SUSPENDED" xml:space="preserve"><value>Dieser Dienst ist nicht gesperrt.</value></data>
   <data name="TICKET_REPLY_NOT_ALLOWED" xml:space="preserve"><value>Ein geschlossenes Ticket kann keine neuen Antworten erhalten.</value></data>

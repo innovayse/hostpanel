@@ -886,6 +886,9 @@
   <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
     <value>Причину прекращения можно указать только если услуга прекращается в конце цикла.</value>
   </data>
+  <data name="RenewalDueAtWithoutTrialService" xml:space="preserve">
+    <value>Срок оплаты можно указать только для счёта на конвертацию пробного периода.</value>
+  </data>
   <data name="ServiceTerminatedAtRequired" xml:space="preserve">
     <value>Укажите дату прекращения услуги.</value>
   </data>

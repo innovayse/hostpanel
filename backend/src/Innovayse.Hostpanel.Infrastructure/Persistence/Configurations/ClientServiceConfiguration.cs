@@ -60,6 +60,7 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.TrialAutoConvert).IsRequired().HasDefaultValue(false);
         builder.Property(x => x.TrialGracePeriodDays).IsRequired().HasDefaultValue(0);
         builder.Property(x => x.TrialReminderDays);
+        builder.Property(x => x.TrialPaymentDueAt);
         builder.Property(x => x.FirstPaymentAmount).HasColumnType("numeric(18,4)");
         builder.Property(x => x.RecurringAmount).HasColumnType("numeric(18,4)");
         builder.Property(x => x.ProvisioningRef).HasMaxLength(500);

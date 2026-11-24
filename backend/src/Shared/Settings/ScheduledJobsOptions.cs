@@ -36,6 +36,10 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(0, 23)]
     public int SendRenewalRemindersHour { get; init; } = 6;
 
+    /// <summary>UTC hour (0-23) of the daily free trial run: reminders, conversions and terminations.</summary>
+    [Range(0, 23)]
+    public int ProcessTrialsHour { get; init; } = 6;
+
     /// <summary>UTC hour (0-23) of the daily server account count sync.</summary>
     [Range(0, 23)]
     public int SyncServerAccountCountsHour { get; init; } = 6;
@@ -256,6 +260,9 @@ public sealed class ScheduledJobsOptions : IValidatableObject
 
     /// <summary>Gets the schedule of the renewal reminders.</summary>
     public JobSchedule SendRenewalReminders => JobSchedule.Daily(SendRenewalRemindersHour);
+
+    /// <summary>Gets the schedule of the free trial run.</summary>
+    public JobSchedule ProcessTrials => JobSchedule.Daily(ProcessTrialsHour);
 
     /// <summary>Gets the schedule of the server account count sync.</summary>
     public JobSchedule SyncServerAccountCounts => JobSchedule.Daily(SyncServerAccountCountsHour);

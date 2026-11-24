@@ -104,7 +104,12 @@ keywords: "նամակների ձևանմուշներ, փոփոխականներ, 
 <SettingTable :settings="[
   { name: 'service-provisioned', type: 'string', default: '', description: 'Ուղարկվում է հաճախորդին ծառայությունը ակտիվացվելիս։ Փոփոխականներ՝ service.id, service.provisioning_ref, service.domain, service.username' },
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ ծառայության դադարեցումը ձախողվում է։ Փոփոխականներ՝ service.id, reason' },
+  { name: 'trial-ending', type: 'string', default: '', description: 'Ուղարկվում է հաճախորդին փորձաշրջանի ավարտից առաջ՝ ապրանքի յուրաքանչյուր հիշեցման օրը։ Փոփոխականներ՝ trial.service_id, trial.product_name, trial.end_date, trial.service_url, days_left' },
+  { name: 'trial-converted', type: 'string', default: '', description: 'Ուղարկվում է հաճախորդին, երբ փորձաշրջանը վերածվում է վճարովի ծառայության և հաշիվ է դուրս գրվում։ Փոփոխականներ՝ trial.service_id, trial.product_name, trial.end_date, trial.service_url, payment_due_date' },
+  { name: 'trial-ended', type: 'string', default: '', description: 'Ուղարկվում է հաճախորդին, երբ փորձաշրջանը դադարեցվում է։ Փոփոխականներ՝ trial.service_id, trial.product_name, trial.end_date, trial.service_url' },
 ]" />
+
+Փորձաշրջանի երեք ձևանմուշները (`trial-ending`, `trial-converted`, `trial-ended`) ստեղծվում են անգլերեն, ռուսերեն, հայերեն, գերմաներեն և իսպաներեն, ինչպես մյուս ձևանմուշները։ Ֆրանսերեն տարբերակ չկա, ուստի ֆրանսերեն լեզվով հաճախորդը ստանում է անգլերեն տեքստը։
 
 ### Պլագիններ {#plugins}
 

@@ -5,7 +5,10 @@ using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInvoices;
 
-/// <summary>Validates <see cref="RaiseClientRenewalInvoicesCommand"/>.</summary>
+/// <summary>
+/// Validates <see cref="RaiseClientRenewalInvoicesCommand"/>: a real client, a real trial service when one is named,
+/// and a due date only for a trial conversion.
+/// </summary>
 public sealed class RaiseClientRenewalInvoicesValidator : LocalizedValidator<RaiseClientRenewalInvoicesCommand>
 {
     /// <summary>Initializes the rules.</summary>
@@ -14,5 +17,12 @@ public sealed class RaiseClientRenewalInvoicesValidator : LocalizedValidator<Rai
         : base(localizer)
     {
         RuleFor(x => x.ClientId).GreaterThan(0).WithMessage(L["ClientIdInvalid"]);
+
+        RuleFor(x => x.TrialServiceId).MustBePositiveId(L["ServiceIdInvalid"]);
+
+        When(x => x.TrialServiceId is null, () =>
+        {
+            RuleFor(x => x.DueAt).Null().WithMessage(L["RenewalDueAtWithoutTrialService"]);
+        });
     }
 }

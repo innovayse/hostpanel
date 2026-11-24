@@ -886,6 +886,9 @@
   <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
     <value>Indiquez un motif de résiliation uniquement lorsque le service se termine avec son cycle.</value>
   </data>
+  <data name="RenewalDueAtWithoutTrialService" xml:space="preserve">
+    <value>Indiquez une date d'échéance uniquement pour la facture de conversion d'un essai.</value>
+  </data>
   <data name="ServiceTerminatedAtRequired" xml:space="preserve">
     <value>Saisissez la date de résiliation du service.</value>
   </data>

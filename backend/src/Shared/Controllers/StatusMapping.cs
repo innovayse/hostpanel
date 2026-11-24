@@ -87,6 +87,9 @@ public static class StatusMapping
             // Exact row: the product has no free trial to order, a state conflict whose name carries no CONFLICT / ALREADY token.
             // (ORDER_TRIAL_ALREADY_USED reaches 409 through the ALREADY token arm.)
             "PRODUCT_TRIAL_NOT_AVAILABLE" => new(409, "Conflict"),
+            // Exact rows: the service's trial is not running (convert or terminate it), or is running (its due date is then
+            // fixed), a state conflict whose names carry no CONFLICT / ALREADY token.
+            "SERVICE_NOT_IN_TRIAL" or "SERVICE_TRIAL_DUE_DATE_FIXED" => new(409, "Conflict"),
             // Exact rows: fraud detection refused the request, a policy refusal and not a malformed request.
             "ORDER_FRAUD_REJECTED" or "REGISTRATION_FRAUD_REJECTED" => new(403, "Forbidden"),
             // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was

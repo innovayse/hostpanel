@@ -16,6 +16,7 @@ using Innovayse.Hostpanel.Application.Domains.Commands.SyncPendingDomainStatuses
 using Innovayse.Hostpanel.Application.Domains.Commands.SyncTldCostPrices;
 using Innovayse.Hostpanel.Application.Domains.Commands.SyncTldCostPricesNow;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.AutoTerminateSuspendedCron;
+using Innovayse.Hostpanel.Application.Services.Commands.ProcessTrialsCron;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Security;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -54,6 +55,7 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
         new ProcessRenewalsCronCommand(),
         new SuspendOverdueServicesCronCommand(),
         new SendRenewalRemindersCronCommand(),
+        new ProcessTrialsCronCommand(),
         new ReconcileGatewayPaymentsCronCommand(),
         new DispatchFulfilmentCronCommand(),
         new CheckReleaseUpdatesCronCommand(),

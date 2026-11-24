@@ -21,24 +21,27 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
 /// <summary>
 /// The renewal, reminder, suspension and termination sweeps leave a running trial alone: a service whose
-/// trial is <see cref="TrialStatus.Active"/> is never returned, while an ordinary service still is.
+/// trial is <see cref="TrialStatus.Active"/> or <see cref="TrialStatus.AwaitingPayment"/> is never returned,
+/// while an ordinary service and a trial already <see cref="TrialStatus.ConvertedToPaid"/> still are.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The two services every sweep test seeds.</summary>
+    /// <summary>The four services every sweep test seeds: ordinary, active trial, awaiting-payment trial, converted trial.</summary>
     /// <param name="Ordinary">A service that never had a trial.</param>
-    /// <param name="Active">A trial that is running.</param>
-    private sealed record Seeded(int Ordinary, int Active)
+    /// <param name="Active">A trial that is running (<see cref="TrialStatus.Active"/>).</param>
+    /// <param name="Awaiting">A converted trial whose invoice is unpaid.</param>
+    /// <param name="Converted">A converted trial that was paid.</param>
+    private sealed record Seeded(int Ordinary, int Active, int Awaiting, int Converted)
     {
         /// <summary>The services a sweep may return.</summary>
-        public int[] Eligible => [Ordinary];
+        public int[] Eligible => [Ordinary, Converted];
 
         /// <summary>The services a sweep must leave out.</summary>
-        public int[] Running => [Active];
+        public int[] Running => [Active, Awaiting];
     }
 
-    /// <summary>The renewal query lists the ordinary service but not the running trial.</summary>
+    /// <summary>The renewal query lists the ordinary and the converted service but not the running trials.</summary>
     /// <returns>A task.</returns>
     [Fact]
     public async Task GetRenewableServices_SkipsRunningTrialsAsync()
@@ -54,7 +57,7 @@ public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : I
         AssertSweep(result.Value!.Select(s => s.Id), seeded);
     }
 
-    /// <summary>The upcoming-renewals list shows the ordinary service but not the running trial.</summary>
+    /// <summary>The upcoming-renewals list shows the ordinary and the converted service but not the running trials.</summary>
     /// <returns>A task.</returns>
     [Fact]
     public async Task ListUpcomingServiceRenewals_SkipsRunningTrialsAsync()
@@ -70,7 +73,7 @@ public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : I
         AssertSweep(result.Value!.Items.Select(s => s.Id), seeded);
     }
 
-    /// <summary>The undated-renewals sweep lists the ordinary service but not the running trial.</summary>
+    /// <summary>The undated-renewals sweep lists the ordinary and the converted service but not the running trials.</summary>
     /// <returns>A task.</returns>
     [Fact]
     public async Task ListUndatedRenewingServices_SkipsRunningTrialsAsync()
@@ -85,7 +88,7 @@ public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : I
         AssertSweep(result.Value!, seeded);
     }
 
-    /// <summary>The end-of-cycle termination sweep lists the ordinary service but not the running trial.</summary>
+    /// <summary>The end-of-cycle termination sweep lists the ordinary and the converted service but not the running trials.</summary>
     /// <returns>A task.</returns>
     [Fact]
     public async Task ListEndOfCycleTerminationsDue_SkipsRunningTrialsAsync()
@@ -200,7 +203,9 @@ public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : I
         var statuses = await context.ClientServices.AsNoTracking()
             .Where(s => all.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Status);
         statuses[seeded.Ordinary].Should().Be(ServiceStatus.Suspended);
+        statuses[seeded.Converted].Should().Be(ServiceStatus.Suspended);
         statuses[seeded.Active].Should().Be(ServiceStatus.Active);
+        statuses[seeded.Awaiting].Should().Be(ServiceStatus.Active);
     }
 
     /// <summary>Suspends every seeded service for non-payment, long ago, straight in the database.</summary>
@@ -230,21 +235,21 @@ public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : I
         ids.Should().NotContain(seeded.Running);
     }
 
-    /// <summary>Seeds an ordinary service and a trial service, all active and auto-renewing.</summary>
+    /// <summary>Seeds the four services (ordinary, active trial, awaiting-payment trial, converted trial), all active and auto-renewing.</summary>
     /// <param name="host">The host to seed through.</param>
     /// <param name="nextRenewalAt">The renewal date every service gets.</param>
     /// <returns>The seeded ids.</returns>
     private static async Task<Seeded> SeedAsync(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> host, DateTimeOffset? nextRenewalAt) =>
         await SeedAsync(host.Services, nextRenewalAt);
 
-    /// <summary>Seeds an ordinary service and a trial service, all active and auto-renewing.</summary>
+    /// <summary>Seeds the four services (ordinary, active trial, awaiting-payment trial, converted trial), all active and auto-renewing.</summary>
     /// <param name="host">The clocked host to seed through.</param>
     /// <param name="nextRenewalAt">The renewal date every service gets.</param>
     /// <returns>The seeded ids.</returns>
     private static async Task<Seeded> SeedAsync(ClockedHost host, DateTimeOffset? nextRenewalAt) =>
         await SeedAsync(host.Services, nextRenewalAt);
 
-    /// <summary>Seeds the services and marks one of them as a trial straight in the database.</summary>
+    /// <summary>Seeds the four services and sets the trial status of three of them straight in the database.</summary>
     /// <param name="services">The services of the host to seed through.</param>
     /// <param name="nextRenewalAt">The renewal date every service gets.</param>
     /// <returns>The seeded ids.</returns>
@@ -252,11 +257,15 @@ public sealed class TrialSweepExclusionTests(IntegrationTestFactory factory) : I
     {
         var ordinary = await RenewalTestSeeds.SeedActiveServiceAsync(services, nextRenewalAt);
         var active = await RenewalTestSeeds.SeedActiveServiceAsync(services, nextRenewalAt);
+        var awaiting = await RenewalTestSeeds.SeedActiveServiceAsync(services, nextRenewalAt);
+        var converted = await RenewalTestSeeds.SeedActiveServiceAsync(services, nextRenewalAt);
 
         using var scope = services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         await SetTrialAsync(context, active.ServiceId, TrialStatus.Active);
-        return new Seeded(ordinary.ServiceId, active.ServiceId);
+        await SetTrialAsync(context, awaiting.ServiceId, TrialStatus.AwaitingPayment);
+        await SetTrialAsync(context, converted.ServiceId, TrialStatus.ConvertedToPaid);
+        return new Seeded(ordinary.ServiceId, active.ServiceId, awaiting.ServiceId, converted.ServiceId);
     }
 
     /// <summary>Sets one service's trial status straight in the database.</summary>

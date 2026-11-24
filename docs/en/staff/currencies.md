@@ -100,6 +100,7 @@ These jobs run automatically on a schedule. All times are UTC. Each job runs one
 | Process Renewals | 05:00 UTC | Raises renewal invoices for services and domains due within the configured window |
 | Process Billable Items | 06:00 UTC | Places queued billable items onto invoices |
 | Send Renewal Reminders | 06:00 UTC | Sends renewal reminder emails |
+| Process Trials | 06:00 UTC | Sends trial reminders, converts or terminates ended trials |
 | Check Overdue Invoices | 07:00 UTC | Marks unpaid past-due invoices as Overdue |
 | Auto-Terminate Suspended | 08:00 UTC | Terminates services suspended past the configured limit |
 | Suspend Overdue Services | 09:00 UTC | Suspends services with overdue invoices past the configured limit |

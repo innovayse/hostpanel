@@ -360,7 +360,8 @@
       "applied": "Applied",
       "failed": "Failed",
       "unsupported": "Cannot be reconciled"
-    }
+    },
+    "choosePackage": "Choose a package"
   },
   "clientServicesList": {
     "nextDue": "Next Due",

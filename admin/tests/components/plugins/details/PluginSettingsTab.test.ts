@@ -59,6 +59,17 @@ describe('PluginSettingsTab', () => {
     expect(wrapper.find('[data-testid="plugin-details-settings-empty"]').exists()).toBe(false)
   })
 
+  it('lets the connection status of a panel plugin reflect its servers instead of "not tested yet"', async () => {
+    const wrapper = await mountTab({
+      hasConfig: true,
+      serverModules: ['examplepanel'],
+      servers: [serverOptionDto({ id: 7, isOnline: true }), serverOptionDto({ id: 8, isOnline: true })],
+    })
+
+    expect(wrapper.get('[data-testid="integration-status-servers"]').text()).toContain('2 of 2 servers online')
+    expect(wrapper.find('[data-testid="integration-status-idle"]').exists()).toBe(false)
+  })
+
   it('shows the slot widget bindings of a plugin that declares widgets', async () => {
     const wrapper = await mountTab({ widgets })
 

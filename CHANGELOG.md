@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The **Change package** dialog of a service offers the packages of the server's panel in a select (#1450) when the panel plugin that serves the server declares `provisioningPanelPackages`: `GET /api/provisioning/{id}/packages` answers `{ "names": [...] }`. A panel that cannot list answers `409 PANEL_OPERATION_NOT_SUPPORTED` and the dialog keeps the field to type the name in; a failing panel answers `502 SERVICE_PACKAGES_UPSTREAM_FAILED`.
+- A failed server connection test says why (#1450). `POST /api/admin/servers/{id}/test-connection` carries the error code beside the sentence (`errorCode`), and a panel plugin that times out or fails the secure handshake answers `SERVER_CONNECTION_TIMED_OUT` or `SERVER_CONNECTION_TLS_FAILED` instead of the generic unreachable answer.
+
+### Fixed
+
+- The permissions list of a plugin (Overview tab and install dialog) shows a label for every capability the plugin SDK defines (#1450), in every admin language, instead of the raw message key. A test fails when the SDK gets a capability the admin has no label for.
+- The connection status of a panel plugin on its Settings tab reflects its servers (#1450), how many are online, offline or not tested, instead of "Not tested yet".
+
 ## [0.10.0] - 2026-11-24
 
 ### Added

@@ -411,6 +411,9 @@
   <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo cambiar el paquete de hosting. Inténtelo de nuevo o contacte con soporte.</value>
   </data>
+  <data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve">
+    <value>No se pudo leer del servidor la lista de paquetes de hosting. Inténtelo de nuevo o escriba el nombre del paquete a mano.</value>
+  </data>
   <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo leer la cuenta de hosting en el panel de control. Inténtelo de nuevo o contacte con soporte.</value>
   </data>
@@ -1655,6 +1658,12 @@
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>El panel de control rechazó las credenciales guardadas.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
+    <value>El servidor no respondió a tiempo. Compruebe que el panel está en marcha y que un cortafuegos no lo bloquea.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TLS_FAILED" xml:space="preserve">
+    <value>Falló la conexión segura con el servidor. Compruebe el certificado del panel o permita su certificado autofirmado en los ajustes del servidor.</value>
   </data>
   <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>El sshAgentProfile del manifiesto debe ser un identificador de perfil de palabras en minúsculas unidas por guiones sencillos, de 32 caracteres como máximo, y no puede ser generic-linux.</value>

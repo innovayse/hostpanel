@@ -20,6 +20,7 @@ import {
   ServiceSection,
   type ServiceStatusPayload,
   type ServiceSyncPayload,
+  type ServicePackagesDto,
   type ServiceSyncResult,
   type ServiceTerminationDatePayload,
 } from '@/types/service'
@@ -171,6 +172,15 @@ export const useServicesApi = () => {
     request<void>(`${ApiPath.Provisioning}/${id}/change-package`, { method: HttpMethod.Post, body: JSON.stringify({ newPackage }) })
 
   /**
+   * Lists the hosting packages the server of a provisioned service offers.
+   *
+   * @param id - Service id.
+   * @returns The package names; the API refuses with a code when the panel cannot list them.
+   */
+  const listPackages = (id: number | string): Promise<ServicePackagesDto> =>
+    request<ServicePackagesDto>(`${ApiPath.Provisioning}/${id}/packages`)
+
+  /**
    * Reconciles a provisioned service with its hosting panel: the platform's status and package are applied to the
    * panel (the password too when asked) and the panel's IP address is recorded on the service.
    *
@@ -222,6 +232,6 @@ export const useServicesApi = () => {
   return {
     addExistingService, listServices, getService, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes,
     changeStatus, correctTerminationDate, getPanelLoginUrl,
-    provisionService, changePassword, changePackage, syncServiceWithPanel, suspendService, unsuspendService, terminateService,
+    provisionService, changePassword, changePackage, listPackages, syncServiceWithPanel, suspendService, unsuspendService, terminateService,
   }
 }

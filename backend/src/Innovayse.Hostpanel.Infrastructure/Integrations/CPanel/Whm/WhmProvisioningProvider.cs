@@ -307,4 +307,14 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
 
         _logger.LogInformation("cPanel account {User} was already suspended: {Suspended}.", user, suspended);
     }
+
+    /// <summary>Answers that the host's own cPanel provider cannot list packages: that listing comes from a panel plugin.</summary>
+    /// <param name="ct">Cancellation token; not used.</param>
+    /// <returns>Never returns.</returns>
+    /// <exception cref="DomainRuleException">Always thrown with <see cref="HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED"/>.</exception>
+    public Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct)
+    {
+        throw new DomainRuleException(
+            HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The built in cPanel provider does not list packages.");
+    }
 }

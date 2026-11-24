@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
@@ -11,12 +13,14 @@ public sealed class PanelPluginCallException : Exception
     /// <param name="pluginId">The plugin that threw.</param>
     /// <param name="operation">The contract method that was called.</param>
     /// <param name="exceptionType">The type name of what the plugin threw.</param>
-    public PanelPluginCallException(string pluginId, string operation, string exceptionType)
+    /// <param name="failure">The kind of failure the host could tell from what was thrown.</param>
+    public PanelPluginCallException(string pluginId, string operation, string exceptionType, PanelPluginFailure failure = PanelPluginFailure.Failed)
         : base($"Plugin '{pluginId}' failed in {operation} with {exceptionType}.")
     {
         PluginId = pluginId;
         Operation = operation;
         ExceptionType = exceptionType;
+        Failure = failure;
     }
 
     /// <summary>Gets the plugin that threw.</summary>
@@ -27,4 +31,7 @@ public sealed class PanelPluginCallException : Exception
 
     /// <summary>Gets the type name of what the plugin threw.</summary>
     public string ExceptionType { get; }
+
+    /// <summary>Gets the kind of failure the host could tell from what was thrown.</summary>
+    public PanelPluginFailure Failure { get; }
 }

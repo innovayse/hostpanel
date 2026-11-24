@@ -141,6 +141,21 @@ describe('servicesStore', () => {
     expect(store.error).toBe('Service not found.')
   })
 
+  it('fetchPackages answers the names the panel lists, and nothing when it refuses or is offline', async () => {
+    const store = useServicesStore()
+    const mock = stubFetch(json({ names: ['Starter', 'Business'] }))
+
+    expect(await store.fetchPackages(4)).toEqual(['Starter', 'Business'])
+    expect(callOf(mock).url).toBe('/api/provisioning/4/packages')
+
+    stubFetch(problem('The control panel cannot do that.', 409))
+    expect(await store.fetchPackages(4)).toEqual([])
+    stubOffline()
+    expect(await store.fetchPackages(4)).toEqual([])
+    expect(store.error).toBeNull()
+    expect(store.actionError).toBeNull()
+  })
+
   it('fetchClientServices is silent on failure', async () => {
     stubOffline()
     const store = useServicesStore()

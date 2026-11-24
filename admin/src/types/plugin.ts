@@ -96,7 +96,7 @@ export const PluginErrorCode = {
 /** One of the {@link PluginErrorCode} values. */
 export type PluginErrorCode = (typeof PluginErrorCode)[keyof typeof PluginErrorCode]
 
-/** Closed set of capabilities a manifest may declare; the strings are the SDK's `PluginCapabilities` names. */
+/** Closed set of capabilities a manifest may declare; the strings are the SDK's `PluginCapabilities` names. A guard test keeps it equal to the SDK's list and every member labelled in every locale. */
 export const PluginCapability = {
   /** A payment plugin that can charge a saved card or account. */
   StoredCredentials: 'storedCredentials',
@@ -104,6 +104,48 @@ export const PluginCapability = {
   PaymentReturn: 'paymentReturn',
   /** A plugin of any type that also answers routes and adds pages, menus and slots. */
   Endpoints: 'endpoints',
+  /** A plugin of any type that also calculates the tax of an invoice. */
+  Tax: 'tax',
+  /** A provisioning plugin that runs the account operations of a hosting control panel. */
+  ProvisioningPanel: 'provisioningPanel',
+  /** A panel plugin that tells how a client signs in to an account. */
+  ProvisioningPanelLogin: 'provisioningPanelLogin',
+  /** A panel plugin that lists the packages a server offers. */
+  ProvisioningPanelPackages: 'provisioningPanelPackages',
+  /** A panel plugin that reads one account by its reference. */
+  ProvisioningPanelAccount: 'provisioningPanelAccount',
+  /** A provisioning plugin that runs the operations of a virtual server or cloud platform. */
+  VirtualServer: 'virtualServer',
+  /** A virtual server plugin that lists the servers a platform holds. */
+  VirtualServerList: 'virtualServerList',
+  /** A virtual server plugin that manages snapshots. */
+  VirtualServerSnapshots: 'virtualServerSnapshots',
+  /** A virtual server plugin that manages backups. */
+  VirtualServerBackups: 'virtualServerBackups',
+  /** A virtual server plugin that manages firewall rules. */
+  VirtualServerFirewall: 'virtualServerFirewall',
+  /** A virtual server plugin that opens a console session. */
+  VirtualServerConsole: 'virtualServerConsole',
+  /** A registrar plugin that runs the domain operations. */
+  RegistrarOperations: 'registrarOperations',
+  /** A registrar plugin that manages e-mail forwarding. */
+  RegistrarEmailForwarding: 'registrarEmailForwarding',
+  /** A registrar plugin that switches DNS management. */
+  RegistrarDnsManagement: 'registrarDnsManagement',
+  /** A registrar plugin that looks up WHOIS. */
+  RegistrarWhois: 'registrarWhois',
+  /** A registrar plugin that manages child nameserver hosts. */
+  RegistrarChildNameservers: 'registrarChildNameservers',
+  /** A registrar plugin that manages DNSSEC records. */
+  RegistrarDnssec: 'registrarDnssec',
+  /** A registrar plugin that restores a domain from redemption. */
+  RegistrarRestore: 'registrarRestore',
+  /** A registrar plugin that lists the domains of an account, for import. */
+  RegistrarDomainList: 'registrarDomainList',
+  /** A registrar plugin that suggests domain names. */
+  RegistrarSuggestions: 'registrarSuggestions',
+  /** A registrar plugin that reads the account balance. */
+  RegistrarBalance: 'registrarBalance',
 } as const
 
 /** One of the {@link PluginCapability} values. */

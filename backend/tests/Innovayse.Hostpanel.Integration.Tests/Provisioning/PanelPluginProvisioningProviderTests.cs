@@ -529,6 +529,82 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         (await unavailable.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
     }
 
+    /// <summary>Listing packages hands the plugin the stored server and answers the names the panel reports, in its order.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ListPackages_Reported_AnswersTheNamesAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePackagesPanelPlugin));
+
+        var names = await harness.Provider().ListPackagesAsync(CancellationToken.None);
+
+        names.Should().Equal("basic", "plus");
+        var context = harness.Script.Received.Should().ContainSingle().Which.Should().BeOfType<PanelListPackagesContext>().Which;
+        context.Server.ServerId.Should().Be(harness.Server.Id);
+        context.Server.Password.Should().Be(PanelPluginHarness.ServerPassword);
+    }
+
+    /// <summary>A panel with no packages answers an empty list, not an absent operation.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ListPackages_NoPackages_AnswersAnEmptyListAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePackagesPanelPlugin));
+        harness.Script.Packages = ValueResult<IReadOnlyList<PanelPackageDetails>, PanelRefusalReason>.Done([]);
+
+        var names = await harness.Provider().ListPackagesAsync(CancellationToken.None);
+
+        names.Should().BeEmpty();
+    }
+
+    /// <summary>A plugin that does not declare the package listing is not supported and is never called.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ListPackages_WithoutTheCapability_IsNotSupportedAndNotAskedAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakeLoginlessPanelPlugin));
+
+        var act = () => harness.Provider().ListPackagesAsync(CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED);
+        harness.Script.Received.Should().BeEmpty();
+    }
+
+    /// <summary>A listing the plugin says it cannot do, and a refusal, each answer their own code.</summary>
+    /// <param name="outcome">How the plugin answers.</param>
+    /// <param name="code">The code the host answers.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(PanelOperationOutcome.NotSupported, HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED)]
+    [InlineData(PanelOperationOutcome.Refused, HostpanelErrorCodes.PANEL_ACCESS_DENIED)]
+    public async Task ListPackages_NotAListing_IsRefusedWithItsCodeAsync(PanelOperationOutcome outcome, string code)
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePackagesPanelPlugin));
+        harness.Script.Packages = outcome == PanelOperationOutcome.NotSupported
+            ? ValueResult<IReadOnlyList<PanelPackageDetails>, PanelRefusalReason>.NotSupported()
+            : ValueResult<IReadOnlyList<PanelPackageDetails>, PanelRefusalReason>.Refused(PanelRefusalReason.AccessDenied);
+
+        var act = () => harness.Provider().ListPackagesAsync(CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(code);
+    }
+
+    /// <summary>A plugin that throws is a call failure whose text never reaches the caller, and a switched off plugin is unavailable.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ListPackages_ThrowingOrOffPlugin_IsAFailureWithoutPluginTextAsync()
+    {
+        using var throwing = await PanelPluginHarness.CreateAsync(factory, typeof(FakePackagesPanelPlugin));
+        throwing.Script.Throw = new InvalidOperationException("plugin internal text");
+        using var off = await PanelPluginHarness.CreateAsync(factory, typeof(FakePackagesPanelPlugin), enabled: false);
+
+        var thrown = () => throwing.Provider().ListPackagesAsync(CancellationToken.None);
+        var unavailable = () => off.Provider().ListPackagesAsync(CancellationToken.None);
+
+        (await thrown.Should().ThrowAsync<PanelPluginCallException>()).Which.Message.Should().NotContain("plugin internal text");
+        (await unavailable.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
+    }
+
     /// <summary>Builds the order a service is provisioned with: service 7, client 3.</summary>
     /// <returns>The order.</returns>
     private static ProvisionAccountOrder Order()

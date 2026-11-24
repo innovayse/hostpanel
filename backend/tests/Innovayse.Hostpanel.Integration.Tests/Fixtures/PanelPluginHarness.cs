@@ -118,6 +118,11 @@ internal sealed class PanelPluginHarness : IDisposable
             capabilities.Add(PluginCapabilities.ProvisioningPanelAccount);
         }
 
+        if (typeof(IProvisioningPanelPackagesPlugin).IsAssignableFrom(implementation))
+        {
+            capabilities.Add(PluginCapabilities.ProvisioningPanelPackages);
+        }
+
         var registry = PluginActivationTestSeeds.Registry(Plugin(pluginId, implementation, [module], [.. capabilities]));
         if (enabled)
         {

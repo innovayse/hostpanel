@@ -42,6 +42,34 @@ export const serverState = (server: ServerStateSource): ServerState => {
   return server.isOnline === false ? ServerState.Offline : ServerState.Untested
 }
 
+/** How a group of servers stands together: the counts of each last known state and the one state that stands for the group. */
+export interface ServersConnectionSummary {
+  /** Offline when any server is, online when at least one is and none is offline, untested when none has been tested. */
+  state: ServerState
+  /** Servers whose last test succeeded. */
+  online: number
+  /** Servers whose last test failed. */
+  offline: number
+  /** Servers never tested. */
+  untested: number
+  /** All the servers counted. */
+  total: number
+}
+
+/**
+ * Sums up the last known connection state of a group of servers, for a panel plugin whose connection is kept per server.
+ *
+ * @param servers - The servers, at least one.
+ * @returns The counts and the state that stands for the group.
+ */
+export const summarizeServers = (servers: ServerStateSource[]): ServersConnectionSummary => {
+  const states = servers.map(serverState)
+  const online = states.filter((state) => state === ServerState.Online).length
+  const offline = states.filter((state) => state === ServerState.Offline).length
+  const state = offline > 0 ? ServerState.Offline : online > 0 ? ServerState.Online : ServerState.Untested
+  return { state, online, offline, untested: servers.length - online - offline, total: servers.length }
+}
+
 /**
  * How full a server is.
  *

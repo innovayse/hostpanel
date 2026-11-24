@@ -225,7 +225,7 @@ describe('ServersView', () => {
       'GET /api/admin/servers?': () => json(page([serverDto()])),
       'GET /api/admin/server-groups': () => json([]),
       'POST /api/admin/servers/1/test-connection': () =>
-        json({ connected: true, accountsCount: 14, version: '7.1', errorMessage: null, testedAt: '2026-10-14T00:00:00Z' }),
+        json({ connected: true, accountsCount: 14, version: '7.1', errorCode: null, errorMessage: null, testedAt: '2026-10-14T00:00:00Z' }),
     })
     const { wrapper } = await mountServers()
 

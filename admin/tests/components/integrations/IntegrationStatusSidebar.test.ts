@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
 import { mountWithApp } from '../../helpers/mount'
 import { IntegrationConnectionState } from '@/types/integration'
+import { serverOptionDto } from '../../helpers/serverFixtures'
 
 /**
  * Mounts the sidebar.
@@ -67,6 +68,36 @@ describe('IntegrationStatusSidebar', () => {
 
     expect(wrapper.find('[data-testid="integration-status-result"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-status-connection"]').exists()).toBe(false)
+  })
+
+  it('reflects the servers of a panel plugin instead of "not tested yet"', () => {
+    const wrapper = mountSidebar({
+      servers: [serverOptionDto({ id: 1, isOnline: true }), serverOptionDto({ id: 2, isOnline: true }), serverOptionDto({ id: 3, isOnline: false })],
+    })
+
+    const servers = wrapper.get('[data-testid="integration-status-servers"]')
+    expect(servers.get('[data-testid="integration-status-servers-state"]').text()).toBe('Offline')
+    expect(servers.text()).toContain('2 of 3 servers online')
+    expect(servers.text()).toContain('1 offline')
+    expect(wrapper.find('[data-testid="integration-status-idle"]').exists()).toBe(false)
+  })
+
+  it('names the servers never tested', () => {
+    const wrapper = mountSidebar({ servers: [serverOptionDto({ id: 1, isOnline: true }), serverOptionDto({ id: 2, isOnline: null })] })
+
+    expect(wrapper.get('[data-testid="integration-status-servers-state"]').text()).toBe('Online')
+    expect(wrapper.get('[data-testid="integration-status-servers"]').text()).toContain('1 not tested')
+  })
+
+  it('keeps "not tested yet" for a plugin with no servers, and prefers the plugin reported state to its servers', () => {
+    expect(mountSidebar({ servers: [] }).find('[data-testid="integration-status-idle"]').exists()).toBe(true)
+
+    const wrapper = mountSidebar({
+      servers: [serverOptionDto({ isOnline: false })],
+      connection: { state: IntegrationConnectionState.Connected, message: 'Fine.', checkedAt: '2026-11-04T10:00:00Z' },
+    })
+    expect(wrapper.find('[data-testid="integration-status-connection"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-status-servers"]').exists()).toBe(false)
   })
 
   it('draws bars of the badge and the message line while a test is in flight', () => {

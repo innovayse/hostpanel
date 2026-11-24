@@ -50,4 +50,8 @@ public sealed class StubProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct)
         => Task.FromResult(new HostedAccountState(HostedAccountStatus.Active, null, null, null));
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct)
+        => Task.FromResult<IReadOnlyList<string>>([]);
 }

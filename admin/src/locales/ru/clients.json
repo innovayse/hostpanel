@@ -361,7 +361,8 @@
       "applied": "Применено",
       "failed": "Не удалось",
       "unsupported": "Нельзя согласовать"
-    }
+    },
+    "choosePackage": "Выберите тариф"
   },
   "clientServicesList": {
     "nextDue": "Следующая оплата",

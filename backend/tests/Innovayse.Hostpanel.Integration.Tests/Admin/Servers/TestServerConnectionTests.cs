@@ -74,8 +74,36 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
 
         using var doc = System.Text.Json.JsonDocument.Parse(body);
         doc.RootElement.GetProperty("connected").GetBoolean().Should().BeFalse();
+        doc.RootElement.GetProperty("errorCode").GetString().Should().Be(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
         doc.RootElement.GetProperty("errorMessage").GetString()
             .Should().Be("Could not reach the server. See the server log for detail.");
+    }
+
+    /// <summary>A failure with its own reason answers that reason's code and sentence, not the generic unreachable one.</summary>
+    /// <param name="code">The code the probe failed with.</param>
+    /// <param name="message">The sentence the request language gives it.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_TIMED_OUT, "The server did not answer in time. Check that the panel is running and not blocked by a firewall.")]
+    [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_TLS_FAILED, "The secure connection to the server failed. Check the certificate of the panel, or allow its self signed certificate in the server settings.")]
+    [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_AUTH_FAILED, "The control panel refused the saved credentials.")]
+    public async Task WhenProviderFailsForASpecificReason_AnswersItsCodeAndSentenceAsync(string code, string message)
+    {
+        var tester = new FakeServerConnectionTester { ShouldFail = true, FailureCode = code };
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));
+
+        var token = await factory.GetAdminTokenAsync();
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var id = await ServersTestSeeds.CreateServerAsync(client, $"Server-{Guid.NewGuid():N}");
+
+        var response = await client.PostAsync($"/api/admin/servers/{id}/test-connection", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        body.GetProperty("errorCode").GetString().Should().Be(code);
+        body.GetProperty("errorMessage").GetString().Should().Be(message);
     }
 
     /// <summary>A failed probe words its reason in the language the request asked for, not in English only.</summary>

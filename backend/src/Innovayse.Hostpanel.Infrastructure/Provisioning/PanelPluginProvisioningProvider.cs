@@ -282,6 +282,28 @@ public sealed class PanelPluginProvisioningProvider : IProvisioningProvider
         return new HostedAccountState(account.Status.ToHostedAccountStatus(), account.Domain, account.PackageName, account.IpAddress);
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin does not declare the package listing or says it cannot list, and
+    /// with the panel's refusal code when it refuses.
+    /// </exception>
+    public async Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct)
+    {
+        if (!_caller.Declares(_pluginId, PluginCapabilities.ProvisioningPanelPackages))
+        {
+            throw new DomainRuleException(
+                HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The panel plugin does not declare the package listing.");
+        }
+
+        var result = await RunOnPanelAsync<IProvisioningPanelPackagesPlugin, ValueResult<IReadOnlyList<PanelPackageDetails>, PanelRefusalReason>>(
+            nameof(IProvisioningPanelPackagesPlugin.ListPackagesAsync),
+            (plugin, server, token) => plugin.ListPackagesAsync(new PanelListPackagesContext(server), token),
+            ct);
+
+        result.Outcome.EnsureDone(result.Reason);
+        return (result.Value ?? []).Select(package => package.Name).ToList();
+    }
+
     /// <summary>
     /// Runs one call on the plugin. The server's stored password is read only once the plugin is resolved, available and inside its
     /// time limit, so a plugin that is off, missing or broken never costs a read of it and never sees it.

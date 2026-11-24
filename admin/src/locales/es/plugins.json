@@ -32,7 +32,28 @@
     "capabilities": {
       "endpoints": "Añade sus propias páginas, menús y widgets a los paneles",
       "paymentReturn": "Completar un pago cuando el pagador vuelve de la pasarela",
-      "storedCredentials": "Cobrar en tarjetas guardadas y cuentas de pago"
+      "provisioningPanel": "Crear y gestionar cuentas de hosting en un panel de control",
+      "provisioningPanelAccount": "Leer una cuenta de hosting concreta de un panel de control",
+      "provisioningPanelLogin": "Iniciar la sesión de los clientes en el panel de control de su hosting",
+      "provisioningPanelPackages": "Listar los paquetes que ofrece un panel de control",
+      "registrarBalance": "Consultar el saldo de la cuenta del registrador",
+      "registrarChildNameservers": "Gestionar los servidores de nombres secundarios de un dominio",
+      "registrarDnsManagement": "Activar y desactivar la gestión de DNS de los dominios",
+      "registrarDnssec": "Gestionar los registros DNSSEC de un dominio",
+      "registrarDomainList": "Listar los dominios del registrador para importarlos",
+      "registrarEmailForwarding": "Gestionar el reenvío de correo de los dominios",
+      "registrarOperations": "Registrar, renovar y transferir dominios",
+      "registrarRestore": "Restaurar un dominio del periodo de redención",
+      "registrarSuggestions": "Sugerir nombres de dominio",
+      "registrarWhois": "Consultar el registro WHOIS de un dominio",
+      "storedCredentials": "Cobrar en tarjetas guardadas y cuentas de pago",
+      "tax": "Calcular el impuesto de una factura",
+      "virtualServer": "Crear y gestionar servidores virtuales",
+      "virtualServerBackups": "Gestionar las copias de seguridad de los servidores virtuales",
+      "virtualServerConsole": "Abrir una consola de un servidor virtual",
+      "virtualServerFirewall": "Gestionar las reglas de cortafuegos de los servidores virtuales",
+      "virtualServerList": "Listar los servidores virtuales de una plataforma",
+      "virtualServerSnapshots": "Gestionar las instantáneas de los servidores virtuales"
     }
   },
   "restartBanner": {

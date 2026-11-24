@@ -42,7 +42,10 @@
     "tested": "Проверено",
     "roundTrip": "Время отклика",
     "notTestedYet": "Ещё не проверялось",
-    "setupNote": "Примечание по настройке"
+    "setupNote": "Примечание по настройке",
+    "serversOnline": "В сети {online} из {total} серверов",
+    "serversOffline": "Не в сети: {count}",
+    "serversUntested": "Не проверено: {count}"
   },
   "integrations": {
     "lengthIntegrationValue": "Интеграций: {length}",

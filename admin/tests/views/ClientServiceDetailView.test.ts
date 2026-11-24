@@ -525,6 +525,39 @@ describe('ClientServiceDetailView', () => {
     expect(toastMessages()).toEqual(['The hosting account could not be read from the control panel.'])
   })
 
+  it('offers the packages the panel lists in a select when the change package dialog opens', async () => {
+    const { wrapper, mock } = await mountLoaded({ ...detail, status: ServiceStatus.Active }, undefined, {
+      'GET /api/provisioning/9/packages': () => json({ names: ['Starter', 'Business'] }),
+      'POST /api/provisioning/9/change-package': () => new Response(null, { status: 204 }),
+    })
+
+    await wrapper.get('[data-testid="client-service-change-package"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="client-service-new-package"]').exists()).toBe(false)
+    const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'client-service-package-select')!
+    expect((select.vm.$props as { options: unknown[] }).options).toEqual([{ value: 'Starter', label: 'Starter' }, { value: 'Business', label: 'Business' }])
+    select.vm.$emit('update:modelValue', 'Business')
+    await flushPromises()
+    await wrapper.get('[data-testid="client-service-package-confirm"]').trigger('click')
+    await flushPromises()
+
+    const change = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.url === '/api/provisioning/9/change-package')
+    expect(change).toMatchObject({ method: 'POST', body: { newPackage: 'Business' } })
+  })
+
+  it('keeps the free text field when the panel cannot list its packages', async () => {
+    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active }, undefined, {
+      'GET /api/provisioning/9/packages': () => problem('The control panel cannot do that.', 409),
+    })
+
+    await wrapper.get('[data-testid="client-service-change-package"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="client-service-package-select"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="client-service-new-package"]').exists()).toBe(true)
+  })
+
   it('labels the address as assigned, not dedicated', async () => {
     const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
 

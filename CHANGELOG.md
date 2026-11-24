@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-24
+
 ### Added
 
 - A website a plugin set up reports the PHP CLI path of its PHP version (#1427). `ServiceWebsite.PhpCliPath` (migration `AddServiceWebsitePhpCliPath`, existing rows left empty) is filled from the `php_cli` the agent answers to `ensure-website` (agent 1.6.0 and later), stored when a website is created or its PHP version changes, and cleared when the website no longer runs PHP or the server does not report the path. The plugin SDK carries it as `PluginWebsite.PhpCliPath` (SDK 3.16.0), so a plugin that does not know it is unaffected. An active website that runs PHP but has no stored path is set up once more on its next call to learn it. The plugin guide in English, Russian and Armenian describes it.

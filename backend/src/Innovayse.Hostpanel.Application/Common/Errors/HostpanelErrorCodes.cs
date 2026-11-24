@@ -798,6 +798,9 @@ public static class HostpanelErrorCodes
     /// <summary>The provisioning provider rejected the package change (502).</summary>
     public const string SERVICE_PACKAGE_UPSTREAM_FAILED = "SERVICE_PACKAGE_UPSTREAM_FAILED";
 
+    /// <summary>The provisioning provider failed to list the packages of the service's server (502).</summary>
+    public const string SERVICE_PACKAGES_UPSTREAM_FAILED = "SERVICE_PACKAGES_UPSTREAM_FAILED";
+
     /// <summary>The control panel could not be read for the service's hosting account (502).</summary>
     public const string SERVICE_PANEL_SYNC_UPSTREAM_FAILED = "SERVICE_PANEL_SYNC_UPSTREAM_FAILED";
 
@@ -859,6 +862,12 @@ public static class HostpanelErrorCodes
 
     /// <summary>The panel refused the credentials the server stores (answered inside the test result).</summary>
     public const string SERVER_CONNECTION_AUTH_FAILED = "SERVER_CONNECTION_AUTH_FAILED";
+
+    /// <summary>The panel did not answer within the time limit (answered inside the test result).</summary>
+    public const string SERVER_CONNECTION_TIMED_OUT = "SERVER_CONNECTION_TIMED_OUT";
+
+    /// <summary>The secure connection to the server could not be set up: its certificate was refused or the handshake failed (answered inside the test result).</summary>
+    public const string SERVER_CONNECTION_TLS_FAILED = "SERVER_CONNECTION_TLS_FAILED";
 
     // Hosting panels served by plugins
 

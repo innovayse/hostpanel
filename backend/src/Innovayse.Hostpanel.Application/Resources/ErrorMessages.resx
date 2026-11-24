@@ -411,6 +411,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>The hosting package could not be changed. Please try again or contact support.</value>
   </data>
+<data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve">
+    <value>The list of hosting packages could not be read from the server. Please try again or enter the package name by hand.</value>
+  </data>
 <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
     <value>The hosting account could not be read from the control panel. Please try again or contact support.</value>
   </data>
@@ -1659,6 +1662,12 @@
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>The control panel refused the saved credentials.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
+    <value>The server did not answer in time. Check that the panel is running and not blocked by a firewall.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TLS_FAILED" xml:space="preserve">
+    <value>The secure connection to the server failed. Check the certificate of the panel, or allow its self signed certificate in the server settings.</value>
   </data>
   <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>The sshAgentProfile in the manifest must be a profile id of lower case words joined by single hyphens, at most 32 characters, and must not be generic-linux.</value>

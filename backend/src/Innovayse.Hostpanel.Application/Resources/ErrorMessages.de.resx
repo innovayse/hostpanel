@@ -177,6 +177,7 @@
   <data name="SERVICE_NO_SERVER_ASSIGNED" xml:space="preserve"><value>Diesem Dienst ist kein Hosting-Server zugewiesen.</value></data>
   <data name="SERVICE_PASSWORD_UPSTREAM_FAILED" xml:space="preserve"><value>Das Passwort konnte auf dem Hosting-Server nicht geändert werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve"><value>Das Hosting-Paket konnte nicht geändert werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
+  <data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve"><value>Die Liste der Hosting-Pakete konnte nicht vom Server gelesen werden. Bitte versuchen Sie es erneut oder geben Sie den Paketnamen von Hand ein.</value></data>
   <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve"><value>Das Hosting-Konto konnte nicht aus dem Control Panel gelesen werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve"><value>Der Dienst konnte auf dem Hosting-Server nicht gesperrt werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="SERVICE_TERMINATE_UPSTREAM_FAILED" xml:space="preserve"><value>Der Dienst konnte auf dem Hosting-Server nicht beendet werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
@@ -645,6 +646,12 @@
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Das Bedienfeld hat die gespeicherten Zugangsdaten abgelehnt.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
+    <value>Der Server hat nicht rechtzeitig geantwortet. Prüfen Sie, ob das Bedienfeld läuft und nicht von einer Firewall blockiert wird.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TLS_FAILED" xml:space="preserve">
+    <value>Die sichere Verbindung zum Server ist fehlgeschlagen. Prüfen Sie das Zertifikat des Bedienfelds oder erlauben Sie sein selbstsigniertes Zertifikat in den Servereinstellungen.</value>
   </data>
   <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Das sshAgentProfile im Manifest muss eine Profil-ID aus Kleinbuchstaben-Wörtern sein, die durch einzelne Bindestriche verbunden sind, höchstens 32 Zeichen lang, und darf nicht generic-linux lauten.</value>

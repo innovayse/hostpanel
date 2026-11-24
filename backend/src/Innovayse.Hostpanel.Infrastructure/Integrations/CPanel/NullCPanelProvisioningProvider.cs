@@ -88,4 +88,12 @@ public sealed class NullCPanelProvisioningProvider : IProvisioningProvider
         throw new DomainRuleException(
             HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The cPanel provider does not read a single account.");
     }
+
+    /// <inheritdoc/>
+    /// <exception cref="DomainRuleException">Always thrown with <c>PANEL_OPERATION_NOT_SUPPORTED</c>, like the real cPanel provider this stands in for.</exception>
+    public Task<IReadOnlyList<string>> ListPackagesAsync(CancellationToken ct)
+    {
+        throw new DomainRuleException(
+            HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, "The cPanel provider does not list packages.");
+    }
 }

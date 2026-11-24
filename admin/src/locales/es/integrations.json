@@ -42,7 +42,10 @@
     "tested": "Probado",
     "roundTrip": "Viaje de ida y vuelta",
     "notTestedYet": "No probado aún",
-    "setupNote": "Nota de configuración"
+    "setupNote": "Nota de configuración",
+    "serversOnline": "{online} de {total} servidores en línea",
+    "serversOffline": "{count} desconectados",
+    "serversUntested": "{count} sin probar"
   },
   "integrations": {
     "lengthIntegrationValue": "Integraciones: {length}",

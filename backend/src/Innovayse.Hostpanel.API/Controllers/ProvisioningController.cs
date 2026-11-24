@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Provisioning.Commands.SyncServiceWithPanel
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.GetServiceCredentials;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.ListServicePackages;
 using Innovayse.Hostpanel.Application.Services.Commands.SuspendService;
 using Innovayse.Hostpanel.Application.Services.Commands.TerminateService;
 using Innovayse.Hostpanel.Application.Services.Commands.UnsuspendService;
@@ -161,6 +162,32 @@ public sealed class ProvisioningController : BaseApiController
     public async Task<IActionResult> GetCredentialsAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<ServiceCredentialsDto>>(new GetServiceCredentialsQuery(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Lists the hosting packages the server of a provisioned service offers.</summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the package names; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c> when the service has never been
+    /// provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated or <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server;
+    /// 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service;
+    /// 409 with a panel code (<c>PANEL_OPERATION_NOT_SUPPORTED</c> when the panel plugin cannot list its packages, or
+    /// <c>PANEL_PLUGIN_CONFLICT</c>); 502 with <c>PANEL_ACCESS_DENIED</c>, <c>PANEL_REFUSED</c> or <c>SERVICE_PACKAGES_UPSTREAM_FAILED</c>;
+    /// 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{id:int}/packages")]
+    [ProducesResponseType(typeof(ServicePackagesDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> ListPackagesAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<ServicePackagesDto>>(new ListServicePackagesQuery(id), ct);
         return HandleResult(outcome);
     }
 

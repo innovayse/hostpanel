@@ -361,7 +361,8 @@
       "applied": "Կիրառվեց",
       "failed": "Չհաջողվեց",
       "unsupported": "Հնարավոր չէ համապատասխանեցնել"
-    }
+    },
+    "choosePackage": "Ընտրեք փաթեթ"
   },
   "clientServicesList": {
     "nextDue": "Հաջորդ վճարում",

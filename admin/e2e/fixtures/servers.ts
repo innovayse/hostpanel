@@ -70,6 +70,7 @@ export const connectionOk: TestConnectionResultDto = {
   connected: true,
   accountsCount: 12,
   version: '7.4.2',
+  errorCode: null,
   errorMessage: null,
   testedAt: '2026-10-01T00:00:00Z',
 }

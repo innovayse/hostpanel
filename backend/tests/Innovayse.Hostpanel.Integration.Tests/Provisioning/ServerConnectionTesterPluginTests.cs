@@ -1,3 +1,4 @@
+using System.Security.Authentication;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Provisioning;
@@ -112,6 +113,47 @@ public sealed class ServerConnectionTesterPluginTests(IntegrationTestFactory fac
         result.Connected.Should().BeFalse();
         result.ErrorCode.Should().Be(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
         result.Version.Should().BeNull();
+    }
+
+    /// <summary>A plugin that times out fails the test as timed out, whether it throws the timeout itself or through its HTTP client.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TestAsync_TimingOutPlugin_IsTimedOutAsync()
+    {
+        await AssertThrownCodeAsync(new TimeoutException("secret panel text"), HostpanelErrorCodes.SERVER_CONNECTION_TIMED_OUT);
+        await AssertThrownCodeAsync(new TaskCanceledException("secret", new TimeoutException()), HostpanelErrorCodes.SERVER_CONNECTION_TIMED_OUT);
+    }
+
+    /// <summary>An HTTP failure that wraps a failed secure handshake fails the test as a TLS failure, so the admin checks the certificate.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TestAsync_FailedHandshake_IsTlsFailedAsync()
+    {
+        await AssertThrownCodeAsync(
+            new HttpRequestException("secret", new AuthenticationException("secret handshake")), HostpanelErrorCodes.SERVER_CONNECTION_TLS_FAILED);
+    }
+
+    /// <summary>An HTTP failure with no more specific kind stays unreachable.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TestAsync_PlainHttpFailure_IsUnreachableAsync()
+    {
+        await AssertThrownCodeAsync(new HttpRequestException("secret"), HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
+    }
+
+    /// <summary>Runs the test against a plugin that throws and checks the code of the failed result.</summary>
+    /// <param name="thrown">What the plugin throws.</param>
+    /// <param name="code">The code the result must carry.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    private async Task AssertThrownCodeAsync(Exception thrown, string code)
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
+        harness.Script.Throw = thrown;
+
+        var result = await Tester(harness).TestAsync(harness.Server, CancellationToken.None);
+
+        result.Connected.Should().BeFalse();
+        result.ErrorCode.Should().Be(code);
     }
 
     /// <summary>Two installed plugins declaring the module fail the test with <c>PANEL_PLUGIN_CONFLICT</c>, and neither is called.</summary>

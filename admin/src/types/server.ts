@@ -242,7 +242,9 @@ export interface TestConnectionResultDto {
   accountsCount: number | null
   /** Server software version, or null. */
   version: string | null
-  /** Error message if connection failed, or null. */
+  /** Error code naming why the connection failed (the code an error response carries), or null when it connected. */
+  errorCode: string | null
+  /** Error message if connection failed, in the request language, or null. */
   errorMessage: string | null
   /** UTC timestamp of the test. */
   testedAt: string

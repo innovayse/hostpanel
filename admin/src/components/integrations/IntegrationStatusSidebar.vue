@@ -3,13 +3,16 @@
  * Body of the connection status card of the integration detail page.
  *
  * Displays the connection test state (in flight, the result of this session's test, the plugin's
- * last reported connection state, or not tested yet) and an optional contextual hint. The card around it, with its caption
+ * last reported connection state, the servers of a panel plugin, or not tested yet) and an optional contextual hint. The card around it, with its caption
  * and its skeleton while the integration is still being read, is the status card of `IntegrationDetailView.schema`, which
  * `UiDetailCards` draws.
  */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatClock } from '@/lib/format'
 import type { IntegrationConnection, IntegrationTestResult } from '@/types/integration'
+import type { ServerOptionDto } from '@/types/server'
+import { SERVER_STATE_KEYS, SERVER_STATE_TONES, summarizeServers } from '@/lib/servers'
 import { integrationConnectionTone } from '@/lib/tones'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -25,7 +28,7 @@ import { UiTone } from '@/utils/ui/tone'
 const { t, locale } = useI18n()
 
 /** Props for IntegrationStatusSidebar. */
-defineProps<{
+const props = defineProps<{
   /** Result of the most recent in-session test, or null. */
   testResult: IntegrationTestResult | null
   /** True while a connection test is in flight. */
@@ -36,7 +39,12 @@ defineProps<{
   hint?: string
   /** Last connection state a plugin reported, shown while no test ran on this page; null or absent for none. */
   connection?: IntegrationConnection | null
+  /** The servers a panel plugin serves: its connection is kept per server, so they stand in for a plugin level state; absent or empty for none. */
+  servers?: ServerOptionDto[]
 }>()
+
+/** How the plugin's servers stand together, or null when it has none to sum up. */
+const serversSummary = computed(() => (props.servers && props.servers.length > 0 ? summarizeServers(props.servers) : null))
 
 /**
  * Formats a round-trip duration for the detail row.
@@ -102,6 +110,22 @@ const formatDuration = (ms: number): string =>
           <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ t('integrations.integrationStatusSidebar.tested') }}</UiText>
           <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Xs">{{ formatClock(connection.checkedAt, locale) }}</UiText>
         </UiStack>
+      </UiStack>
+
+      <!-- A panel plugin keeps its connection per server: the card reflects its servers -->
+      <UiStack v-else-if="serversSummary" :gap="UiGap.Xs" data-testid="integration-status-servers">
+        <UiBadge :tone="SERVER_STATE_TONES[serversSummary.state]" dot data-testid="integration-status-servers-state">
+          {{ t(SERVER_STATE_KEYS[serversSummary.state]) }}
+        </UiBadge>
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          {{ t('integrations.integrationStatusSidebar.serversOnline', { online: serversSummary.online, total: serversSummary.total }) }}
+        </UiText>
+        <UiText v-if="serversSummary.offline > 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          {{ t('integrations.integrationStatusSidebar.serversOffline', { count: serversSummary.offline }) }}
+        </UiText>
+        <UiText v-if="serversSummary.untested > 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
+          {{ t('integrations.integrationStatusSidebar.serversUntested', { count: serversSummary.untested }) }}
+        </UiText>
       </UiStack>
 
       <!-- Nothing tested on this page yet -->

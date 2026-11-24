@@ -411,6 +411,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось изменить тарифный план хостинга. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
+<data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Не удалось получить список тарифных планов хостинга с сервера. Повторите попытку или введите название вручную.</value>
+  </data>
 <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось прочитать хостинг-аккаунт на панели управления. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
@@ -1656,6 +1659,12 @@
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Панель управления отклонила сохранённые данные доступа.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
+    <value>Сервер не ответил вовремя. Проверьте, что панель запущена и не закрыта межсетевым экраном.</value>
+  </data>
+  <data name="SERVER_CONNECTION_TLS_FAILED" xml:space="preserve">
+    <value>Не удалось установить защищённое соединение с сервером. Проверьте сертификат панели или разрешите её самоподписанный сертификат в настройках сервера.</value>
   </data>
   <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Значение sshAgentProfile в манифесте должно быть идентификатором профиля из слов в нижнем регистре, соединённых одиночными дефисами, не длиннее 32 символов, и не должно быть generic-linux.</value>

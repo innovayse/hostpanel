@@ -130,6 +130,20 @@ export const useServicesStore = defineStore('services', () => {
   }
 
   /**
+   * Loads the hosting packages the service's server offers, for the change package dialog. A panel that cannot list its packages is
+   * not an error here: the dialog then asks for the name by hand, so a refusal is deliberately silent.
+   *
+   * @param id - Service primary key.
+   * @returns The package names; empty when the panel cannot list them or the call failed.
+   */
+  const fetchPackages = async (id: number | string): Promise<string[]> => {
+    /** Throwaway error ref: the listing is optional, so its refusal is not shown. */
+    const quiet = ref<string | null>(null)
+    const result = await runAction(quiet, () => api.listPackages(id))
+    return result.ok ? result.value.names : []
+  }
+
+  /**
    * Runs one mutating request, capturing a refusal into `actionError`.
    *
    * @param task - The request to run.
@@ -305,6 +319,6 @@ export const useServicesStore = defineStore('services', () => {
     services, current, pageSize, totalCount, loading, error, actionError, fieldErrors, syncResult,
     fetchAll, fetchClientPage, fetchById, fetchClientServices,
     addExisting, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
-    fetchPanelLoginUrl, provision, changePassword, changePackage, syncWithPanel, clearSyncResult, suspend, unsuspend, terminate,
+    fetchPanelLoginUrl, provision, changePassword, changePackage, fetchPackages, syncWithPanel, clearSyncResult, suspend, unsuspend, terminate,
   }
 })

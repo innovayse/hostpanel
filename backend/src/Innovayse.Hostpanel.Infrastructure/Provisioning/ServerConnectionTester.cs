@@ -12,6 +12,7 @@ using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Microsoft.Extensions.Logging;
@@ -117,10 +118,16 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         {
             return ServerConnectionTestResult.Failed(ex.Code);
         }
-        catch (PanelPluginCallException)
+        catch (PanelPluginCallException ex)
         {
-            // The caller logged the plugin and the exception type; the plugin's own text never reaches the administrator.
-            return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
+            // The caller logged the plugin and the exception type; the plugin's own text never reaches the administrator,
+            // only the kind of failure it was, as a code the admin can act on.
+            return ServerConnectionTestResult.Failed(ex.Failure switch
+            {
+                PanelPluginFailure.TimedOut => HostpanelErrorCodes.SERVER_CONNECTION_TIMED_OUT,
+                PanelPluginFailure.TlsRejected => HostpanelErrorCodes.SERVER_CONNECTION_TLS_FAILED,
+                _ => HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE,
+            });
         }
     }
 

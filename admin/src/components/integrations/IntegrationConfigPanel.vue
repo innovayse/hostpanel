@@ -13,6 +13,7 @@ import { useIntegrationsStore } from '@/stores/integrations'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { INTEGRATION_META } from '@/types/integrationmeta'
 import type { IntegrationConfigPayload, IntegrationSlug } from '@/types/integration'
+import type { ServerOptionDto } from '@/types/server'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
 import UiDetailCards from '@/components/ui/UiDetailCards.vue'
@@ -25,6 +26,8 @@ import schema from '@/views/IntegrationDetailView.schema'
 const props = defineProps<{
   /** Slug of the integration to configure (a plugin's id for a plugin integration). */
   slug: string
+  /** The servers a panel plugin serves, when the panel is the plugin's: its status card then reflects them; absent for any other integration. */
+  servers?: ServerOptionDto[]
 }>()
 
 /** Translation function. */
@@ -126,6 +129,7 @@ onMounted(load)
           :test-result="store.testResult"
           :testing="store.testing"
           :connection="store.current?.connection"
+          :servers="servers"
           :endpoint-host="endpointHost"
           :hint="hint"
         />

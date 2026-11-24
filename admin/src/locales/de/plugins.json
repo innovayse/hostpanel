@@ -32,7 +32,28 @@
     "capabilities": {
       "endpoints": "Eigene Seiten, Menüs und Widgets zu den Panels hinzufügen",
       "paymentReturn": "Eine Zahlung nach der Rückkehr des Zahlers vom Gateway abschließen",
-      "storedCredentials": "Gespeicherte Karten und Zahlungskonten belasten"
+      "provisioningPanel": "Hosting-Konten in einem Bedienfeld anlegen und verwalten",
+      "provisioningPanelAccount": "Ein einzelnes Hosting-Konto aus einem Bedienfeld lesen",
+      "provisioningPanelLogin": "Kunden im Bedienfeld ihres Hostings anmelden",
+      "provisioningPanelPackages": "Die Pakete auflisten, die ein Bedienfeld anbietet",
+      "registrarBalance": "Das Guthaben des Registrar-Kontos abrufen",
+      "registrarChildNameservers": "Die untergeordneten Nameserver einer Domain verwalten",
+      "registrarDnsManagement": "Die DNS-Verwaltung von Domains ein- und ausschalten",
+      "registrarDnssec": "Die DNSSEC-Einträge einer Domain verwalten",
+      "registrarDomainList": "Die beim Registrar gehaltenen Domains für den Import auflisten",
+      "registrarEmailForwarding": "Die E-Mail-Weiterleitung für Domains verwalten",
+      "registrarOperations": "Domains registrieren, verlängern und übertragen",
+      "registrarRestore": "Eine Domain aus der Löschfrist wiederherstellen",
+      "registrarSuggestions": "Domainnamen vorschlagen",
+      "registrarWhois": "Den WHOIS-Eintrag einer Domain abfragen",
+      "storedCredentials": "Gespeicherte Karten und Zahlungskonten belasten",
+      "tax": "Die Steuer einer Rechnung berechnen",
+      "virtualServer": "Virtuelle Server anlegen und verwalten",
+      "virtualServerBackups": "Sicherungen virtueller Server verwalten",
+      "virtualServerConsole": "Eine Konsole zu einem virtuellen Server öffnen",
+      "virtualServerFirewall": "Die Firewall-Regeln virtueller Server verwalten",
+      "virtualServerList": "Die virtuellen Server einer Plattform auflisten",
+      "virtualServerSnapshots": "Snapshots virtueller Server verwalten"
     }
   },
   "restartBanner": {

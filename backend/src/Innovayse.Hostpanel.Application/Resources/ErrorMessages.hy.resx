@@ -411,6 +411,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց փոխել հոսթինգի փաթեթը։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
+<data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Չհաջողվեց սերվերից ստանալ հոստինգի փաթեթների ցանկը։ Կրկին փորձեք կամ մուտքագրեք փաթեթի անունը ձեռքով։</value>
+  </data>
 <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց կարդալ հոսթինգի հաշիվը կառավարման վահանակից։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
@@ -1656,6 +1659,12 @@
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Կառավարման վահանակը մերժեց պահված մուտքի տվյալները։</value>
+  </data>
+  <data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
+    <value>Սերվերը ժամանակին չպատասխանեց։ Ստուգեք, որ վահանակը աշխատում է և չի արգելափակված firewall-ով։</value>
+  </data>
+  <data name="SERVER_CONNECTION_TLS_FAILED" xml:space="preserve">
+    <value>Սերվերի հետ պաշտպանված կապը չհաջողվեց։ Ստուգեք վահանակի վկայականը կամ թույլատրեք նրա ինքնաստորագրված վկայականը սերվերի կարգավորումներում։</value>
   </data>
   <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
     <value>Մանիֆեստի sshAgentProfile-ը պետք է լինի պրոֆիլի նույնացուցիչ՝ փոքրատառ բառեր՝ կապված մեկական գծիկով, առավելագույնը 32 նիշ, և չպետք է լինի generic-linux։</value>

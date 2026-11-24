@@ -2,7 +2,7 @@
  * Pure helpers of the servers screens: a server's last known state, how full it is, how its account usage reads and the facts of its card.
  */
 import { ServerState, ServersGroupState } from '@/types/server'
-import type { ServerDto } from '@/types/server'
+import type { ServerDto, TestConnectionResultDto } from '@/types/server'
 import { EMPTY_VALUE, joinParts } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { formatPlainAmount } from '@/lib/money'
@@ -108,7 +108,7 @@ export const summarizeServers = (servers: ServerStateSource[]): ServersConnectio
  * @param result - What the test reported: the account count and the version, each null when the panel gave none.
  * @returns For example "Online · 15 accounts · 7.4.2"; an unknown count or version is left out rather than written as zero or blank.
  */
-export const serverOnlineMessage = (result: { accountsCount: number | null; version: string | null }): string =>
+export const serverOnlineMessage = (result: Pick<TestConnectionResultDto, 'accountsCount' | 'version'>): string =>
   joinParts([
     translate('servers.servers.online'),
     result.accountsCount === null ? null : translate('servers.servers.accountsCount', { count: result.accountsCount }),

@@ -15,17 +15,11 @@ internal static class PluginHostAssemblies
     /// <summary>The one namespace under <see cref="HostPrefix"/> that belongs to plugins; no host assembly may be named under it.</summary>
     private const string PluginNamespacePrefix = "Innovayse.Hostpanel.Plugins.";
 
-    /// <summary>The former name of the plugin SDK, which a plugin package may still not ship.</summary>
-    private const string FormerSdkName = "Innovayse.SDK";
-
     /// <summary>
     /// How the host names its own assemblies, handed to every assembly name check. The one place these three values are
     /// written; the architecture test of the plugin namespace reads <see cref="Options"/> too.
     /// </summary>
-    public static PluginAssemblyOptions Options { get; } = new(HostPrefix, PluginNamespacePrefix)
-    {
-        ExtraReservedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { FormerSdkName },
-    };
+    public static PluginAssemblyOptions Options { get; } = new(HostPrefix, PluginNamespacePrefix);
 
     /// <summary>The simple names of the runtime's trusted platform assemblies of the running process, compared ignoring case.</summary>
     private static readonly Lazy<HashSet<string>> PlatformAssemblies = new(LoadPlatformAssemblies);

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The host no longer special cases the plugin SDK's former package name `Innovayse.SDK` (#1437). Only `Hostpanel.Sdk` is reserved as the SDK assembly, since every plugin uses it now.
 - SSH key agent: the jail sections and extras are no longer built into the agent (#1425). The `generic-linux` profile sets `jail_sections = basicshell,extendedshell,editors,netutils,terminfo` and the CWP profile keeps its own sections and extras; an enrolment with no `jail_sections` is refused with `internal_error`. On a RHEL or AlmaLinux server where SELinux is enforcing, `ensure-website` is refused with `website_failed` and changes nothing until SELinux labelling is supported; set SELinux to permissive or serve the site by hand.
 
 ### Security

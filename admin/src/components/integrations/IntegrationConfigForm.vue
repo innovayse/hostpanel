@@ -237,6 +237,7 @@ const handleSave = (): void => {
         v-if="integration.isPlugin"
         :name="integration.name"
         :icon-url="integration.iconUrl"
+        decorative
         data-testid="integration-plugin-avatar"
       />
       <UiStack v-else :align="UiAlignItems.Center" :justify="UiJustify.Center" class="h-10 w-10 shrink-0 rounded-control p-2" :class="meta?.color ?? 'bg-text-muted'">

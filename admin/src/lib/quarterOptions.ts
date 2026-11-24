@@ -5,6 +5,7 @@
  * `Q4 · Oct–Dec` under its year heading; once picked, the trigger reads `Q4 2026 · Oct–Dec` on one
  * line. The month names are short and come from `Intl` in the reader's language.
  */
+import { PART_SEPARATOR } from '@/lib/format'
 import type { UiSelectOption } from '@/utils/ui/select'
 
 /** Number of quarters in a year. */
@@ -15,9 +16,6 @@ const MONTHS_PER_QUARTER = 3
 
 /** Prefix of a quarter's number. */
 const QUARTER_PREFIX = 'Q'
-
-/** Separates the quarter from its months. */
-const PART_SEPARATOR = ' · '
 
 /** Joins the first and the last month of a quarter. */
 const MONTH_RANGE_SEPARATOR = '–'

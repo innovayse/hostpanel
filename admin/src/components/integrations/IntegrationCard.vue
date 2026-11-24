@@ -66,6 +66,7 @@ const description = computed<string | undefined>(() => props.integration?.descri
             :name="integration.name"
             :icon-url="integration.iconUrl"
             :size="UiSize.Lg"
+            decorative
             data-testid="integration-plugin-avatar"
           />
           <UiStack v-else :align="UiAlignItems.Center" :justify="UiJustify.Center" class="h-12 w-12 rounded-control p-2.5" :class="meta?.color ?? 'bg-text-muted'">

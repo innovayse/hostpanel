@@ -51,6 +51,21 @@ export const ServerState = {
 /** One of the {@link ServerState} values. */
 export type ServerState = (typeof ServerState)[keyof typeof ServerState]
 
+/** Closed set of the states a group of servers stands in together, shown where one badge stands for several servers. */
+export const ServersGroupState = {
+  /** At least one server is online and none is offline. */
+  Online: 'online',
+  /** Some servers are online and some are offline. */
+  Partial: 'partial',
+  /** Every tested server is offline. */
+  Offline: 'offline',
+  /** No server has been tested. */
+  Untested: 'untested',
+} as const
+
+/** One of the {@link ServersGroupState} values. */
+export type ServersGroupState = (typeof ServersGroupState)[keyof typeof ServersGroupState]
+
 /** Where and how a server's API is reached. */
 export interface ServerEndpoint {
   /** Hostname or IP used for API access. */

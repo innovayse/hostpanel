@@ -98,7 +98,8 @@
     "deleteServer": "Eliminar servidor",
     "deleteGroup": "Eliminar grupo",
     "connectionFailed": "Conexión fallida",
-    "onlineDetails": "En línea · {accounts} cuentas · {version}",
+    "accountsCount": "{count} cuentas",
+    "partiallyOnline": "Parcialmente en línea",
     "deleteServerMessage": "¿Eliminar \"{name}\"? Esto no se puede deshacer.",
     "deleteGroupMessage": "¿Eliminar el grupo \"{name}\"? Los servidores en él se desasignarán."
   },

@@ -98,7 +98,8 @@
     "deleteServer": "Delete Server",
     "deleteGroup": "Delete Group",
     "connectionFailed": "Connection failed",
-    "onlineDetails": "Online · {accounts} accounts · {version}",
+    "accountsCount": "{count} accounts",
+    "partiallyOnline": "Partially online",
     "deleteServerMessage": "Delete \"{name}\"? This cannot be undone.",
     "deleteGroupMessage": "Delete group \"{name}\"? Servers in it will be unassigned."
   },

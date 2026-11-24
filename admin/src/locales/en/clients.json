@@ -328,6 +328,7 @@
     "newPassword": "New Password",
     "enterNewPassword": "Enter new password",
     "enterTheNewHostingPackage": "Enter the new hosting package name.",
+    "chooseTheNewHostingPackage": "Choose the new hosting package.",
     "packageName": "Package Name",
     "eGStarterPlan": "e.g. starter_plan",
     "suspendService": "Suspend Service",

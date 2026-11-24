@@ -535,6 +535,7 @@ describe('ClientServiceDetailView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="client-service-new-package"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="client-service-package-prompt"]').text()).toBe('Choose the new hosting package.')
     const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'client-service-package-select')!
     expect((select.vm.$props as { options: unknown[] }).options).toEqual([{ value: 'Starter', label: 'Starter' }, { value: 'Business', label: 'Business' }])
     select.vm.$emit('update:modelValue', 'Business')
@@ -556,6 +557,7 @@ describe('ClientServiceDetailView', () => {
 
     expect(wrapper.find('[data-testid="client-service-package-select"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="client-service-new-package"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="client-service-package-prompt"]').text()).toBe('Enter the new hosting package name.')
   })
 
   it('labels the address as assigned, not dedicated', async () => {

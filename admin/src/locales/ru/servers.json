@@ -98,7 +98,8 @@
     "deleteServer": "Удалить сервер",
     "deleteGroup": "Удалить группу",
     "connectionFailed": "Не удалось подключиться",
-    "onlineDetails": "Онлайн · аккаунтов: {accounts} · {version}",
+    "accountsCount": "аккаунтов: {count}",
+    "partiallyOnline": "Частично в сети",
     "deleteServerMessage": "Удалить «{name}»? Это действие нельзя отменить.",
     "deleteGroupMessage": "Удалить группу «{name}»? Серверы в ней будут откреплены."
   },

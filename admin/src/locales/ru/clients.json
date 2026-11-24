@@ -329,6 +329,7 @@
     "newPassword": "Новый пароль",
     "enterNewPassword": "Введите новый пароль",
     "enterTheNewHostingPackage": "Введите название нового хостинг-пакета.",
+    "chooseTheNewHostingPackage": "Выберите новый хостинг-пакет.",
     "packageName": "Название пакета",
     "eGStarterPlan": "например, starter_plan",
     "suspendService": "Приостановить услугу",

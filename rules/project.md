@@ -235,7 +235,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Hostpanel.Sdk.dll` into the load path: `Assembly.LoadFrom` over it would give the process two distinct
   `IPaymentPlugin` types with the same name, after which every cast in `PluginActivator` fails. Hosting panel plugins such as the
   Control Web Panel one are installed the same way, and a newly installed plugin is loaded at the next start.
-- **Plugin assembly names.** `PluginAssemblyNames` (the plugin packaging package, "Plugin package checks"; the host's names go in as a `PluginAssemblyOptions`, written once in `Infrastructure/Plugins/PluginHostAssemblies.Options` and used by every caller) reserves `Innovayse.Hostpanel.`, `System.`, `Microsoft.`, the SDK (`Hostpanel.Sdk`, and its former name `Innovayse.SDK`, which a plugin still may not ship) and every
+- **Plugin assembly names.** `PluginAssemblyNames` (the plugin packaging package, "Plugin package checks"; the host's names go in as a `PluginAssemblyOptions`, written once in `Infrastructure/Plugins/PluginHostAssemblies.Options` and used by every caller) reserves `Innovayse.Hostpanel.`, `System.`, `Microsoft.`, the SDK (`Hostpanel.Sdk`) and every
   trusted platform assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`), with one carve-out: `Innovayse.Hostpanel.Plugins.<Name>` is the
   plugin namespace and official plugins are named that way (`Innovayse.Hostpanel.Plugins.Stripe.dll`). The trailing dot is the
   boundary, so `Innovayse.Hostpanel.PluginsX` and `Innovayse.Hostpanel.Plugins` stay reserved. No host assembly or project may

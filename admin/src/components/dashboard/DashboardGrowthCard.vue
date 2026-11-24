@@ -14,6 +14,7 @@ import { formatDayCaption } from '@/lib/dashboardOverview'
 import { PANEL_CHARTS, PanelChart } from '@/lib/panelCharts'
 import type { DashboardDailyCount } from '@/types/dashboardcharts'
 import type { UiChartSeries } from '@/utils/ui/chart'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 
 /** Props for DashboardGrowthCard. */
@@ -61,7 +62,7 @@ const clientsTotal = computed<number>(() => sumOf(props.newClients))
 <template>
   <DashboardChartCard :title="t('dashboard.growth.title')" :note="t('dashboard.growth.note')" data-testid="dashboard-growth">
     <template #aside>
-      <UiStack direction="row" align="center" gap="md">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md">
         <UiMetric :value="ordersTotal" :label="t('dashboard.growth.orders')" :size="UiSize.Sm" :loading="waiting" data-testid="dashboard-growth-orders" />
         <UiMetric :value="clientsTotal" :label="t('dashboard.growth.clients')" :size="UiSize.Sm" :loading="waiting" data-testid="dashboard-growth-clients" />
       </UiStack>

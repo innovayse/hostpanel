@@ -6,7 +6,7 @@
  */
 import type { InjectionKey, Ref } from 'vue'
 import type { RowSelection } from '@/composables/useRowSelection'
-import type { UiAlign, UiCardRole, UiColumnSize, UiHideBelow, UiSortDirection } from '@/utils/ui/table'
+import type { UiAlign, UiCardRole, UiColumnKind, UiColumnSize, UiColumnWidth, UiHideBelow, UiSortDirection } from '@/utils/ui/table'
 
 /** Closed set of table paddings. */
 export const UiTableDensity = {
@@ -29,6 +29,10 @@ export interface UiTableColumn {
   actions?: boolean
   /** Width the column takes; `Auto` when omitted. */
   size?: UiColumnSize
+  /** Kind of data the column holds; it decides the width when `size` is omitted (free text shares the remaining width, a status, date or id shrinks). */
+  kind?: UiColumnKind
+  /** Width of a `Fixed` column. */
+  width?: UiColumnWidth
   /** Breakpoint below which the column is hidden. */
   hideBelow?: UiHideBelow
   /** The column is the checkbox column of a selectable table. */
@@ -49,7 +53,7 @@ export interface UiTableColumn {
 export interface UiTableContext {
   /** Padding applied to header and data cells. */
   density: UiTableDensity
-  /** True below `sm`, where the table is drawn as a list of cards (`UiCardList`) and its parts draw no table markup. */
+  /** True below `md`, where the table is drawn as a list of cards (`UiCardList`) and its parts draw no table markup. */
   phone?: boolean
   /** True while the table draws placeholder rows: the body and foot groups render nothing then. */
   loading?: boolean

@@ -5,7 +5,7 @@
  */
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema, SkeletonStat } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The four balance tiles. */
 export const CLIENT_TRANSACTIONS_STATS: readonly SkeletonStat[] = [
@@ -27,7 +27,7 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'date', label: 'shared.date' },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'paymentMethod', label: 'shared.paymentMethod' },
       { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
       { key: 'amountIn', label: 'shared.amountIn', numeric: true },

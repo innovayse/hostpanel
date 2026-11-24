@@ -141,7 +141,7 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var server = Server.Create(new ServerDetails(
-            $"no-agent-{Guid.NewGuid():N}", "no-agent.example.test", null, null, ServerModules.Cwp7, "root", new ServerCredentials(null, null, "hash"), true, null,
+            $"no-agent-{Guid.NewGuid():N}", "no-agent.example.test", null, null, ServerModules.Linux, "root", new ServerCredentials(null, null, "hash"), true, null,
             false, false, 0m, null, null, ServerNameServers.None, false), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);

@@ -99,4 +99,17 @@ public interface IProvisioningProvider
     /// </exception>
     /// <returns>A task that completes when the package is changed.</returns>
     public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct);
+
+    /// <summary>
+    /// Reads what the panel reports about one hosting account: whether it is active or suspended, its domain, its package and
+    /// the IP address it is served on. Read only: nothing is changed on the panel.
+    /// </summary>
+    /// <param name="req">The service and the account reference.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <exception cref="Innovayse.Hostpanel.Domain.DomainRuleException">
+    /// Thrown with <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the provider cannot read one account, with
+    /// <c>PANEL_ACCOUNT_NOT_FOUND</c> when the panel holds no such account and with the panel's own refusal code when it refuses.
+    /// </exception>
+    /// <returns>The state the panel reports; a field the panel does not report is <see langword="null"/>.</returns>
+    public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct);
 }

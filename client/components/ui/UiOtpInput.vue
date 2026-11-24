@@ -4,7 +4,7 @@
       {{ label }}
     </p>
 
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 sm:gap-3">
       <input
         v-for="(_, i) in digits"
         :key="i"
@@ -101,7 +101,7 @@ const setInputRef = (element: unknown, index: number): void => {
  * @returns The cell's classes for its current state.
  */
 const cellClasses = (index: number): string => {
-  const base = 'w-12 h-14 text-center text-xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:scale-105 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500'
+  const base = 'w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:scale-105 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500'
   if (props.error) {
     return `${base} bg-white dark:bg-white/5 border-red-400 dark:border-red-500 focus-visible:ring-red-500/50 shadow-[0_0_0_3px] shadow-red-500/20`
   }

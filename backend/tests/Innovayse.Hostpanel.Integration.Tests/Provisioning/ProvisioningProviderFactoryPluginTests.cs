@@ -101,6 +101,18 @@ public sealed class ProvisioningProviderFactoryPluginTests(IntegrationTestFactor
         supported.Should().BeEquivalentTo(ProvisioningProviderFactory.BuiltModules);
     }
 
+    /// <summary>The plain Linux module is never supported for orders, with or without an active plugin.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task SupportedModules_NeverIncludeTheLinuxModuleAsync()
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
+
+        var supported = await harness.Factory().SupportedModulesAsync(CancellationToken.None);
+
+        supported.Should().NotContain(ServerModules.Linux);
+    }
+
     /// <summary>A module both the host and an active plugin serve is listed once.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

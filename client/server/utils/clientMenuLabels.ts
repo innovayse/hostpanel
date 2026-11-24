@@ -50,6 +50,13 @@ export const CLIENT_MENU_MESSAGES: Readonly<Record<AppLocale, ClientMenuMessages
     [ClientMenuIcon.Domains]: 'Mis dominios',
     [ClientMenuIcon.Invoices]: 'Facturas',
     [ClientMenuIcon.Support]: 'Soporte'
+  },
+  [AppLocale.Fr]: {
+    [ClientMenuIcon.Dashboard]: 'Tableau de bord',
+    [ClientMenuIcon.Services]: 'Mes services',
+    [ClientMenuIcon.Domains]: 'Mes domaines',
+    [ClientMenuIcon.Invoices]: 'Factures',
+    [ClientMenuIcon.Support]: 'Support'
   }
 }
 

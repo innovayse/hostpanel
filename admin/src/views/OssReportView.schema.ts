@@ -5,7 +5,7 @@
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -17,12 +17,12 @@ const schema: ReportSkeletonSchema = {
   table: {
     columns: [
       { key: 'countryName', label: 'reports.oss.countryName', size: UiColumnSize.Grow },
-      { key: 'countryCode', label: 'reports.oss.countryCode' },
+      { key: 'countryCode', label: 'reports.oss.countryCode', kind: UiColumnKind.Id },
       { key: 'vatRate', label: 'reports.oss.vatRate', align: UiAlign.Right },
       { key: 'numberOfInvoices', label: 'reports.oss.numberOfInvoices', align: UiAlign.Right },
       { key: 'totalExclVat', label: 'reports.oss.totalValueInvoicedExclVat', align: UiAlign.Right },
       { key: 'totalVatCollected', label: 'reports.oss.totalVatCollected', align: UiAlign.Right },
-      { key: 'currency', label: 'shared.currency' },
+      { key: 'currency', label: 'shared.currency', kind: UiColumnKind.Id },
     ],
   },
   emptyText: 'shared.noDataFoundForThis2',

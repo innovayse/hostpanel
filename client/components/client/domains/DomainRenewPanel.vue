@@ -1,9 +1,9 @@
 <template>
   <UiCard v-if="renewResult" data-testid="domain-renew-success">
     <UiEmptyState :icon="CheckCircle" :title="$t('client.domains.renewOrderPlaced')" :description="$t('client.domains.renewOrderDesc')">
-      <UiButton :to="clientInvoicePath(renewResult.invoiceId)" data-testid="domain-renew-pay">
+      <UiButton variant="primary" :to="clientInvoicePath(renewResult.invoiceId)" data-testid="domain-renew-pay">
         <CreditCard :size="14" :stroke-width="2" class="mr-2" />
-        {{ $t('client.domains.renewPayInvoice') }}
+        {{ $t('common.pay') }}
       </UiButton>
     </UiEmptyState>
   </UiCard>
@@ -12,8 +12,8 @@
     <UiCardHeader :title="$t('client.domains.tabRenew')" :icon="RefreshCw" />
 
     <UiStack direction="row" align="center" justify="between" class="pb-4 border-b border-gray-100 dark:border-white/10 mb-5">
-      <UiStack gap="none">
-        <UiText weight="semibold">{{ fullName }}</UiText>
+      <UiStack gap="none" class="min-w-0">
+        <UiText weight="semibold" class="break-all">{{ fullName }}</UiText>
         <UiText size="xs" tone="muted">{{ $t('client.domains.renewExpiry') }} {{ formatDate(domain.expiresAt) }}</UiText>
       </UiStack>
       <UiBadge :variant="standing.tone" size="sm">{{ standing.label }}</UiBadge>
@@ -50,9 +50,9 @@
       />
 
       <template #actions>
-        <UiButton type="submit" :loading="renewSaving" :disabled="!payMethod" full-width data-testid="domain-renew-submit">
+        <UiButton variant="primary" type="submit" :loading="renewSaving" :disabled="!payMethod" full-width data-testid="domain-renew-submit">
           <RefreshCw v-if="!renewSaving" :size="14" :stroke-width="2" class="mr-1.5" />
-          {{ renewSaving ? $t('client.domains.renewPlacing') : $t('client.domains.renewBtn') }}
+          {{ $t('client.domains.tabRenew') }}
         </UiButton>
       </template>
     </UiForm>

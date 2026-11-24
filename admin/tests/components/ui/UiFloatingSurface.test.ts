@@ -101,4 +101,13 @@ describe('UiFloatingSurface as a bottom sheet', () => {
     expect(wrapper.get('[data-testid="mode"]').text()).toBe('true')
     expect(bound).toBe(wrapper.get('[data-testid="drawer-body"] > div').element)
   })
+
+describe('UiFloatingSurface height', () => {
+  it('keeps a tall popover inside the screen: it is as tall as the free room at most and scrolls inside itself', () => {
+    stubPhone(false)
+    const panel = mountSurface().get('[data-testid="surface-content"]')
+
+    expect(panel.classes()).toEqual(expect.arrayContaining(['max-h-[var(--fp-max-h,none)]', 'overflow-y-auto']))
+  })
+})
 })

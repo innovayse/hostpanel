@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiStack from '~/components/ui/UiStack.vue'
-import { UiCrossAlign, UiDirection, UiGap, UiJustify } from '~/utils/ui/enums'
+import { UiCrossAlign, UiDirection, UiGap, UiJustify, UiStackTag } from '~/utils/ui/enums'
 
 describe('UiStack', () => {
   it('is a vertical flex column with the default gap and renders its slot', () => {
@@ -54,6 +54,6 @@ describe('UiStack', () => {
   })
 
   it('renders the requested tag', () => {
-    expect(mountWithKit(UiStack, { props: { as: 'ul' } }).element.tagName).toBe('UL')
+    expect(mountWithKit(UiStack, { props: { as: UiStackTag.Ul } }).element.tagName).toBe('UL')
   })
 })

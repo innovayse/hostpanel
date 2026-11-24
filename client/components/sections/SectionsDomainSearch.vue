@@ -2,7 +2,7 @@
   <UiSearchBar
     v-model="query"
     :placeholder="$t('hero.search.placeholder')"
-    :button-label="$t('domains.search')"
+    :button-label="$t('ui.searchButton')"
     :size="size"
     data-testid="sections-domain-search"
     @search="search"

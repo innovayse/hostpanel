@@ -5,13 +5,12 @@
     "subtitle": "Stay up to date with the latest news, updates and special offers.",
     "allMonths": "All",
     "filterLabel": "Filter by month",
-    "readMore": "Continue reading",
+    "readMore": "Read more",
     "empty": "No announcements at this time.",
     "signInRequired": "Sign in to read announcements",
     "signInRequiredDesc": "Announcements are shown to signed-in customers.",
-    "signIn": "Sign in",
     "errorDesc": "Please try again later.",
-    "backToList": "Back to Announcements",
+    "backToList": "Back to announcements",
     "published": "Published"
   }
 }

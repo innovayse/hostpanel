@@ -6,7 +6,7 @@
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiAlign, UiColumnSize } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -17,10 +17,10 @@ const schema: ReportSkeletonSchema = {
   summary: true,
   table: {
     columns: [
-      { key: 'id', label: 'shared.invoiceId', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.invoiceId', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName', size: UiColumnSize.Grow },
-      { key: 'invoiceDate', label: 'shared.invoiceDate' },
-      { key: 'datePaid', label: 'shared.datePaid' },
+      { key: 'invoiceDate', label: 'shared.invoiceDate', kind: UiColumnKind.Date },
+      { key: 'datePaid', label: 'shared.datePaid', kind: UiColumnKind.Date },
       { key: 'currency', label: 'shared.currency', size: UiColumnSize.Compact },
       { key: 'subTotal', label: 'shared.subTotal2', align: UiAlign.Right },
       { key: 'tax', label: 'reports.salesTax.tax', align: UiAlign.Right },

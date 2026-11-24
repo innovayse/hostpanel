@@ -21,6 +21,19 @@ public sealed class ServiceWebsite : HostingResource
     public string? PhpVersion { get; private set; }
 
     /// <summary>
+    /// Gets the absolute path of the PHP command line binary that matches <see cref="PhpVersion"/> on the server, or
+    /// <see langword="null"/> when the website runs no PHP, the server did not report the path, or the website was set
+    /// up before the host kept it.
+    /// </summary>
+    public string? PhpCliPath { get; private set; }
+
+    /// <summary>
+    /// Gets whether the website runs PHP but its CLI path is not known yet, so it is asked of the server once more the
+    /// next time the website is ensured.
+    /// </summary>
+    public bool NeedsPhpCliPath => PhpVersion is not null && PhpCliPath is null;
+
+    /// <summary>
     /// Gets whether the document root is a symbolic link the plugin switches on its deploys, so the server applies the
     /// settings that allow a link as a document root.
     /// </summary>
@@ -97,14 +110,25 @@ public sealed class ServiceWebsite : HostingResource
     /// <param name="documentRoot">The directory it serves files from.</param>
     /// <param name="phpVersion">The PHP version, or <see langword="null"/> for none.</param>
     /// <param name="documentRootMayBeLink">Whether the document root is a link the plugin switches on its deploys.</param>
-    /// <exception cref="ArgumentException">The document root is blank, or <paramref name="phpVersion"/> is set and blank.</exception>
+    /// <param name="phpCliPath">
+    /// The PHP CLI path the server reported for <paramref name="phpVersion"/>, or <see langword="null"/> when it reported
+    /// none; ignored, and so cleared, when the website runs no PHP.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// The document root is blank, or <paramref name="phpVersion"/> or <paramref name="phpCliPath"/> is set and blank.
+    /// </exception>
     /// <exception cref="InvalidOperationException">Thrown when the website is not active.</exception>
-    public void Respecify(string documentRoot, string? phpVersion, bool documentRootMayBeLink)
+    public void Respecify(string documentRoot, string? phpVersion, bool documentRootMayBeLink, string? phpCliPath)
     {
         EnsureText(documentRoot, nameof(documentRoot));
         if (phpVersion is not null)
         {
             EnsureText(phpVersion, nameof(phpVersion));
+        }
+
+        if (phpCliPath is not null)
+        {
+            EnsureText(phpCliPath, nameof(phpCliPath));
         }
 
         if (State is not HostingResourceState.Active)
@@ -114,6 +138,7 @@ public sealed class ServiceWebsite : HostingResource
 
         DocumentRoot = documentRoot.Trim();
         PhpVersion = phpVersion?.Trim();
+        PhpCliPath = phpVersion is null ? null : phpCliPath?.Trim();
         DocumentRootMayBeLink = documentRootMayBeLink;
     }
 }

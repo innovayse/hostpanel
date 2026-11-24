@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiAlign, UiColumnSize } from '@/utils/ui/table'
+import { UiAlign, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The VAT rates list. */
 const schema: ListSkeletonSchema = {
@@ -18,9 +18,9 @@ const schema: ListSkeletonSchema = {
     pagination: true,
     columns: [
       { key: 'country', label: 'vatRates.table.country', align: UiAlign.Left, size: UiColumnSize.Grow },
-      { key: 'kind', label: 'vatRates.table.kind', align: UiAlign.Left, size: UiColumnSize.Compact },
+      { key: 'kind', label: 'vatRates.table.kind', align: UiAlign.Left, kind: UiColumnKind.Status },
       { key: 'rate', label: 'vatRates.table.rate', numeric: true, size: UiColumnSize.Compact },
-      { key: 'validFrom', label: 'vatRates.table.validFrom', align: UiAlign.Left, size: UiColumnSize.Compact },
+      { key: 'validFrom', label: 'vatRates.table.validFrom', align: UiAlign.Left, kind: UiColumnKind.Date },
       { key: 'actions', label: 'vatRates.table.actions', actions: true },
     ],
   },

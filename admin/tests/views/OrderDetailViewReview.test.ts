@@ -11,6 +11,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { callsOf, json, problem } from '../helpers/fetch'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** An order held for review, with its fraud score and reasons. */
 const held = {
@@ -130,6 +131,6 @@ describe('OrderDetailView fraud review', () => {
     await wrapper.get('[data-testid="order-fraud-approve"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('The order is not held for review.')
+    expect(toastMessages().join(' ')).toContain('The order is not held for review.')
   })
 })

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  HEADER_CONTROL, HEADER_FOCUS, HEADER_ICON_ROW, HEADER_MENU_ROW, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_NAV_ITEM, HEADER_PRIMARY,
+  HEADER_CONTROL, HEADER_FOCUS, HEADER_ICON_ROW, HEADER_MENU_ROW, HEADER_NAV_ACTIVE, HEADER_NAV_IDLE, HEADER_NAV_ITEM,
 } from '~/utils/headerControl'
 
 describe('header control classes', () => {
@@ -11,15 +11,13 @@ describe('header control classes', () => {
     expect(HEADER_CONTROL).toContain('h-10')
     expect(HEADER_CONTROL).toContain('rounded-lg')
     expect(HEADER_CONTROL).toContain('border-classic-border')
-    expect(HEADER_PRIMARY).toContain('h-10')
-    expect(HEADER_PRIMARY).toContain('rounded-lg')
     expect(HEADER_NAV_ITEM).toContain('h-10')
   })
 
   it('draws a keyboard focus ring in light and dark', () => {
     expect(HEADER_FOCUS).toContain('focus-visible:ring-classic-brand')
     expect(HEADER_FOCUS).toContain('dark:focus-visible:ring-classic-brand')
-    for (const classes of [HEADER_CONTROL, HEADER_NAV_ITEM, HEADER_PRIMARY, HEADER_MENU_ROW, HEADER_ICON_ROW]) {
+    for (const classes of [HEADER_CONTROL, HEADER_NAV_ITEM, HEADER_MENU_ROW, HEADER_ICON_ROW]) {
       expect(classes).toContain(HEADER_FOCUS)
     }
   })
@@ -29,7 +27,5 @@ describe('header control classes', () => {
     expect(HEADER_NAV_IDLE).toContain('hover:bg-classic-surface-2')
     expect(HEADER_NAV_ACTIVE).toContain('bg-classic-fill')
     expect(HEADER_NAV_ACTIVE).toContain('text-classic-on-brand')
-    expect(HEADER_PRIMARY).toContain('hover:bg-classic-fill-hover')
-    expect(HEADER_PRIMARY).toContain('active:bg-classic-fill-pressed')
   })
 })

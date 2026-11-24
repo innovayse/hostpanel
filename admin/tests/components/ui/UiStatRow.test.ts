@@ -88,3 +88,23 @@ describe('UiStatRow', () => {
     expect(wrapper.find('[data-testid="ui-stat-row-active"] [data-testid="ui-skeleton-bar"]').exists()).toBe(true)
   })
 })
+
+describe('UiStatRow inline figures', () => {
+  it('fills the row with as many columns as its own width holds, not a fixed count', () => {
+    const classes = mountRow({ stats, variant: 'inline', columns: 6 }).get('[data-testid="ui-stat-row"]').classes()
+
+    expect(classes).toContain('grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]')
+    expect(classes).not.toContain('lg:grid-cols-6')
+    expect(classes).not.toContain('grid-cols-2')
+  })
+
+  it('wraps a long value and keeps its full text as a title instead of cutting it', () => {
+    const email = 'a.very.long.address@example.test'
+    const wrapper = mountRow({ stats, variant: 'inline', figures: { clients: { value: email } } })
+    const value = wrapper.get('[data-testid="ui-stat-row-clients"] [title]')
+
+    expect(value.attributes('title')).toBe(email)
+    expect(value.classes()).toContain('break-words')
+    expect(value.classes()).not.toContain('truncate')
+  })
+})

@@ -8,7 +8,7 @@
  */
 import { SkeletonKind, SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, SkeletonDetailCard, SkeletonTable } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** Closed set of the keys of the cards, the suffixes of their `card-<key>` slots. */
 export const SummaryCard = {
@@ -174,13 +174,13 @@ const THIRD_COLUMN: readonly SkeletonDetailCard[] = [
 export const SUMMARY_SERVICES_TABLE: SkeletonTable = {
   rows: 3,
   columns: [
-    { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+    { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
     { key: 'product', label: 'shared.productService', size: UiColumnSize.Grow },
     { key: 'domain', label: 'shared.domain' },
     { key: 'price', label: 'shared.price', numeric: true },
     { key: 'billingCycle', label: 'shared.billingCycle' },
-    { key: 'nextDue', label: 'clients.clientSummary.nextDue' },
-    { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+    { key: 'nextDue', label: 'clients.clientSummary.nextDue', kind: UiColumnKind.Date },
+    { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }
@@ -189,11 +189,11 @@ export const SUMMARY_SERVICES_TABLE: SkeletonTable = {
 export const SUMMARY_DOMAINS_TABLE: SkeletonTable = {
   rows: 3,
   columns: [
-    { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+    { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
     { key: 'name', label: 'shared.domainName', size: UiColumnSize.Grow },
     { key: 'registrar', label: 'shared.registrar' },
-    { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
-    { key: 'expiresAt', label: 'shared.expiryDate' },
+    { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
+    { key: 'expiresAt', label: 'shared.expiryDate', kind: UiColumnKind.Date },
     { key: 'autoRenew', label: 'shared.autoRenew', size: UiColumnSize.Compact },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
@@ -203,12 +203,12 @@ export const SUMMARY_DOMAINS_TABLE: SkeletonTable = {
 export const SUMMARY_QUOTES_TABLE: SkeletonTable = {
   rows: 3,
   columns: [
-    { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+    { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
     { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
-    { key: 'dateCreated', label: 'clients.clientSummary.createDate' },
-    { key: 'validUntil', label: 'shared.validUntil' },
+    { key: 'dateCreated', label: 'clients.clientSummary.createDate', kind: UiColumnKind.Date },
+    { key: 'validUntil', label: 'shared.validUntil', kind: UiColumnKind.Date },
     { key: 'total', label: 'shared.total', numeric: true },
-    { key: 'stage', label: 'shared.stage', size: UiColumnSize.Compact },
+    { key: 'stage', label: 'shared.stage', kind: UiColumnKind.Status },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }

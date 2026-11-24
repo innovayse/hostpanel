@@ -1,0 +1,90 @@
+{
+  "dashboard": "Panel",
+  "clients": "Clientes",
+  "clientsChildren": {
+    "view": "Ver/Buscar clientes",
+    "users": "Gestionar usuarios",
+    "groups": "Grupos",
+    "sharedHostings": "Hostings compartidos",
+    "addons": "Complementos de servicios",
+    "cancellations": "Solicitudes de cancelación",
+    "planChanges": "Cambios de plan",
+    "affiliates": "Gestionar afiliados"
+  },
+  "billing": "Facturación",
+  "billingChildren": {
+    "transactions": "Lista de transacciones",
+    "invoices": "Facturas",
+    "billableItems": "Elementos facturables",
+    "quotes": "Cotizaciones",
+    "offlineCc": "Procesamiento de tarjeta sin conexión",
+    "disputes": "Disputas",
+    "gatewayLog": "Registro de pasarela",
+    "paymentClaims": "Reclamaciones de pago",
+    "bankTransfers": "Transferencias bancarias pendientes",
+    "creditNotes": "Notas de crédito",
+    "renewals": "Renovaciones próximas"
+  },
+  "reports": "Informes",
+  "orders": "Pedidos",
+  "domains": "Dominios",
+  "support": "Soporte",
+  "supportChildren": {
+    "overview": "Resumen de soporte",
+    "tickets": "Tickets de soporte",
+    "newTicket": "Abrir nuevo ticket",
+    "predefinedReplies": "Respuestas predefinidas",
+    "announcements": "Anuncios",
+    "emailCampaigns": "Campañas de correo",
+    "downloads": "Descargas",
+    "knowledgebase": "Base de conocimientos",
+    "networkIssues": "Problemas de red"
+  },
+  "plugins": "Complementos",
+  "servers": "Servidores",
+  "integrations": "Integraciones",
+  "migration": "Migración",
+  "fraud": "Fraude",
+  "fraudChildren": {
+    "settings": "Ajustes",
+    "blockLists": "Listas de bloqueo",
+    "log": "Registro de fraude"
+  },
+  "settings": "Configuración",
+  "settingsChildren": {
+    "general": "General",
+    "products": "Productos",
+    "productBundles": "Ofertas de productos",
+    "tldPricing": "Precios de TLD",
+    "slides": "Diapositivas",
+    "emailTemplates": "Plantillas de correo",
+    "gateways": "Pasarelas de pago",
+    "currencies": "Monedas",
+    "taxRules": "Reglas fiscales",
+    "vatRates": "Tipos de IVA"
+  },
+  "storefront": "Contenido de la tienda",
+  "storefrontChildren": {
+    "testimonials": "Testimonios",
+    "partners": "Socios",
+    "projects": "Proyectos",
+    "faqs": "Preguntas frecuentes",
+    "locations": "Ubicaciones de servidores"
+  },
+  "storefrontTitles": {
+    "faqs": "Preguntas y respuestas",
+    "locations": "Ubicaciones de servidores"
+  },
+  "openTickets": "{count} ticket abierto | {count} tickets abiertos",
+  "servicesTitle": "Servicios",
+  "documentation": "Documentación",
+  "sections": {
+    "sales": "Ventas",
+    "support": "Soporte",
+    "catalog": "Catálogo",
+    "infrastructure": "Infraestructura",
+    "insights": "Análisis",
+    "addons": "Complementos",
+    "system": "Sistema"
+  }
+}

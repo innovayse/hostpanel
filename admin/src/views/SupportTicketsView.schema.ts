@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The support tickets list. */
 const schema: ListSkeletonSchema = {
@@ -24,9 +24,9 @@ const schema: ListSkeletonSchema = {
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
       { key: 'department', label: 'shared.department' },
       { key: 'requestor', label: 'support.supportTickets.requestor', cardRole: UiCardRole.Subtitle },
-      { key: 'priority', label: 'shared.priority', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, size: UiColumnSize.Compact },
-      { key: 'lastReply', label: 'shared.lastReply', size: UiColumnSize.Compact },
+      { key: 'priority', label: 'shared.priority', kind: UiColumnKind.Status },
+      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
+      { key: 'lastReply', label: 'shared.lastReply', kind: UiColumnKind.Date },
     ],
   },
 }

@@ -6,18 +6,16 @@
       "services": "Services",
       "process": "Process",
       "faq": "FAQ",
-      "login": "Sign in",
-      "start": "Get started",
       "cart": "Cart",
-      "menu": "Menu"
+      "menu": "Menu",
+      "apps": "Apps"
     },
     "hero": {
       "titleLine1": "Your whole",
       "titleLine2": "digital",
       "titleAccent": "infrastructure",
       "lead": "Domains, hosting, servers and billing in one client portal. Register a domain in minutes and manage everything from one panel.",
-      "ctaPrimary": "Check a domain",
-      "ctaSecondary": "Talk to a specialist",
+      "ctaPrimary": "Check domain",
       "statClients": "clients",
       "statUptime": "uptime",
       "statRegions": "regions"
@@ -25,7 +23,6 @@
     "domainSearch": {
       "title": "Find your domain",
       "placeholder": "example",
-      "cta": "Search",
       "available": "available",
       "taken": "taken",
       "empty": "Type a name and press Search.",
@@ -75,8 +72,6 @@
       "eyebrow": "Process",
       "title": "Four steps to go live",
       "lead": "Clear steps and a support team at every stage.",
-      "start": "Get started",
-      "talk": "Talk to a specialist",
       "note": "Not sure which plan fits? Our team will help you choose.",
       "step1Title": "Choose a plan",
       "step1Body": "Pick hosting or a server and search for the domain you want.",
@@ -94,8 +89,6 @@
     "testimonials": {
       "eyebrow": "Clients",
       "title": "What they say about us",
-      "prev": "Previous",
-      "next": "Next",
       "rating": "Rated {rating} out of 5",
       "slide": "Testimonial {current} of {total}",
       "goTo": "Show testimonial from {name}"
@@ -103,14 +96,14 @@
     "faq": {
       "title": "Frequently asked questions",
       "lead": "Quick answers about plans, domains and support.",
-      "contact": "Still have questions? Contact support",
-      "viewAll": "View all questions"
+      "contact": "Contact support",
+      "viewAll": "See all questions"
     },
     "cta": {
       "title": "Tell us about your project",
       "lead": "A consultation on choosing a domain, hosting and a server.",
       "primary": "Book a call",
-      "secondary": "See the plans"
+      "secondary": "See plans"
     },
     "footer": {
       "tagline": "Hosting, domains and servers under one roof.",
@@ -223,6 +216,10 @@
       "email": "Email",
       "phone": "Phone",
       "response": "Typical response: {time}"
+    },
+    "actions": {
+      "getStarted": "Get started",
+      "talkToSpecialist": "Talk to a specialist"
     }
   }
 }

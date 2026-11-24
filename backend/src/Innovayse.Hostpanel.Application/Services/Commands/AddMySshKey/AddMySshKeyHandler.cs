@@ -81,11 +81,13 @@ public sealed class AddMySshKeyHandler
                 : HostpanelErrorCodes.SSH_KEY_INVALID);
         }
 
-        var installed = await _installer.InstallAsync(context, cmd.Label, parsed, issuedToPluginId: null, ct);
-        if (installed.IsFailure || installed.Value is not { } key)
+        var installed = await _installer.InstallAsync(context, cmd.Label, parsed, issuedToPluginId: null, allowedFrom: [], ct);
+        if (installed.IsFailure || installed.Value is not { } installation)
         {
             return Result<SshKeyDto>.FailureCode(installed.ErrorCode ?? HostpanelErrorCodes.SSH_SERVER_UNAVAILABLE);
         }
+
+        var key = installation.Key;
 
         await _activity.RecordAsync(
             new ActivityLogEntry(

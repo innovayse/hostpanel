@@ -38,7 +38,7 @@ describe('UiGrid', () => {
   it('follows the container width instead of the screen when asked', () => {
     const classes = mount(UiGrid, { props: { columns: 2, container: true } }).classes()
 
-    expect(classes).toEqual(expect.arrayContaining(['grid-cols-1', '@3xl:grid-cols-2']))
+    expect(classes).toEqual(expect.arrayContaining(['grid-cols-1', '@lg:grid-cols-2']))
     expect(classes).not.toContain('md:grid-cols-2')
   })
 

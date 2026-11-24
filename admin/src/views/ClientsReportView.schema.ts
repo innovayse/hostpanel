@@ -7,6 +7,7 @@ import { REPORT_FIELDS_KEY } from '@/lib/reportsSchema'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
+import { UiColumnKind } from '@/utils/ui/table'
 
 /** What the clients report is made of. */
 const schema: ReportSkeletonSchema = {
@@ -19,11 +20,11 @@ const schema: ReportSkeletonSchema = {
   ],
   table: {
     columns: [
-      { key: 'id', label: 'shared.id' },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'firstName', label: 'shared.firstName' },
       { key: 'lastName', label: 'shared.lastName' },
       { key: 'email', label: 'shared.email' },
-      { key: 'status', label: 'shared.status' },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status },
     ],
     pagination: true,
   },

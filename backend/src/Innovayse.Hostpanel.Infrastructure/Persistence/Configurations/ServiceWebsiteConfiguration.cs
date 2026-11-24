@@ -15,6 +15,7 @@ public sealed class ServiceWebsiteConfiguration : IEntityTypeConfiguration<Servi
         builder.Property(x => x.Hostname).IsRequired().HasMaxLength(253);
         builder.Property(x => x.DocumentRoot).IsRequired().HasMaxLength(500);
         builder.Property(x => x.PhpVersion).HasMaxLength(16);
+        builder.Property(x => x.PhpCliPath).HasMaxLength(500);
         builder.Property(x => x.DocumentRootMayBeLink).IsRequired();
 
         // The database, not only the handler, refuses the same host name twice on one service, so two concurrent

@@ -11,6 +11,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -21,7 +22,7 @@ describe('InvoiceSummaryTab', () => {
     const wrapper = mountWithApp(InvoiceSummaryTab, { props: { invoice: invoiceFixture() } })
 
     expect(wrapper.get('[data-testid="billing-invoice-client-name"]').text()).toBe('Ada Lovelace')
-    expect(wrapper.get('[data-testid="billing-invoice-client-invoices"]').text()).toBe('(View Invoices)')
+    expect(wrapper.get('[data-testid="billing-invoice-client-invoices"]').text()).toBe('View invoices')
     expect(wrapper.get('[data-testid="billing-invoice-status"]').text()).toBe('Unpaid')
     expect(wrapper.get('[data-testid="billing-invoice-fact-balance"]').text()).toContain('60.00 USD')
   })
@@ -131,7 +132,7 @@ describe('InvoiceSummaryTab', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-summary-feedback"]').text()).toContain('Cannot cancel.')
+    expect(toastMessages().join(' ')).toContain('Cannot cancel.')
   })
 
   it('names the outstanding balance in the invoice currency in the mark paid prompt of an AMD invoice', async () => {

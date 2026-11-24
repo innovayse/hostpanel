@@ -27,12 +27,12 @@
       testid="setup-password"
       required
     />
-    <UiStack direction="row" gap="md" class="pt-2">
+    <UiStack direction="row" gap="md" wrap class="pt-2">
       <UiButton variant="subtle" full-width data-testid="setup-credentials-back" @click="emit('back')">
-        {{ $t('client.setup.back') }}
+        {{ $t('common.back') }}
       </UiButton>
-      <UiButton full-width :disabled="!canContinue" data-testid="setup-credentials-next" @click="emit('next')">
-        {{ $t('client.setup.confirmDetails') }}
+      <UiButton variant="primary" full-width :disabled="!canContinue" data-testid="setup-credentials-next" @click="emit('next')">
+        {{ $t('common.continue') }}
       </UiButton>
     </UiStack>
   </ClientServicesSetupStepCard>

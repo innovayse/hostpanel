@@ -24,7 +24,7 @@ public sealed class GetServerSshTargetTests(IntegrationTestFactory factory) : IC
         result.IsSuccess.Should().BeTrue();
         var target = result.Value!;
         target.ServerId.Should().Be(serverId);
-        target.Module.Should().Be(ServerModules.Cwp7);
+        target.Module.Should().Be(ServerModules.Linux);
         target.IsDisabled.Should().BeFalse();
         target.Agent.Should().NotBeNull();
         target.Agent!.IsEnabled.Should().BeTrue();

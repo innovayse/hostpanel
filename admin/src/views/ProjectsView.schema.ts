@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The storefront projects list. */
 const schema: ListSkeletonSchema = {
@@ -19,7 +19,7 @@ const schema: ListSkeletonSchema = {
       { key: 'cover', label: 'storefront.projects.cover', size: UiColumnSize.Grow },
       { key: 'title', label: 'storefront.projects.projectTitle' },
       { key: 'slug', label: 'storefront.projects.slug' },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

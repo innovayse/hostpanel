@@ -12,10 +12,12 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 import LocaleMenu from '@/components/layout/LocaleMenu.vue'
-import ThemeMenu from '@/components/layout/ThemeMenu.vue'
+import ThemeToggle from '@/components/layout/ThemeToggle.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiCardRadius } from '@/utils/ui/card'
+import { UiCardPadding, UiCardRadius } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for AuthShell. */
 defineProps<{
@@ -28,36 +30,36 @@ defineProps<{
 </script>
 
 <template>
-  <div class="ground flex min-h-dvh flex-col">
+  <UiStack :gap="UiGap.None" class="ground min-h-dvh">
     <slot name="banner" />
     <!-- Pinned to the top right corner, clear of the notch and the side safe areas; the card below stays centred. -->
     <UiStack
-      direction="row"
-      align="center"
-      gap="xs"
+      :direction="UiDirection.Row"
+      :align="UiAlignItems.Center"
+      :gap="UiGap.Xs"
       class="fixed right-0 top-0 z-10 pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))]"
     >
-      <ThemeMenu testid="auth-theme" />
+      <ThemeToggle testid="auth-theme" />
       <LocaleMenu testid="auth-locale" />
     </UiStack>
     <!-- Safe-area padding keeps the content clear of notches and the home indicator on a phone. -->
     <UiStack
-      align="center"
-      justify="center"
-      gap="md"
+      :align="UiAlignItems.Center"
+      :justify="UiJustify.Center"
+      :gap="UiGap.Md"
       class="flex-1 px-[max(1rem,env(safe-area-inset-left))] pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(4rem,env(safe-area-inset-top))]"
     >
-      <UiCard elevated padding="md" :radius="UiCardRadius.Panel" class="w-full max-w-sm sm:p-8">
-        <UiStack gap="lg">
-          <UiStack direction="row" align="center" gap="sm">
+      <UiCard elevated :padding="UiCardPadding.Md" :radius="UiCardRadius.Panel" class="w-full max-w-sm sm:p-8">
+        <UiStack :gap="UiGap.Lg">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
             <!-- The wordmark for the active theme: it carries the name, so no text beside it. -->
             <BrandLogo img-class="h-9 w-auto" />
           </UiStack>
-          <UiStack gap="xs">
-            <UiHeading :level="1" variant="page" class="font-display" data-testid="auth-title">
+          <UiStack :gap="UiGap.Xs">
+            <UiHeading :level="1" :variant="UiHeadingVariant.Page" class="font-display" data-testid="auth-title">
               {{ title }}
             </UiHeading>
-            <UiText v-if="subtitle !== undefined" tone="secondary" size="md">
+            <UiText v-if="subtitle !== undefined" :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
               {{ subtitle }}
             </UiText>
           </UiStack>
@@ -65,5 +67,5 @@ defineProps<{
         </UiStack>
       </UiCard>
     </UiStack>
-  </div>
+  </UiStack>
 </template>

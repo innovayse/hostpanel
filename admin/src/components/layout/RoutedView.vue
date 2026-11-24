@@ -17,7 +17,7 @@
  * - `ViewLoading`, the generic stand-in, only for a record that has no schema (see `lib/skeletonExceptions.ts`).
  *
  * On a hard load nothing is matched yet: the router is still asking the server who is signed in, and only then knows whether
- * the visitor gets the panel or the sign-in screen. Until the first navigation settles the root level draws `AppLoading`,
+ * the visitor gets the panel or the sign-in screen. Until the first navigation settles the root level draws `PageLoading`,
  * so the page is never blank; if that navigation fails it ends in the load error instead of a spinner.
  *
  * Use it wherever a layout would write `<RouterView />`.
@@ -26,7 +26,7 @@ import { computed, inject, ref, unref } from 'vue'
 import type { Component } from 'vue'
 import { RouterView, useRouter, viewDepthKey } from 'vue-router'
 import type { RouteLocationNormalized, RouteRecordNormalized } from 'vue-router'
-import AppLoading from '@/components/layout/AppLoading.vue'
+import PageLoading from '@/components/layout/PageLoading.vue'
 import ViewLoadError from '@/components/layout/ViewLoadError.vue'
 import ViewLoading from '@/components/layout/ViewLoading.vue'
 import UiSkeletonOf from '@/components/ui/UiSkeletonOf.vue'
@@ -115,7 +115,7 @@ const outletSchema = computed<SkeletonSchema | undefined>(() => pendingRecords.v
 </script>
 
 <template>
-  <AppLoading v-if="booting" />
+  <PageLoading v-if="booting" />
   <template v-else-if="loading && shell === undefined">
     <UiSkeletonOf v-if="schema" :schema="schema">
       <template #outlet>

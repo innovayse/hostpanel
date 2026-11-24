@@ -14,13 +14,14 @@
     <UiContainer data-testid="demo-banner-container">
       <UiStack direction="row" align="center" gap="none" wrap class="min-w-0 gap-x-3 gap-y-1">
         <UiBadge variant="info" class="shrink-0" data-testid="demo-banner-label">{{ $t('demo.label') }}</UiBadge>
-        <UiText v-if="resetText" as="span" size="sm" tone="inherit" :class="tone.title" data-testid="demo-banner-reset">{{ resetText }}</UiText>
-        <UiText as="span" size="sm" tone="inherit" class="min-w-0 break-words" :class="tone.body" data-testid="demo-banner-note">{{ $t('demo.note') }}</UiText>
+        <UiText v-if="resetText" :as="UiTextTag.Span" size="sm" tone="inherit" :class="tone.title" data-testid="demo-banner-reset">{{ resetText }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="min-w-0 break-words" :class="tone.body" data-testid="demo-banner-note">{{ $t('demo.note') }}</UiText>
         <UiLink
           v-if="docsUrl"
           :href="`${docsUrl}/customers/portal`"
           external
-          class="shrink-0 text-sm font-medium underline"
+          tone="inherit"
+          class="shrink-0 text-sm font-medium"
           :class="tone.title"
           data-testid="demo-banner-guide"
         >{{ $t('demo.guide') }}</UiLink>
@@ -35,7 +36,7 @@
  * left until the next data reset, and the note that data resets. Renders nothing otherwise.
  */
 import { useDemoStore } from '~/stores/demo'
-import { UiAlertVariant } from '~/utils/ui/enums'
+import { UiAlertVariant, UiTextTag } from '~/utils/ui/enums'
 import { ALERT_TONE_CLASSES } from '~/utils/ui/tones'
 
 /** The info palette the banner shares with UiAlert, applied to a full-width band. */

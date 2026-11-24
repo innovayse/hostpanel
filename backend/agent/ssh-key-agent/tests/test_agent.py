@@ -131,6 +131,86 @@ class OperationTests(AgentTestCase):
         dup = self.call(op="add", account="alice", key_id=KEY_ID_B, public_key=make_key(1))
         self.assertEqual(dup["error"], "duplicate_key")
 
+    def test_add_with_sources_writes_the_from_option_and_lists_the_key(self):
+        added = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1),
+                          **{"from": ["203.0.113.7", "198.51.100.0/24"]})
+        self.assertTrue(added["ok"], added)
+        self.assertTrue(self.authorized_keys().startswith('from="203.0.113.7,198.51.100.0/24" ssh-ed25519 '))
+        self.assertTrue(self.authorized_keys().rstrip().endswith("hostpanel:" + KEY_ID_A))
+        listed = self.call(op="list", account="alice")
+        self.assertEqual([k["key_id"] for k in listed["keys"]], [KEY_ID_A])
+        self.assertEqual(listed["unmanaged_keys"], 0)
+        self.assertTrue(self.call(op="revoke", account="alice", key_id=KEY_ID_A)["changed"])
+        self.assertNotIn(KEY_ID_A, self.authorized_keys())
+
+    def test_add_with_the_same_sources_is_idempotent_and_with_other_sources_conflicts(self):
+        sources = {"from": ["203.0.113.7"]}
+        self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **sources)
+        again = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **sources)
+        self.assertFalse(again["changed"])
+        other = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **{"from": ["203.0.113.8"]})
+        self.assertEqual(other["error"], "key_id_conflict")
+        none = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1))
+        self.assertEqual(none["error"], "key_id_conflict")
+        self.assertEqual(self.authorized_keys().count("ssh-ed25519"), 1)
+
+    def test_invalid_sources_are_refused_and_write_nothing(self):
+        bad = [[], "203.0.113.7", ["*.example.com"], ["example.com"], ["203.0.113.7", "203.0.113.7"], ["198.51.100.5/24"],
+               ["203.0.113.256"], ["010.0.0.1"], ["203.0.113.0/033"], ["::1.2.3.4"], ["fe80::1%eth0"], ['1.2.3.4"'],
+               ["!203.0.113.7"], [7], ["203.0.113.7/"], ["1.2.3.4/33"], ["2001:db8::/129"], ["203.0.113.7\n"],
+               ["10.0.0.%d" % n for n in range(17)]]
+        for sources in bad:
+            with self.subTest(sources=sources):
+                result = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **{"from": sources})
+                self.assertEqual(result["error"], "invalid_request")
+        self.assertFalse(os.path.exists(os.path.join(self.home_root, "alice", ".ssh", "authorized_keys")))
+
+    def test_valid_sources_are_accepted(self):
+        for sources in (["203.0.113.7"], ["0.0.0.0/0"], ["::/0"], ["2001:db8::1", "2001:DB8:1::/48"], ["10.0.0.%d" % n for n in range(16)]):
+            with self.subTest(sources=sources):
+                self.assertTrue(agent.is_source_list(sources))
+
+    def test_a_duplicate_key_with_sources_is_still_a_duplicate(self):
+        self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1), **{"from": ["203.0.113.7"]})
+        dup = self.call(op="add", account="alice", key_id=KEY_ID_B, public_key=make_key(1))
+        self.assertEqual(dup["error"], "duplicate_key")
+
+    def test_a_from_option_that_is_not_ours_is_unmanaged(self):
+        ssh_dir = os.path.join(self.home_root, "alice", ".ssh")
+        os.makedirs(ssh_dir)
+        with open(os.path.join(ssh_dir, "authorized_keys"), "w") as handle:
+            handle.write('from="*.example.com" ssh-ed25519 AAAA hostpanel:%s\n' % KEY_ID_A)
+        self.assertEqual(self.call(op="list", account="alice")["keys"], [])
+
+    def write_host_key(self, content):
+        """Points the agent at a host key file with this content and returns its path."""
+        path = os.path.join(self.tmp.name, "host.pub")
+        with open(path, "w") as handle:
+            handle.write(content)
+        self.config["host_key_file"] = path
+        return path
+
+    def test_ping_and_add_report_the_host_key_without_its_comment(self):
+        blob = make_key(9).split()[1]
+        self.write_host_key("ssh-ed25519 %s root@server\n" % blob)
+        self.assertEqual(self.call(op="ping")["host_key"], "ssh-ed25519 " + blob)
+        added = self.call(op="add", account="alice", key_id=KEY_ID_A, public_key=make_key(1))
+        self.assertEqual(added["host_key"], "ssh-ed25519 " + blob)
+
+    def test_no_host_key_is_reported_when_the_file_is_unusable(self):
+        for content in ("", "ssh-rsa AAAAB3NzaC1yc2E= root@server\n", "%s\n%s\n" % (make_key(8), make_key(9)), "garbage"):
+            with self.subTest(content=content):
+                self.write_host_key(content)
+                self.assertNotIn("host_key", self.call(op="ping"))
+        self.config["host_key_file"] = os.path.join(self.tmp.name, "missing.pub")
+        self.assertNotIn("host_key", self.call(op="ping"))
+        self.config["host_key_file"] = ""
+        self.assertNotIn("host_key", self.call(op="ping"))
+
+    def test_profiles_name_the_default_host_key_file(self):
+        root = os.path.join(os.path.dirname(__file__), "..", "profiles")
+        self.assertEqual(agent.load_config(os.path.join(root, "generic-linux.conf"))["host_key_file"], "/etc/ssh/ssh_host_ed25519_key.pub")
+
     def test_unmanaged_keys_are_preserved_and_never_listed(self):
         ssh_dir = os.path.join(self.home_root, "alice", ".ssh")
         os.mkdir(ssh_dir, 0o700)
@@ -223,21 +303,29 @@ class BoundaryTests(AgentTestCase):
         self.assertEqual(self.call(op="ping")["php_versions"], [])
 
     def test_ping_reports_provider_and_binding(self):
-        self.config["provider"] = "cwp"
+        self.config["provider"] = "generic-linux"
         self.config["binding"] = KEY_ID_A
         pong = self.call(op="ping")
-        self.assertEqual((pong["provider"], pong["binding"]), ("cwp", KEY_ID_A))
+        self.assertEqual((pong["provider"], pong["binding"]), ("generic-linux", KEY_ID_A))
 
     def test_profiles_load_and_bad_binding_refused(self):
         root = os.path.join(os.path.dirname(__file__), "..", "profiles")
-        for name in ("generic-linux.conf", "cwp.conf"):
-            loaded = agent.load_config(os.path.join(root, name))
-            self.assertEqual(loaded["binding"], "")
+        loaded = agent.load_config(os.path.join(root, "generic-linux.conf"))
+        self.assertEqual(loaded["binding"], "")
         broken = os.path.join(self.tmp.name, "broken.conf")
         with open(broken, "w") as handle:
             handle.write("[agent]\nbinding = ../../etc\n")
         with self.assertRaises(agent.AgentError):
             agent.load_config(broken)
+
+
+    def test_the_jail_sections_and_extras_come_from_the_profile_not_the_agent(self):
+        root = os.path.join(os.path.dirname(__file__), "..", "profiles")
+        bare = agent.load_config(os.path.join(self.tmp.name, "absent.conf"))
+        self.assertEqual((bare["jail_sections"], bare["jail_extras"]), ([], []))
+        generic = agent.load_config(os.path.join(root, "generic-linux.conf"))
+        self.assertEqual(generic["jail_sections"], ["basicshell", "extendedshell", "editors", "netutils", "terminfo"])
+        self.assertEqual(generic["jail_extras"], [])
 
 
 class PolicyTests(AgentTestCase):
@@ -317,6 +405,10 @@ class JailEnrolTests(AgentTestCase):
         })
         self.groups["sftp-ssh"] = []
         self.calls = []
+        # The jailkit catalogue defining the sections above, so check_config finds none missing unless a test says so.
+        self.jailkit_ini = self.host_file("jk_init.ini", "[basicshell]\nlibraries = x\n\n[editors]\n")
+        self._jailkit_ini = agent.JAILKIT_INI
+        agent.JAILKIT_INI = self.jailkit_ini
 
         def jail_run(argv, **kwargs):
             self.calls.append(argv)
@@ -348,6 +440,7 @@ class JailEnrolTests(AgentTestCase):
 
     def tearDown(self):
         agent.JAIL_RUN = subprocess.run
+        agent.JAILKIT_INI = self._jailkit_ini
         super().tearDown()
 
     def add(self, seed=1, key_id=KEY_ID_A):
@@ -488,17 +581,17 @@ class JailEnrolTests(AgentTestCase):
         self.assertEqual(self.add()["error"], "internal_error")
         self.assertEqual(self.jk_cp_calls(), [])
         self.assertNotIn("/usr/sbin/jk_init", [c[0] for c in self.calls])
-        self.assertEqual(agent.unsafe_jail_extras(self.config), [tree])
+        self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), [tree])
 
     def test_private_key_file_kinds_are_refused(self):
         for name in ("ssh_host_ed25519_key", "privkey.pem", "privkey1.pem", "store.p12", "store.pfx", "store.jks", "A.KEY"):
             self.config["jail_extras"] = [self.host_file(os.path.join("kinds", name))]
-            self.assertEqual(agent.unsafe_jail_extras(self.config), self.config["jail_extras"], name)
+            self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), self.config["jail_extras"], name)
 
     def test_public_material_is_accepted(self):
         for name in ("ssh_host_ed25519_key.pub", "fullchain.pem", "ca-bundle.crt", "cert.pem"):
             self.config["jail_extras"] = [self.host_file(os.path.join("public", name))]
-            self.assertEqual(agent.unsafe_jail_extras(self.config), [], name)
+            self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), [], name)
 
     def test_symlinks_into_private_material_are_refused(self):
         private = os.path.join(self.tmp.name, "host", "private")
@@ -512,14 +605,14 @@ class JailEnrolTests(AgentTestCase):
         os.symlink(private, os.path.join(certs, "inner"))
         for extra in (file_link, certs):
             self.config["jail_extras"] = [extra]
-            self.assertEqual(agent.unsafe_jail_extras(self.config), [extra])
+            self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), [extra])
 
     def test_symlink_loop_terminates(self):
         certs = os.path.join(self.tmp.name, "host", "loop")
         os.makedirs(certs)
         os.symlink(certs, os.path.join(certs, "self"))
         self.config["jail_extras"] = [certs]
-        self.assertEqual(agent.unsafe_jail_extras(self.config), [])
+        self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), [])
 
     def test_check_config_exit_codes_and_output(self):
         tree = os.path.join(self.tmp.name, "host", "tls")
@@ -568,10 +661,93 @@ class JailEnrolTests(AgentTestCase):
         with open(os.path.join(certs, "ca-bundle.crt"), "w") as handle:
             handle.write("pem")
         self.config["jail_extras"] = [certs]
-        self.assertEqual(agent.unsafe_jail_extras(self.config), [])
+        self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), [])
         key = self.host_file("server.key")
         self.config["jail_extras"] = [certs, key]
-        self.assertEqual(agent.unsafe_jail_extras(self.config), [key])
+        self.assertEqual(agent.unsafe_jail_extras(self.config["jail_extras"]), [key])
+
+    def install_jail_extras_helper(self, lines, exit_code=0):
+        """Installs a stand-in `jail-extras` helper that records its arguments, prints the lines and exits with the code."""
+        helper_dir = os.path.join(self.tmp.name, "libexec")
+        os.makedirs(helper_dir, exist_ok=True)
+        self.config["helper_dir"] = helper_dir
+        args_file = os.path.join(self.tmp.name, "jail-extras-args")
+        path = os.path.join(helper_dir, "jail-extras")
+        with open(path, "w") as handle:
+            handle.write("#!/bin/sh\necho \"$@\" > '%s'\nprintf '%%s\\n' %s\nexit %d\n"
+                         % (args_file, " ".join("'%s'" % line for line in lines), exit_code))
+        os.chmod(path, 0o755)
+        return args_file
+
+    def test_helper_paths_are_unioned_with_the_configured_extras(self):
+        configured = self.host_file("bashrc")
+        listed = self.host_file("flock")
+        args_file = self.install_jail_extras_helper([listed, configured, "relative/path", "/with space/x"])
+        self.config["jail_extras"] = [configured]
+        self.assertEqual(agent.jail_extras(self.config), [configured, listed])
+        with open(args_file) as handle:
+            self.assertEqual(handle.read().split(), list(agent.SAFE_TRUST_PATHS))
+        self.assertTrue(self.add()["ok"])
+        self.assertEqual(self.jk_cp_calls()[0][4:], [configured, listed])
+
+    def test_a_server_without_the_helper_or_with_a_failing_one_keeps_the_configured_extras(self):
+        configured = self.host_file("bashrc")
+        self.config["jail_extras"] = [configured]
+        self.assertEqual(agent.jail_extras(self.config), [configured])
+        self.install_jail_extras_helper([self.host_file("flock")], exit_code=1)
+        self.assertEqual(agent.jail_extras(self.config), [configured])
+
+    def test_private_key_check_runs_over_the_helper_paths_too(self):
+        tree = os.path.join(self.tmp.name, "host", "tls")
+        os.makedirs(os.path.join(tree, "private"))
+        self.install_jail_extras_helper([self.host_file("flock"), tree])
+        self.config["jail_extras"] = [self.host_file("bashrc")]
+        self.assertEqual(self.add()["error"], "internal_error")
+        self.assertEqual(self.jk_cp_calls(), [])
+        self.assertNotIn("/usr/sbin/jk_init", [c[0] for c in self.calls])
+        self.assertEqual(agent.unsafe_jail_extras(agent.jail_extras(self.config)), [tree])
+
+    def test_enrolment_without_jail_sections_is_refused(self):
+        self.config["jail_sections"] = []
+        self.assertEqual(self.add()["error"], "internal_error")
+        self.assertEqual(self.calls, [])
+
+    def check_config_output(self):
+        """Runs check_config against self.config and returns (exit code, stdout)."""
+        original = agent.load_config
+        agent.load_config = lambda: self.config
+        out = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(out):
+                code = agent.check_config()
+        finally:
+            agent.load_config = original
+        return code, out.getvalue()
+
+    def test_check_config_flags_a_private_key_that_only_the_helper_lists(self):
+        tree = os.path.join(self.tmp.name, "host", "tls")
+        os.makedirs(os.path.join(tree, "private"))
+        self.install_jail_extras_helper([tree])
+        self.config["jail_enrol"] = False
+        code, out = self.check_config_output()
+        self.assertEqual(code, 1)
+        self.assertIn(tree, out)
+
+    def test_check_config_warns_for_each_jail_section_missing_from_jailkit(self):
+        ini = self.jailkit_ini
+        self.config["jail_sections"] = ["basicshell", "editors", "extendedshell", "terminfo"]
+        code, out = self.check_config_output()
+        self.assertEqual(code, 1)
+        self.assertEqual(out.splitlines(), ["jail section extendedshell is missing from " + ini,
+                                            "jail section terminfo is missing from " + ini])
+        self.config["jail_sections"] = ["basicshell", "editors"]
+        self.assertEqual(self.check_config_output(), (0, ""))
+        agent.JAILKIT_INI = os.path.join(self.tmp.name, "no-jailkit.ini")
+        code, out = self.check_config_output()
+        self.assertEqual(code, 1)
+        self.assertIn("jail section basicshell is missing", out)
+        self.config["jail_enrol"] = False
+        self.assertEqual(self.check_config_output(), (0, ""))
 
     def test_enrolment_is_idempotent(self):
         self.assertTrue(self.add(1, KEY_ID_A)["ok"])

@@ -30,6 +30,7 @@ public sealed class EnsurePluginWebsiteTests(PluginHostAccessFixture fixture) : 
         website.DocumentRoot.Should().Be("sites/app");
         website.DocumentRootPath.Should().Be("/home/web/sites/app");
         website.PhpVersion.Should().Be("8.3");
+        website.PhpCliPath.Should().Be("/usr/bin/php8.3");
         var order = fixture.HostingAgents().AgentFor(owner.ServerId).WebsiteOf("web", "app.site-ok.example.test");
         order.Should().NotBeNull();
         order!.DocumentRootMayBeLink.Should().BeTrue();
@@ -37,6 +38,7 @@ public sealed class EnsurePluginWebsiteTests(PluginHostAccessFixture fixture) : 
         var stored = (await fixture.WebsitesOfAsync(owner.ServiceId)).Should().ContainSingle().Which;
         stored.IssuedToPluginId.Should().Be(fixture.HostingPluginId);
         stored.State.Should().Be(HostingResourceState.Active);
+        stored.PhpCliPath.Should().Be("/usr/bin/php8.3");
         stored.IsBoundTo(owner.ServerId, "web").Should().BeTrue();
         (await fixture.ActivityOfAsync(owner.ClientId)).Should()
             .ContainSingle(line => line.StartsWith($"Plugin {fixture.HostingPluginId} set up website app.site-ok.example.test", StringComparison.Ordinal));
@@ -86,10 +88,65 @@ public sealed class EnsurePluginWebsiteTests(PluginHostAccessFixture fixture) : 
         second.Id.Should().Be(first.Id);
         second.DocumentRoot.Should().Be("public_html");
         second.PhpVersion.Should().Be("8.2");
+        second.PhpCliPath.Should().Be("/usr/bin/php8.2");
         var order = fixture.HostingAgents().AgentFor(owner.ServerId).WebsiteOf("web", "app.site-change.example.test")!;
         (order.DocumentRoot, order.PhpVersion, order.DocumentRootMayBeLink).Should().Be(("public_html", "8.2", false));
         var stored = (await fixture.WebsitesOfAsync(owner.ServiceId)).Should().ContainSingle().Which;
         (stored.DocumentRoot, stored.PhpVersion, stored.DocumentRootMayBeLink).Should().Be(("public_html", "8.2", false));
+        stored.PhpCliPath.Should().Be("/usr/bin/php8.2");
+    }
+
+    /// <summary>A repeat that drops PHP clears the stored CLI path with the version.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RepeatWithoutPhp_ClearsThePhpCliPathAsync()
+    {
+        var owner = await fixture.OwnerWithDomainBoundToAsync("site-nophp", fixture.HostingPluginId);
+        await EnsureAsync(owner, fixture.HostingPluginId, Spec("app.site-nophp.example.test"));
+
+        var second = await EnsureAsync(
+            owner, fixture.HostingPluginId, new PluginWebsiteSpec("app.site-nophp.example.test", "public_html", null, false));
+
+        second.PhpVersion.Should().BeNull();
+        second.PhpCliPath.Should().BeNull();
+        (await fixture.WebsitesOfAsync(owner.ServiceId)).Should().ContainSingle().Which.PhpCliPath.Should().BeNull();
+    }
+
+    /// <summary>
+    /// An active website that runs PHP but has no stored CLI path, as every record made before the host kept it, is set up
+    /// once more to learn the path; once it is stored a repeat answers from the record again.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ActiveWebsiteWithPhpAndNoCliPath_IsEnsuredOnceToBackfillItAsync()
+    {
+        var owner = await fixture.OwnerWithDomainBoundToAsync("site-backfill", fixture.HostingPluginId);
+        var spec = Spec("app.site-backfill.example.test");
+        await fixture.SeedWebsiteWithoutPhpCliAsync(owner, fixture.HostingPluginId, spec);
+        var agent = fixture.HostingAgents().AgentFor(owner.ServerId);
+
+        var first = await EnsureAsync(owner, fixture.HostingPluginId, spec);
+        var second = await EnsureAsync(owner, fixture.HostingPluginId, spec);
+
+        first.PhpCliPath.Should().Be("/usr/bin/php8.3");
+        second.Should().Be(first);
+        agent.CallsOf("ensure-website").Should().Be(1);
+        (await fixture.WebsitesOfAsync(owner.ServiceId)).Should().ContainSingle().Which.PhpCliPath.Should().Be("/usr/bin/php8.3");
+    }
+
+    /// <summary>A website without PHP never needs a CLI path, so a repeat does not call the server.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ActiveWebsiteWithoutPhp_IsNotEnsuredAgainAsync()
+    {
+        var owner = await fixture.OwnerWithDomainBoundToAsync("site-backfill-nophp", fixture.HostingPluginId);
+        var spec = new PluginWebsiteSpec("app.site-backfill-nophp.example.test", "public_html", null, false);
+        await fixture.SeedWebsiteWithoutPhpCliAsync(owner, fixture.HostingPluginId, spec);
+
+        var answer = await EnsureAsync(owner, fixture.HostingPluginId, spec);
+
+        answer.PhpCliPath.Should().BeNull();
+        fixture.HostingAgents().AgentFor(owner.ServerId).CallsOf("ensure-website").Should().Be(0);
     }
 
     /// <summary>A request the agent would refuse is refused first, before any agent call and before a record is saved.</summary>

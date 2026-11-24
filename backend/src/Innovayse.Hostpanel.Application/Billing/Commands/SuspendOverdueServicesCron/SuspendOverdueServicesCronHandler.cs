@@ -99,7 +99,7 @@ public sealed class SuspendOverdueServicesCronHandler
         // A hold (OverrideAutoSuspend) protects a service until its SuspendUntil, or for good when it
         // names no date; a date only ever comes with the hold, so an elapsed one ends it.
         var eligible = states.Values
-            .Where(s => s.Status == ServiceStatus.Active && s.AutoRenew
+            .Where(s => s.Status == ServiceStatus.Active && s.AutoRenew && !s.InTrial
                         && (!s.OverrideAutoSuspend || (s.SuspendUntil != null && s.SuspendUntil <= now)))
             .Select(s => s.Id)
             .Order()

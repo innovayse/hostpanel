@@ -16,6 +16,7 @@ import { mountRouted } from '../helpers/mount'
 import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** The installed registrar plugins every list screen reads on mount, as the plugins endpoint answers them. */
 const REGISTRAR_ROUTES = {
@@ -123,8 +124,7 @@ describe('TldConfigsView', () => {
     expect(com).toContain('Never')
     expect(wrapper.get('[data-testid="tld-row-net"]').text()).toContain('-5.0%')
     expect(wrapper.get('[data-testid="tld-row-net"] [role="img"]').attributes('aria-label')).toBe('Disabled')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
-    expect(wrapper.text()).toContain('TLDs: 2')
+    expect(wrapper.findAll('th').find((header) => header.text() === 'TLD')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 
   it('puts the typed search in the address and sends it after the pause', async () => {
@@ -153,6 +153,8 @@ describe('TldConfigsView', () => {
   it('keeps the chosen page in the address', async () => {
     stubRoutes({ ...REGISTRAR_ROUTES, 'GET /api/admin/tld-configs': () => json(page([item('com')], 45)) })
     const { wrapper, router } = await mountListAt()
+
+    expect(wrapper.find('[data-testid="ui-card-footer"] [data-testid="tld-configs-pagination-next"]').exists()).toBe(true)
 
     await wrapper.get('[data-testid="tld-configs-pagination-next"]').trigger('click')
     await flushPromises()
@@ -246,7 +248,7 @@ describe('TldConfigsView', () => {
     await wrapper.get('[data-testid="tld-configs-sync"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tld-configs-result"]').text()).toBe('The registrar did not answer.')
+      expect(toastMessages()).toContain('The registrar did not answer.')
     })
   })
 
@@ -314,7 +316,7 @@ describe('TldConfigsView', () => {
     await wrapper.get('[data-testid="tld-delete-com"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="tld-configs-result"]').text()).toBe('The TLD has domains.')
+      expect(toastMessages()).toContain('The TLD has domains.')
     })
   })
 

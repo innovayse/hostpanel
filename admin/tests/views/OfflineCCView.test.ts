@@ -13,6 +13,7 @@ import OfflineCCView from '@/views/OfflineCCView.vue'
 import { invalid, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
+import { toastMessages } from '../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -111,7 +112,7 @@ describe('OfflineCCView', () => {
     await wrapper.get('[data-testid="offline-cc-form"]').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="offline-cc-feedback"]').text()).toBe('The amount exceeds the balance.')
+    expect(toastMessages()).toContain('The amount exceeds the balance.')
     expect(wrapper.find('[data-testid="offline-cc-open-invoice"]').exists()).toBe(false)
     expect((wrapper.get('[data-testid="offline-cc-reference"]').element as HTMLInputElement).value).toBe('ref-1')
   })

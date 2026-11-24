@@ -86,9 +86,6 @@ const presentation = useDrawerPresentation()
  */
 const isSheet = computed<boolean>(() => presentation.value === UiDrawerPresentation.Sheet)
 
-/** Classes of the popover: clipped to the kit's popup look (the place and the surface are the floating surface's). */
-const popupClasses = `overflow-hidden ${datePopupClasses}`
-
 /** First day of the month the grid shows. */
 const currentMonth = ref(new Date())
 
@@ -360,7 +357,7 @@ onMounted(initFromModel)
       :title="fieldPlaceholder"
       :min-room="POPUP_HEIGHT"
       :gap="POPUP_GAP_PX"
-      :popover-class="popupClasses"
+      :popover-class="datePopupClasses"
       @close="hide(true)"
       @panel="panel = $event"
     >
@@ -381,11 +378,11 @@ onMounted(initFromModel)
         <div class="p-4 w-full sm:w-80">
           <div class="flex items-center justify-between mb-4">
             <button type="button" data-testid="date-picker-prev" :class="dateArrowClasses" @click="prevMonth">‹</button>
-            <div class="flex items-center gap-2">
-              <div class="w-[140px]">
+            <div class="flex min-w-0 items-center gap-2">
+              <div class="w-[140px] min-w-0">
                 <UiSelect v-model="currentMonthValue" :options="monthOptions" :placeholder="t('ui.uiDatePicker.month')" />
               </div>
-              <div class="w-[100px]">
+              <div class="w-[100px] min-w-0">
                 <UiSelect v-model="currentYearValue" :options="yearOptions" :placeholder="t('ui.uiDatePicker.year')" />
               </div>
             </div>

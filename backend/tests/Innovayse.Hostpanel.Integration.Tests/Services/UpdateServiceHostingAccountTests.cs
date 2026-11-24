@@ -188,7 +188,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     public async Task UpdateHostingAccount_PendingServiceOnAnotherPanel_AcceptsAnyUsernameAsync()
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Pending);
-        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.Cwp7);
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModules.Linux);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
 
         var response = await client.PutAsJsonAsync(

@@ -55,7 +55,25 @@ public sealed class ListServerOptionsTests(IntegrationTestFactory factory) : ICl
         var row = (await ReadAsync(admin, Route)).Single(r => r.GetProperty("name").GetString() == $"{token}-lean");
 
         row.EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(
-            "id", "name", "hostname", "ipAddress", "isOnline", "accountsCount", "limits");
+            "id", "name", "hostname", "ipAddress", "isOnline", "lastTestedAt", "accountsCount", "limits");
+    }
+
+    /// <summary>A server never tested has no test time, and a tested one carries the moment of its last test, as the Servers page shows it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task List_CarriesTheMomentOfTheLastConnectionTest()
+    {
+        var admin = await ServersTestSeeds.AdminClientAsync(factory);
+        var token = PagedListReads.UniqueToken();
+        var tested = await ServersTestSeeds.CreateServerAsync(admin, $"{token}-tested");
+        await ServersTestSeeds.CreateServerAsync(admin, $"{token}-never");
+        await ServersTestSeeds.RecordConnectionTestAsync(factory, tested, isOnline: true, accountsCount: 3);
+
+        var rows = (await ReadAsync(admin, Route)).Where(r => r.GetProperty("name").GetString()!.StartsWith(token, StringComparison.Ordinal)).ToList();
+
+        rows[0].GetProperty("name").GetString().Should().Be($"{token}-never");
+        rows[0].GetProperty("lastTestedAt").ValueKind.Should().Be(JsonValueKind.Null);
+        rows[1].GetProperty("lastTestedAt").GetDateTimeOffset().Should().Be(TestMoments.Seeded);
     }
 
     /// <summary>The module filter keeps only the servers that run that module.</summary>

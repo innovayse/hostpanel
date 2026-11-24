@@ -1,6 +1,5 @@
 {
   "orderDetail": {
-    "accept": "Accept",
     "orderInfo": "Order Info",
     "overview": "Overview",
     "created": "Created",
@@ -18,15 +17,13 @@
     "orderCancelled": "Order cancelled.",
     "confirmCancelTitle": "Cancel this order?",
     "confirmCancelMessage": "The order will be cancelled. This cannot be undone.",
-    "cancelOrder": "Cancel order",
     "linesSubtotal": "Order subtotal (before tax and credit)",
     "invoiceTotal": "Invoice total",
     "fulfilment": "Fulfilment",
-    "retry": "Retry",
     "lineRetried": "Line retried and fulfilled.",
     "attempts": "Attempts: {count}, last {at}",
     "finishRefund": "Part of the cost was given back. Finish the refund by hand.",
-    "closeRefund": "Refund finished",
+    "closeRefund": "Mark refunded",
     "confirmCloseRefundTitle": "Close this refund?",
     "confirmCloseRefundMessage": "Confirm that the cost of this line was given back to the client, by you or by a refund that stopped. A refund that started recently may still be running and cannot be closed yet; only one stuck for longer than the retry lease can. The line will be closed as refunded and can no longer be retried. The action is recorded in the client log.",
     "refundClosed": "Line closed as refunded."
@@ -36,16 +33,12 @@
     "searchOrders": "Search orders by number or id",
     "order": "Order #",
     "items": "Items",
-    "accept": "Accept",
-    "totalcountOrderValue": "Orders: {totalCount}",
     "noOrdersFound": "No orders found",
     "noOrdersMatchYourFilters": "No orders match your filter",
-    "clearFilters": "Clear filter",
     "orderAccepted": "Order accepted.",
     "orderCancelled": "Order cancelled.",
     "confirmCancelTitle": "Cancel this order?",
     "confirmCancelMessage": "The order will be cancelled. This cannot be undone.",
-    "cancelOrder": "Cancel order",
     "failedLines": "{count} to retry",
     "needsAttention": "Needs attention",
     "reviewQueue": "Pending review"
@@ -87,7 +80,8 @@
     "rejectReasonLabel": "Reason",
     "rejectReasonHint": "The client reads this reason in the e-mail.",
     "rejectReasonPlaceholder": "Why the order is refused",
-    "rejectReasonRequired": "Enter a reason.",
-    "rejectSubmit": "Reject order"
-  }
+    "rejectReasonRequired": "Enter a reason."
+  },
+  "accept": "Accept",
+  "cancelOrder": "Cancel order"
 }

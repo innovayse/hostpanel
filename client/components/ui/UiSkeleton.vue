@@ -31,7 +31,7 @@
  * block or circle from the outside with `class`.
  */
 import { computed } from 'vue'
-import { UiSkeletonShape } from '~/utils/ui/enums'
+import { UiSkeletonShape, UiSkeletonWidth } from '~/utils/ui/enums'
 
 /** Props of UiSkeleton. */
 interface Props {
@@ -39,12 +39,15 @@ interface Props {
   shape?: `${UiSkeletonShape}`
   /** Number of text lines when the shape is a line. */
   lines?: number
+  /** Width of a single line or block; a circle ignores it. */
+  width?: `${UiSkeletonWidth}`
 }
 
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
   shape: UiSkeletonShape.Line,
   lines: 1,
+  width: UiSkeletonWidth.Full,
 })
 
 /** Whether several text lines are drawn. */
@@ -53,14 +56,21 @@ const isMultiLine = computed(() => props.shape === UiSkeletonShape.Line && props
 /** Colour and animation shared by every placeholder. */
 const BASE_CLASSES = 'animate-pulse bg-gray-200 dark:bg-white/10'
 
+/** Width utility per step, written out so Tailwind emits them. */
+const WIDTH_CLASSES: Record<`${UiSkeletonWidth}`, string> = {
+  [UiSkeletonWidth.Full]: 'w-full',
+  [UiSkeletonWidth.ThreeQuarters]: 'w-3/4',
+  [UiSkeletonWidth.Heading]: 'w-64 max-w-full',
+}
+
 /** Shape utilities for a single placeholder. */
 const shapeClasses = computed(() => {
   if (props.shape === UiSkeletonShape.Circle) {
     return 'h-10 w-10 rounded-full'
   }
   if (props.shape === UiSkeletonShape.Block) {
-    return 'w-full rounded-xl'
+    return `${WIDTH_CLASSES[props.width]} rounded-xl`
   }
-  return 'h-4 w-full rounded'
+  return `h-4 ${WIDTH_CLASSES[props.width]} rounded`
 })
 </script>

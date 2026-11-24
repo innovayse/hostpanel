@@ -10,11 +10,11 @@ import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -28,7 +28,7 @@ import { PluginTableDisplay, PluginValueFormat } from '@/types/pluginview'
 import type { PluginTableBlock } from '@/types/pluginview'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
-import { UiAlignItems, UiGap } from '@/utils/ui/layout'
+import { UiAlignItems, UiGap, UiDirection } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiColumnSize } from '@/utils/ui/table'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
@@ -133,12 +133,12 @@ watch(pageCount, (count) => {
     <!-- The cards; while the rows load the same cards are drawn with bars where the cells go -->
     <UiStack v-else-if="block.display === PluginTableDisplay.Cards" :gap="UiGap.Sm" :aria-busy="loading ? 'true' : undefined" data-testid="plugin-table-cards">
       <UiCard v-for="(row, index) in cardRows" :key="row?.key ?? `placeholder-${index}`" :padding="UiCardPadding.Sm" data-testid="plugin-table-card">
-        <UiStack v-if="row === null" direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" aria-hidden="true">
+        <UiStack v-if="row === null" :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" aria-hidden="true">
           <UiSkeletonBar class="h-4 w-24 rounded-md" />
           <UiSkeletonBar class="h-3.5 w-16 rounded-md" />
           <UiSkeletonBar class="h-3.5 w-20 rounded-md" />
         </UiStack>
-        <UiStack v-else direction="row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap>
+        <UiStack v-else :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap>
           <template v-for="cell in row.cells" :key="cell.key">
             <UiBadge v-if="cell.badge" small>{{ cell.text }}</UiBadge>
             <UiText v-else-if="cell.first" :size="UiTextSize.Sm" class="font-mono font-semibold">{{ cell.text }}</UiText>
@@ -147,7 +147,17 @@ watch(pageCount, (count) => {
         </UiStack>
       </UiCard>
     </UiStack>
-    <UiTable v-else scrollable :loading="loading" :skeleton-rows="SKELETON_ROWS" data-testid="plugin-table-grid">
+    <UiDataTable
+      v-else
+      :loading="loading"
+      :skeleton-rows="SKELETON_ROWS"
+      :page="showPager ? page : undefined"
+      :total="rows.length"
+      :page-size="perPage"
+      pagination-testid="plugin-table-pagination"
+      data-testid="plugin-table-grid"
+      @update:page="page = $event"
+    >
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader v-for="(column, index) in block.columns" :key="column.field" :size="index === 0 ? UiColumnSize.Grow : undefined">{{ column.label }}</UiTableHeader>
@@ -170,9 +180,9 @@ watch(pageCount, (count) => {
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>
-    </UiTable>
+    </UiDataTable>
     <UiPagination
-      v-if="showPager"
+      v-if="showPager && block.display === PluginTableDisplay.Cards"
       :page="page"
       :total="rows.length"
       :page-size="perPage"

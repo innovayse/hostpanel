@@ -17,7 +17,7 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { providePluginActionMessages, usePluginSource } from '@/composables/usePluginView'
 import type { PluginBlock as PluginBlockData, PluginHeaderBlock } from '@/types/pluginview'
-import { UiAlignItems, UiGap } from '@/utils/ui/layout'
+import { UiAlignItems, UiGap, UiDirection } from '@/utils/ui/layout'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -52,12 +52,12 @@ const actions = computed<{ key: string; block: PluginBlockData }[]>(() =>
 
 <template>
   <UiStack :gap="UiGap.Xs" data-testid="plugin-header-block">
-    <UiStack v-if="block.compact" direction="row" :gap="UiGap.Md" :align="UiAlignItems.Center" wrap data-testid="plugin-header-compact">
+    <UiStack v-if="block.compact" :direction="UiDirection.Row" :gap="UiGap.Md" :align="UiAlignItems.Center" wrap data-testid="plugin-header-compact">
       <UiStack v-if="title || subtitle" :gap="UiGap.None" class="min-w-0">
         <UiHeading :level="2" :variant="UiHeadingVariant.Card" class="truncate" data-testid="plugin-header">{{ title }}</UiHeading>
         <UiText v-if="subtitle" :size="UiTextSize.Xs" :tone="UiTextTone.Muted" class="truncate font-mono" data-testid="plugin-header-subtitle">{{ subtitle }}</UiText>
       </UiStack>
-      <UiStack direction="row" :gap="UiGap.Md" :align="UiAlignItems.Center" wrap class="ml-auto">
+      <UiStack :direction="UiDirection.Row" :gap="UiGap.Md" :align="UiAlignItems.Center" wrap class="ml-auto">
         <PluginBlock v-for="action in actions" :key="action.key" :block="action.block" />
       </UiStack>
     </UiStack>

@@ -83,6 +83,8 @@ describe('pages/knowledgebase/[id]', () => {
     const wrapper = await mountRenderedPage(Page, ROOT)
 
     expect(wrapper.find('[data-testid="kb-back"]').attributes('href')).toBe('/en/knowledgebase')
+    expect(wrapper.find('[data-testid="kb-back"]').text()).toBe('common.back')
+    expect(wrapper.find('[data-testid="kb-back"]').attributes('aria-label')).toBe('kb.backToKb')
   })
 
   it('sets the head from the article, with a plain separator in the title', async () => {

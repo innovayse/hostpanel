@@ -9,6 +9,8 @@ export interface SshKey {
   label: string
   /** `SHA256:` fingerprint. */
   fingerprint: string
+  /** The addresses and CIDR networks the key may be used from; empty for a key that works from anywhere. */
+  allowedFrom: string[]
   /** ISO creation timestamp. */
   createdAt: string
   /** Last state confirmed by the server. */

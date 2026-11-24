@@ -69,4 +69,12 @@ describe('UiPagination', () => {
     expect(other.classes()).toContain('focus-visible:ring-2')
     expect(wrapper.find('[data-testid="ui-pagination-next"]').classes()).toContain('focus-visible:ring-2')
   })
+
+  it('wraps its buttons and keeps 44px touch targets on a phone', () => {
+    const wrapper = mountWithKit(UiPagination, { props: { modelValue: 1, totalPages: 3, perPage: 10 } })
+
+    expect(wrapper.find('nav').classes()).toContain('flex-wrap')
+    expect(wrapper.find('[data-testid="ui-pagination-page-1"]').classes()).toEqual(expect.arrayContaining(['h-11', 'w-11']))
+    expect(wrapper.find('[data-testid="ui-pagination-next"]').classes()).toContain('min-h-11')
+  })
 })

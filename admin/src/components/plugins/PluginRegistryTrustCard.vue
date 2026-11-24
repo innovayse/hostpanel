@@ -22,6 +22,10 @@ import UiText from '@/components/ui/UiText.vue'
 import { PluginRegistryTrust } from '@/types/plugin'
 import { PluginSettingKey } from '@/types/setting'
 import type { Setting, SettingSave } from '@/types/setting'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -71,22 +75,22 @@ const wide = computed<boolean>(() => trust.value === PluginRegistryTrust.AnyRegi
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-registry-trust">
-    <UiStack gap="sm">
-      <UiHeading :level="2" variant="section">{{ t('plugins.registryTrust.title') }}</UiHeading>
-      <UiText tone="secondary" size="md">{{ t('plugins.registryTrust.description') }}</UiText>
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-registry-trust">
+    <UiStack :gap="UiGap.Sm">
+      <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('plugins.registryTrust.title') }}</UiHeading>
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('plugins.registryTrust.description') }}</UiText>
 
-      <UiAlert v-if="!draft.setting.value" variant="warning" data-testid="plugin-registry-trust-not-seeded">
+      <UiAlert v-if="!draft.setting.value" :variant="UiTone.Warning" data-testid="plugin-registry-trust-not-seeded">
         {{ t('plugins.registryTrust.notSeeded', { key: PluginSettingKey.RegistryTrust }) }}
       </UiAlert>
       <template v-else>
-        <UiAlert v-if="wide" variant="danger" data-testid="plugin-registry-trust-warning">
+        <UiAlert v-if="wide" :variant="UiTone.Danger" data-testid="plugin-registry-trust-warning">
           {{ t('plugins.registryTrust.warning') }}
         </UiAlert>
-        <UiStack direction="row" align="center" wrap>
-          <UiStack gap="xs" class="min-w-56 flex-1">
-            <UiText tone="primary" size="md">{{ t('plugins.registryTrust.label') }}</UiText>
-            <UiText tone="muted" size="sm">{{ t('plugins.registryTrust.hint') }}</UiText>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+          <UiStack :gap="UiGap.Xs" class="min-w-56 flex-1">
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('plugins.registryTrust.label') }}</UiText>
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('plugins.registryTrust.hint') }}</UiText>
           </UiStack>
           <UiSelect
             v-model="trust"

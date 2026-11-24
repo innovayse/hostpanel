@@ -20,7 +20,7 @@ Hostpanel ──ssh (pinned host key, per-server ED25519)──▶ hpsshkeys@ser
 
 The `restrict` directive removes PTY, port forwarding and user rc; the forced command ignores whatever the client asks to run; sudo allows only that exact path with no arguments. Requests travel on stdin as a JSON document; the agent never executes a shell or takes a path from the request.
 
-**Supported server modules:** only CWP7 maps to an agent profile (`cwp`). All other server types show "SSH key management not available" to clients.
+**Supported server modules:** a server is supported when the hosting panel plugin that serves its module ships an SSH agent profile (see [SSH agent profile of a hosting panel plugin](../developers/write-a-plugin.md#ssh-agent-profile)). All other server types show "SSH key management not available" to clients.
 
 ## Set up SSH on a server
 
@@ -62,7 +62,7 @@ The installer accepts these flags:
 
 | Flag | Effect |
 |------|--------|
-| `--provider <profile>` | Agent profile: `cwp` for CWP7, `generic-linux` for plain Linux |
+| `--provider <profile>` | Agent profile: the id the plugin that serves the server's module ships (the SSH dialog fills it in), or `generic-linux` for plain Linux |
 | `--binding <id>` | Ties this installation to the Hostpanel server record |
 | `--config <file>` | Use a custom config file instead of the profile's default (advanced) |
 | `--dry-run` | Preview what would be installed without making any changes |
@@ -141,7 +141,7 @@ For disaster recovery, **Advanced** lets you paste an existing private key inste
 The installer writes the base configuration from the chosen profile. An administrator can edit it directly on the server. The defaults below are the profile values written by the installer; the agent's own built-in defaults differ (for example `max_keys` is 50 built-in, 20 in both profiles; `deny_accounts` and `account_check_command` are profile-specific).
 
 <SettingTable :settings="[
-  { name: 'provider', type: 'string', default: 'cwp / generic-linux', description: 'Agent profile name. Set by the installer; reported on ping.' },
+  { name: 'provider', type: 'string', default: 'generic-linux or the id a panel plugin ships', description: 'Agent profile name. Set by the installer; reported on ping.' },
   { name: 'binding', type: 'string', default: '', description: 'UUID of the Hostpanel server record. Set by the installer; checked on Test agent.' },
   { name: 'min_uid', type: 'number', default: '1000', description: 'Minimum numeric uid a customer account must have. System accounts below this value are always refused.' },
   { name: 'home_root', type: 'string', default: '/home', description: 'Expected parent of every customer home directory. An account whose passwd home is not directly under this path is refused.' },
@@ -149,23 +149,52 @@ The installer writes the base configuration from the chosen profile. An administ
   { name: 'max_keys', type: 'number', default: '20 (profiles); 50 (built-in)', description: 'Maximum number of managed keys per account. Attempts to add beyond this return too_many_keys.' },
   { name: 'audit_log', type: 'string', default: '/var/log/hostpanel-ssh-key-agent.log', description: 'Root-only file where every add and revoke is recorded with fingerprint (never key material).' },
   { name: 'lock_dir', type: 'string', default: '/run/hostpanel-ssh-key-agent', description: 'Directory for per-account lock files that serialise concurrent operations on the same account.' },
-  { name: 'account_check_command', type: 'string', default: 'set by cwp profile; empty in generic-linux', description: 'Absolute path of a root-owned helper run as helper <account>. Exit 0 = panel account exists, 1 = not found, anything else = fault.' },
+  { name: 'account_check_command', type: 'string', default: 'set by a panel plugin profile; empty in generic-linux', description: 'Absolute path of a root-owned helper run as helper <account>. Exit 0 = panel account exists, 1 = not found, anything else = fault.' },
   { name: 'check_shadow_lock', type: 'boolean', default: 'true', description: 'A locked password (usermod -L) makes the account account_suspended. !! or * alone is not treated as a lock.' },
   { name: 'ssh_group', type: 'string', default: '', description: 'If set, only members of this group may receive keys. Leave empty when jail_enrol is on.' },
   { name: 'eligible_list', type: 'string', default: '', description: 'Path to a root-owned file, one account per line, that acts as an SSH opt-in list. The file must not be group- or world-writable.' },
   { name: 'jail_enrol', type: 'boolean', default: 'false', description: 'When true, adding the first key enrols the account in a jailkit chroot; revoking the last key withdraws it. Requires jailkit installed. Agent 1.2.0 and later.' },
   { name: 'jail_root', type: 'string', default: '/home/jail', description: 'Parent directory of all jails; must be root-owned.' },
   { name: 'jail_group', type: 'string', default: 'sftp-ssh', description: 'Group that the customer sshd chroots (used in Match Group / ChrootDirectory). Leave ssh_group empty when jail_enrol is on.' },
-  { name: 'jail_sections', type: 'string', default: 'basicshell,editors,extendedshell,netutils,terminfo', description: 'jk_init sections copied into a new jail.' },
+  { name: 'jail_sections', type: 'string', default: 'set by the profile', description: 'jk_init sections copied into a new jail. Set by the profile (generic-linux: basicshell,extendedshell,editors,netutils,terminfo), no built in default; enrolment with none is refused. With jail_enrol on, install.sh --check warns for each section missing from /etc/jailkit/jk_init.ini.' },
   { name: 'jail_shell', type: 'string', default: '/bin/bash', description: 'Login shell set when a customer is enrolled into the jail.' },
-  { name: 'jail_extras', type: 'string', default: '/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS', description: 'Extra paths copied into each jail with jk_cp when the jail lacks one or its host copy changed (missing in the jail, another size, or newer). Paths missing on the host are skipped, and an entry already in place is not copied again. An entry that is or contains (symlinks followed) private key material is refused and install.sh --check warns: a private directory, or a file named *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx or *.jks; for outgoing TLS list /etc/pki/tls/certs, /etc/pki/ca-trust/extracted and /etc/ssl/certs, never /etc/pki/tls. Includes dircolors and shell profile entries needed by bash login; rsync, tar, gzip and unzip let CI/CD deploy sites over SSH.' },
+  { name: 'jail_extras', type: 'string', default: 'empty (the jail-extras helper lists the deploy tools)', description: 'Extra paths copied into each jail with jk_cp when the jail lacks one or its host copy changed (missing in the jail, another size, or newer). Paths missing on the host are skipped, and an entry already in place is not copied again. An entry that is or contains (symlinks followed) private key material is refused and install.sh --check warns: a private directory, or a file named *.key, ssh_host_*_key, privkey*.pem, *.p12, *.pfx or *.jks; for outgoing TLS list /etc/pki/tls/certs, /etc/pki/ca-trust/extracted and /etc/ssl/certs, never /etc/pki/tls. Includes dircolors and shell profile entries needed by bash login; rsync, tar, gzip and unzip let CI/CD deploy sites over SSH. Added to what the jail-extras helper of the provider lists; the private key check covers both.' },
   { name: 'systemd_unit_dir', type: 'string', default: '/etc/systemd/system', description: 'Directory where the home bind-mount systemd unit is written for each enrolled account.' },
-  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' }
+  { name: 'helper_dir', type: 'string', default: '/usr/local/libexec/hostpanel-ssh-key-agent', description: 'Directory of the provider helpers behind the website and database operations (ensure-website, remove-website, ensure-database, remove-database). An operation without its helper answers not_supported. Agent 1.5.0 and later.' },
+  { name: 'web_server', type: 'string', default: '(empty)', description: 'apache or nginx. Read by the generic-linux website helpers. Empty means the one that is running; set it when both or neither is running, or the website operations are refused. Agent 1.6.0 and later.' },
+  { name: 'host_key_file', type: 'string', default: '/etc/ssh/ssh_host_ed25519_key.pub', description: 'The public host key of the server, reported on ping and on add so Hostpanel can show it to the customer and hand it to a plugin. Point it at the key of the sshd the customers connect to. Empty, a missing file, or a file that is not exactly one ED25519 key line reports no host key. Agent 1.6.0 and later.' }
 ]" />
+
+## Jail extras hold only public trust material
+
+A jail is a customer's own environment, so `jail_extras` may list only public files. The agent refuses an entry that is, or contains, private key material. It walks every entry and everything below it, follows symlinks, and treats a path as private when:
+
+- one of its components is named `private` (such as `/etc/pki/tls/private`), or
+- its file name matches `*.key`, `ssh_host_*_key`, `privkey*.pem`, `*.p12`, `*.pfx` or `*.jks` (the match ignores case).
+
+Public halves such as `*.pub`, `*.crt` and `fullchain.pem` are fine. An entry that does not exist on the server is skipped, as it is when copying.
+
+When an entry is refused, the agent does not enrol the account: the call fails with `internal_error` before anything is built, and the message names the entry. `install.sh --check` (the agent's `--check-config`) warns about such an entry and prints the safe trust paths. It exits with 1 for an unsafe entry, and with 2 when the configuration cannot be read, which `install.sh` reports as a failed check.
+
+For outgoing TLS in a jail (git, curl) list the certificate directories, never their parent `/etc/pki/tls`, which holds the `private` directory:
+
+    jail_extras = /usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS,/etc/pki/tls/certs,/etc/pki/ca-trust/extracted,/etc/ssl/certs
+
+## A jail for site deployers {#jail-for-deployers}
+
+A bare jailkit tree holds a shell and little else, so a jailed account could not deploy a site. From agent 1.7.0 the `generic-linux` profile ships a `jail-extras` helper (`/usr/local/libexec/hostpanel-ssh-key-agent/jail-extras`). The agent runs it on every enrolment and copies what it lists into the jail, on top of `jail_extras`:
+
+- the deploy tools that are installed, found with `command -v`: flock, setsid, nohup, awk, basename, cut, find, grep, head, ln, mkdir, mktemp, mv, readlink, rm, sed, sha256sum, sort, tail, tar, touch, tr, curl, gzip, gunzip, mysql, mysqldump, base64, and `rsync` and `unzip` when they are present;
+- every installed PHP command line binary with its ini directory, its directory of additional ini files (and the directories the links in it lead to) and its extension directory;
+- the CA bundle found in the safe trust paths (`/etc/ssl/certs/ca-certificates.crt`, or `/etc/pki/tls/certs/ca-bundle.crt` with its target on RHEL and AlmaLinux).
+
+The agent joins the helper's paths and `jail_extras` into one list and runs the private key check over that list, so one code path guards both: a path that is or contains a private key stops the enrolment with `internal_error`, and `install.sh --check` reports it. The helper only prints paths and never copies anything; run it by hand with `jail-extras /etc/ssl/certs` to see what a server would give a jail.
+
+The jail sections are the profile's choice too. The `generic-linux` profile sets `jail_sections = basicshell,extendedshell,editors,netutils,terminfo` and a panel plugin's profile sets its own sections and extras; the agent has no built in default for either. When `jail_enrol` is on, `install.sh --check` warns for each configured section that `/etc/jailkit/jk_init.ini` does not define, or for all of them when jailkit is not installed.
 
 ## Websites and databases
 
-Agent 1.5.0 can give a hosting account a website and databases on request. It runs one root-owned helper per operation from `helper_dir`; the CWP profile ships all four, so nothing needs configuring on a CWP server. A server without a helper answers `not_supported`, and the ping answer lists the operations that are available (`capabilities`) and the PHP versions the server offers (`php_versions`, for example `["8.1", "8.2", "8.3"]`, empty when the server has no `php-versions` helper).
+Agent 1.5.0 can give a hosting account a website and databases on request. It runs one root-owned helper per operation from `helper_dir`; the `generic-linux` profile ships all four, so nothing needs configuring on a plain Linux server, and a panel plugin's profile may ship its own. A server without a helper answers `not_supported`, and the ping answer lists the operations that are available (`capabilities`) and the PHP versions the server offers (`php_versions`, for example `["8.1", "8.2", "8.3"]`, empty when the server has no `php-versions` helper).
 
 | Operation | Request fields | Success answer |
 |-----------|----------------|----------------|
@@ -182,6 +211,34 @@ Agent 1.5.0 can give a hosting account a website and databases on request. It ru
 The helpers are idempotent, keep a root-owned record of what they created, and `remove-*` only touches that: a website or database that someone else made is refused with `site_not_owned`. Every file they edit is backed up first, Apache and php-fpm configuration is tested before a graceful reload, and a failed test restores the files. The database password is generated on the server, sent back only in the answer that created the database, and never written to any log; if it is lost, remove the database and create it again.
 
 Errors added in 1.5.0: `not_supported`, `site_not_owned`, `website_conflict`, `php_version_unsupported`, `website_failed`, `database_failed`, `database_limit`. The full request and answer shapes are in the agent's `README.md`.
+
+### Plain Linux servers (`generic-linux`)
+
+A server added with the **Linux server (no control panel)** module (`Linux`) gets this profile with no plugin involved; the SSH dialog offers the built-in bundle for it, and orders never choose such a server.
+
+Agent 1.6.0 ships website and database helpers for the `generic-linux` profile, so a server with no hosting panel can host websites too (`install.sh --provider generic-linux` puts them in `helper_dir`). They need Debian, Ubuntu, RHEL or AlmaLinux with Apache or nginx and, for PHP, php-fpm.
+
+- **Web server.** The one that is running. When both or neither run, the website operations are refused and the ping answer lists none until `web_server` in `agent.conf` is set to `apache` or `nginx`. Virtual hosts are written to `/etc/apache2/sites-available/hp-<hostname>.conf` (Debian Apache, enabled with `a2ensite`, `proxy_fcgi` enabled with `a2enmod`), `/etc/httpd/conf.d/hp-<hostname>.conf` (RHEL Apache) or `/etc/nginx/conf.d/hp-<hostname>.conf` (nginx), and tested with `apache2ctl -t`, `httpd -t` or `nginx -t` before a reload.
+- **PHP.** Debian and Ubuntu with the sury packages, RHEL with Remi, and the RHEL AppStream are recognised. A version is offered when its php-fpm, pool directory and command line binary are all there. The ping answer lists them in `php_versions` and gives the command line binary of each in `php_cli` (for example `{"8.3": "/usr/bin/php8.3"}`); the `ensure-website` answer carries `php_cli` too, so a deploy can run the right PHP.
+- **Pools.** One php-fpm pool per account and PHP version (`hp-<account>.conf`), shared by the account's websites on that version and removed with the last of them.
+- **Document root.** The home gets `o+x` and missing directories are created owned by the account with mode 755. With `link_root` the last path component is never created, the deploy links it. nginx passes the resolved path (`$realpath_root`) to PHP; behind Apache the pool revalidates OPcache and the realpath cache on every request.
+- **What it may touch.** A website whose hostname is registered to another account answers `site_not_owned`; a virtual host or pool that the agent did not write answers `website_conflict` and is never changed. `remove-website` only removes what the agent registered in `/var/lib/hostpanel-ssh-key-agent/<account>/`. Database operations are offered only when MySQL or MariaDB is there (next item).
+- **Databases.** Offered when a `mariadb` (else `mysql`) client is installed and one of the units `mysql`, `mysqld` or `mariadb` is running; otherwise the ping answer lists no database operation. The helpers act as the database administrator through `/root/.my.cnf` when it exists, else through root's socket authentication. `ensure-database` creates the database and a user `<account>_<label>` for `localhost` and `127.0.0.1` only, at most 10 per account. The password is returned once, by the call that creates the database, and the agent never stores or logs it. The registry entry is written before anything is created, and `remove-database` drops only a database with an entry; any other answers `site_not_owned`.
+- **SELinux.** While SELinux is enforcing (`getenforce` prints `Enforcing`, the default on RHEL and AlmaLinux), `ensure-website` is refused with `website_failed` and changes nothing: the virtual hosts, pools and document roots the helper writes are not labelled for SELinux, so the web server could not read them. Set SELinux to permissive or disabled, or serve the site by hand, until labelling is supported.
+
+`/usr/local/libexec/hostpanel-ssh-key-agent/detect` prints what the helpers found on a server, including the database client and unit.
+
+## Limiting a key to some addresses, and the host key {#source-restriction-and-host-key}
+
+Agent 1.8.0 and later can limit where a key may be used from. A plugin that issues an SSH key (the `IPluginHostSshSourceApi` of Hostpanel.Sdk 3.16.0) names the addresses or CIDR networks, and the agent writes them into the key's line in `authorized_keys`:
+
+```
+from="203.0.113.7,198.51.100.0/24" ssh-ed25519 AAAA... hostpanel:<key id>
+```
+
+A connection from any other address is refused by the server. A key without a list works from anywhere, as before, and a client's own keys never have one. A list holds 1 to 16 distinct entries, each a plain IPv4 or IPv6 address or a CIDR network whose host bits are zero (`198.51.100.0/24`, not `198.51.100.5/24`). Host names, wildcards and negations are refused, so nothing but an address reaches the key line. The same key id asked again with another list answers `key_id_conflict`: revoke the key and add it again to change its sources. The sources stay with the key: when a suspended service is unsuspended, the key comes back with the same list. The client sees the list next to the key on the service's **SSH Keys** tab.
+
+`ping` and `add` also return the server's public host key (`host_key`, one `ssh-ed25519 ...` line without a comment), read from `host_key_file` (default `/etc/ssh/ssh_host_ed25519_key.pub`). The host hands it to the plugin with the access it issued, so the plugin can pin the key from the first connection instead of trusting whatever a first scan shows. Set `host_key_file` to the key of the sshd customers connect to when that is not the default one. An agent older than 1.6.0 reports no host key and refuses a key with a list (`invalid_request`), so update the agent before a plugin asks for sources.
 
 ## Keys over a service's life
 
@@ -208,7 +265,7 @@ These codes come from the agent itself and appear in Hostpanel's error responses
 | `account_suspended` | Account's password is locked (`usermod -L`) and `check_shadow_lock` is on |
 | `invalid_key` | Public key is not a valid ED25519 key |
 | `duplicate_key` | This key fingerprint already exists under a different `key_id` |
-| `key_id_conflict` | Same `key_id`, different key material |
+| `key_id_conflict` | Same `key_id`, different key material or a different list of sources |
 | `too_many_keys` | Account has reached the maximum number of managed keys |
 | `ssh_disabled` | Account's shell is a disabled shell (e.g. `/sbin/nologin`) and `jail_enrol` is off |
 | `unsafe_path` | The `.ssh` directory or `authorized_keys` file is a symlink or owned unexpectedly |

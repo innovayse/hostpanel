@@ -5,7 +5,7 @@
  * Detects edit mode from the route params, loads the configuration when editing, and carries the
  * pricing tables for registration, transfer and renewal across the listed year periods. Asks
  * before leaving with unsaved edits. A refused load shows the API's sentence with a retry instead of
- * the form; a refused save shows next to the save bar, a saved configuration returns to the list.
+ * the form; a refused save toasts its sentence, a saved configuration returns to the list.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,11 +20,15 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStepper from '@/components/ui/UiStepper.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import { UiTone } from '@/utils/ui/tone'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import UiText from '@/components/ui/UiText.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useFormDirty } from '@/composables/useFormDirty'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { useRegistrarModuleOptions } from '@/composables/useRegistrarModuleOptions'
 import { CURRENCY_CODES, currencyLabel, currencySymbol } from '@/lib/money'
@@ -67,8 +71,8 @@ const loadingConfig = ref(false)
 /** True while saving the form. */
 const saving = ref(false)
 
-/** The sentence for the last refused save, null when none. */
-const saveError = ref<string | null>(null)
+/** Toasts the refusal of a save. */
+const feedback = useOutcomeToast()
 
 /** Sentence for a failed load of the configuration being edited, null when none. */
 const loadError = ref<string | null>(null)
@@ -200,12 +204,11 @@ const setPrice = (map: Record<string, number>, period: string, value: number): v
 /** Collects form data and dispatches create or update via the store; returns to the list on success. */
 const handleSave = async (): Promise<void> => {
   if (!tld.value.trim()) {
-    saveError.value = t('settings.tldConfigForm.tldIsRequired')
+    feedback.show(t('settings.tldConfigForm.tldIsRequired'), true)
     return
   }
 
   saving.value = true
-  saveError.value = null
 
   const categories = categoriesInput.value
     .split(',')
@@ -242,7 +245,7 @@ const handleSave = async (): Promise<void> => {
     await settle()
     void router.push(AppRoute.SettingsTldPricing)
   } else {
-    saveError.value = store.actionError
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -253,19 +256,19 @@ const handleCancel = (): void => {
 </script>
 
 <template>
-  <UiStack gap="none" data-testid="tld-config-form-view">
+  <UiStack :gap="UiGap.None" data-testid="tld-config-form-view">
     <UiPageHeader :title="isEditMode ? t('settings.tldConfigForm.editTld') : t('settings.tldConfigForm.createTld')" />
 
     <UiErrorState v-if="loadError" :message="loadError" testid="tld-config-form-load-error" @retry="loadConfig" />
 
     <UiSchemaForm v-else :columns="schema.columns" :loading="loadingConfig" :hints="hints" data-testid="tld-config-form" @submit="handleSave">
       <template #field-tld="{ id, describedby }">
-        <UiStack direction="row" align="center" gap="sm">
-          <UiText tone="muted" size="lg">.</UiText>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Lg">.</UiText>
           <UiInput
             :id="id"
             :model-value="tld"
-            type="text"
+            :type="UiInputType.Text"
             :placeholder="t('shared.examples.tld')"
             :disabled="isEditMode"
             :aria-describedby="describedby"
@@ -321,7 +324,7 @@ const handleCancel = (): void => {
         <UiInput
           :id="id"
           v-model="categoriesInput"
-          type="text"
+          :type="UiInputType.Text"
           :aria-describedby="describedby"
           :placeholder="t('settings.tldConfigForm.popularBusinessTech')"
           data-testid="tld-config-form-categories"
@@ -367,10 +370,8 @@ const handleCancel = (): void => {
         />
       </template>
 
-      <UiStatusMessage :message="saveError" :tone="UiTone.Danger" class="mb-5" data-testid="tld-config-form-error" />
-
       <SettingsFormFooter
-        :save-label="isEditMode ? t('shared.saveChanges') : t('settings.tldConfigForm.createTld')"
+        :save-label="isEditMode ? t('shared.save') : t('settings.tldConfigForm.createTld')"
         :saving="saving"
         :dirty="!loadingConfig"
         @cancel="handleCancel"
@@ -381,11 +382,11 @@ const handleCancel = (): void => {
     <!-- Unsaved-changes question, asked while the route change waits -->
     <UiDialog
       v-if="leaveGuard.pending.value"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('settings.tldConfigForm.unsavedChanges')"
       :message="t('settings.tldConfigForm.youHaveUnsavedChangesAre')"
       :confirm-label="t('settings.tldConfigForm.leave')"
-      tone="warning"
+      :tone="UiTone.Warning"
       @confirm="leaveGuard.confirmLeave"
       @close="leaveGuard.cancelLeave"
     />

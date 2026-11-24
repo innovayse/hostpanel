@@ -4,26 +4,26 @@
       <UiStack direction="row" align="center" gap="sm" class="min-w-0">
         <UiTile size="lg" :icon="Server" tone="primary" />
         <UiStack gap="none" class="min-w-0">
-          <UiText as="h3" size="sm" weight="semibold" truncate class="group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+          <UiText :as="UiTextTag.H3" size="sm" weight="semibold" truncate class="group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
             {{ service.productName }}
           </UiText>
-          <UiText as="span" size="xs" tone="subtle" truncate>{{ service.domain || $t('client.dashboard.noDomain') }}</UiText>
+          <UiText :as="UiTextTag.Span" size="xs" tone="subtle" truncate>{{ service.domain || $t('client.dashboard.noDomain') }}</UiText>
         </UiStack>
       </UiStack>
-      <div class="flex-shrink-0">
+      <UiStack gap="none" class="flex-shrink-0">
         <UiBadge v-if="awaitsSetup" variant="info" size="sm" data-testid="service-needs-setup">{{ $t('client.dashboard.needsSetup') }}</UiBadge>
         <ClientStatusBadge v-else :status="service.status" />
-      </div>
+      </UiStack>
     </UiStack>
 
     <UiGrid cols="2" gap="sm" class="mt-4">
       <UiStack gap="none">
-        <UiText as="span" size="xs" tone="subtle">{{ $t('client.services.nextDue') }}</UiText>
-        <UiText as="span" size="xs" weight="medium" tone="muted">{{ formatDate(service.nextRenewalAt) }}</UiText>
+        <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ $t('client.services.nextDue') }}</UiText>
+        <UiText :as="UiTextTag.Span" size="xs" weight="medium" tone="muted">{{ formatDate(service.nextRenewalAt) }}</UiText>
       </UiStack>
       <UiStack gap="none">
-        <UiText as="span" size="xs" tone="subtle">{{ $t('client.services.amount') }}</UiText>
-        <UiText as="span" size="xs" weight="medium" tone="muted">{{ formatCurrency(service.price, currency) }}</UiText>
+        <UiText :as="UiTextTag.Span" size="xs" tone="subtle">{{ $t('client.services.amount') }}</UiText>
+        <UiText :as="UiTextTag.Span" size="xs" weight="medium" tone="muted">{{ formatCurrency(service.price, currency) }}</UiText>
       </UiStack>
     </UiGrid>
 
@@ -52,6 +52,7 @@ import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 import { hasUsageLimit } from '~/utils/serviceUsage'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ServiceCard. */
 interface Props {

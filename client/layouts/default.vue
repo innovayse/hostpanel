@@ -10,7 +10,7 @@
     <component :is="header" />
 
     <!-- Main content -->
-    <UiStack as="main" gap="none" class="flex-1">
+    <UiStack :as="UiStackTag.Main" gap="none" class="flex-1">
       <slot />
     </UiStack>
 
@@ -35,6 +35,7 @@
  */
 import { computed, toValue } from 'vue'
 import { TemplateSlot } from '~/types/templateslot'
+import { UiStackTag } from '~/utils/ui/enums'
 
 const { name, slot } = useTemplate()
 

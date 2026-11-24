@@ -21,6 +21,8 @@ import type { ReportClientStatement, ReportStatementBalance, ReportStatementLine
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportTableData } from '@/types/reporttabledata'
 import { ReportFieldWidth } from '@/utils/ui/reportField'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/ClientStatementView.schema'
 
 const { t } = useI18n()
@@ -103,8 +105,8 @@ const describeLine = (line: ReportStatementLine): string => {
     </template>
 
     <template #summary>
-      <UiStack gap="xs" data-testid="report-previous-balance">
-        <UiText v-for="balance in balances" :key="balance.currency" tone="secondary" size="md" class="text-right">
+      <UiStack :gap="UiGap.Xs" data-testid="report-previous-balance">
+        <UiText v-for="balance in balances" :key="balance.currency" :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="text-right">
           {{ t('reports.clientStatement.previousBalance') }} {{ formatCurrencyCode(balance.previousBalance, balance.currency) }}
         </UiText>
       </UiStack>
@@ -115,8 +117,8 @@ const describeLine = (line: ReportStatementLine): string => {
     </template>
 
     <template #closing>
-      <UiStack gap="xs" data-testid="report-ending-balance">
-        <UiText v-for="balance in balances" :key="balance.currency" tone="secondary" size="md" class="text-right">
+      <UiStack :gap="UiGap.Xs" data-testid="report-ending-balance">
+        <UiText v-for="balance in balances" :key="balance.currency" :tone="UiTextTone.Secondary" :size="UiTextSize.Md" class="text-right">
           {{ t('reports.clientStatement.endingBalance') }} {{ formatCurrencyCode(balance.endingBalance, balance.currency) }}
         </UiText>
       </UiStack>

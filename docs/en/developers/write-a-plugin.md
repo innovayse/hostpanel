@@ -264,6 +264,7 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
+  { name: 'sshAgentProfile', type: 'string', default: 'null', description: 'The id of the SSH key agent profile a hosting panel plugin ships in its own package (needs SDK 3.15.0 or later and the provisioningPanel capability), for example examplepanel. See SSH agent profile of a hosting panel plugin. The id is lower case letters and digits joined by single hyphens, at most 32 characters, and generic-linux belongs to the host and cannot be named.' },
   { name: 'tags', type: 'string[]', default: '[]', description: 'Optional keywords a plugin registry uses to let people find the plugin. Needs SDK 3.3.0 or later. At most 10 tags, each 2 to 30 lowercase letters, digits and hyphens with no leading #, and no tag twice. A bad list is refused with PLUGIN_MANIFEST_TAGS_INVALID.' },
   { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Optional. Web origins (scheme, host and port, such as https://example.com or https://*.example.com) that a link block of a plugin view may point at with an absolute https address, and that a preview block may frame (a pure https origin only). Leave it out when the plugin only links to sites hosted on the installation: see the section on links to sites the reader owns below.' }
 ]" />
@@ -422,6 +423,7 @@ A version 2 manifest may list `capabilities`, each a name from the SDK's `Plugin
 | `provisioningPanel` | `Provisioning` only | | `IProvisioningPanelPlugin` |
 | `provisioningPanelLogin` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelLoginPlugin` |
 | `provisioningPanelPackages` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelPackagesPlugin` |
+| `provisioningPanelAccount` | `Provisioning` only | `provisioningPanel` | `IProvisioningPanelAccountPlugin` |
 | `virtualServer` | `Provisioning` only | | `IVirtualServerPlugin` |
 | `virtualServerList` | `Provisioning` only | | `IVirtualServerListPlugin` |
 | `virtualServerSnapshots` | `Provisioning` only | `virtualServer` | `IVirtualServerSnapshotPlugin` |
@@ -515,8 +517,11 @@ screens behave the same whoever drives the panel.
 | `ListAccountsAsync`, `GetUsageAsync` | the disk usage report: the accounts page by page, then each account's usage |
 | `TestConnectionAsync` | Test Connection on a server and the periodic account count sync |
 | `GetLoginDetailsAsync` | the account's login details, only when `provisioningPanelLogin` is declared; without it the host answers that the action is not supported |
+| `GetAccountAsync` | the service's panel sync and the read after an account is created: one account by its reference, only when `provisioningPanelAccount` is declared; without it the host answers that the action is not supported |
 
 `provisioningPanelPackages` is accepted, and the host does not call `ListPackagesAsync` yet.
+
+**Reading one account.** A plugin that also implements `IProvisioningPanelAccountPlugin` and declares `provisioningPanelAccount` lets the host read one account by its `ProvisioningRef`: its status, domain, package and, when the panel says it, `IpAddress` (an IPv4 or IPv6 address in text form; anything else is ignored). A field the panel leaves `null` is shown as not reported. The host reads the account right after it creates one, to record the IP address on the service, and when staff press **Sync with panel** on a service. The read never changes the panel. A sync takes the platform as the source of truth: through the operations above it asks the panel to suspend or unsuspend the account to match the service and to change the package to the product's package, sets the stored password only when staff tick the box, and records the IP address the panel reports. The domain is reported and never changed. Without the capability a sync answers `PANEL_OPERATION_NOT_SUPPORTED`, and after an account is created the failed read is only logged, so provisioning still succeeds.
 
 **Which plugin serves a server.** The server's module id is compared with each plugin's `serverModules` ignoring case, so a server
 saved as `DirectAdmin` is served by a plugin that declares `directadmin`. Nothing stored is rewritten: the service keeps its server and its
@@ -544,6 +549,19 @@ exists, so create must be idempotent by user name and answer `AlreadyApplied` fo
 **The connection.** The plugin receives the server as the host stores it: host name, address, `UseSsl`, user name, access hash, API
 token and `Password`, with `Port` null because the host keeps no panel port. The secrets print as `***` in a log line or an exception, and
 the plugin logs none of them. The stored password is read for a plugin call only; no provider built into the host receives it.
+
+### SSH agent profile of a hosting panel plugin {#ssh-agent-profile}
+
+A server of a panel plugin can have its SSH keys managed through the SSH key agent the host keeps (see [SSH key agent](../servers/ssh-key-agent.md)). The agent needs a profile that tells it how to recognise the panel's accounts, and a plugin ships its own, so the host names no panel. A plugin that declares `provisioningPanel` sets `sshAgentProfile` in the manifest and carries the files in its package:
+
+| Package path | Holds |
+| --- | --- |
+| `agent/profile.conf` | The profile, one file in the agent's own configuration format (one `[agent]` section). At most 8 KiB. `provider` must equal `sshAgentProfile` and `binding` must be empty, because the host sets it for each server. It may set only keys the agent defines, and `helper_dir` and `account_check_command` must stay inside `/usr/local/libexec/hostpanel-ssh-key-agent`. |
+| `agent/helpers/<name>` | The small programs the agent runs for the profile, one file each directly in the folder, installed under the helper folder of the profile. At most 32 files of 64 KiB each. A name is a letter or a digit followed by letters, digits, dots, underscores or hyphens. |
+
+The files are covered by the package signature like the rest of the package, and the host checks them with the `Hostpanel.Sdk.Packaging` package, the same code you run before you publish (`PluginAgentPackageChecker`). A profile that breaks a rule is refused at install (`PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID`, `PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED`, `PLUGIN_SSH_AGENT_PROFILE_MISSING`, `PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID` and `PLUGIN_SSH_AGENT_HELPER_INVALID`). A plugin that was installed before a rule existed stays loaded and its servers simply have no profile to install, with one warning in the log.
+
+For a server whose module the plugin serves, the host offers the profile on the server's SSH dialog and builds an installer bundle for it: the agent and its files plus the plugin's profile and helpers, packed the same way every time, so the SHA256 the administrator sees is the one of the download (`GET /api/public/ssh-agent/bundle.tar.gz?profile=<id>`, answered 404 `SSH_AGENT_PROFILE_NOT_FOUND` for an id no loaded plugin ships). A file of the plugin replaces a file the host embeds at the same path. Two plugins that ship the same profile id are not allowed: the second one loads without its profile.
 
 ### Registrar connection roles
 
@@ -601,7 +619,7 @@ if (host is IPluginHostHostingApi hosting)
 | Member | Needs | What it does |
 |--------|-------|--------------|
 | `GetHostingCapabilitiesAsync` | any of `ssh`, `websites`, `databases` | Tells which of the three the service supports, and the PHP versions of its server. A kind the manifest does not declare reads as false. |
-| `EnsureWebsiteAsync` | `websites` | Makes sure the website exists as the specification says. Asking again with the same specification answers the stored website without calling the server; with another one, the server and the record are updated. |
+| `EnsureWebsiteAsync` | `websites` | Makes sure the website exists as the specification says. Asking again with the same specification answers the stored website without calling the server; with another one, the server and the record are updated. The answer's `PhpCliPath` (SDK 3.16.0) is the absolute path of the PHP command line binary of the website's PHP version, so a deploy can run the same PHP as the site; it is null when the website has no PHP or the server did not report the path. A website stored before the host kept the path is set up once more on its next call to learn it. |
 | `RemoveWebsiteAsync` | `websites` | Removes a website this plugin set up. Removing twice is fine. |
 | `EnsureDatabaseAsync` | `databases` | Makes sure a database exists for the label. The password is in the answer to the call that created it and nowhere else: a repeat answers the same database with a null password. |
 | `RemoveDatabaseAsync` | `databases` | Drops a database this plugin created. Removing twice is fine. |

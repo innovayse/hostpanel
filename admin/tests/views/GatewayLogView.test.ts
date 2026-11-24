@@ -54,7 +54,6 @@ describe('GatewayLogView', () => {
 
     expect(wrapper.text()).toContain('Gateway Transaction Log')
     expect(wrapper.get('[data-testid="billing-gateway-log-table"]').text()).toContain('No Records Found')
-    expect(wrapper.get('[data-testid="billing-gateway-log-count"]').text()).toContain('0 Records Found')
   })
 
   it('renders the entries the API returns', async () => {
@@ -64,7 +63,6 @@ describe('GatewayLogView', () => {
     expect(callOf(mock).url).toBe('/api/gateway-logs?page=1&pageSize=20')
     expect(wrapper.get('[data-testid="billing-gateway-log-table"]').text()).toContain('Invoice #5 ref abc')
     expect(wrapper.get('[data-testid="billing-gateway-log-table"]').text()).toContain('Payment')
-    expect(wrapper.get('[data-testid="billing-gateway-log-count"]').text()).toContain('1 Records Found')
   })
 
   it('draws the headers of the schema columns, in order', async () => {

@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiCardRole, UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The storefront FAQ list. */
 const schema: ListSkeletonSchema = {
@@ -17,8 +17,8 @@ const schema: ListSkeletonSchema = {
     columns: [
       { key: 'handle', size: UiColumnSize.Compact, cardRole: UiCardRole.Hidden },
       { key: 'question', label: 'storefront.faqs.question', size: UiColumnSize.Grow },
-      { key: 'category', label: 'storefront.faqs.category' },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge },
+      { key: 'category', label: 'storefront.faqs.category', kind: UiColumnKind.Status },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],
   },

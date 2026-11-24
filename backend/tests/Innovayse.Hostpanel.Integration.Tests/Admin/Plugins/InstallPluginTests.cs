@@ -343,7 +343,6 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Hostpanel.Sdk.dll")]
-    [InlineData("Innovayse.SDK.dll")]
     [InlineData("lib/Innovayse.Hostpanel.Domain.dll")]
     [InlineData("System.Text.Json.dll")]
     [InlineData("Microsoft.Extensions.Logging.Abstractions.dll")]

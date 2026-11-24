@@ -381,7 +381,6 @@ backend:test:
     TEST_PROJECTS: >-
       Innovayse.Hostpanel.Domain.Tests
       Innovayse.Hostpanel.Architecture.Tests
-      Innovayse.CWP.Tests
   rules:
     # main is reached only through a GitHub PR whose CI ran these same suites before the
     # merge; running them again here only delayed the deploy by ~20 minutes. Set
@@ -463,6 +462,23 @@ deploy-scripts:test:
         - scripts/retry-bounded.sh
         - scripts/test-retry-bounded.sh
         - scripts/test-deploy-rollback.sh
+
+# Runs the SSH key agent's Python unit tests (the helpers run for real against a stand-in server tree), then a syntax
+# check and shellcheck of its provider helpers. The same checks as the agent job of .github/workflows/ci.yml.
+agent:test:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - apt-get update -qq && apt-get install -y -qq python3 shellcheck
+    - python3 -m unittest discover -s backend/agent/ssh-key-agent/tests
+    - sh scripts/check-agent-helpers.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - .gitlab-ci.yml
+        - scripts/check-agent-helpers.sh
+        - backend/agent/ssh-key-agent/**/*
 
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the

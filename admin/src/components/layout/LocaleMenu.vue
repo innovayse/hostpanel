@@ -13,8 +13,10 @@ import { SUPPORTED_LOCALES, setLocale } from '@/i18n'
 import type { SupportedLocale } from '@/i18n'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
+import UiText from '@/components/ui/UiText.vue'
 import { iconTriggerClasses, iconTriggerIconSize } from '@/utils/ui/button'
 import type { UiMenuAction } from '@/utils/ui/menu'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Props of the language menu. */
 withDefaults(defineProps<{
@@ -33,6 +35,7 @@ const localeLabels = computed<Record<SupportedLocale, string>>(() => ({
   hy: t('layout.localeLabels.hy'),
   ru: t('layout.localeLabels.ru'),
   de: t('layout.localeLabels.de'),
+  es: t('layout.localeLabels.es'),
 }))
 
 /**
@@ -58,9 +61,9 @@ const actions = computed<UiMenuAction[]>(() =>
 
 <template>
   <UiMenu :actions="actions" :aria-label="t('shared.language')" :testid="testid">
-    <span :class="[iconTriggerClasses, 'gap-1 px-2']">
+    <UiText :as="UiTextTag.Span" :tone="UiTextTone.Plain" :class="[iconTriggerClasses, 'gap-1 px-2']">
       <UiIcon :markup="Icon.Globe" :size="iconTriggerIconSize" />
-      <span class="text-xs font-medium uppercase">{{ locale }}</span>
-    </span>
+      <UiText :as="UiTextTag.Span" :tone="UiTextTone.Plain" :size="UiTextSize.Xs" class="font-medium uppercase">{{ locale }}</UiText>
+    </UiText>
   </UiMenu>
 </template>

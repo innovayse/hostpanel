@@ -1,7 +1,7 @@
 <template>
   <!-- The live region is always in the DOM: a region inserted together with its text is not announced. -->
   <UiText
-    as="p"
+    :as="UiTextTag.P"
     size="xs"
     tone="muted"
     class="text-center"
@@ -21,6 +21,7 @@
  * as why the page is about to change, goes here so it can never overflow or resize the button.
  * Both checkout templates use it, so the busy state reads the same in each.
  */
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of SubmitHint. */
 interface Props {

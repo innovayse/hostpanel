@@ -20,7 +20,7 @@ describe('PluginKeptData', () => {
     const wrapper = mountList()
 
     expect(wrapper.get('[data-testid="plugin-kept-example-pay"]').text()).toContain('example-pay')
-    expect(wrapper.get('[data-testid="plugin-purge-acme"]').text()).toBe('Purge data')
+    expect(wrapper.get('[data-testid="plugin-purge-acme"]').text()).toBe('Purge')
   })
 
   it('emits purge with the plugin id', async () => {
@@ -34,7 +34,7 @@ describe('PluginKeptData', () => {
   it('disables the buttons while one purge runs, keeping the label', () => {
     const wrapper = mountList({ purgingId: 'example-pay' })
 
-    expect(wrapper.get('[data-testid="plugin-purge-example-pay"]').text()).toContain('Purge data')
+    expect(wrapper.get('[data-testid="plugin-purge-example-pay"]').text()).toContain('Purge')
     expect(wrapper.get('[data-testid="plugin-purge-acme"]').attributes('disabled')).toBeDefined()
   })
 })

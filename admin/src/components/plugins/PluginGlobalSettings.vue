@@ -15,6 +15,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import type { Setting, SettingSave } from '@/types/setting'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -71,7 +72,7 @@ const confirmPurge = (): void => {
 </script>
 
 <template>
-  <UiStack gap="lg">
+  <UiStack :gap="UiGap.Lg">
     <UiErrorState
       v-if="error"
       :message="error"

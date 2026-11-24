@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Open a new ticket: the staff form that creates a support ticket on behalf of a client, with a
- * client search, department and priority. Opens the ticket's detail page on success; a refusal shows
- * the API's sentence next to the submit button.
+ * client search, department and priority. Opens the ticket's detail page on success; a refusal is toasted
+ * with the API's sentence.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -15,17 +15,18 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { useClientsStore } from '@/stores/clients'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority } from '@/types/ticket'
 import type { ClientListItem } from '@/types/client'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
-import { UiTone } from '@/utils/ui/tone'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import schema from '@/views/SupportOpenTicketView.schema'
 import { AppRoute, supportTicketPath } from '@/lib/routes'
@@ -35,6 +36,9 @@ import { UiActionKind } from '@/utils/ui/actions'
 const { t } = useI18n()
 
 const router = useRouter()
+
+/** Toasts the refusal of the creation. */
+const feedback = useOutcomeToast()
 const store = useSupportStore()
 const clientsStore = useClientsStore()
 
@@ -147,6 +151,8 @@ const handleSubmit = async (): Promise<void> => {
   })
   if (newId) {
     router.push(supportTicketPath(newId))
+  } else {
+    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -170,7 +176,7 @@ onMounted(() => {
 
     <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors">
       <template #field-clientId>
-        <UiStack class="relative" gap="xs">
+        <UiStack class="relative" :gap="UiGap.Xs">
           <UiInput
             :model-value="clientSearch"
             :placeholder="t('support.supportOpenTicket.searchByNameEmailOr')"
@@ -178,7 +184,7 @@ onMounted(() => {
             @update:model-value="handleClientSearch"
             @focus="showClientDropdown = clientResults.length > 0"
           />
-          <UiStack v-if="selectedClientId !== null" direction="row" justify="end">
+          <UiStack v-if="selectedClientId !== null" :direction="UiDirection.Row" :justify="UiJustify.End">
             <UiButton
               :variant="UiButtonVariant.Link"
               :size="UiSize.Sm"
@@ -197,14 +203,15 @@ onMounted(() => {
             <UiButton
               v-for="client in clientResults"
               :key="client.id"
+              :variant="UiButtonVariant.Ghost"
               block
               class="justify-start"
               :data-testid="`support-open-ticket-client-${client.id}`"
               @click="selectClient(client)"
             >
-              <UiText tone="primary" size="md">{{ client.firstName }} {{ client.lastName }}</UiText>
-              <UiText tone="muted" size="md">#{{ client.id }}</UiText>
-              <UiText tone="muted" size="md">{{ client.email }}</UiText>
+              <UiText :as="UiTextTag.Span" :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ client.firstName }} {{ client.lastName }}</UiText>
+              <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Md">#{{ client.id }}</UiText>
+              <UiText :as="UiTextTag.Span" :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ client.email }}</UiText>
             </UiButton>
           </UiCard>
         </UiStack>
@@ -264,7 +271,7 @@ onMounted(() => {
         />
       </template>
 
-      <UiStack direction="row">
+      <UiStack :direction="UiDirection.Row">
         <UiButton :action="UiActionKind.Add"
           :variant="UiButtonVariant.Primary"
           :loading="store.loading"
@@ -272,10 +279,9 @@ onMounted(() => {
           data-testid="support-open-ticket-submit"
           @click="handleSubmit"
         >
-          {{ t('support.supportOpenTicket.openTicket') }}
+          {{ t('shared.createTicket') }}
         </UiButton>
       </UiStack>
-      <UiStatusMessage :message="store.actionError" :tone="UiTone.Danger" data-testid="support-open-ticket-error" />
     </UiSchemaForm>
   </UiStack>
 </template>

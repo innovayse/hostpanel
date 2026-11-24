@@ -15,10 +15,14 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiInputType } from '@/utils/ui/input'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -64,10 +68,10 @@ const submit = (): void => {
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-licence-card">
-    <UiStack gap="sm">
-      <UiStack direction="row" align="center" gap="sm" wrap>
-        <UiHeading :level="2" variant="section">{{ t('pluginDetails.licence.heading') }}</UiHeading>
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-licence-card">
+    <UiStack :gap="UiGap.Sm">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
+        <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('pluginDetails.licence.heading') }}</UiHeading>
         <UiBadge
           :tone="hasKey ? UiTone.Success : UiTone.Warning"
           small
@@ -76,8 +80,8 @@ const submit = (): void => {
           {{ keyStateText }}
         </UiBadge>
       </UiStack>
-      <UiText tone="muted" size="sm">{{ t('pluginDetails.licence.description') }}</UiText>
-      <UiStack direction="row" align="center" gap="sm" wrap>
+      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('pluginDetails.licence.description') }}</UiText>
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
         <UiInput
           v-model="key"
           :type="UiInputType.Password"
@@ -89,25 +93,29 @@ const submit = (): void => {
           @keyup.enter="submit"
         />
         <UiButton :action="UiActionKind.Save"
-          type="button"
+          :title="t('pluginDetails.licence.save')"
+          :aria-label="t('pluginDetails.licence.save')"
+          :type="UiButtonType.Button"
           :variant="UiButtonVariant.Primary"
-          size="sm"
+          :size="UiSize.Sm"
           :disabled="!canSave"
           data-testid="plugin-licence-save"
           @click="submit"
         >
-          {{ t('pluginDetails.licence.save') }}
+          {{ t('shared.save') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Delete"
+        <UiButton :action="UiActionKind.Remove"
           v-if="hasKey"
-          type="button"
+          :title="t('pluginDetails.licence.remove')"
+          :aria-label="t('pluginDetails.licence.remove')"
+          :type="UiButtonType.Button"
           :variant="UiButtonVariant.Danger"
-          size="sm"
+          :size="UiSize.Sm"
           :disabled="busy"
           data-testid="plugin-licence-remove"
           @click="emit('remove')"
         >
-          {{ t('pluginDetails.licence.remove') }}
+          {{ t('shared.remove') }}
         </UiButton>
       </UiStack>
     </UiStack>

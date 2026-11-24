@@ -15,11 +15,11 @@
       <span>{{ $t('ui.pagination.entries') }}</span>
     </div>
 
-    <nav class="flex items-center gap-1" :aria-label="$t('ui.pagination.label')">
+    <nav class="flex flex-wrap items-center gap-1" :aria-label="$t('ui.pagination.label')">
       <button
         type="button"
         data-testid="ui-pagination-prev"
-        class="px-3 py-1.5"
+        class="min-h-11 px-3 py-1.5 sm:min-h-8"
         :class="[NAV_BASE, modelValue <= 1
           ? NAV_DISABLED
           : NAV_ENABLED]"
@@ -33,7 +33,7 @@
         type="button"
         :data-testid="`ui-pagination-page-${p}`"
         :aria-current="p === modelValue ? 'page' : undefined"
-        class="w-8 h-8"
+        class="h-11 w-11 sm:h-8 sm:w-8"
         :class="[NAV_BASE, p === modelValue ? PAGE_CURRENT : NAV_ENABLED]"
         @click="emit('update:modelValue', p)"
       >{{ p }}</button>
@@ -41,7 +41,7 @@
       <button
         type="button"
         data-testid="ui-pagination-next"
-        class="px-3 py-1.5"
+        class="min-h-11 px-3 py-1.5 sm:min-h-8"
         :class="[NAV_BASE, modelValue >= totalPages
           ? NAV_DISABLED
           : NAV_ENABLED]"

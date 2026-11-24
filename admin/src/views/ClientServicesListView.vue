@@ -21,21 +21,17 @@ import AddExistingServiceModal from '@/components/clients/AddExistingServiceModa
 import ServiceFilterFields from '@/components/services/ServiceFilterFields.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientServicesListView.schema'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize } from '@/utils/ui/text'
+import { UiJustify, UiDirection } from '@/utils/ui/layout'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
 import { useListQuery } from '@/composables/useListQuery'
@@ -43,6 +39,7 @@ import { ServiceFilterKey, useServiceFilters } from '@/composables/useServiceFil
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiSize } from '@/utils/ui/size'
 
 const { t } = useI18n()
 
@@ -138,8 +135,8 @@ onMounted(() => settingsStore.fetchProducts())
 
 <template>
   <UiStack>
-    <UiStack direction="row" :justify="UiJustify.End">
-      <UiButton :action="UiActionKind.Add" size="sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
+    <UiStack :direction="UiDirection.Row" :justify="UiJustify.End">
+      <UiButton :variant="UiButtonVariant.Secondary" :action="UiActionKind.Add" :size="UiSize.Sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
         {{ t('clients.addExistingService.open') }}
       </UiButton>
     </UiStack>
@@ -181,67 +178,51 @@ onMounted(() => settingsStore.fetchProducts())
       @retry="fetchServices()"
     />
 
-    <UiCard v-else-if="initialLoading || services.length > 0">
-      <UiTable
-        :density="UiTableDensity.Comfortable"
-        :loading="initialLoading"
-        data-testid="client-services-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="service in services"
-            :key="service.id"
-            hoverable
-            class="cursor-pointer"
-            :data-testid="`client-services-row-${service.id}`"
-            @click="viewService(service.id)"
-          >
-            <UiTableCell muted>{{ service.id }}</UiTableCell>
-            <UiTableCell>{{ service.productName }}</UiTableCell>
-            <UiTableCell muted>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
-            <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
-            <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
-            <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-      <template v-if="initialLoading || totalCount > pageSize" #footer>
-        <UiStack
-          direction="row"
-          wrap
-          :justify="UiJustify.Between"
-          :align="UiAlignItems.Center"
+    <UiDataTable
+      v-else
+      :density="UiTableDensity.Comfortable"
+      :loading="initialLoading"
+      :empty="!initialLoading && services.length === 0"
+      :page="page"
+      :total="totalCount"
+      :page-size="pageSize"
+      pagination-testid="client-services-pagination"
+      data-testid="client-services-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="service in services"
+          :key="service.id"
+          hoverable
+          clickable
+          :data-testid="`client-services-row-${service.id}`"
+          @click="viewService(service.id)"
         >
-          <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm">
-            {{ t('clients.clientServicesList.totalcountServiceValue', { totalCount }) }}
-          </UiResultCount>
-          <UiPagination
-            :page="page"
-            :total="totalCount"
-            :page-size="pageSize"
-            :loading="initialLoading"
-            testid="client-services-pagination"
-            @update:page="setPage"
-          />
-        </UiStack>
+          <UiTableCell muted>{{ service.id }}</UiTableCell>
+          <UiTableCell>{{ service.productName }}</UiTableCell>
+          <UiTableCell muted>{{ service.domain ?? EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
+          <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
+          <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+      <template #empty>
+        <UiEmptyState
+          :title="narrowed ? t('clients.clientServicesList.noServicesMatchYourFilters') : t('clients.clientServicesList.noServicesFoundForThis')"
+          data-testid="client-services-empty"
+        >
+          <template v-if="activeCount > 0" #actions>
+            <UiButton :variant="UiButtonVariant.Link" data-testid="client-services-clear-empty" @click="clearAll">
+              {{ t('shared.clearFilters') }}
+            </UiButton>
+          </template>
+        </UiEmptyState>
       </template>
-    </UiCard>
-
-    <UiCard v-else>
-      <UiEmptyState
-        :title="narrowed ? t('clients.clientServicesList.noServicesMatchYourFilters') : t('clients.clientServicesList.noServicesFoundForThis')"
-        data-testid="client-services-empty"
-      >
-        <template v-if="activeCount > 0" #actions>
-          <UiButton :variant="UiButtonVariant.Link" data-testid="client-services-clear-empty" @click="clearAll">
-            {{ t('clients.clientServicesList.clearFilters') }}
-          </UiButton>
-        </template>
-      </UiEmptyState>
-    </UiCard>
+    </UiDataTable>
   </UiStack>
 </template>

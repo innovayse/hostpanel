@@ -25,10 +25,10 @@ import { readPluginField } from '@/lib/pluginView'
 import { usePluginUiStore } from '@/stores/pluginUi'
 import { PluginFieldType } from '@/types/pluginview'
 import type { PluginFormBlock, PluginFormField } from '@/types/pluginview'
-import { UiButtonType } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiInputType } from '@/utils/ui/input'
-import { UiAlignItems, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiAlignItems, UiGap, UiJustify, UiDirection } from '@/utils/ui/layout'
 import { UiHeadingVariant, UiLabelVariant, UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -231,8 +231,8 @@ const submit = async (): Promise<void> => {
         </UiField>
       </template>
       <UiStatusMessage :message="message || null" :tone="messageTone" data-testid="plugin-form-message" />
-      <UiStack direction="row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
-        <UiButton :action="UiActionKind.Save" :type="UiButtonType.Submit" :loading="sending" :disabled="sending" data-testid="plugin-form-submit">{{ block.submit.label }}</UiButton>
+      <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
+        <UiButton :action="UiActionKind.Save" :variant="UiButtonVariant.Primary" :type="UiButtonType.Submit" :loading="sending" :disabled="sending" data-testid="plugin-form-submit">{{ block.submit.label }}</UiButton>
       </UiStack>
     </UiForm>
   </UiCard>

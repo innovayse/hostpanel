@@ -65,6 +65,14 @@ describe('BlockListAddForm', () => {
     expect(mountForm().get('[data-testid="fraud-block-list-note"]').attributes('maxlength')).toBe('500')
   })
 
+  it('labels the button Add and keeps the full phrase as its title', () => {
+    const button = mountForm().get('[data-testid="fraud-block-list-add"]')
+
+    expect(button.text()).toBe('Add')
+    expect(button.attributes('title')).toBe('Add to block list')
+    expect(button.attributes('aria-label')).toBe('Add to block list')
+  })
+
   it('keeps Add blocked until there is a value, and sends nothing for a blank one', async () => {
     const wrapper = mountForm({ value: '   ' })
 

@@ -3,15 +3,13 @@
     "title": "Paquetes",
     "subtitle": "Servicios que van juntos, se contratan a la vez y tienen descuento.",
     "domainIncluded": "Dominio incluido: {years}",
-    "choose": "Elegir este paquete",
-    "back": "Volver a Productos",
+    "choose": "Elegir paquete",
     "notFound": "Paquete no encontrado.",
     "primary": "Servicio principal",
     "cycle": "Ciclo de facturación",
     "cyclePlaceholder": "Seleccione un ciclo de facturación",
     "unpriced": "Este servicio no tiene precio por ahora, por lo que el paquete no se puede pedir.",
     "orderSummary": "Resumen del paquete",
-    "continue": "Continuar",
     "discount": {
       "percentage": "{amount}% de descuento",
       "fixed": "{amount} de descuento"
@@ -24,8 +22,7 @@
     "domain": {
       "title": "Dominio incluido",
       "actionLabel": "Registre un dominio nuevo o transfiera uno existente",
-      "pick": "Seleccionar",
-      "useTransfer": "Usar este dominio",
+      "useTransfer": "Usar dominio",
       "change": "Cambiar",
       "unavailable": "Ahora mismo no se pueden pedir dominios."
     }

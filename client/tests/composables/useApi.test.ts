@@ -81,7 +81,7 @@ describe('useApi', () => {
   })
 
   it('sends the default language when the locale is not one the backend ships', () => {
-    locale.value = 'fr'
+    locale.value = 'it'
 
     useApi('/api/portal/client/me')
 
@@ -247,7 +247,7 @@ describe('apiStream', () => {
   })
 
   it('sends the default language when the locale is not one the backend ships', async () => {
-    await arrange('fr', () => ({ headers: { 'content-type': 'text/event-stream' }, body: '' }))
+    await arrange('it', () => ({ headers: { 'content-type': 'text/event-stream' }, body: '' }))
 
     await apiStream('/stream', {}, new AbortController().signal)
 

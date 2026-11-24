@@ -112,7 +112,9 @@ describe('ServicesListView', () => {
     expect(row.text()).toContain('Monthly')
     expect(row.text()).toContain('Suspended')
     expect(wrapper.get('[data-testid="services-client-11"]').attributes('href')).toBe('/clients/3')
-    expect(wrapper.findAll('th').filter((header) => header.classes().includes('w-full'))).toHaveLength(1)
+    const headers = wrapper.findAll('th')
+    expect(headers.find((header) => header.text() === 'Product/Service')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
+    expect(headers.find((header) => header.text() === 'Price')?.classes()).toEqual(expect.arrayContaining(['w-px', 'whitespace-nowrap']))
   })
 
   it('draws the headers of the schema columns, in order', async () => {

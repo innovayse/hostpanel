@@ -1,12 +1,10 @@
 <template>
-  <li class="h-full">
+  <UiStack :as="UiStackTag.Li" gap="none" class="h-full">
     <UiCard
       padding="lg"
       class="flex h-full flex-col transition-[transform,border-color] motion-safe:hover:-translate-y-1 !border-nova-border !bg-nova-surface hover:!border-nova-brand"
     >
-      <span class="grid h-11 w-11 place-items-center rounded-xl bg-nova-surface-2 text-nova-brand">
-        <Icon :name="feature.icon" class="h-[22px] w-[22px]" aria-hidden="true" />
-      </span>
+      <UiIconTile :icon="feature.icon" size="lg" tone="nova" />
       <UiHeading :level="3" size="bare" class="mt-5 text-[17px] font-bold text-nova-ink">
         {{ t(feature.titleKey) }}
       </UiHeading>
@@ -19,7 +17,7 @@
         {{ t(feature.bodyKey) }}
       </UiText>
     </UiCard>
-  </li>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -35,6 +33,7 @@
  * before it was rendered.
  */
 import type { Feature } from '~/templates/nova/types/feature'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of FeatureCard. */
 defineProps<{

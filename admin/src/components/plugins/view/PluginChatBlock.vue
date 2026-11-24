@@ -39,6 +39,7 @@ import PluginChatMessage from '@/components/plugins/view/PluginChatMessage.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiScrollArea from '@/components/ui/UiScrollArea.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { usePluginChatTurn } from '@/composables/usePluginChatTurn'
@@ -52,6 +53,7 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiCardPadding } from '@/utils/ui/card'
 
 /** Props for PluginChatBlock. */
 const props = defineProps<{
@@ -94,18 +96,18 @@ const logClasses = computed<string>(() => (inPane ? 'max-h-[50dvh]' : 'max-h-[60
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-chat">
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-chat">
     <UiStack :gap="UiGap.Sm">
       <!-- The log scrolls by itself, so the composer below it stays in view. -->
       <UiStack :gap="UiGap.None" class="relative">
-        <div
-          ref="log"
+        <UiScrollArea
+          v-model:element="log"
           role="log"
           tabindex="0"
           aria-live="polite"
           :aria-busy="streaming"
           :aria-label="t('plugins.pluginPage.chatLog')"
-          class="min-h-48 overflow-y-auto"
+          class="min-h-48"
           :class="logClasses"
           data-testid="plugin-chat-log"
           @scroll="onScroll"
@@ -139,16 +141,16 @@ const logClasses = computed<string>(() => (inPane ? 'max-h-[50dvh]' : 'max-h-[60
                   :disabled="streaming"
                   data-testid="plugin-chat-retry"
                   @click="resendLast(true)"
-                >{{ t('plugins.pluginPage.chatRetry') }}</UiButton>
+                >{{ t('shared.retry') }}</UiButton>
               </UiStack>
             </UiAlert>
           </UiStack>
-        </div>
+        </UiScrollArea>
         <UiStack v-if="!following" :align="UiAlignItems.Center" class="pointer-events-none absolute inset-x-0 bottom-2">
           <UiButton :icon="Icon.ArrowDown"
             :variant="UiButtonVariant.Secondary"
             :size="UiSize.Sm"
-            class="pointer-events-auto shadow-popover"
+            class="pointer-events-auto"
             data-testid="plugin-chat-jump"
             @click="jumpToLatest"
           >{{ t('plugins.pluginPage.chatJumpToLatest') }}

@@ -95,13 +95,13 @@ const onCancel = (): void => {
     <slot />
     <template #footer>
       <UiButton v-if="resettable" :action="UiActionKind.Reset" variant="ghost" class="mr-auto" data-testid="filter-reset" @click="emit('reset')">
-        {{ t('ui.uiFilterTrigger.reset') }}
+        {{ t('shared.reset') }}
       </UiButton>
       <UiButton :action="UiActionKind.Cancel" variant="secondary" class="max-sm:hidden" data-testid="filter-cancel" @click="onCancel">
-        {{ t('ui.uiFilterTrigger.cancel') }}
+        {{ t('shared.cancel') }}
       </UiButton>
       <UiButton :action="UiActionKind.Apply" variant="primary" data-testid="filter-apply" @click="onApply">
-        {{ t('ui.uiFilterTrigger.apply') }}
+        {{ t('shared.apply') }}
       </UiButton>
     </template>
   </UiDialog>

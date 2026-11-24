@@ -11,7 +11,7 @@
     <ClientOnly>
       <UiStack
         v-if="cart.count > 0"
-        as="span"
+        :as="UiStackTag.Span"
         direction="row"
         align="center"
         justify="center"
@@ -34,6 +34,7 @@
 import { ShoppingCart } from 'lucide-vue-next'
 import { useCartStore } from '~/stores/cart'
 import { HEADER_CONTROL } from '~/utils/headerControl'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** The cart store: the count shown in the badge and the action that opens the drawer. */
 const cart = useCartStore()

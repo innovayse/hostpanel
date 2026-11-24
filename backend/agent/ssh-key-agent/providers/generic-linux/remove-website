@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# What: takes back what ensure-website made for ONE hostname of ONE account (agent op remove-website). Only what the
+#       registry says the agent created is touched: the virtual host file (and its Debian Apache enabling link) when it
+#       carries the agent's marker, the account's pool of that php version when it is marked and no other registered
+#       website of the account uses the version, and the document root directory only when ensure-website created it
+#       and it is empty (the customer's files are never removed). A hostname the agent has no record of whose vhost
+#       exists, or one registered to another account, is refused. Idempotent: nothing left to remove is a success
+#       with changed=false. Configuration is tested before the reload and restored if a test fails.
+# Usage (root, called by hostpanel-ssh-key-agent): remove-website <account> <hostname>
+# Exit: 0 done, 2 bad arguments, 3 not created by the agent (or another account's), other = failed.
+#       Prints one `RESULT {"changed":true|false}` line.
+set -euo pipefail
+HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=hp-common.sh
+. "$HELPER_DIR/hp-common.sh"
+
+[ $# -eq 2 ] || hp_die "$EXIT_BAD_ARGS" "usage: remove-website <account> <hostname>"
+HOSTN="$2"
+hp_require_account "$1"
+[[ "$HOSTN" =~ $HOSTNAME_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad hostname"
+
+OWNER="$(hp_site_owner "$HOSTN")"
+[ -z "$OWNER" ] || [ "$OWNER" = "$ACCOUNT" ] || hp_die "$EXIT_NOT_OWNED" "$HOSTN belongs to another account"
+hp_detect_web
+VHOST="$(hp_vhost_file "$HOSTN")"
+if [ -z "$OWNER" ]; then
+  [ ! -e "$VHOST" ] || hp_die "$EXIT_NOT_OWNED" "$HOSTN was not created by the agent"
+  hp_result '{"changed":false}'
+  exit 0
+fi
+[ ! -e "$VHOST" ] || hp_is_managed "$VHOST" || hp_die "$EXIT_NOT_OWNED" "$(basename "$VHOST") was not written by the agent"
+
+hp_guard
+VHOST_CHANGED=0
+PHP="$(hp_reg_get website "$HOSTN" php)"
+DOCROOT="$(hp_reg_get website "$HOSTN" docroot)"
+DOCROOT_CREATED="$(hp_reg_get website "$HOSTN" docroot_created)"
+
+# 1. The virtual host and, on Debian Apache, the link that enables it.
+if [ "$WEB_UNIT" = apache2 ]; then
+  ENABLED="$ENABLED_DIR/hp-$HOSTN.conf"
+  if [ -L "$ENABLED" ] || [ -e "$ENABLED" ]; then
+    hp_backup "$ENABLED"
+    "$SBIN/a2dissite" "hp-$HOSTN" >/dev/null
+    VHOST_CHANGED=1
+    hp_say "site disabled"
+  fi
+fi
+if hp_remove_file "$VHOST"; then
+  VHOST_CHANGED=1
+  hp_say "vhost $(basename "$VHOST") removed"
+fi
+
+# 2. The pool of this php version, unless another registered website of the account still uses it.
+hp_drop_pool "$PHP" "$HOSTN"
+
+# 3. Tests before the reload; a failure restores every edited file.
+if [ "$VHOST_CHANGED" = 1 ] && ! hp_web_test; then
+  hp_die 1 "$WEB_UNIT configuration test failed, restored"
+fi
+DIRTY=0
+
+# 4. The document root directory (after the tests: a removed directory is not restored), only when ensure-website made
+#    it and it is empty.
+if [ "$DOCROOT_CREATED" = 1 ] && [[ "$DOCROOT" =~ $DOCROOT_RE ]]; then
+  HOME_REAL="$(realpath -- "$HOME_DIR")"
+  TARGET="$(realpath -m -- "$HOME_DIR/$DOCROOT")"
+  if [[ "$TARGET" == "$HOME_REAL"/* ]] && [ -d "$TARGET" ] && [ ! -L "$TARGET" ] && rmdir -- "$TARGET" 2>/dev/null; then
+    hp_say "empty document root removed"
+  fi
+fi
+
+hp_reg_remove website "$HOSTN"
+for service in "${DROPPED_SERVICES[@]}"; do
+  "$BIN/systemctl" reload "$service"
+  hp_say "$service reloaded"
+done
+if [ "$VHOST_CHANGED" = 1 ]; then
+  "$BIN/systemctl" reload "$WEB_UNIT"
+  hp_say "$WEB_UNIT reloaded"
+fi
+hp_result '{"changed":true}'

@@ -26,6 +26,9 @@ public sealed class IssuePluginSshAccessTests(PluginHostAccessFixture fixture) :
     /// <summary>The label a plugin gives its key in these tests.</summary>
     private const string Label = "deploy";
 
+    /// <summary>The host key line the fake agent reports in the tests that read it.</summary>
+    private const string HostKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ";
+
     /// <summary>A bound service of the caller gets an identity on its own account, recorded as issued to the plugin and audited.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -474,6 +477,122 @@ public sealed class IssuePluginSshAccessTests(PluginHostAccessFixture fixture) :
         return Convert.FromBase64String(string.Concat(
             privateKey.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(line => !line.StartsWith("-----", StringComparison.Ordinal))));
+    }
+
+    /// <summary>
+    /// A key issued with sources is installed with exactly those sources, recorded with them, and the access carries the host
+    /// key the agent reported.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task IssueWithSources_InstallsThemAndReturnsTheHostKeyAsync()
+    {
+        string[] sources = ["203.0.113.7", "198.51.100.0/24"];
+        var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-from");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        var agent = fixture.Agents().AgentFor(owner.ServerId);
+        agent.HostKey = HostKey;
+
+        var access = await fixture.AsPluginAsync(
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            api => ((IPluginHostSshSourceApi)api).IssueSshAccessAsync(owner.ServiceId, Label, sources, CancellationToken.None));
+
+        access.HostKey.Should().Be(HostKey);
+        agent.AllowedFromOf(access.KeyId).Should().Equal(sources);
+        (await fixture.KeysOfAsync(owner.ServiceId)).Should().ContainSingle().Which.AllowedFrom.Should().Equal(sources);
+    }
+
+    /// <summary>An issue without sources, by either overload, installs an open key and still returns the host key.</summary>
+    /// <param name="withEmptyList">Whether the sources overload is called with an empty list.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task IssueWithoutSources_InstallsAnOpenKeyAsync(bool withEmptyList)
+    {
+        var owner = await fixture.OwnerWithServiceAsync($"plugin-ssh-open-{withEmptyList}");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        var agent = fixture.Agents().AgentFor(owner.ServerId);
+        agent.HostKey = HostKey;
+
+        var access = await fixture.AsPluginAsync(
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            api => withEmptyList
+                ? ((IPluginHostSshSourceApi)api).IssueSshAccessAsync(owner.ServiceId, Label, [], CancellationToken.None)
+                : api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None));
+
+        access.HostKey.Should().Be(HostKey);
+        agent.AllowedFromOf(access.KeyId).Should().BeEmpty();
+        (await fixture.KeysOfAsync(owner.ServiceId)).Should().ContainSingle().Which.AllowedFrom.Should().BeEmpty();
+    }
+
+    /// <summary>An agent that reports no host key leaves the access without one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AgentWithoutAHostKey_GivesAnAccessWithoutOneAsync()
+    {
+        var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-nohostkey");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        fixture.Agents().AgentFor(owner.ServerId).HostKey = null;
+
+        var access = await fixture.AsPluginAsync(
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            api => api.IssueSshAccessAsync(owner.ServiceId, Label, CancellationToken.None));
+
+        access.HostKey.Should().BeNull();
+    }
+
+    /// <summary>A source that is not an address or a network is refused as an invalid request, before anything is read, made or sent.</summary>
+    /// <param name="source">The offending source.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("*.example.com")]
+    [InlineData("example.com")]
+    [InlineData("198.51.100.5/24")]
+    [InlineData("203.0.113.256")]
+    [InlineData("!203.0.113.7")]
+    [InlineData("")]
+    public async Task IssueWithAnInvalidSource_IsAnInvalidRequestAndSendsNothingAsync(string source)
+    {
+        var owner = await fixture.OwnerWithServiceAsync($"plugin-ssh-badfrom-{Math.Abs(source.GetHashCode(StringComparison.Ordinal))}");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+
+        var refused = await fixture.AsPluginAsync(
+            PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+            async api =>
+            {
+                var act = () => ((IPluginHostSshSourceApi)api).IssueSshAccessAsync(owner.ServiceId, Label, [source], CancellationToken.None);
+                return (await act.Should().ThrowAsync<PluginHostAccessException>()).Which;
+            });
+
+        refused.Failure.Should().Be(PluginHostAccessFailure.InvalidRequest);
+        fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
+        (await fixture.KeysOfAsync(owner.ServiceId)).Should().BeEmpty();
+    }
+
+    /// <summary>More sources than a key may name, and the same source twice, are invalid requests.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task IssueWithTooManyOrRepeatedSources_IsAnInvalidRequestAsync()
+    {
+        var owner = await fixture.OwnerWithServiceAsync("plugin-ssh-manyfrom");
+        await fixture.BindProductsOfAsync(fixture.SshPluginId, owner.ServiceId);
+        var tooMany = Enumerable.Range(1, SshAllowedFromRules.MaxEntries + 1).Select(n => $"203.0.113.{n}").ToArray();
+        string[] repeated = ["203.0.113.7", "203.0.113.7"];
+
+        foreach (var sources in new[] { tooMany, repeated })
+        {
+            var refused = await fixture.AsPluginAsync(
+                PluginHostAccessFixture.ClientCall(fixture.SshPluginId, owner.ClientId),
+                async api =>
+                {
+                    var act = () => ((IPluginHostSshSourceApi)api).IssueSshAccessAsync(owner.ServiceId, Label, sources, CancellationToken.None);
+                    return (await act.Should().ThrowAsync<PluginHostAccessException>()).Which;
+                });
+            refused.Failure.Should().Be(PluginHostAccessFailure.InvalidRequest);
+        }
+
+        fixture.Agents().AgentFor(owner.ServerId).Calls.Should().BeEmpty();
     }
 
     /// <summary>Calls issue and returns the refusal the plugin catches.</summary>

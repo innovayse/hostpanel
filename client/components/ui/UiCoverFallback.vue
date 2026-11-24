@@ -6,7 +6,7 @@
     <UiDecor class="-bottom-12 -left-8 h-36 w-36 rounded-full border-[12px] border-current opacity-10" />
 
     <UiStack align="center" gap="sm" class="relative">
-      <UiText as="span" tone="inherit" size="inherit" class="font-display text-4xl font-bold tracking-wide" data-testid="ui-cover-fallback-initials">{{ initials }}</UiText>
+      <UiText :as="UiTextTag.Span" tone="inherit" size="inherit" class="font-display text-4xl font-bold tracking-wide" data-testid="ui-cover-fallback-initials">{{ initials }}</UiText>
       <component :is="icon" :size="22" :stroke-width="2" class="opacity-80" data-testid="ui-cover-fallback-icon" :data-site-type="siteType" />
     </UiStack>
   </div>
@@ -22,6 +22,7 @@
  */
 import { computed } from 'vue'
 import { SITE_TYPE_ICONS, initialsOf, siteTypeOf } from '~/utils/ui/siteType'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of UiCoverFallback. */
 interface Props {

@@ -1,8 +1,8 @@
 <template>
   <UiStack :gap="UiGap.Sm" :align="UiCrossAlign.Center" class="py-6 text-center" data-testid="plugin-chat-empty">
     <UiChatAvatar />
-    <UiText v-if="intro?.title" as="p" :weight="UiTextWeight.Semibold" data-testid="plugin-chat-intro-title">{{ intro.title }}</UiText>
-    <UiText as="p" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-chat-intro-text">{{ intro?.text ?? placeholder }}</UiText>
+    <UiText v-if="intro?.title" :as="UiTextTag.P" :weight="UiTextWeight.Semibold" data-testid="plugin-chat-intro-title">{{ intro.title }}</UiText>
+    <UiText :as="UiTextTag.P" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-chat-intro-text">{{ intro?.text ?? placeholder }}</UiText>
     <UiStack v-if="suggestions.length" :direction="UiDirection.Row" :gap="UiGap.Xs" :justify="UiJustify.Center" wrap data-testid="plugin-chat-suggestions">
       <UiButton
         v-for="(suggestion, position) in suggestions"
@@ -25,7 +25,7 @@
  * the sentence) and its ready-made messages as chips. Pressing a chip asks the chat to send that message.
  */
 import type { PluginChatSuggestion } from '~/types/pluginblock'
-import { UiButtonVariant, UiCrossAlign, UiDirection, UiGap, UiJustify, UiSize, UiTextSize, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
+import { UiButtonVariant, UiCrossAlign, UiDirection, UiGap, UiJustify, UiSize, UiTextSize, UiTextTag, UiTextTone, UiTextWeight } from '~/utils/ui/enums'
 
 /** Props of PluginChatEmpty. */
 interface Props {

@@ -22,7 +22,7 @@ public sealed class TestServerSshAgentTests(IntegrationTestFactory factory) : IC
 
         body.GetProperty("isHealthy").GetBoolean().Should().BeTrue();
         body.GetProperty("agentVersion").GetString().Should().Be("1.1.0");
-        body.GetProperty("provider").GetString().Should().Be("cwp");
+        body.GetProperty("provider").GetString().Should().Be("generic-linux");
         (await admin.GetFromJsonAsync<JsonElement>($"/api/admin/servers/{serverId}/ssh-settings"))
             .GetProperty("isHealthy").GetBoolean().Should().BeTrue();
     }
@@ -63,7 +63,7 @@ public sealed class TestServerSshAgentTests(IntegrationTestFactory factory) : IC
         body.GetProperty("isHealthy").GetBoolean().Should().BeFalse();
         body.GetProperty("error").GetString().Should().Be(nameof(SshProviderFailure.BindingMismatch));
         body.GetProperty("agentVersion").GetString().Should().Be("1.1.0");
-        body.GetProperty("provider").GetString().Should().Be("cwp");
+        body.GetProperty("provider").GetString().Should().Be("generic-linux");
         (await admin.GetFromJsonAsync<JsonElement>($"/api/admin/servers/{serverId}/ssh-settings"))
             .GetProperty("isHealthy").GetBoolean().Should().BeFalse();
     }

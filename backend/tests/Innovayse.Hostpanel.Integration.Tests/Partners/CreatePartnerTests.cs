@@ -62,7 +62,7 @@ public sealed class CreatePartnerTests(IntegrationTestFactory factory) : IClassF
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.PostAsJsonAsync("/api/admin/partners", new { logoUrl = (string?)null, url = (string?)null, sortOrder = 0, isActive = true, translations = new { fr = new { name = "Nom" } } });
+        var response = await client.PostAsJsonAsync("/api/admin/partners", new { logoUrl = (string?)null, url = (string?)null, sortOrder = 0, isActive = true, translations = new { en = new { name = "Name" }, it = new { name = "Nome" } } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

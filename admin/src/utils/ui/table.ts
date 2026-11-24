@@ -28,6 +28,7 @@ export const UiHideBelow = {
   Md: 'md',
   Lg: 'lg',
   Xl: 'xl',
+  TwoXl: '2xl',
 } as const
 
 /** One of the breakpoints. */
@@ -39,6 +40,7 @@ export const hideBelowClasses: Record<UiHideBelow, string> = {
   md: 'hidden md:table-cell',
   lg: 'hidden lg:table-cell',
   xl: 'hidden xl:table-cell',
+  '2xl': 'hidden 2xl:table-cell',
 }
 
 /** Closed set of sort directions of a sortable column. */
@@ -104,28 +106,81 @@ export const actionsColumnClasses = 'text-end whitespace-nowrap'
 
 /** Closed set of widths a column takes in the table. */
 export const UiColumnSize = {
-  /** As narrow as its content: the width of an id, a status, a date, an icon. */
+  /** Shrinks to its content, on one line: the width of an id, a status, a date, an icon. */
   Compact: 'compact',
-  /** Its content on one line, as wide as the content needs (the default). */
+  /** Its content on one line, as wide as the content needs, never truncated (an address that must stay whole). */
   Auto: 'auto',
-  /** The one column of the table that takes the width the others leave and truncates its content (a name, a title); at most one per table. */
+  /** Takes a double share of the table's width (the share of every data column, so the free width is spread evenly) and truncates its content with a tooltip (a name, an email, a title). */
   Grow: 'grow',
+  /** Takes a single share of the table's width, on one line: a status, a date, an id, a number. */
+  Narrow: 'narrow',
+  /** A width of its own, one of {@link UiColumnWidth}, on one line. */
+  Fixed: 'fixed',
 } as const
 
 /** One of the column sizes. */
 export type UiColumnSize = (typeof UiColumnSize)[keyof typeof UiColumnSize]
 
+/** Closed set of kinds of data a column holds, which decide its width when the screen names no size. */
+export const UiColumnKind = {
+  /** Free text (a name, an email, a title): takes a double share of the width and truncates (the default). */
+  Text: 'text',
+  /** A status, a badge or an icon: takes a single share of the width. */
+  Status: 'status',
+  /** A date or a time: takes a single share of the width. */
+  Date: 'date',
+  /** An id or a short code: takes a single share of the width. */
+  Id: 'id',
+} as const
+
+/** One of the column kinds. */
+export type UiColumnKind = (typeof UiColumnKind)[keyof typeof UiColumnKind]
+
+/** The size a column of each kind takes when the screen names none. */
+export const kindSizes: Record<UiColumnKind, UiColumnSize> = {
+  text: UiColumnSize.Grow,
+  status: UiColumnSize.Narrow,
+  date: UiColumnSize.Narrow,
+  id: UiColumnSize.Narrow,
+}
+
+/** Closed set of widths a `Fixed` column takes. */
+export const UiColumnWidth = {
+  /** A narrow column (a flag, a short figure). */
+  Small: 'small',
+  /** A medium column. */
+  Medium: 'medium',
+  /** A wide column. */
+  Large: 'large',
+} as const
+
+/** One of the fixed column widths. */
+export type UiColumnWidth = (typeof UiColumnWidth)[keyof typeof UiColumnWidth]
+
+/** Classes per fixed width, literal so Tailwind emits them. */
+export const columnWidthClasses: Record<UiColumnWidth, string> = {
+  small: 'w-24',
+  medium: 'w-40',
+  large: 'w-64',
+}
+
 /**
  * Classes per column size, header and cells alike. No size wraps its text: a `Compact` column shrinks to its
- * content, an `Auto` one keeps it on a line, and the `Grow` one gets the full width with a zero max width, which
- * stops its content from widening the column, so the content truncates instead. A minimum width (which wins over
+ * content (an icon, the actions), an `Auto` one keeps it on a line, a `Fixed` one is as wide as its width token. A
+ * `Grow` and a `Narrow` column claim a share of the table's width in percent, two parts for the text and one for the rest, so when the
+ * table is wider than its content the browser spreads the free width over every data column in those proportions instead of
+ * handing it to one column; the table never grows past its box, because shares over 100% are scaled down. `Grow` also gets
+ * a zero max width, which stops its content from widening the column, so the content truncates instead, and a minimum width
+ * that keeps it readable. A minimum width (which wins over
  * the zero maximum) keeps the column readable when its neighbours need the room, so a narrow screen scrolls the table
  * sideways rather than squeezing the name to a letter or two.
  */
 export const columnSizeClasses: Record<UiColumnSize, string> = {
   compact: 'w-px whitespace-nowrap',
   auto: 'whitespace-nowrap',
-  grow: 'w-full max-w-0 min-w-36 truncate',
+  grow: 'w-[28%] max-w-0 min-w-36 truncate',
+  narrow: 'w-[14%] min-w-24 whitespace-nowrap',
+  fixed: 'whitespace-nowrap',
 }
 
 /**
@@ -135,20 +190,48 @@ export const columnSizeClasses: Record<UiColumnSize, string> = {
 export const growControlClasses = 'w-full'
 
 /**
+ * The size a column takes: an actions column is always `Compact` (one icon button or one "…" trigger), a size the screen
+ * names wins, and any other column takes the size of its kind, a number that of a status (free text a double share, the
+ * rest a single one).
+ *
+ * @param column - The column.
+ * @returns Its size.
+ */
+export const sizeOfColumn = (column: UiTableColumn): UiColumnSize => {
+  if (column.actions) {
+    return UiColumnSize.Compact
+  }
+  if (column.size !== undefined) {
+    return column.size
+  }
+  return column.numeric ? UiColumnSize.Narrow : kindSizes[column.kind ?? UiColumnKind.Text]
+}
+
+/**
  * Classes a column's size gives its header, cells and placeholder cells.
  *
  * @param column - The column.
- * @returns The classes of its size, those of `Auto` when the column sets none; an actions column is always `Compact` (one icon button or one "…" trigger), and a growing column of controls takes the width but never truncates.
+ * @returns The classes of its size; a growing column of controls takes the width but never truncates.
  */
 export const columnSizeOf = (column: UiTableColumn): string => {
-  if (column.actions) {
-    return columnSizeClasses[UiColumnSize.Compact]
-  }
-  if (column.size === UiColumnSize.Grow && column.cardRole === UiCardRole.Control) {
+  const size = sizeOfColumn(column)
+  if (size === UiColumnSize.Grow && column.cardRole === UiCardRole.Control) {
     return growControlClasses
   }
-  return columnSizeClasses[column.size ?? UiColumnSize.Auto]
+  if (size === UiColumnSize.Fixed) {
+    return `${columnSizeClasses.fixed} ${columnWidthClasses[column.width ?? UiColumnWidth.Medium]}`
+  }
+  return columnSizeClasses[size]
 }
+
+/**
+ * Whether the cells of a column truncate their content, so a cell shows the full text in a tooltip when it is cut.
+ *
+ * @param column - The column of the cell.
+ * @returns True for a `Grow` column that holds text (not a form control).
+ */
+export const truncatesColumn = (column: UiTableColumn | undefined): boolean =>
+  column !== undefined && sizeOfColumn(column) === UiColumnSize.Grow && column.cardRole !== UiCardRole.Control
 
 /** Classes of a numeric or money cell: right aligned, figures of one width, kept on one line. */
 export const numericCellClasses = 'text-end tabular-nums whitespace-nowrap'
@@ -206,21 +289,27 @@ const cardHiddenLabelClasses = 'sr-only'
 export const cardRoleOf = (column: UiTableColumn): UiCardRole => column.cardRole ?? UiCardRole.Field
 
 /**
- * Gives a table's columns their card heading. A table whose headers name no heading gets one by default: its `Grow` column
- * (the one that names the record), else its first column that is neither the checkbox nor the actions, so a screen writes
- * `card-role` only for a badge, a subtitle, a control or a column to leave out. A column that names its role is never changed,
+ * Gives a table's columns their card heading and badge. A table whose headers name no heading gets one by default: its `Grow` column
+ * (the one that names the record), else its first column that is neither the checkbox nor the actions; its first `Status` column
+ * is the badge at the top right, so a screen writes `card-role` only for a subtitle, a control or a column to leave out. A column that names its role is never changed,
  * and a table whose columns all name theirs (an editable table of controls) has no heading.
  *
  * @param columns - The columns of one header row, in order.
  * @returns The same columns, the heading one carrying `title` as its role.
  */
 export const withCardTitle = (columns: readonly UiTableColumn[]): UiTableColumn[] => {
-  if (columns.some((column) => column.cardRole === UiCardRole.Title)) {
-    return [...columns]
-  }
   const candidates = columns.filter((column) => column.cardRole === undefined && !column.select && !column.actions)
-  const title = candidates.find((column) => column.size === UiColumnSize.Grow) ?? candidates[0]
-  return columns.map((column) => (column === title ? { ...column, cardRole: UiCardRole.Title } : column))
+  const named = columns.some((column) => column.cardRole === UiCardRole.Title)
+  const title = named ? undefined : (candidates.find((column) => column.size === UiColumnSize.Grow) ?? candidates[0])
+  // The first status column is the badge at the top right of the card, unless a column already names that role.
+  const badged = columns.some((column) => column.cardRole === UiCardRole.Badge)
+  const badge = badged ? undefined : candidates.find((column) => column !== title && column.kind === UiColumnKind.Status)
+  return columns.map((column) => {
+    if (column === title) {
+      return { ...column, cardRole: UiCardRole.Title }
+    }
+    return column === badge ? { ...column, cardRole: UiCardRole.Badge } : column
+  })
 }
 
 /**

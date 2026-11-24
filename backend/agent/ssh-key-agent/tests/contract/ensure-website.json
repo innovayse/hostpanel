@@ -20,6 +20,18 @@
       "response": {"v": 1, "ok": true, "changed": true}
     },
     {
+      "name": "the answer carries the CLI of the php version the site runs",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "php": "8.3", "link_root": true},
+      "helper": {"exit": 0, "result": {"changed": true, "php_cli": "/usr/bin/php8.3"}},
+      "response": {"v": 1, "ok": true, "changed": true, "php_cli": "/usr/bin/php8.3"}
+    },
+    {
+      "name": "a CLI that is not an absolute path fails the operation",
+      "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app", "php": "8.3"},
+      "helper": {"exit": 0, "result": {"changed": true, "php_cli": "php"}},
+      "response": {"v": 1, "ok": false, "error": "website_failed"}
+    },
+    {
       "name": "no helper on this server",
       "request": {"v": 1, "op": "ensure-website", "account": "alice", "hostname": "app.example.com", "docroot": "sites/app"},
       "helper": null,

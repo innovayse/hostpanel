@@ -13,27 +13,25 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiDetailCards from '@/components/ui/UiDetailCards.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
+import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatDate } from '@/lib/format'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { formatPlainAmount } from '@/lib/money'
@@ -41,12 +39,12 @@ import { invoicePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { useClientCreditStore } from '@/stores/clientCredit'
 import { CreditAdjustment } from '@/types/creditmovement'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import type { UiStatFigure } from '@/utils/ui/statRow'
-import { UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
-import schema, { CREDIT_FORM_PART, CREDIT_HISTORY_PART, CREDIT_HISTORY_TABLE, CREDIT_STATS_PART } from '@/views/ClientCreditView.schema'
+import schema, { CREDIT_FORM_PART, CREDIT_HISTORY_TABLE, CREDIT_STATS_PART } from '@/views/ClientCreditView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
 
 /** Translates a key into the active locale. */
@@ -77,13 +75,10 @@ const reason = ref('')
 const processing = ref(false)
 
 /** The outcome line of the last adjustment. */
-const feedback = useResultBanner()
+const feedback = useOutcomeToast()
 
 /** Sentence for a page of the history that could not be read while an earlier page is still on screen; empty when none. */
 const pageError = ref('')
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /** Options of the direction select. */
 const directionOptions = computed(() => [
@@ -147,7 +142,6 @@ const adjust = async (): Promise<void> => {
   if (!canAdjust.value) {
     return
   }
-  feedback.clear()
   processing.value = true
   const ok = await store.adjust(clientId.value, direction.value, amount.value, reason.value.trim())
   processing.value = false
@@ -213,57 +207,50 @@ onMounted(() => load(1))
             data-testid="client-credit-reason"
           />
         </template>
-        <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="client-credit-feedback" />
         <UiFormActions>
-          <UiButton :action="UiActionKind.Apply" type="submit" variant="primary" :loading="processing" :disabled="loading || !canAdjust" data-testid="client-credit-submit">
-            {{ t('clients.clientCredit.apply') }}
+          <UiButton :action="UiActionKind.Apply" type="submit" :variant="UiButtonVariant.Primary" :loading="processing" :disabled="loading || !canAdjust" data-testid="client-credit-submit">
+            {{ t('shared.apply') }}
           </UiButton>
         </UiFormActions>
       </UiSchemaForm>
 
-      <UiDetailCards :columns="CREDIT_HISTORY_PART.columns" :loading="loading">
-        <template #card-history>
-          <UiStatusMessage :message="pageError" :tone="UiTone.Danger" data-testid="client-credit-page-error" />
-          <UiText v-if="entries.length === 0" :tone="UiTextTone.Muted" data-testid="client-credit-empty">
-            {{ t('clients.clientCredit.historyEmpty') }}
-          </UiText>
-          <UiTable v-else :density="UiTableDensity.Comfortable" data-testid="client-credit-table">
-            <UiSchemaTableHead :columns="CREDIT_HISTORY_TABLE.columns" />
-            <UiTableBody divided>
-              <UiTableRow v-for="entry in entries" :key="entry.id" hoverable :data-testid="`client-credit-entry-${entry.id}`">
-                <UiTableCell muted>{{ formatDate(entry.date) }}</UiTableCell>
-                <UiTableCell>{{ t(`clients.clientCredit.movement.${entry.movement}`) }}</UiTableCell>
-                <UiTableCell muted>{{ entry.description }}</UiTableCell>
-                <UiTableCell>
-                  <UiLink v-if="entry.invoiceId !== null" :to="invoicePath(entry.invoiceId)">#{{ entry.invoiceId }}</UiLink>
-                  <UiText v-else :tone="UiTextTone.Muted">-</UiText>
-                </UiTableCell>
-                <UiTableCell numeric>
-                  <UiText :tone="entry.change >= 0 ? UiTextTone.Success : UiTextTone.Danger" :data-testid="`client-credit-change-${entry.id}`">
-                    {{ (entry.change > 0 ? '+' : '') + money(entry.change) }}
-                  </UiText>
-                </UiTableCell>
-                <UiTableCell muted numeric>{{ money(entry.balanceAfter) }}</UiTableCell>
-              </UiTableRow>
-            </UiTableBody>
-          </UiTable>
-          <UiStack
-            v-if="entriesTotal > LEDGER_PAGE_SIZE"
-            direction="row"
-            :justify="UiJustify.Between"
-            :align="UiAlignItems.Center"
-          >
-            <UiResultCount>{{ t('clients.clientCredit.entriesCount', { count: entriesTotal }) }}</UiResultCount>
-            <UiPagination
-              :page="page"
-              :total="entriesTotal"
-              :page-size="LEDGER_PAGE_SIZE"
-              testid="client-credit-pagination"
-              @update:page="load"
-            />
+      <UiDataTable
+        :density="UiTableDensity.Comfortable"
+        :loading="loading"
+        :empty="!loading && entries.length === 0"
+        :empty-text="t('clients.clientCredit.historyEmpty')"
+        :page="page"
+        :total="entriesTotal"
+        :page-size="LEDGER_PAGE_SIZE"
+        pagination-testid="client-credit-pagination"
+        data-testid="client-credit-table"
+        @update:page="load"
+      >
+        <template #header>
+          <UiStack>
+            <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('clients.clientCredit.history') }}</UiHeading>
+            <UiStatusMessage :message="pageError" :tone="UiTone.Danger" data-testid="client-credit-page-error" />
           </UiStack>
         </template>
-      </UiDetailCards>
+        <UiSchemaTableHead :columns="CREDIT_HISTORY_TABLE.columns" />
+        <UiTableBody>
+          <UiTableRow v-for="entry in entries" :key="entry.id" hoverable :data-testid="`client-credit-entry-${entry.id}`">
+            <UiTableCell muted>{{ formatDate(entry.date) }}</UiTableCell>
+            <UiTableCell>{{ t(`clients.clientCredit.movement.${entry.movement}`) }}</UiTableCell>
+            <UiTableCell muted>{{ entry.description }}</UiTableCell>
+            <UiTableCell>
+              <UiLink v-if="entry.invoiceId !== null" :to="invoicePath(entry.invoiceId)">#{{ entry.invoiceId }}</UiLink>
+              <UiText v-else :tone="UiTextTone.Muted">-</UiText>
+            </UiTableCell>
+            <UiTableCell numeric>
+              <UiText :tone="entry.change >= 0 ? UiTextTone.Success : UiTextTone.Danger" :data-testid="`client-credit-change-${entry.id}`">
+                {{ (entry.change > 0 ? '+' : '') + money(entry.change) }}
+              </UiText>
+            </UiTableCell>
+            <UiTableCell muted numeric>{{ money(entry.balanceAfter) }}</UiTableCell>
+          </UiTableRow>
+        </UiTableBody>
+      </UiDataTable>
     </template>
   </UiStack>
 </template>

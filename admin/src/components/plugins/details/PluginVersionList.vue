@@ -10,6 +10,8 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import type { RegistryPluginVersionDto } from '@/types/plugin'
+import { UiGap } from '@/utils/ui/layout'
+import { UiHeadingVariant } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -36,8 +38,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UiStack gap="sm" data-testid="plugin-details-versions">
-    <UiHeading :level="2" variant="section">{{ t('pluginDetails.versions.heading') }}</UiHeading>
+  <UiStack :gap="UiGap.Sm" data-testid="plugin-details-versions">
+    <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('pluginDetails.versions.heading') }}</UiHeading>
     <UiEmptyState
       v-if="versions.length === 0"
       :title="t('pluginDetails.versions.emptyTitle')"

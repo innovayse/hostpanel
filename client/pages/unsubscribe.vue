@@ -1,13 +1,13 @@
 <template>
   <ClientAuthShell :show-logo="false">
-    <div v-if="awaitingConfirmation" class="flex flex-col items-center gap-4 text-center" data-testid="unsubscribe-confirm">
+    <UiStack v-if="awaitingConfirmation" align="center" class="text-center" data-testid="unsubscribe-confirm">
       <UiText tone="muted" size="sm">
         {{ $t('client.unsubscribe.prompt') }}
       </UiText>
-      <UiButton :loading="status === UnsubscribeStatus.Pending" full-width data-testid="unsubscribe-confirm-button" @click="confirm">
+      <UiButton variant="primary" :loading="status === UnsubscribeStatus.Pending" full-width data-testid="unsubscribe-confirm-button" @click="confirm">
         {{ $t('client.unsubscribe.confirm') }}
       </UiButton>
-    </div>
+    </UiStack>
 
     <ClientOutcomePanel
       v-else-if="status === UnsubscribeStatus.Done"

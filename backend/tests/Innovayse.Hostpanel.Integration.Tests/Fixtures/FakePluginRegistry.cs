@@ -20,6 +20,13 @@ public sealed class FakePluginRegistry : IPluginRegistry
     /// <summary>The icons by plugin id this registry reports.</summary>
     private readonly Dictionary<string, PluginIconDto> _icons = [];
 
+    /// <summary>The agent profiles this registry reports, in the order they were added.</summary>
+    private readonly List<PluginAgentProfileDto> _agentProfiles = [];
+
+    /// <summary>Adds an SSH key agent profile this registry reports as shipped by a loaded plugin.</summary>
+    /// <param name="profile">The profile to add.</param>
+    public void AddAgentProfile(PluginAgentProfileDto profile) => _agentProfiles.Add(profile);
+
     /// <summary>Sets the icon this registry reports for a plugin.</summary>
     /// <param name="pluginId">The plugin id.</param>
     /// <param name="icon">The icon to report.</param>
@@ -44,6 +51,10 @@ public sealed class FakePluginRegistry : IPluginRegistry
 
     /// <inheritdoc/>
     public PluginIconDto? GetIcon(string pluginId) => _icons.GetValueOrDefault(pluginId);
+
+    /// <inheritdoc/>
+    public PluginAgentProfileDto? FindAgentProfile(string profileId) =>
+        _agentProfiles.Find(p => string.Equals(p.ProfileId, profileId, StringComparison.Ordinal));
 
     /// <inheritdoc/>
     public IReadOnlyCollection<RefusedPlugin> GetRefusedPlugins() => _refused;

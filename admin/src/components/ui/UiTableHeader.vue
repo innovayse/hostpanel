@@ -6,12 +6,12 @@
  * can still override a single property. `sortable` turns the caption into a button that emits
  * `sort`; the parent owns the order and passes the current `direction`, which is mirrored into
  * `aria-sort` and an arrow. `numeric` and `actions` match the cells below them (right aligned, the
- * actions column always `Compact`, its caption read by assistive technology only); `size` is the width the column takes (`Compact`, `Auto` by default, or the one `Grow` column that takes
- * the rest and truncates), set once here and followed by every cell of the column; `hideBelow` hides the column under a breakpoint. The cell paints the one hairline under the header (an inset
+ * actions column always `Compact`, its caption read by assistive technology only); `size` is the width the column takes (`Compact` shrinks to the content, `Auto` keeps one whole line, `Fixed` takes a `width`, `Grow` shares the
+ * remaining width and truncates), which by default follows its `kind` (free text shares, a status, a date or an id shrinks), set once here and followed by every cell of the column; `hideBelow` hides the column under a breakpoint. The cell paints the one hairline under the header (an inset
  * shadow, because a border does not travel with a sticky header in a collapsed-border table); the fill of a
  * sticky header comes from the scrolling box (`UiTable` with `maxHeight`). `select` marks the checkbox column of a selectable table
  * (drawn by `UiTableRow`, not set by a screen); a header that holds the select-all checkbox itself (an editable table) says `select` too.
- * The caption is also the label of the column's value on a card (below `sm`, see `UiTable`), where `cardRole` sets what the column is
+ * The caption is also the label of the column's value on a card (below `md`, see `UiTable`), where `cardRole` sets what the column is
  * (the heading, a muted subtitle, the top right badge, a field, a control or left out); the header
  * itself is not drawn there (a hidden element holds its caption so it can be read). The caption text is read from a `display: contents` span around the slot, because a
  * slot can hold any markup, and a sortable column also hands the table its `sort` request, so the table's sort control can order it.
@@ -22,8 +22,8 @@
 import { computed, inject, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
-import { columnClasses, columnSizeOf, headerDensityClasses, UiColumnSize, UiSortDirection } from '@/utils/ui/table'
-import type { UiAlign, UiCardRole, UiHideBelow } from '@/utils/ui/table'
+import { columnClasses, columnSizeOf, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
+import type { UiAlign, UiCardRole, UiColumnKind, UiColumnSize, UiColumnWidth, UiHideBelow } from '@/utils/ui/table'
 
 /** Props for UiTableHeader. */
 const props = withDefaults(defineProps<{
@@ -39,20 +39,26 @@ const props = withDefaults(defineProps<{
   numeric?: boolean
   /** Heads the row actions column: right aligned and compact, its caption visible to assistive technology only. */
   actions?: boolean
-  /** Width of the column: as narrow as its content, one line (the default), or the one column that takes the rest and truncates. */
+  /** Width of the column: shrunk to its content, one line, a fixed width, or sharing the remaining width and truncating; omitted, it follows the `kind`. */
   size?: UiColumnSize
+  /** What the column holds, which sets its width when `size` is omitted: free text (the default) shares the remaining width, a status, a date or an id shrinks. */
+  kind?: UiColumnKind
+  /** Width of a `Fixed` column. */
+  width?: UiColumnWidth
   /** Hides the column below this breakpoint; set it on the header and on every cell of the column. */
   hideBelow?: UiHideBelow
   /** Heads the checkbox column of a selectable table: narrow, like its cells. */
   select?: boolean
-  /** What the column is on a card (below `sm`): the heading, the badge, a labelled field, a control or left out. When omitted the table picks the heading (its `Grow` column, else its first) and every other column is a labelled field. */
+  /** What the column is on a card (below `md`): the heading, the badge, a labelled field, a control or left out. When omitted the table picks the heading (its `Grow` column, else its first) and every other column is a labelled field. */
   cardRole?: UiCardRole
   /** Position of the header among the cells of its row; set by `UiTableRow`, never by a screen. */
   columnIndex?: number
 }>(), {
   cardRole: undefined,
   columnIndex: undefined,
-  size: UiColumnSize.Auto,
+  size: undefined,
+  kind: undefined,
+  width: undefined,
   hideBelow: undefined,
   select: false,
   numeric: false,
@@ -103,6 +109,8 @@ const column = computed<UiTableColumn>(() => ({
   numeric: props.numeric,
   actions: props.actions,
   size: props.size,
+  kind: props.kind,
+  width: props.width,
   hideBelow: props.hideBelow,
   select: props.select,
   label: label.value,

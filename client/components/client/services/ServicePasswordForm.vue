@@ -29,7 +29,7 @@
       <template #actions>
         <UiButton type="submit" :loading="passwordChanging" data-testid="service-password-submit">
           <KeyRound v-if="!passwordChanging" :size="14" :stroke-width="2" class="mr-1.5" />
-          {{ $t('client.services.passwordBtn') }}
+          {{ $t('common.save') }}
         </UiButton>
       </template>
     </UiForm>

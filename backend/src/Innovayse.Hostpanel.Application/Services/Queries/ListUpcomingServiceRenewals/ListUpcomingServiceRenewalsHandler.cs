@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Extensions;
@@ -54,7 +55,7 @@ public sealed class ListUpcomingServiceRenewalsHandler
         var until = _clock.UtcNow.AddDays((int)query.Window);
 
         // Services already past due are included: they are the ones most in need of an invoice.
-        var due = _context.ClientServices.AsNoTracking()
+        var due = _context.ClientServices.AsNoTracking().NotInTrial()
             .Where(s => s.Status == ServiceStatus.Active && s.NextRenewalAt != null && s.NextRenewalAt <= until);
 
         var total = await due.CountAsync(ct);

@@ -1,0 +1,25 @@
+{
+  "whyChooseUs": {
+    "badge": "Pourquoi nous choisir",
+    "title": "Un hébergement sur lequel vous pouvez compter",
+    "subtitle": "Des serveurs rapides, des prix honnêtes et une équipe de support qui répond.",
+    "advantages": {
+      "fastDelivery": {
+        "title": "Des serveurs rapides",
+        "description": "Un stockage SSD et des serveurs optimisés garantissent le chargement rapide de vos pages."
+      },
+      "qualityGuaranteed": {
+        "title": "Une disponibilité fiable",
+        "description": "Une infrastructure redondante et une surveillance constante maintiennent votre site en ligne."
+      },
+      "support": {
+        "title": "Un support 24 h/24",
+        "description": "Notre équipe de support est disponible à tout moment pour vous aider avec votre compte et votre site."
+      },
+      "provenResults": {
+        "title": "La confiance de nos clients",
+        "description": "Des milliers de sites fonctionnent chaque jour sur nos serveurs."
+      }
+    }
+  }
+}

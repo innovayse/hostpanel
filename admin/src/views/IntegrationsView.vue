@@ -28,6 +28,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { AppRoute } from '@/lib/routes'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
@@ -124,7 +125,7 @@ onMounted(load)
 </script>
 
 <template>
-  <UiStack gap="md" class="w-full">
+  <UiStack :gap="UiGap.Md">
     <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle" :subtitle-loading="loading">
       <template v-if="guideUrl" #actions>
         <PageHelpLink :url="guideUrl" />
@@ -141,7 +142,7 @@ onMounted(load)
     />
 
     <!-- Cards grid; while the list loads the same grid holds placeholder cards -->
-    <UiGrid v-else-if="loading || filtered.length > 0" :columns="3" gap="md" data-testid="integrations-grid">
+    <UiGrid v-else-if="loading || filtered.length > 0" :columns="3" :gap="UiGap.Md" data-testid="integrations-grid">
       <template v-if="loading">
         <IntegrationCard v-for="index in LOADING_CARD_COUNT" :key="index" />
       </template>

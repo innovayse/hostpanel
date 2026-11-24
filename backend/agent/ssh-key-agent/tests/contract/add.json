@@ -1,0 +1,70 @@
+{
+  "op": "add",
+  "cases": [
+    {
+      "name": "a key limited to two sources, with the server host key",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["203.0.113.7", "198.51.100.0/24"]},
+      "host_key_file": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ root@server",
+      "helper": null,
+      "response": {"v": 1, "ok": true, "key_id": "11111111-1111-4111-8111-111111111111", "fingerprint": "SHA256:RXm/ruZ0eTzRXKwi1AQEDynB0VgHQ2ac9KPSFdf/YnA", "changed": true, "host_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJ"}
+    },
+    {
+      "name": "an IPv6 source and a network",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["2001:db8::1", "2001:db8:1::/48"]},
+      "helper": null,
+      "response": {"v": 1, "ok": true, "key_id": "11111111-1111-4111-8111-111111111111", "fingerprint": "SHA256:RXm/ruZ0eTzRXKwi1AQEDynB0VgHQ2ac9KPSFdf/YnA", "changed": true}
+    },
+    {
+      "name": "a key without sources keeps working from anywhere and the server has no host key",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB"},
+      "helper": null,
+      "response": {"v": 1, "ok": true, "key_id": "11111111-1111-4111-8111-111111111111", "fingerprint": "SHA256:RXm/ruZ0eTzRXKwi1AQEDynB0VgHQ2ac9KPSFdf/YnA", "changed": true}
+    },
+    {
+      "name": "the same key with the same sources is already there",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["203.0.113.7"]},
+      "authorized_keys": ["from=\"203.0.113.7\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB hostpanel:11111111-1111-4111-8111-111111111111"],
+      "helper": null,
+      "response": {"v": 1, "ok": true, "key_id": "11111111-1111-4111-8111-111111111111", "fingerprint": "SHA256:RXm/ruZ0eTzRXKwi1AQEDynB0VgHQ2ac9KPSFdf/YnA", "changed": false}
+    },
+    {
+      "name": "the same key id with other sources is a conflict",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["198.51.100.9"]},
+      "authorized_keys": ["from=\"203.0.113.7\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB hostpanel:11111111-1111-4111-8111-111111111111"],
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "key_id_conflict"}
+    },
+    {
+      "name": "the same key id without sources, where it was installed with some, is a conflict",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB"},
+      "authorized_keys": ["from=\"203.0.113.7\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB hostpanel:11111111-1111-4111-8111-111111111111"],
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "key_id_conflict"}
+    },
+    {
+      "name": "the same key under another id is a duplicate",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "22222222-2222-4222-8222-222222222222", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["203.0.113.7"]},
+      "authorized_keys": ["from=\"203.0.113.7\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB hostpanel:11111111-1111-4111-8111-111111111111"],
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "duplicate_key"}
+    },
+    {
+      "name": "a source that is not an address or a network is refused",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["*.example.com"]},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    },
+    {
+      "name": "a network with host bits set is refused",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": ["198.51.100.5/24"]},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    },
+    {
+      "name": "an empty list of sources is refused",
+      "request": {"v": 1, "op": "add", "account": "alice", "key_id": "11111111-1111-4111-8111-111111111111", "public_key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEB", "from": []},
+      "helper": null,
+      "response": {"v": 1, "ok": false, "error": "invalid_request"}
+    }
+  ]
+}

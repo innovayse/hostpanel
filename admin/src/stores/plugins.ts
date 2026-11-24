@@ -24,6 +24,7 @@ import type {
   PluginRegistryItemDto,
   PluginRegistryQuery,
   RegistryInstanceDto,
+  PluginServersDto,
   PluginSlotWidgetBindingDto,
   RegistryDetailsState,
 } from '@/types/plugin'
@@ -90,6 +91,15 @@ export const usePluginsStore = defineStore('plugins', () => {
 
   /** Plugin ids whose slot widgets are loading; each plugin loads on its own. */
   const slotWidgetsLoading = ref<Record<string, boolean>>({})
+
+  /** The servers each plugin serves with the modules it declares, by plugin id; each entry is filled by {@link fetchServersFor}. */
+  const pluginServers = ref<Record<string, PluginServersDto>>({})
+
+  /** Sentence for the last failed load of one plugin's servers, by plugin id; absent or null when none. */
+  const pluginServersError = ref<Record<string, string | null>>({})
+
+  /** Plugin ids whose servers are loading; each plugin loads on its own. */
+  const pluginServersLoading = ref<Record<string, boolean>>({})
 
   /** Sentence for the last refused binding save, null when none. */
   const bindingError = ref<string | null>(null)
@@ -377,6 +387,25 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   /**
+   * Fetches the servers one panel plugin serves. The error is kept for that plugin only; a plugin that serves no server module
+   * answers empty lists, which the settings page reads as "no servers section".
+   *
+   * @param id - Plugin identifier as declared in plugin.json.
+   * @returns Resolves when the request is over; a refusal is left in `pluginServersError` under the plugin id.
+   */
+  const fetchServersFor = async (id: string): Promise<void> => {
+    pluginServersLoading.value = { ...pluginServersLoading.value, [id]: true }
+    /** Local sink so one plugin's refusal does not touch another's state. */
+    const failure = ref<string | null>(null)
+    const served = await runAction(failure, () => api.listPluginServers(id))
+    if (served.ok) {
+      pluginServers.value = { ...pluginServers.value, [id]: served.value }
+    }
+    pluginServersError.value = { ...pluginServersError.value, [id]: failure.value }
+    pluginServersLoading.value = { ...pluginServersLoading.value, [id]: false }
+  }
+
+  /**
    * Saves the products one slot widget is bound to, then reloads the widgets so the list shows
    * what the server kept (unknown or deleted products are dropped on save).
    *
@@ -621,12 +650,12 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   return {
-    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, bindingError,
+    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, pluginServers, pluginServersError, pluginServersLoading, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
     registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
     registryInstance, registryInstanceBusy, registryInstanceError,
     isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
     fetchRegistry, setRegistryFilter, fetchRegistryUpdates, fetchRegistryInstance, retryRegistryInstance, installFromRegistry,
-    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgetsFor, saveSlotWidgetProducts,
+    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgetsFor, fetchServersFor, saveSlotWidgetProducts,
   }
 })

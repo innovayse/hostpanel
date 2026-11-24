@@ -15,15 +15,15 @@
   >
     <UiContainer>
       <UiStack direction="row" align="center" justify="between" gap="none" wrap class="min-w-0 gap-x-3 gap-y-2">
-        <UiText as="span" size="sm" tone="inherit" class="min-w-0 break-words" :class="tone.body" data-testid="signin-prompt-text">
+        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="min-w-0 break-words" :class="tone.body" data-testid="signin-prompt-text">
           {{ $t('signInPrompt.message') }}
         </UiText>
         <UiStack direction="row" align="center" gap="sm" class="shrink-0">
           <UiButton :href="signInHref" variant="primary" size="sm" data-testid="signin-prompt-signin">
-            {{ $t('signInPrompt.signIn') }}
+            {{ $t('common.signIn') }}
           </UiButton>
           <UiButton variant="ghost" size="sm" data-testid="signin-prompt-dismiss" @click="dismiss">
-            {{ $t('signInPrompt.dismiss') }}
+            {{ $t('ui.close') }}
           </UiButton>
         </UiStack>
       </UiStack>
@@ -41,7 +41,7 @@
  */
 import { LOGIN_HINT_QUERY, SIGN_IN_PROMPT_QUERY, SIGN_IN_PROMPT_VALUE } from '~/constants/clientRoutes'
 import { SessionCookie } from '~/constants/sessionCookie'
-import { UiAlertVariant } from '~/utils/ui/enums'
+import { UiAlertVariant, UiTextTag } from '~/utils/ui/enums'
 import { ALERT_TONE_CLASSES } from '~/utils/ui/tones'
 import { signInPath, withoutSignInPrompt } from '~/utils/returnPath'
 

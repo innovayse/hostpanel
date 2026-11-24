@@ -1,8 +1,8 @@
 <template>
   <UiStack align="center" gap="sm" class="py-4 text-center" data-testid="outcome-panel">
-    <div class="mb-2 flex h-16 w-16 items-center justify-center rounded-2xl" :class="toneClass">
+    <UiStack align="center" justify="center" gap="none" class="mb-2 h-16 w-16 rounded-2xl" :class="toneClass">
       <component :is="icon" :size="32" :stroke-width="1.5" />
-    </div>
+    </UiStack>
     <UiHeading :level="headingLevel" size="subsection">{{ title }}</UiHeading>
     <UiText v-if="message" tone="muted" size="sm" class="leading-relaxed">{{ message }}</UiText>
     <slot />

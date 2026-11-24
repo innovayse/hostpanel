@@ -1,8 +1,8 @@
 {
   "description": "Configure billing currencies, exchange rates and the base currency",
-  "updateRates": "Update Rates",
-  "updateProductPrices": "Update Prices",
-  "addCurrency": "Add Currency",
+  "updateRates": "Update rates",
+  "updateProductPrices": "Update prices",
+  "addCurrency": "Create currency",
   "rateProvider": {
     "title": "Exchange rate source",
     "description": "Choose the bank the exchange rates are taken from. The daily update and the Update Exchange Rates button both use it. The European Central Bank quotes against the euro, so the base currency must be one it publishes.",
@@ -32,14 +32,11 @@
   "empty": "No currencies configured yet. Add your first currency to get started.",
   "makeBaseModal": {
     "title": "Make Base Currency",
-    "message": "Make {code} the base currency? Rates of every other currency are re-expressed against the new base.",
-    "confirmLabel": "Make Base"
+    "message": "Make {code} the base currency? Rates of every other currency are re-expressed against the new base."
   },
   "pricesPicker": {
     "title": "Update Product Prices",
-    "description": "Choose which non-base currencies to recompute from the base prices.",
-    "cancel": "Cancel",
-    "continue": "Continue"
+    "description": "Choose which non-base currencies to recompute from the base prices."
   },
   "pricesConfirm": {
     "title": "Overwrite Product Prices",
@@ -55,7 +52,6 @@
   },
   "form": {
     "editTitle": "Edit Currency",
-    "addTitle": "Add Currency",
     "code": {
       "label": "ISO Code",
       "placeholder": "e.g. USD"
@@ -80,9 +76,6 @@
       "label": "Enabled",
       "baseHint": "The base currency is always enabled.",
       "hint": "Whether payers may be billed in this currency"
-    },
-    "cancel": "Cancel",
-    "save": "Save Changes",
-    "add": "Add Currency"
+    }
   }
 }

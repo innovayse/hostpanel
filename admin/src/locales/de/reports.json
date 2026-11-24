@@ -112,7 +112,6 @@
     "diskSpaceBandwidthUsageSummary": "Zusammenfassung der Speicherplatz- und Bandbreitennutzung",
     "thisReportShowsTheDisk": "Dieser Bericht zeigt die Statistiken zur Speicherplatz- und Bandbreitennutzung der Hosting-Konten.",
     "diskSpaceUsageStatsLast": "Speicherplatzstatistik zuletzt aktualisiert am {value}",
-    "updateNow": "Jetzt aktualisieren",
     "clientNameDomain": "Kundenname / Domain",
     "diskUsage": "Speicherplatznutzung",
     "diskLimit": "Speicherplatzlimit",
@@ -120,14 +119,14 @@
     "bwUsage": "Bandbreitennutzung",
     "bwLimit": "Bandbreitenlimit",
     "noAccountsOnThisServer": "Keine Konten auf diesem Server.",
-    "noData": "Keine Daten gefunden. Klicken Sie auf „Jetzt aktualisieren“, um die Statistiken von Ihren Hosting-Servern abzurufen.",
+    "noData": "Keine Daten gefunden. Klicken Sie auf „Aktualisieren“, um die Statistiken von Ihren Hosting-Servern abzurufen.",
     "failuresTitle": "Diese Server haben keine Werte geliefert:",
     "failure": {
       "unsupportedModule": "Das Control Panel kann die Speicherplatz- und Bandbreitennutzung noch nicht melden.",
       "missingCredentials": "Es ist kein API-Token und kein Access Hash festgelegt.",
       "unreachable": "Der Server hat nicht geantwortet oder die Anfrage abgelehnt."
     },
-    "noDataHint": "Klicken Sie auf „Jetzt aktualisieren“, um die Statistiken von Ihren Hosting-Servern abzurufen."
+    "noDataHint": "Klicken Sie auf „Aktualisieren“, um die Statistiken von Ihren Hosting-Servern abzurufen."
   },
   "domainRenewalEmails": {
     "domainRenewalReminderEmails": "Erinnerungs-E-Mails zur Domain-Verlängerung",
@@ -258,7 +257,6 @@
     },
     "showInactive": "Inaktive Domains anzeigen",
     "showInactiveHint": "Auch Domains auflisten, die nicht aktiv sind.",
-    "recheck": "SSL-Status erneut prüfen",
     "recheckHint": "Die Zertifikate jetzt erneut prüfen.",
     "noDomains": "Keine Domains zu überwachen.",
     "summary": "Domains pro Ablaufgruppe"

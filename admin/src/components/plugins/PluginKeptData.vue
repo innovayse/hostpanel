@@ -6,21 +6,21 @@
  * off; purging deletes that data for good. The action only asks: the screen confirms first.
  */
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiTableDensity } from '@/utils/ui/injection'
 import { UiColumnSize } from '@/utils/ui/table'
+import { UiTextTag, UiTextTone, UiHeadingVariant, UiTextSize } from '@/utils/ui/text'
 import { Icon } from '@/lib/icons'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -66,26 +66,26 @@ const keptActions = (id: string): UiMenuAction[] => {
 </script>
 
 <template>
-  <UiStack gap="sm" data-testid="plugins-kept-data">
-    <UiHeading :level="2" variant="section">{{ t('plugins.keptData.title') }}</UiHeading>
-    <UiText tone="muted" size="sm">{{ t('plugins.keptData.description') }}</UiText>
-    <UiCard clip>
-      <UiTable :density="UiTableDensity.Comfortable" data-testid="plugins-kept-data-table">
-        <UiTableHead>
-          <UiTableRow>
-            <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.id') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
-          </UiTableRow>
-        </UiTableHead>
-        <UiTableBody divided>
-          <UiTableRow v-for="id in ids" :key="id" hoverable :data-testid="`plugin-kept-${id}`">
-            <UiTableCell class="font-mono text-text-primary">{{ id }}</UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="keptActions(id)" :testid="`plugin-kept-actions-${id}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
+  <UiStack :gap="UiGap.Sm" data-testid="plugins-kept-data">
+    <UiHeading :level="2" :variant="UiHeadingVariant.Section">{{ t('plugins.keptData.title') }}</UiHeading>
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('plugins.keptData.description') }}</UiText>
+    <UiDataTable data-testid="plugins-kept-data-table">
+      <UiTableHead>
+        <UiTableRow>
+          <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.id') }}</UiTableHeader>
+          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+        </UiTableRow>
+      </UiTableHead>
+      <UiTableBody>
+        <UiTableRow v-for="id in ids" :key="id" hoverable :data-testid="`plugin-kept-${id}`">
+          <UiTableCell>
+            <UiText :as="UiTextTag.Span" :tone="UiTextTone.Primary" class="font-mono">{{ id }}</UiText>
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="keptActions(id)" :testid="`plugin-kept-actions-${id}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

@@ -1,7 +1,7 @@
 <template>
   <UiStack
     v-if="visible"
-    as="section"
+    :as="UiStackTag.Section"
     gap="none"
     data-testid="comparison-table"
     class="relative pb-[clamp(56px,8vw,84px)]"
@@ -47,6 +47,7 @@ import type { PlanCard } from '~/types/plancard'
 import type { ComparisonRow } from '~/types/comparisonrow'
 import { isComparable } from '~/utils/comparisonRows'
 import { BLOCK_TITLE_CLASS } from '~/templates/aurora/typography'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Component props: the plan columns and the aligned comparison rows. */
 const props = withDefaults(defineProps<{

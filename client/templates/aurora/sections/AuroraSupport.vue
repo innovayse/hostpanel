@@ -20,9 +20,9 @@
         >
           <UiStack gap="sm">
             <UiTile size="lg" :icon="ICONS[channel.channel]" class="bg-tile-sky text-white" />
-            <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ t(`aurora.support.${channel.channel}`) }}</UiText>
-            <UiText v-if="channel.value" as="span" size="inherit" tone="inherit" class="text-[15px] text-tx2" :data-testid="`support-value-${channel.channel}`">{{ channel.value }}</UiText>
-            <UiText v-if="channel.responseTime" as="span" size="inherit" tone="inherit" class="text-[14px] text-mut" :data-testid="`support-response-${channel.channel}`">
+            <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="text-[18px] text-tx">{{ t(`aurora.support.${channel.channel}`) }}</UiText>
+            <UiText v-if="channel.value" :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[15px] text-tx2" :data-testid="`support-value-${channel.channel}`">{{ channel.value }}</UiText>
+            <UiText v-if="channel.responseTime" :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[14px] text-mut" :data-testid="`support-response-${channel.channel}`">
               {{ t('aurora.support.response', { time: channel.responseTime }) }}
             </UiText>
           </UiStack>
@@ -45,6 +45,7 @@ import { useSupportChannels } from '~/composables/useSupportChannels'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import UiLink from '~/components/ui/UiLink.vue'
 import UiStack from '~/components/ui/UiStack.vue'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

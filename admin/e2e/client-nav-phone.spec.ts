@@ -111,7 +111,7 @@ test('a tab far along the strip is brought into view when its section opens', as
   }).toBe(true)
 })
 
-test('the client header on a phone: the status sits beside the name and Export is a row of its own', async ({ page }) => {
+test('the client header on a phone: the back link is a row above the name, the status sits beside the name and Export is a row of its own', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [
@@ -134,11 +134,12 @@ test('the client header on a phone: the status sits beside the name and Export i
   const status = await boxOf(page.getByTestId('client-layout-header').getByText(adaDetail.status, { exact: true }))
   const exportButton = await boxOf(page.getByTestId('client-layout-export'))
 
-  // First row: the back arrow, the name and the status badge right after it share a line.
-  expect(Math.abs((back.y + back.height / 2) - (name.y + name.height / 2))).toBeLessThan(20)
+  // First row: the back link sits on a row of its own above the name.
+  expect(back.y + back.height).toBeLessThanOrEqual(name.y + 4)
+  // Second row: the status badge shares a line with the name, right after it.
   expect(Math.abs((status.y + status.height / 2) - (name.y + name.height / 2))).toBeLessThan(20)
   expect(status.x).toBeGreaterThanOrEqual(name.x + name.width - 4)
-  // Second row: Export is below the name and stays on screen.
+  // Third row: Export is below the name and stays on screen.
   expect(exportButton.y).toBeGreaterThan(name.y + name.height - 4)
   expect(exportButton.x + exportButton.width).toBeLessThanOrEqual(390)
 })
@@ -188,7 +189,6 @@ test('a phone changes the theme from the menu drawer, since the top bar has no r
   await page.getByTestId('topbar-toggle-sidebar').click()
   await expect(page.getByTestId('sidebar-theme')).toBeVisible()
   await page.getByTestId('sidebar-theme').click()
-  await page.getByTestId('theme-option-light').click()
 
   await expect(page.locator('html')).toHaveClass(/(^|\s)light(\s|$)/)
   expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)

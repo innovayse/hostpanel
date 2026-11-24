@@ -31,6 +31,8 @@ defineProps<{
         :key="column.key"
         :align="column.align"
         :size="column.size"
+        :kind="column.kind"
+        :width="column.width"
         :hide-below="column.hideBelow"
         :card-role="column.cardRole"
         :numeric="column.numeric"

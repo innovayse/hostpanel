@@ -5,6 +5,7 @@
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { claimedLines, upcomingDomainsPage, upcomingServicesPage } from './fixtures/renewals'
+import { toastWith } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
 /** The three list routes every flow starts from. */
@@ -43,7 +44,7 @@ test('a renewal invoice is raised by hand and the count is shown', async ({ page
 
   await page.getByTestId('renewals-service-generate-4').click()
 
-  await expect(page.getByTestId('renewals-notice')).toContainText('Renewal invoices raised: 1.')
+  await expect(toastWith(page, 'Renewal invoices raised: 1.')).toBeVisible()
   expect(api.callsTo(HttpMethod.Post, '/api/billing/client/9/renewal-invoices')).toHaveLength(1)
 })
 
@@ -59,6 +60,6 @@ test('a claimed line is released only after the confirmation', async ({ page }) 
   await expect(page.getByRole('dialog')).toContainText('Check the domain at the registrar first')
   await page.getByRole('dialog').getByRole('button', { name: 'Release claim' }).click()
 
-  await expect(page.getByTestId('renewals-notice')).toContainText('The claim was released.')
+  await expect(toastWith(page, 'The claim was released.')).toBeVisible()
   expect(api.callsTo(HttpMethod.Post, '/api/billing/5/items/11/release-renewal-claim')).toHaveLength(1)
 })

@@ -12,7 +12,10 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiStack from '@/components/ui/UiStack.vue'
 import { Icon } from '@/lib/icons'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { ReportAction } from '@/utils/ui/reportParts'
 
 const { t } = useI18n()
@@ -45,8 +48,8 @@ interface ActionLook {
 
 /** The look of each action; read again when the language changes. */
 const looks = computed<Readonly<Record<ReportAction, ActionLook>>>(() => ({
-  [ReportAction.Refresh]: { icon: Icon.Refresh, label: t('shared.refreshReport'), testid: 'report-refresh' },
-  [ReportAction.Export]: { icon: Icon.Download, label: t('shared.exportCsv'), testid: 'report-export' },
+  [ReportAction.Refresh]: { icon: Icon.Refresh, label: t('shared.refresh'), testid: 'report-refresh' },
+  [ReportAction.Export]: { icon: Icon.Download, label: t('shared.export'), testid: 'report-export' },
   [ReportAction.Print]: { icon: Icon.Printer, label: t('shared.print'), testid: 'report-print' },
 }))
 
@@ -74,10 +77,10 @@ const press: Readonly<Record<ReportAction, () => void>> = {
 </script>
 
 <template>
-  <div class="flex shrink-0 items-center gap-2 whitespace-nowrap">
+  <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="shrink-0 whitespace-nowrap">
     <slot />
-    <UiButton v-for="action in actions" :key="action" :icon="looks[action].icon" variant="secondary" :data-testid="looks[action].testid" @click="press[action]()">
+    <UiButton v-for="action in actions" :key="action" :icon="looks[action].icon" :variant="UiButtonVariant.Secondary" :data-testid="looks[action].testid" @click="press[action]()">
       {{ looks[action].label }}
     </UiButton>
-  </div>
+  </UiStack>
 </template>

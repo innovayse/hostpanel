@@ -1,0 +1,22 @@
+{
+  "error": {
+    "403": {
+      "title": "Accès refusé",
+      "message": "Vous n'avez pas l'autorisation d'accéder à cette page."
+    },
+    "404": {
+      "title": "Page introuvable",
+      "message": "La page que vous recherchez n'existe pas ou a été déplacée."
+    },
+    "500": {
+      "title": "Erreur du serveur",
+      "message": "Un problème est survenu de notre côté. Nous travaillons à le résoudre."
+    },
+    "helpText": "Si vous avez besoin d'aide, n'hésitez pas à",
+    "contactUs": "nous contacter",
+    "default": {
+      "title": "Une erreur s'est produite",
+      "message": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
+    }
+  }
+}

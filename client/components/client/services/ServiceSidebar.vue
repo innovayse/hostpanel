@@ -30,7 +30,7 @@
 
     <UiNavGroup v-if="service.server && liveAccount" :title="$t('client.services.sectionQuickLinks')" :icon="Link2">
       <UiNavItem v-if="canSignIn" :icon="Monitor" :loading="ssoLoading" testid="service-link-cpanel" @click="emit('cpanel')">
-        {{ $t('client.services.linkCpanel') }}
+        {{ $t('client.services.actionLoginCpanel') }}
       </UiNavItem>
       <UiNavItem v-if="liveAccount" :href="webmailUrl" :icon="Mail" testid="service-link-webmail">
         {{ $t('client.services.linkWebmail') }}
@@ -129,7 +129,7 @@ const tabs = computed(() => [
   ...(canOrder.value && props.service.status === ServiceStatus.Active
     ? [{ key: ServiceTab.PlanChange, label: t('client.services.tabPlanChange'), icon: ArrowUpDown }]
     : []),
-  ...(canOrder.value ? [{ key: ServiceTab.Cancel, label: t('client.services.tabCancel'), icon: XCircle }] : []),
+  ...(canOrder.value ? [{ key: ServiceTab.Cancel, label: t('client.services.cancelBtn'), icon: XCircle }] : []),
   ...props.pluginTabs.map(tab => ({ ...tab, icon: Puzzle })),
 ])
 </script>

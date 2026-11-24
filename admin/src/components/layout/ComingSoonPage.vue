@@ -8,6 +8,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { UiSize } from '@/utils/ui/size'
 
 /** Props for ComingSoonPage. */
 defineProps<{
@@ -30,7 +31,7 @@ defineProps<{
     <UiCard>
       <UiEmptyState :title="heading" :description="description" data-testid="coming-soon-empty">
         <template #icon>
-          <UiIcon :markup="icon" size="lg" />
+          <UiIcon :markup="icon" :size="UiSize.Lg" />
         </template>
       </UiEmptyState>
     </UiCard>

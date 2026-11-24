@@ -1,54 +1,50 @@
 <template>
   <UiAccent :color="color">
     <!-- Features -->
-    <section v-if="features.length > 0" :class="[brandFallback, 'py-16 bg-ui-surface [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))] [.tpl-classic_&]:bg-classic-surface-2 [.tpl-classic_&]:py-12']" data-testid="trial-features">
-      <UiContainer>
-        <div>
-          <UiHeading :level="2" class="text-center mb-10 [.tpl-classic_&]:font-semibold [.tpl-classic_&]:text-classic-ink">{{ $t('trial.featuresTitle', { product: name }) }}</UiHeading>
-          <UiGrid cols="1" gap="md" class="md:grid-cols-2">
-            <UiCard
-              v-for="(feature, index) in features"
-              :key="index"
-              padding="sm"
-              class="flex items-center gap-3 animate-reveal-up motion-reduce:animate-none"
-              :class="revealDelay(index * 60)"
-            >
-              <CheckCircle :size="18" :stroke-width="2" :class="[accent.text, 'flex-shrink-0']" />
-              <span class="text-sm text-gray-700 dark:text-gray-300">{{ feature }}</span>
-            </UiCard>
-          </UiGrid>
-        </div>
+    <UiStack v-if="features.length > 0" :as="UiStackTag.Section" gap="none" :class="[brandFallback, 'py-16 bg-ui-surface [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))] [.tpl-classic_&]:bg-classic-surface-2 [.tpl-classic_&]:py-12']" data-testid="trial-features">
+      <UiContainer class="w-full">
+        <UiHeading :level="2" class="text-center mb-10 [.tpl-classic_&]:font-semibold [.tpl-classic_&]:text-classic-ink">{{ $t('trial.featuresTitle', { product: name }) }}</UiHeading>
+        <UiGrid cols="1" gap="md" class="md:grid-cols-2">
+          <UiCard
+            v-for="(feature, index) in features"
+            :key="index"
+            padding="sm"
+            class="flex items-center gap-3 animate-reveal-up motion-reduce:animate-none"
+            :class="revealDelay(index * 60)"
+          >
+            <CheckCircle :size="18" :stroke-width="2" :class="[accent.text, 'flex-shrink-0']" />
+            <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="text-gray-700 dark:text-gray-300">{{ feature }}</UiText>
+          </UiCard>
+        </UiGrid>
       </UiContainer>
-    </section>
+    </UiStack>
 
     <!-- Perks -->
-    <section :class="[brandFallback, 'py-16 [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))] [.tpl-classic_&]:bg-classic-page [.tpl-classic_&]:py-12']" data-testid="trial-perks">
-      <UiContainer>
-        <div>
-          <UiGrid cols="1" gap="lg" class="md:grid-cols-3">
-            <UiCard
-              v-for="(perk, index) in perks"
-              :key="perk.key"
-              class="text-center animate-reveal-up motion-reduce:animate-none"
-              :data-testid="`trial-perk-${perk.key}`"
-              :class="revealDelay(index * 100)"
-            >
-              <component :is="perk.icon" :size="32" :stroke-width="2" :class="[accent.text, 'mx-auto mb-3']" />
-              <UiText weight="semibold" class="mb-1">{{ $t(`trial.perks.${perk.key}.title`) }}</UiText>
-              <UiText size="sm" tone="subtle">{{ $t(`trial.perks.${perk.key}.desc`) }}</UiText>
-            </UiCard>
-          </UiGrid>
+    <UiStack :as="UiStackTag.Section" gap="none" :class="[brandFallback, 'py-16 [.tpl-classic_&]:[--accent:rgb(var(--classic-brand))] [.tpl-classic_&]:bg-classic-page [.tpl-classic_&]:py-12']" data-testid="trial-perks">
+      <UiContainer class="w-full">
+        <UiGrid cols="1" gap="lg" class="md:grid-cols-3">
+          <UiCard
+            v-for="(perk, index) in perks"
+            :key="perk.key"
+            class="text-center animate-reveal-up motion-reduce:animate-none"
+            :data-testid="`trial-perk-${perk.key}`"
+            :class="revealDelay(index * 100)"
+          >
+            <component :is="perk.icon" :size="32" :stroke-width="2" :class="[accent.text, 'mx-auto mb-3']" />
+            <UiText weight="semibold" class="mb-1">{{ $t(`trial.perks.${perk.key}.title`) }}</UiText>
+            <UiText size="sm" tone="subtle">{{ $t(`trial.perks.${perk.key}.desc`) }}</UiText>
+          </UiCard>
+        </UiGrid>
 
-          <div class="mt-12 text-center">
-            <UiAccentButton :href="trialUrl" size="lg" class="px-10 py-4 font-bold" data-testid="trial-cta-bottom">
-              <Rocket :size="20" :stroke-width="2" />
-              {{ $t('trial.cta') }}
-            </UiAccentButton>
-            <UiText size="sm" tone="subtle" class="mt-3">{{ $t('trial.noCc') }}</UiText>
-          </div>
-        </div>
+        <UiStack gap="none" align="center" class="mt-12 text-center">
+          <UiAccentButton appearance="solid" :href="trialUrl" size="lg" data-testid="trial-cta-bottom">
+            <Rocket :size="20" :stroke-width="2" />
+            {{ $t('trial.cta') }}
+          </UiAccentButton>
+          <UiText size="sm" tone="subtle" class="mt-3">{{ $t('trial.noCc') }}</UiText>
+        </UiStack>
       </UiContainer>
-    </section>
+    </UiStack>
   </UiAccent>
 </template>
 
@@ -62,6 +58,7 @@ import { revealDelay } from '~/utils/reveal'
 import { CheckCircle, Clock, CreditCard, Headphones, Rocket } from 'lucide-vue-next'
 import { TrialPerk } from '~/types/trialperk'
 import { ACCENT_BRAND_CLASS, ACCENT_CLASSES, isAccentColor } from '~/utils/ui/accent'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of TrialDetails. */
 interface Props {

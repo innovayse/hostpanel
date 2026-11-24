@@ -11,7 +11,7 @@ import { AppRoute } from '@/lib/routes'
 import { BlockListType } from '@/types/fraud'
 import { SkeletonKind, SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { CompositeSkeletonSchema, FormSkeletonPart, SkeletonTable, TabsSkeletonPart, ToolbarSkeletonPart } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** The strip of the four lists, one tab per {@link BlockListType}, in the order the operator reads them. */
 export const BLOCK_LIST_TABS_PART: TabsSkeletonPart = {
@@ -65,7 +65,7 @@ export const BLOCK_LIST_TABLE: SkeletonTable = {
   columns: [
     { key: 'value', label: 'shared.value', size: UiColumnSize.Grow },
     { key: 'note', label: 'fraud.blockList.note' },
-    { key: 'addedAt', label: 'fraud.blockList.addedAt' },
+    { key: 'addedAt', label: 'fraud.blockList.addedAt', kind: UiColumnKind.Date },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }

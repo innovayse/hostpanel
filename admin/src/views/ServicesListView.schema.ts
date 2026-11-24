@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiCardRole, UiColumnSize } from '@/utils/ui/table'
 
 /** The services list. */
 const schema: ListSkeletonSchema = {
@@ -17,14 +17,14 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'id', label: 'shared.id', size: UiColumnSize.Compact },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'product', label: 'shared.productService', size: UiColumnSize.Grow },
       { key: 'domain', label: 'shared.domain' },
       { key: 'client', label: 'shared.clientName', cardRole: UiCardRole.Subtitle },
       { key: 'price', label: 'shared.price', numeric: true, size: UiColumnSize.Compact },
       { key: 'billingCycle', label: 'shared.billingCycle' },
-      { key: 'nextDueDate', label: 'shared.nextDueDate', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, size: UiColumnSize.Compact },
+      { key: 'nextDueDate', label: 'shared.nextDueDate', kind: UiColumnKind.Date },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     ],
   },
 }

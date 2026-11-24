@@ -34,6 +34,8 @@ describe('SectionsCTA', () => {
     expect(wrapper.find('[data-testid="sections-domain-search"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="cta-contact"]').attributes('href')).toBe('/en/contact')
     expect(wrapper.find('[data-testid="cta-plans"]').attributes('href')).toBe('/en/hosting')
+    expect(wrapper.find('[data-testid="cta-plans"]').text()).toBe('cta.button')
+    expect(wrapper.find('[data-testid="cta-contact"]').text()).toBe('common.contactUs')
   })
 
   it('draws no gradient or glow decoration', () => {

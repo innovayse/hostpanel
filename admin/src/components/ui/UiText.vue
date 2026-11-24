@@ -16,16 +16,23 @@ const props = withDefaults(defineProps<{
   tone?: UiTextTone
   /** Type size. */
   size?: UiTextSize
-  /** Element the text is drawn as; a paragraph by default, a `span` where only phrasing content is allowed (inside a button). */
+  /** Element the text is drawn as; a paragraph by default, a `span` where only phrasing content is allowed (inside a button), a `time` for a moment (its `datetime` attribute falls through). */
   as?: UiTextTag
+  /** Cuts a line that does not fit with an ellipsis instead of wrapping it; the text may then shrink inside a flex row. */
+  truncate?: boolean
 }>(), {
   tone: 'plain',
   size: 'plain',
   as: UiTextTag.P,
+  truncate: false,
 })
 
-/** Classes of the chosen tone and size; a long unbroken word (an id, an address, a hash) wraps instead of widening the page on a phone. */
-const classes = computed<string[]>(() => ['break-words', textToneClasses[props.tone], textSizeClasses[props.size]])
+/** Classes of the chosen tone and size; a long unbroken word (an id, an address, a hash) wraps instead of widening the page on a phone, or is cut with an ellipsis when `truncate`. */
+const classes = computed<string[]>(() => [
+  props.truncate ? 'min-w-0 truncate' : 'break-words',
+  textToneClasses[props.tone],
+  textSizeClasses[props.size],
+])
 </script>
 
 <template>

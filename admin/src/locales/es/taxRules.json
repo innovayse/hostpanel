@@ -1,0 +1,50 @@
+{
+  "title": "Reglas fiscales",
+  "description": "Define el tipo impositivo con el que se gravan las facturas nuevas, por país o por región de un país",
+  "addRule": "Añadir regla fiscal",
+  "empty": "Todavía no hay reglas fiscales. Añade una regla para gravar automáticamente las facturas nuevas.",
+  "searchPlaceholder": "Buscar por nombre, país o región",
+  "noMatches": "Ninguna regla fiscal coincide con tus filtros",
+  "table": {
+    "name": "Nombre",
+    "country": "País",
+    "region": "Región",
+    "rate": "Tipo",
+    "enabled": "Estado",
+    "actions": "Acciones"
+  },
+  "wholeCountry": "Todo el país",
+  "enabledBadge": "Activado",
+  "disabledBadge": "Desactivado",
+  "deleteModal": {
+    "title": "Eliminar regla fiscal",
+    "message": "¿Eliminar la regla fiscal {name}? Las facturas ya emitidas conservan el tipo con el que se gravaron."
+  },
+  "toasts": {
+    "deleted": "La regla fiscal se eliminó."
+  },
+  "form": {
+    "editTitle": "Editar regla fiscal",
+    "name": {
+      "label": "Nombre",
+      "placeholder": "p. ej. IVA de Alemania"
+    },
+    "country": {
+      "label": "País",
+      "placeholder": "Selecciona un país"
+    },
+    "region": {
+      "label": "Región",
+      "placeholder": "p. ej. Baviera",
+      "hint": "Déjalo vacío para una regla que abarca todo el país."
+    },
+    "rate": {
+      "label": "Tipo (%)",
+      "placeholder": "p. ej. 19"
+    },
+    "enabled": {
+      "label": "Activado",
+      "hint": "Solo se usan las reglas activadas en las facturas nuevas."
+    }
+  }
+}

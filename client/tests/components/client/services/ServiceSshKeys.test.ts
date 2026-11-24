@@ -50,10 +50,10 @@ const answerReads = (state: SshAccessState, keys: Record<string, unknown>[] = []
   table[`GET ${ACCESS_PATH}`] = {
     body: {
       state,
-      hostname: 'cwp.example.test',
+      hostname: 'panel.example.test',
       port: 2222,
       username: 'web',
-      connectCommand: state === SshAccessState.Available ? 'ssh -p 2222 web@cwp.example.test' : null,
+      connectCommand: state === SshAccessState.Available ? 'ssh -p 2222 web@panel.example.test' : null,
       maxKeys: 20
     }
   }
@@ -93,7 +93,7 @@ const mountIn = async (state: SshAccessState, keys: Record<string, unknown>[] = 
 }
 
 /** One installed key. */
-const KEY_ROW = { keyId: 'k1', label: 'laptop', fingerprint: 'SHA256:abc', createdAt: '2026-10-27T00:00:00Z', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true }
+const KEY_ROW = { keyId: 'k1', label: 'laptop', fingerprint: 'SHA256:abc', allowedFrom: [], createdAt: '2026-10-27T00:00:00Z', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true }
 
 describe('ServiceSshKeys', () => {
   beforeEach(async () => {
@@ -110,7 +110,7 @@ describe('ServiceSshKeys', () => {
 
     expect(requestsTo(stub.requests, ACCESS_PATH)).toHaveLength(1)
     expect(requestsTo(stub.requests, KEYS_PATH)).toHaveLength(1)
-    expect(wrapper.find('[data-testid="service-ssh-command"]').text()).toBe('ssh -p 2222 web@cwp.example.test')
+    expect(wrapper.find('[data-testid="service-ssh-command"]').text()).toBe('ssh -p 2222 web@panel.example.test')
     expect(wrapper.find('[data-testid="service-ssh-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="service-ssh-form"]').exists()).toBe(true)
   })
@@ -122,7 +122,7 @@ describe('ServiceSshKeys', () => {
     await wrapper.find('[data-testid="ui-accordion-toggle-1"]').trigger('click')
     const html = wrapper.find('[data-testid="service-ssh-deploy"]').html()
     expect(html).toContain('ssh -p 2222 -i ~/.ssh/deploy_key')
-    expect(html).toContain('web@cwp.example.test:public_html/')
+    expect(html).toContain('web@panel.example.test:public_html/')
   })
 
   it('offers no deployment guide without a form', async () => {
@@ -185,6 +185,14 @@ describe('ServiceSshKeys', () => {
     expect(rows[0]?.find('[data-testid="service-ssh-revoke"]').exists()).toBe(true)
     expect(rows[1]?.find('[data-testid="service-ssh-key-badge"]').text()).toContain('client.services.ssh.sync.Stale')
     expect(rows[1]?.find('[data-testid="service-ssh-revoke"]').exists()).toBe(true)
+  })
+
+  it('shows the sources a key is limited to and nothing for an open key', async () => {
+    const wrapper = await mountIn(SshAccessState.Available, [KEY_ROW, { ...KEY_ROW, keyId: 'k2', allowedFrom: ['203.0.113.7', '198.51.100.0/24'] }])
+
+    const rows = wrapper.findAll('[data-testid="service-ssh-key"]')
+    expect(rows[0]?.find('[data-testid="service-ssh-key-allowed-from"]').exists()).toBe(false)
+    expect(rows[1]?.find('[data-testid="service-ssh-key-allowed-from"]').text()).toContain('client.services.ssh.allowedFrom')
   })
 
   it('refuses a private key in the browser', async () => {

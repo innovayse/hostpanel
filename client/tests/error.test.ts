@@ -50,6 +50,8 @@ describe('error.vue', () => {
     const wrapper = mountWithKit(ErrorPage, { props: { error: { statusCode: 500 } } })
 
     expect(wrapper.find('[data-testid="error-go-home"]').attributes('href')).toBe('/en/')
+    expect(wrapper.find('[data-testid="error-go-home"]').text()).toBe('common.home')
+    expect(wrapper.find('[data-testid="error-go-back"]').text()).toBe('common.back')
     expect(wrapper.find('[data-testid="error-contact"]').attributes('href')).toBe('/en/contact')
   })
 

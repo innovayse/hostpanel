@@ -19,8 +19,11 @@ import { placeholderRows } from '@/lib/placeholderRows'
 import { AppRoute, invoiceViewPath } from '@/lib/routes'
 import { invoiceStatusTone } from '@/lib/tones'
 import type { Invoice } from '@/types/invoice'
-import { UiCardRadius } from '@/utils/ui/card'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding, UiCardRadius } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify, UiStackTag } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiHeadingVariant, UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Props for DashboardRecentInvoices. */
 const props = defineProps<{
@@ -35,14 +38,20 @@ const { t } = useI18n()
 /** How many placeholder rows the card draws while the invoices load (the dashboard asks for this many). */
 const PLACEHOLDER_ROWS = 5
 
-/** Classes of the row: four columns from `sm` up, a name line over a number, total and status line on a phone. */
-const ROW_CLASSES = 'grid items-center border-t border-border-subtle text-sm max-sm:grid-cols-[auto_1fr_auto] max-sm:gap-x-3 max-sm:gap-y-1 max-sm:py-2.5 sm:h-12 sm:grid-cols-[1.2fr_1.6fr_1fr_0.8fr]'
+/** Classes of the row: one line from `sm` up, a name line over a number, total and status line on a phone. */
+const ROW_CLASSES = 'border-t border-border-subtle text-sm max-sm:flex-wrap max-sm:gap-x-3 max-sm:gap-y-1 max-sm:py-2.5 sm:h-12'
 
-/** Classes of the client name cell: it takes the whole first line on a phone. */
-const NAME_CLASSES = 'max-sm:col-span-3 max-sm:row-start-1'
+/** Classes of the number cell: its own width on a phone, the first column from `sm` up. */
+const NUMBER_CLASSES = 'min-w-0 max-sm:shrink-0 sm:flex-[1.2_1_0%]'
 
-/** Classes of the cells of the second phone line, which keep the second row whatever their order in the markup. */
-const DETAIL_CLASSES = 'max-sm:row-start-2'
+/** Classes of the client name cell: it takes the whole first line on a phone, the second column from `sm` up. */
+const NAME_CLASSES = 'min-w-0 max-sm:order-first max-sm:basis-full sm:flex-[1.6_1_0%]'
+
+/** Classes of the total cell: it takes the room left on the second phone line, the third column from `sm` up. */
+const TOTAL_CLASSES = 'min-w-0 max-sm:flex-1 sm:flex-[1_1_0%]'
+
+/** Classes of the status cell: its own width on a phone, the last column from `sm` up. */
+const STATUS_CLASSES = 'min-w-0 max-sm:shrink-0 sm:flex-[0.8_1_0%]'
 
 /** True until the first read has answered: the rows are drawn with placeholders. */
 const initialLoading = computed<boolean>(() => props.loading && props.invoices.length === 0)
@@ -52,35 +61,43 @@ const rows = computed(() => placeholderRows(props.invoices, initialLoading.value
 </script>
 
 <template>
-  <UiCard padding="none" :radius="UiCardRadius.Panel" :aria-busy="initialLoading ? 'true' : undefined" class="p-5.5" data-testid="dashboard-recent-invoices">
+  <UiCard :padding="UiCardPadding.None" :radius="UiCardRadius.Panel" :aria-busy="initialLoading ? 'true' : undefined" class="p-5.5" data-testid="dashboard-recent-invoices">
     <template #header>
-      <UiStack direction="row" align="center" justify="between" class="mb-2.5">
-        <UiHeading :level="2" variant="card">{{ t('dashboard.recentInvoices') }}</UiHeading>
-        <UiLink :to="AppRoute.BillingInvoices" variant="link" size="sm" data-testid="dashboard-recent-invoices-all">
-          {{ t('dashboard.viewAll') }}
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" class="mb-2.5">
+        <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ t('dashboard.recentInvoices') }}</UiHeading>
+        <UiLink :to="AppRoute.BillingInvoices" :variant="UiButtonVariant.Link" :size="UiSize.Sm" data-testid="dashboard-recent-invoices-all">
+          {{ t('shared.viewAll') }}
         </UiLink>
       </UiStack>
     </template>
     <UiText v-if="!initialLoading && invoices.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Md" class="py-3">{{ t('dashboard.noInvoices') }}</UiText>
-    <ul v-else>
-      <li
+    <UiStack v-else :as="UiStackTag.Ul" :gap="UiGap.None">
+      <UiStack
         v-for="(invoice, index) in rows"
         :key="invoice?.id ?? `placeholder-${index}`"
+        :as="UiStackTag.Li"
+        :direction="UiDirection.Row"
+        :align="UiAlignItems.Center"
+        :gap="UiGap.None"
         :class="ROW_CLASSES"
       >
-        <template v-if="invoice === null">
-          <UiSkeletonBar :class="[DETAIL_CLASSES, 'h-3.5 w-10 rounded-md']" aria-hidden="true" />
-          <UiSkeletonBar :class="[NAME_CLASSES, 'h-3.5 w-3/4 rounded-md']" aria-hidden="true" />
-          <UiSkeletonBar :class="[DETAIL_CLASSES, 'h-3.5 w-16 rounded-md']" aria-hidden="true" />
-          <UiSkeletonBar :class="[DETAIL_CLASSES, 'h-5 w-16 rounded-full']" aria-hidden="true" />
-        </template>
-        <template v-else>
-          <UiLink :to="invoiceViewPath(invoice.id)" :class="[DETAIL_CLASSES, 'text-text-muted']" :data-testid="`dashboard-invoice-${invoice.id}`">#{{ invoice.id }}</UiLink>
-          <span :class="[NAME_CLASSES, 'truncate pr-2']">{{ invoice.clientName }}</span>
-          <span :class="[DETAIL_CLASSES, 'tabular-nums']">{{ formatCurrencyCode(invoice.total, invoice.currency ?? '') }}</span>
-          <UiBadge :tone="invoiceStatusTone(invoice.status)" :class="[DETAIL_CLASSES, 'justify-self-start']">{{ invoice.status }}</UiBadge>
-        </template>
-      </li>
-    </ul>
+        <UiStack :align="UiAlignItems.Start" :gap="UiGap.None" :class="NUMBER_CLASSES">
+          <UiSkeletonBar v-if="invoice === null" class="h-3.5 w-10 rounded-md" aria-hidden="true" />
+          <UiLink v-else :to="invoiceViewPath(invoice.id)" :variant="UiButtonVariant.Link" :size="UiSize.Sm" :data-testid="`dashboard-invoice-${invoice.id}`">#{{ invoice.id }}</UiLink>
+        </UiStack>
+        <UiStack :gap="UiGap.None" :class="NAME_CLASSES">
+          <UiSkeletonBar v-if="invoice === null" class="h-3.5 w-3/4 rounded-md" aria-hidden="true" />
+          <UiText v-else :as="UiTextTag.Span" :tone="UiTextTone.Plain" class="truncate pr-2">{{ invoice.clientName }}</UiText>
+        </UiStack>
+        <UiStack :align="UiAlignItems.Start" :gap="UiGap.None" :class="TOTAL_CLASSES">
+          <UiSkeletonBar v-if="invoice === null" class="h-3.5 w-16 rounded-md" aria-hidden="true" />
+          <UiText v-else :as="UiTextTag.Span" :tone="UiTextTone.Plain" class="tabular-nums">{{ formatCurrencyCode(invoice.total, invoice.currency ?? '') }}</UiText>
+        </UiStack>
+        <UiStack :align="UiAlignItems.Start" :gap="UiGap.None" :class="STATUS_CLASSES">
+          <UiSkeletonBar v-if="invoice === null" class="h-5 w-16 rounded-full" aria-hidden="true" />
+          <UiBadge v-else :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
+        </UiStack>
+      </UiStack>
+    </UiStack>
   </UiCard>
 </template>

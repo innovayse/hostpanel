@@ -10,10 +10,9 @@
     "payByCardHosted": "Pagar con tarjeta",
     "noPaymentOption": "El pago en línea no está disponible en este momento. Contacte con soporte para pagar esta factura.",
     "hostedHint": "Elija Pagar con tarjeta para completar el pago en la página segura del proveedor de pagos.",
-    "retry": "Intentar de nuevo",
     "bankTransfer": {
       "hint": "Pague mediante transferencia bancaria. Verá los datos del banco y una referencia que debe indicar en la transferencia; la factura se marcará como pagada cuando confirmemos la recepción del dinero.",
-      "choose": "Pagar por transferencia bancaria",
+      "choose": "Transferencia bancaria",
       "heading": "Pagar por transferencia bancaria",
       "awaiting": "A la espera de la confirmación del pago",
       "intro": "Realice una transferencia con los datos siguientes. Indique la referencia exactamente como se muestra para que podamos asociar su pago a esta factura.",
@@ -25,7 +24,6 @@
       "iban": "IBAN",
       "swift": "SWIFT / BIC",
       "copy": "Copiar {field}",
-      "copied": "Copiado",
       "noDetails": "Todavía no hay datos de cuenta bancaria configurados para esta transferencia. Contacte con nosotros para obtener la cuenta de destino e indique la referencia anterior.",
       "afterwards": "También le hemos enviado estos datos por correo electrónico. La factura permanece pendiente hasta que veamos el dinero en nuestra cuenta; esto puede tardar unos días hábiles."
     }

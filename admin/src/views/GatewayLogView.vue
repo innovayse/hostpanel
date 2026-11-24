@@ -9,17 +9,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -35,6 +32,7 @@ import { schemaHeader } from '@/lib/schemaHeader'
 import { useGatewayLogStore } from '@/stores/gatewayLog'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import type { GatewayLogFilters } from '@/types/gatewaylog'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 const { t } = useI18n()
 
@@ -139,39 +137,30 @@ loadOnChange(load)
       @retry="load"
     />
 
-    <UiResultCount :loading="store.loading && store.entries.length === 0" data-testid="billing-gateway-log-count">
-      {{ t('shared.totalcountRecordsFound', { totalCount: store.totalCount }) }}
-    </UiResultCount>
-
-    <UiCard>
-      <UiTable
-        :empty-text="t('shared.noRecordsFound')"
-        :loading="store.loading && store.entries.length === 0"
-        :empty="!store.loading && store.entries.length === 0"
-        data-testid="billing-gateway-log-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable>
-            <UiTableCell muted>{{ new Date(entry.dateTime).toLocaleString() }}</UiTableCell>
-            <UiTableCell>{{ entry.gateway }}</UiTableCell>
-            <UiTableCell>
-              <UiText tone="secondary" size="sm" class="whitespace-pre-wrap break-words font-mono">{{ entry.debugData }}</UiText>
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="gatewayLogResultTone(entry.result)">{{ statusLabel(GATEWAY_LOG_RESULT_OPTIONS, entry.result) }}</UiBadge>
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
-
-    <UiPagination
+    <UiDataTable
+      :empty-text="t('shared.noRecordsFound')"
+      :loading="store.loading && store.entries.length === 0"
+      :empty="!store.loading && store.entries.length === 0"
       :page="page"
       :total="store.totalCount"
       :page-size="store.pageSize"
-      testid="billing-gateway-log-pagination"
+      pagination-testid="billing-gateway-log-pagination"
+      data-testid="billing-gateway-log-table"
       @update:page="setPage"
-    />
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="entry in store.entries" :key="entry.id" hoverable>
+          <UiTableCell muted>{{ new Date(entry.dateTime).toLocaleString() }}</UiTableCell>
+          <UiTableCell>{{ entry.gateway }}</UiTableCell>
+          <UiTableCell>
+            <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" class="whitespace-pre-wrap break-words font-mono">{{ entry.debugData }}</UiText>
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="gatewayLogResultTone(entry.result)">{{ statusLabel(GATEWAY_LOG_RESULT_OPTIONS, entry.result) }}</UiBadge>
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

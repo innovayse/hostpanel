@@ -1,5 +1,5 @@
 <template>
-  <UiStack id="nova-main" as="div" gap="none" class="tpl-nova bg-nova-bg font-nova text-nova-ink">
+  <UiStack id="nova-main" :as="UiStackTag.Div" gap="none" class="tpl-nova bg-nova-bg font-nova text-nova-ink">
     <UiSection padding="lg" class="border-b border-nova-border">
       <UiHeading
         :level="1"
@@ -46,6 +46,7 @@ import NovaFinalCta from '~/templates/nova/sections/FinalCta.vue'
 import type { PlanCard } from '~/types/plancard'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { ComparisonRow } from '~/types/comparisonrow'
+import { UiStackTag } from '~/utils/ui/enums'
 
 /** Props of NovaHosting. */
 withDefaults(defineProps<{

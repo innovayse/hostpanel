@@ -2,8 +2,9 @@
 /**
  * Table row.
  *
- * `hoverable` tints the row under the pointer, `selected` marks the chosen row and `bordered`
- * draws the bottom hairline (none after the last row). All colours come from theme tokens.
+ * `hoverable` tints the row under the pointer, `selected` marks the chosen row and `clickable` makes the whole row a
+ * pointer target (the hover tint and the pointer cursor), for a row that opens its record. The hairline between rows is
+ * drawn by `UiTableBody`, not by the row. All colours come from theme tokens.
  *
  * In a selectable table (`UiTable` with `selection`) the row draws the checkbox column itself: inside the header a
  * select-all cell (indeterminate over a partial selection), in the body a row checkbox for a row with a `rowId`. A click
@@ -34,8 +35,8 @@ const props = withDefaults(defineProps<{
   hoverable?: boolean
   /** Marks the row as selected. */
   selected?: boolean
-  /** Draws a bottom border, except on the last row. */
-  bordered?: boolean
+  /** The whole row opens its record on a click: tints under the pointer and shows the pointer cursor. */
+  clickable?: boolean
   /** The id the row has in the table's selection; without it a body row draws no checkbox. */
   rowId?: RowId
   /** `data-testid` of the row's checkbox. */
@@ -43,7 +44,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   hoverable: false,
   selected: false,
-  bordered: false,
+  clickable: false,
   rowId: undefined,
   selectTestid: 'ui-table-select-row',
 })
@@ -196,9 +197,9 @@ RecordCard.props = ['start']
 
 /** State classes. */
 const classes = computed<string[]>(() => [
-  props.hoverable ? 'hover:bg-surface-hover transition-colors' : '',
+  props.hoverable || props.clickable ? 'hover:bg-surface-hover transition-colors' : '',
+  props.clickable ? 'cursor-pointer' : '',
   isSelected.value ? selectedRowClasses : '',
-  props.bordered ? 'border-b border-border-subtle last:border-0' : '',
 ])
 
 /**

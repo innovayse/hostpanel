@@ -99,8 +99,10 @@ const submit = (): void => {
         :variant="UiButtonVariant.Primary"
         :loading="adding"
         :disabled="!canAdd"
+        :title="t('fraud.blockList.add')"
+        :aria-label="t('fraud.blockList.add')"
         data-testid="fraud-block-list-add"
-      >{{ t('fraud.blockList.add') }}
+      >{{ t('shared.add') }}
       </UiButton>
     </template>
   </UiSchemaForm>

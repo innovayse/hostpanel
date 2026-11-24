@@ -6,6 +6,9 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="KeyId">Stable public id, used in the revoke route.</param>
 /// <param name="Label">Friendly label.</param>
 /// <param name="Fingerprint">SHA256 fingerprint.</param>
+/// <param name="AllowedFrom">
+/// The addresses and CIDR networks the key may be used from; empty for a key that works from anywhere.
+/// </param>
 /// <param name="CreatedAt">When it was added.</param>
 /// <param name="SyncState">Last state observed on the server.</param>
 /// <param name="IsStale">
@@ -20,6 +23,7 @@ public sealed record SshKeyDto(
     Guid KeyId,
     string Label,
     string Fingerprint,
+    IReadOnlyList<string> AllowedFrom,
     DateTimeOffset CreatedAt,
     SshKeySyncState SyncState,
     bool IsStale,

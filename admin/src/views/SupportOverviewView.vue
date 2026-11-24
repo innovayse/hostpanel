@@ -19,6 +19,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { useSupportStore } from '@/stores/support'
 import { SupportOverviewPeriod } from '@/types/supportoverviewstats'
 import type { UiStatFigure } from '@/utils/ui/statRow'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import schema, { SUPPORT_PANELS_ROW } from '@/views/SupportOverviewView.schema'
 
@@ -102,7 +103,7 @@ onMounted(() => {
 
       <UiDetailCards :columns="SUPPORT_PANELS_ROW.columns" :loading="overviewLoading">
         <template #card-average>
-          <UiText tone="muted" size="md" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md" data-testid="support-overview-average">{{ averageFirstResponse }}</UiText>
         </template>
         <template #card-hours>
           <UiChart

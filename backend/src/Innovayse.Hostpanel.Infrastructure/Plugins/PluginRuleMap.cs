@@ -1,4 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using PackageAgentRule = Hostpanel.Sdk.Packaging.Enums.PluginAgentRule;
+using PackageAgentViolation = Hostpanel.Sdk.Packaging.Agent.PluginAgentViolation;
 using PackageArchiveRule = Hostpanel.Sdk.Packaging.Enums.PluginArchiveRule;
 using PackageIconRule = Hostpanel.Sdk.Packaging.Enums.PluginIconRule;
 using PackageIconViolation = Hostpanel.Sdk.Packaging.Icons.PluginIconViolation;
@@ -54,6 +56,8 @@ internal static class PluginRuleMap
             PackageManifestRule.ConnectionRolesIncomplete => PluginManifestRule.ConnectionRolesIncomplete,
             PackageManifestRule.SdkPackageVersionInvalid => PluginManifestRule.SdkPackageVersionInvalid,
             PackageManifestRule.MinHostVersionBelowSdk => PluginManifestRule.MinHostVersionBelowSdk,
+            PackageManifestRule.SshAgentProfileInvalid => PluginManifestRule.SshAgentProfileInvalid,
+            PackageManifestRule.SshAgentProfileNotAllowed => PluginManifestRule.SshAgentProfileNotAllowed,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this package rule."),
         };
     }
@@ -69,6 +73,30 @@ internal static class PluginRuleMap
             PackageIconRule.Missing => PluginManifestRule.IconMissing,
             PackageIconRule.Invalid => PluginManifestRule.IconInvalid,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this icon rule."),
+        };
+    }
+
+    /// <summary>
+    /// Maps an agent check of the package to the host's manifest rule: the host reports the agent files as part of the
+    /// manifest. The rules that concern the profile file share one host rule, and the ones that concern the helpers share
+    /// another; the violation's detail names the file and the key.
+    /// </summary>
+    /// <param name="rule">The package's agent rule.</param>
+    /// <returns>The host rule.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The package defines an agent rule the host has no arm for.</exception>
+    public static PluginManifestRule ToHost(PackageAgentRule rule)
+    {
+        return rule switch
+        {
+            PackageAgentRule.ProfileMissing => PluginManifestRule.SshAgentProfileMissing,
+            PackageAgentRule.ProfileInvalid
+                or PackageAgentRule.LinkNotAllowed
+                or PackageAgentRule.KeyNotAllowed
+                or PackageAgentRule.ProviderMismatch
+                or PackageAgentRule.BindingNotEmpty
+                or PackageAgentRule.PathOutsideHelperDirectory => PluginManifestRule.SshAgentProfileFileInvalid,
+            PackageAgentRule.HelperInvalid or PackageAgentRule.TooManyHelpers => PluginManifestRule.SshAgentHelperInvalid,
+            _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this agent rule."),
         };
     }
 
@@ -102,6 +130,16 @@ internal static class PluginRuleMap
     /// <param name="violation">The package's violation.</param>
     /// <returns>The host violation, with the same detail.</returns>
     public static PluginManifestViolation ToHost(PackageIconViolation violation)
+    {
+        ArgumentNullException.ThrowIfNull(violation);
+
+        return new PluginManifestViolation(ToHost(violation.Rule), violation.Detail);
+    }
+
+    /// <summary>Maps an agent violation of the package to the host's manifest violation.</summary>
+    /// <param name="violation">The package's violation.</param>
+    /// <returns>The host violation, with the same detail.</returns>
+    public static PluginManifestViolation ToHost(PackageAgentViolation violation)
     {
         ArgumentNullException.ThrowIfNull(violation);
 

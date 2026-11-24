@@ -18,7 +18,7 @@
       >
         <UiStack direction="row" align="center" gap="md">
           <UiTile size="lg" :icon="ICONS[category]" class="bg-tile-pink text-white" />
-          <UiText as="span" size="inherit" tone="inherit" weight="semibold" class="text-[16px] text-tx">{{ t(`aurora.apps.${category}`) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="semibold" class="text-[16px] text-tx">{{ t(`aurora.apps.${category}`) }}</UiText>
         </UiStack>
       </UiCard>
     </UiBalancedGrid>
@@ -37,6 +37,7 @@ import { InstallerAppCategory } from '~/constants/installerAppCategory'
 import { useInstallerApps } from '~/composables/useInstallerApps'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import UiStack from '~/components/ui/UiStack.vue'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Translator for the active locale. */
 const { t } = useI18n()

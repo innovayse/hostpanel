@@ -1,7 +1,7 @@
 /**
  * The admin at phone width (390 px): every popup is one bottom sheet. The shell navigation opens from the top bar as a sheet
  * with a grip, closes on Escape, on a backdrop tap and on a drag down, and leads to a list; a dialog form is a sheet whose
- * save row is pinned to the bottom edge; on a list page the filters (titled Filters, with Apply and Clear in the footer
+ * save row is pinned to the bottom edge; on a list page the filters (titled Filters, with Apply and Reset in the footer
  * and the count on the trigger), a row menu, a select and the period picker open as sheets too. A report and an
  * integrations category are reached through a tab strip, a chart report fits, and a settings form keeps its save bar in
  * reach, with nothing scrolling sideways on any of them. At tablet width (768 px) the navigation is a sheet as well and five
@@ -66,8 +66,8 @@ test('the menu sheet opens from the top bar with a grip, leads to a list and clo
   await stubApi(page, { signedIn: true, routes: [json(HttpMethod.Get, '/api/clients', clientsPage)] })
 
   await page.goto('/')
-  await expect(page.getByTestId('app-sidebar-desktop')).toHaveCount(1)
-  await expect(page.getByTestId('app-sidebar-desktop')).toBeHidden()
+  await expect(page.getByTestId('sidebar-desktop')).toHaveCount(1)
+  await expect(page.getByTestId('sidebar-desktop')).toBeHidden()
 
   await page.getByTestId('topbar-toggle-sidebar').click()
   await expect(page.getByTestId('drawer')).toBeVisible()
@@ -127,13 +127,13 @@ test('a form dialog is a bottom sheet with its save row pinned to the bottom edg
   await expect(panel).toBeVisible()
   // The row menu sheet that led here is still leaving while the dialog rises, so the grip is awaited until it is the dialog's alone.
   await expect(page.getByTestId('drawer-grip')).toHaveCount(1)
-  // The sheet rises into place, so the box is read until the enter has settled: full width, resting on the bottom edge, under the height limit.
+  // The sheet rises into place, so the box is read until the enter has settled: a full-screen sheet, as wide and as tall as the viewport.
   await expect.poll(async () => (await panel.boundingBox())?.width).toBe(390)
   await expect.poll(async () => {
     const box = await panel.boundingBox()
     return box === null ? 0 : box.y + box.height
   }).toBe(800)
-  expect((await boxOf(panel)).height).toBeLessThanOrEqual(800 * 0.85 + 1)
+  expect((await boxOf(panel)).height).toBe(800)
 
   // The save button is reachable without scrolling the dialog and sits inside the viewport.
   const save = page.getByTestId('currency-form-save')
@@ -163,14 +163,14 @@ test.describe('the popups of a list page are bottom sheets', () => {
     await expect(page.getByTestId('billing-transactions-table')).toContainText(newTransaction.description)
   }
 
-  test('the filters are a sheet titled Filters with Apply and Clear in the footer, and the count stays on the trigger', async ({ page }) => {
+  test('the filters are a sheet titled Filters with Apply and Reset in the footer, and the count stays on the trigger', async ({ page }) => {
     await openLedger(page)
 
     await page.getByTestId('billing-transactions-filter').click()
     await expect(page.getByTestId('drawer-grip')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Filters' })).toBeVisible()
     await expect(page.getByTestId('ui-drawer-footer').getByTestId('filter-apply')).toBeVisible()
-    await expect(page.getByTestId('ui-drawer-footer').getByTestId('filter-reset')).toHaveText('Clear')
+    await expect(page.getByTestId('ui-drawer-footer').getByTestId('filter-reset')).toHaveText('Reset')
     await expect(page.getByTestId('filter-cancel')).toBeHidden()
 
     await page.getByTestId('billing-transactions-filter-direction').getByTestId('ui-select-trigger').click()
@@ -294,6 +294,8 @@ test.describe('at tablet width', () => {
     await page.getByTestId('topbar-toggle-sidebar').click()
 
     await expect(page.getByTestId('drawer-grip')).toBeVisible()
+    // The drawer holds the full menu: Clients is a section, so its button opens the sub-menu and the View link (same test id) appears.
+    await page.getByTestId('drawer').getByTestId('nav-clients').first().click()
     await expect(page.getByTestId('drawer').getByTestId('nav-clients').last()).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('drawer')).toHaveCount(0)

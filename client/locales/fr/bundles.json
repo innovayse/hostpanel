@@ -1,0 +1,30 @@
+{
+  "bundles": {
+    "title": "Packs",
+    "subtitle": "Des services complémentaires, commandés en une seule fois et proposés à prix réduit.",
+    "domainIncluded": "Domaine inclus : {years}",
+    "choose": "Choisir ce pack",
+    "notFound": "Pack introuvable.",
+    "primary": "Service principal",
+    "cycle": "Cycle de facturation",
+    "cyclePlaceholder": "Sélectionnez un cycle de facturation",
+    "unpriced": "Ce service n'a pas de prix pour le moment, le pack ne peut donc pas être commandé.",
+    "orderSummary": "Récapitulatif du pack",
+    "discount": {
+      "percentage": "{amount} % de réduction",
+      "fixed": "{amount} de réduction"
+    },
+    "summary": {
+      "discount": "Remise du pack : {name}",
+      "estimate": "Estimation. Le prix final et la remise sont confirmés lors de la validation de la commande.",
+      "incomplete": "Pour continuer, choisissez un cycle de facturation pour chaque service, ainsi qu'un domaine si le pack en comprend un."
+    },
+    "domain": {
+      "title": "Domaine inclus",
+      "actionLabel": "Enregistrer un nouveau domaine ou en transférer un",
+      "useTransfer": "Utiliser ce domaine",
+      "change": "Modifier",
+      "unavailable": "Les domaines ne peuvent pas être commandés pour le moment."
+    }
+  }
+}

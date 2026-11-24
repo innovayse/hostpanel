@@ -9,11 +9,15 @@
 import { onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useReleaseStatusStore } from '@/stores/releaseStatus'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -27,7 +31,7 @@ const UPGRADE_ICON = '<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0
 /** SVG path for the copy icon. */
 const COPY_ICON = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>'
 
-/** True for two seconds after the command is copied, to show "Copied!" feedback. */
+/** True for two seconds after the command is copied, to show "Copied" feedback. */
 const copied = ref(false)
 
 /** Active timeout handle, kept so it can be cleared on unmount. */
@@ -64,16 +68,17 @@ const copyCommand = async (): Promise<void> => {
 </script>
 
 <template>
-  <div
+  <UiStack
     v-if="releaseStatus.status?.isUpgradeAvailable"
+    :gap="UiGap.None"
     class="mx-2.5 mb-2 rounded-[9px] border border-status-yellow/30 bg-tint-yellow p-3"
     data-testid="release-update-notice"
   >
-    <UiStack gap="xs">
+    <UiStack :gap="UiGap.Xs">
       <!-- Header: icon + version label -->
-      <UiStack direction="row" align="center" gap="xs">
-        <UiIcon :markup="UPGRADE_ICON" size="sm" class="shrink-0 text-status-yellow" />
-        <UiText size="sm" class="font-medium text-status-yellow">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs">
+        <UiIcon :markup="UPGRADE_ICON" :size="UiSize.Sm" class="shrink-0 text-status-yellow" />
+        <UiText :size="UiTextSize.Sm" class="font-medium text-status-yellow">
           {{ t('layout.releaseUpdate.title', { version: releaseStatus.status.latestVersion }) }}
         </UiText>
       </UiStack>
@@ -82,37 +87,41 @@ const copyCommand = async (): Promise<void> => {
       <UiLink
         v-if="releaseStatus.status.releaseNotesUrl"
         :href="releaseStatus.status.releaseNotesUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        size="sm"
+        external
+        :variant="UiButtonVariant.Link"
+        :size="UiSize.Sm"
         data-testid="release-update-notes-link"
       >
         {{ t('layout.releaseUpdate.releaseNotes') }}
       </UiLink>
 
       <!-- Copyable upgrade command -->
-      <div
+      <UiStack
         v-if="releaseStatus.status.upgradeCommand"
+        :gap="UiGap.None"
         class="relative mt-1 rounded-[6px] border border-border bg-surface-base px-2.5 py-1.5"
         data-testid="release-update-command"
       >
-        <code class="block break-all font-mono text-[0.7rem] text-text-secondary leading-relaxed pr-6">
+        <UiText :as="UiTextTag.Span" :tone="UiTextTone.Secondary" class="block break-all pr-6 font-mono text-[0.7rem] leading-relaxed">
           {{ releaseStatus.status.upgradeCommand }}
-        </code>
-        <UiButton :icon="COPY_ICON"
-          variant="ghost"
-          size="sm"
-          class="absolute right-1.5 top-1.5 p-0.5 text-text-muted hover:text-text-primary"
-          :aria-label="t('layout.releaseUpdate.copy')"
-          data-testid="release-update-copy"
-          @click="copyCommand"
-        ></UiButton>
-      </div>
+        </UiText>
+        <UiStack :gap="UiGap.None" class="absolute right-1.5 top-1.5">
+          <UiIconButton
+            :label="t('layout.releaseUpdate.copy')"
+            :variant="UiButtonVariant.Ghost"
+            :size="UiSize.Xs"
+            data-testid="release-update-copy"
+            @click="copyCommand"
+          >
+            <UiIcon :markup="COPY_ICON" :size="UiSize.Sm" />
+          </UiIconButton>
+        </UiStack>
+      </UiStack>
 
       <!-- Copied feedback -->
-      <UiText v-if="copied" size="xs" tone="secondary" data-testid="release-update-copied">
-        {{ t('layout.releaseUpdate.copied') }}
+      <UiText v-if="copied" :size="UiTextSize.Xs" :tone="UiTextTone.Secondary" data-testid="release-update-copied">
+        {{ t('shared.copied') }}
       </UiText>
     </UiStack>
-  </div>
+  </UiStack>
 </template>

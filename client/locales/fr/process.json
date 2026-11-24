@@ -1,0 +1,25 @@
+{
+  "process": {
+    "badge": "Comment ça marche",
+    "title": "De la commande au site en ligne en quatre étapes",
+    "description": "Choisissez une offre, ajoutez un domaine et votre site est en ligne le jour même.",
+    "steps": {
+      "discovery": {
+        "title": "Choisissez une offre",
+        "description": "Comparez les offres mutualisées, VPS et dédiées et choisissez les ressources adaptées à votre site."
+      },
+      "design": {
+        "title": "Choisissez un domaine",
+        "description": "Enregistrez un nouveau domaine ou faites pointer un domaine existant vers votre compte d'hébergement."
+      },
+      "development": {
+        "title": "Configurez votre site",
+        "description": "Installez un CMS en un clic, envoyez vos fichiers ou laissez-nous migrer votre site gratuitement."
+      },
+      "launch": {
+        "title": "Mettez-vous en ligne, nous restons à vos côtés",
+        "description": "Votre site est en ligne avec SSL et sauvegardes, et notre équipe est disponible 24 h/24."
+      }
+    }
+  }
+}

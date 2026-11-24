@@ -1,6 +1,7 @@
 using System.Reflection;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Provisioning;
 using Hostpanel.Sdk.Plugins.Registrar;
 using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Hostpanel.Sdk.Plugins.VirtualServers;
@@ -58,6 +59,7 @@ public sealed class PluginCapabilityRulesTests
     [InlineData("Payment", "tax")]
     [InlineData("Provisioning", "provisioningPanel")]
     [InlineData("Provisioning", "provisioningPanel,provisioningPanelLogin,provisioningPanelPackages")]
+    [InlineData("Provisioning", "provisioningPanel,provisioningPanelAccount")]
     [InlineData("Provisioning", "provisioningPanelLogin,provisioningPanel")]
     [InlineData("Provisioning", "virtualServer,virtualServerList,virtualServerSnapshots,virtualServerBackups,virtualServerFirewall,virtualServerConsole")]
     [InlineData("Provisioning", "virtualServerList")]
@@ -73,6 +75,8 @@ public sealed class PluginCapabilityRulesTests
     /// <param name="capability">The capability.</param>
     [Theory]
     [InlineData("Payment", "provisioningPanel")]
+    [InlineData("Payment", "provisioningPanelAccount")]
+    [InlineData("Registrar", "provisioningPanelAccount")]
     [InlineData("Payment", "virtualServer")]
     [InlineData("Registrar", "provisioningPanel")]
     [InlineData("Registrar", "virtualServerList")]
@@ -96,6 +100,7 @@ public sealed class PluginCapabilityRulesTests
     [Theory]
     [InlineData("provisioningPanelLogin", "provisioningPanel")]
     [InlineData("provisioningPanelPackages", "provisioningPanel")]
+    [InlineData("provisioningPanelAccount", "provisioningPanel")]
     [InlineData("virtualServerSnapshots", "virtualServer")]
     [InlineData("virtualServerBackups", "virtualServer")]
     [InlineData("virtualServerFirewall", "virtualServer")]
@@ -136,6 +141,8 @@ public sealed class PluginCapabilityRulesTests
     [InlineData("paymentReturn", typeof(IPaymentReturnPlugin), true)]
     [InlineData("registrarOperations", typeof(IRegistrarWhoisPlugin), true)]
     [InlineData("registrarWhois", typeof(IRegistrarOperationsPlugin), false)]
+    [InlineData("provisioningPanelAccount", typeof(IProvisioningPanelAccountPlugin), true)]
+    [InlineData("provisioningPanelAccount", typeof(IProvisioningPanelPlugin), false)]
     [InlineData("virtualServerConsole", typeof(IVirtualServerPlugin), true)]
     [InlineData("virtualServerSnapshots", typeof(IVirtualServerPlugin), false)]
     [InlineData("virtualServerSnapshots", typeof(IVirtualServerSnapshotPlugin), true)]
@@ -162,6 +169,7 @@ public sealed class PluginCapabilityRulesTests
     /// <param name="expected">Whether the plugin declares a provisioning capability.</param>
     [Theory]
     [InlineData("Provisioning", "provisioningPanel", true)]
+    [InlineData("Provisioning", "provisioningPanel,provisioningPanelAccount", true)]
     [InlineData("Provisioning", "virtualServer", true)]
     [InlineData("Provisioning", "virtualServerList", true)]
     [InlineData("Provisioning", "endpoints", false)]

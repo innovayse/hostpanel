@@ -16,10 +16,10 @@
 
     <UiNavGroup v-if="canOrder" :title="$t('client.domains.sectionActions')" :icon="Zap">
       <UiNavItem :icon="RefreshCw" :disabled="isPending" testid="domain-action-renew" @click="choose(DomainTab.Renew)">
-        {{ $t('client.domains.actionRenewDomain') }}
+        {{ $t('client.domains.tabRenew') }}
       </UiNavItem>
       <UiNavItem :to="SITE_DOMAINS_PATH" :icon="PlusCircle" testid="domain-action-register">
-        {{ $t('client.domains.actionRegisterNew') }}
+        {{ $t('client.domains.registerNew') }}
       </UiNavItem>
     </UiNavGroup>
   </UiStack>

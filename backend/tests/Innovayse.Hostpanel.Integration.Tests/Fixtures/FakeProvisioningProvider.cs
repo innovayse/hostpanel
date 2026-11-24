@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Provisioning;
+using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -28,6 +29,23 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// </summary>
     public ProvisioningResult ProvisionAnswer { get; set; } = ProvisioningResult.Created("fake-ref-123");
 
+    /// <summary>
+    /// When <see langword="true"/>, only <see cref="GetAccountAsync"/> throws: the panel can create, change and suspend but cannot
+    /// be read back.
+    /// </summary>
+    public bool FailAccountRead { get; set; }
+
+    /// <summary>
+    /// When <see langword="true"/>, the members that change the account (suspend, unsuspend, change password and change package)
+    /// throw while <see cref="GetAccountAsync"/> still answers: the panel can be read but refuses every change.
+    /// </summary>
+    public bool FailChanges { get; set; }
+
+    /// <summary>
+    /// The answer <see cref="GetAccountAsync"/> gives when no failure is set; an active account that reports nothing else by default.
+    /// </summary>
+    public HostedAccountState AccountAnswer { get; set; } = new(HostedAccountStatus.Active, null, null, null);
+
     /// <summary>How many times <see cref="ProvisionAsync"/> was called.</summary>
     public int ProvisionCalls { get; private set; }
 
@@ -45,6 +63,15 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
 
     /// <summary>How many times <see cref="ChangePackageAsync"/> was called.</summary>
     public int ChangePackageCalls { get; private set; }
+
+    /// <summary>How many times <see cref="GetAccountAsync"/> was called.</summary>
+    public int AccountStateCalls { get; private set; }
+
+    /// <summary>The package every <see cref="ChangePackageAsync"/> call was asked to assign, in order.</summary>
+    public List<string> ChangedPackages { get; } = [];
+
+    /// <summary>How many times <see cref="UnsuspendAsync"/> was called.</summary>
+    public int UnsuspendCalls { get; private set; }
 
     /// <summary>How many calls reached the account-level members the client and staff screens use.</summary>
     public int AccountCalls => CredentialsCalls + SsoCalls + ChangePasswordCalls + ChangePackageCalls;
@@ -64,13 +91,16 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     {
         SuspendCalls++;
         ThrowIfShouldFail();
+        ThrowIfFailChanges();
         return Task.CompletedTask;
     }
 
     /// <inheritdoc/>
     public Task UnsuspendAsync(UnsuspendAccountOrder req, CancellationToken ct)
     {
+        UnsuspendCalls++;
         ThrowIfShouldFail();
+        ThrowIfFailChanges();
         return Task.CompletedTask;
     }
 
@@ -102,6 +132,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     {
         ChangePasswordCalls++;
         ThrowIfShouldFail();
+        ThrowIfFailChanges();
         return Task.CompletedTask;
     }
 
@@ -109,8 +140,32 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public Task ChangePackageAsync(ChangeAccountPackageOrder req, CancellationToken ct)
     {
         ChangePackageCalls++;
+        ChangedPackages.Add(req.NewPackage);
         ThrowIfShouldFail();
+        ThrowIfFailChanges();
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task<HostedAccountState> GetAccountAsync(AccountStateOrder req, CancellationToken ct)
+    {
+        AccountStateCalls++;
+        ThrowIfShouldFail();
+        if (FailAccountRead)
+        {
+            throw new InvalidOperationException("fake provider cannot read the account");
+        }
+
+        return Task.FromResult(AccountAnswer);
+    }
+
+    /// <summary>Throws when <see cref="FailChanges"/> is set, simulating a panel that refuses every change.</summary>
+    private void ThrowIfFailChanges()
+    {
+        if (FailChanges)
+        {
+            throw new InvalidOperationException("fake provider refused the change");
+        }
     }
 
     /// <summary>Throws <see cref="FailWith"/> when it is set, simulating a provider's coded refusal.</summary>

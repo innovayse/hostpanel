@@ -121,13 +121,13 @@ export const dateFieldClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fiel
 export const datePopupClasses = 'rounded-card'
 
 /** Classes of the previous/next month arrows. */
-export const dateArrowClasses = `rounded-lg px-2 text-text-secondary hover:text-text-primary text-lg transition-colors ${focusRingClasses}`
+export const dateArrowClasses = `rounded-lg px-2 max-sm:min-h-11 max-sm:min-w-11 text-text-secondary hover:text-text-primary text-lg transition-colors ${focusRingClasses}`
 
 /** Classes of a plain text action (Clear, Close). */
-export const dateActionClasses = `rounded-lg text-sm text-text-secondary hover:text-text-primary transition-colors ${focusRingClasses}`
+export const dateActionClasses = `rounded-lg text-sm max-sm:min-h-11 max-sm:px-3 text-text-secondary hover:text-text-primary transition-colors ${focusRingClasses}`
 
 /** Classes of one calendar cell, common to every state. */
-export const dateCellBaseClasses = `h-8 flex items-center justify-center text-sm transition-colors ${focusRingClasses}`
+export const dateCellBaseClasses = `h-8 max-sm:h-11 flex items-center justify-center text-sm transition-colors ${focusRingClasses}`
 
 /** Classes of the selected day (and of a one-day range), fully rounded. */
 export const dateCellSelectedClasses = 'bg-primary-400 light:bg-primary-600 text-surface-base rounded-lg font-semibold'

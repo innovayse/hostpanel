@@ -13,14 +13,15 @@
  * classes the caller passes; the component only guarantees the three properties above, so a
  * screen never draws a bare `div` for ornament and the "card-styled div" rule stays meaningful.
  */
+import { UiDecorTag } from '~/utils/ui/enums'
 
 /** Props of UiDecor. */
 interface Props {
   /** Tag to render. */
-  as?: string
+  as?: `${UiDecorTag}`
 }
 
 withDefaults(defineProps<Props>(), {
-  as: 'div',
+  as: UiDecorTag.Div,
 })
 </script>

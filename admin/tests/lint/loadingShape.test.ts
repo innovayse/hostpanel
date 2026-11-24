@@ -67,7 +67,7 @@ const ALLOWED: readonly AllowedException[] = [
   {
     file: 'components/plugins/details/PluginSettingsTab.vue',
     rule: LoadingRule.CardLines,
-    reason: 'the slot widgets a plugin declares, and so how many cards the tab holds, are only known once they have been read',
+    reason: 'the servers a plugin serves and the slot widgets it declares, and so how many cards the tab holds, are only known once they have been read',
   },
   {
     file: 'views/PluginPageView.vue',

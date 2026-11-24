@@ -20,7 +20,7 @@
     <!-- Demo mode: the published customer account, one click from filled in -->
     <UiAlert v-if="demoAccount && !isSso" variant="info" class="mb-4" data-testid="login-demo">
       <UiStack gap="sm">
-        <UiText as="span" size="sm" tone="inherit" data-testid="login-demo-hint">
+        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" data-testid="login-demo-hint">
           {{ $t('client.login.demoAccountHint', { email: demoAccount.email }) }}
         </UiText>
         <UiButton variant="outline" size="sm" data-testid="login-demo-use" @click="fillDemoAccount">
@@ -38,10 +38,10 @@
     >
       <UiAlert variant="info" data-testid="login-2fa-hint">
         <UiStack gap="sm">
-          <UiText as="span" size="sm" tone="inherit" class="font-medium">
+          <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="font-medium">
             {{ $t('client.login.twoFactorRequired') }}
           </UiText>
-          <UiText as="span" size="sm" tone="inherit">
+          <UiText :as="UiTextTag.Span" size="sm" tone="inherit">
             {{ $t('client.login.twoFactorPrompt') }}
           </UiText>
         </UiStack>
@@ -59,12 +59,13 @@
         full-width
         :loading="authStore.loading"
         :disabled="code.length < 6"
+        :title="$t('client.login.twoFactorSubmit')"
         data-testid="login-2fa-submit"
       >
-        {{ $t('client.login.twoFactorSubmit') }}
+        {{ $t('common.confirm') }}
       </UiButton>
       <UiButton variant="ghost" size="sm" full-width data-testid="login-2fa-cancel" @click="cancelTwoFactor">
-        {{ $t('client.login.twoFactorBack') }}
+        {{ $t('client.login.backToSignIn') }}
       </UiButton>
     </UiForm>
 
@@ -91,20 +92,20 @@
         required
       />
       <UiStack direction="row" justify="end">
-        <UiLink :to="CLIENT_FORGOT_PASSWORD_PATH" :underline="false" testid="login-forgot" class="text-xs">
+        <UiLink tone="primary" :to="CLIENT_FORGOT_PASSWORD_PATH" :underline="false" testid="login-forgot" class="text-xs">
           {{ $t('client.login.forgotPassword') }}
         </UiLink>
       </UiStack>
       <UiButton type="submit" variant="primary" size="lg" full-width :loading="authStore.loading" data-testid="login-submit">
-        {{ $t('client.login.signIn') }}
+        {{ $t('common.signIn') }}
       </UiButton>
     </UiForm>
 
     <template v-if="!isSso" #footer>
-      <UiText as="span" size="sm" tone="muted">
+      <UiText :as="UiTextTag.Span" size="sm" tone="muted">
         {{ $t('client.login.noAccount') }}
-        <UiLink :to="CLIENT_REGISTER_PATH" :underline="false" testid="login-register" class="font-medium">
-          {{ $t('client.login.createAccount') }}
+        <UiLink tone="primary" :to="CLIENT_REGISTER_PATH" :underline="false" testid="login-register" class="font-medium">
+          {{ $t('client.register.submit') }}
         </UiLink>
       </UiText>
     </template>
@@ -125,6 +126,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useDemoStore } from '~/stores/demo'
 import { SignInOutcome } from '~/types/signinoutcome'
 import { safeReturnPath } from '~/utils/returnPath'
+import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: false, middleware: 'client-auth' })
 

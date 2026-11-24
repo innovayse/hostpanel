@@ -411,6 +411,9 @@
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց փոխել հոսթինգի փաթեթը։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
+<data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Չհաջողվեց կարդալ հոսթինգի հաշիվը կառավարման վահանակից։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
+  </data>
 <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց կասեցնել ծառայությունը հոսթինգի սերվերի վրա։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
@@ -1597,6 +1600,12 @@
   <data name="ORDER_PRODUCT_ONE_PER_CLIENT" xml:space="preserve">
     <value>Դուք արդեն ունեք այս ապրանքը․ այն կարելի է պատվիրել մեկ անգամ յուրաքանչյուր հաճախորդի համար։</value>
   </data>
+  <data name="ORDER_TRIAL_ALREADY_USED" xml:space="preserve">
+    <value>Դուք արդեն օգտվել եք այս ապրանքի անվճար փորձնական ժամանակահատվածից։</value>
+  </data>
+  <data name="PRODUCT_TRIAL_NOT_AVAILABLE" xml:space="preserve">
+    <value>Այս ապրանքն անվճար փորձնական ժամանակահատված չունի։</value>
+  </data>
   <data name="PRODUCT_MAX_ACTIVE_SERVICES_INVALID" xml:space="preserve">
     <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
   </data>
@@ -1647,5 +1656,23 @@
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
     <value>Կառավարման վահանակը մերժեց պահված մուտքի տվյալները։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի sshAgentProfile-ը պետք է լինի պրոֆիլի նույնացուցիչ՝ փոքրատառ բառեր՝ կապված մեկական գծիկով, առավելագույնը 32 նիշ, և չպետք է լինի generic-linux։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED" xml:space="preserve">
+    <value>sshAgentProfile կարող է նշել միայն այն պլագինը, որը հայտարարում է provisioningPanel հնարավորությունը։</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
+    <value>Մանիֆեստում նշված է sshAgentProfile, բայց փաթեթում agent/profile.conf ֆայլը չկա։</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
+    <value>Փաթեթի SSH բանալիների գործակալի պրոֆիլը անթույլատրելի է։ Մանրամասները ցուցադրված են կողքին։</value>
+  </data>
+  <data name="PLUGIN_SSH_AGENT_HELPER_INVALID" xml:space="preserve">
+    <value>Փաթեթի SSH բանալիների գործակալի պրոֆիլի օգնական ծրագիրը անթույլատրելի է, կամ փաթեթում դրանք չափազանց շատ են։ Մանրամասները ցուցադրված են կողքին։</value>
+  </data>
+  <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Տեղադրված ոչ մի պլագին չի տրամադրում SSH բանալիների գործակալի այս պրոֆիլը։</value>
   </data>
 </root>

@@ -6,14 +6,6 @@ import type { ContentLanguage } from '@/locales/contentLanguage'
 /** Per-locale text of one entry; a locale the operator has not written is absent. */
 export type StorefrontTranslations<T> = Partial<Record<ContentLanguage, T>>
 
-/** What the last successful action of a storefront list page did, shown as its outcome line. */
-export enum StorefrontListOutcome {
-  /** The staged entry was deleted. */
-  Deleted = 'deleted',
-  /** The new display order was saved. */
-  OrderSaved = 'orderSaved',
-}
-
 /** One entry's new position in the display order. */
 export interface StorefrontOrderItem {
   /** Entry ID. */
@@ -38,8 +30,6 @@ export interface StorefrontListTestIds {
   add: string
   /** The load-error banner. */
   error: string
-  /** The outcome line of a delete or reorder: the success sentence or the API's refusal. */
-  actionError: string
   /** Prefix of a table row. */
   row: string
   /** Prefix of a row's actions menu trigger. */
@@ -67,7 +57,6 @@ export const storefrontTestIds = (prefix: string): StorefrontListTestIds => {
     view: `${prefix}-view`,
     add: `${prefix}-add`,
     error: `${prefix}-error`,
-    actionError: `${prefix}-action-error`,
     row: `${row}-row`,
     actions: `${row}-actions`,
     edit: `${row}-edit`,

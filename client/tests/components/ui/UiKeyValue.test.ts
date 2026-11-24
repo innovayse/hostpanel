@@ -27,4 +27,10 @@ describe('UiKeyValue', () => {
     expect(strong.findAll('span')[1]!.classes()).toContain('font-semibold')
     expect(normal.findAll('span')[1]!.classes()).toContain('font-medium')
   })
+
+  it('lets a long value break inside the row', () => {
+    const wrapper = mountWithKit(UiKeyValue, { props: { label: 'Host', value: 'x' } })
+
+    expect(wrapper.findAll('span')[1]!.classes()).toEqual(expect.arrayContaining(['min-w-0', 'break-words']))
+  })
 })

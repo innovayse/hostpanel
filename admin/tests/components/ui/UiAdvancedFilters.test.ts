@@ -101,4 +101,12 @@ describe('UiAdvancedFilters with filters already in force', () => {
 
     expect(wrapper.findAll('[data-testid^="advanced-filters-value-"]')).toHaveLength(1)
   })
+
+  it('lays its controls out by its own width, not the screen\'s, so a side panel stacks them', () => {
+    const wrapper = mountFilters()
+
+    expect(wrapper.classes()).toContain('@container')
+    expect(wrapper.get('[data-testid="advanced-filters-value-0"]').element.closest('.grid')?.className).toContain('@lg:grid-cols-3')
+    expect(wrapper.get('[data-testid="advanced-filters-value-0"]').element.closest('.grid')?.className).not.toContain('sm:grid-cols-3')
+  })
 })

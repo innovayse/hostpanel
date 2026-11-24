@@ -135,7 +135,7 @@ describe('client layout', () => {
     it('drops the gutter and hides the side menu on a wide screen', async () => {
       const wrapper = await mountAt(PAGE_PATH, 'workspace')
 
-      expect(wrapper.get('main > div').classes()).not.toContain('p-6')
+      expect(wrapper.get('main > div').classes()).not.toContain('p-4')
       expect(wrapper.get('main > div').classes()).toContain('flex-1')
       expect(wrapper.findComponent(ClientLayoutSidebar).classes()).toContain('lg:hidden')
     })
@@ -143,14 +143,14 @@ describe('client layout', () => {
     it('keeps the usual frame for a standard page', async () => {
       const wrapper = await mountAt(PAGE_PATH, 'standard')
 
-      expect(wrapper.get('main > div').classes()).toContain('p-6')
+      expect(wrapper.get('main > div').classes()).toContain('p-4')
       expect(wrapper.findComponent(ClientLayoutSidebar).classes()).not.toContain('lg:hidden')
     })
 
     it('keeps the usual frame once the reader left the page the store still holds', async () => {
       const wrapper = await mountAt('/client/dashboard', 'workspace')
 
-      expect(wrapper.get('main > div').classes()).toContain('p-6')
+      expect(wrapper.get('main > div').classes()).toContain('p-4')
       expect(wrapper.findComponent(ClientLayoutSidebar).classes()).not.toContain('lg:hidden')
     })
   })

@@ -28,6 +28,12 @@ const mountForm = (props: Record<string, unknown>, slots: Record<string, string>
   mountWithApp(UiSchemaForm, { props, slots })
 
 describe('UiSchemaForm', () => {
+  it('caps the width of the form it draws when asked', () => {
+    const wrapper = mountForm({ columns: [left], maxWidth: 'form' })
+
+    expect(wrapper.get('form').classes()).toContain('max-w-3xl')
+  })
+
   it('draws a section card per section and a field per field', () => {
     const wrapper = mountForm({ columns: [left, right] })
 

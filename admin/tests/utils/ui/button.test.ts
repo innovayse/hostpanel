@@ -1,21 +1,17 @@
 /**
- * Unit tests for the button vocabulary: every look has classes, and `plain` adds none.
+ * Unit tests for the button vocabulary: every look has classes.
  */
 import { describe, expect, it } from 'vitest'
 import { buttonBaseClasses, buttonRadiusClasses, buttonVariantClasses, iconTriggerClasses, UiButtonVariant } from '@/utils/ui/button'
 
 describe('button variants', () => {
   it('keeps the named looks', () => {
-    expect(Object.values(UiButtonVariant)).toEqual(['plain', 'primary', 'secondary', 'ghost', 'field', 'danger', 'link'])
+    expect(Object.values(UiButtonVariant)).toEqual(['primary', 'secondary', 'ghost', 'field', 'danger', 'link'])
   })
 
-  it('maps every look, with plain empty and the rest non-empty', () => {
+  it('maps every look to classes', () => {
     for (const variant of Object.values(UiButtonVariant)) {
-      if (variant === UiButtonVariant.Plain) {
-        expect(buttonVariantClasses[variant]).toBe('')
-      } else {
-        expect(buttonVariantClasses[variant].length).toBeGreaterThan(0)
-      }
+      expect(buttonVariantClasses[variant].length).toBeGreaterThan(0)
     }
   })
 
@@ -45,10 +41,8 @@ describe('button variants', () => {
 
   it('gives every look a disabled colour set and no opacity-only dimming', () => {
     for (const variant of Object.values(UiButtonVariant)) {
-      if (variant !== UiButtonVariant.Plain) {
-        expect(buttonVariantClasses[variant]).toContain('disabled:text-text-muted')
-        expect(buttonVariantClasses[variant]).not.toContain('opacity')
-      }
+      expect(buttonVariantClasses[variant]).toContain('disabled:text-text-muted')
+      expect(buttonVariantClasses[variant]).not.toContain('opacity')
     }
     expect(buttonBaseClasses).not.toContain('opacity')
   })

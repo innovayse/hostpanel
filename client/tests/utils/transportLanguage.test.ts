@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_LANGUAGE, LANGUAGE_HEADER, SUPPORTED_LANGUAGES, resolveLanguage } from '~/utils/transportLanguage'
 
 describe('resolveLanguage', () => {
-  it.each(['en', 'ru', 'hy', 'de', 'es'])('passes the supported language %s through', (language) => {
+  it.each(['en', 'ru', 'hy', 'de', 'es', 'fr'])('passes the supported language %s through', (language) => {
     expect(resolveLanguage(language)).toBe(language)
   })
 
@@ -16,12 +16,12 @@ describe('resolveLanguage', () => {
     expect(resolveLanguage(' RU ')).toBe('ru')
   })
 
-  it.each([undefined, null, '', 'fr', 'ru-RU', 'en,ru'])('falls back to the default for %s', (raw) => {
+  it.each([undefined, null, '', 'it', 'ru-RU', 'en,ru'])('falls back to the default for %s', (raw) => {
     expect(resolveLanguage(raw)).toBe(DEFAULT_LANGUAGE)
   })
 
   it('names the header the backend reads and the languages it ships', () => {
     expect(LANGUAGE_HEADER).toBe('X-Language')
-    expect([...SUPPORTED_LANGUAGES]).toEqual(['en', 'ru', 'hy', 'de', 'es'])
+    expect([...SUPPORTED_LANGUAGES]).toEqual(['en', 'ru', 'hy', 'de', 'es', 'fr'])
   })
 })

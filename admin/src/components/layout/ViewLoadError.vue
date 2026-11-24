@@ -9,9 +9,10 @@ import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { UiAlignItems } from '@/utils/ui/layout'
+import { UiAlignItems, UiGap } from '@/utils/ui/layout'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -23,8 +24,8 @@ const reload = (): void => {
 </script>
 
 <template>
-  <UiStack gap="md" :align="UiAlignItems.Start" data-testid="view-load-error">
-    <UiAlert variant="error">
+  <UiStack :gap="UiGap.Md" :align="UiAlignItems.Start" data-testid="view-load-error">
+    <UiAlert :variant="UiTone.Danger">
       {{ t('layout.viewLoadFailed') }}
     </UiAlert>
     <UiButton :action="UiActionKind.Refresh" :variant="UiButtonVariant.Secondary" data-testid="view-load-error-reload" @click="reload">

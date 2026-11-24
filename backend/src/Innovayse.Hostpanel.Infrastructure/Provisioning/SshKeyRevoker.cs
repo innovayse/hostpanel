@@ -106,7 +106,8 @@ public sealed class SshKeyRevoker : ISshKeyRevoker
 
         try
         {
-            await provider.AddKeyAsync(new SshAccount(key.ServerId, key.AccountUsername), key.KeyId, key.PublicKey, ct);
+            // Under the same sources the key was issued with, so a key limited to some addresses never comes back open.
+            await provider.AddKeyAsync(new SshAccount(key.ServerId, key.AccountUsername), key.KeyId, key.PublicKey, key.AllowedFrom, ct);
             key.MarkInstalled();
             return true;
         }

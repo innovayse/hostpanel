@@ -24,11 +24,10 @@ describe('UiButton', () => {
     expect(wrapper.attributes('data-testid')).toBe('probe')
   })
 
-  it('adds no colours of its own in the plain look', () => {
+  it('is a styled secondary button when no look is given', () => {
     const wrapper = mount(UiButton)
 
-    expect(wrapper.classes()).not.toContain('gradient-brand')
-    expect(wrapper.classes()).not.toContain('cursor-pointer')
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['bg-surface-field', 'border', 'cursor-pointer', 'inline-flex', 'rounded-control']))
   })
 
   it('owns its styling in a named look', () => {
@@ -91,6 +90,15 @@ describe('UiButton', () => {
     expect(primary.classes()).toEqual(expect.arrayContaining(['not-disabled:gradient-brand', 'not-disabled:shadow-glow-primary', 'text-text-on-primary', 'rounded-control']))
   })
 
+  it('keeps the default look while loading or disabled, with the muted disabled colours', () => {
+    const loading = mount(UiButton, { props: { loading: true, action: UiActionKind.Save } })
+    const disabled = mount(UiButton, { props: { disabled: true } })
+
+    expect(loading.classes()).toContain('bg-surface-field')
+    expect(loading.find('svg').exists()).toBe(false)
+    expect(disabled.classes()).toEqual(expect.arrayContaining(['bg-surface-field', 'disabled:text-text-muted', 'disabled:cursor-not-allowed']))
+  })
+
   it('does not emit click while disabled', async () => {
     const wrapper = mount(UiButton, { props: { disabled: true } })
 
@@ -104,6 +112,14 @@ describe('UiButton', () => {
 
     expect(wrapper.find('svg').exists()).toBe(true)
     expect(wrapper.element.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+  })
+
+  it('lays the icon and the label side by side in the default look', () => {
+    const wrapper = mount(UiButton, { props: { action: UiActionKind.Add, size: UiSize.Sm }, slots: { default: 'Add existing' } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['inline-flex', 'items-center', 'gap-1.5', 'bg-surface-field']))
+    expect(wrapper.element.firstElementChild?.tagName.toLowerCase()).toBe('svg')
+    expect(wrapper.text()).toBe('Add existing')
   })
 
   it('draws its own icon, and that wins over the kind', () => {
@@ -130,5 +146,16 @@ describe('UiButton', () => {
 
     expect(pill.classes()).toContain('rounded-pill')
     expect(plain.classes()).not.toContain('rounded-pill')
+  })
+
+  it('names a shortened label in full through its hint, as accessible name and tooltip', () => {
+    const hinted = mount(UiButton, { props: { hint: 'Download PDF' }, slots: { default: 'PDF' } })
+    const plain = mount(UiButton, { slots: { default: 'PDF' } })
+
+    expect(hinted.attributes('aria-label')).toBe('Download PDF')
+    expect(hinted.attributes('title')).toBe('Download PDF')
+    expect(hinted.text()).toBe('PDF')
+    expect(plain.attributes('aria-label')).toBeUndefined()
+    expect(plain.attributes('title')).toBeUndefined()
   })
 })

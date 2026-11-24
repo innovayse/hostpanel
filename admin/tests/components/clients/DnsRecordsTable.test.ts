@@ -10,6 +10,7 @@ import type { DnsRecordItem } from '@/types/domain'
 import { createTestI18n } from '../../helpers/i18n'
 import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 /**
  * Builds a DNS record fixture.
@@ -109,7 +110,7 @@ describe('DnsRecordsTable', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="clients-dns-feedback"]').text()).toBe('The registrar refused the change.')
+    expect(toastMessages()).toContain('The registrar refused the change.')
     expect(wrapper.emitted('refresh')).toBeUndefined()
   })
 

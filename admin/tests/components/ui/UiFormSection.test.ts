@@ -49,9 +49,9 @@ describe('UiFormSection', () => {
     const two = mountSection({ section })
     const one = mountSection({ section: { ...section, columns: 1 } })
 
-    expect(two.get('.grid').classes()).toContain('@3xl:grid-cols-2')
+    expect(two.get('.grid').classes()).toContain('@lg:grid-cols-2')
     expect(one.get('.grid').classes()).toContain('grid-cols-1')
-    expect(one.get('.grid').classes()).not.toContain('@3xl:grid-cols-2')
+    expect(one.get('.grid').classes()).not.toContain('@lg:grid-cols-2')
   })
 
   it('makes a full span field take the whole row', () => {

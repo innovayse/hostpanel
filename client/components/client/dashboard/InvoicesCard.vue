@@ -20,12 +20,12 @@
         :to="clientInvoicePath(invoice.id)"
         :testid="`dashboard-invoice-${invoice.id}`"
       >
-        <div>
+        <UiStack gap="none">
           <UiText size="sm" weight="medium">#{{ invoice.id }}</UiText>
           <UiText size="xs" tone="subtle">{{ $t('client.dashboard.due') }} {{ formatDate(invoice.dueDate) }}</UiText>
-        </div>
+        </UiStack>
         <UiStack direction="row" align="center" gap="sm">
-          <UiText as="span" size="sm" weight="semibold">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" weight="semibold">{{ formatCurrency(invoice.total, { code: invoice.currency }) }}</UiText>
           <ClientStatusBadge :status="invoice.status" />
         </UiStack>
       </ClientDashboardListRow>
@@ -43,6 +43,7 @@ import { ArrowRight, FileText } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()

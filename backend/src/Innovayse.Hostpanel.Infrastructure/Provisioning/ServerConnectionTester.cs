@@ -21,15 +21,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 
 /// <summary>
 /// Tests server connectivity: through the installed panel plugin that serves the server's module when there is one, otherwise
-/// with the API client the host has for the module.
+/// with the host's own cPanel client.
 /// </summary>
 public sealed class ServerConnectionTester : IServerConnectionTester
 {
-#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP client and HostingPanelAddress, which the cPanel path also uses), obsolete since SDK 3.1.0; stays until a cPanel plugin and a legacy CWP plugin exist.
-    /// <summary>The CWP API client, for servers on the CWP module.</summary>
-    private readonly IHostingPanelApiClient _cwpClient;
-#pragma warning restore CS0618
-
     /// <summary>Builds the named WHM HTTP client, so the WHM timeout and resilience profile apply.</summary>
     private readonly IHttpClientFactory _httpClientFactory;
 
@@ -48,9 +43,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
     /// <summary>Activates a panel plugin and runs its connection test.</summary>
     private readonly PanelPluginCaller _caller;
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP client and HostingPanelAddress, which the cPanel path also uses), obsolete since SDK 3.1.0; stays until a cPanel plugin and a legacy CWP plugin exist.
     /// <summary>Initializes a new instance of the <see cref="ServerConnectionTester"/> class.</summary>
-    /// <param name="cwpClient">The CWP API client, for servers on the CWP module.</param>
     /// <param name="httpClientFactory">Builds the named WHM HTTP client, so the WHM timeout and resilience profile apply.</param>
     /// <param name="loggerFactory">Builds the WHM client's logger.</param>
     /// <param name="options">The port cPanel servers answer WHM on.</param>
@@ -58,16 +51,13 @@ public sealed class ServerConnectionTester : IServerConnectionTester
     /// <param name="resolver">Finds the installed plugin that serves a server module.</param>
     /// <param name="caller">Activates a panel plugin and runs its connection test.</param>
     public ServerConnectionTester(
-        IHostingPanelApiClient cwpClient,
         IHttpClientFactory httpClientFactory,
         ILoggerFactory loggerFactory,
         IOptions<ProvisioningOptions> options,
         ILogger<ServerConnectionTester> logger,
         IServerModulePluginResolver resolver,
         PanelPluginCaller caller)
-#pragma warning restore CS0618
     {
-        _cwpClient = cwpClient;
         _httpClientFactory = httpClientFactory;
         _loggerFactory = loggerFactory;
         _options = options;
@@ -78,8 +68,8 @@ public sealed class ServerConnectionTester : IServerConnectionTester
 
     /// <summary>
     /// Tests connectivity to the server using its stored credentials.
-    /// A module an installed plugin serves is tested through the plugin; otherwise cPanel and legacy CentOS are tested with the
-    /// host's own clients, and any other module answers <c>PANEL_PLUGIN_UNAVAILABLE</c>, as every provisioning call does.
+    /// A module an installed plugin serves is tested through the plugin; otherwise cPanel is tested with the
+    /// host's own client, and any other module answers <c>PANEL_PLUGIN_UNAVAILABLE</c>, as every provisioning call does.
     /// </summary>
     /// <param name="server">The server to test.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -97,13 +87,8 @@ public sealed class ServerConnectionTester : IServerConnectionTester
             return ServerConnectionTestResult.Failed(HostpanelErrorCodes.PANEL_PLUGIN_CONFLICT);
         }
 
-        if (ServerModules.Same(server.Module, ServerModules.CPanel))
-        {
-            return await TestCPanelAsync(server, ct);
-        }
-
-        return ServerModules.Same(server.Module, ServerModules.Centos)
-            ? await TestLegacyCwpAsync(server, ct)
+        return ServerModules.Same(server.Module, ServerModules.CPanel)
+            ? await TestCPanelAsync(server, ct)
             : ServerConnectionTestResult.Failed(HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE);
     }
 
@@ -156,7 +141,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         try
         {
             // Inside the try: an address that cannot be turned into a URL is an unreachable server.
-#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP client and HostingPanelAddress, which the cPanel path also uses), obsolete since SDK 3.1.0; stays until a cPanel plugin and a legacy CWP plugin exist.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (HostingPanelAddress), obsolete since SDK 3.1.0; stays until a cPanel plugin exists.
             // Dialled at the server's API address when it has one, the host name otherwise.
             var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.ApiEndpointHost, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
 #pragma warning restore CS0618
@@ -172,41 +157,4 @@ public sealed class ServerConnectionTester : IServerConnectionTester
             return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
         }
     }
-
-    /// <summary>
-    /// Tests connectivity to a legacy CentOS Web Panel server using IHostingPanelApiClient.
-    /// </summary>
-    /// <param name="server">The legacy CWP server.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The connection result.</returns>
-    private async Task<ServerConnectionTestResult> TestLegacyCwpAsync(Server server, CancellationToken ct)
-    {
-        var apiKey = server.AccessHash ?? server.ApiToken;
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_NO_API_KEY);
-        }
-
-        try
-        {
-            var info = await _cwpClient.GetServerInfoAsync(ConnectionTo(server, apiKey), ct);
-            return ServerConnectionTestResult.Succeeded(info.AccountsCount, info.Version);
-        }
-        catch (Exception ex)
-        {
-            // The provider's own message never reaches the caller (rules on upstream detail); it
-            // is logged here for whoever has to chase the failure up.
-            _logger.LogWarning(ex, "CWP connection test failed for server {ServerId} ({Hostname})", server.Id, server.Hostname);
-            return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
-        }
-    }
-
-#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP client and HostingPanelAddress, which the cPanel path also uses), obsolete since SDK 3.1.0; stays until a cPanel plugin and a legacy CWP plugin exist.
-    /// <summary>Builds the panel connection for a server on the panel's default API port, dialled at the server's API address when it has one.</summary>
-    /// <param name="server">The server to reach.</param>
-    /// <param name="apiKey">The credential the server stores for its panel API.</param>
-    /// <returns>The connection to hand the panel client.</returns>
-    private static HostingPanelConnection ConnectionTo(Server server, string apiKey) =>
-        new(server.ApiEndpointHost, IHostingPanelApiClient.DefaultApiPort, apiKey);
-#pragma warning restore CS0618
 }

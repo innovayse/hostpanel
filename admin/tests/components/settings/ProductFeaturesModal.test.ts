@@ -10,6 +10,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountScreen } from '../../helpers/mount'
 import { requestsOf, stubRouteTable } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 /** The product being specified. */
 const product: Product = {
@@ -126,7 +127,7 @@ describe('ProductFeaturesModal', () => {
     await wrapper.get('[data-testid="product-feature-remove-7"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="product-features-error"]').text()).toBe('Line is locked.')
+      expect(toastMessages()).toContain('Line is locked.')
     })
     expect(wrapper.find('[data-testid="product-feature-label-7"]').exists()).toBe(true)
   })
@@ -163,7 +164,7 @@ describe('ProductFeaturesModal', () => {
     await wrapper.get('[data-testid="product-feature-add"]').trigger('click')
 
     await vi.waitFor(() => {
-      expect(wrapper.get('[data-testid="product-features-error"]').text()).toBe('That name is already used for this product.')
+      expect(toastMessages()).toContain('That name is already used for this product.')
     })
   })
 

@@ -20,24 +20,20 @@ import { statusLabel } from '@/lib/tones'
 import { EmailLogOutcome } from '@/types/emaillog'
 import type { EmailLogFilters } from '@/types/emaillog'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiCard from '@/components/ui/UiCard.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiDateRangePicker from '@/components/ui/UiDateRangePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
-import UiPagination from '@/components/ui/UiPagination.vue'
-import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientEmailsView.schema'
-import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiTextSize } from '@/utils/ui/text'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
 
@@ -106,7 +102,7 @@ loadOnChange(load)
 
 <template>
   <UiStack>
-    <UiHeading :level="1" variant="card">{{ t('clients.clientEmails.emails') }}</UiHeading>
+    <UiHeading :level="1" :variant="UiHeadingVariant.Card">{{ t('clients.clientEmails.emails') }}</UiHeading>
 
     <UiListToolbar
       v-model:search="search"
@@ -151,44 +147,31 @@ loadOnChange(load)
       @retry="load"
     />
 
-    <UiCard v-else class="overflow-x-auto">
-      <UiTable
-        :empty-text="t('shared.noRecordsFound')"
-        :density="UiTableDensity.Comfortable"
-        :loading="store.loading && store.emails.length === 0"
-        :empty="!store.loading && store.emails.length === 0"
-        data-testid="client-emails-table"
-      >
-        <UiSchemaTableHead :columns="schema.table.columns" />
-        <UiTableBody divided>
-          <UiTableRow v-for="email in store.emails" :key="email.id" hoverable>
-            <UiTableCell muted>{{ formatDate(email.sentAt) }}</UiTableCell>
-            <UiTableCell>{{ email.subject }}</UiTableCell>
-            <UiTableCell>
-              <UiBadge :tone="email.success ? UiTone.Success : UiTone.Danger" :data-testid="`client-emails-outcome-${email.id}`">
-                {{ t(emailOutcomeLabelKey(email)) }}
-              </UiBadge>
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-      <UiStack
-        v-if="store.totalCount > 0"
-        direction="row"
-        :justify="UiJustify.Between"
-        :align="UiAlignItems.Center"
-      >
-        <UiResultCount :loading="store.loading && store.emails.length === 0" :size="UiTextSize.Sm" data-testid="client-emails-count">
-          {{ t('clients.clientEmails.totalcountEmailValue', { totalCount: store.totalCount }) }}
-        </UiResultCount>
-        <UiPagination
-          :page="page"
-          :total="store.totalCount"
-          :page-size="store.pageSize"
-          testid="client-emails-pagination"
-          @update:page="setPage"
-        />
-      </UiStack>
-    </UiCard>
+    <UiDataTable
+      v-else
+      :empty-text="t('shared.noRecordsFound')"
+      :density="UiTableDensity.Comfortable"
+      :loading="store.loading && store.emails.length === 0"
+      :empty="!store.loading && store.emails.length === 0"
+      :page="page"
+      :total="store.totalCount"
+      :page-size="store.pageSize"
+      pagination-testid="client-emails-pagination"
+      data-testid="client-emails-table"
+      @update:page="setPage"
+    >
+      <UiSchemaTableHead :columns="schema.table.columns" />
+      <UiTableBody>
+        <UiTableRow v-for="email in store.emails" :key="email.id" hoverable>
+          <UiTableCell muted>{{ formatDate(email.sentAt) }}</UiTableCell>
+          <UiTableCell>{{ email.subject }}</UiTableCell>
+          <UiTableCell>
+            <UiBadge :tone="email.success ? UiTone.Success : UiTone.Danger" :data-testid="`client-emails-outcome-${email.id}`">
+              {{ t(emailOutcomeLabelKey(email)) }}
+            </UiBadge>
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
   </UiStack>
 </template>

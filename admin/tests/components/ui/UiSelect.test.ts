@@ -3,6 +3,7 @@
  * contract, the empty and loading rows, remote lookups and the compact look for toolbars. The teleport is inlined
  * unless a test says otherwise.
  */
+import type { UiWidth } from '@/utils/ui/layout'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
@@ -35,6 +36,8 @@ interface SelectProps {
   compact?: boolean
   /** Joined to a field on its right. */
   attached?: boolean
+  /** Fixed width of the control. */
+  width?: UiWidth
   /** Accessible name of the trigger. */
   ariaLabel?: string
   /** Options, defaulting to the shared list. */
@@ -93,6 +96,12 @@ afterEach(() => {
 describe('UiSelect', () => {
   it('shows the label of the selected option', () => {
     expect(track({ modelValue: 'b' }).get('button').text()).toBe('Beta')
+  })
+
+  it('never grows past the row it sits in, so a long label is cut in the trigger', () => {
+    const classes = track({ modelValue: 'b' }).classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['max-w-full', 'min-w-0']))
   })
 
   it('shows the placeholder in the muted colour while nothing matches', () => {
@@ -461,6 +470,12 @@ describe('UiSelect', () => {
 
     expect(wrapper.attributes('data-testid')).toBe('probe')
     expect(wrapper.get('[data-testid="ui-select-panel"]').classes()).toEqual(expect.arrayContaining(['min-w-[18rem]', 'max-w-[calc(100vw-4rem)]']))
+  })
+
+  it('takes a fixed width when asked', () => {
+    const wrapper = track({ modelValue: 'a', width: 'lg' })
+
+    expect(wrapper.classes()).toContain('w-48')
   })
 
   it('keeps the field look when it is not compact', async () => {

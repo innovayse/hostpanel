@@ -1,0 +1,31 @@
+{
+  "plugins": {
+    "tableEmpty": "Rien ici pour le moment.",
+    "chatMessage": "Votre message",
+    "chatStop": "Arrêter",
+    "unavailable": "Cette partie n'est pas disponible pour le moment.",
+    "workspaceBack": "Retour",
+    "previewSize": "Taille d'écran",
+    "previewSource": "Quel site",
+    "previewDesktop": "Ordinateur",
+    "previewPhone": "Téléphone",
+    "previewOpen": "Ouvrir",
+    "previewSelectDone": "Terminer la sélection",
+    "previewSelectHint": "Mode sélection : cliquez ou touchez un élément. Cliquez dessus de nouveau pour le retirer. Appuyez sur Échap pour quitter.",
+    "chatSelectionStale": "Cette page a changé après votre sélection. Sélectionnez de nouveau ces éléments, puis envoyez votre message.",
+    "previewEmpty": "Rien à prévisualiser pour le moment.",
+    "previewInsecure": "L'aperçu nécessite une connexion sécurisée. En http simple, ce navigateur masque ce que le panneau vérifie avant d'afficher un site, l'aperçu reste donc désactivé. Ouvrez le panneau en https.",
+    "chatStepStopped": "Arrêté",
+    "chatStepsCount": "{done} étapes sur {total} terminées",
+    "chatResultDetails": "Voir les détails",
+    "chatLog": "Conversation",
+    "chatEmpty": "Démarrez la conversation.",
+    "chatJumpToLatest": "Aller au dernier message",
+    "chatHint": "Entrée pour envoyer, Maj+Entrée pour un retour à la ligne",
+    "chatCopy": "Copier la réponse",
+    "chatCopyCode": "Copier le code",
+    "openUrlBlocked": "Ce navigateur a bloqué le nouvel onglet. Autorisez les fenêtres pop-up pour ce site et réessayez.",
+    "openUrlRefused": "Le plugin a renvoyé une adresse qui ne peut pas être ouverte.",
+    "chatWriting": "Rédaction d'une réponse"
+  }
+}

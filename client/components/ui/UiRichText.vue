@@ -10,6 +10,7 @@
  */
 import { defineComponent, h } from 'vue'
 import type { PropType } from 'vue'
+import { UiRichTextTag } from '~/utils/ui/enums'
 import { TAG_CLASSES, parseRichText, renderRichNode } from '~/utils/ui/richText'
 
 export default defineComponent({
@@ -18,7 +19,7 @@ export default defineComponent({
     /** The raw HTML body from the API. */
     html: { type: String as PropType<string>, default: '' },
     /** Tag of the wrapper element. */
-    as: { type: String as PropType<string>, default: 'div' },
+    as: { type: String as PropType<`${UiRichTextTag}`>, default: UiRichTextTag.Div },
   },
   setup(props) {
     return () => h(

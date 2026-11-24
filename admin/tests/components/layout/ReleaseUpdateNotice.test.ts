@@ -1,6 +1,6 @@
 /**
  * Mount tests for ReleaseUpdateNotice: shown only when an upgrade is available, with the version,
- * release notes link, copyable command, and "Copied!" feedback.
+ * release notes link, copyable command, and "Copied" feedback.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -74,7 +74,7 @@ describe('ReleaseUpdateNotice', () => {
     expect(wrapper.find('[data-testid="release-update-command"]').exists()).toBe(false)
   })
 
-  it('shows "Copied!" feedback after clicking the copy button', async () => {
+  it('shows "Copied" feedback after clicking the copy button', async () => {
     vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
     vi.useFakeTimers()
 

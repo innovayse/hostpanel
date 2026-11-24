@@ -22,6 +22,8 @@ import type { ReportColumnExtra } from '@/types/reportcolumn'
 import type { ReportSalesTax, ReportSalesTaxRow } from '@/types/reportsalestax'
 import type { ReportTableData } from '@/types/reporttabledata'
 import { ReportFieldWidth } from '@/utils/ui/reportField'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/SalesTaxView.schema'
 
 const { t } = useI18n()
@@ -84,7 +86,7 @@ const goToPage = async (next: number): Promise<void> => {
     :retry="load"
     :schema="schema"
     :widths="FILTER_WIDTHS"
-    :generate-label="t('shared.generateReport')"
+    :generate-label="t('shared.generate')"
     :table="table"
     @generate="generate"
     @page="goToPage"
@@ -94,8 +96,8 @@ const goToPage = async (next: number): Promise<void> => {
     </template>
 
     <template #summary>
-      <UiStack gap="xs" data-testid="report-sales-tax-summary">
-        <UiText v-for="total in data?.totals ?? []" :key="total.currency" tone="secondary" size="md">
+      <UiStack :gap="UiGap.Xs" data-testid="report-sales-tax-summary">
+        <UiText v-for="total in data?.totals ?? []" :key="total.currency" :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
           {{
             t('reports.salesTax.currencySummary', {
               currency: total.currency,
@@ -108,7 +110,7 @@ const goToPage = async (next: number): Promise<void> => {
       </UiStack>
     </template>
 
-    <UiText tone="muted" size="sm">
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
       {{ t('reports.salesTax.thisReportExcludesInvoicesThat') }}
     </UiText>
   </ReportPage>

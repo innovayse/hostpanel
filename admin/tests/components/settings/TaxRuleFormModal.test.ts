@@ -25,10 +25,10 @@ describe('TaxRuleFormModal', () => {
   it('opens empty in create mode', async () => {
     const { wrapper } = await mountScreen(TaxRuleFormModal, { rule: null, saving: false, error: null })
 
-    expect(wrapper.get('h2').text()).toBe('Add Tax Rule')
+    expect(wrapper.get('h2').text()).toBe('Create tax rule')
     expect(valueOf(wrapper, 'tax-rule-form-name')).toBe('')
     expect(valueOf(wrapper, 'tax-rule-form-region')).toBe('')
-    expect(wrapper.get('[data-testid="tax-rule-form-save"]').text()).toBe('Add')
+    expect(wrapper.get('[data-testid="tax-rule-form-save"]').text()).toBe('Create')
   })
 
   it('fills the fields from the edited rule', async () => {

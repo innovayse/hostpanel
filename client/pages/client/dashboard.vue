@@ -4,16 +4,10 @@
     <UiPageHeader
       :title="$t('client.dashboard.title')"
       :description="$t('client.dashboard.subtitle')"
+      :actions="headerActions"
       class="!mb-0"
       data-testid="dashboard-title"
-    >
-      <template #actions>
-        <UiButton size="sm" variant="subtle" :loading="refreshing" data-testid="dashboard-refresh" @click="refresh">
-          <RefreshCw v-if="!refreshing" :size="13" :stroke-width="2" class="mr-1.5" />
-          {{ $t('client.dashboard.refresh') }}
-        </UiButton>
-      </template>
-    </UiPageHeader>
+    />
 
     <!-- Not a customer account: a staff identity signed into the client portal. The API
          said so with a code, so this is one explanation with somewhere to go, not four red
@@ -24,7 +18,7 @@
          because the counts below are zeros in exactly this case and reading them as "nothing
          here yet" is the misunderstanding this banner exists to prevent. -->
     <UiAlert v-if="loadErrors.length" variant="error" data-testid="dashboard-load-errors">
-      <UiText v-for="message in loadErrors" :key="message" as="p" size="sm">{{ message }}</UiText>
+      <UiText v-for="message in loadErrors" :key="message" :as="UiTextTag.P" size="sm">{{ message }}</UiText>
     </UiAlert>
 
     <ClientDashboardStatGrid :loading="statsLoading" />
@@ -66,9 +60,13 @@ import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { useContentStore } from '~/stores/content'
 import { PluginSlotId } from '~/types/pluginslotid'
+import type { UiHeaderAction } from '~/types/uiheaderaction'
+import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
+/** Translator for the strings this page builds itself. */
+const { t } = useI18n()
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()
 /** Content store: the announcements the dashboard shows. */
@@ -96,4 +94,9 @@ const refresh = async (): Promise<void> => {
     refreshing.value = false
   }
 }
+
+/** The header's one action: reloading every section. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  { key: 'refresh', label: t('common.refresh'), icon: RefreshCw, onSelect: refresh, loading: refreshing.value, testid: 'dashboard-refresh' },
+])
 </script>

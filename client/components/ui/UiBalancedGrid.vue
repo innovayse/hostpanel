@@ -15,13 +15,14 @@
  */
 import { computed } from 'vue'
 import { BALANCED_MAX_COLUMNS, BALANCED_TABLET_COLUMNS, balancedColumns, tabletColumns } from '~/utils/balancedGrid'
+import { UiGridTag } from '~/utils/ui/enums'
 
 /** Props of UiBalancedGrid. */
 interface Props {
   /** Number of items the slot renders; decides the column count. */
   count: number
   /** Tag to render (use `ul` for a list of cards). */
-  as?: string
+  as?: `${UiGridTag}`
   /**
    * The fewest columns the card width is computed for. A grid of one or two cards then keeps the
    * width of a card in a fuller grid and is centred, instead of stretching across the container.
@@ -30,7 +31,7 @@ interface Props {
 }
 
 /** Props of the component with their defaults applied. */
-const props = withDefaults(defineProps<Props>(), { as: 'div', minColumns: 1 })
+const props = withDefaults(defineProps<Props>(), { as: UiGridTag.Div, minColumns: 1 })
 
 /** Columns on a desktop screen, never fewer than the `minColumns` the card width is kept for (capped at the widest row). */
 const columns = computed(() => Math.min(BALANCED_MAX_COLUMNS, Math.max(balancedColumns(props.count), props.minColumns)))

@@ -33,6 +33,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -117,7 +118,7 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
 </script>
 
 <template>
-  <UiStack gap="md" data-testid="plugin-registry">
+  <UiStack :gap="UiGap.Md" data-testid="plugin-registry">
     <UiErrorState
       v-if="error"
       :message="error"
@@ -137,7 +138,7 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
       <UiResultCount :loading="initialLoading" :size="UiTextSize.Sm" data-testid="plugin-registry-total">
         {{ t('plugins.pluginRegistry.total', { total }) }}
       </UiResultCount>
-      <UiGrid :columns="3" gap="md" :aria-busy="initialLoading" data-testid="plugin-registry-list">
+      <UiGrid :columns="3" :gap="UiGap.Md" :aria-busy="initialLoading" data-testid="plugin-registry-list">
         <template v-if="initialLoading">
           <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
           <PluginCardSkeleton v-for="slot in pageSize" :key="slot" />
@@ -153,17 +154,17 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
               v-if="needsDetails(item)"
               type="button"
               :variant="UiButtonVariant.Primary"
-              size="sm"
+              :size="UiSize.Sm"
               :data-testid="`registry-details-${item.id}`"
               @click="emit('details', item.id)"
             >
-              {{ t('plugins.pluginRegistry.details') }}
+              {{ t('shared.details') }}
             </UiButton>
-            <UiButton :action="UiActionKind.Refresh"
+            <UiButton :icon="Icon.Download"
               v-else-if="actionable(item)"
               type="button"
               :variant="item.installed ? UiButtonVariant.Secondary : UiButtonVariant.Primary"
-              size="sm"
+              :size="UiSize.Sm"
               :loading="installingIds.includes(item.id)"
               :disabled="installingIds.includes(item.id)"
               :data-testid="`registry-install-${item.id}`"
@@ -172,16 +173,17 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
               <template v-if="item.installed">
                 {{ t('plugins.pluginRegistry.update', { version: item.latestVersion }) }}
               </template>
-              <template v-else>{{ t('plugins.pluginRegistry.install') }}</template>
+              <template v-else>{{ t('shared.install') }}</template>
             </UiButton>
             <UiIconButton
               v-if="item.installed"
               :label="t('plugins.pluginRegistry.settings')"
+              :variant="UiButtonVariant.Ghost"
               :size="UiSize.Sm"
               :data-testid="`registry-settings-${item.id}`"
               @click="emit('details', item.id)"
             >
-              <UiIcon :markup="Icon.Settings" size="sm" />
+              <UiIcon :markup="Icon.Settings" :size="UiSize.Sm" />
             </UiIconButton>
           </template>
         </PluginCard>

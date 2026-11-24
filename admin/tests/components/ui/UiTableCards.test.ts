@@ -1,5 +1,5 @@
 /**
- * Unit tests for the phone render of UiTable: below `sm` the table is a UiCardList of UiRecordCards built from the same header columns and row
+ * Unit tests for the phone render of UiTable: below `md` the table is a UiCardList of UiRecordCards built from the same header columns and row
  * slots, each cell lands in the part of the card its column's role names, and no table markup is drawn.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,6 +18,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { messages } from '@/locales/messages'
+import { UI_BELOW_MD_QUERY } from '@/utils/ui/breakpoints'
 import { UiCardRole, UiSortDirection } from '@/utils/ui/table'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -28,7 +29,7 @@ const global = () => ({ plugins: [createTestI18n()] })
 const originalMatchMedia = window.matchMedia
 
 beforeEach(() => {
-  // A phone: every media query of the table (below `sm`) matches.
+  // A phone: every media query of the table (below `md`) matches.
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
@@ -90,6 +91,28 @@ const tableOf = (
 })
 
 describe('UiTable as a card list', () => {
+  it('is a list of cards from the md breakpoint down and a table above it', async () => {
+    /** Makes `matchMedia` report a match for the given query only. */
+    const stub = (matching: string): void => {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        writable: true,
+        value: (query: string) => ({ matches: query === matching, media: query, addEventListener: () => undefined, removeEventListener: () => undefined }),
+      })
+    }
+
+    stub(UI_BELOW_MD_QUERY)
+    const tablet = mount(cardHarness(), { global: global() })
+    await nextTick()
+    expect(tablet.find('table').exists()).toBe(false)
+    expect(tablet.text()).toContain('Ada')
+
+    stub('')
+    const desktop = mount(cardHarness(), { global: global() })
+    await nextTick()
+    expect(desktop.find('table').exists()).toBe(true)
+  })
+
   it('draws a list of record cards and no table markup', async () => {
     const wrapper = mount(cardHarness(), { global: global() })
     await flushPromises()

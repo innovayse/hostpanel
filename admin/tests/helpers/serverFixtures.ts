@@ -5,7 +5,9 @@
 import type { ServerDto, ServerGroupDto, ServerModuleOptionDto, ServerOptionDto } from '@/types/server'
 import { ServerModuleSource } from '@/types/serverenums'
 import type { ServerSshSettingsDto, ServerSshSetupDto } from '@/types/serverssh'
-import { SshAgentProfile } from '@/types/sshenums'
+
+/** The agent profile id the fixtures' servers install: the id a panel plugin ships. */
+export const SSH_AGENT_PROFILE = 'examplepanel'
 
 /**
  * Builds a provisioning server.
@@ -68,6 +70,7 @@ export const serverOptionDto = (overrides: Partial<ServerOptionDto> = {}): Serve
   hostname: 'host1.example.com',
   ipAddress: '203.0.113.10',
   isOnline: true,
+  lastTestedAt: null,
   accountsCount: 12,
   limits: { maxAccounts: 100, isDefault: true, isDisabled: false },
   ...overrides,
@@ -120,7 +123,7 @@ export const serverSshSettingsDto = (overrides: Partial<ServerSshSettingsDto> = 
  */
 export const serverSshSetupDto = (overrides: Partial<ServerSshSetupDto> = {}): ServerSshSetupDto => ({
   serverId: 1,
-  profile: SshAgentProfile.Cwp,
+  profile: SSH_AGENT_PROFILE,
   publicKey: null,
   binding: null,
   agentUsername: 'hpsshkeys',

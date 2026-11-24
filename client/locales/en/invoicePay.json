@@ -5,15 +5,14 @@
     "paymentsToDate": "Payments to Date",
     "balanceDue": "Balance Due",
     "alreadyPaid": "This invoice has already been paid.",
-    "viewInvoice": "View Invoice",
+    "viewInvoice": "View invoice",
     "securityNotice": "Any data you enter here is submitted securely and is encrypted to reduce the risk of fraud",
     "payByCardHosted": "Pay by card",
     "noPaymentOption": "Online payment is not available right now. Please contact support to pay this invoice.",
     "hostedHint": "Choose Pay by card to finish the payment on the payment provider's secure page.",
-    "retry": "Try again",
     "bankTransfer": {
       "hint": "Pay with a bank transfer. You will see the bank details and a reference to write on the transfer, and the invoice is marked paid once we confirm the money arrived.",
-      "choose": "Pay by bank transfer",
+      "choose": "Bank transfer",
       "heading": "Pay by bank transfer",
       "awaiting": "Awaiting payment confirmation",
       "intro": "Make a transfer with the details below. Write the reference exactly as shown so we can match your payment to this invoice.",
@@ -25,7 +24,6 @@
       "iban": "IBAN",
       "swift": "SWIFT / BIC",
       "copy": "Copy {field}",
-      "copied": "Copied",
       "noDetails": "No bank account details are set up for this transfer yet. Please contact us for the account to pay into, and quote the reference above.",
       "afterwards": "We also emailed you these details. The invoice stays pending until we see the money in our account; this can take a few banking days."
     }

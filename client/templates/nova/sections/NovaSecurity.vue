@@ -1,14 +1,14 @@
 <template>
   <UiSection v-if="features.length" padding="lg" class="border-b border-nova-border" data-testid="nova-security">
-    <div class="max-w-[75ch]">
+    <UiStack gap="none" class="max-w-[75ch]">
       <NovaSectionHeader
         :eyebrow="t('nova.security.eyebrow')"
         :title="t('nova.security.title')"
         :lead="t('nova.security.lead')"
       />
-    </div>
+    </UiStack>
 
-    <UiGrid as="ul" cols="3" gap="lg" class="mt-10">
+    <UiGrid :as="UiGridTag.Ul" cols="3" gap="lg" class="mt-10">
       <NovaFeatureCard v-for="feature in features" :key="feature.key" :feature="feature" />
     </UiGrid>
   </UiSection>
@@ -26,6 +26,7 @@ import NovaFeatureCard from '~/templates/nova/sections/FeatureCard.vue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
 import { SECURITY_FEATURES, SECURITY_FEATURE_CARDS } from '~/templates/nova/content'
 import type { Feature } from '~/templates/nova/types/feature'
+import { UiGridTag } from '~/utils/ui/enums'
 
 /** Translator for the copy. */
 const { t } = useI18n()

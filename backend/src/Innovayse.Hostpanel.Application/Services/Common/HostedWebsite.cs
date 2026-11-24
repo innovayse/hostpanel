@@ -6,4 +6,6 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="DocumentRoot">The document root, relative to the account's home directory.</param>
 /// <param name="DocumentRootPath">The absolute path of the document root on the hosting server.</param>
 /// <param name="PhpVersion">The PHP version it runs with, or <see langword="null"/> for none.</param>
-public sealed record HostedWebsite(Guid Id, string Hostname, string DocumentRoot, string DocumentRootPath, string? PhpVersion);
+/// <param name="PhpCliPath">The absolute path of the PHP command line binary of that version, or <see langword="null"/> when none or not known.</param>
+public sealed record HostedWebsite(
+    Guid Id, string Hostname, string DocumentRoot, string DocumentRootPath, string? PhpVersion, string? PhpCliPath);

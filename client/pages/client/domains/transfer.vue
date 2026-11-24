@@ -5,9 +5,9 @@
     <UiCard v-if="success" data-testid="transfer-success">
       <UiEmptyState :icon="CheckCircle" :title="$t('client.domainTransfer.successTitle')" :description="$t('client.domainTransfer.successDesc')">
         <UiStack direction="row" gap="sm" justify="center" wrap>
-          <UiButton :to="clientInvoicePath(success.invoiceId)" data-testid="transfer-pay-invoice">
+          <UiButton variant="primary" :to="clientInvoicePath(success.invoiceId)" data-testid="transfer-pay-invoice">
             <CreditCard :size="16" :stroke-width="2" class="mr-2" />
-            {{ $t('client.domainTransfer.payInvoice') }}
+            {{ $t('common.pay') }}
           </UiButton>
           <UiButton :to="CLIENT_DOMAINS_PATH" variant="subtle" data-testid="transfer-view-domains">{{ $t('client.domainTransfer.viewDomains') }}</UiButton>
         </UiStack>
@@ -62,7 +62,7 @@
         <UiText v-else size="xs" tone="subtle" data-testid="transfer-no-payment">{{ $t('client.domainTransfer.noPaymentMethods') }}</UiText>
 
         <template #actions>
-          <UiButton type="submit" :loading="submitting" :disabled="!form.domain || !form.paymentmethod" data-testid="transfer-submit">
+          <UiButton variant="primary" type="submit" :loading="submitting" :disabled="!form.domain || !form.paymentmethod" data-testid="transfer-submit">
             <ArrowLeftRight v-if="!submitting" :size="14" :stroke-width="2" class="mr-1.5" />
             {{ $t('client.domainTransfer.submit') }}
           </UiButton>

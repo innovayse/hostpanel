@@ -1,13 +1,7 @@
 {
-  "cwpBrandHeader": {
-    "centosWebPanel": "CentOS Web Panel",
-    "provisioningProvider": "Մատակարարման պրովայդեր",
-    "connectionError": "Միացման սխալ",
-    "unknown": "Անհայտ"
-  },
   "integrationCard": {
     "plugin": "Պլագին",
-    "configure": "Կարգավորել →",
+    "configure": "Կարգավորել",
     "notConfigured": "Կարգավորված չէ"
   },
   "categories": {
@@ -56,15 +50,6 @@
     "noIntegrationsInThisCategory": "Այս կատեգորիայում ինտեգրացիաներ չկան",
     "emptyHint": "Տեղադրեք պլագին կատալոգից կամ վերբեռնեք պլագինի փաթեթ՝ այն ավելացնելու համար։",
     "browsePlugins": "Դիտել պլագինները"
-  },
-  "common": {
-    "never": "Երբեք"
-  },
-  "providerStatus": {
-    "notConnected": "Միացված չէ",
-    "statusUnknown": "Կարգավիճակն անհայտ է",
-    "lastTested": "Վերջին ստուգումը",
-    "cwpVersion": "CWP տարբերակ"
   },
   "integrationConfigForm": {
     "enterValue": "Մուտքագրեք՝ {label}",

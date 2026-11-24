@@ -17,6 +17,11 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiGap } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -63,27 +68,29 @@ onMounted(async () => {
     <UiLoader v-if="loading" data-testid="verify-email-loading" />
 
     <!-- Success -->
-    <UiStack v-else-if="success" gap="md" data-testid="verify-email-success">
-      <UiText tone="secondary" size="md">
+    <UiStack v-else-if="success" :gap="UiGap.Md" data-testid="verify-email-success">
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
         {{ t('auth.verifyEmail.yourEmailHasBeenSuccessfully') }}
       </UiText>
       <UiLink :action="UiActionKind.Next"
         :to="AppRoute.Login"
-        variant="primary"
-        size="lg"
+        :variant="UiButtonVariant.Primary"
+        :size="UiSize.Lg"
         class="w-full"
         data-testid="verify-email-go-login"
+        :title="t('auth.verifyEmail.goToAdminPanel')"
+        :aria-label="t('auth.verifyEmail.goToAdminPanel')"
       >
-        {{ t('auth.verifyEmail.goToAdminPanel') }}
+        {{ t('auth.verifyEmail.openPanel') }}
       </UiLink>
     </UiStack>
 
     <!-- Error -->
-    <UiStack v-else gap="md" data-testid="verify-email-failure">
-      <UiAlert variant="error" data-testid="verify-email-error">
+    <UiStack v-else :gap="UiGap.Md" data-testid="verify-email-failure">
+      <UiAlert :variant="UiTone.Danger" data-testid="verify-email-error">
         {{ error }}
       </UiAlert>
-      <UiLink :to="AppRoute.Login" variant="link" data-testid="verify-email-back-login">
+      <UiLink :to="AppRoute.Login" :variant="UiButtonVariant.Link" data-testid="verify-email-back-login">
         {{ t('auth.verifyEmail.backToLogin') }}
       </UiLink>
     </UiStack>

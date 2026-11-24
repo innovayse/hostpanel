@@ -53,22 +53,24 @@ export const THEME_BOOT_CONFIG: ThemeBootConfig = {
 }
 
 /**
- * Reads the stored choice, resolves "system" through `prefers-color-scheme`, toggles the light
+ * Reads the stored choice, follows `prefers-color-scheme` when nothing valid is stored, toggles the light
  * class on `<html>` and points every `theme-color` meta at the resolved scheme's colour.
  *
  * Storage that throws (private mode, blocked site data) counts as no choice, which means
  * "follow the system".
  *
  * @param config - Storage key, stored values, media query, class and colours.
+ * @param chosen - A choice made in this page that storage could not keep; it is used in place of the stored one.
  * @returns True when the light scheme was applied.
  */
-export const bootTheme = (config: ThemeBootConfig): boolean => {
+export const bootTheme = (config: ThemeBootConfig, chosen?: string): boolean => {
   let stored: string | null = null
   try {
     stored = window.localStorage.getItem(config.storageKey)
   } catch {
     stored = null
   }
+  stored = chosen ?? stored
   let light = stored === config.light
   if (stored !== config.light && stored !== config.dark) {
     light = typeof window.matchMedia === 'function' && window.matchMedia(config.lightQuery).matches

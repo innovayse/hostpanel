@@ -11,14 +11,14 @@
       <!-- The reference is the one thing the payer must not get wrong, so it stands apart from the other fields. -->
       <UiAlert variant="info" data-testid="bank-transfer-reference-box">
         <UiStack direction="row" justify="between" align="center" gap="sm">
-          <UiStack gap="xs">
+          <UiStack gap="xs" class="min-w-0">
             <UiText size="sm" tone="muted">{{ $t('invoicePay.bankTransfer.reference') }}</UiText>
-            <UiText as="span" weight="bold" data-testid="bank-transfer-reference">{{ details.reference }}</UiText>
+            <UiText :as="UiTextTag.Span" weight="bold" class="break-all" data-testid="bank-transfer-reference">{{ details.reference }}</UiText>
           </UiStack>
           <UiCopyButton
             :value="details.reference"
             :label="$t('invoicePay.bankTransfer.copy', { field: $t('invoicePay.bankTransfer.reference') })"
-            :copied-label="$t('invoicePay.bankTransfer.copied')"
+            :copied-label="$t('common.copied')"
             testid="bank-transfer-copy-reference"
           />
         </UiStack>
@@ -27,14 +27,14 @@
 
       <UiStack gap="sm">
         <UiStack v-for="row in rows" :key="row.key" direction="row" justify="between" align="center" gap="sm" :data-testid="`bank-transfer-row-${row.key}`">
-          <UiStack gap="none">
+          <UiStack gap="none" class="min-w-0">
             <UiText size="sm" tone="muted">{{ row.label }}</UiText>
-            <UiText as="span" weight="medium" :data-testid="`bank-transfer-${row.key}`">{{ row.value }}</UiText>
+            <UiText :as="UiTextTag.Span" weight="medium" class="break-all" :data-testid="`bank-transfer-${row.key}`">{{ row.value }}</UiText>
           </UiStack>
           <UiCopyButton
             :value="row.copyValue"
             :label="$t('invoicePay.bankTransfer.copy', { field: row.label })"
-            :copied-label="$t('invoicePay.bankTransfer.copied')"
+            :copied-label="$t('common.copied')"
             :testid="`bank-transfer-copy-${row.key}`"
           />
         </UiStack>
@@ -42,11 +42,11 @@
 
       <!-- Nothing to send the money to: say so, so the payer asks the provider instead of guessing. -->
       <UiAlert v-if="hasNoAccountDetails" variant="warning" data-testid="bank-transfer-no-details">
-        <UiText as="span" size="sm">{{ $t('invoicePay.bankTransfer.noDetails') }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm">{{ $t('invoicePay.bankTransfer.noDetails') }}</UiText>
       </UiAlert>
 
       <UiAlert v-if="details.instructions" variant="info" data-testid="bank-transfer-instructions">
-        <UiText as="span" size="sm" class="whitespace-pre-line">{{ details.instructions }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" class="whitespace-pre-line">{{ details.instructions }}</UiText>
       </UiAlert>
 
       <UiText size="sm" tone="muted">{{ $t('invoicePay.bankTransfer.afterwards') }}</UiText>
@@ -67,6 +67,7 @@
 import { computed } from 'vue'
 import type { BankTransferDetails } from '~/types/banktransferdetails'
 import { formatCurrency } from '~/utils/formatCurrency'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** One line of the details: what it is, what is shown and what the copy button copies. */
 interface DetailRow {

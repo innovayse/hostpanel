@@ -17,6 +17,8 @@ public sealed class OrderServiceValidator : LocalizedValidator<OrderServiceComma
         RuleFor(x => x.ProductId).MustBePositiveId(L["OrderServiceProductIdInvalid"]);
         RuleFor(x => x.BillingCycle).IsInEnum().WithMessage(L["OrderServiceBillingCycleInvalid"]);
         RuleFor(x => x.OrderItemId).GreaterThan(0).WithMessage(L["OrderItemIdInvalid"]).When(x => x.OrderItemId is not null);
+        // A trial is started by the client, never from an order line.
+        RuleFor(x => x.OrderItemId).Null().WithMessage(L["OrderItemIdInvalid"]).When(x => x.Trial is not null);
         RuleFor(x => x.FirstPaymentAmount)
             .GreaterThanOrEqualTo(0)
             .WithMessage(L["OrderServiceAmountInvalid"])

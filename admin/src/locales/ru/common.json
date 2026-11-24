@@ -1,6 +1,4 @@
 {
-  "save": "Сохранить",
-  "signOut": "Выйти",
   "admin": "Админ",
   "notifications": "Уведомления",
   "notificationsWithCount": "Уведомления, новых: {count}",

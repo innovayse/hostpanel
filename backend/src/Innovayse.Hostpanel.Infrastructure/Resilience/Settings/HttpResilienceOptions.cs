@@ -148,46 +148,14 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
-    /// CWP control panels. Registered with no retry stage and no breaker.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>No retries.</b> Every CWP call is a form POST, and the operation is carried in the
-    /// body's <c>action</c> field rather than in the method or the path: create, suspend,
-    /// unsuspend and terminate all post to <c>/v1/account</c>, and so does the account listing
-    /// behind the server-info screen. A predicate cannot separate the read from the writes
-    /// without re-reading a consumed request body, and guessing wrong here re-creates a hosting
-    /// account. The one genuinely safe endpoint, <c>/v1/version</c>, is a version string on an
-    /// admin screen; a retry stage that exists only for it is machinery with no user.
-    /// </para>
-    /// <para>
-    /// <b>No breaker.</b> This client addresses a different server on every call, the base URL
-    /// is a per-call argument, not a base address, so a breaker would be shared across every
-    /// CWP node the platform owns and one dead box would stop provisioning on all of them.
-    /// </para>
-    /// <para>
-    /// <b>12 seconds an attempt, 14 in total</b>, inside the registration's existing 15-second
-    /// <see cref="HttpClient.Timeout"/>, which was already tuned for this panel.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions Cwp { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(12),
-        TotalTimeout = TimeSpan.FromSeconds(14),
-        MaxRetryAttempts = 0,
-        RetryDelay = TimeSpan.Zero,
-        CircuitBreakerEnabled = false,
-    };
-
-    /// <summary>
     /// cPanel servers, the "CPanelWhm" named client the provisioning factory, the connection
     /// tester and the disk usage report resolve per server. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
-    /// The same reasons as <see cref="Cwp"/>: a retried <c>createacct</c> could race the first
+    /// A retried <c>createacct</c> could race the first
     /// attempt, and the server is a per-call argument, so a breaker would be shared across every
     /// WHM node. Account creation builds a home directory, a mail store and a DNS zone and can be
-    /// slow on a busy node, hence the same long budget.
+    /// slow on a busy node, hence a long budget.
     /// </remarks>
     public ResilienceProfileOptions CPanelWhm { get; set; } = new()
     {
@@ -353,7 +321,6 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(SsoTwoFactor), SsoTwoFactor);
         yield return new NamedResilienceProfile(nameof(Telegram), Telegram);
         yield return new NamedResilienceProfile(nameof(StatusProbe), StatusProbe);
-        yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
         yield return new NamedResilienceProfile(nameof(CPanelWhm), CPanelWhm);
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
         yield return new NamedResilienceProfile(nameof(Vat), Vat);

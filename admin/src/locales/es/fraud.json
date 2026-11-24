@@ -1,0 +1,94 @@
+{
+  "blockList": {
+    "subtitle": "Direcciones IP, rangos IP, dominios de correo y países que la comprobación de fraude siempre marca.",
+    "tabsLabel": "Tipo de lista de bloqueo",
+    "valueLabel": {
+      "Ip": "Dirección IP",
+      "Cidr": "Rango IP (CIDR)",
+      "EmailDomain": "Dominio de correo",
+      "Country": "País"
+    },
+    "valuePlaceholder": {
+      "Ip": "203.0.113.7",
+      "Cidr": "203.0.113.0/24",
+      "EmailDomain": "mail.example",
+      "Country": "Seleccionar país"
+    },
+    "note": "Nota",
+    "notePlaceholder": "Por qué está bloqueado (opcional)",
+    "add": "Añadir a la lista de bloqueo",
+    "added": "Entrada añadida a la lista de bloqueo.",
+    "addedAt": "Añadido",
+    "removed": "Entrada eliminada de la lista de bloqueo.",
+    "empty": "Esta lista de bloqueo está vacía.",
+    "searchPlaceholder": "Buscar por valor o nota",
+    "noMatches": "Ninguna entrada coincide con tu búsqueda.",
+    "deleteTitle": "¿Quitar de la lista de bloqueo?",
+    "deleteMessage": "{value} ya no será marcado por la comprobación de fraude."
+  },
+  "log": {
+    "subtitle": "Todos los registros y pedidos puntuados por la comprobación de fraude, con su decisión y los motivos.",
+    "decision": "Decisión",
+    "reason": "Motivo",
+    "kind": "Comprobar",
+    "score": "Puntuación",
+    "reasons": "Motivos",
+    "noReasons": "Ninguno",
+    "order": "Pedido",
+    "searchPlaceholder": "Buscar por correo o dirección IP",
+    "noMatches": "Ninguna entrada del registro coincide con tu búsqueda o filtros."
+  },
+  "settings": {
+    "title": "Ajustes de fraude",
+    "subtitle": "Elige cuándo un pedido espera revisión y cuándo una acción se rechaza de inmediato.",
+    "enabled": "Detección de fraude",
+    "enabledHint": "Cuando está desactivado, no se puntúan los registros ni los pedidos y nada se retiene para revisión.",
+    "saved": "Ajustes de fraude guardados.",
+    "sections": {
+      "thresholds": "Umbrales de puntuación de riesgo",
+      "velocity": "Límites de velocidad por dirección IP"
+    },
+    "units": {
+      "points": "pts",
+      "minutes": "min",
+      "orders": "pedidos",
+      "accounts": "cuentas"
+    },
+    "band": {
+      "allow": "Permitir",
+      "review": "Revisar",
+      "reject": "Rechazar",
+      "range": "{from} a {to}",
+      "empty": "ninguno"
+    },
+    "offNote": "La detección de fraude está desactivada. Los umbrales y límites de abajo se conservan pero no se aplican: no se puntúa, retiene para revisión ni rechaza nada hasta que la actives.",
+    "fields": {
+      "manualReviewRiskScore": {
+        "label": "Umbral de revisión",
+        "hint": "A partir de esta puntuación de riesgo, de 0 a 100, un pedido espera la revisión del personal."
+      },
+      "autoRejectRiskScore": {
+        "label": "Umbral de rechazo automático",
+        "hint": "A partir de esta puntuación de riesgo, de 0 a 100, una acción se rechaza de inmediato. Debe ser mayor que el umbral de revisión."
+      },
+      "velocityWindowMinutes": {
+        "label": "Ventana de velocidad",
+        "hint": "Cuánto tiempo atrás se cuentan los pedidos de una dirección IP, de 1 a 1440 minutos."
+      },
+      "velocityMaxOrders": {
+        "label": "Pedidos permitidos en la ventana",
+        "hint": "Más pedidos que este desde una misma dirección IP dentro de la ventana aumentan el riesgo."
+      },
+      "maxAccountsPerIp": {
+        "label": "Cuentas permitidas por dirección IP",
+        "hint": "Más cuentas que esta desde una misma dirección IP aumentan el riesgo."
+      }
+    },
+    "errors": {
+      "scoreRange": "Introduce un número entero de 0 a 100.",
+      "reviewBelowReject": "Debe ser menor que el umbral de rechazo automático.",
+      "windowRange": "Introduce un número entero de minutos de 1 a 1440.",
+      "countRange": "Introduce un número entero de 1 a 100."
+    }
+  }
+}

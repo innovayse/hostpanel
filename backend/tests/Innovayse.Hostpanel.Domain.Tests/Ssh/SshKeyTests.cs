@@ -146,6 +146,49 @@ public sealed class SshKeyTests
         Assert.False(key.IsActive);
     }
 
+    /// <summary>A key created without sources works from anywhere, and so does one created with an empty list.</summary>
+    [Fact]
+    public void Create_WithoutSources_HasNone()
+    {
+        NewKey().AllowedFrom.Should().BeEmpty();
+        SshKey.Create(10, 1, "web", "deploy", "ssh-ed25519 AAAA", "SHA256:x", "deployer", []).AllowedFrom.Should().BeEmpty();
+    }
+
+    /// <summary>A key keeps the sources it was created with, in order, and they survive install and revoke.</summary>
+    [Fact]
+    public void Create_WithSources_KeepsThemInOrder()
+    {
+        var key = SshKey.Create(10, 1, "web", "deploy", "ssh-ed25519 AAAA", "SHA256:x", "deployer", ["203.0.113.7", "198.51.100.0/24"]);
+        key.MarkInstalled();
+
+        key.AllowedFrom.Should().Equal("203.0.113.7", "198.51.100.0/24");
+    }
+
+    /// <summary>The key does not share the list the caller gave, so a later change to it cannot alter the key.</summary>
+    [Fact]
+    public void Create_CopiesTheSources()
+    {
+        var sources = new List<string> { "203.0.113.7" };
+        var key = SshKey.Create(10, 1, "web", "deploy", "ssh-ed25519 AAAA", "SHA256:x", "deployer", sources);
+
+        sources.Add("203.0.113.8");
+
+        key.AllowedFrom.Should().Equal("203.0.113.7");
+    }
+
+    /// <summary>A list that is not valid sources is refused.</summary>
+    /// <param name="source">The offending source.</param>
+    [Theory]
+    [InlineData("*.example.com")]
+    [InlineData("198.51.100.5/24")]
+    [InlineData("")]
+    public void Create_InvalidSources_Throws(string source)
+    {
+        var act = () => SshKey.Create(10, 1, "web", "deploy", "ssh-ed25519 AAAA", "SHA256:x", "deployer", [source]);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
     /// <summary>A blank account, label, public key or fingerprint is refused.</summary>
     /// <param name="account">The account user name.</param>
     /// <param name="label">The label.</param>

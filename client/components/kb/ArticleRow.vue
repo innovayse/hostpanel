@@ -10,7 +10,7 @@
     <FileText :size="16" :stroke-width="2" class="mt-0.5 flex-shrink-0 text-primary-700 dark:text-primary-400 [.tpl-classic_&]:text-classic-brand" />
     <UiStack gap="none" class="min-w-0">
       <UiText
-        as="span"
+        :as="UiTextTag.Span"
         size="sm"
         weight="medium"
         tone="inherit"
@@ -22,7 +22,7 @@
       </UiText>
       <UiText
         v-if="article.excerpt"
-        as="span"
+        :as="UiTextTag.Span"
         size="xs"
         tone="muted"
         class="mt-0.5 line-clamp-1 block [.tpl-classic_&]:text-classic-muted"
@@ -44,6 +44,7 @@
 import { FileText } from 'lucide-vue-next'
 import { siteKnowledgebaseArticlePath } from '~/constants/siteRoutes'
 import type { KbArticleSummary } from '~/types/kbarticlesummary'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ArticleRow. */
 interface Props {

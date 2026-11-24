@@ -296,6 +296,6 @@ describe('ClientProfileView', () => {
     const captions = wrapper.get('[data-testid="client-profile-contacts"]').findAll('[role="columnheader"]').map((header) => header.text())
     expect(captions).toEqual(['Name', 'Email', 'Phone', 'Type'])
     expect(PROFILE_CONTACTS_TABLE.columns).toHaveLength(captions.length)
-    expect(wrapper.get('[data-testid="ui-detail-card-contacts"]').text()).toContain('Contacts (1)')
+    expect(wrapper.get('[data-testid="client-profile-contacts-title"]').text()).toContain('Contacts (1)')
   })
 })

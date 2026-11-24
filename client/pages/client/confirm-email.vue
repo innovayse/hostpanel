@@ -9,8 +9,8 @@
       :title="$t('client.confirmEmail.confirmed')"
       data-testid="confirm-success"
     >
-      <UiLink :to="CLIENT_LOGIN_PATH" :underline="false" testid="confirm-signin" class="font-medium">
-        {{ $t('client.confirmEmail.signIn') }}
+      <UiLink tone="primary" :to="CLIENT_LOGIN_PATH" :underline="false" testid="confirm-signin" class="font-medium">
+        {{ $t('common.signIn') }}
       </UiLink>
     </ClientOutcomePanel>
 
@@ -21,7 +21,7 @@
       :title="message"
       data-testid="confirm-failed"
     >
-      <UiLink :to="CLIENT_REGISTER_PATH" :underline="false" testid="confirm-register" class="font-medium">
+      <UiLink tone="primary" :to="CLIENT_REGISTER_PATH" :underline="false" testid="confirm-register" class="font-medium">
         {{ $t('client.confirmEmail.backToRegister') }}
       </UiLink>
     </ClientOutcomePanel>

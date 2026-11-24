@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangePackage;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangePassword;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ProvisionService;
+using Innovayse.Hostpanel.Application.Provisioning.Commands.SyncServiceWithPanel;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.GetServiceCredentials;
@@ -210,6 +211,37 @@ public sealed class ProvisioningController : BaseApiController
     public async Task<IActionResult> ChangePackageAsync(int id, [FromBody] ChangePackageCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Reconciles a provisioned hosting service with its control panel: the status and the package the platform holds are applied to
+    /// the panel, the password too when asked, and the IP address the panel reports is recorded on the service.
+    /// </summary>
+    /// <param name="id">Client service primary key; wins over any id in the body.</param>
+    /// <param name="command">Whether the stored password is also set on the panel.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with what was done about each field; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
+    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who
+    /// is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>,
+    /// <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server cannot read the
+    /// account; 502 with <c>PANEL_ACCESS_DENIED</c>, <c>PANEL_REFUSED</c> or <c>SERVICE_PANEL_SYNC_UPSTREAM_FAILED</c> when the panel cannot be
+    /// read; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 429 when the rate limit is hit.
+    /// A change that fails to apply is reported in its field of the 200 answer.
+    /// </returns>
+    [HttpPost("/api/admin/services/{id:int}/sync-panel")]
+    [ProducesResponseType(typeof(ServiceSyncDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> SyncWithPanelAsync(int id, [FromBody] SyncServiceWithPanelCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<ServiceSyncDto>>(command with { ServiceId = id }, ct);
         return HandleResult(outcome);
     }
 

@@ -10,10 +10,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CurrencyFormModal from '@/components/settings/CurrencyFormModal.vue'
 import ExchangeRateProviderCard from '@/components/settings/ExchangeRateProviderCard.vue'
-import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -25,14 +23,13 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import UiTable from '@/components/ui/UiTable.vue'
+import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { Icon } from '@/lib/icons'
-import { UiTone } from '@/utils/ui/tone'
 import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
 import { useSettingsStore } from '@/stores/settings'
@@ -42,8 +39,12 @@ import schema, { CURRENCIES_TABLE, CURRENCY_PROVIDER_PART } from '@/views/Curren
 import { EMPTY_VALUE } from '@/lib/format'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiGap } from '@/utils/ui/layout'
+import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -61,7 +62,7 @@ const store = useCurrenciesStore()
 const settingsStore = useSettingsStore()
 
 /** The result banner for the bulk actions. */
-const banner = useResultBanner()
+const banner = useOutcomeToast()
 
 /** Whether the add/edit currency dialog is visible. */
 const showModal = ref(false)
@@ -272,13 +273,6 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
     <UiPageHeader :actions="headerActions" v-bind="schemaHeader(schema, t)">
     </UiPageHeader>
 
-    <UiAlert
-      v-if="banner.message.value"
-      :variant="UiTone.Danger"
-      data-testid="currencies-result"
-    >
-      {{ banner.message.value }}
-    </UiAlert>
 
     <!-- A refused settings load is said, never hidden: the card would otherwise claim the row is not seeded. -->
     <UiErrorState
@@ -303,44 +297,42 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
       @retry="store.fetchAll()"
     />
 
-    <UiCard v-else clip>
-      <UiTable :empty-text="t('currencies.empty')" :density="UiTableDensity.Comfortable" :loading="store.loading" :empty="!store.loading && store.currencies.length === 0">
-        <UiSchemaTableHead :columns="CURRENCIES_TABLE.columns" />
-        <UiTableBody divided>
-          <UiTableRow
-            v-for="c in store.currencies"
-            :key="c.code"
-            hoverable
-            :data-testid="`currency-row-${c.code}`"
-          >
-            <UiTableCell strong>{{ c.code }}</UiTableCell>
-            <UiTableCell muted class="tabular-nums">{{ c.numeric }}</UiTableCell>
-            <UiTableCell muted>{{ formatSample(c) }}</UiTableCell>
-            <UiTableCell numeric muted>{{ c.decimals }}</UiTableCell>
-            <UiTableCell numeric muted>
-              {{ c.isBase ? EMPTY_VALUE : c.rateToBase.toFixed(8) }}
-            </UiTableCell>
-            <UiTableCell>
-              <UiBadge v-if="c.isBase" tone="primary" small>
-                {{ t('currencies.baseBadge') }}
-              </UiBadge>
-            </UiTableCell>
-            <UiTableCell>
-              <UiStatusIcon
-                :state="c.isEnabled"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
-                :on-label="t('currencies.enabledBadge')"
-                :off-label="t('currencies.disabledBadge')"
-              />
-            </UiTableCell>
-            <UiTableCell actions>
-              <UiRowActions :actions="currencyActions(c)" :testid="`currency-actions-${c.code}`" />
-            </UiTableCell>
-          </UiTableRow>
-        </UiTableBody>
-      </UiTable>
-    </UiCard>
+    <UiDataTable v-else :empty-text="t('currencies.empty')" :density="UiTableDensity.Comfortable" :loading="store.loading" :empty="!store.loading && store.currencies.length === 0">
+      <UiSchemaTableHead :columns="CURRENCIES_TABLE.columns" />
+      <UiTableBody>
+        <UiTableRow
+          v-for="c in store.currencies"
+          :key="c.code"
+          hoverable
+          :data-testid="`currency-row-${c.code}`"
+        >
+          <UiTableCell strong>{{ c.code }}</UiTableCell>
+          <UiTableCell muted>{{ c.numeric }}</UiTableCell>
+          <UiTableCell muted>{{ formatSample(c) }}</UiTableCell>
+          <UiTableCell numeric muted>{{ c.decimals }}</UiTableCell>
+          <UiTableCell numeric muted>
+            {{ c.isBase ? EMPTY_VALUE : c.rateToBase.toFixed(8) }}
+          </UiTableCell>
+          <UiTableCell>
+            <UiBadge v-if="c.isBase" :tone="UiTone.Primary" small>
+              {{ t('currencies.baseBadge') }}
+            </UiBadge>
+          </UiTableCell>
+          <UiTableCell>
+            <UiStatusIcon
+              :state="c.isEnabled"
+              :on-icon="Icon.CheckCircle"
+              :off-icon="Icon.Close"
+              :on-label="t('currencies.enabledBadge')"
+              :off-label="t('currencies.disabledBadge')"
+            />
+          </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="currencyActions(c)" :testid="`currency-actions-${c.code}`" />
+          </UiTableCell>
+        </UiTableRow>
+      </UiTableBody>
+    </UiDataTable>
 
     <!-- Add/edit currency dialog -->
     <CurrencyFormModal
@@ -354,12 +346,12 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
     <!-- Make base confirmation -->
     <UiDialog
       v-if="makeBaseTarget"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('currencies.makeBaseModal.title')"
       :message="t('currencies.makeBaseModal.message', { code: makeBaseTarget.code })"
-      :confirm-label="t('currencies.makeBaseModal.confirmLabel')"
+      :confirm-label="t('currencies.makeBase')"
       :loading="makingBase"
-      tone="primary"
+      :tone="UiTone.Primary"
       @confirm="confirmMakeBase"
       @close="makeBaseTarget = null"
     />
@@ -370,11 +362,11 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
       :title="t('currencies.pricesPicker.title')"
       @close="showPricesPicker = false"
     >
-      <UiText tone="secondary" size="md">
+      <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">
         {{ t('currencies.pricesPicker.description') }}
       </UiText>
-      <UiStack gap="sm" class="max-h-52 overflow-y-auto">
-        <UiLabel v-for="c in nonBaseCurrencies" :key="c.code" variant="inline">
+      <UiStack :gap="UiGap.Sm" class="max-h-52 overflow-y-auto">
+        <UiLabel v-for="c in nonBaseCurrencies" :key="c.code" :variant="UiLabelVariant.Inline">
           <UiCheckbox
             :model-value="selectedPriceCurrencies.includes(c.code)"
             :data-testid="`currencies-price-${c.code}`"
@@ -384,17 +376,17 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
         </UiLabel>
       </UiStack>
       <template #footer>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="currencies-prices-cancel" @click="showPricesPicker = false">
-          {{ t('currencies.pricesPicker.cancel') }}
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="currencies-prices-cancel" @click="showPricesPicker = false">
+          {{ t('shared.cancel') }}
         </UiButton>
         <UiButton :action="UiActionKind.Next"
-          type="button"
-          variant="primary"
+          :type="UiButtonType.Button"
+          :variant="UiButtonVariant.Primary"
           :disabled="selectedPriceCurrencies.length === 0"
           data-testid="currencies-prices-continue"
           @click="confirmPricesPicker"
         >
-          {{ t('currencies.pricesPicker.continue') }}
+          {{ t('shared.continue') }}
         </UiButton>
       </template>
     </UiDialog>
@@ -402,12 +394,12 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
     <!-- Product price recompute: overwrite confirmation -->
     <UiDialog
       v-if="showPricesConfirm"
-      variant="confirm"
+      :variant="UiDialogVariant.Confirm"
       :title="t('currencies.pricesConfirm.title')"
       :message="t('currencies.pricesConfirm.message', { codes: selectedPriceCurrencies.join(', ') })"
       :confirm-label="t('currencies.pricesConfirm.confirmLabel')"
       :loading="updatingPrices"
-      tone="danger"
+      :tone="UiTone.Danger"
       @confirm="handleUpdatePrices"
       @close="showPricesConfirm = false"
     />

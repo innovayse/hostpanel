@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary>
-/// Proves a request that asks for Russian, Armenian, German or Spanish is answered in that language.
+/// Proves a request that asks for Russian, Armenian, German, Spanish or French is answered in that language.
 /// <para>
 /// The client app ships several languages and does not translate error codes itself: the sentence
 /// comes from
@@ -45,7 +45,7 @@ public sealed class ValidationMessagesLocalizationTests
     /// fallback to the neutral (English) file; every supported language carries every key, so only a
     /// language with no file exercises the fallback.
     /// </summary>
-    private const string LocaleWithoutTranslations = "fr";
+    private const string LocaleWithoutTranslations = "it";
 
     /// <summary>A key of the neutral file whose English sentence takes a length limit.</summary>
     private const string FallbackKey = "ProductNameTooLong";

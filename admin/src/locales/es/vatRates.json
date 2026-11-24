@@ -1,0 +1,53 @@
+{
+  "title": "Tipos de IVA",
+  "description": "El tipo de IVA de cada Estado miembro de la UE y el día desde el que se aplica. A un consumidor de otro Estado miembro se le facturan los servicios digitales al tipo estándar de su propio país. Los tipos reducidos se guardan como referencia y nunca se aplican automáticamente.",
+  "addRate": "Añadir tipo de IVA",
+  "empty": "Todavía no hay tipos de IVA. Añade uno, o reinicia la aplicación para importar los tipos incluidos.",
+  "searchPlaceholder": "Buscar por código de país",
+  "noMatches": "Ningún tipo de IVA coincide con tu búsqueda",
+  "table": {
+    "country": "País",
+    "kind": "Tipo",
+    "rate": "Tipo",
+    "validFrom": "Válido desde",
+    "actions": "Acciones"
+  },
+  "kind": {
+    "Standard": "Estándar",
+    "Reduced": "Reducido"
+  },
+  "filters": {
+    "status": "Estado"
+  },
+  "status": {
+    "Active": "Vigente",
+    "Superseded": "Sustituido",
+    "Upcoming": "Próximos"
+  },
+  "deleteModal": {
+    "title": "Eliminar tipo de IVA",
+    "message": "¿Eliminar el tipo {kind} de {country} que se aplica desde {validFrom}? Las facturas ya emitidas conservan el tipo con el que se gravaron."
+  },
+  "toasts": {
+    "deleted": "El tipo de IVA se eliminó."
+  },
+  "form": {
+    "editTitle": "Editar tipo de IVA",
+    "country": {
+      "label": "Estado miembro",
+      "placeholder": "Selecciona un país"
+    },
+    "kind": {
+      "label": "Tipo",
+      "placeholder": "Selecciona un tipo"
+    },
+    "rate": {
+      "label": "Tipo (%)",
+      "placeholder": "p. ej. 19"
+    },
+    "validFrom": {
+      "label": "Válido desde",
+      "hint": "Un tipo está vigente hasta que empieza una fila posterior del mismo país y tipo. Para cambiar un tipo, añade una fila con el nuevo día de inicio; edita una fila solo para corregir un error. Un tipo incluido de serie cuyo día se traslada más adelante no se vuelve a importar."
+    }
+  }
+}

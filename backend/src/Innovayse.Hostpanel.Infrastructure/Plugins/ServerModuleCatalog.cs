@@ -7,7 +7,7 @@ using Innovayse.Hostpanel.Domain.Servers;
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
 /// <summary>
-/// The control panel modules a server can be given: <see cref="ServerModules.Known"/> plus the <c>serverModules</c> of every loaded
+/// The control panel modules a server can be given: <see cref="ServerModules.Listed"/> (the host panel and the unorderable Linux server) plus the <c>serverModules</c> of every loaded
 /// provisioning plugin that declares an operation on a provisioned server (a panel today, a virtual server platform next). A module
 /// the host knows and a plugin declares is listed once, in the host's spelling and under the plugin's name, so a server saved
 /// before the panel moved to a plugin keeps matching. The one reader of the lists on the admin side; calls go through
@@ -30,12 +30,12 @@ public sealed class ServerModuleCatalog : IServerModuleCatalog
     {
         // Insertion order is the list order: the host's modules first, then the plugins' in plugin id order.
         var options = new Dictionary<string, ServerModuleOptionDto>(StringComparer.OrdinalIgnoreCase);
-        foreach (var id in ServerModules.Known)
+        foreach (var id in ServerModules.Listed)
         {
             options[id] = new ServerModuleOptionDto(id, id, ServerModuleSource.BuiltIn);
         }
 
-        foreach (var plugin in _registry.OfType(PluginType.Provisioning).Where(p => PluginCapabilityRules.DeclaresProvisioning(p.Manifest)))
+        foreach (var plugin in ProvisioningPlugins())
         {
             foreach (var id in plugin.Manifest.ServerModules)
             {
@@ -48,9 +48,25 @@ public sealed class ServerModuleCatalog : IServerModuleCatalog
     }
 
     /// <inheritdoc/>
+    public IReadOnlyList<string> ModulesOf(string pluginId)
+    {
+        return ProvisioningPlugins()
+            .Where(plugin => string.Equals(plugin.Manifest.Id, pluginId, StringComparison.Ordinal))
+            .SelectMany(plugin => plugin.Manifest.ServerModules)
+            .ToList();
+    }
+
+    /// <inheritdoc/>
     public string? Canonical(string module, string? stored = null)
     {
         return List().FirstOrDefault(option => ServerModules.Same(option.Id, module))?.Id
             ?? (stored is not null && ServerModules.Same(stored, module) ? stored : null);
+    }
+
+    /// <summary>Lists the loaded provisioning plugins that declare an operation on a provisioned server: the only plugins whose <c>serverModules</c> count.</summary>
+    /// <returns>The plugins, in the registry's order.</returns>
+    private IEnumerable<LoadedPlugin> ProvisioningPlugins()
+    {
+        return _registry.OfType(PluginType.Provisioning).Where(plugin => PluginCapabilityRules.DeclaresProvisioning(plugin.Manifest));
     }
 }

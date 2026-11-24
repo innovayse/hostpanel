@@ -13,9 +13,9 @@ public static class SupportedLanguages
     public const string Default = "en";
 
     /// <summary>
-    ///     All supported language codes: English, Russian, Armenian, German, Spanish.
+    ///     All supported language codes: English, Russian, Armenian, German, Spanish, French.
     /// </summary>
-    public static readonly HashSet<string> All = ["en", "ru", "hy", "de", "es"];
+    public static readonly HashSet<string> All = ["en", "ru", "hy", "de", "es", "fr"];
 
     /// <summary>
     ///     Checks whether the given language code is supported.

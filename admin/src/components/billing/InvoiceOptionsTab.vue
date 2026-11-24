@@ -21,16 +21,19 @@ import UiGrid from '@/components/ui/UiGrid.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { GATEWAY_OPTIONS } from '@/lib/constants'
 import { toDateInputValue } from '@/lib/format'
 import { InvoiceStatus } from '@/types/invoice'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail } from '@/types/invoice'
-import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -57,10 +60,7 @@ const taxRate = ref(0)
 const saving = ref(false)
 
 /** The outcome line of the last save, shown under the form. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** True when the invoice is a draft the client cannot see yet. */
 const isDraft = computed<boolean>(() => props.invoice.status === InvoiceStatus.Draft)
@@ -79,7 +79,6 @@ const populate = (): void => {
  * @returns Resolves when the request has settled.
  */
 const save = async (): Promise<void> => {
-  feedback.clear()
   saving.value = true
   const ok = await store.updateOptions(props.invoice.id, {
     invoiceDate: invoiceDate.value ?? '',
@@ -100,17 +99,17 @@ onMounted(populate)
 
 <template>
   <UiStack data-testid="billing-invoice-options">
-    <UiAlert v-if="isDraft" variant="info" data-testid="billing-invoice-options-draft">
+    <UiAlert v-if="isDraft" :variant="UiTone.Info" data-testid="billing-invoice-options-draft">
       {{ t('billing.invoiceOptionsTab.thisIsADraftInvoice') }}
     </UiAlert>
 
-    <UiAlert v-if="invoice.reverseCharge" variant="info" data-testid="billing-invoice-options-reverse-charge">
+    <UiAlert v-if="invoice.reverseCharge" :variant="UiTone.Info" data-testid="billing-invoice-options-reverse-charge">
       {{ t('billing.invoiceOptionsTab.reverseCharge', { vatNumber: invoice.clientVatNumber ?? '' }) }}
     </UiAlert>
 
-    <UiCard padding="md">
+    <UiCard :padding="UiCardPadding.Md" container>
       <UiForm stacked data-testid="billing-invoice-options-form" @submit="save">
-        <UiGrid :columns="2">
+        <UiGrid :columns="2" container>
           <UiField :label="t('shared.invoiceDate')" :error="store.fieldErrors.invoiceDate">
             <UiDatePicker v-model="invoiceDate" :placeholder="t('shared.selectDate')" />
           </UiField>
@@ -121,23 +120,22 @@ onMounted(populate)
             <UiSelect v-model="paymentMethod" :options="GATEWAY_OPTIONS" :placeholder="t('shared.paymentMethod')" />
           </UiField>
           <UiField :label="t('billing.invoiceOptionsTab.taxRate')" :error="store.fieldErrors.taxRate">
-            <UiStack direction="row" gap="sm" align="center">
+            <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
               <UiNumberInput v-model="taxRate" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-invoice-tax" />
-              <UiText tone="muted" size="sm">%</UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">%</UiText>
             </UiStack>
           </UiField>
         </UiGrid>
         <UiFormActions>
           <UiButton :action="UiActionKind.Save"
-            type="submit"
-            variant="primary"
+            :type="UiButtonType.Submit"
+            :variant="UiButtonVariant.Primary"
             :loading="saving"
             data-testid="billing-invoice-options-save"
           >
-            {{ t('shared.saveChanges') }}
+            {{ t('shared.save') }}
           </UiButton>
         </UiFormActions>
-        <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="billing-invoice-options-feedback" />
       </UiForm>
     </UiCard>
 

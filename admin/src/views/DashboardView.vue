@@ -36,6 +36,7 @@ import type { SkeletonStat } from '@/utils/ui/skeletonSchema'
 import type { UiStatFigure } from '@/utils/ui/statRow'
 import { gridColumnsOf } from '@/utils/ui/skeletonLayout'
 import type { UiTabItem } from '@/utils/ui/tabs'
+import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
 import schema, { DASHBOARD_CHARTS_ROW, DASHBOARD_MAIN_ROW, DASHBOARD_PANELS_ROW, PERIOD_REVENUE_STAT_KEY } from '@/views/DashboardView.schema'
 
@@ -118,7 +119,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiStack gap="none">
+  <UiStack :gap="UiGap.None">
     <UiPageHeader v-bind="schemaHeader(schema, t, { title: greeting })" data-testid="dashboard-header">
       <template #actions>
         <UiSegmented v-model="period" :items="periodItems" :aria-label="t('dashboard.period.label')" data-testid="dashboard-period" />
@@ -133,18 +134,18 @@ onMounted(() => {
       @retry="store.fetchStats()"
     />
 
-    <UiStack v-else gap="none" class="gap-5.5">
+    <UiStack v-else :gap="UiGap.None" class="gap-5.5">
       <UiStatRow :stats="schema.stats" :figures="figures" testid-prefix="dashboard-stat" data-testid="dashboard-stats" />
 
-      <UiAlert v-if="store.chartsError" variant="warning" data-testid="dashboard-charts-error">
+      <UiAlert v-if="store.chartsError" :variant="UiTone.Warning" data-testid="dashboard-charts-error">
         {{ store.chartsError }}
       </UiAlert>
 
-      <UiAlert v-if="store.stats && store.overviewError" variant="warning" data-testid="dashboard-overview-error">
+      <UiAlert v-if="store.stats && store.overviewError" :variant="UiTone.Warning" data-testid="dashboard-overview-error">
         {{ store.overviewError }}
       </UiAlert>
 
-      <UiSplit :ratio="DASHBOARD_MAIN_ROW.ratio" gap="md" data-testid="dashboard-main">
+      <UiSplit :ratio="DASHBOARD_MAIN_ROW.ratio" :gap="UiGap.Md" data-testid="dashboard-main">
         <DashboardRevenueCard
           :income="store.charts?.income ?? null"
           :currency="store.charts?.currency ?? ''"
@@ -159,7 +160,7 @@ onMounted(() => {
         />
       </UiSplit>
 
-      <UiGrid :columns="gridColumnsOf(DASHBOARD_CHARTS_ROW.columns.length)" gap="md" data-testid="dashboard-charts">
+      <UiGrid :columns="gridColumnsOf(DASHBOARD_CHARTS_ROW.columns.length)" :gap="UiGap.Md" data-testid="dashboard-charts">
         <DashboardGrowthCard
           :new-orders="store.charts?.newOrders ?? null"
           :new-clients="store.charts?.newClients ?? null"
@@ -173,7 +174,7 @@ onMounted(() => {
         <DashboardTicketPriorityCard :priorities="store.charts?.openTickets ?? null" :loading="store.chartsLoading" />
       </UiGrid>
 
-      <UiSplit :ratio="DASHBOARD_PANELS_ROW.ratio" gap="md" data-testid="dashboard-panels">
+      <UiSplit :ratio="DASHBOARD_PANELS_ROW.ratio" :gap="UiGap.Md" data-testid="dashboard-panels">
         <DashboardServerLoad :servers="store.overview.servers" :loading="store.overviewLoading" />
         <DashboardRecentInvoices :invoices="store.overview.recentInvoices" :loading="store.overviewLoading" />
       </UiSplit>

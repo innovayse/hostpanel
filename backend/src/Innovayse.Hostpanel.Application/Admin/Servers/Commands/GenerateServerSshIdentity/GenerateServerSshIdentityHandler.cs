@@ -34,8 +34,8 @@ public sealed class GenerateServerSshIdentityHandler
     /// <summary>Key pair generator.</summary>
     private readonly ISshIdentityGenerator _generator;
 
-    /// <summary>The bundle this build ships.</summary>
-    private readonly ISshAgentBundle _bundle;
+    /// <summary>The bundles this build ships.</summary>
+    private readonly ISshAgentBundles _bundles;
 
     /// <summary>How managed servers see this HostPanel.</summary>
     private readonly SshAgentOptions _network;
@@ -44,12 +44,12 @@ public sealed class GenerateServerSshIdentityHandler
     /// <param name="context">Data context.</param>
     /// <param name="factory">Provider factory, for support and the agent profile.</param>
     /// <param name="generator">Key pair generator.</param>
-    /// <param name="bundle">The bundle this build ships.</param>
+    /// <param name="bundles">The bundles this build ships.</param>
     /// <param name="network">How managed servers see this HostPanel.</param>
     /// <param name="caller">The administrator, for the audit trail.</param>
     /// <param name="logger">Logger; also the admin audit trail.</param>
     public GenerateServerSshIdentityHandler(
-        IHostpanelDbContext context, ISshKeyProviderFactory factory, ISshIdentityGenerator generator, ISshAgentBundle bundle,
+        IHostpanelDbContext context, ISshKeyProviderFactory factory, ISshIdentityGenerator generator, ISshAgentBundles bundles,
         IOptions<SshAgentOptions> network, ICurrentUserService caller, ILogger<GenerateServerSshIdentityHandler> logger)
     {
         _caller = caller;
@@ -57,7 +57,7 @@ public sealed class GenerateServerSshIdentityHandler
         _context = context;
         _factory = factory;
         _generator = generator;
-        _bundle = bundle;
+        _bundles = bundles;
         _network = network.Value;
     }
 
@@ -92,6 +92,6 @@ public sealed class GenerateServerSshIdentityHandler
         _logger.LogInformation(
             "SSH identity of server {ServerId} issued by user {UserId}; SSH key management disabled until reinstall",
             server.Id, _caller.UserId);
-        return Result<ServerSshSetupDto>.Success(settings.ToSetupDto(server.Id, profile, _bundle, _network));
+        return Result<ServerSshSetupDto>.Success(settings.ToSetupDto(server.Id, profile, _bundles, _network));
     }
 }

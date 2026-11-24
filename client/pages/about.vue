@@ -5,7 +5,7 @@
     :sections="sections"
     :contact-title="t('about.contactTitle')"
     :contact-description="t('about.contactDescription')"
-    :contact-link="t('about.contactLink')"
+    :contact-link="t('common.contactUs')"
   />
 </template>
 

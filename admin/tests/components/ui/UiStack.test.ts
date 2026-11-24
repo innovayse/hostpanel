@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiStack from '@/components/ui/UiStack.vue'
+import { UiStackTag } from '@/utils/ui/layout'
 
 describe('UiStack', () => {
   it('stacks vertically with a medium gap by default', () => {
@@ -65,6 +66,22 @@ describe('UiStack', () => {
 
     expect(classes).toContain('flex')
     expect(classes.some(c => c === 'hidden' || c.startsWith('sm:'))).toBe(false)
+  })
+
+  it('is a div by default', () => {
+    expect(mount(UiStack).element.tagName).toBe('DIV')
+  })
+
+  it.each(Object.values(UiStackTag))('is drawn as a %s through as, keeping its layout classes', (tag) => {
+    const wrapper = mount(UiStack, { props: { as: tag } })
+
+    expect(wrapper.element.tagName).toBe(tag.toUpperCase())
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex', 'flex-col']))
+  })
+
+  it('keeps a minimum width when asked and none otherwise', () => {
+    expect(mount(UiStack, { props: { minWidth: 'xs' } }).classes()).toContain('min-w-24')
+    expect(mount(UiStack).classes().some((name) => name.startsWith('min-w-'))).toBe(false)
   })
 
   it('passes attributes through', () => {

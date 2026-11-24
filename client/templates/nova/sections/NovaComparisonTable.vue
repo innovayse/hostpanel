@@ -20,7 +20,7 @@
       class="mt-8 !border-nova-border !bg-nova-surface"
       data-testid="nova-comparison-table"
     >
-      <caption class="sr-only">{{ t('nova.comparison.scrollHint') }}</caption>
+      <UiText :as="UiTextTag.Caption" size="inherit" tone="inherit" class="sr-only">{{ t('nova.comparison.scrollHint') }}</UiText>
       <UiTableHead class="!border-nova-border !bg-transparent">
         <UiTableRow :hoverable="false">
           <UiTableTh
@@ -55,8 +55,8 @@
             <!-- A plan without this line reads as absent, never as zero. -->
             <template v-if="value">{{ value }}</template>
             <template v-else>
-              <span aria-hidden="true">—</span>
-              <span class="sr-only">{{ t('nova.comparison.absent') }}</span>
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" aria-hidden="true">—</UiText>
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="sr-only">{{ t('nova.comparison.absent') }}</UiText>
             </template>
           </UiTableTd>
         </UiTableRow>
@@ -80,6 +80,7 @@ import { orderComparisonRows } from '~/templates/nova/content'
 import { isComparable } from '~/utils/comparisonRows'
 import type { ComparisonRow } from '~/types/comparisonrow'
 import type { PlanCard } from '~/types/plancard'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ComparisonTable. */
 const props = withDefaults(defineProps<{

@@ -25,6 +25,8 @@ import type { SaveVatRatePayload, VatRateDto } from '@/types/vatrate'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDialogSize } from '@/utils/ui/dialog'
 
 /** Translates the dialog's text into the operator's language. */
 const { t } = useI18n()
@@ -75,10 +77,10 @@ const kindOptions = computed(() =>
 )
 
 /** Title of the dialog. */
-const title = computed<string>(() => (isEditMode.value ? t('vatRates.form.editTitle') : t('vatRates.form.addTitle')))
+const title = computed<string>(() => (isEditMode.value ? t('vatRates.form.editTitle') : t('vatRates.addRate')))
 
 /** Label of the submit button. */
-const submitLabel = computed<string>(() => (isEditMode.value ? t('vatRates.form.save') : t('vatRates.form.add')))
+const submitLabel = computed<string>(() => (isEditMode.value ? t('shared.save') : t('shared.create')))
 
 /** Whether every field a row needs is filled: a member state and a first day. */
 const complete = computed<boolean>(() => country.value !== '' && validFrom.value !== null)
@@ -98,7 +100,7 @@ const handleSubmit = (): void => {
 </script>
 
 <template>
-  <UiDialog :title="title" size="md" @close="emit('close')">
+  <UiDialog :title="title" :size="UiDialogSize.Md" @close="emit('close')">
     <UiForm stacked data-testid="vat-rate-form" @submit="handleSubmit">
       <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="vat-rate-form-error">
         {{ error }}
@@ -145,10 +147,10 @@ const handleSubmit = (): void => {
       </UiField>
 
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" variant="secondary" data-testid="vat-rate-form-cancel" @click="emit('close')">
-          {{ t('vatRates.form.cancel') }}
+        <UiButton :action="UiActionKind.Cancel" type="button" :variant="UiButtonVariant.Secondary" data-testid="vat-rate-form-cancel" @click="emit('close')">
+          {{ t('shared.cancel') }}
         </UiButton>
-        <UiButton :action="UiActionKind.Save" type="submit" variant="primary" :loading="saving" :disabled="!complete" data-testid="vat-rate-form-save">
+        <UiButton :action="UiActionKind.Save" type="submit" :variant="UiButtonVariant.Primary" :loading="saving" :disabled="!complete" data-testid="vat-rate-form-save">
           {{ submitLabel }}
         </UiButton>
       </UiFormActions>

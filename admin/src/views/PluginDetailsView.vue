@@ -34,17 +34,19 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
-import { useResultBanner } from '@/composables/useResultBanner'
+import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { AppRoute } from '@/lib/routes'
 import { PluginErrorCode, PluginProcessingStep, VersionRelation } from '@/types/plugin'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto, RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
+import type { ServerOptionDto } from '@/types/server'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
 import schema, { PLUGIN_LINKS_CARD } from '@/views/PluginDetailsView.schema'
+import { UiGap } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -62,10 +64,7 @@ const store = usePluginsStore()
 const integrations = useIntegrationsStore()
 
 /** The outcome line of the last action. */
-const feedback = useResultBanner()
-
-/** Tone of the outcome line: danger for a refusal, success otherwise. */
-const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
+const feedback = useOutcomeToast()
 
 /** One install the operator asked for and has not confirmed yet. */
 interface PendingInstall {
@@ -131,6 +130,18 @@ const widgetsLoading = computed<boolean>(() => store.slotWidgetsLoading[pluginId
 
 /** The sentence of the failed load of the plugin's slot widgets, null when none. */
 const widgetsError = computed<string | null>(() => store.slotWidgetsError[pluginId.value] ?? null)
+
+/** The server modules the plugin declares; empty until loaded and for a plugin that serves none. */
+const serverModules = computed<string[]>(() => store.pluginServers[pluginId.value]?.modules ?? [])
+
+/** The servers stored on the modules the plugin declares; empty until loaded. */
+const pluginServers = computed<ServerOptionDto[]>(() => store.pluginServers[pluginId.value]?.servers ?? [])
+
+/** True while the plugin's servers load, so the Settings tab shows a skeleton instead of an empty note. */
+const serversLoading = computed<boolean>(() => store.pluginServersLoading[pluginId.value] === true)
+
+/** The sentence of the failed load of the plugin's servers, null when none. */
+const serversError = computed<string | null>(() => store.pluginServersError[pluginId.value] ?? null)
 
 /** True while an install, update, uninstall or licence change of this plugin is in flight. */
 const busy = computed<boolean>(() => store.isBusy(pluginId.value))
@@ -248,14 +259,25 @@ const loadWidgets = async (): Promise<void> => {
 }
 
 /**
+ * Loads the servers the plugin serves; a plugin that is not loaded declares no server module the server can list.
+ *
+ * @returns Resolves when the request is over.
+ */
+const loadServers = async (): Promise<void> => {
+  if (plugin.value?.isLoaded === true) {
+    await store.fetchServersFor(pluginId.value)
+  }
+}
+
+/**
  * Loads everything the page shows: the list first (the plugin must be known), the registry details, the integrations
- * list and the slot widgets alongside.
+ * list, the servers and the slot widgets alongside.
  *
  * @returns Resolves when every request is over.
  */
 const load = async (): Promise<void> => {
   await Promise.all([loadList(), loadRegistry(), integrations.fetchAll()])
-  await loadWidgets()
+  await Promise.all([loadWidgets(), loadServers()])
 }
 
 /**
@@ -364,7 +386,6 @@ const clearLicenceField = (): void => {
  * @param key - The licence key.
  */
 const handleSaveKey = async (key: string): Promise<void> => {
-  feedback.clear()
   // The store reloads the details itself, so `hasLicenceKey` is current when this returns.
   const outcome = await store.saveLicenceKey(pluginId.value, key)
   if (outcome.ok) {
@@ -375,7 +396,6 @@ const handleSaveKey = async (key: string): Promise<void> => {
 
 /** Removes the stored licence key and shows the outcome. */
 const handleRemoveKey = async (): Promise<void> => {
-  feedback.clear()
   const outcome = await store.removeLicenceKey(pluginId.value)
   if (outcome.ok) {
     clearLicenceField()
@@ -392,9 +412,9 @@ const handleRestart = async (): Promise<void> => {
 
 // The same screen serves every plugin: a new id in the address loads that plugin.
 watch(pluginId, () => {
-  feedback.clear()
   void loadRegistry()
   void loadWidgets()
+  void loadServers()
 })
 
 // The removal's outcome (the restart note) stays on screen until the operator closes it, then the page is left.
@@ -409,7 +429,7 @@ onMounted(load)
 </script>
 
 <template>
-  <UiStack gap="lg" class="w-full" data-testid="plugin-details">
+  <UiStack :gap="UiGap.Lg" data-testid="plugin-details">
     <UiPageHeader
       :title="plugin?.name ?? t('pluginDetails.title')"
       :back-to="AppRoute.Plugins"
@@ -420,7 +440,6 @@ onMounted(load)
 
     <RestartBanner v-if="store.requiresRestart" :restarting="restarting" @restart="handleRestart" />
 
-    <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugin-details-feedback" />
 
     <UiDetailCards v-if="showLoading" :columns="schema.columns" loading />
 
@@ -465,6 +484,10 @@ onMounted(load)
         v-else-if="activeTab === DetailsTab.Settings"
         :plugin="plugin"
         :has-config="hasConfig"
+        :server-modules="serverModules"
+        :servers="pluginServers"
+        :servers-error="serversError"
+        :servers-loading="serversLoading"
         :widgets="widgets"
         :products="store.productOptions"
         :widgets-error="widgetsError"
@@ -472,6 +495,7 @@ onMounted(load)
         :save="(widget, productIds) => store.saveSlotWidgetProducts(pluginId, widget, productIds)"
         :binding-error="store.bindingError"
         @retry="loadWidgets"
+        @retry-servers="loadServers"
       />
       <PluginVersionList
         v-else-if="activeTab === DetailsTab.Versions && details !== null"
@@ -494,7 +518,7 @@ onMounted(load)
           @remove="handleRemoveKey"
         />
       </template>
-      <UiCard v-else-if="activeTab === DetailsTab.Changes && details !== null" padding="md" data-testid="plugin-details-changes">
+      <UiCard v-else-if="activeTab === DetailsTab.Changes && details !== null" :padding="UiCardPadding.Md" data-testid="plugin-details-changes">
         <PluginUpdateChanges
           :versions="details.versions"
           :installed-version="plugin.version"
@@ -508,7 +532,7 @@ onMounted(load)
       :variant="UiDialogVariant.Confirm"
       :title="t('pluginDetails.confirm.installTitle')"
       :message="t('pluginDetails.confirm.installMessage', { name: plugin?.name ?? '', version: pendingInstall?.version ?? '' })"
-      :confirm-label="t('pluginDetails.confirm.install')"
+      :confirm-label="t('shared.install')"
       :loading="busy"
       :tone="UiTone.Primary"
       :size="UiDialogSize.Lg"
@@ -533,7 +557,7 @@ onMounted(load)
         version: pendingInstall?.version ?? '',
         installed: plugin?.version ?? '',
       })"
-      :confirm-label="t('pluginDetails.confirm.downgrade')"
+      :confirm-label="t('pluginDetails.versions.action.older')"
       :loading="busy"
       :tone="UiTone.Warning"
       data-testid="plugin-details-downgrade-dialog"

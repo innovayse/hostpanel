@@ -55,7 +55,7 @@ internal sealed class AgentHostingResourceProvider : IHostingResourceProvider
     }
 
     /// <inheritdoc/>
-    public async Task EnsureWebsiteAsync(WebsiteOrder order, CancellationToken ct)
+    public async Task<ProvisionedWebsite> EnsureWebsiteAsync(WebsiteOrder order, CancellationToken ct)
     {
         var request = _agent.Request(EnsureWebsiteOp, order.Account);
         request["hostname"] = order.Hostname;
@@ -70,7 +70,11 @@ internal sealed class AgentHostingResourceProvider : IHostingResourceProvider
             request["link_root"] = true;
         }
 
-        await _agent.SendAsync(request, LongEnough(), ct);
+        var response = await _agent.SendAsync(request, LongEnough(), ct);
+
+        // An agent older than 1.6.0, or a server whose helper does not name the binary, sends no php_cli.
+        var phpCli = response["php_cli"]?.GetValue<string>();
+        return new ProvisionedWebsite(string.IsNullOrWhiteSpace(phpCli) ? null : phpCli);
     }
 
     /// <inheritdoc/>

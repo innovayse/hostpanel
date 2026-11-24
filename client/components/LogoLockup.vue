@@ -13,7 +13,7 @@
       :class="markClass"
       aria-hidden="true"
     />
-    <span data-testid="app-logo-name" :class="nameClass">{{ name }}</span>
+    <UiText :as="UiTextTag.Span" tone="inherit" size="inherit" data-testid="app-logo-name" :class="nameClass">{{ name }}</UiText>
   </template>
 </template>
 
@@ -28,7 +28,7 @@
  */
 import Logo from '~/components/Logo.vue'
 import { STATIC_LOGO_MARK } from '~/utils/appLogo'
-import { UiImageFit, UiImageLoading } from '~/utils/ui/enums'
+import { UiImageFit, UiImageLoading, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of the lockup with their defaults applied. */
 withDefaults(

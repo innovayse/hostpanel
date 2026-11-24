@@ -23,9 +23,9 @@ export const REPLIES_REPLIES_CARD = 'replies'
 export const REPLIES_TABS_PART: TabsSkeletonPart = {
   kind: SkeletonPartKind.Tabs,
   tabs: [
-    { key: PredefinedRepliesTab.Category, label: 'shared.addCategory' },
-    { key: PredefinedRepliesTab.Reply, label: 'support.predefinedReplies.addPredefinedReply' },
-    { key: PredefinedRepliesTab.Search, label: 'shared.searchFilter' },
+    { key: PredefinedRepliesTab.Category, label: 'support.predefinedReplies.addCategory' },
+    { key: PredefinedRepliesTab.Reply, label: 'support.predefinedReplies.addReply' },
+    { key: PredefinedRepliesTab.Search, label: 'shared.search' },
   ],
 }
 

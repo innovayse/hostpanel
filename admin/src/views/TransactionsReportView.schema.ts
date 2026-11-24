@@ -6,6 +6,7 @@ import { REPORT_FIELDS_KEY } from '@/lib/reportsSchema'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ReportSkeletonSchema } from '@/utils/ui/skeletonSchema'
 import { ReportAction } from '@/utils/ui/reportParts'
+import { UiColumnKind } from '@/utils/ui/table'
 
 /** What the screen is made of. */
 const schema: ReportSkeletonSchema = {
@@ -15,9 +16,9 @@ const schema: ReportSkeletonSchema = {
   filters: [{ key: REPORT_FIELDS_KEY, label: 'shared.fieldsToInclude' }, { key: 'date', label: 'shared.dateRange' }],
   table: {
     columns: [
-      { key: 'id', label: 'shared.id' },
+      { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
       { key: 'clientName', label: 'shared.clientName' },
-      { key: 'date', label: 'shared.date' },
+      { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'paymentMethod', label: 'shared.paymentMethod' },
       { key: 'amountIn', label: 'shared.amountIn' },
     ],

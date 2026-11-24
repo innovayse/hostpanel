@@ -47,7 +47,7 @@
         <ul
           v-if="isOpen"
           role="listbox"
-          class="absolute z-50 mt-1.5 w-full rounded-xl border border-gray-200 dark:border-white/15 bg-ui-popover shadow-xl shadow-black/10 dark:shadow-black/40 overflow-hidden py-1"
+          class="absolute z-50 mt-1.5 max-h-60 w-full overflow-y-auto overscroll-contain rounded-xl border border-gray-200 dark:border-white/15 bg-ui-popover shadow-xl shadow-black/10 dark:shadow-black/40 py-1"
         >
           <li
             v-for="option in options"
@@ -55,7 +55,7 @@
             role="option"
             :aria-selected="modelValue === option.value"
             :data-testid="`ui-select-option-${option.value}`"
-            class="flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer transition-colors duration-150 select-none"
+            class="flex min-h-11 items-center sm:min-h-0 gap-2 px-4 py-2.5 text-sm cursor-pointer transition-colors duration-150 select-none"
             :class="modelValue === option.value
               ? 'bg-primary-50 dark:bg-primary-500/20 text-primary-600 dark:text-primary-300'
               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-on-primary'"
@@ -67,7 +67,7 @@
               :stroke-width="2.5"
               class="text-primary-600 dark:text-primary-400 flex-shrink-0"
             />
-            <span :class="modelValue !== option.value ? 'ml-[22px]' : ''">{{ option.label }}</span>
+            <span class="min-w-0 break-words" :class="modelValue !== option.value ? 'ml-[22px]' : ''">{{ option.label }}</span>
           </li>
           <li v-if="!options.length" class="px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 text-center">
             {{ $t('ui.noOptions') }}

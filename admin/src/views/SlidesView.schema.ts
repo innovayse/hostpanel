@@ -7,7 +7,7 @@ import { navTitleKey } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { SkeletonKind } from '@/utils/ui/skeletonSchema'
 import type { ListSkeletonSchema } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize, UiCardRole } from '@/utils/ui/table'
 
 /** The slides list. */
 const schema: ListSkeletonSchema = {
@@ -19,7 +19,7 @@ const schema: ListSkeletonSchema = {
       { key: 'image', label: 'settings.slides.image', size: UiColumnSize.Compact },
       { key: 'title', label: 'shared.title', size: UiColumnSize.Grow },
       { key: 'audience', label: 'settings.slides.audience', size: UiColumnSize.Compact },
-      { key: 'status', label: 'shared.status', size: UiColumnSize.Compact, cardRole: UiCardRole.Badge },
+      { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'visibility', label: 'settings.slides.visibility', size: UiColumnSize.Compact },
       { key: 'actions', label: 'shared.actions', actions: true },
     ],

@@ -48,10 +48,10 @@ describe('layout maps', () => {
     expect(gridColumnClasses[6]).toContain('lg:grid-cols-6')
   })
 
-  it('counts columns by the container width, one column below 48rem', () => {
+  it('counts columns by the container width, one column below 32rem', () => {
     expect(Object.keys(containerGridColumnClasses)).toEqual(Object.keys(gridColumnClasses))
-    expect(containerGridColumnClasses[2]).toBe('grid-cols-1 @3xl:grid-cols-2')
-    expect(containerGridColumnClasses[4]).toBe('grid-cols-1 @3xl:grid-cols-2 @4xl:grid-cols-4')
+    expect(containerGridColumnClasses[2]).toBe('grid-cols-1 @lg:grid-cols-2')
+    expect(containerGridColumnClasses[4]).toBe('grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-4')
   })
 
   it('keeps two columns on a phone for a grid of small tiles', () => {

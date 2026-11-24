@@ -7,7 +7,6 @@
     <ProjectReference Include="..\Innovayse.Hostpanel.Application\Innovayse.Hostpanel.Application.csproj" />
     <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.csproj" />
     <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.Packaging\Hostpanel.Sdk.Packaging.csproj" />
-    <ProjectReference Include="..\Innovayse.Providers.CWP\Innovayse.Providers.CWP.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(InnovayseSso)' == 'true'">
     <!--
@@ -84,7 +83,7 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
-    <!-- The SSH key agent bundle (EmbeddedSshAgentBundle): everything an administrator installs on a
+    <!-- The SSH key agent bundle (SshAgentBundles): everything an administrator installs on a
          server, tests and caches excluded. Logical names keep the relative layout. -->
     <EmbeddedResource Include="..\..\agent\ssh-key-agent\**\*"
                       Exclude="..\..\agent\ssh-key-agent\tests\**;..\..\agent\ssh-key-agent\**\__pycache__\**"

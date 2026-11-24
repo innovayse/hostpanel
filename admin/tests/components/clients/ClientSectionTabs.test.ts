@@ -1,8 +1,7 @@
 /**
- * Mount tests for ClientSectionTabs: one tab per section, the selected mark, keyboard and click navigation, and
- * keeping the selected tab in view.
+ * Mount tests for ClientSectionTabs: one tab per section, the selected mark, keyboard and click navigation.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ClientSectionTabs from '@/components/clients/ClientSectionTabs.vue'
@@ -70,88 +69,6 @@ describe('ClientSectionTabs', () => {
     const wrapper = await mountTabs('/clients/12/summary')
 
     expect(wrapper.get('[data-testid="client-nav-strip"] [role="tablist"]').attributes('aria-label')).toBe('Client section tabs')
-  })
-
-  it('brings the selected tab into view on load and when the route changes', async () => {
-    const scrolled: string[] = []
-    const original = HTMLElement.prototype.scrollIntoView
-    HTMLElement.prototype.scrollIntoView = function scrollIntoView(this: HTMLElement) {
-      scrolled.push(this.getAttribute('data-testid') ?? '')
-    }
-    try {
-      const { router } = await mountWithRouter('/clients/12/log')
-      await flushPromises()
-      expect(scrolled).toContain('client-tab-log')
-
-      await router.push('/clients/12/invoices')
-      await flushPromises()
-      expect(scrolled).toContain('client-tab-invoices')
-    } finally {
-      HTMLElement.prototype.scrollIntoView = original
-    }
-  })
-
-  it('brings the selected tab back into view when the strip changes size, and stops watching once left', async () => {
-    /** Callbacks of the observers the component created, so the test can play a resize. */
-    const callbacks: ResizeObserverCallback[] = []
-    /** How many observers were disconnected. */
-    let disconnected = 0
-    /** Every element an observer was asked to watch. */
-    const observed: Element[] = []
-    vi.stubGlobal('ResizeObserver', class {
-      /**
-       * Keeps the callback to play later.
-       *
-       * @param callback - The component's resize callback.
-       */
-      constructor(callback: ResizeObserverCallback) {
-        callbacks.push(callback)
-      }
-
-      /**
-       * Records the observed element.
-       *
-       * @param target - The element the component watches.
-       */
-      observe = (target: Element): void => {
-        observed.push(target)
-      }
-
-      /** Not used by the component. */
-      unobserve = (): void => {}
-
-      /** Counts the disconnect on unmount. */
-      disconnect = (): void => {
-        disconnected += 1
-      }
-    })
-    const scrolled: string[] = []
-    const original = HTMLElement.prototype.scrollIntoView
-    HTMLElement.prototype.scrollIntoView = function scrollIntoView(this: HTMLElement) {
-      scrolled.push(this.getAttribute('data-testid') ?? '')
-    }
-    try {
-      const { wrapper } = await mountWithRouter('/clients/12/log')
-      await flushPromises()
-      scrolled.length = 0
-      // The strip's own scroll edge reader watches it too (the tab strip's child mounts first), then this component.
-      expect(callbacks).toHaveLength(2)
-      // The list keeps its box when a tab changes width (it scrolls), so every tab is watched as well.
-      expect(observed).toContain(wrapper.get('[role="tablist"]').element)
-      for (const tab of wrapper.findAll('[role="tab"]')) {
-        expect(observed).toContain(tab.element)
-      }
-
-      callbacks[1]?.([], {} as ResizeObserver)
-      await flushPromises()
-      expect(scrolled).toEqual(['client-tab-log'])
-
-      wrapper.unmount()
-      expect(disconnected).toBe(2)
-    } finally {
-      HTMLElement.prototype.scrollIntoView = original
-      vi.unstubAllGlobals()
-    }
   })
 
   it('opens the section of the tab that is picked', async () => {

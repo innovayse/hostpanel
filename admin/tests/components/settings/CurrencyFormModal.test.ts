@@ -29,7 +29,7 @@ describe('CurrencyFormModal', () => {
   it('opens empty in create mode with an editable code', async () => {
     const { wrapper } = await mountScreen(CurrencyFormModal, { currency: null, saving: false })
 
-    expect(wrapper.get('h2').text()).toBe('Add Currency')
+    expect(wrapper.get('h2').text()).toBe('Create currency')
     expect(valueOf(wrapper, 'currency-form-code')).toBe('')
     expect(wrapper.get('[data-testid="currency-form-code"]').attributes('disabled')).toBeUndefined()
   })
@@ -76,7 +76,7 @@ describe('CurrencyFormModal', () => {
     const { wrapper } = await mountScreen(CurrencyFormModal, { currency: eur, saving: true })
 
     expect(wrapper.get('[data-testid="currency-form-save"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="currency-form-save"]').text()).toBe('Save Changes')
+    expect(wrapper.get('[data-testid="currency-form-save"]').text()).toBe('Save')
     await wrapper.get('[data-testid="currency-form-cancel"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
   })

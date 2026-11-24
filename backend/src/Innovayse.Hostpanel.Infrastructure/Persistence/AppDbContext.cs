@@ -136,6 +136,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the cancellation requests table.</summary>
     public DbSet<CancellationRequest> CancellationRequests => Set<CancellationRequest>();
 
+    /// <summary>Gets the records of the free trials clients used, one per client and product.</summary>
+    public DbSet<ClientProductTrial> ClientProductTrials => Set<ClientProductTrial>();
+
     /// <summary>Gets the plan change requests table.</summary>
     public DbSet<ServiceChangeRequest> ServiceChangeRequests => Set<ServiceChangeRequest>();
 
@@ -406,7 +409,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
     /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
-    /// another call created the service of the same order line first, or another attempt recorded the renewal of the same
+    /// another call created the service of the same order line first, or another call recorded the same client's trial of
+    /// the product first, or another attempt recorded the renewal of the same
     /// order line first, or another call opened a plan change request for the same service first, or another client
     /// group has the same name (the unique name index was violated), or a client and its group were saved against each
     /// other (the foreign key from the client to its group was violated).
@@ -525,6 +529,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // OrderServiceHandler answers it by reading the service the winner created, so the line gets one service.
             throw new ConcurrencyConflictException(
                 "Another attempt created the service of the same order line concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: ClientProductTrialConfiguration.ClientProductIndex,
+        })
+        {
+            // Two starts of one client's trial of a product recorded it at once: the same lost race as a concurrent save.
+            // OrderServiceHandler answers it as ORDER_TRIAL_ALREADY_USED, so the client gets one trial.
+            throw new ConcurrencyConflictException(
+                "Another call recorded the same client's trial of the product concurrently.", ex);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {

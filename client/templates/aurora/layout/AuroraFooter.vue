@@ -3,7 +3,7 @@
     pb-24 clears the fixed contact button, which otherwise sits on top of the
     bottom row once the page is scrolled to the end.
   -->
-  <footer class="relative border-t border-line2 bg-[color:var(--footer)] shadow-[0_-12px_32px_-20px_rgba(20,22,42,0.22)] pb-24 pt-[clamp(40px,6vw,56px)] font-aurora">
+  <UiBlock :as="UiBlockTag.Footer" class="relative border-t border-line2 bg-[color:var(--footer)] shadow-[0_-12px_32px_-20px_rgba(20,22,42,0.22)] pb-24 pt-[clamp(40px,6vw,56px)] font-aurora">
     <UiContainer>
       <UiGrid cols="auto" gap="xl">
         <UiStack gap="none" class="min-w-0">
@@ -98,21 +98,21 @@
         justify="between"
         class="mt-11 border-t border-line pt-6"
       >
-        <UiText as="span" size="sm" tone="inherit" class="text-mut2">© {{ year }} {{ siteName }}</UiText>
+        <UiText :as="UiTextTag.Span" size="sm" tone="inherit" class="text-mut2">© {{ year }} {{ siteName }}</UiText>
         <UiStack direction="row" wrap align="center" gap="none" class="gap-x-2.5 gap-y-1 text-sm text-mut2">
-          <UiText v-if="taxId" as="span" size="sm" tone="inherit">{{ t('aurora.footer.taxId') }} {{ taxId }}</UiText>
-          <UiText v-if="taxId && (contactEmail || phone)" as="span" size="sm" tone="inherit">·</UiText>
+          <UiText v-if="taxId" :as="UiTextTag.Span" size="sm" tone="inherit">{{ t('aurora.footer.taxId') }} {{ taxId }}</UiText>
+          <UiText v-if="taxId && (contactEmail || phone)" :as="UiTextTag.Span" size="sm" tone="inherit">·</UiText>
           <UiFooterLink v-if="contactEmail" testid="aurora-footer-email" :href="`mailto:${contactEmail}`" :variant="UiFooterLinkVariant.Aurora">
             {{ contactEmail }}
           </UiFooterLink>
-          <UiText v-if="contactEmail && phone" as="span" size="sm" tone="inherit">·</UiText>
+          <UiText v-if="contactEmail && phone" :as="UiTextTag.Span" size="sm" tone="inherit">·</UiText>
           <UiFooterLink v-if="phone" testid="aurora-footer-phone" :href="`tel:${phoneLink}`" :variant="UiFooterLinkVariant.Aurora">
             {{ phone }}
           </UiFooterLink>
         </UiStack>
       </UiStack>
     </UiContainer>
-  </footer>
+  </UiBlock>
 </template>
 
 <script setup lang="ts">
@@ -127,7 +127,7 @@
 import LogoLockup from '~/components/LogoLockup.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useContactDetails } from '~/composables/useContactDetails'
-import { UiFooterLinkVariant } from '~/utils/ui/enums'
+import { UiBlockTag, UiFooterLinkVariant, UiTextTag } from '~/utils/ui/enums'
 import {
   SITE_ACCEPTABLE_USE_PATH,
   SITE_ABOUT_PATH,

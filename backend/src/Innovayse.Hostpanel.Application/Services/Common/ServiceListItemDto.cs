@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="BillingCycle">The billing cycle.</param>
 /// <param name="Status">Current lifecycle status of the service.</param>
 /// <param name="NextDueDate">Next renewal date, or <see langword="null"/> if not yet active.</param>
+/// <param name="TrialStatus">Where the service is in its free trial, or <see langword="null"/> when it is not a trial.</param>
+/// <param name="TrialEndsAt">When the free trial ends, or <see langword="null"/> when it is not a trial.</param>
+/// <param name="TrialDaysLeft">Whole days left of an active trial, rounded up and never negative; <see langword="null"/> unless the trial is active.</param>
 public sealed record ServiceListItemDto(
     int Id,
     int ClientId,
@@ -24,4 +27,7 @@ public sealed record ServiceListItemDto(
     string PriceCurrency,
     BillingCycle BillingCycle,
     ServiceStatus Status,
-    DateTimeOffset? NextDueDate);
+    DateTimeOffset? NextDueDate,
+    TrialStatus? TrialStatus,
+    DateTimeOffset? TrialEndsAt,
+    int? TrialDaysLeft);

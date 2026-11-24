@@ -78,6 +78,9 @@ public static class StatusMapping
             // Exact rows: the product's live-service cap or its one-per-client rule refuses the order, a state conflict
             // whose names carry no CONFLICT / ALREADY token.
             "ORDER_PRODUCT_SOLD_OUT" or "ORDER_PRODUCT_ONE_PER_CLIENT" => new(409, "Conflict"),
+            // Exact row: the product has no free trial to order, a state conflict whose name carries no CONFLICT / ALREADY token.
+            // (ORDER_TRIAL_ALREADY_USED reaches 409 through the ALREADY token arm.)
+            "PRODUCT_TRIAL_NOT_AVAILABLE" => new(409, "Conflict"),
             // Exact rows: fraud detection refused the request, a policy refusal and not a malformed request.
             "ORDER_FRAUD_REJECTED" or "REGISTRATION_FRAUD_REJECTED" => new(403, "Forbidden"),
             // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was

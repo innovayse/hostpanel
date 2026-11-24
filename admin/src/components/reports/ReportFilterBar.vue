@@ -12,8 +12,10 @@ import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiFilterTrigger from '@/components/ui/UiFilterTrigger.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
-import { UiDrawerPresentation } from '@/utils/ui/drawer'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDrawerPresentation } from '@/utils/ui/drawer'
+import { UiAlignItems } from '@/utils/ui/layout'
 
 const { t } = useI18n()
 
@@ -43,7 +45,7 @@ const presentation = useDrawerPresentation()
 </script>
 
 <template>
-  <UiStack v-if="presentation === UiDrawerPresentation.Sheet" class="mb-6" align="start" data-testid="report-filters">
+  <UiStack v-if="presentation === UiDrawerPresentation.Sheet" class="mb-6" :align="UiAlignItems.Start" data-testid="report-filters">
     <UiFilterTrigger
       :count="activeCount"
       :resettable="clearable"
@@ -65,10 +67,10 @@ const presentation = useDrawerPresentation()
     <slot />
 
     <template #actions>
-      <UiButton :action="UiActionKind.Generate" variant="primary" data-testid="report-generate" @click="emit('generate')">
+      <UiButton :action="UiActionKind.Generate" :variant="UiButtonVariant.Primary" data-testid="report-generate" @click="emit('generate')">
         {{ generateLabel ?? t('shared.generate') }}
       </UiButton>
-      <UiButton :action="UiActionKind.Clear" v-if="clearable" variant="ghost" data-testid="report-clear" @click="emit('clear')">
+      <UiButton :action="UiActionKind.Clear" v-if="clearable" :variant="UiButtonVariant.Ghost" data-testid="report-clear" @click="emit('clear')">
         {{ t('shared.clear') }}
       </UiButton>
     </template>

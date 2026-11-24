@@ -1,102 +1,107 @@
 <template>
-  <UiCard class="space-y-4" data-testid="bundle-domain">
-    <div>
-      <UiHeading :level="2" size="label" class="tracking-widest">{{ $t('bundles.domain.title') }}</UiHeading>
-      <UiText size="sm" tone="muted" class="mt-1" data-testid="bundle-domain-years">{{ $t('domains.years', years) }}</UiText>
-    </div>
+  <UiCard data-testid="bundle-domain">
+    <UiStack>
+      <UiStack gap="none">
+        <UiHeading :level="2" size="label" class="tracking-widest">{{ $t('bundles.domain.title') }}</UiHeading>
+        <UiText size="sm" tone="muted" class="mt-1" data-testid="bundle-domain-years">{{ $t('domains.years', years) }}</UiText>
+      </UiStack>
 
-    <UiAlert v-if="error" variant="error" data-testid="bundle-domain-error">{{ error }}</UiAlert>
+      <UiAlert v-if="error" variant="error" data-testid="bundle-domain-error">{{ error }}</UiAlert>
 
-    <!-- The chosen domain -->
-    <div v-if="selected" class="flex items-center justify-between gap-3" data-testid="bundle-domain-selected">
-      <div class="min-w-0">
-        <UiText weight="semibold" class="break-all">{{ selected.name }}</UiText>
-        <UiText size="xs" tone="muted">{{ selected.action === DomainOrderAction.Transfer ? $t('domains.tabTransfer') : $t('domains.tabRegister') }}</UiText>
-      </div>
-      <UiButton variant="subtle" size="sm" data-testid="bundle-domain-change" @click="emit('clear')">
-        {{ $t('bundles.domain.change') }}
-      </UiButton>
-    </div>
+      <!-- The chosen domain -->
+      <UiStack v-if="selected" direction="row" align="center" justify="between" gap="sm" data-testid="bundle-domain-selected">
+        <UiStack gap="none" class="min-w-0">
+          <UiText weight="semibold" class="break-all">{{ selected.name }}</UiText>
+          <UiText size="xs" tone="muted">{{ selected.action === DomainOrderAction.Transfer ? $t('domains.tabTransfer') : $t('domains.tabRegister') }}</UiText>
+        </UiStack>
+        <UiButton variant="subtle" size="sm" icon="mdi:pencil-outline" data-testid="bundle-domain-change" @click="emit('clear')">
+          {{ $t('bundles.domain.change') }}
+        </UiButton>
+      </UiStack>
 
-    <template v-else>
-      <UiChipTabs
-        v-model="action"
-        :tabs="actionTabs"
-        :label="$t('bundles.domain.actionLabel')"
-        testid="bundle-domain-tabs"
-      />
+      <template v-else>
+        <UiChipTabs
+          v-model="action"
+          :tabs="actionTabs"
+          :label="$t('bundles.domain.actionLabel')"
+          testid="bundle-domain-tabs"
+        />
 
-      <!-- Register: search a name across the offered extensions -->
-      <div v-if="action === DomainOrderAction.Register" class="space-y-3">
-        <UiForm spacing="none" @submit="emit('search', term)">
-          <div class="flex flex-wrap items-end gap-2">
-            <UiInput
-              v-model="term"
-              :placeholder="$t('domains.placeholder')"
-              :disabled="!hasZones"
-              class="min-w-[200px] flex-1"
-              testid="bundle-domain-input"
-            />
-            <UiButton type="submit" :disabled="!hasZones" data-testid="bundle-domain-search">{{ $t('domains.search') }}</UiButton>
-          </div>
+        <!-- Register: search a name across the offered extensions -->
+        <UiStack v-if="action === DomainOrderAction.Register" gap="sm">
+          <UiForm spacing="none" @submit="emit('search', term)">
+            <UiStack direction="row" wrap align="end" gap="xs">
+              <UiInput
+                v-model="term"
+                :placeholder="$t('domains.placeholder')"
+                :disabled="!hasZones"
+                class="min-w-[200px] flex-1"
+                testid="bundle-domain-input"
+              />
+              <UiButton type="submit" variant="primary" icon="mdi:magnify" :disabled="!hasZones" data-testid="bundle-domain-search">{{ $t('domains.search') }}</UiButton>
+            </UiStack>
+          </UiForm>
+
+          <UiText v-if="!hasZones" size="sm" tone="muted" data-testid="bundle-domain-no-zones">{{ $t('aurora.domainSearch.noZones') }}</UiText>
+          <UiSkeleton v-else-if="pending" :lines="3" data-testid="bundle-domain-pending" />
+          <UiStack v-else gap="xs">
+            <UiCard
+              v-for="result in results"
+              :key="result.name"
+              padding="sm" class="flex flex-wrap items-center justify-between gap-3 shadow-none"
+              :data-testid="`bundle-domain-result-${result.name}`"
+            >
+              <UiStack direction="row" align="center" gap="sm" class="min-w-0">
+                <UiText class="break-all font-mono">{{ result.name }}</UiText>
+                <UiBadge size="sm" rounded :variant="AVAILABILITY_TONES[result.status]">
+                  {{ $t(`aurora.domainSearch.${result.status}`) }}
+                </UiBadge>
+              </UiStack>
+              <UiStack direction="row" align="center" gap="sm">
+                <UiText weight="bold">{{ result.price }}</UiText>
+                <UiButton
+                  v-if="result.status === DomainResultStatus.Available"
+                  variant="primary"
+                  size="sm"
+                  icon="mdi:check"
+                  :data-testid="`bundle-domain-pick-${result.name}`"
+                  @click="emit('select', { action: DomainOrderAction.Register, name: result.name, eppCode: '' })"
+                >
+                  {{ $t('common.select') }}
+                </UiButton>
+                <UiButton
+                  v-else-if="result.status === DomainResultStatus.Taken"
+                  variant="subtle"
+                  size="sm"
+                  icon="mdi:swap-horizontal"
+                  :data-testid="`bundle-domain-transfer-${result.name}`"
+                  @click="startTransfer(result.name)"
+                >
+                  {{ $t('aurora.domainSearch.transfer') }}
+                </UiButton>
+              </UiStack>
+            </UiCard>
+          </UiStack>
+        </UiStack>
+
+        <!-- Transfer: the name and its authorization code -->
+        <UiForm v-else spacing="sm" @submit="submitTransfer">
+          <UiInput
+            v-model="transferName"
+            :label="$t('domains.transferDomainLabel')"
+            :placeholder="$t('domains.transferDomainPlaceholder')"
+            testid="bundle-domain-transfer-name"
+          />
+          <UiInput
+            v-model="transferEpp"
+            :label="$t('domains.transferAuthLabel')"
+            :placeholder="$t('domains.transferEppPlaceholder')"
+            testid="bundle-domain-transfer-epp"
+          />
+          <UiButton type="submit" variant="primary" full-width icon="mdi:swap-horizontal" data-testid="bundle-domain-transfer-submit">{{ $t('bundles.domain.useTransfer') }}</UiButton>
         </UiForm>
-
-        <UiText v-if="!hasZones" size="sm" tone="muted" data-testid="bundle-domain-no-zones">{{ $t('aurora.domainSearch.noZones') }}</UiText>
-        <UiSkeleton v-else-if="pending" :lines="3" data-testid="bundle-domain-pending" />
-        <div v-else class="space-y-2">
-          <UiCard
-            v-for="result in results"
-            :key="result.name"
-            padding="sm" class="flex flex-wrap items-center justify-between gap-3 shadow-none"
-            :data-testid="`bundle-domain-result-${result.name}`"
-          >
-            <div class="flex min-w-0 items-center gap-3">
-              <UiText class="break-all font-mono">{{ result.name }}</UiText>
-              <UiBadge size="sm" rounded :variant="AVAILABILITY_TONES[result.status]">
-                {{ $t(`aurora.domainSearch.${result.status}`) }}
-              </UiBadge>
-            </div>
-            <div class="flex items-center gap-3">
-              <UiText weight="bold">{{ result.price }}</UiText>
-              <UiButton
-                v-if="result.status === DomainResultStatus.Available"
-                size="sm"
-                :data-testid="`bundle-domain-pick-${result.name}`"
-                @click="emit('select', { action: DomainOrderAction.Register, name: result.name, eppCode: '' })"
-              >
-                {{ $t('bundles.domain.pick') }}
-              </UiButton>
-              <UiButton
-                v-else-if="result.status === DomainResultStatus.Taken"
-                variant="subtle"
-                size="sm"
-                :data-testid="`bundle-domain-transfer-${result.name}`"
-                @click="startTransfer(result.name)"
-              >
-                {{ $t('aurora.domainSearch.transfer') }}
-              </UiButton>
-            </div>
-          </UiCard>
-        </div>
-      </div>
-
-      <!-- Transfer: the name and its authorization code -->
-      <UiForm v-else spacing="sm" @submit="submitTransfer">
-        <UiInput
-          v-model="transferName"
-          :label="$t('domains.transferDomainLabel')"
-          :placeholder="$t('domains.transferDomainPlaceholder')"
-          testid="bundle-domain-transfer-name"
-        />
-        <UiInput
-          v-model="transferEpp"
-          :label="$t('domains.transferAuthLabel')"
-          :placeholder="$t('domains.transferEppPlaceholder')"
-          testid="bundle-domain-transfer-epp"
-        />
-        <UiButton type="submit" full-width data-testid="bundle-domain-transfer-submit">{{ $t('bundles.domain.useTransfer') }}</UiButton>
-      </UiForm>
-    </template>
+      </template>
+    </UiStack>
   </UiCard>
 </template>
 

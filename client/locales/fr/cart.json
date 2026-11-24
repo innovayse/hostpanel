@@ -1,0 +1,23 @@
+{
+  "cart": {
+    "title": "Votre panier",
+    "subtitle": "Vérifiez les offres sélectionnées avant de passer à la caisse",
+    "empty": "Votre panier est vide",
+    "emptyHint": "Ajoutez une offre d'hébergement ou un produit pour commencer",
+    "browseHosting": "Voir les offres d'hébergement",
+    "summary": "Récapitulatif de la commande",
+    "total": "Total",
+    "clearCart": "Vider le panier",
+    "checkout": "Passer à la caisse",
+    "secureCheckout": "Paiement sécurisé. Vos données sont chiffrées.",
+    "items": "articles",
+    "itemsCount": "articles",
+    "staleCurrencyNotice": "Ces articles ont été ajoutés dans une devise que vous n'utilisez plus. Retirez-les et ajoutez-les de nouveau pour voir leur prix actuel.",
+    "currency": {
+      "label": "Devise",
+      "changeConfirm": "Changer de devise vide votre panier, car les prix doivent être recalculés dans la nouvelle devise. Continuer ?",
+      "placeholder": "Sélectionnez une devise"
+    },
+    "emptyDesc": "Ajoutez une offre d'hébergement ou un produit pour commencer"
+  }
+}

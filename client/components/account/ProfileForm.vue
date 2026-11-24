@@ -133,11 +133,11 @@
 
     <template #actions>
       <UiButton type="button" size="sm" variant="subtle" data-testid="account-profile-cancel" @click="emit('cancel')">
-        {{ $t('client.profile.cancel') }}
+        {{ $t('common.cancel') }}
       </UiButton>
-      <UiButton type="submit" size="sm" :loading="saving" data-testid="account-profile-save">
+      <UiButton variant="primary" type="submit" size="sm" :loading="saving" data-testid="account-profile-save">
         <Check v-if="!saving" :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.profile.save') }}
+        {{ $t('common.save') }}
       </UiButton>
     </template>
   </UiForm>

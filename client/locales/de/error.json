@@ -12,8 +12,6 @@
       "title": "Serverfehler",
       "message": "Bei uns ist etwas schiefgelaufen. Wir arbeiten an der Behebung."
     },
-    "goBack": "Zurück",
-    "goHome": "Zur Startseite",
     "helpText": "Wenn Sie Hilfe benötigen, können Sie uns gern",
     "contactUs": "kontaktieren",
     "default": {

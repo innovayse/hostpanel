@@ -3,7 +3,7 @@
     <UiBackdrop variant="aurora" />
 
     <UiContainer class="relative">
-      <UiStack as="section" align="center" gap="none" class="relative pb-9 pt-[clamp(48px,7vw,80px)] text-center">
+      <UiStack :as="UiStackTag.Section" align="center" gap="none" class="relative pb-9 pt-[clamp(48px,7vw,80px)] text-center">
         <UiText tone="inherit" size="inherit" :class="[EYEBROW_CLASS, 'text-ac1']">{{ t('aurora.domainsPage.eyebrow') }}</UiText>
         <UiHeading :level="1" size="bare" :class="[PAGE_TITLE_CLASS, 'mt-3.5']" data-testid="domains-title">
           {{ t('aurora.domainsPage.title') }}
@@ -50,6 +50,7 @@ import { EYEBROW_CLASS, PAGE_TITLE_CLASS } from '~/templates/aurora/typography'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import type { DomainResult } from '~/types/domainresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
+import { UiStackTag } from '~/utils/ui/enums'
 
 withDefaults(defineProps<{
   /** Priced extensions, for the price table and the "has zones" decision. */

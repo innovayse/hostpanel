@@ -1,5 +1,7 @@
 <template>
-  <div
+  <UiStack
+    gap="none"
+    align="center"
     class="text-center animate-reveal-up motion-reduce:animate-none"
     data-testid="section-header"
   >
@@ -12,7 +14,7 @@
     <UiText v-if="subtitle" tone="muted" size="lg" class="max-w-[75ch] mx-auto" data-testid="section-header-subtitle">
       {{ subtitle }}
     </UiText>
-  </div>
+  </UiStack>
 </template>
 
 <script setup lang="ts">

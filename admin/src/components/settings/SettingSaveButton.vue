@@ -8,6 +8,7 @@
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 
 const { t } = useI18n()
 
@@ -27,12 +28,12 @@ const emit = defineEmits<{
 
 <template>
   <UiButton :action="UiActionKind.Save"
-    type="button"
-    variant="primary"
+    :type="UiButtonType.Button"
+    :variant="UiButtonVariant.Primary"
     :loading="saving"
     :disabled="!dirty"
     @click="emit('click')"
   >
-    {{ t('common.save') }}
+    {{ t('shared.save') }}
   </UiButton>
 </template>

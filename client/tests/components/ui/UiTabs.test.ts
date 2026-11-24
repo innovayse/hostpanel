@@ -1,7 +1,8 @@
 /**
- * Unit tests for UiTabs: the tab list semantics, selection, the badge and the panel slot.
+ * Unit tests for UiTabs: the tab list semantics, selection, the badge, the panel slot and keeping the active tab in view.
  */
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiTabs from '~/components/ui/UiTabs.vue'
 
@@ -60,5 +61,60 @@ describe('UiTabs', () => {
 
     expect(wrapper.find('[role="tablist"]').classes()).toContain('overflow-x-auto')
     expect(wrapper.find('[data-testid="ui-tab-billing"]').classes()).toContain('shrink-0')
+  })
+})
+
+describe('UiTabs reveal of the active tab', () => {
+  /**
+   * Replaces `scrollIntoView` with a recorder for the duration of one test.
+   *
+   * @returns The ids of the tabs scrolled into view and the restore function.
+   */
+  const recordScrolls = () => {
+    const scrolled: string[] = []
+    const original = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = function scrollIntoView(this: HTMLElement) {
+      scrolled.push(this.getAttribute('data-testid') ?? '')
+    }
+    return { scrolled, restore: () => { HTMLElement.prototype.scrollIntoView = original } }
+  }
+
+  it('scrolls the active tab into view on first draw', () => {
+    const { scrolled, restore } = recordScrolls()
+    try {
+      mountWithKit(UiTabs, { props: { tabs: TABS, modelValue: 'billing' } })
+
+      expect(scrolled).toEqual(['ui-tab-billing'])
+    } finally {
+      restore()
+    }
+  })
+
+  it('scrolls a newly active tab into view when the selection changes', async () => {
+    const { scrolled, restore } = recordScrolls()
+    try {
+      const wrapper = mountWithKit(UiTabs, { props: { tabs: TABS, modelValue: 'overview' } })
+      scrolled.length = 0
+
+      await wrapper.setProps({ modelValue: 'billing' })
+      await nextTick()
+
+      expect(scrolled).toEqual(['ui-tab-billing'])
+    } finally {
+      restore()
+    }
+  })
+
+  it('fades the side of the bar that still hides tabs', async () => {
+    const wrapper = mountWithKit(UiTabs, { props: { tabs: TABS, modelValue: 'overview' }, attachToBody: true })
+    const list = wrapper.find('[role="tablist"]').element as HTMLElement
+    for (const [key, value] of Object.entries({ clientWidth: 100, scrollWidth: 300, scrollLeft: 0 })) {
+      Object.defineProperty(list, key, { value, configurable: true, writable: true })
+    }
+    list.dispatchEvent(new Event('scroll'))
+    await nextTick()
+
+    expect(wrapper.find('[role="tablist"]').classes().join(' ')).toContain('mask-image')
+    wrapper.unmount()
   })
 })

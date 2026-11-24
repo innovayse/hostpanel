@@ -772,6 +772,9 @@
   <data name="OrderServiceClientIdInvalid" xml:space="preserve">
     <value>Indique un cliente válido.</value>
   </data>
+  <data name="StartTrialProductIdInvalid" xml:space="preserve">
+    <value>Indique un producto válido.</value>
+  </data>
   <data name="OrderServiceProductIdInvalid" xml:space="preserve">
     <value>Indique un producto válido.</value>
   </data>

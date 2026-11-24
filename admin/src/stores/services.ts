@@ -20,6 +20,7 @@ import type {
   ServiceListItem,
   ServiceNotesPayload,
   ServiceStatus,
+  ServiceSyncResult,
 } from '@/types/service'
 import { DEFAULT_PAGE_SIZE, LOOKUP_PAGE_SIZE } from '@/lib/limits'
 
@@ -50,6 +51,9 @@ export const useServicesStore = defineStore('services', () => {
 
   /** Per-field messages of the last refused save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
+
+  /** What the last panel sync did about each field, null until one ran and after it is cleared. */
+  const syncResult = ref<ServiceSyncResult | null>(null)
 
   /**
    * Loads one page of services. The page, the search and the filters come from the list's address, so the store keeps
@@ -243,6 +247,33 @@ export const useServicesStore = defineStore('services', () => {
     mutate(() => api.changePackage(id, newPackage))
 
   /**
+   * Reconciles a service with its hosting panel and keeps what was done in `syncResult`. The platform is the source of
+   * truth: its status and package are applied to the panel, the password too when asked, and the panel's IP address is
+   * recorded on the service.
+   *
+   * @param id - Service primary key.
+   * @param pushPassword - Whether the stored password is also set on the panel.
+   * @returns True when the panel was read and compared; false when refused (see `actionError`).
+   */
+  const syncWithPanel = async (id: number | string, pushPassword: boolean): Promise<boolean> => {
+    syncResult.value = null
+    const result = await runAction(actionError, () => api.syncServiceWithPanel(id, { pushPassword }), fieldErrors)
+    if (result.ok) {
+      syncResult.value = result.value
+    }
+    return result.ok
+  }
+
+  /**
+   * Forgets the result of the last panel sync, so the next dialog starts clean.
+   *
+   * @returns Nothing.
+   */
+  const clearSyncResult = (): void => {
+    syncResult.value = null
+  }
+
+  /**
    * Suspends a service.
    *
    * @param id - Service primary key.
@@ -271,9 +302,9 @@ export const useServicesStore = defineStore('services', () => {
     mutate(() => api.terminateService(id, { reason }))
 
   return {
-    services, current, pageSize, totalCount, loading, error, actionError, fieldErrors,
+    services, current, pageSize, totalCount, loading, error, actionError, fieldErrors, syncResult,
     fetchAll, fetchClientPage, fetchById, fetchClientServices,
     addExisting, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
-    fetchPanelLoginUrl, provision, changePassword, changePackage, suspend, unsuspend, terminate,
+    fetchPanelLoginUrl, provision, changePassword, changePackage, syncWithPanel, clearSyncResult, suspend, unsuspend, terminate,
   }
 })

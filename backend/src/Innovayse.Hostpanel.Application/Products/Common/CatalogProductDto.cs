@@ -19,6 +19,8 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="IsFeatured">Whether the product is the group's recommended plan.</param>
 /// <param name="SortOrder">Operator-defined position inside the group, lowest first.</param>
 /// <param name="Sku">The normalised stock-keeping unit that names the product, or null when none is set.</param>
+/// <param name="TrialEnabled">Whether the product offers a free trial.</param>
+/// <param name="TrialDays">The length of the free trial in days; 0 when the trial is off.</param>
 public sealed record CatalogProductDto(
     int Id,
     int GroupId,
@@ -31,4 +33,6 @@ public sealed record CatalogProductDto(
     IReadOnlyList<ProductPriceDto> Prices,
     bool IsFeatured,
     int SortOrder,
-    string? Sku);
+    string? Sku,
+    bool TrialEnabled,
+    int TrialDays);

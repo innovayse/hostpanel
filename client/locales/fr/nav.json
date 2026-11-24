@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "products": "Produits",
+    "hosting": "Hébergement",
+    "domains": "Domaines",
+    "clientArea": "Espace client",
+    "hostingDesc": "Offres d'hébergement web mutualisé",
+    "openMenu": "Ouvrir le menu",
+    "allHosting": "Toutes les offres d'hébergement",
+    "vpsDesc": "Votre propre serveur virtuel avec accès root",
+    "serversDesc": "Des machines complètes pour les charges de travail intensives",
+    "emailDesc": "Des boîtes aux lettres personnalisées pour votre équipe",
+    "sslDesc": "Chiffrez le trafic et gagnez la confiance des visiteurs",
+    "backupDesc": "Des copies automatiques que vous pouvez restaurer rapidement",
+    "support": "Support",
+    "help": "Centre d'aide",
+    "helpDesc": "Guides et tutoriels",
+    "faq": "FAQ",
+    "faqDesc": "Des réponses rapides aux questions courantes",
+    "contact": "Nous contacter",
+    "contactDesc": "Parlez à notre équipe",
+    "menu": "Menu",
+    "primary": "Navigation principale",
+    "preferences": "Préférences"
+  }
+}

@@ -15,6 +15,7 @@ import { applyListFilter } from '../helpers/listFilter'
 import { optionValues } from '../helpers/select'
 import { json, problem } from '../helpers/fetch'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../helpers/toasts'
 
 /** One pending order as the list endpoint returns it. */
 const pendingOrder = {
@@ -187,7 +188,7 @@ describe('OrdersListView', () => {
     await wrapper.get('[data-testid="orders-accept-1"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="orders-action-feedback"]').text()).toContain('Order cannot be accepted.')
+    expect(toastMessages().join(' ')).toContain('Order cannot be accepted.')
   })
 
   it('shows the API sentence when the load is refused', async () => {

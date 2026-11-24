@@ -9,7 +9,7 @@
       :message="$t('client.resetPassword.invalidMessage')"
       data-testid="reset-invalid"
     >
-      <UiLink :to="CLIENT_FORGOT_PATH" :underline="false" testid="reset-request-new" class="mt-3 text-sm font-medium">
+      <UiLink tone="primary" :to="CLIENT_FORGOT_PATH" :underline="false" testid="reset-request-new" class="mt-3 text-sm font-medium">
         {{ $t('client.resetPassword.requestNew') }}
       </UiLink>
     </ClientOutcomePanel>
@@ -24,7 +24,7 @@
       data-testid="reset-success"
     >
       <UiBackLink :to="CLIENT_LOGIN_PATH" testid="reset-success-signin" class="mt-3" compact>
-        {{ $t('client.resetPassword.backToSignIn') }}
+        {{ $t('client.login.backToSignIn') }}
       </UiBackLink>
     </ClientOutcomePanel>
 
@@ -55,7 +55,7 @@
       </UiButton>
       <UiStack align="center">
         <UiBackLink :to="CLIENT_LOGIN_PATH" testid="reset-back" compact>
-          {{ $t('client.resetPassword.backToSignIn') }}
+          {{ $t('client.login.backToSignIn') }}
         </UiBackLink>
       </UiStack>
     </UiForm>

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Provisioning.Events;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -38,6 +39,21 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
 
     /// <summary>Gets the UTC timestamp of the next renewal date, if active.</summary>
     public DateTimeOffset? NextRenewalAt { get; private set; }
+
+    /// <summary>Gets where the service is in its free trial, or <see langword="null"/> when it is not a trial.</summary>
+    public TrialStatus? TrialStatus { get; private set; }
+
+    /// <summary>Gets the UTC moment the trial ends, or <see langword="null"/> when it is not a trial.</summary>
+    public DateTimeOffset? TrialEndsAt { get; private set; }
+
+    /// <summary>Gets whether the trial turns into a paid service at its end.</summary>
+    public bool TrialAutoConvert { get; private set; }
+
+    /// <summary>Gets how many days the first invoice of a converted trial may stay unpaid.</summary>
+    public int TrialGracePeriodDays { get; private set; }
+
+    /// <summary>Gets the days before the trial end reminders go out on, comma separated and descending (for example <c>3,1</c>), or <see langword="null"/> when it is not a trial.</summary>
+    public string? TrialReminderDays { get; private set; }
 
     /// <summary>Gets the linked domain name.</summary>
     public string? Domain { get; private set; }
@@ -227,11 +243,12 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <param name="firstInvoiceId">The invoice the first payment is charged on, or <see langword="null"/> when there is none yet.</param>
     /// <param name="now">The current moment (UTC), read by the caller; stamped on the domain event.</param>
     /// <param name="orderItemId">The order line the service is created for, or <see langword="null"/> when it is not ordered through a line.</param>
+    /// <param name="trial">The trial rules of the product when the service is ordered as a free trial, or <see langword="null"/> for an ordinary service.</param>
     /// <returns>A new pending <see cref="ClientService"/>.</returns>
     public static ClientService CreateOrdered(
         int clientId, int productId, BillingCycle billingCycle, string? domain,
         decimal firstPaymentAmount, decimal recurringAmount, string? paymentMethod, int? firstInvoiceId, DateTimeOffset now,
-        int? orderItemId = null)
+        int? orderItemId = null, ProductTrial? trial = null)
     {
         var svc = Create(clientId, productId, billingCycle, now);
         svc.Domain = domain;
@@ -240,7 +257,63 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         svc.FirstPaymentAmount = firstPaymentAmount;
         svc.RecurringAmount = recurringAmount;
         svc.PaymentMethod = paymentMethod;
+
+        if (trial is not null)
+        {
+            svc.StartTrial(trial, now);
+        }
+
         return svc;
+    }
+
+    /// <summary>
+    /// Makes the service a free trial under the product's rules: the trial is Active and ends the trial
+    /// length from <paramref name="now"/>; the rules are copied so later edits of the product do not change it.
+    /// </summary>
+    /// <param name="rules">The trial rules of the product.</param>
+    /// <param name="now">The moment the trial starts (UTC), read by the caller.</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="ServicesErrors.ServiceNotPending"/> when the service is not Pending or already is a trial:
+    /// a trial can only be started on the service as <see cref="CreateOrdered"/> leaves it.
+    /// </exception>
+    public void StartTrial(ProductTrial rules, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+
+        if (Status is not ServiceStatus.Pending || TrialStatus is not null)
+        {
+            throw new DomainRuleException(
+                ServicesErrors.ServiceNotPending,
+                "A trial can only be started on a Pending service that is not a trial yet.");
+        }
+
+        TrialStatus = Enums.TrialStatus.Active;
+        TrialEndsAt = now.AddDays(rules.Days);
+        TrialAutoConvert = rules.AutoConvert;
+        TrialGracePeriodDays = rules.GracePeriodDays;
+        TrialReminderDays = ProductTrial.FormatReminderDays(rules.ReminderDays);
+    }
+
+    /// <summary>
+    /// Reads how many whole days of the free trial are left at <paramref name="now"/>: the time to
+    /// <see cref="TrialEndsAt"/> rounded up, so a trial that ends later today has 1 day left, and 0
+    /// once the end has passed, never a negative number.
+    /// </summary>
+    /// <param name="now">The moment to count from (UTC), read by the caller.</param>
+    /// <returns>
+    /// The days left, or <see langword="null"/> when the service is not a trial or its trial is not
+    /// <see cref="Enums.TrialStatus.Active"/> (no other status exists yet).
+    /// </returns>
+    public int? TrialDaysLeft(DateTimeOffset now)
+    {
+        if (TrialStatus != Enums.TrialStatus.Active || TrialEndsAt is not { } endsAt)
+        {
+            return null;
+        }
+
+        var remaining = endsAt - now;
+
+        return remaining <= TimeSpan.Zero ? 0 : (int)Math.Ceiling(remaining.TotalDays);
     }
 
     /// <summary>
@@ -343,6 +416,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         }
 
         Status = ServiceStatus.Active;
+
+        // A running trial is not billed for a period: the first renewal is the end of the trial, which overrides a
+        // NextRenewalAt staff set earlier.
+        if (TrialStatus is Enums.TrialStatus.Active && TrialEndsAt is { } trialEnd)
+        {
+            NextRenewalAt = trialEnd;
+            return;
+        }
 
         // A renewal date already later than the first period's end (staff set it while the
         // service was pending) is kept, the same rule as ExtendRenewalTo.
@@ -562,6 +643,16 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         DedicatedIp = account.DedicatedIp;
         Username = account.Username;
         Password = account.Password;
+    }
+
+    /// <summary>
+    /// Records the IP address the panel reports for the service's hosting account. It writes the same address staff can
+    /// correct by hand in <see cref="RecordHostingAccount"/>, and nothing else of the account.
+    /// </summary>
+    /// <param name="ipAddress">The address, in text form, as it is to be shown.</param>
+    public void RecordAssignedIp(string? ipAddress)
+    {
+        DedicatedIp = ipAddress;
     }
 
     /// <summary>

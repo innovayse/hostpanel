@@ -17,7 +17,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems } from '@/utils/ui/layout'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -110,8 +110,8 @@ const submit = (): void => {
 </script>
 
 <template>
-  <UiStack gap="sm" :data-testid="`plugin-widget-${pluginId}-${widget.widgetId}`">
-    <UiStack gap="xs">
+  <UiStack :gap="UiGap.Sm" :data-testid="`plugin-widget-${pluginId}-${widget.widgetId}`">
+    <UiStack :gap="UiGap.Xs">
       <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">
         {{ widget.title ?? t('plugins.pluginSlotWidgets.pluginWidget', { plugin: pluginId, widget: widget.widgetId }) }}
       </UiText>
@@ -124,11 +124,12 @@ const submit = (): void => {
       {{ t('plugins.pluginSlotWidgets.orphaned') }}
     </UiAlert>
 
-    <UiStack direction="row" gap="xs" wrap data-testid="plugin-widget-chosen">
+    <UiStack :direction="UiDirection.Row" :gap="UiGap.Xs" wrap data-testid="plugin-widget-chosen">
       <UiBadge v-for="item in chosen" :key="item.id" :tone="UiTone.Primary">
         {{ item.name }}
         <UiIconButton
           :label="t('plugins.pluginSlotWidgets.removeProduct', { name: item.name })"
+          :variant="UiButtonVariant.Ghost"
           :size="UiSize.Sm"
           :data-testid="`plugin-widget-remove-${item.id}`"
           @click="remove(item.id)"
@@ -141,7 +142,7 @@ const submit = (): void => {
       </UiText>
     </UiStack>
 
-    <UiStack direction="row" :align="UiAlignItems.Center" wrap>
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
       <UiSelect
         v-model="pending"
         :options="options"
@@ -159,7 +160,7 @@ const submit = (): void => {
         data-testid="plugin-widget-save"
         @click="submit"
       >
-        {{ t('common.save') }}
+        {{ t('shared.save') }}
       </UiButton>
     </UiStack>
     <UiText v-if="error" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" data-testid="plugin-widget-error">

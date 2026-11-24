@@ -23,10 +23,13 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
+import { UiDialogSize } from '@/utils/ui/dialog'
+import { UiInputType } from '@/utils/ui/input'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
 
@@ -123,13 +126,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <UiDialog :title="t('clients.addExistingService.title')" size="lg" @close="emit('close')">
+  <UiDialog :title="t('clients.addExistingService.title')" :size="UiDialogSize.Lg" @close="emit('close')">
     <UiForm stacked @submit="handleSave">
       <UiText :tone="UiTextTone.Secondary">{{ t('clients.addExistingService.intro') }}</UiText>
-      <UiAlert v-if="store.actionError" variant="error" data-testid="add-existing-service-error">
+      <UiAlert v-if="store.actionError" :variant="UiTone.Danger" data-testid="add-existing-service-error">
         {{ store.actionError }}
       </UiAlert>
-      <UiGrid :columns="2">
+      <UiGrid :columns="2" container>
         <UiField :label="t('shared.productService')" required :error="store.fieldErrors.productId">
           <UiSelect
             v-model="productId"
@@ -149,12 +152,12 @@ onMounted(() => {
         </UiField>
         <UiField :label="t('shared.domain')" required :error="store.fieldErrors.domain">
           <template #default="{ id }">
-            <UiInput :id="id" v-model="domain" type="text" placeholder="example.com" data-testid="add-existing-service-domain" />
+            <UiInput :id="id" v-model="domain" :type="UiInputType.Text" placeholder="example.com" data-testid="add-existing-service-domain" />
           </template>
         </UiField>
         <UiField :label="t('clients.addExistingService.username')" required :error="store.fieldErrors.username">
           <template #default="{ id }">
-            <UiInput :id="id" v-model="username" type="text" :placeholder="t('clients.addExistingService.username')" data-testid="add-existing-service-username" />
+            <UiInput :id="id" v-model="username" :type="UiInputType.Text" :placeholder="t('clients.addExistingService.username')" data-testid="add-existing-service-username" />
           </template>
         </UiField>
         <UiField :label="t('shared.billingCycle')">
@@ -173,15 +176,15 @@ onMounted(() => {
         </UiField>
       </UiGrid>
       <UiFormActions>
-        <UiButton :action="UiActionKind.Cancel" type="button" :variant="UiButtonVariant.Secondary" data-testid="add-existing-service-cancel" @click="emit('close')">{{ t('shared.cancel') }}</UiButton>
+        <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="add-existing-service-cancel" @click="emit('close')">{{ t('shared.cancel') }}</UiButton>
         <UiButton :action="UiActionKind.Add"
-          type="submit"
+          :type="UiButtonType.Submit"
           :variant="UiButtonVariant.Primary"
           :loading="saving"
           :disabled="!complete"
           data-testid="add-existing-service-save"
         >
-          {{ t('clients.addExistingService.add') }}
+          {{ t('shared.add') }}
         </UiButton>
       </UiFormActions>
     </UiForm>

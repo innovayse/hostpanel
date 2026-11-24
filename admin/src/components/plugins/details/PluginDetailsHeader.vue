@@ -18,10 +18,14 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { PluginPricing } from '@/types/plugin'
 import type { PluginListItemDto, RegistryPluginDetailsDto } from '@/types/plugin'
-import { UiButtonVariant } from '@/utils/ui/button'
+import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
+import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -62,11 +66,11 @@ const canUninstall = computed<boolean>(() => !props.plugin.isBuiltIn)
 </script>
 
 <template>
-  <UiCard padding="md" data-testid="plugin-details-header">
-    <UiStack direction="row" align="start" gap="md" reflow-below-md>
+  <UiCard :padding="UiCardPadding.Md" data-testid="plugin-details-header">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Start" :gap="UiGap.Md" reflow-below-md>
       <UiPluginAvatar :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color" :size="UiSize.Lg" data-testid="plugin-details-avatar" />
-      <UiStack gap="sm" class="min-w-0 flex-1">
-        <UiStack direction="row" align="center" gap="sm" wrap>
+      <UiStack :gap="UiGap.Sm" class="min-w-0 flex-1">
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
           <UiBadge v-if="registry !== null && registry.verified" :tone="UiTone.Success" small data-testid="plugin-details-verified">
             {{ t('pluginDetails.verified') }}
           </UiBadge>
@@ -74,10 +78,10 @@ const canUninstall = computed<boolean>(() => !props.plugin.isBuiltIn)
             {{ t(`pluginDetails.pricing.${registry.pricing}`) }}
           </UiBadge>
         </UiStack>
-        <UiText tone="muted" size="sm" data-testid="plugin-details-author">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-details-author">
           {{ t('pluginDetails.byAuthor', { author: plugin.author }) }}
         </UiText>
-        <UiStack direction="row" align="center" gap="sm" wrap>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
           <UiBadge :tone="UiTone.Info" dot small data-testid="plugin-details-installed">
             {{ t('pluginDetails.installedVersion', { version: plugin.version }) }}
           </UiBadge>
@@ -88,13 +92,13 @@ const canUninstall = computed<boolean>(() => !props.plugin.isBuiltIn)
             {{ t('pluginDetails.updateAvailable', { version: registry.latestVersion }) }}
           </UiBadge>
         </UiStack>
-        <UiText tone="secondary" size="sm" data-testid="plugin-details-description">{{ plugin.description }}</UiText>
-        <UiStack direction="row" align="center" gap="sm" wrap>
-          <UiButton :action="UiActionKind.Refresh"
+        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" data-testid="plugin-details-description">{{ plugin.description }}</UiText>
+        <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
+          <UiButton :icon="Icon.Download"
             v-if="registry !== null && canOfferUpdate"
-            type="button"
+            :type="UiButtonType.Button"
             :variant="UiButtonVariant.Primary"
-            size="sm"
+            :size="UiSize.Sm"
             :loading="busy"
             :disabled="busy"
             data-testid="plugin-details-update"
@@ -104,14 +108,14 @@ const canUninstall = computed<boolean>(() => !props.plugin.isBuiltIn)
           </UiButton>
           <UiButton :action="UiActionKind.Delete"
             v-if="canUninstall"
-            type="button"
+            :type="UiButtonType.Button"
             :variant="UiButtonVariant.Danger"
-            size="sm"
+            :size="UiSize.Sm"
             :disabled="busy"
             data-testid="plugin-details-uninstall"
             @click="emit('uninstall')"
           >
-            {{ t('pluginDetails.uninstall') }}
+            {{ t('shared.uninstall') }}
           </UiButton>
         </UiStack>
       </UiStack>

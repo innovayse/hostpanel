@@ -15,12 +15,12 @@
  * line up with the header and footer.
  */
 import { computed } from 'vue'
-import { UiSectionPadding, UiSectionTone } from '~/utils/ui/enums'
+import { UiBlockTag, UiSectionPadding, UiSectionTone } from '~/utils/ui/enums'
 
 /** Props of UiSection. */
 interface Props {
   /** Tag to render. */
-  as?: string
+  as?: `${UiBlockTag}`
   /** Vertical padding. */
   padding?: `${UiSectionPadding}`
   /** Background of the band. */
@@ -31,7 +31,7 @@ interface Props {
 
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
-  as: 'section',
+  as: UiBlockTag.Section,
   padding: UiSectionPadding.Md,
   tone: UiSectionTone.Plain,
   contained: true,
@@ -42,6 +42,7 @@ const props = withDefaults(defineProps<Props>(), {
  * empty band reads as a broken page, and roomier from `md`.
  */
 const PADDING_CLASSES: Record<UiSectionPadding, string> = {
+  [UiSectionPadding.None]: '',
   [UiSectionPadding.Sm]: 'py-8 md:py-10',
   [UiSectionPadding.Md]: 'py-10 md:py-14',
   [UiSectionPadding.Lg]: 'py-12 md:py-20',

@@ -11,7 +11,7 @@ import { AppRoute } from '@/lib/routes'
 import { RenewalWindow } from '@/types/renewal'
 import { SkeletonKind, SkeletonPartKind } from '@/utils/ui/skeletonSchema'
 import type { CardsSkeletonPart, CompositeSkeletonSchema, SkeletonTable, TabsSkeletonPart } from '@/utils/ui/skeletonSchema'
-import { UiColumnSize } from '@/utils/ui/table'
+import { UiColumnKind, UiColumnSize } from '@/utils/ui/table'
 
 /** Key of the card of the services table, the suffix of its `card-<key>` slot. */
 export const RENEWALS_SERVICES_CARD = 'services'
@@ -38,10 +38,10 @@ export const RENEWALS_SERVICES_TABLE: SkeletonTable = {
   columns: [
     { key: 'client', label: 'shared.client' },
     { key: 'product', label: 'billing.renewals.product', size: UiColumnSize.Grow },
-    { key: 'renewsOn', label: 'billing.renewals.renewsOn', size: UiColumnSize.Compact },
+    { key: 'renewsOn', label: 'billing.renewals.renewsOn', kind: UiColumnKind.Date },
     { key: 'billingCycle', label: 'shared.billingCycle' },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
-    { key: 'autoRenew', label: 'shared.autoRenew', size: UiColumnSize.Compact },
+    { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }
@@ -52,9 +52,9 @@ export const RENEWALS_DOMAINS_TABLE: SkeletonTable = {
   columns: [
     { key: 'client', label: 'shared.client' },
     { key: 'domain', label: 'shared.domain', size: UiColumnSize.Grow },
-    { key: 'expires', label: 'billing.renewals.expires', size: UiColumnSize.Compact },
+    { key: 'expires', label: 'billing.renewals.expires', kind: UiColumnKind.Date },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
-    { key: 'autoRenew', label: 'shared.autoRenew', size: UiColumnSize.Compact },
+    { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }
@@ -62,10 +62,10 @@ export const RENEWALS_DOMAINS_TABLE: SkeletonTable = {
 /** The claimed lines table: invoice, client, the line, when it was claimed and the row action. */
 export const RENEWALS_CLAIMS_TABLE: SkeletonTable = {
   columns: [
-    { key: 'invoice', label: 'shared.invoice', size: UiColumnSize.Compact },
+    { key: 'invoice', label: 'shared.invoice', kind: UiColumnKind.Id },
     { key: 'client', label: 'shared.client' },
     { key: 'line', label: 'billing.renewals.line', size: UiColumnSize.Grow },
-    { key: 'claimedAt', label: 'billing.renewals.claimedAt', size: UiColumnSize.Compact },
+    { key: 'claimedAt', label: 'billing.renewals.claimedAt', kind: UiColumnKind.Date },
     { key: 'actions', label: 'shared.actions', actions: true },
   ],
 }

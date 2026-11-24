@@ -16,15 +16,17 @@ Servers are listed by name as cards, 20 to a page. Each card shows **Server Name
 
 **Status badges:** Online, Offline, Not tested.
 
-Type part of a name, host name or IP address in the search box to find a server. The **Filters** button narrows the list by module and by status (Online, Offline or Not tested); applied filters show as chips you can remove. The search, the filters and the page stay in the address, so a link or a reload opens the same list. Search treats `%` and `_` as ordinary characters. Screens that need to choose a server (the group form, adding an existing service, a service's server and the CWP7 page) and the dashboard's capacity card read every server regardless of the page.
+Type part of a name, host name or IP address in the search box to find a server. The **Filters** button narrows the list by module and by status (Online, Offline or Not tested); applied filters show as chips you can remove. The search, the filters and the page stay in the address, so a link or a reload opens the same list. Search treats `%` and `_` as ordinary characters. Screens that need to choose a server (the group form, adding an existing service and a service's server) and the dashboard's capacity card read every server regardless of the page.
 
 **Row actions:** Test Connection, SSH (opens the SSH key management dialog), Edit, Delete.
 
 **DEFAULT** badge marks the default server for its module. When other things are equal, the default server is preferred within its group or module when a server is picked for a new account (see [Fill types](#fill-types)).
 
 <Callout type="note">
-<strong>cPanel</strong> provisions accounts automatically and is built in; it is new and not yet tested against a live WHM server, see <a href="./cpanel">cPanel servers</a>. Every other panel is provisioned by its plugin: install and switch on the plugin, and its panel types (for example DirectAdmin) appear in the Module list, ready to pick, to test and to provision accounts on. An entry in the list with no plugin behind it (DirectAdmin, CentOS, Lukittu, Virtualmin, HyperVm) is stored but does not provision accounts automatically and cannot be tested. A server that uses a panel type whose plugin is switched off answers that the plugin is not available.
+<strong>cPanel</strong> provisions accounts automatically and is built in; it is new and not yet tested against a live WHM server, see <a href="./cpanel">cPanel servers</a>. Every other panel is provisioned by its plugin: install and switch on the plugin, and its panel types (for example DirectAdmin) appear in the Module list, ready to pick, to test and to provision accounts on. An entry in the list with no plugin behind it (DirectAdmin, Lukittu, Virtualmin, HyperVm) is stored but does not provision accounts automatically and cannot be tested. A server that uses a panel type whose plugin is switched off answers that the plugin is not available. Control Web Panel (CWP) is supported through the CWP plugin: install it from the plugin registry, switch it on in Integrations, and note that a newly installed plugin is loaded at the next start.
 </Callout>
+
+A server with no control panel at all is added with the **Linux server (no control panel)** module. It is not a product, so orders never pick it: add it with the existing service flow, give it an SSH key and the agent installs the built-in `generic-linux` profile, which supports SSH accounts, websites and databases (see [Plain Linux servers](./ssh-key-agent#plain-linux-servers-generic-linux)).
 
 ## Add a server
 
@@ -53,7 +55,7 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 
 | Field | Notes |
 |-------|-------|
-| Module | Control panel type: cPanel and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
+| Module | Control panel type: cPanel, Linux server (no control panel) and the types of the installed panel plugins; a server saved with an older type keeps it while you edit it |
 | Username | API username |
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |
@@ -91,7 +93,7 @@ In the **Groups** section below the server list, click **Create Group**.
 
 | Field | Notes |
 |-------|-------|
-| Group Name | e.g. "CWP Servers" |
+| Group Name | e.g. "Production servers" |
 | Fill Type | How accounts are distributed (see below) |
 | Servers | Move servers from Available into In Group |
 

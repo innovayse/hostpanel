@@ -21,6 +21,8 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiAlignItems, UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -51,22 +53,22 @@ const outcomeMessage = computed<string | null>(() =>
     data-testid="plugin-processing-dialog"
     @close="processing.close()"
   >
-    <UiStack v-if="processing.running.value" align="center" gap="sm" data-testid="plugin-processing-running">
+    <UiStack v-if="processing.running.value" :align="UiAlignItems.Center" :gap="UiGap.Sm" data-testid="plugin-processing-running">
       <UiLoader :size="UiSize.Lg" :label="stepText" show-label />
     </UiStack>
-    <UiStack v-else gap="sm" data-testid="plugin-processing-outcome">
+    <UiStack v-else :gap="UiGap.Sm" data-testid="plugin-processing-outcome">
       <UiStatusMessage
         :message="outcomeMessage"
         :tone="processing.failed.value ? UiTone.Danger : UiTone.Success"
         data-testid="plugin-processing-message"
       />
-      <UiText v-if="!processing.failed.value && store.requiresRestart" tone="muted" size="sm" data-testid="plugin-processing-restart">
+      <UiText v-if="!processing.failed.value && store.requiresRestart" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="plugin-processing-restart">
         {{ t('plugins.processing.restartNeeded') }}
       </UiText>
     </UiStack>
     <template v-if="!processing.running.value" #footer>
       <UiButton :action="UiActionKind.Close" type="button" :variant="UiButtonVariant.Primary" data-testid="plugin-processing-close" @click="processing.close()">
-        {{ t('plugins.processing.close') }}
+        {{ t('shared.close') }}
       </UiButton>
     </template>
   </UiDialog>

@@ -243,4 +243,25 @@ describe('UiDrawer as a sheet', () => {
 
     expect(wrapper.emitted('close')).toBeUndefined()
   })
+
+describe('UiDrawer as a full-screen sheet', () => {
+  it('fills the viewport with room for the notch and the home indicator, without rounded corners or a partial height', () => {
+    const classes = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet, fullscreen: true }).get('aside').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['inset-0', 'h-dvh', 'max-h-dvh', 'pt-[env(safe-area-inset-top)]', 'pb-[env(safe-area-inset-bottom)]']))
+    expect(classes).not.toContain('rounded-t-panel')
+    expect(classes).not.toContain('max-h-[85dvh]')
+  })
+
+  it('keeps the body scrolling and the footer pinned', () => {
+    const wrapper = mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet, fullscreen: true }, { footer: '<b />' })
+
+    expect(wrapper.get('[data-testid="drawer-body"]').classes()).toEqual(expect.arrayContaining(['overflow-y-auto', 'min-h-0']))
+    expect(wrapper.get('[data-testid="ui-drawer-footer"]').classes()).toContain('shrink-0')
+  })
+
+  it('leaves a plain sheet a bottom sheet', () => {
+    expect(mountDrawer({ open: true, title: 'x', presentation: UiDrawerPresentation.Sheet }).get('aside').classes()).toContain('rounded-t-panel')
+  })
+})
 })

@@ -1,0 +1,20 @@
+{
+  "title": "Paleta de comandos",
+  "open": "Buscar en el panel",
+  "placeholder": "Buscar páginas y acciones",
+  "empty": "No se encontró nada para \"{query}\"",
+  "hintNavigate": "Arriba y abajo para mover",
+  "hintOpen": "Intro para abrir",
+  "hintClose": "Esc para cerrar",
+  "groups": {
+    "recent": "Recientes",
+    "actions": "Acciones",
+    "navigation": "Navegación"
+  },
+  "actions": {
+    "newClient": "Crear cliente",
+    "newQuote": "Crear presupuesto",
+    "addTransaction": "Añadir transacción",
+    "newBillableItem": "Crear concepto facturable"
+  }
+}

@@ -2,8 +2,8 @@
 /**
  * "Back to ..." navigation: a ghost pill with the back arrow and the short name of the place it returns to.
  *
- * It is the one back control of the panel. `UiPageHeader` draws it on the header row left of the title (`backTo` and
- * `backLabel`); a screen whose header is not a `UiPageHeader` (a card header, a client sub-page) uses it directly. The
+ * It is the one back control of the panel. `UiPageHeader` draws it on its own row above the title at every width (`backTo`
+ * and `backLabel`), so it never narrows the title; a screen whose header is not a `UiPageHeader` (a card header, a client sub-page) uses it directly. The
  * label names the destination ("Plugins"), never "Back to plugins": the arrow already says back. `data-testid` and other
  * attributes fall through to the link. Without a target (a skeleton) the pill is a disabled button, not an anchor that
  * leads nowhere.
@@ -34,10 +34,10 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <UiButton v-if="to === undefined" :icon="Icon.Back" :variant="UiButtonVariant.Ghost" :size="UiSize.Sm" pill disabled class="shrink-0 whitespace-nowrap" :class="{ 'md:hidden': mobileOnly }">
+  <UiButton v-if="to === undefined" :icon="Icon.Back" :variant="UiButtonVariant.Ghost" :size="UiSize.Sm" pill disabled class="max-w-full shrink-0 whitespace-nowrap" :class="{ 'md:hidden': mobileOnly }">
     {{ label }}
   </UiButton>
-  <UiLink v-else :to="to" :icon="Icon.Back" :variant="UiButtonVariant.Ghost" :size="UiSize.Sm" pill class="shrink-0 whitespace-nowrap" :class="{ 'md:hidden': mobileOnly }">
+  <UiLink v-else :to="to" :icon="Icon.Back" :variant="UiButtonVariant.Ghost" :size="UiSize.Sm" pill class="max-w-full shrink-0 whitespace-nowrap" :class="{ 'md:hidden': mobileOnly }">
     {{ label }}
   </UiLink>
 </template>

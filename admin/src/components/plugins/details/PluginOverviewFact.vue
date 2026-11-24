@@ -6,6 +6,8 @@
  */
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiGap } from '@/utils/ui/layout'
+import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
 /** Props for PluginOverviewFact. */
 withDefaults(defineProps<{
@@ -25,11 +27,11 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <UiStack gap="xs" data-testid="plugin-overview-fact">
-    <UiText tone="muted" size="xs">{{ label }}</UiText>
+  <UiStack :gap="UiGap.Xs" data-testid="plugin-overview-fact">
+    <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ label }}</UiText>
     <slot>
-      <UiText v-if="value !== null" tone="primary" size="sm" :class="mono ? 'font-mono break-all' : 'break-words'">{{ value }}</UiText>
-      <UiText v-else tone="muted" size="sm">{{ empty }}</UiText>
+      <UiText v-if="value !== null" :tone="UiTextTone.Primary" :size="UiTextSize.Sm" :class="mono ? 'font-mono break-all' : 'break-words'">{{ value }}</UiText>
+      <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ empty }}</UiText>
     </slot>
   </UiStack>
 </template>

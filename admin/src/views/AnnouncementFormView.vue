@@ -19,6 +19,8 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { toDateInputValue } from '@/lib/format'
 import { useAnnouncementsStore } from '@/stores/announcements'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiDirection, UiGap } from '@/utils/ui/layout'
+import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
 import schema, { ANNOUNCEMENT_DATE_FIELD_KEY } from '@/views/AnnouncementFormView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -149,7 +151,7 @@ onMounted(() => {
       @retry="fetchAnnouncement"
     />
 
-    <UiAlert v-else-if="store.error" variant="error" data-testid="announcement-form-error">{{ store.error }}</UiAlert>
+    <UiAlert v-else-if="store.error" :variant="UiTone.Danger" data-testid="announcement-form-error">{{ store.error }}</UiAlert>
 
     <UiSchemaForm
       v-if="loadError === null"
@@ -196,7 +198,7 @@ onMounted(() => {
       </template>
 
       <template #section-announcement>
-        <UiStack direction="row" gap="sm">
+        <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm">
           <UiButton :action="UiActionKind.Save"
             :variant="UiButtonVariant.Primary"
             :loading="saving"
@@ -204,7 +206,7 @@ onMounted(() => {
             data-testid="announcement-form-save"
             @click="handleSave"
           >
-            {{ isEditMode ? t('support.announcementForm.updateAnnouncement') : t('support.announcementForm.saveAnnouncement') }}
+            {{ t('shared.save') }}
           </UiButton>
           <UiLink :action="UiActionKind.Cancel"
             :to="AppRoute.SupportAnnouncements"

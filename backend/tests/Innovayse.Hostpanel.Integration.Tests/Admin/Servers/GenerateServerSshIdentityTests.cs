@@ -31,7 +31,7 @@ public sealed class GenerateServerSshIdentityTests(IntegrationTestFactory factor
         var body = JsonDocument.Parse(raw).RootElement;
         var publicKey = body.GetProperty("publicKey").GetString()!;
         publicKey.Should().StartWith("ssh-ed25519 ").And.EndWith($"hostpanel-server-{serverId}");
-        body.GetProperty("profile").GetString().Should().Be("cwp");
+        body.GetProperty("profile").GetString().Should().Be("generic-linux");
         body.GetProperty("binding").GetGuid().Should().NotBeEmpty();
 
         // The stored private key is a real OpenSSH key whose public half is the one returned.

@@ -1,6 +1,6 @@
 /**
  * Mount tests for AccountCard: the initials, address and role of the signed-in account, the menu behind the
- * avatar (settings, sign-out), and the folded rail drawing the avatar alone.
+ * "more" button (settings, sign-out), and the folded rail drawing the avatar alone.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -63,9 +63,10 @@ describe('AccountCard', () => {
     expect(wrapper.get('[data-testid="account-name"]').text()).toBe('ada@example.com')
   })
 
-  it('opens the settings and sign-out actions from the avatar', async () => {
+  it('opens the settings and sign-out actions from the more button', async () => {
     const wrapper = await mountCard()
     expect(wrapper.get('[data-testid="sidebar-user-menu"]').attributes('aria-label')).toBe('Account menu')
+    expect(wrapper.get('[data-testid="sidebar-user-menu"]').find('[data-testid="account-avatar"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="sidebar-settings"]').exists()).toBe(false)
 
     await wrapper.get('[data-testid="sidebar-user-menu"]').trigger('click')
@@ -83,12 +84,36 @@ describe('AccountCard', () => {
     expect(wrapper.find('[data-testid="account-role"]').exists()).toBe(false)
   })
 
-  it('sizes the avatar to fit inside the rail tile, and larger when the card is open', async () => {
+  it('makes the avatar the menu trigger in the folded rail', async () => {
+    const wrapper = await mountCard({ rail: true })
+
+    expect(wrapper.get('[data-testid="sidebar-user-menu"]').find('[data-testid="account-avatar"]').exists()).toBe(true)
+
+    await wrapper.get('[data-testid="sidebar-user-menu"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="sidebar-sign-out"]').exists()).toBe(true)
+  })
+
+  it('signs out through the auth store and returns to the sign-in screen', async () => {
+    const wrapper = await mountCard()
+    const logout = vi.spyOn(useAuthStore(), 'logout').mockResolvedValue()
+
+    await wrapper.get('[data-testid="sidebar-user-menu"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="sidebar-sign-out"]').trigger('click')
+    await flushPromises()
+
+    expect(logout).toHaveBeenCalledTimes(1)
+  })
+
+  it('sizes the avatar to fit inside the rail tile, and smaller when the card is open', async () => {
     const rail = await mountCard({ rail: true })
     const open = await mountCard()
 
     expect(rail.get('[data-testid="account-avatar"]').classes()).toContain('size-8')
     expect(rail.get('[data-testid="account-card"]').classes()).toContain('p-0.5')
-    expect(open.get('[data-testid="account-avatar"]').classes()).toContain('size-9')
+    expect(open.get('[data-testid="account-avatar"]').classes()).toContain('size-7')
+    expect(open.get('[data-testid="account-card"]').classes()).toContain('px-3')
   })
 })

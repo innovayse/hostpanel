@@ -16,7 +16,7 @@
           the locale files via `label` and `description`.
         -->
         <UiStack gap="sm">
-          <UiText as="span" size="sm" weight="medium">{{ $t('client.services.cancelType') }}</UiText>
+          <UiText :as="UiTextTag.Span" size="sm" weight="medium">{{ $t('client.services.cancelType') }}</UiText>
           <UiRadio
             name="cancel-type"
             :value="CancellationType.EndOfBillingPeriod"
@@ -77,6 +77,7 @@ import { XCircle } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import { CancellationType } from '~/types/cancellationtype'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ServiceCancelForm. */
 interface Props {

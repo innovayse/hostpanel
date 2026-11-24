@@ -5,7 +5,7 @@
     data-testid="home-domain-search"
     class="relative min-w-0 border-line2 bg-card shadow-panel"
   >
-    <UiText as="span" size="inherit" tone="inherit" weight="bold" class="font-display text-[20px] -tracking-[0.01em] text-tx">
+    <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="bold" class="font-display text-[20px] -tracking-[0.01em] text-tx">
       {{ t('aurora.domainSearch.title') }}
     </UiText>
 
@@ -25,7 +25,7 @@
           data-testid="home-domain-search-submit"
           :class="[BRAND_BUTTON, 'px-[22px] py-[15px] text-[15px]']"
         >
-          {{ t('aurora.domainSearch.cta') }}
+          {{ t('ui.searchButton') }}
         </UiButton>
       </UiStack>
     </UiForm>
@@ -37,8 +37,8 @@
     -->
     <UiList v-if="visibleHints.length > 0" list-style="bare" class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5" data-testid="price-hints">
       <UiListItem v-for="hint in visibleHints" :key="hint.tld" class="flex items-baseline gap-1.5 text-[13px]">
-        <UiText as="span" size="inherit" tone="inherit" class="font-mono text-tx2">{{ hint.tld }}</UiText>
-        <UiText as="span" size="inherit" tone="inherit" weight="semibold" class="text-mut">{{ hint.register }}</UiText>
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="font-mono text-tx2">{{ hint.tld }}</UiText>
+        <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" weight="semibold" class="text-mut">{{ hint.register }}</UiText>
       </UiListItem>
     </UiList>
 
@@ -74,14 +74,14 @@
         >
           <UiStack direction="row" wrap align="center" justify="between" gap="md">
             <UiStack direction="row" align="center" gap="sm" class="min-w-0">
-              <span class="h-2 w-2 shrink-0 rounded-full" :class="AVAILABILITY_DOT_CLASSES[result.status]" />
-              <UiText as="span" size="inherit" tone="inherit" truncate class="font-mono text-[15px] text-tx">{{ result.name }}</UiText>
+              <UiDot :class="AVAILABILITY_DOT_CLASSES[result.status]" />
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" truncate class="font-mono text-[15px] text-tx">{{ result.name }}</UiText>
             </UiStack>
             <UiStack direction="row" align="center" gap="sm" class="shrink-0">
-              <UiText as="span" size="inherit" tone="inherit" class="text-[13px]" :class="AVAILABILITY_LABEL_CLASSES[result.status]">
+              <UiText :as="UiTextTag.Span" size="inherit" tone="inherit" class="text-[13px]" :class="AVAILABILITY_LABEL_CLASSES[result.status]">
                 {{ t(`aurora.domainSearch.${result.status}`) }}
               </UiText>
-              <UiText as="span" size="sm" tone="inherit" weight="semibold" class="text-mut">{{ result.price }}</UiText>
+              <UiText :as="UiTextTag.Span" size="sm" tone="inherit" weight="semibold" class="text-mut">{{ result.price }}</UiText>
             </UiStack>
           </UiStack>
         </UiCard>
@@ -101,6 +101,7 @@ import { BRAND_BUTTON } from '~/templates/aurora/buttons'
 import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_LABEL_CLASSES } from '~/utils/domainStatus'
 import type { DomainResult } from '~/types/domainresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props with their defaults applied. */
 const props = withDefaults(defineProps<{

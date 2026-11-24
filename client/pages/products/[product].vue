@@ -23,7 +23,7 @@
   <UiStack v-else align="center" justify="center" class="min-h-[60dvh] bg-ui-page" data-testid="product-not-found">
     <!-- Not found -->
     <UiEmptyState :icon="Package" :title="$t('products.notFound')" :description="$t('products.notFoundDescription')">
-      <UiButton :to="localePath(SITE_PRODUCTS_PATH)" icon="mdi:arrow-left" data-testid="product-back">
+      <UiButton variant="primary" :to="localePath(SITE_PRODUCTS_PATH)" icon="mdi:arrow-left" data-testid="product-back">
         {{ $t('common.backToProducts') }}
       </UiButton>
     </UiEmptyState>

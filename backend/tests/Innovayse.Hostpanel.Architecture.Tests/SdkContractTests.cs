@@ -119,7 +119,7 @@ public sealed class SdkContractTests
         methods.SelectMany(m => m.GetParameters()).Select(p => p.Name!.ToLowerInvariant())
             .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid"));
         typeof(PluginSshAccess).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "KeyId", "Host", "Port", "Username", "Domain", "PrivateKey", "HostKeyFingerprint");
+            "KeyId", "Host", "Port", "Username", "Domain", "PrivateKey", "HostKeyFingerprint", "HostKey");
         PluginHostAccess.Ssh.Should().Be("ssh");
         PluginHostAccess.Websites.Should().Be("websites");
         PluginHostAccess.Databases.Should().Be("databases");
@@ -477,6 +477,25 @@ public sealed class SdkContractTests
     }
 
     /// <summary>
+    /// The optional source restricted SSH API (SDK 3.16.0) extends the host API without changing it: its one member names
+    /// only a service of the calling client and the sources the key may be used from, never a client or a plugin.
+    /// </summary>
+    [Fact]
+    public void IPluginHostSshSourceApi_ExtendsTheHostApiAndNamesOnlyAServiceAndItsSources()
+    {
+        typeof(IPluginHostSshSourceApi).GetInterfaces().Should().Equal(typeof(IPluginHostApi));
+        var methods = typeof(IPluginHostSshSourceApi).GetMethods();
+
+        methods.Select(m => m.Name).Should().Equal("IssueSshAccessAsync");
+        var issue = methods.Single();
+        issue.ReturnType.Should().Be(typeof(Task<PluginSshAccess>));
+        issue.GetParameters().Select(p => p.ParameterType)
+            .Should().Equal(typeof(int), typeof(string), typeof(IReadOnlyList<string>), typeof(CancellationToken));
+        issue.GetParameters().Select(p => p.Name!.ToLowerInvariant())
+            .Should().NotContain(n => n.Contains("clientid") || n.Contains("pluginid"));
+    }
+
+    /// <summary>
     /// The optional hosting API (SDK 3.9.0) extends the host API without changing it: its five members name only a service
     /// of the caller's client, a website or a database id, and never a client or a plugin; a database password exists only
     /// in the answer to the call that created it and is masked when printed.
@@ -499,7 +518,7 @@ public sealed class SdkContractTests
         typeof(IPluginHostHostingApi).GetMethod("EnsureWebsiteAsync")!.ReturnType.Should().Be(typeof(Task<PluginWebsite>));
         typeof(IPluginHostHostingApi).GetMethod("EnsureDatabaseAsync")!.ReturnType.Should().Be(typeof(Task<PluginDatabase>));
         typeof(PluginWebsite).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "Id", "Hostname", "DocumentRoot", "DocumentRootPath", "PhpVersion");
+            "Id", "Hostname", "DocumentRoot", "DocumentRootPath", "PhpVersion", "PhpCliPath");
         typeof(PluginWebsiteSpec).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "Hostname", "DocumentRoot", "PhpVersion", "DocumentRootMayBeLink");
         typeof(PluginDatabase).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Id", "Name", "Username", "Host", "Port", "Password");
@@ -615,7 +634,7 @@ public sealed class SdkContractTests
             .Select(type => type.FullName).Should().BeEmpty("group each type in an area folder");
     }
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>The 2.0.0 move: each released type is in its new namespace.</summary>
     /// <param name="type">The type under inspection.</param>
     /// <param name="expected">The namespace it must be in.</param>
@@ -659,7 +678,7 @@ public sealed class SdkContractTests
     }
 #pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>
     /// The payment, slot, lifecycle and hosting panel records keep the members plugins compile against, so a
     /// rename of a positional record member is a red build.
@@ -741,7 +760,7 @@ public sealed class SdkContractTests
             .Fields.Should().BeEmpty();
     }
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>A panel address is HTTPS on the given port, and an IPv6 literal is bracketed so its colons are not read as the port.</summary>
     /// <param name="host">The host handed to the builder.</param>
     /// <param name="expected">The base URL it must build.</param>
@@ -758,7 +777,7 @@ public sealed class SdkContractTests
     }
 #pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>A panel address needs a host: a null, empty or blank one is refused instead of building a URL without a server.</summary>
     [Fact]
     public void HostingPanelAddress_RefusesAMissingHost()
@@ -769,7 +788,7 @@ public sealed class SdkContractTests
     }
 #pragma warning restore CS0618
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; the SDK still ships it for existing plugins.
     /// <summary>The account envelope is a sealed record with init-only members: nothing can change it after it is read.</summary>
     [Fact]
     public void HostingPanelApiWire_IsAnImmutableRecord()

@@ -40,7 +40,7 @@ withDefaults(defineProps<{
     <UiText v-if="description" tone="secondary" size="md" class="max-w-md">
       {{ description }}
     </UiText>
-    <div v-if="$slots.actions" class="mt-1 flex items-center gap-2" data-testid="ui-empty-state-actions">
+    <div v-if="$slots.actions" class="mt-1 flex flex-wrap items-center justify-center gap-2" data-testid="ui-empty-state-actions">
       <slot name="actions" />
     </div>
   </div>

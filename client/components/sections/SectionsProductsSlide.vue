@@ -3,7 +3,8 @@
     <!-- Split slide: the cover above the text on a phone, the text on the left and the cover on the right from md up. Both fill the slider height. -->
     <UiContainer class="relative z-10 grid h-full grid-cols-1 grid-rows-[minmax(0,2fr)_minmax(0,3fr)] items-stretch gap-5 pb-16 pt-20 md:grid-cols-2 md:grid-rows-1 md:gap-12 md:pb-16 md:pt-14" :data-testid="`slider-slide-${item.id}`">
       <!-- Cover -->
-      <div
+      <UiStack
+        gap="none"
         :class="[accent.tintStrong, 'relative min-h-0 overflow-hidden rounded-2xl ring-1 ring-inset ring-[color:color-mix(in_srgb,var(--accent)_40%,transparent)] md:order-2']"
         :data-testid="`slider-cover-${item.id}`"
       >
@@ -15,15 +16,15 @@
           class="absolute inset-0 h-full w-full"
           :testid="`slider-cover-image-${item.id}`"
         />
-        <div
+        <UiDecor
           v-else
-          :class="[accent.fill, cover.classes, 'absolute inset-6 opacity-80']"
+          :class="[accent.fill, cover.classes, 'inset-6 opacity-80']"
           :data-testid="`slider-cover-art-${item.id}`"
         />
-      </div>
+      </UiStack>
 
       <!-- Text -->
-      <div class="flex min-h-0 flex-col justify-center md:order-1" :data-testid="`slider-text-${item.id}`">
+      <UiStack gap="none" justify="center" class="min-h-0 md:order-1" :data-testid="`slider-text-${item.id}`">
         <UiAccentTile :icon="`mdi:${item.icon}`" size="lg" class="mb-4 sm:mb-6" />
 
         <UiHeading
@@ -53,34 +54,38 @@
         </UiText>
 
         <!-- Features, one after another -->
-        <div v-if="item.features.length" class="mb-5 flex flex-wrap gap-2 sm:mb-8 sm:gap-3" :data-testid="`slider-features-${item.id}`">
-          <span
+        <UiStack v-if="item.features.length" direction="row" wrap gap="xs" class="mb-5 sm:mb-8 sm:gap-3" :data-testid="`slider-features-${item.id}`">
+          <UiText
             v-for="(feature, featureIndex) in item.features"
             :key="feature"
-            :class="[accent.tintStrong, accent.borderMedium, 'inline-flex cursor-default items-center gap-2 rounded-md border px-3 py-1 text-xs font-bold text-classic-ink sm:px-4 sm:py-1.5 sm:text-sm', 'animate-reveal-up motion-reduce:animate-none', revealDelay(800 + featureIndex * 100)]"
+            :as="UiTextTag.Span"
+            tone="inherit"
+            size="xs"
+            weight="bold"
+            :class="[accent.tintStrong, accent.borderMedium, 'inline-flex cursor-default items-center gap-2 rounded-md border px-3 py-1 text-classic-ink sm:px-4 sm:py-1.5 sm:text-sm', 'animate-reveal-up motion-reduce:animate-none', revealDelay(800 + featureIndex * 100)]"
           >
             <CheckCircle :size="14" :stroke-width="3" :class="accent.text" />
             {{ feature }}
-          </span>
-        </div>
+          </UiText>
+        </UiStack>
 
         <!-- Calls to action -->
-        <div class="flex flex-col gap-3 sm:flex-row sm:gap-4 animate-reveal-up motion-reduce:animate-none" :class="revealDelay(1000)">
+        <UiStack gap="sm" class="sm:flex-row sm:gap-4 animate-reveal-up motion-reduce:animate-none" :class="revealDelay(1000)">
           <UiMagnetic :strength="0.2">
-            <UiAccentButton :to="localePath(item.learnMoreUrl)" size="lg" class="w-full font-bold sm:w-auto sm:px-10 sm:py-4" :data-testid="`slider-cta-${item.id}`">
-              <span class="truncate">{{ $t('products.pricing.cta.learnMore') }}</span>
+            <UiAccentButton :to="localePath(item.learnMoreUrl)" appearance="solid" size="lg" class="w-full font-bold sm:w-auto sm:px-10 sm:py-4" :data-testid="`slider-cta-${item.id}`">
+              <UiText :as="UiTextTag.Span" tone="inherit" size="inherit" weight="bold" truncate>{{ $t('common.learnMore') }}</UiText>
               <ArrowRight :size="18" :stroke-width="3" class="flex-shrink-0" />
             </UiAccentButton>
           </UiMagnetic>
 
           <UiMagnetic v-if="demoHref" :strength="0.15">
             <UiButton :href="demoHref" target="_blank" rel="noopener noreferrer" variant="subtle" size="lg" class="w-full font-bold sm:w-auto sm:px-10 sm:py-4" :data-testid="`slider-demo-${item.id}`">
-              <span class="truncate">{{ $t('products.pricing.cta.viewDemo') }}</span>
+              <UiText :as="UiTextTag.Span" tone="inherit" size="inherit" weight="bold" truncate>{{ $t('products.pricing.cta.viewDemo') }}</UiText>
               <PlayCircle :size="18" :stroke-width="2.5" class="ml-2 flex-shrink-0 text-primary-400" />
             </UiButton>
           </UiMagnetic>
-        </div>
-      </div>
+        </UiStack>
+      </UiStack>
     </UiContainer>
   </UiAccent>
 </template>
@@ -100,6 +105,7 @@ import { safeHref } from '~/utils/safeUrl'
 import { ACCENT_CLASSES } from '~/utils/ui/accent'
 import { SlideCoverKind } from '~/types/slidecoverkind'
 import type { SliderItem } from '~/types/slideritem'
+import { UiTextTag } from '~/utils/ui/enums'
 
 /** Props of the slide. */
 interface Props {

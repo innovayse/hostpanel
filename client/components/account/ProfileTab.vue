@@ -1,5 +1,5 @@
 <template>
-  <div data-testid="account-profile-tab">
+  <UiStack gap="none" data-testid="account-profile-tab">
     <!-- Only while there is no profile to show: a refresh after a save keeps the page (and the edit
          form, whose confirmation would otherwise be lost with the form that is unmounted). -->
     <UiStack v-if="userLoading && !user" gap="md" data-testid="account-profile-loading">
@@ -23,7 +23,7 @@
         <UiStack v-if="canEdit" direction="row" justify="end">
           <UiButton size="sm" variant="subtle" data-testid="account-profile-edit" @click="editing = true">
             <Pencil :size="14" :stroke-width="2" class="mr-1.5" />
-            {{ $t('client.profile.edit') }}
+            {{ $t('common.edit') }}
           </UiButton>
         </UiStack>
         <AccountProfileView
@@ -44,7 +44,7 @@
       :title="$t('client.profile.failedToLoad')"
       data-testid="account-profile-failed"
     />
-  </div>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -114,7 +114,8 @@ const LANGUAGE_LABEL_KEYS: Record<AppLocale, string> = {
   [AppLocale.Ru]: 'client.profile.langRussian',
   [AppLocale.Hy]: 'client.profile.langArmenian',
   [AppLocale.De]: 'client.profile.langGerman',
-  [AppLocale.Es]: 'client.profile.langSpanish'
+  [AppLocale.Es]: 'client.profile.langSpanish',
+  [AppLocale.Fr]: 'client.profile.langFrench'
 }
 
 /**

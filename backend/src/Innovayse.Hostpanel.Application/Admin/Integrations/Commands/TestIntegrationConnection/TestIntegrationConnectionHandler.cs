@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Commands.TestIntegrationConnection;
@@ -24,9 +23,6 @@ public sealed class TestIntegrationConnectionHandler
     /// <summary>Payment plugin resolver, used for live gateway probes.</summary>
     private readonly IPaymentPluginResolver _pluginResolver;
 
-    /// <summary>Invalidates the cached hosting-panel server-info results a test call would make stale.</summary>
-    private readonly IMemoryCache _cache;
-
     /// <summary>Logs a provider failure without putting its detail on the wire.</summary>
     private readonly ILogger<TestIntegrationConnectionHandler> _logger;
 
@@ -42,7 +38,6 @@ public sealed class TestIntegrationConnectionHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
-    /// <param name="cache">Invalidates the cached hosting-panel server-info results a test call would make stale.</param>
     /// <param name="logger">Logs a provider failure without putting its detail on the wire.</param>
     /// <param name="clock">The source of the current moment.</param>
     /// <param name="plugins">The loaded plugins, for a slug that names no built-in integration.</param>
@@ -50,7 +45,6 @@ public sealed class TestIntegrationConnectionHandler
     public TestIntegrationConnectionHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
-        IMemoryCache cache,
         ILogger<TestIntegrationConnectionHandler> logger,
         IClock clock,
         IPluginRegistry plugins,
@@ -60,7 +54,6 @@ public sealed class TestIntegrationConnectionHandler
         _connections = connections;
         _context = context;
         _pluginResolver = pluginResolver;
-        _cache = cache;
         _logger = logger;
         _clock = clock;
     }
@@ -111,13 +104,6 @@ public sealed class TestIntegrationConnectionHandler
 
                 result = await ProbePaymentPluginAsync(plugin, testedAt, ct);
             }
-        }
-
-        // A tested hosting-panel credential invalidates the cached live server-info result
-        // the read side serves for 5 minutes, whatever the probe's own outcome.
-        if (command.Slug.Equals(IntegrationSlugs.Cwp, StringComparison.OrdinalIgnoreCase))
-        {
-            _cache.Remove(HostingPanelCacheKeys.Cwp);
         }
 
         return Result<IntegrationTestResultDto>.Success(result);

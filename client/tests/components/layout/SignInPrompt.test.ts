@@ -54,6 +54,8 @@ describe('LayoutSignInPrompt', () => {
     })
 
     expect(wrapper.get('[data-testid="signin-prompt-text"]').text()).toBe('signInPrompt.message')
+    expect(wrapper.get('[data-testid="signin-prompt-signin"]').text()).toBe('common.signIn')
+    expect(wrapper.get('[data-testid="signin-prompt-dismiss"]').text()).toBe('ui.close')
     const href = wrapper.get('[data-testid="signin-prompt-signin"]').attributes('href') ?? ''
     const target = new URL(href, 'http://portal.test')
     expect(target.pathname).toBe('/api/portal/auth/sso/authorize')

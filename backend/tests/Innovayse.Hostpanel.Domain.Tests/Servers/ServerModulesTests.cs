@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Domain.Servers;
 namespace Innovayse.Hostpanel.Domain.Tests.Servers;
 
 /// <summary>
-/// <see cref="ServerModules"/>: the host offers cPanel only, the ids it still names are spelled exactly as stored rows hold them,
+/// <see cref="ServerModules"/>: the host offers cPanel only, the id it still names for the SSH agent profile is spelled exactly as stored rows hold it,
 /// and two ids are the same module when they match ignoring case, the one comparison every caller uses.
 /// </summary>
 public sealed class ServerModulesTests
@@ -15,13 +15,13 @@ public sealed class ServerModulesTests
         ServerModules.Known.Should().Equal("CPanel");
     }
 
-    /// <summary>The legacy ids are spelled as stored rows hold them and are not offered.</summary>
+    /// <summary>The Linux module is spelled as stored, listed in the catalog and never in the orderable modules.</summary>
     [Fact]
-    public void LegacyConstants_AreTheStoredSpellings_AndAreNotKnown()
+    public void Linux_IsListedButNotKnown()
     {
-        ServerModules.Centos.Should().Be("Centos");
-        ServerModules.Cwp7.Should().Be("Cwp7");
-        ServerModules.Known.Should().NotContain([ServerModules.Centos, ServerModules.Cwp7]);
+        ServerModules.Linux.Should().Be("Linux");
+        ServerModules.Listed.Should().Equal("CPanel", "Linux");
+        ServerModules.Known.Should().NotContain(ServerModules.Linux);
     }
 
     /// <summary>Ids match ignoring case, so a row stored as <c>HestiaCP</c> and a plugin that declares <c>hestiacp</c> are one module.</summary>

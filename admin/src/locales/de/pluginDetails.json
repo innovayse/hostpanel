@@ -20,7 +20,6 @@
   "staged": "Version {version} vorbereitet, wird nach dem Neustart angewendet",
   "updateAvailable": "Update verfügbar: {version}",
   "updateTo": "Auf {version} aktualisieren",
-  "uninstall": "Deinstallieren",
   "links": {
     "heading": "Links",
     "documentation": "Dokumentation",
@@ -80,10 +79,8 @@
   "confirm": {
     "installTitle": "Diese Version installieren?",
     "installMessage": "Version {version} von {name} installieren? Die Änderung wird nach einem Server-Neustart wirksam.",
-    "install": "Installieren",
     "downgradeTitle": "Eine ältere Version installieren?",
-    "downgradeMessage": "Version {version} von {name} ist älter als die installierte Version {installed}. Eine ältere Version enthält möglicherweise keine Fehlerbehebungen und kann Daten, die die neuere geschrieben hat, eventuell nicht lesen. Die Änderung wird nach einem Server-Neustart wirksam. Trotzdem installieren?",
-    "downgrade": "Ältere Version installieren"
+    "downgradeMessage": "Version {version} von {name} ist älter als die installierte Version {installed}. Eine ältere Version enthält möglicherweise keine Fehlerbehebungen und kann Daten, die die neuere geschrieben hat, eventuell nicht lesen. Die Änderung wird nach einem Server-Neustart wirksam. Trotzdem installieren?"
   },
   "feedback": {
     "licenceSaved": "Der Lizenzschlüssel wurde gespeichert.",
@@ -96,6 +93,14 @@
   "settings": {
     "emptyTitle": "Keine Einstellungen",
     "emptyDescription": "Dieses Plugin hat keine änderbaren Einstellungen."
+  },
+  "servers": {
+    "heading": "Server",
+    "description": "Server auf den Modulen, die dieses Plugin bedient ({modules}). Die Verbindung jedes Servers wird auf seiner Serverseite eingerichtet und getestet.",
+    "lastTested": "Zuletzt getestet {when}",
+    "neverTested": "Nie getestet",
+    "empty": "Noch kein Server nutzt dieses Plugin.",
+    "openServers": "Server öffnen, um einen hinzuzufügen"
   },
   "title": "Plugin",
   "overview": {

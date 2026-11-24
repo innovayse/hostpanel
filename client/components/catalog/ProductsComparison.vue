@@ -1,6 +1,8 @@
 <template>
-  <section
+  <UiStack
     v-if="activeGroup"
+    :as="UiStackTag.Section"
+    gap="none"
     class="py-8 md:py-20 bg-ui-surface relative overflow-hidden [.tpl-classic_&]:bg-classic-surface-2"
     data-testid="products-comparison"
   >
@@ -9,12 +11,12 @@
       <UiDecor class="top-1/2 right-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-[150px]" />
     </UiDecor>
 
-    <UiContainer class="relative z-10">
+    <UiContainer class="relative z-10 w-full">
       <MarketingSectionHeader class="mb-12" :badge="$t('products.comparison.title')" :subtitle="$t('products.comparison.subtitle')">
         <template #title>
           <i18n-t keypath="products.comparison.headline" tag="span">
             <template #perfectMatch>
-              <span class="text-primary-600 dark:text-primary-400 [.tpl-classic_&]:text-classic-brand">{{ $t('products.comparison.perfectMatchHighlight') }}</span>
+              <UiText :as="UiTextTag.Span" size="inherit" tone="primary" weight="bold" class="[.tpl-classic_&]:text-classic-brand">{{ $t('products.comparison.perfectMatchHighlight') }}</UiText>
             </template>
           </i18n-t>
         </template>
@@ -29,33 +31,39 @@
         testid="comparison-groups"
       />
 
-      <div
+      <UiStack
+        gap="none"
         class="animate-reveal-up motion-reduce:animate-none"
         :class="revealDelay(200)"
       >
         <UiTable scrollable :label="$t('products.comparison.title')">
           <UiTableHead>
-            <tr>
-              <th class="text-left p-6 text-gray-900 dark:text-white font-bold text-lg w-1/4 [.tpl-classic_&]:text-classic-ink">{{ $t('products.comparison.headers.feature') }}</th>
-              <th
+            <UiTableRow :hoverable="false">
+              <UiTableTh class="w-1/4 [.tpl-classic_&]:text-classic-ink">{{ $t('products.comparison.headers.feature') }}</UiTableTh>
+              <UiTableTh
                 v-for="plan in activeGroup.plans"
                 :key="plan.id"
-                class="p-6 text-center align-top"
+                align="center"
+                class="align-top"
                 :class="plan.isFeatured ? 'bg-gradient-to-b from-primary-500/10 to-transparent [.tpl-classic_&]:bg-none [.tpl-classic_&]:bg-classic-brand-soft' : ''"
                 :data-testid="`comparison-plan-${plan.id}`"
               >
-                <NuxtLink :to="localePath(siteConfigurePath(plan.id))" class="inline-flex flex-col items-center gap-1">
-                  <span class="text-gray-900 dark:text-white font-bold text-base [.tpl-classic_&]:text-classic-ink">{{ plan.name }}</span>
-                  <span
+                <UiLink :to="localePath(siteConfigurePath(plan.id))" tone="inherit" :underline="false" class="inline-flex flex-col items-center gap-1">
+                  <UiText :as="UiTextTag.Span" weight="bold" class="normal-case tracking-normal [.tpl-classic_&]:text-classic-ink">{{ plan.name }}</UiText>
+                  <UiText
                     v-if="plan.isFeatured"
-                    class="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary-500 text-on-primary inline-block [.tpl-classic_&]:rounded [.tpl-classic_&]:bg-classic-fill [.tpl-classic_&]:text-classic-on-brand"
+                    :as="UiTextTag.Span"
+                    size="xs"
+                    weight="semibold"
+                    tone="inherit"
+                    class="px-2 py-0.5 rounded-full bg-primary-500 text-on-primary inline-block normal-case tracking-normal [.tpl-classic_&]:rounded [.tpl-classic_&]:bg-classic-fill [.tpl-classic_&]:text-classic-on-brand"
                     :data-testid="`comparison-popular-${plan.id}`"
-                  >{{ $t('products.comparison.headers.popular') }}</span>
-                  <span v-if="plan.price" class="text-2xl font-bold text-primary-700 dark:text-primary-300 [.tpl-classic_&]:text-classic-brand" :data-testid="`comparison-price-${plan.id}`">{{ plan.price }}</span>
-                  <span v-if="plan.price" class="text-xs font-normal normal-case text-gray-600 dark:text-gray-400 [.tpl-classic_&]:text-classic-muted">{{ $t(`products.pricing.cycles.${PRICING_CYCLE_I18N_KEY[plan.billingCycle]}`) }}</span>
-                </NuxtLink>
-              </th>
-            </tr>
+                  >{{ $t('products.comparison.headers.popular') }}</UiText>
+                  <UiText v-if="plan.price" :as="UiTextTag.Span" size="inherit" weight="bold" tone="inherit" class="text-2xl text-primary-700 dark:text-primary-300 normal-case tracking-normal [.tpl-classic_&]:text-classic-brand" :data-testid="`comparison-price-${plan.id}`">{{ plan.price }}</UiText>
+                  <UiText v-if="plan.price" :as="UiTextTag.Span" size="xs" tone="inherit" class="normal-case tracking-normal text-gray-600 dark:text-gray-400 [.tpl-classic_&]:text-classic-muted">{{ $t(`products.pricing.cycles.${PRICING_CYCLE_I18N_KEY[plan.billingCycle]}`) }}</UiText>
+                </UiLink>
+              </UiTableTh>
+            </UiTableRow>
           </UiTableHead>
 
           <UiTableBody class="bg-ui-raised">
@@ -65,24 +73,24 @@
               group
               :data-testid="`comparison-row-${rowIndex}`"
             >
-              <td class="p-4 text-sm font-medium text-gray-900 dark:text-white [.tpl-classic_&]:text-classic-ink">{{ row.label }}</td>
-              <td
+              <UiTableTd class="font-medium text-gray-900 dark:text-white [.tpl-classic_&]:text-classic-ink">{{ row.label }}</UiTableTd>
+              <UiTableTd
                 v-for="(value, index) in row.values"
                 :key="`${row.label}-${activeGroup.plans[index]?.id ?? index}`"
-                class="p-4 text-center text-sm"
+                align="center"
                 :class="[
                   value ? 'text-gray-900 dark:text-white [.tpl-classic_&]:text-classic-ink' : 'text-gray-500 dark:text-gray-400 [.tpl-classic_&]:text-classic-muted',
                   activeGroup.plans[index]?.isFeatured ? 'bg-primary-500/5 [.tpl-classic_&]:bg-classic-brand-soft' : '',
                 ]"
               >
                 {{ value || $t('products.comparison.notIncluded') }}
-              </td>
+              </UiTableTd>
             </UiTableRow>
           </UiTableBody>
         </UiTable>
-      </div>
+      </UiStack>
     </UiContainer>
-  </section>
+  </UiStack>
 </template>
 
 <script setup lang="ts">
@@ -101,6 +109,7 @@ import { revealDelay } from '~/utils/reveal'
 import type { ChipTab } from '~/types/chiptab'
 import type { ComparisonGroup } from '~/types/comparisongroup'
 import { siteConfigurePath } from '~/constants/siteRoutes'
+import { UiStackTag, UiTextTag } from '~/utils/ui/enums'
 
 /** Props of ProductsComparison. */
 interface Props {

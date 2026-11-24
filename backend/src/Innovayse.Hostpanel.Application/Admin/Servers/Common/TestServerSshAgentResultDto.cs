@@ -10,7 +10,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 /// means the agent answering was installed for another server record.
 /// </param>
 /// <param name="Provider">
-/// The profile the agent reports it runs (for example <c>cwp</c> or <c>generic-linux</c>), when it
+/// The profile id the agent reports it runs (a plugin's profile id or <c>generic-linux</c>), when it
 /// answered. The agent's own name for its profile, passed through as it was reported.
 /// </param>
 public sealed record TestServerSshAgentResultDto(bool IsHealthy, string? AgentVersion, SshProviderFailure? Error, string? Provider);

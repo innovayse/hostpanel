@@ -92,7 +92,7 @@ describe('PluginChatMessage', () => {
   it('gives a code block of the reply its own copy button', () => {
     const wrapper = mountMessage({ text: '```\nnpm run build\n```' })
 
-    expect(wrapper.get('[data-testid="markdown-copy"]').attributes('aria-label')).toBe('Copy code')
+    expect(wrapper.get('[data-testid="markdown-copy"]').attributes('aria-label')).toBe('Copy')
   })
 
   it('shows a link of the reply as text', () => {

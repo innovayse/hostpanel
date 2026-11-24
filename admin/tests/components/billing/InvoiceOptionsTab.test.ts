@@ -10,6 +10,7 @@ import { json, problem } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
 import { stubRoutes } from '../../helpers/routes'
 import { useToastStore } from '@/stores/toast'
+import { toastMessages } from '../../helpers/toasts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -73,7 +74,6 @@ describe('InvoiceOptionsTab', () => {
     await wrapper.get('[data-testid="billing-invoice-options-form"]').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="billing-invoice-options-feedback"]').text())
-      .toBe('The due date is before the invoice date.')
+    expect(toastMessages()).toContain('The due date is before the invoice date.')
   })
 })

@@ -81,7 +81,7 @@ hp_home_root() {
   root="$(hp_conf_value home_root)"
   root="${root:-/home}"
   root="${root%/}"
-  [[ "$root" =~ ^/[A-Za-z0-9._/-]+$ ]] && [[ "$root" != *..* ]] || hp_die 1 "home_root must be a plain absolute path"
+  { [[ "$root" =~ ^/[A-Za-z0-9._/-]+$ ]] && [[ "$root" != *..* ]]; } || hp_die 1 "home_root must be a plain absolute path"
   echo "$root"
 }
 
@@ -92,7 +92,7 @@ hp_require_account() {
   HOME_L="$(hp_home_root)" || exit 1
   HOME_L="$HOME_L/$ACCOUNT"
   HOME_DIR="$ROOT$HOME_L"
-  [ -d "$HOME_DIR" ] && [ ! -L "$HOME_DIR" ] || hp_die "$EXIT_NOT_OWNED" "no home for $ACCOUNT"
+  { [ -d "$HOME_DIR" ] && [ ! -L "$HOME_DIR" ]; } || hp_die "$EXIT_NOT_OWNED" "no home for $ACCOUNT"
 }
 
 # ----------------------------------------------------------------------------- web server detection
@@ -145,7 +145,7 @@ hp_detect_web() {
       ENABLED_DIR="$ROOT/etc/apache2/sites-enabled"
       WEB_TEST=("$SBIN/apache2ctl" -t)
       WEB_USER=www-data
-      [ -x "$SBIN/a2ensite" ] && [ -x "$SBIN/a2dissite" ] && [ -x "$SBIN/a2enmod" ] || hp_die 1 "a2ensite, a2dissite or a2enmod missing"
+      { [ -x "$SBIN/a2ensite" ] && [ -x "$SBIN/a2dissite" ] && [ -x "$SBIN/a2enmod" ]; } || hp_die 1 "a2ensite, a2dissite or a2enmod missing"
       ;;
     httpd)
       VHOST_DIR="$ROOT/etc/httpd/conf.d"
@@ -158,7 +158,7 @@ hp_detect_web() {
       WEB_USER="$(hp_nginx_user)"
       ;;
   esac
-  [ -x "${WEB_TEST[0]}" ] && [ -x "$BIN/systemctl" ] || hp_die 1 "the web server test command or systemctl is missing"
+  { [ -x "${WEB_TEST[0]}" ] && [ -x "$BIN/systemctl" ]; } || hp_die 1 "the web server test command or systemctl is missing"
   [ -d "$VHOST_DIR" ] || hp_die 1 "$WEB_UNIT configuration directory missing"
 }
 
@@ -183,7 +183,7 @@ hp_php_layouts() {
     [ -x "$file" ] || continue
     version="${file##*/php-fpm}"
     [[ "$version" =~ $PHP_RE ]] || continue
-    [ -d "$ROOT/etc/php/$version/fpm/pool.d" ] && [ -x "$BIN/php$version" ] || continue
+    { [ -d "$ROOT/etc/php/$version/fpm/pool.d" ] && [ -x "$BIN/php$version" ]; } || continue
     printf '%s\t/usr/sbin/php-fpm%s\t/etc/php/%s/fpm/pool.d\tphp%s-fpm\t/usr/bin/php%s\t/run/php\n' \
       "$version" "$version" "$version" "$version" "$version"
   done
@@ -191,7 +191,7 @@ hp_php_layouts() {
   for dir in "$ROOT"/opt/remi/php[0-9][0-9]*; do
     nn="${dir##*/php}"
     [[ "$nn" =~ ^[0-9]{2,3}$ ]] || continue
-    [ -x "$dir/root/usr/sbin/php-fpm" ] && [ -x "$dir/root/usr/bin/php" ] && [ -d "$ROOT/etc/opt/remi/php$nn/php-fpm.d" ] || continue
+    { [ -x "$dir/root/usr/sbin/php-fpm" ] && [ -x "$dir/root/usr/bin/php" ] && [ -d "$ROOT/etc/opt/remi/php$nn/php-fpm.d" ]; } || continue
     printf '%s.%s\t/opt/remi/php%s/root/usr/sbin/php-fpm\t/etc/opt/remi/php%s/php-fpm.d\tphp%s-php-fpm\t/opt/remi/php%s/root/usr/bin/php\t/var/opt/remi/php%s/run/php-fpm\n' \
       "${nn:0:1}" "${nn:1}" "$nn" "$nn" "$nn" "$nn" "$nn"
   done

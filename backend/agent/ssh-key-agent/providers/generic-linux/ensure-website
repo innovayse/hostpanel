@@ -22,7 +22,7 @@ HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOSTN="$2"; DOCROOT="$3"; PHP="$4"; LINK="$5"
 hp_require_account "$1"
 [[ "$HOSTN" =~ $HOSTNAME_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad hostname"
-[[ "$DOCROOT" =~ $DOCROOT_RE ]] && [[ "$DOCROOT" != *..* ]] || hp_die "$EXIT_BAD_ARGS" "bad docroot"
+{ [[ "$DOCROOT" =~ $DOCROOT_RE ]] && [[ "$DOCROOT" != *..* ]]; } || hp_die "$EXIT_BAD_ARGS" "bad docroot"
 [ -z "$PHP" ] || [[ "$PHP" =~ $PHP_RE ]] || hp_die "$EXIT_BAD_ARGS" "bad php version"
 [[ "$LINK" =~ ^[01]$ ]] || hp_die "$EXIT_BAD_ARGS" "bad link_root"
 [ "$LINK" = 0 ] || [ -n "$PHP" ] || hp_die "$EXIT_BAD_ARGS" "link_root needs a php version"
@@ -86,7 +86,7 @@ IFS=/ read -r -a PARTS <<< "${TARGET#"$HOME_REAL"/}"
 CUR="$HOME_REAL"
 for i in "${!PARTS[@]}"; do
   CUR="$CUR/${PARTS[$i]}"
-  [ ! -e "$CUR" ] && [ ! -L "$CUR" ] || continue
+  { [ ! -e "$CUR" ] && [ ! -L "$CUR" ]; } || continue
   if [ "$LINK" = 1 ] && [ "$i" -eq $(( ${#PARTS[@]} - 1 )) ]; then
     continue
   fi

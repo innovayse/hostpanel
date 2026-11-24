@@ -19,7 +19,7 @@ TOOLS=(flock setsid nohup awk basename cut find grep head ln mkdir mktemp mv rea
 BUNDLES=(ca-certificates.crt ca-bundle.crt tls-ca-bundle.pem)
 
 for dir in "$@"; do
-  [[ "$dir" =~ ^/[A-Za-z0-9._+/-]+$ ]] && [[ "$dir" != *..* ]] || hp_die "$EXIT_BAD_ARGS" "usage: jail-extras [trust directory] (any number)"
+  { [[ "$dir" =~ ^/[A-Za-z0-9._+/-]+$ ]] && [[ "$dir" != *..* ]]; } || hp_die "$EXIT_BAD_ARGS" "usage: jail-extras [trust directory] (any number)"
 done
 
 {

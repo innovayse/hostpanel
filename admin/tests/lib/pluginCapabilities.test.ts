@@ -23,7 +23,7 @@ const LABELS = 'plugins.pluginInstallDialog.capabilities'
 const sdkCapabilities = (): string[] => {
   const path = fileURLToPath(new URL(SDK_CAPABILITIES, import.meta.url))
   expect(existsSync(path), 'the plugin SDK submodule must be checked out').toBe(true)
-  return [...readFileSync(path, 'utf8').matchAll(/public const string \w+ = "(\w+)";/g)].map((match) => match[1])
+  return [...readFileSync(path, 'utf8').matchAll(/public const string \w+ = "(\w+)";/g)].map((match) => match[1] as string)
 }
 
 describe('PluginCapability', () => {

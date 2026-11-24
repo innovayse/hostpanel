@@ -535,7 +535,7 @@ describe('ClientServiceDetailView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="client-service-new-package"]').exists()).toBe(false)
-    const select = wrapper.getComponent('[data-testid="client-service-package-select"]')
+    const select = wrapper.findAllComponents(UiSelect).find((candidate) => candidate.attributes('data-testid') === 'client-service-package-select')!
     expect(select.props('options')).toEqual([{ value: 'Starter', label: 'Starter' }, { value: 'Business', label: 'Business' }])
     select.vm.$emit('update:modelValue', 'Business')
     await flushPromises()

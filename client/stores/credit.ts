@@ -11,6 +11,7 @@
 import { defineStore } from 'pinia'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { apiErrorMessage } from '~/lib/errorHandler'
+import { useClientStore } from '~/stores/client'
 import type { ClientCredit } from '~/types/clientcredit'
 
 /** How many history lines one page of the table shows. */
@@ -23,6 +24,7 @@ export const CREDIT_PAGE_SIZE = 10
  */
 export const useCreditStore = defineStore('credit', () => {
   const billing = useBillingApi()
+  const client = useClientStore()
 
   /** The credit on screen; null until {@link load} or after a failed read. */
   const credit = ref<ClientCredit | null>(null)
@@ -60,14 +62,19 @@ export const useCreditStore = defineStore('credit', () => {
   /**
    * Reads the credit and one page of its history.
    *
+   * An identity with no client record has no credit: nothing is sent for it, the API would refuse it.
+   *
    * @param nextPage - 1-based history page; the page already on screen when absent.
-   * @returns The credit; null when it could not be read ({@link error} holds the sentence).
+   * @returns The credit; null when it could not be read ({@link error} holds the sentence) or the identity has no client record.
    */
   const load = async (nextPage: number = page.value): Promise<ClientCredit | null> => {
     loading.value = true
     error.value = ''
     requestedPage.value = nextPage
     try {
+      if (!(await client.isCustomerAccount())) {
+        return null
+      }
       credit.value = await billing.fetchCredit(nextPage, CREDIT_PAGE_SIZE)
       page.value = nextPage
     } catch (e: unknown) {

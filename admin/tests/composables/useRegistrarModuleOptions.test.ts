@@ -5,6 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useRegistrarModuleOptions } from '@/composables/useRegistrarModuleOptions'
+import { PluginCapability } from '@/types/plugin'
 import { json, stubFetch } from '../helpers/fetch'
 
 afterEach(() => {
@@ -34,6 +35,22 @@ describe('useRegistrarModuleOptions', () => {
     )
     const { options, load } = useRegistrarModuleOptions()
     expect(options.value).toEqual([])
+
+    await load()
+
+    expect(options.value).toEqual([{ value: 'registrar-one', label: 'Registrar One' }])
+  })
+
+  it('offers only the registrars that declare the capability asked for', async () => {
+    setActivePinia(createPinia())
+    stubFetch(
+      json([
+        { ...plugin('registrar-one', 'Registrar One', 'registrar'), capabilities: ['registrarOperations', 'registrarDomainList'] },
+        { ...plugin('registrar-two', 'Registrar Two', 'registrar'), capabilities: ['registrarOperations'] },
+        { ...plugin('a-gateway', 'A Gateway', 'payment'), capabilities: ['registrarDomainList'] },
+      ]),
+    )
+    const { options, load } = useRegistrarModuleOptions(PluginCapability.RegistrarDomainList)
 
     await load()
 

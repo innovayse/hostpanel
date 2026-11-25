@@ -347,6 +347,9 @@ public static class HostpanelErrorCodes
     /// <summary>The name is already registered through this system (409).</summary>
     public const string DOMAIN_ALREADY_REGISTERED = "DOMAIN_ALREADY_REGISTERED";
 
+    /// <summary>The registrar's domain list does not say when the domain expires, so it cannot be imported with a due date (409).</summary>
+    public const string DOMAIN_IMPORT_EXPIRY_UNKNOWN = "DOMAIN_IMPORT_EXPIRY_UNKNOWN";
+
     /// <summary>The registrar rejected the registration request (502).</summary>
     public const string DOMAIN_REGISTRATION_UPSTREAM_FAILED = "DOMAIN_REGISTRATION_UPSTREAM_FAILED";
 

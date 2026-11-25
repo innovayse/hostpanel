@@ -6,7 +6,7 @@
  */
 import { expect, test } from './support/test'
 import { FREE_TERM, TAKEN_DOMAIN } from './support/fixtures.mjs'
-import { required, waitForHydration } from './support/helpers'
+import { required, resetStub, stubRequests, waitForHydration } from './support/helpers'
 
 test('an available name can be added to the cart', async ({ page }) => {
   await page.goto('/domains')
@@ -37,6 +37,18 @@ test('a registered name is reported as taken and offers no add button', async ({
   await expect(page.getByTestId(`domain-result-${TAKEN_DOMAIN}`)).toHaveAttribute('data-status', 'taken')
   await expect(page.getByTestId(`domain-add-${TAKEN_DOMAIN}`)).toHaveCount(0)
   await expect(page.getByTestId(`domain-result-${name}.net`)).toHaveAttribute('data-status', 'available')
+})
+
+test('a malformed name is refused at once, before any request reaches the backend', async ({ page, request }) => {
+  await resetStub(request)
+  await page.goto('/domains')
+  await waitForHydration(page)
+
+  await page.getByTestId('domain-search-input').fill('bad name!')
+  await page.getByTestId('domain-search-submit').click()
+
+  await expect(page.getByTestId('domains-error')).toBeVisible()
+  expect((await stubRequests(request)).some(r => r.path === '/api/domains/check')).toBe(false)
 })
 
 test('the search field and its button have the same height and sit on one line', async ({ page }) => {

@@ -6,6 +6,21 @@
     "renewalPrice": "Precio de renovación",
     "regPeriod": "Período de registro",
     "noDomainsMatchYourFilters": "Ningún dominio coincide con tus filtros",
-    "noDomainsFound": "No se encontraron dominios"
+    "noDomainsFound": "No se encontraron dominios",
+    "importFromRegistrar": "Importar del registrador"
+  },
+  "registrarImport": {
+    "title": "Importar del registrador",
+    "intro": "Asigna a un cliente un dominio que el registrador ya tiene, con su vencimiento real. No se crea ningún pedido, factura ni cargo.",
+    "chooseRegistrar": "Elige un registrador",
+    "noRegistrars": "Ningún registrador instalado lista sus dominios",
+    "chooseClientFirst": "Elige primero el cliente al que pertenecerá el dominio",
+    "empty": "Esta cuenta del registrador no tiene dominios",
+    "inPanel": "En el panel",
+    "notInPanel": "No está en el panel",
+    "noExpiry": "Sin vencimiento informado",
+    "import": "Importar",
+    "previousPage": "Anterior",
+    "page": "Página {page}"
   }
 }

@@ -1807,4 +1807,7 @@
   <data name="GatewayOrderIdInvalid" xml:space="preserve">
     <value>Идентификатор заказа шлюза содержит от 1 до 255 символов, без пробелов по краям и управляющих символов.</value>
   </data>
+  <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
+    <value>Курсор страницы регистратора слишком длинный.</value>
+  </data>
 </root>

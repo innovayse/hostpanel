@@ -27,8 +27,9 @@
  * Explains that the signed-in account has no client profile, and offers a way out.
  *
  * Shown wherever the client portal would otherwise render an empty section or a red alert
- * for an account that simply is not a customer: most often the platform superadmin, who
- * authenticates fine and has no row in the backend's `clients` table.
+ * for an account that has no client record: a person who signed in and has not ordered yet (the
+ * first order creates the record, so the action leads to the catalogue), or a staff account such
+ * as the platform superadmin, who authenticates fine and has no row in the backend's `clients` table.
  *
  * The explanation is the API's own sentence, kept by `stores/client.ts` when it recognised
  * the CLIENT_PROFILE_NOT_FOUND code, and already in the caller's language: the backend

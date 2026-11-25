@@ -169,9 +169,10 @@ public static class StatusMapping
             "REFUND_BLOCKED_BY_PLUGIN" => new(409, "Conflict"),
             // Exact rows: the registrar's own state stands in the way (no such operation there, the
             // domain not active yet, no privacy subscription), and none of the names carries a
-            // CONFLICT / ALREADY token for the generic arms.
+            // CONFLICT / ALREADY token for the generic arms. An import the registrar's list gives no expiry for is the
+            // same kind of state: the registrar does not say what the import needs.
             "REGISTRAR_OPERATION_UNSUPPORTED" or "REGISTRAR_DOMAIN_NOT_ACTIVE" or "REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE"
-                => new(409, "Conflict"),
+                or "DOMAIN_IMPORT_EXPIRY_UNKNOWN" => new(409, "Conflict"),
             // Exact rows: the name is not free to buy (a state conflict, and the name carries no
             // CONFLICT / ALREADY token); the operator's registrar balance is short, which is the
             // deployment's state rather than the caller's (503).

@@ -35,3 +35,14 @@ export const makeClientUser = (overrides: Partial<ClientUser> = {}): ClientUser 
   actsForAccount: true,
   ...overrides
 })
+
+/**
+ * Builds a signed-in identity that has no client record yet, as `GET /api/portal/client/me` answers for
+ * it: no id, no billing field, no permission flag and no account to act for, flagged as not a customer
+ * account. The person this stands for becomes a customer with their first order.
+ *
+ * @param overrides - Fields to set on top of the defaults.
+ * @returns The identity.
+ */
+export const makeUserWithoutClientRecord = (overrides: Partial<ClientUser> = {}): ClientUser =>
+  makeClientUser({ id: null, hasClientProfile: false, permissions: 0, actsForAccount: false, ...overrides })

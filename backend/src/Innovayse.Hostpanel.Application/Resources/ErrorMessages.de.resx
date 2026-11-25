@@ -672,4 +672,7 @@
   <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>Kein installiertes Plugin liefert dieses SSH-Schlüssel-Agent-Profil.</value>
   </data>
+  <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
+    <value>Die Registrierungsstelle meldet nicht, wann diese Domain abläuft, daher kann sie nicht importiert werden.</value>
+  </data>
 </root>

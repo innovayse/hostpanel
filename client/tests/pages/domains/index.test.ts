@@ -196,12 +196,23 @@ describe('domains page', () => {
     expect(received.props.error).toBe('')
   })
 
-  it('hands the template the sentence of a name the API refused', async () => {
-    replies[`POST ${DomainPath.DomainCheck}`] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { Domain: ['Domain name is not valid.'] } } }
+  it('hands the template the sentence of a malformed name at once, without asking the API', async () => {
     const wrapper = await mountDomains()
 
     wrapper.findComponent(TemplateDomains).vm.$emit('search', 'bad name!')
-    await until(() => received.props.error === 'Domain name is not valid.', 'the refusal to reach the template')
+    await flushPromises()
+
+    expect(received.props.error).toBe('domains.invalidName')
+    expect(received.props.results).toEqual([])
+    expect(domainChecks()).toHaveLength(0)
+  })
+
+  it('hands the template the sentence of a name the API refused', async () => {
+    replies[`POST ${DomainPath.DomainCheck}`] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { Domain: ['Domain name is reserved.'] } } }
+    const wrapper = await mountDomains()
+
+    wrapper.findComponent(TemplateDomains).vm.$emit('search', 'reserved')
+    await until(() => received.props.error === 'Domain name is reserved.', 'the refusal to reach the template')
 
     expect(received.props.results).toEqual([])
   })

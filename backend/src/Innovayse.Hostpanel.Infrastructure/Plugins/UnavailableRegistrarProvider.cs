@@ -167,6 +167,13 @@ public sealed class UnavailableRegistrarProvider : IRegistrarProvider
         return Task.FromResult(Result<IReadOnlyList<TldPricing>>.Success([]));
     }
 
+    /// <inheritdoc />
+    /// <remarks>Always <c>REGISTRAR_NOT_CONFIGURED</c>: with no registrar to ask, nothing is held.</remarks>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct)
+    {
+        return Task.FromResult(Result<RegistrarHeldDomainPage>.FailureCode(HostpanelErrorCodes.REGISTRAR_NOT_CONFIGURED));
+    }
+
     /// <summary>The answer every operation gets.</summary>
     /// <returns>A failed result carrying <c>REGISTRAR_NOT_CONFIGURED</c>.</returns>
     private static RegistrarResult Refused()

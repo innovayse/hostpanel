@@ -145,13 +145,19 @@ jobs:
 
   # The SSH key agent (backend/agent/ssh-key-agent): its Python unit tests, which also run every helper for real against
   # a stand-in server tree, then a syntax check and shellcheck of the provider helpers. The same job as agent:test in
-  # .gitlab-ci.yml. shellcheck is preinstalled on the runner image.
+  # .gitlab-ci.yml. shellcheck is installed here at a pinned version: the self-hosted runners behind ubuntu-latest do
+  # not ship it, and the job must pass on every runner it lands on.
   agent:
     name: SSH key agent (unit tests + shell helpers)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install a pinned shellcheck
+        run: |
+          python3 -m venv "$RUNNER_TEMP/shellcheck-venv"
+          "$RUNNER_TEMP/shellcheck-venv/bin/pip" install --quiet shellcheck-py==0.10.0.1
+          echo "$RUNNER_TEMP/shellcheck-venv/bin" >> "$GITHUB_PATH"
       - run: sh scripts/run-agent-tests.sh
       - name: Check the syntax of every helper and lint them with shellcheck
         run: sh scripts/check-agent-helpers.sh

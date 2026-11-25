@@ -60,7 +60,7 @@ Open a client, go to their **Domains** tab and click a domain to open its detail
 | Nameservers | Nameserver 1-5; saved to the registrar on change (`NAMESERVERS_UPSTREAM_FAILED` if the registrar refuses) |
 | Registrar Commands | Register, Renew, Modify Contact Details, Get EPP Code, Enable / Disable ID Protection, Turn auto renew on / off at the registrar |
 | Dates & Billing | Registration period, expiry date, renewal price, subscription ID |
-| Management Tools | DNS Management, Email Forwarding, ID Protection, Auto Renew, Registrar Lock |
+| Management Tools | DNS Management, Email Forwarding, ID Protection, Renew from the panel, Registrar Lock |
 | Admin Notes | Staff-only notes |
 | DNS Records | DNS record table (add, edit, delete; `DNS_RECORD_UPSTREAM_FAILED` if the registrar refuses) |
 | Email Forwarding | Forwarding rule table |
@@ -73,7 +73,7 @@ Open a client, go to their **Domains** tab and click a domain to open its detail
 - **Renew from the panel**: controls whether a renewal invoice is raised automatically before expiry. It never changes anything at the registrar.
 - **Registrar Lock**: prevents unauthorised transfers out (`REGISTRAR_LOCK_UPSTREAM_FAILED` if the registrar refuses).
 
-The registrar's own auto renew is a separate setting, changed with **Turn on auto renew at the registrar** and **Turn off auto renew at the registrar** on the Registrar tab (`DOMAIN_AUTO_RENEW_UPSTREAM_FAILED` if the registrar refuses). Turn it off at the registrar for a domain the panel renews, so the registrar does not renew it a second time. These two actions do not change the **Renew from the panel** switch.
+The registrar's own auto renew is a separate setting, changed with **Turn on auto renew at the registrar** and **Turn off auto renew at the registrar** on the Registrar tab (`DOMAIN_AUTO_RENEW_UPSTREAM_FAILED` if the registrar refuses). Turn it off at the registrar for a domain the panel renews, so the registrar does not renew it a second time. These two actions do not change the **Renew from the panel** switch. Registering a domain sets only the panel renewal; auto renew at the registrar stays off unless the operator asks for it.
 
 A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when a registrar command is attempted. Cancelling a domain that cannot be cancelled returns `DOMAIN_CANCEL_NOT_ALLOWED`.
 

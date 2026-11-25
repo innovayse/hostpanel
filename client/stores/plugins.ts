@@ -11,6 +11,7 @@
 
 import { defineStore } from 'pinia'
 import { usePluginsApi } from '~/composables/apis/usePluginsApi'
+import { useClientStore } from '~/stores/client'
 import type { PluginMenuLink } from '~/types/pluginmenulink'
 import { apiErrorCode, apiErrorMessage, apiFieldErrors, PortalErrorCode } from '~/lib/errorHandler'
 import { HttpMethod } from '~/types/httpmethod'
@@ -32,6 +33,7 @@ const UNAVAILABLE: PluginCallResult = { ok: false, data: null, error: '', fieldE
  */
 export const usePluginsStore = defineStore('plugins', () => {
   const api = usePluginsApi()
+  const client = useClientStore()
 
   /** The plugin menu links the signed-in person may open, in display order; empty until {@link loadUi} or with no plugin. */
   const menu = ref<PluginMenuLink[]>([])
@@ -63,14 +65,19 @@ export const usePluginsStore = defineStore('plugins', () => {
   /**
    * Reads the plugin index once per session, or again when asked to.
    *
-   * A failed read leaves the menu without plugin items: the menu is a way in, never the only one,
-   * and a refusal here (an identity with no client record) is explained by the pages themselves.
+   * A failed read leaves the menu without plugin items: the menu is a way in, never the only one.
+   * Nothing is sent for an identity with no client record: the API refuses every plugin read of it,
+   * so the read waits for the client store's answer on that ({@link useClientStore}'s `isCustomerAccount`),
+   * leaves the menu empty and is made again by the next call.
    *
    * @param force - Read again even when read before.
    * @returns Resolves when the read has ended.
    */
   const loadUi = async (force = false): Promise<void> => {
     if (uiLoaded.value && !force) {
+      return
+    }
+    if (!(await client.isCustomerAccount())) {
       return
     }
     try {
@@ -152,13 +159,17 @@ export const usePluginsStore = defineStore('plugins', () => {
   /**
    * Reads the widget index of one slot. A slot is an addition to a host page, never a part it needs,
    * so a failed read shows nothing and leaves the page as it would be without plugins; no sentence is
-   * shown, so there is no error state to keep.
+   * shown, so there is no error state to keep. An identity with no client record reads nothing:
+   * the API would refuse it.
    *
    * @param slotId - The slot id.
    * @param context - The slot's context, e.g. `{ serviceId: '4' }`.
    * @returns The widgets; empty on a failure or with no plugin.
    */
   const loadSlot = async (slotId: PluginSlotId, context: Record<string, string>): Promise<PluginSlotWidget[]> => {
+    if (!(await client.isCustomerAccount())) {
+      return []
+    }
     try {
       return (await api.fetchSlot(slotId, context)).widgets
     } catch {
@@ -168,6 +179,7 @@ export const usePluginsStore = defineStore('plugins', () => {
 
   /**
    * Reads one slot widget's view. A failure is the widget's own neutral note, never the page's error.
+   * An identity with no client record reads nothing: the API would refuse it.
    *
    * @param slotId - The slot id.
    * @param pluginId - The plugin id.
@@ -181,6 +193,9 @@ export const usePluginsStore = defineStore('plugins', () => {
     widgetId: string,
     context: Record<string, string>,
   ): Promise<PluginSlotWidgetView | null> => {
+    if (!(await client.isCustomerAccount())) {
+      return null
+    }
     try {
       return await api.fetchSlotWidget(slotId, pluginId, widgetId, context)
     } catch {

@@ -11,7 +11,7 @@ import { flushPromises } from '@vue/test-utils'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { bankTransferPath, BillingEndpoint } from '~/tests/helpers/billingPaths'
 import { awaitCheckoutLoaded, cartLine, checkoutReplies } from '~/tests/helpers/checkoutFlow'
-import { makeClientUser } from '~/tests/helpers/clientUser'
+import { makeClientUser, makeUserWithoutClientRecord } from '~/tests/helpers/clientUser'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { until } from '~/tests/helpers/settle'
@@ -229,6 +229,28 @@ describe('ClassicCheckout', () => {
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeUndefined()
     })
+  })
+
+  it('lets a signed-in person who has no client record yet order, sending no guest details so the order creates the record', async () => {
+    const wrapper = await mountCheckout()
+    const identity = makeUserWithoutClientRecord({ email: 'ann@acme.test' })
+    useAuthStore().user = identity
+    useClientStore().user = identity
+    useClientStore().clientProfileMissing = true
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="checkout-user-email"]').text()).toBe('ann@acme.test')
+    expect(wrapper.find('[data-testid="checkout-guest-form"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(localized(clientInvoicePayPath(12))))
+
+    const order = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as Record<string, unknown>
+    expect(order).toMatchObject({ paymentmethod: PaymentModule.BankTransfer })
+    expect(order).not.toHaveProperty('email')
+    expect(order).not.toHaveProperty('password')
   })
 
   it('places a bank-transfer order with the guest details and goes to the invoice', async () => {

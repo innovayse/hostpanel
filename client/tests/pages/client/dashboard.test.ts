@@ -13,7 +13,7 @@ import { mountPage } from '~/tests/helpers/mountClient'
 import { stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import { Permission } from '~/types/permission'
-import { makeClientUser } from '~/tests/helpers/clientUser'
+import { makeClientUser, makeUserWithoutClientRecord } from '~/tests/helpers/clientUser'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
 import { slotIndex, slotPath, slotWidgetPath, throwingView, workingView } from '~/tests/helpers/pluginSlotFixture'
 import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -144,6 +144,23 @@ describe('client dashboard page', () => {
 
     expect(wrapper.find('[data-testid="no-profile-notice"]').text()).toContain('No client record.')
     expect(wrapper.find('[data-testid="dashboard-load-errors"]').exists()).toBe(false)
+  })
+
+  it('explains that the account has no client profile yet, with the way to the first order, instead of rendering nothing', async () => {
+    table[readOf(AccountEndpoint.Me)] = { body: makeUserWithoutClientRecord({ email: 'ann@acme.test' }) }
+
+    const wrapper = await mountDashboard()
+    await settle()
+
+    expect(wrapper.find('[data-testid="no-profile-notice"]').text()).toContain('client.noProfile.body')
+    expect(wrapper.find('[data-testid="no-profile-browse"]').attributes('href')).toBe('/hosting')
+    expect(wrapper.find('[data-testid="dashboard-load-errors"]').exists()).toBe(false)
+    expect(reads(AccountEndpoint.Services)).toBe(0)
+    expect(reads(BillingEndpoint.Invoices)).toBe(0)
+    expect(reads(DomainEndpoint.List)).toBe(0)
+    expect(reads(AccountEndpoint.Tickets)).toBe(0)
+    expect(reads(BillingEndpoint.Credit)).toBe(0)
+    expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(0)
   })
 
   it('reloads every section from the API when refresh is pressed', async () => {

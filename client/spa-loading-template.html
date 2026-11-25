@@ -1,0 +1,61 @@
+<!--
+  The loading shell of the pages rendered in the browser only (/client/**, /cart/**, /checkout/**).
+
+  Those routes send an empty #__nuxt, so the visitor saw a blank page until the bundle and the first
+  data had arrived. Nuxt puts this fragment inside #__nuxt and removes it when the app mounts.
+
+  It is plain HTML on purpose: nothing of the app has loaded yet, so there is no component, no
+  translation and no theme token to use. It fills the viewport (nothing around it moves when the
+  app replaces it), takes the page colour from the visitor's colour scheme (or the mode class on
+  <html> when one is already there; this file never writes that class, plugins/color-mode.ts is
+  its one writer), and carries no sentence, so there is nothing to translate: the spinner is a
+  status region the page marks busy.
+-->
+<div class="spa-loading" role="status" aria-busy="true" data-testid="spa-loading">
+  <div class="spa-loading-spinner" aria-hidden="true"></div>
+</div>
+<style>
+  .spa-loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9fafb;
+  }
+
+  .spa-loading-spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 3px solid rgb(var(--brand-primary-500, 6 182 212) / 0.25);
+    border-top-color: rgb(var(--brand-primary-500, 6 182 212));
+    border-radius: 9999px;
+    animation: spa-loading-spin 0.8s linear infinite;
+  }
+
+  @keyframes spa-loading-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .spa-loading {
+      background: #0a0a0f;
+    }
+  }
+
+  html.light .spa-loading {
+    background: #f9fafb;
+  }
+
+  html.dark .spa-loading {
+    background: #0a0a0f;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spa-loading-spinner {
+      animation: none;
+    }
+  }
+</style>

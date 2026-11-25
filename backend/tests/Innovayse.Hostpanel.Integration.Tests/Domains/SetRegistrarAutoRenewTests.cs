@@ -143,6 +143,24 @@ public sealed class SetRegistrarAutoRenewTests(IntegrationTestFactory factory) :
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(DomainsTestSeeds.DomainNotFoundCode);
     }
 
+    /// <summary>A client token is refused with 403: the registrar's auto renew is staff only, and the registrar is not asked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SetRegistrarAutoRenew_ClientToken_Returns403AndAsksNoRegistrarAsync()
+    {
+        var registrar = NewRegistrar();
+        var host = HostWith(registrar);
+        var (owner, _) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "registrar-auto-renew-client");
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/domains/{DomainsTestSeeds.UnknownId}/registrar-auto-renew", new { value = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        registrar.Calls.Should().BeEmpty();
+    }
+
     /// <summary>An unauthenticated caller is refused with 401.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

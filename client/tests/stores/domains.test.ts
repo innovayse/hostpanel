@@ -301,22 +301,54 @@ describe('useDomainsStore storefront lookup', () => {
     expect(store.lookupTerm).toBe('My Site.xyz')
   })
 
-  it('shows no rows for a name the API refuses as malformed, and holds its sentence instead', async () => {
-    table[CHECK_ROUTE] = {
-      status: 400,
-      body: { type: 'VALIDATION_ERROR', detail: 'Domain name is not valid.', errors: { Domain: ['Domain name may only contain letters, digits and hyphens.'] } },
-    }
+  it('refuses a malformed name at once with the rule of the API, sending no request and showing no rows', async () => {
     const store = withPricing()
 
     await store.searchOfferedTlds('bad name!')
 
     expect(store.lookupResults).toEqual([])
-    expect(store.lookupError).toBe('Domain name may only contain letters, digits and hyphens.')
-    expect(requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => (bodyOf(request) as { domain: string }).domain)).toContain('bad-name!.com')
+    expect(store.lookupError).toBe('domains.invalidName')
+    expect(store.lookupPending).toBe(false)
+    expect(store.lookupTerm).toBe('bad name!')
+    expect(stub.requests).toHaveLength(0)
+  })
+
+  it('refuses a malformed name before the price table has loaded', async () => {
+    const store = useDomainsStore()
+
+    await store.searchOfferedTlds('-bad-')
+
+    expect(store.lookupError).toBe('domains.invalidName')
+    expect(stub.requests).toHaveLength(0)
+  })
+
+  it('empties the rows of an earlier search when the next name is malformed', async () => {
+    table[CHECK_ROUTE] = { body: { domain: 'good.com', available: true, status: 'x' } }
+    const store = withPricing()
+    await store.searchOfferedTlds('good')
+    expect(store.lookupResults).toHaveLength(4)
+
+    await store.searchOfferedTlds('bad_name')
+
+    expect(store.lookupResults).toEqual([])
+    expect(store.lookupError).toBe('domains.invalidName')
+  })
+
+  it('shows no rows for a name the API refuses as malformed that the browser let through, and holds its sentence instead', async () => {
+    table[CHECK_ROUTE] = {
+      status: 400,
+      body: { type: 'VALIDATION_ERROR', detail: 'Domain name is not valid.', errors: { Domain: ['Domain name is reserved.'] } },
+    }
+    const store = withPricing()
+
+    await store.searchOfferedTlds('reserved')
+
+    expect(store.lookupResults).toEqual([])
+    expect(store.lookupError).toBe('Domain name is reserved.')
+    expect(requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => (bodyOf(request) as { domain: string }).domain)).toContain('reserved.com')
   })
 
   it('clears the sentence of a refused name when the next search is accepted', async () => {
-    table[CHECK_ROUTE] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { Domain: ['Not a name.'] } } }
     const store = withPricing()
     await store.searchOfferedTlds('-bad-')
 

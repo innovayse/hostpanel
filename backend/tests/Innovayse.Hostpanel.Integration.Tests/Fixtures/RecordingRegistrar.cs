@@ -34,8 +34,14 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     /// <summary>Gets the answer to an auto renew change when a test scripts one; otherwise the stub's success answers.</summary>
     public RegistrarResult? SetAutoRenewAnswer { get; init; }
 
+    /// <summary>Every registration order this registrar was asked to place, in call order.</summary>
+    private readonly ConcurrentQueue<DomainRegistrationOrder> _registrations = new();
+
     /// <summary>Gets a snapshot of the operations this registrar was asked for, as "Operation domain".</summary>
     public IReadOnlyList<string> Calls => [.. _calls];
+
+    /// <summary>Gets a snapshot of the registration orders this registrar was asked to place.</summary>
+    public IReadOnlyList<DomainRegistrationOrder> Registrations => [.. _registrations];
 
     /// <summary>Notes one operation against a domain.</summary>
     /// <param name="operation">The port member name.</param>
@@ -49,6 +55,7 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     public Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct)
     {
         Note(nameof(RegisterAsync), request.DomainName);
+        _registrations.Enqueue(request);
         return _inner.RegisterAsync(request, ct);
     }
 
@@ -217,5 +224,11 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct)
     {
         return _inner.GetTldPricingAsync(ct);
+    }
+
+    /// <inheritdoc/>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct)
+    {
+        return _inner.ListDomainsAsync(cursor, ct);
     }
 }

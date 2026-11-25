@@ -20,6 +20,8 @@ import { startHeldServer } from '../helpers/heldServer'
 import { startTransport } from '../helpers/stubTransport'
 import type { StubReply, StubRequest, StubServer } from '../helpers/stubServer'
 import { usePluginsStore } from '~/stores/plugins'
+import { markCustomerKnown } from '~/tests/helpers/knownCustomer'
+import { useClientStore } from '~/stores/client'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import type { PluginUi } from '~/types/pluginui'
 import { PluginSlotId } from '~/types/pluginslotid'
@@ -115,6 +117,7 @@ const routeCalls = (): StubRequest[] => stub.requests.filter(request => request.
 
 beforeEach(async () => {
   setActivePinia(createPinia())
+  markCustomerKnown()
   stub = await startTransport(answering())
 })
 
@@ -514,5 +517,29 @@ describe('stores/plugins: slots', () => {
 
     expect(await store.loadSlotWidget(PluginSlotId.ServiceTabs, 'acme-sites', 'ok', { serviceId: '9' })).toBeNull()
     expect(store.pageError).toBe('')
+  })
+})
+
+describe('usePluginsStore for an identity with no client record', () => {
+  beforeEach(() => {
+    useClientStore().clientProfileMissing = true
+  })
+
+  it('sends no index read, leaves the menu empty and reads again once the identity is a customer', async () => {
+    const store = usePluginsStore()
+
+    await store.loadUi()
+
+    expect(stub.requests).toHaveLength(0)
+    expect(store.menu).toEqual([])
+    expect(store.uiLoaded).toBe(false)
+  })
+
+  it('sends no slot read and shows no widget', async () => {
+    const store = usePluginsStore()
+
+    expect(await store.loadSlot(PluginSlotId.DashboardCards, {})).toEqual([])
+    expect(await store.loadSlotWidget(PluginSlotId.DashboardCards, 'acme-sites', 'w', {})).toBeNull()
+    expect(stub.requests).toHaveLength(0)
   })
 })

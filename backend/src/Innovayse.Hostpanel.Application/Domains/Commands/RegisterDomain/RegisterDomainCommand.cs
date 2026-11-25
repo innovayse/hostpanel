@@ -7,13 +7,17 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 /// <param name="DomainName">Fully-qualified domain name to register (e.g. "example.com").</param>
 /// <param name="Years">Number of years to register the domain for (1 to 10).</param>
 /// <param name="WhoisPrivacy">Whether to enable WHOIS privacy on registration.</param>
-/// <param name="AutoRenew">Whether to enable automatic renewal at the registrar.</param>
+/// <param name="AutoRenew">Whether the panel renews the domain itself (its own renewal flag); never sent to the registrar.</param>
 /// <param name="Nameserver1">Primary nameserver hostname; null to use registrar defaults.</param>
 /// <param name="Nameserver2">Secondary nameserver hostname; null to use registrar defaults.</param>
 /// <param name="FirstPaymentAmount">One-time registration cost to record on the domain.</param>
 /// <param name="RecurringAmount">Recurring renewal price to record on the domain.</param>
 /// <param name="PaymentMethod">Payment method label to record on the domain; null if not set.</param>
 /// <param name="PriceCurrency">ISO 4217 code of the currency the amounts are in (the paid order's currency); null bills in the client's billing currency.</param>
+/// <param name="RegistrarAutoRenew">
+/// Whether to switch auto renew on at the registrar. It is a separate setting from <paramref name="AutoRenew"/>, off unless asked for,
+/// so a domain the panel renews is not also renewed by the registrar.
+/// </param>
 /// <param name="OrderId">
 /// The order whose line registers the domain, set only by order fulfilment and stored on the domain so a retry of the line
 /// can tell the registration it made from a domain the client holds from elsewhere. Never bound from a request body.
@@ -30,4 +34,5 @@ public sealed record RegisterDomainCommand(
     decimal RecurringAmount = 0,
     string? PaymentMethod = null,
     string? PriceCurrency = null,
+    bool RegistrarAutoRenew = false,
     [property: JsonIgnore] int? OrderId = null);

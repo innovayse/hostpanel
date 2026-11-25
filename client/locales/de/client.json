@@ -1,9 +1,9 @@
 {
   "client": {
     "noProfile": {
-      "title": "Dieses Konto ist kein Kundenkonto",
-      "body": "Sie sind angemeldet, doch zu diesem Konto gehört kein Kundenprofil, daher gibt es im Kundenbereich nichts anzuzeigen. Mitarbeiterkonten verwalten die Plattform im Admin-Bereich.",
-      "browseAction": "Hosting-Angebote ansehen"
+      "title": "Noch kein Kundenprofil",
+      "body": "Sie sind angemeldet, doch zu diesem Konto gehört noch kein Kundenprofil. Es wird mit Ihrer ersten Bestellung angelegt, bis dahin gibt es hier nichts anzuzeigen. Mitarbeiterkonten verwalten die Plattform im Admin-Bereich.",
+      "browseAction": "Erste Bestellung aufgeben"
     },
     "nav": {
       "dashboard": "Dashboard",

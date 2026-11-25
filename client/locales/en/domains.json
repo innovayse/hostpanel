@@ -9,6 +9,7 @@
     "taken": "Already registered",
     "registerNow": "Register",
     "invalidDomain": "Please enter a valid domain with extension (e.g. mysite.com)",
+    "invalidName": "A domain name may only contain Latin letters, digits and hyphens, and may not start or end with a hyphen.",
     "checkFailed": "Domain check failed. Please try again.",
     "cannotAdd": "This domain cannot be added to the cart right now. Please try again.",
     "tldNotSupported": "This TLD is not available for registration",

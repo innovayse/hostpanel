@@ -18,7 +18,7 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// <b>Services had no such rule before this type.</b> <c>GetMyServiceInvoicesQuery</c> was the
 /// first client-facing service use case to carry one; the five routes that took a service id
 /// straight off <c>MyServicesController</c> and checked nothing now do too. They dispatch
-/// <c>GetMyServiceControlPanelSsoUrlQuery</c>, <c>CancelMyServiceCommand</c>,
+/// <c>GetMyServicePanelSsoUrlQuery</c>, <c>CancelMyServiceCommand</c>,
 /// <c>SetupMyServiceCommand</c>, <c>ChangeMyServicePasswordCommand</c> and
 /// <c>GetMyServiceCancellationStatusQuery</c>, each of which settles ownership here and then
 /// delegates to the unscoped use case the admin routes keep using.

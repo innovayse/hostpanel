@@ -14,11 +14,11 @@
         size="sm"
         :loading="ssoLoading"
         class="hidden sm:flex"
-        data-testid="service-cpanel-login"
-        @click="emit('cpanel')"
+        data-testid="service-panel-login"
+        @click="emit('panel')"
       >
-        <Monitor :size="14" class="mr-1.5" />
-        {{ $t('client.services.actionLoginCpanel') }}
+        <ClientServicesServicePanelIcon v-if="!ssoLoading" :service="service" :fallback="Monitor" class="mr-1.5" />
+        {{ $t('client.services.actionOpenPanel') }}
       </UiButton>
       <ClientStatusBadge :status="service.status" />
     </UiStack>
@@ -51,7 +51,7 @@ const props = defineProps<Props>()
 /** Events the component raises. */
 const emit = defineEmits<{
   /** The reader asked to sign in to the control panel. */
-  cpanel: []
+  panel: []
 }>()
 
 /** The client store, which knows what the signed-in person may do. */

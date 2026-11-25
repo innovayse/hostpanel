@@ -29,7 +29,7 @@ export const makeClientService = (overrides: Partial<ClientService> = {}): Clien
   price: 10,
   firstPaymentAmount: 12,
   paymentMethod: 'card_gateway',
-  server: { name: 'srv1', hostname: 'srv1.example.net', ipAddress: '10.0.0.1' },
+  server: { name: 'srv1', hostname: 'srv1.example.net', ipAddress: '10.0.0.1', panelPlugin: null },
   createdAt: '2026-01-01T00:00:00Z',
   suspensionSource: null,
   usage: null,

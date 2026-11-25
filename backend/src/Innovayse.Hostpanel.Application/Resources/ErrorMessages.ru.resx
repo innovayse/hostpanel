@@ -426,7 +426,7 @@
 <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось восстановить услугу на сервере хостинга. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
-<data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+<data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось открыть сеанс панели управления. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
 <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
@@ -1180,7 +1180,7 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Дату прекращения можно исправить только у прекращённой услуги.</value>
   </data>
-  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+  <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось начать сеанс панели управления. Панель вернула адрес, который не принадлежит её серверу.</value>
   </data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">

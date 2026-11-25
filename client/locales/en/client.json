@@ -228,7 +228,7 @@
       "sectionManage": "Manage",
       "sectionActions": "Actions",
       "sectionQuickLinks": "Quick Links",
-      "actionLoginCpanel": "Open control panel",
+      "actionOpenPanel": "Open control panel",
       "actionOpenTicket": "Create ticket",
       "linkWebmail": "Open webmail",
       "whatToday": "What would you like to do today?",

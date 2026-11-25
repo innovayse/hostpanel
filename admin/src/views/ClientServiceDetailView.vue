@@ -14,6 +14,7 @@ import { useSettingsStore } from '@/stores/settings'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { serverAccountsLabel } from '@/lib/servers'
+import { pluginIconPath } from '@/lib/apiPaths'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { Icon } from '@/lib/icons'
 import { BillingCycle, ServiceChangeReason, ServiceSection, ServiceStatus } from '@/types/service'
@@ -51,14 +52,14 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { ClientSection, clientItemPath, clientSectionPath, servicePlanChangesPath } from '@/lib/routes'
 import schema, { BILLING_COLUMNS, NOTES_COLUMNS } from '@/views/ClientServiceDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
-import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import type { UiBarPluginIcon, UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiInputType } from '@/utils/ui/input'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  ...(service.value?.status !== ServiceStatus.Terminated ? [{ label: t('shared.open'), title: t('clients.clientServiceDetail.loginToControlPanel'), icon: Icon.ExternalLink, variant: UiButtonVariant.Secondary, testid: 'client-service-panel', disabled: !service.value?.account.provisioningRef, loading: ssoLoading.value, onSelect: handleLoginToPanel }] : []),
+  ...(service.value?.status !== ServiceStatus.Terminated ? [{ label: t('shared.open'), title: t('clients.clientServiceDetail.loginToControlPanel'), icon: Icon.ExternalLink, pluginIcon: panelPluginIcon.value, variant: UiButtonVariant.Secondary, testid: 'client-service-panel', disabled: !service.value?.account.provisioningRef, loading: ssoLoading.value, onSelect: handleLoginToPanel }] : []),
   { label: t('shared.view'), title: t('serviceChangeRequests.viewHistory'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Secondary, testid: 'client-service-plan-changes', to: servicePlanChangesPath(serviceId.value) },
   { label: t('shared.cancel'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: 'client-service-cancel', onSelect: handleCancel },
 ])
@@ -127,6 +128,12 @@ const serviceId = computed(() => route.params.serviceId as string)
 
 /** Fetched service detail, null until loaded (owned by the store). */
 const service = computed(() => store.current)
+
+/** The serving plugin's picture for the Open panel button; undefined (the generic icon) when no plugin serves the server's module or it ships no icon. */
+const panelPluginIcon = computed<UiBarPluginIcon | undefined>(() => {
+  const plugin = service.value?.server?.panelPlugin
+  return plugin?.hasIcon ? { name: plugin.name, iconUrl: pluginIconPath(plugin.id) } : undefined
+})
 
 /** True while the initial load is in flight (owned by the store). */
 const loading = computed(() => store.loading)

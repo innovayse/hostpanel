@@ -182,7 +182,7 @@
   <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve"><value>Der Dienst konnte auf dem Hosting-Server nicht gesperrt werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="SERVICE_TERMINATE_UPSTREAM_FAILED" xml:space="preserve"><value>Der Dienst konnte auf dem Hosting-Server nicht beendet werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve"><value>Der Dienst konnte auf dem Hosting-Server nicht reaktiviert werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
-  <data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve"><value>Eine Sitzung im Kontrollpanel konnte nicht gestartet werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
+  <data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve"><value>Eine Sitzung im Kontrollpanel konnte nicht gestartet werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve"><value>Die Zugangsdaten des Kontos konnten nicht abgerufen werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.</value></data>
   <data name="PRODUCT_GROUP_NOT_FOUND" xml:space="preserve"><value>Produktgruppe nicht gefunden.</value></data>
   <data name="PRODUCT_FEATURE_NOT_FOUND" xml:space="preserve"><value>Diese Leistungsmerkmal-Zeile existiert nicht.</value></data>
@@ -423,7 +423,7 @@
   <data name="SERVICE_STATUS_CHANGE_NOT_ALLOWED" xml:space="preserve"><value>Dieser Dienst kann nicht in diesen Status versetzt werden.</value></data>
   <data name="SERVICE_AUTOMATION_INCONSISTENT" xml:space="preserve"><value>Legen Sie ein Haltedatum nur mit der Sperrhaltung fest und einen Kündigungsgrund nur mit der Kündigung zum Zyklusende.</value></data>
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve"><value>Nur ein beendeter Dienst hat ein Beendigungsdatum, das korrigiert werden kann.</value></data>
-  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve"><value>Eine Sitzung im Kontrollpanel konnte nicht gestartet werden. Das Panel hat eine Adresse zurückgegeben, die nicht zu seinem Server gehört.</value></data>
+  <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve"><value>Eine Sitzung im Kontrollpanel konnte nicht gestartet werden. Das Panel hat eine Adresse zurückgegeben, die nicht zu seinem Server gehört.</value></data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve"><value>Der Benutzername des Hosting-Kontos ist für cPanel ungültig. Verwenden Sie Kleinbuchstaben und Ziffern, beginnen Sie mit einem Buchstaben und nutzen Sie höchstens 16 Zeichen.</value></data>
   <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve"><value>Dies ist kein gültiger Domainname. Prüfen Sie ihn und versuchen Sie es erneut.</value></data>
   <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve"><value>Dieser Dienst hat noch keine Domain und keinen Benutzernamen. Richten Sie zuerst das Hosting-Konto ein.</value></data>

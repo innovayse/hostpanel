@@ -20,7 +20,7 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
     /// <summary>Every <see cref="TerminateAsync"/> call this fake was asked to make, in order.</summary>
     private readonly List<TerminateAccountOrder> _terminated = [];
 
-    /// <summary>The caller addresses recorded by <see cref="GetCPanelSsoUrlAsync"/>.</summary>
+    /// <summary>The caller addresses recorded by <see cref="GetPanelSsoUrlAsync"/>.</summary>
     private readonly List<string?> _ssoCallerIps = [];
 
     /// <summary>Every <see cref="SuspendAsync"/> call this fake was asked to make, in order.</summary>
@@ -66,7 +66,7 @@ public sealed class RecordingProvisioningProvider : IProvisioningProvider
     public IReadOnlyList<string?> SsoCallerIps => _ssoCallerIps;
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
+    public Task<string> GetPanelSsoUrlAsync(PanelSsoOrder req, CancellationToken ct)
     {
         _ssoCallerIps.Add(req.CallerIp);
         return Task.FromResult("https://recording-panel.example.test/sso");

@@ -29,13 +29,14 @@
     </UiNavGroup>
 
     <UiNavGroup v-if="service.server && liveAccount" :title="$t('client.services.sectionQuickLinks')" :icon="Link2">
-      <UiNavItem v-if="canSignIn" :icon="Monitor" :loading="ssoLoading" testid="service-link-cpanel" @click="emit('cpanel')">
-        {{ $t('client.services.actionLoginCpanel') }}
+      <UiNavItem v-if="canSignIn" :loading="ssoLoading" testid="service-link-panel" @click="emit('panel')">
+        <ClientServicesServicePanelIcon v-if="!ssoLoading" :service="service" :fallback="Monitor" :size="15" />
+        {{ $t('client.services.actionOpenPanel') }}
       </UiNavItem>
       <UiNavItem v-if="liveAccount" :href="webmailUrl" :icon="Mail" testid="service-link-webmail">
         {{ $t('client.services.linkWebmail') }}
       </UiNavItem>
-      <!-- Automatic sign-in failed; the panel's own login form was opened instead. -->
+      <!-- The panel refused the sign-in: the API's own sentence is shown and nothing is opened. -->
       <UiText v-if="ssoError" size="xs" tone="danger" class="px-3 pb-3" data-testid="service-sso-error">{{ ssoError }}</UiText>
     </UiNavGroup>
   </UiStack>
@@ -88,7 +89,7 @@ const emit = defineEmits<{
   /** The reader picked another panel: a `ServiceTab` value or a plugin tab's key. */
   'update:activeTab': [value: string]
   /** The reader asked to sign in to the control panel. */
-  cpanel: []
+  panel: []
 }>()
 
 /** The client store, which knows what the signed-in person may do. */

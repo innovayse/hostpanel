@@ -11,7 +11,7 @@
  * lookup (see `SERVICE_MANAGED` in the fixtures).
  */
 import { expect, test } from './support/test'
-import { CANCEL_REASON, NEW_SERVICE_PASSWORD, SERVICE_INVOICE, SERVICE_MANAGED, SERVICE_PENDING, SERVICE_SUSPENDED } from './support/fixtures.mjs'
+import { CANCEL_REASON, NEW_SERVICE_PASSWORD, PANEL_PLUGIN, PANEL_SSO_URL, SERVICE_INVOICE, SERVICE_MANAGED, SERVICE_PANEL, SERVICE_PENDING, SERVICE_SUSPENDED } from './support/fixtures.mjs'
 import { resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
 
 test.beforeEach(async ({ context, request, baseURL }) => {
@@ -99,4 +99,27 @@ test('a service without a control-panel account is sent to the setup wizard', as
 
   await expect(page).toHaveURL(new RegExp(`/client/services/${SERVICE_PENDING.id}/setup$`))
   await expect(page.getByTestId('setup-wizard')).toBeVisible()
+})
+
+test('the Open panel button shows the icon of the plugin that serves the server and opens the panel the API signs in to', async ({ page, context }) => {
+  await page.goto(`/client/services/${SERVICE_PANEL.id}`)
+  await waitForHydration(page)
+
+  const icon = page.getByTestId('service-panel-login').getByTestId('service-panel-plugin-icon')
+  await expect(icon).toHaveAttribute('alt', PANEL_PLUGIN.name)
+  await expect(icon).toHaveAttribute('src', `/api/portal/client/plugins/${PANEL_PLUGIN.id}/icon`)
+  await expect.poll(() => icon.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
+
+  await context.route(PANEL_SSO_URL, (route) => route.fulfill({ body: '' }))
+  const opened = context.waitForEvent('page')
+  await page.getByTestId('service-panel-login').click()
+
+  expect((await opened).url()).toBe(PANEL_SSO_URL)
+})
+
+test('the Open panel button keeps the generic icon on a server no plugin serves', async ({ page }) => {
+  await page.goto(`/client/services/${SERVICE_MANAGED.id}`)
+  await waitForHydration(page)
+
+  await expect(page.getByTestId('service-panel-plugin-icon')).toHaveCount(0)
 })

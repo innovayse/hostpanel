@@ -35,7 +35,7 @@ public sealed class GetServerBriefsHandler
         IReadOnlyList<ServerBriefDto> briefs = await _context.Servers
             .AsNoTracking()
             .Where(s => query.ServerIds.Contains(s.Id))
-            .Select(s => new ServerBriefDto(s.Id, s.Name, s.Hostname, s.IpAddress))
+            .Select(s => new ServerBriefDto(s.Id, s.Name, s.Hostname, s.IpAddress, s.Module))
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<ServerBriefDto>>.Success(briefs);

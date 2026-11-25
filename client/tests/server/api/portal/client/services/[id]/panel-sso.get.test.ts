@@ -1,7 +1,7 @@
 /**
- * Tests for `GET /api/portal/client/services/:id/cpanel-sso`: it calls the backend `GET /me/services/7/cpanel-sso` with the session bearer, forwards the reader language and returns the backend's answer untouched.
+ * Tests for `GET /api/portal/client/services/:id/panel-sso`: it calls the backend `GET /me/services/7/panel-sso` with the session bearer, forwards the reader language and returns the backend's answer untouched.
  *
- * @module tests/server/api/portal/client/services/[id]/cpanel-sso.get.test
+ * @module tests/server/api/portal/client/services/[id]/panel-sso.get.test
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -17,14 +17,14 @@ let route: RouteModule
 
 beforeEach(async () => {
   backend = await startBackend()
-  route = await import('~/server/api/portal/client/services/[id]/cpanel-sso.get')
+  route = await import('~/server/api/portal/client/services/[id]/panel-sso.get')
 })
 
 afterEach(async () => {
   await backend.close()
 })
 
-describe('GET /api/portal/client/services/:id/cpanel-sso', () => {
+describe('GET /api/portal/client/services/:id/panel-sso', () => {
   it('calls the backend endpoint and returns its answer', async () => {
     backend.respondWith(() => ({ body: { ok: true } }))
 
@@ -32,7 +32,7 @@ describe('GET /api/portal/client/services/:id/cpanel-sso', () => {
 
     expect(result).toEqual({ ok: true })
     expect(backend.requests[0]?.method).toBe('GET')
-    expect(backend.requests[0]?.url).toBe('/api/me/services/7/cpanel-sso')
+    expect(backend.requests[0]?.url).toBe('/api/me/services/7/panel-sso')
     expect(backend.requests[0]?.headers['authorization']).toBe('Bearer jwt')
   })
 

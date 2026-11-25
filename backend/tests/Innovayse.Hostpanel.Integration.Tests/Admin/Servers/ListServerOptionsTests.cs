@@ -55,7 +55,7 @@ public sealed class ListServerOptionsTests(IntegrationTestFactory factory) : ICl
         var row = (await ReadAsync(admin, Route)).Single(r => r.GetProperty("name").GetString() == $"{token}-lean");
 
         row.EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(
-            "id", "name", "hostname", "ipAddress", "isOnline", "lastTestedAt", "accountsCount", "limits");
+            "id", "name", "hostname", "ipAddress", "module", "isOnline", "lastTestedAt", "accountsCount", "limits");
     }
 
     /// <summary>A server never tested has no test time, and a tested one carries the moment of its last test, as the Servers page shows it.</summary>

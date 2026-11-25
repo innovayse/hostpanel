@@ -1,5 +1,5 @@
 /**
- * Addresses of a hosting service's control panel and webmail on its own server, and the one rule
+ * Addresses of a hosting service's webmail and website, and the one rule
  * for offering a client the control panel sign-in.
  *
  * The service card, header, quick actions and sidebar all show the same sign-in entry, so they all
@@ -8,18 +8,10 @@
  * @module utils/controlPanel
  */
 
-import { CONTROL_PANEL_PORT, WEBMAIL_PORT } from '~/constants/controlPanel'
+import { WEBMAIL_PORT } from '~/constants/controlPanel'
 import { HTTPS_PREFIX } from '~/constants/urlScheme'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
-
-/**
- * Address of the control panel's plain sign-in page.
- *
- * @param host - The service's server host name.
- * @returns The secure address with the panel port.
- */
-export const controlPanelUrl = (host: string): string => `${HTTPS_PREFIX}${host}:${CONTROL_PANEL_PORT}`
 
 /**
  * Address of the service's webmail.

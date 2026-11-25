@@ -198,10 +198,11 @@ public sealed class PanelPluginProvisioningProvider : IProvisioningProvider
 
     /// <inheritdoc/>
     /// <exception cref="DomainRuleException">
-    /// Thrown with <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the plugin answers an address that is not an absolute http or
-    /// https address, and with the panel's refusal code when it refuses.
+    /// Thrown with <c>SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED</c> when the plugin answers an address that is not an https address with
+    /// no user info on the server's own host (the host name, or the host its API is dialled at), and with the panel's refusal code
+    /// when it refuses.
     /// </exception>
-    public async Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
+    public async Task<string> GetPanelSsoUrlAsync(PanelSsoOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
 
@@ -213,12 +214,14 @@ public sealed class PanelPluginProvisioningProvider : IProvisioningProvider
 
         result.Outcome.EnsureDone(result.Reason);
 
-        // The link is handed to a browser, so only a web address passes; nothing of a rejected one is logged or returned.
-        if (!Uri.TryCreate(result.Url, UriKind.Absolute, out var link)
-            || (link.Scheme != Uri.UriSchemeHttps && link.Scheme != Uri.UriSchemeHttp))
+        // The link is handed to a browser, so the host alone decides whether it may be: https, no user info, on the server's own
+        // host. Nothing of a rejected link is logged or returned, because it can carry a one time token.
+        var link = PanelSsoLinkRules.Accept(result.Url, _server.Hostname, _server.ApiEndpointHost);
+        if (link is null)
         {
+            _logger.LogWarning("Panel plugin {PluginId} answered a sign in link that is not an https address on the server's own host.", _pluginId);
             throw new DomainRuleException(
-                HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED, "The panel plugin answered a sign in link that is not a web address.");
+                HostpanelErrorCodes.SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED, "The panel plugin answered a sign in link that is not on the server.");
         }
 
         return link.AbsoluteUri;

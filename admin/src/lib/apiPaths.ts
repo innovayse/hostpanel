@@ -145,3 +145,12 @@ export const API_BASE = '/api'
  */
 export const reportApiPath = (slug: string, suffix?: string): string =>
   suffix ? `${ApiPath.Reports}/${slug}/${suffix}` : `${ApiPath.Reports}/${slug}`
+
+/**
+ * Builds the address of the icon an installed plugin ships, for an `<img>`: the same-origin staff route the plugin list's
+ * `iconUrl` points at.
+ *
+ * @param pluginId - Plugin id as its manifest declares it.
+ * @returns `/api/admin/plugins/<id>/icon`.
+ */
+export const pluginIconPath = (pluginId: string): string => `${API_BASE}${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/icon`

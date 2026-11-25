@@ -21,7 +21,6 @@ import type { ClientService } from '~/types/clientservice'
 import type { ServiceInvoice } from '~/types/serviceinvoice'
 import type { ServiceInvoices } from '~/types/serviceinvoices'
 import { apiErrorCode, apiErrorMessage, PortalErrorCode } from '~/lib/errorHandler'
-import { controlPanelUrl } from '~/utils/controlPanel'
 
 /**
  * Service-management state for the service pages.
@@ -253,14 +252,14 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
    * @returns The address to open, or null when none could be obtained
    * ({@link ssoError} holds the sentence to show). A call made while one is in flight returns null.
    */
-  const fetchCpanelUrl = async (serviceId: string): Promise<string | null> => {
+  const fetchPanelUrl = async (serviceId: string): Promise<string | null> => {
     if (ssoLoading.value) {
       return null
     }
     ssoLoading.value = true
     ssoError.value = ''
     try {
-      const { url } = await api.fetchCpanelSsoUrl(serviceId)
+      const { url } = await api.fetchPanelSsoUrl(serviceId)
       // An empty address would open a blank tab, which reads as a panel that failed to load.
       if (!url) {
         throw new Error('No control-panel address was returned.')
@@ -275,24 +274,27 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
   }
 
   /**
-   * Opens a service's control panel in a new tab: through single sign-on when the API gives an
-   * address, else the panel's plain sign-in page on the service's server. The one place this
-   * choice is made, so every button that opens the panel behaves the same.
+   * Opens a service's control panel in a new tab through the API's single sign-on, which is the only way in: the
+   * address comes from whichever provider serves the service's server, so no panel's own sign-in page is guessed
+   * at here. The one place the panel is opened, so every button that opens it behaves the same.
    *
    * @param serviceId - Service id.
-   * @param hostname - The service's server host name; null or absent when the server is not known.
-   * @returns Nothing; a failed single sign-in leaves its sentence in {@link ssoError}.
+   * @returns Nothing; a refused sign-in leaves the API's own sentence in {@link ssoError} and opens nothing.
    */
-  const openControlPanel = async (serviceId: string, hostname?: string | null): Promise<void> => {
-    const url = await fetchCpanelUrl(serviceId)
+  const openPanel = async (serviceId: string): Promise<void> => {
+    const url = await fetchPanelUrl(serviceId)
     if (url) {
       window.open(url, '_blank', 'noopener')
-      return
-    }
-    if (hostname) {
-      window.open(controlPanelUrl(hostname), '_blank', 'noopener')
     }
   }
+
+  /**
+   * Address of the icon the plugin serving a service's panel ships.
+   *
+   * @param pluginId - Plugin id as its manifest declares it.
+   * @returns The same-origin address of the icon, for an `<img>`.
+   */
+  const panelIconUrl = (pluginId: string): string => api.panelPluginIconPath(pluginId)
 
   /**
    * Completes first-time setup on a newly provisioned service.
@@ -350,8 +352,9 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
     changePassword,
     cancelService,
     loadInvoices,
-    fetchCpanelUrl,
-    openControlPanel,
+    fetchPanelUrl,
+    openPanel,
+    panelIconUrl,
     setUpService
   }
 })

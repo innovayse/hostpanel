@@ -194,8 +194,8 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The absolute URL WHM returned, in its parsed form, once it is shown to be an https address on this server and on its cPanel port.</returns>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the session.</exception>
-    /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED"/> when the URL WHM returned is not an https address on this server and its cPanel port.</exception>
-    public async Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
+    /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED"/> when the URL WHM returned is not an https address on this server and its cPanel port.</exception>
+    public async Task<string> GetPanelSsoUrlAsync(PanelSsoOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
         RequireReference(req.ProvisioningRef);
@@ -212,7 +212,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
         if (session is null)
         {
             _logger.LogWarning("WHM returned a cPanel session URL that is not on the server for {User}.", req.ProvisioningRef);
-            throw new DomainRuleException(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED, "The cPanel session URL is not on the server.");
+            throw new DomainRuleException(HostpanelErrorCodes.SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED, "The cPanel session URL is not on the server.");
         }
 
         _logger.LogInformation("cPanel session opened for {User}.", req.ProvisioningRef);

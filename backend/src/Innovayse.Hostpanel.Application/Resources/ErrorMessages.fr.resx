@@ -420,7 +420,7 @@
 <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Le service n'a pas pu être réactivé sur le serveur d'hébergement. Veuillez réessayer ou contacter le support.</value>
   </data>
-<data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+<data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
     <value>Une session de panneau de contrôle n'a pas pu être démarrée. Veuillez réessayer ou contacter le support.</value>
   </data>
 <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
@@ -1126,7 +1126,7 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Seul un service résilié a une date de résiliation à corriger.</value>
   </data>
-  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+  <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
     <value>Une session de panneau de contrôle n'a pas pu être démarrée. Le panneau a renvoyé une adresse qui ne se trouve pas sur son serveur.</value>
   </data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">

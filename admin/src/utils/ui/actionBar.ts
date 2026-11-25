@@ -6,6 +6,14 @@ import type { RouteLocationRaw } from 'vue-router'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiButtonVariant } from '@/utils/ui/button'
 
+/** The picture of the plugin an action runs through, drawn instead of the generic icon on the action's button. */
+export interface UiBarPluginIcon {
+  /** Display name of the plugin: the alternative text of the picture, because the button's own label does not name it. */
+  name: string
+  /** Address of the plugin's icon. */
+  iconUrl: string
+}
+
 /** The part of an action that both bars draw the same way: a labelled icon button that can move into the menu. */
 export interface UiBarAction {
   /** The label drawn on the button and in the menu (already translated). */
@@ -14,6 +22,8 @@ export interface UiBarAction {
   title?: string
   /** Inner SVG markup of the icon (an `Icon` entry or `actionIcons[kind]`); every bar action has one. */
   icon: string
+  /** The plugin the action runs through; its icon replaces `icon` on the button (the menu row of a folded action keeps `icon`). */
+  pluginIcon?: UiBarPluginIcon
   /** Look of the button; the primary action of the bar is the one in the primary look. */
   variant: UiButtonVariant
   /** Blocks the action. */

@@ -27,6 +27,16 @@ export interface ServiceListItem {
   nextDueDate: string | null
 }
 
+/** The panel plugin that serves a service's server: the Open panel button shows its icon and names it. */
+export interface ServicePanelPlugin {
+  /** Plugin id as its manifest declares it. */
+  id: string
+  /** Display name of the plugin. */
+  name: string
+  /** True when the plugin ships an icon the admin plugin icon route serves. */
+  hasIcon: boolean
+}
+
 /** The provisioning server a service is hosted on, as far as it could be resolved. */
 export interface ServiceServer {
   /** Display name of the server. */
@@ -35,6 +45,8 @@ export interface ServiceServer {
   hostname: string
   /** IP address of the server, or null when it has none. */
   ipAddress: string | null
+  /** The panel plugin that serves the server's module; null when none does (a module the host provisions itself). */
+  panelPlugin: ServicePanelPlugin | null
 }
 
 /** The hosting account a service was provisioned as. */

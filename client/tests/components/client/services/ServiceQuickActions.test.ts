@@ -14,26 +14,37 @@ describe('ServiceQuickActions', () => {
     const known = mountClient(ServiceQuickActions, { props: { service: service(), ssoLoading: false } })
     const unknown = mountClient(ServiceQuickActions, { props: { service: service({ server: null }), ssoLoading: false } })
 
-    expect(known.find('[data-testid="service-quick-cpanel"]').exists()).toBe(true)
-    expect(unknown.find('[data-testid="service-quick-cpanel"]').exists()).toBe(false)
+    expect(known.find('[data-testid="service-quick-panel"]').exists()).toBe(true)
+    expect(unknown.find('[data-testid="service-quick-panel"]').exists()).toBe(false)
   })
 
   it('hides the control-panel shortcut on a service that is not active', () => {
     const wrapper = mountClient(ServiceQuickActions, { props: { service: service({ status: ServiceStatus.Pending }), ssoLoading: false } })
 
-    expect(wrapper.find('[data-testid="service-quick-cpanel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-quick-panel"]').exists()).toBe(false)
   })
 
   it('raises the event of the shortcut that was clicked', async () => {
     const wrapper = mountClient(ServiceQuickActions, { props: { service: service(), ssoLoading: false } })
 
-    await wrapper.find('[data-testid="service-quick-cpanel"]').trigger('click')
+    await wrapper.find('[data-testid="service-quick-panel"]').trigger('click')
     await wrapper.find('[data-testid="service-quick-invoices"]').trigger('click')
     await wrapper.find('[data-testid="service-quick-cancel"]').trigger('click')
 
-    expect(wrapper.emitted('cpanel')).toHaveLength(1)
+    expect(wrapper.emitted('panel')).toHaveLength(1)
     expect(wrapper.emitted('invoices')).toHaveLength(1)
     expect(wrapper.emitted('cancel')).toHaveLength(1)
+  })
+})
+
+describe('ServiceQuickActions panel icon', () => {
+  it('shows the icon of the plugin that serves the server, named after the plugin', () => {
+    const served = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+    const wrapper = mountClient(ServiceQuickActions, { props: { service: service({ server: served }), ssoLoading: false } })
+
+    const icon = wrapper.get('[data-testid="service-quick-panel"] [data-testid="service-panel-plugin-icon"]')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 })
 
@@ -43,7 +54,7 @@ describe('ServiceQuickActions permissions', () => {
     await grantPermissions(Permission.ViewProductsServices | Permission.ViewPayInvoices)
 
     expect(wrapper.find('[data-testid="service-quick-invoices"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="service-quick-cpanel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-quick-panel"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="service-quick-cancel"]').exists()).toBe(false)
   })
 
@@ -51,7 +62,7 @@ describe('ServiceQuickActions permissions', () => {
     const wrapper = mountClient(ServiceQuickActions, { props: { service: service(), ssoLoading: false } })
     await grantPermissions(Permission.AllowSingleSignOn | Permission.PlaceNewOrders)
 
-    expect(wrapper.find('[data-testid="service-quick-cpanel"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="service-quick-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="service-quick-cancel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="service-quick-invoices"]').exists()).toBe(false)
   })

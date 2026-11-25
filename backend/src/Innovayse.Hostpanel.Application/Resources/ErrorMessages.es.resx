@@ -426,7 +426,7 @@
   <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo reactivar el servicio en el servidor de hosting. Inténtelo de nuevo o contacte con soporte.</value>
   </data>
-  <data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+  <data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo iniciar una sesión del panel de control. Inténtelo de nuevo o contacte con soporte.</value>
   </data>
   <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
@@ -1149,7 +1149,7 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Solo un servicio dado de baja tiene una fecha de baja que corregir.</value>
   </data>
-  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+  <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
     <value>No se pudo iniciar una sesión del panel de control. El panel devolvió una dirección que no pertenece a su servidor.</value>
   </data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">

@@ -3,7 +3,7 @@
  * base is the prefix every request URL carries.
  */
 import { describe, expect, it } from 'vitest'
-import { API_BASE, ApiPath, reportApiPath } from '@/lib/apiPaths'
+import { API_BASE, ApiPath, pluginIconPath, reportApiPath } from '@/lib/apiPaths'
 
 describe('ApiPath', () => {
   it('holds root-relative paths without a trailing slash', () => {
@@ -49,5 +49,15 @@ describe('reportApiPath', () => {
   it('builds report endpoints under the reports root, not the router page', () => {
     expect(reportApiPath('invoices')).toBe('/reports/invoices')
     expect(reportApiPath('invoices', 'export')).toBe('/reports/invoices/export')
+  })
+})
+
+describe('pluginIconPath', () => {
+  it('points at the staff plugin icon route under the proxy base', () => {
+    expect(pluginIconPath('acme-panel')).toBe('/api/admin/plugins/acme-panel/icon')
+  })
+
+  it('encodes an id so it can never leave its path segment', () => {
+    expect(pluginIconPath('a/b')).toBe('/api/admin/plugins/a%2Fb/icon')
   })
 })

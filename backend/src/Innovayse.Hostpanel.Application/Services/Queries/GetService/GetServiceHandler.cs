@@ -23,13 +23,18 @@ public sealed class GetServiceHandler
     /// <summary>Tells the moment a trial's days left are counted from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Names the panel plugin that serves the server's module.</summary>
+    private readonly IServerPanelPluginReader _panelPlugins;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">The bus the product, client and server queries are dispatched through.</param>
     /// <param name="clock">Tells the moment a trial's days left are counted from.</param>
-    public GetServiceHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock)
+    /// <param name="panelPlugins">Names the panel plugin that serves the server's module.</param>
+    public GetServiceHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock, IServerPanelPluginReader panelPlugins)
     {
         _clock = clock;
+        _panelPlugins = panelPlugins;
         _context = context;
         _bus = bus;
     }
@@ -65,7 +70,7 @@ public sealed class GetServiceHandler
             server = servers.Value?.FirstOrDefault();
         }
 
-        var assignedServer = server is null ? null : new ServiceServerDto(server.Name, server.Hostname, server.IpAddress);
+        var assignedServer = server is null ? null : new ServiceServerDto(server.Name, server.Hostname, server.IpAddress, _panelPlugins.Find(server.Module));
 
         var dto = new ServiceDetailDto(
             svc.Id,

@@ -6,4 +6,4 @@ namespace Innovayse.Hostpanel.Domain.Provisioning;
 /// <param name="ServiceId">Internal service identifier from the platform.</param>
 /// <param name="ProvisioningRef">Provider-assigned reference for the account.</param>
 /// <param name="CallerIp">The address of the browser that will open the link, or <see langword="null"/> when unknown; only panels that bind a session to it read it.</param>
-public record ControlPanelSsoOrder(int ServiceId, string ProvisioningRef, string? CallerIp);
+public record PanelSsoOrder(int ServiceId, string ProvisioningRef, string? CallerIp);

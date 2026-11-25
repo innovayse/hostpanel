@@ -59,6 +59,7 @@
  * control-panel shortcut for active ones and a setup badge for those not yet provisioned.
  */
 import { CLIENT_SERVICES_PATH, clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
+import { storeToRefs } from 'pinia'
 import { ArrowRight, Loader, Monitor, Server } from 'lucide-vue-next'
 import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'

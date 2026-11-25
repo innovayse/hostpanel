@@ -75,12 +75,15 @@ public sealed class GetIntegrationHandler
 
         // A built-in integration wins over a plugin of the same slug, as it does in the list.
         var isPlugin = !IntegrationCatalogue.All.ContainsKey(query.Slug) && _plugins.IsLoaded(query.Slug);
-        var iconUrl = isPlugin && _plugins.GetIcon(query.Slug) is not null ? PluginIconPaths.For(query.Slug) : null;
+        var loadedManifest = _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == query.Slug);
+        var iconUrl = isPlugin && loadedManifest?.Version is { } version && _plugins.GetIcon(query.Slug) is not null
+            ? PluginIconPaths.For(query.Slug, version)
+            : null;
 
         // A built-in slug the test knows keeps its own test. A plugin can be tested through IPluginStatus, or, for a
         // payment plugin, through the gateway status probe that Test Connection falls back to.
         var isBuiltIn = IntegrationCatalogue.TryGetTestable(query.Slug, out _);
-        var manifest = isBuiltIn ? null : _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == query.Slug);
+        var manifest = isBuiltIn ? null : loadedManifest;
         var canTest = isBuiltIn
             || (manifest is not null && (_connections.Supports(manifest.Id) || manifest.Type == PluginType.Payment));
         var connection = manifest is not null && isEnabled ? await _connections.ReadAsync(manifest, ct) : null;

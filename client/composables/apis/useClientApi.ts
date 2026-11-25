@@ -372,13 +372,15 @@ export const useClientApi = () => {
 
   /**
    * Address of the icon the plugin serving a service's panel ships, for an `<img>`: the portal's own route, which
-   * asks the API for it with the caller's session.
+   * asks the API for it with the caller's session. The plugin's version is part of the address, so an update is a new
+   * address and the browser shows the new icon at once instead of the cached one.
    *
    * @param pluginId - Plugin id as its manifest declares it.
+   * @param version - The plugin's version, as the API reports it next to the plugin.
    * @returns The same-origin address of the icon.
    */
-  const panelPluginIconPath = (pluginId: string): string =>
-    `/api/portal/client/plugins/${encodeURIComponent(pluginId)}/icon`
+  const panelPluginIconPath = (pluginId: string, version: string): string =>
+    `/api/portal/client/plugins/${encodeURIComponent(pluginId)}/icon?v=${encodeURIComponent(version)}`
 
   /**
    * Completes first-time setup on a newly provisioned hosting service.

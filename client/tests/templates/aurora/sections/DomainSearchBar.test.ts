@@ -2,6 +2,8 @@
  * Unit tests for DomainSearchBar: the e2e test ids, the search event, and the category chips.
  */
 import { describe, expect, it } from 'vitest'
+import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import DomainSearchBar from '~/templates/aurora/sections/DomainSearchBar.vue'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
@@ -22,7 +24,28 @@ describe('DomainSearchBar', () => {
     expect(wrapper.find('[data-testid="domain-search-submit"]').attributes('type')).toBe('submit')
   })
 
+  it('submits natively to the domains page with the name in the query the page reads, so Enter works before hydration', async () => {
+    await loadGlobals()
+    const wrapper = mountWithKit(DomainSearchBar)
+
+    const form = wrapper.find('[data-testid="domain-search-bar-form"]')
+    expect(form.attributes('method')).toBe('get')
+    expect(form.attributes('action')).toBe(SITE_DOMAINS_PATH)
+    expect(wrapper.find('[data-testid="domain-search-input"]').attributes('name')).toBe(DOMAIN_SEARCH_QUERY_PARAM)
+  })
+
+  it('intercepts the submit once mounted, so the page is not reloaded', async () => {
+    await loadGlobals()
+    const wrapper = mountWithKit(DomainSearchBar)
+    const event = new Event('submit', { cancelable: true })
+
+    wrapper.find('form').element.dispatchEvent(event)
+
+    expect(event.defaultPrevented).toBe(true)
+  })
+
   it('shows the name a search started elsewhere ran for, and follows it when it changes', async () => {
+    await loadGlobals()
     const wrapper = mountWithKit(DomainSearchBar, { props: { initialQuery: 'first-site' } })
     const input = wrapper.find('[data-testid="domain-search-input"]')
     expect((input.element as HTMLInputElement).value).toBe('first-site')

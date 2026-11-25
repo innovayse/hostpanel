@@ -25,7 +25,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="RefusedRule">The manifest rule a refused plugin breaks; <see langword="null"/> otherwise.</param>
 /// <param name="RefusedDetail">Where and how the rule is broken; <see langword="null"/> unless refused.</param>
 /// <param name="IconUrl">
-/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a loaded plugin that ships an icon;
+/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon?v={version}</c>, the plugin version in the address so an update is never shown the cached old icon) for a loaded plugin that ships an icon;
 /// <see langword="null"/> when it has none, so the panel shows the colour block.
 /// </param>
 /// <param name="StagedVersion">

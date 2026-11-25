@@ -20,9 +20,9 @@ public sealed class RegisterDomainValidator : LocalizedValidator<RegisterDomainC
         // FulfillPaidOrderHandler against a name the customer has already paid for, so a name
         // this rule refused would fail *after* the money moved.
         RuleFor(x => x.DomainName)
-            .NotEmpty()
-            .Matches(@"^(?=.{1,253}$)[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$")
-            .WithMessage(L["DomainNameRequired"]);
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(L["DomainNameRequired"])
+            .MustBeDomainName(L["DomainNameInvalid"]);
 
         RuleFor(x => x.Years).InclusiveBetween(1, 10).WithMessage(L["DomainYearsRange"]);
     }

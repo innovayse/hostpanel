@@ -289,17 +289,17 @@ describe('ClientServiceDetailView', () => {
   })
 
   it('draws the icon of the plugin that serves the server on the Open panel button, named after the plugin', async () => {
-    const server = { name: 'srv', hostname: 'srv.example', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+    const server = { name: 'srv', hostname: 'srv.example', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', iconVersion: '1.2.0' } }
     const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active, server })
 
     const icon = wrapper.get('[data-testid="client-service-panel"]').get('[data-testid="plugin-avatar-image"]')
-    expect(icon.attributes('src')).toBe('/api/admin/plugins/acme-panel/icon')
+    expect(icon.attributes('src')).toBe('/api/admin/plugins/acme-panel/icon?v=1.2.0')
     expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 
   it('keeps the generic icon on the Open panel button when no plugin serves the server or the plugin has no icon', async () => {
     const plain = { name: 'srv', hostname: 'srv.example', ipAddress: null, panelPlugin: null }
-    const iconless = { ...plain, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: false } }
+    const iconless = { ...plain, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', iconVersion: null } }
     const { wrapper: builtIn } = await mountLoaded({ ...detail, status: ServiceStatus.Active, server: plain })
     const { wrapper: noIcon } = await mountLoaded({ ...detail, status: ServiceStatus.Active, server: iconless })
 

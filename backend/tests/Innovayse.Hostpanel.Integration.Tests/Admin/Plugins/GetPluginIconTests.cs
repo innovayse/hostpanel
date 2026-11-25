@@ -89,6 +89,21 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
         (await response.Content.ReadAsByteArrayAsync()).Should().Equal(PngBytes);
     }
 
+    /// <summary>The versioned address a plugin row carries (<c>?v=</c>) is served like the bare one: the version only names the cache entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task VersionedAddress_IsServedLikeTheBareOneAsync()
+    {
+        var registry = new FakePluginRegistry();
+        Load(registry, "versioned-plugin", new PluginIconDto("image/png", PngBytes, "\"png\""));
+        var client = await AdminClientOverAsync(registry);
+
+        var response = await client.GetAsync(PluginIconPaths.For("versioned-plugin", "2.0.0"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsByteArrayAsync()).Should().Equal(PngBytes);
+    }
+
     /// <summary>A repeat request holding the current tag is answered 304 with no body.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

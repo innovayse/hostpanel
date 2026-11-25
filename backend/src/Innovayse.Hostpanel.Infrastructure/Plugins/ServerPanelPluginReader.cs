@@ -35,6 +35,9 @@ public sealed class ServerPanelPluginReader : IServerPanelPluginReader
             return null;
         }
 
-        return new ServicePanelPluginDto(plugin.Manifest.Id, plugin.Manifest.Name, plugin.Icon is not null);
+        return new ServicePanelPluginDto(
+            plugin.Manifest.Id,
+            plugin.Manifest.Name,
+            plugin.Icon is not null ? plugin.Manifest.Version : null);
     }
 }

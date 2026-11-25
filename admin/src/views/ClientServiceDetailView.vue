@@ -133,7 +133,7 @@ const service = computed(() => store.current)
 /** The serving plugin's picture for the Open panel button; undefined (the generic icon) when no plugin serves the server's module or it ships no icon. */
 const panelPluginIcon = computed<UiBarPluginIcon | undefined>(() => {
   const plugin = service.value?.server?.panelPlugin
-  return plugin?.hasIcon ? { name: plugin.name, iconUrl: pluginIconPath(plugin.id) } : undefined
+  return plugin?.iconVersion ? { name: plugin.name, iconUrl: pluginIconPath(plugin.id, plugin.iconVersion) } : undefined
 })
 
 /** True while the initial load is in flight (owned by the store). */

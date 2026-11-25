@@ -70,7 +70,7 @@ public sealed class ServicePanelPluginTests(IntegrationTestFactory factory) : IC
         var plugin = body.RootElement.GetProperty("server").GetProperty("panelPlugin");
         plugin.GetProperty("id").GetString().Should().Be("hestia");
         plugin.GetProperty("name").GetString().Should().Be("Panel plugin");
-        plugin.GetProperty("hasIcon").GetBoolean().Should().BeFalse();
+        plugin.GetProperty("iconVersion").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     /// <summary>The client's own list names the plugin that serves the server's module.</summary>

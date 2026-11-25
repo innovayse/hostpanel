@@ -1,10 +1,23 @@
 <template>
   <UiBlock>
-    <UiForm data-testid="domain-search-bar-form" spacing="none" class="mx-auto" @submit="emit('search', query)">
+    <!--
+      A GET to the domains page with the name in the query the page reads on load: an Enter pressed before
+      the page is hydrated is submitted natively and still lands on the search; once hydrated, the form
+      intercepts the submit and searches in place.
+    -->
+    <UiForm
+      data-testid="domain-search-bar-form"
+      spacing="none"
+      class="mx-auto"
+      method="get"
+      :action="searchPath"
+      @submit="emit('search', query)"
+    >
       <UiStack direction="row" wrap justify="center" align="end" gap="xs">
         <UiInput
           v-model="query"
           testid="domain-search-input"
+          :name="DOMAIN_SEARCH_QUERY_PARAM"
           :disabled="!hasZones"
           :placeholder="t('aurora.domainSearch.placeholder')"
           class="min-w-[200px] flex-[1_1_260px]"
@@ -43,6 +56,8 @@
  * aurora domain search bar: the wide field and category filter that head the
  * domains page. Presentation only: it emits the term and the chosen category.
  */
+import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
+import { SITE_DOMAINS_PATH } from '~/constants/siteRoutes'
 import { BRAND_BUTTON } from '~/templates/aurora/buttons'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import type { ChipTab } from '~/types/chiptab'
@@ -70,6 +85,12 @@ const emit = defineEmits<{
 
 /** Translator for the active locale. */
 const { t } = useI18n()
+
+/** Prefixes a path with the active language. */
+const localePath = useLocalePath()
+
+/** The domains page in the active language: where a submit that runs before hydration lands. */
+const searchPath = localePath(SITE_DOMAINS_PATH)
 
 /** The category chips: the sentinel reads "all", every other category its translated (or capitalised) name. */
 const categoryTabs = computed<ChipTab[]>(() => props.categories.map(entry => ({

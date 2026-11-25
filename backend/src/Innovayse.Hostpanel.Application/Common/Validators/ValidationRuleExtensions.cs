@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.Localization;
 
@@ -205,6 +206,22 @@ public static class ValidationRuleExtensions
         ArgumentNullException.ThrowIfNull(rule);
 
         return rule.Must(PriceDiscount.IsValidPercent).WithMessage(message);
+    }
+
+    /// <summary>
+    /// Requires a well-formed fully-qualified domain name: every label of ASCII letters, digits and inner hyphens, no
+    /// label over 63 characters, the whole name within 253, and an extension of letters. The rule is
+    /// <see cref="DomainNameRules"/>, so every use case that takes a name from a visitor refuses the same ones.
+    /// </summary>
+    /// <typeparam name="T">The command or query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the domain name property.</param>
+    /// <param name="message">The localized sentence reported when the name is malformed.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, string> MustBeDomainName<T>(this IRuleBuilder<T, string> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(DomainNameRules.IsValidName).WithMessage(message);
     }
 
     /// <summary>

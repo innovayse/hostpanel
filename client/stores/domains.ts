@@ -36,7 +36,6 @@ import { EMPTY_AMOUNT } from '~/utils/formatCurrency'
 import { formatMoney } from '~/utils/formatMoney'
 import { contactFromRegistrant } from '~/utils/domainContacts'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
-import { ProductType } from '~/types/producttype'
 import type { AccountContact } from '~/types/accountcontact'
 import type { ClientUser } from '~/types/clientuser'
 import type { DomainContactFields } from '~/types/domaincontactfields'
@@ -44,7 +43,7 @@ import type { DomainDetail } from '~/types/domaindetail'
 import type { WhoisRecord } from '~/types/whoisrecord'
 import type { DomainOrderResult } from '~/types/domainorderresult'
 import type { GatewayMethod } from '~/types/gatewaymethod'
-import { apiErrorMessage } from '~/lib/errorHandler'
+import { apiErrorMessage, apiFieldErrors } from '~/lib/errorHandler'
 
 /** How many extensions the storefront search offers. */
 const OFFERED_TLD_COUNT = 4
@@ -105,6 +104,9 @@ export const useDomainsStore = defineStore('domains', () => {
   /** The name the last storefront search was run for, so the search field can show it. */
   const lookupTerm = ref('')
 
+  /** The sentence for a name the API refused as malformed; empty when the last search was accepted. */
+  const lookupError = ref('')
+
   /** The currency the price rows are quoted in, shaped for {@link formatMoney}. */
   const rowCurrency = computed(() =>
     currencyStore.moneyCurrencyFor(catalogStore.tldPricing?.currency?.code))
@@ -158,7 +160,9 @@ export const useDomainsStore = defineStore('domains', () => {
    *
    * A check that fails is reported as `unknown` rather than dropped or shown as taken: the row
    * count stays stable, and a registrar that is unconfigured or unreachable reads as a fault
-   * instead of as a name somebody owns.
+   * instead of as a name somebody owns. A name the API refuses as malformed is refused for every
+   * extension alike, so it is not a row at all: the rows are emptied and {@link lookupError}
+   * holds the API's sentence.
    *
    * @param term - Raw text the visitor typed.
    * @returns Nothing; the rows land in {@link lookupResults}.
@@ -170,9 +174,11 @@ export const useDomainsStore = defineStore('domains', () => {
     }
     lookupTerm.value = term.trim()
 
+    lookupError.value = ''
     lookupPending.value = true
     try {
-      lookupResults.value = await Promise.all(
+      let refusal = ''
+      const rows = await Promise.all(
         offeredTlds.value.map(async ({ tld, register }): Promise<DomainResult> => {
           const name = `${base}${tld}`
           try {
@@ -182,11 +188,16 @@ export const useDomainsStore = defineStore('domains', () => {
               price: response.available ? register : '—',
               status: response.available ? DomainResultStatus.Available : DomainResultStatus.Taken,
             }
-          } catch {
+          } catch (e: unknown) {
+            if (Object.keys(apiFieldErrors(e)).length > 0) {
+              refusal = apiErrorMessage(e)
+            }
             return { name, price: '—', status: DomainResultStatus.Unknown }
           }
         })
       )
+      lookupError.value = refusal
+      lookupResults.value = refusal ? [] : rows
     } finally {
       lookupPending.value = false
     }
@@ -265,21 +276,6 @@ export const useDomainsStore = defineStore('domains', () => {
       paymentMethodsLoading.value = false
     }
     return paymentMethods.value
-  }
-
-  /**
-   * Looks up the id of the product a domain cart line is sold under.
-   *
-   * @returns The id, or null when there is no domain product or the catalogue was unreachable
-   * (the cart then simply cannot add a domain, which the page already handles).
-   */
-  const fetchDomainProductId = async (): Promise<number | null> => {
-    try {
-      const products = await catalog.fetchProducts()
-      return products.find(p => p.type === ProductType.Domain)?.id ?? null
-    } catch {
-      return null
-    }
   }
 
   // -- Transfer order ---------------------------------------------------------------------
@@ -586,6 +582,7 @@ export const useDomainsStore = defineStore('domains', () => {
 
   return {
     lookupTerm,
+    lookupError,
     searchResult,
     searchError,
     searching,
@@ -606,7 +603,6 @@ export const useDomainsStore = defineStore('domains', () => {
     categories,
     offeredTlds,
     searchOfferedTlds,
-    fetchDomainProductId,
     transferResult,
     transferError,
     transferSaving,

@@ -68,6 +68,7 @@ export const useBundlePage = async (id: number) => {
     await catalogStore.loadProducts()
     if (catalogStore.bundleFor(id)?.includesDomain) {
       await catalogStore.loadTldPricing()
+      await catalogStore.loadDomainProduct()
     }
   }, {
     watch: [locale],

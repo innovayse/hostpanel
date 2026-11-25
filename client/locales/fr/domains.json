@@ -10,6 +10,7 @@
     "registerNow": "Enregistrer maintenant",
     "invalidDomain": "Veuillez saisir un domaine valide avec son extension (par ex. monsite.com)",
     "checkFailed": "La vérification du domaine a échoué. Veuillez réessayer.",
+    "cannotAdd": "Ce domaine ne peut pas être ajouté au panier pour le moment. Veuillez réessayer.",
     "tldNotSupported": "Cette extension n'est pas disponible à l'enregistrement",
     "alreadyInCart": "Déjà dans le panier",
     "tabRegister": "Enregistrement",

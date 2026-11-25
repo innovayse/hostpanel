@@ -46,6 +46,15 @@ describe('AuroraHeader', () => {
     expect(wrapper.find('[data-testid="nav-cart"]').attributes('href')).toBe('/cart')
   })
 
+  it('lets the controls wrap inside the bar so a phone is not scrolled sideways', async () => {
+    await loadGlobals()
+    stubRoute()
+    const controls = mountWithKit(AuroraHeader, {}).find('[data-testid="header-controls"]')
+
+    expect(controls.classes()).toEqual(expect.arrayContaining(['flex-wrap', 'min-w-0', 'max-w-full']))
+    expect(controls.classes()).not.toContain('shrink-0')
+  })
+
   it('emphasises the current entry only', async () => {
     await loadGlobals()
     stubRoute()

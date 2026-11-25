@@ -8,6 +8,7 @@
     :categories="categories"
     :active-category="activeCategory"
     :in-cart="cartDomains"
+    :error="notice"
     @search="search"
     @update:category="(value: string) => (activeCategory = value)"
     @add="addDomain"
@@ -92,10 +93,25 @@ await usePayerAsyncData('domains:tld-pricing', () => catalogStore.loadTldPricing
 })
 
 /** Price table, categories and name lookup state of the domains store. */
-const { priceRows, categories, lookupResults: results, lookupPending: pending, lookupTerm } = storeToRefs(domainsStore)
+const { priceRows, categories, lookupResults: results, lookupPending: pending, lookupTerm, lookupError } = storeToRefs(domainsStore)
 
-/** Runs a lookup for the typed name across the offered extensions. */
-const search = domainsStore.searchOfferedTlds
+/** The sentence for the last add to the cart that could not be done; empty when there is none to show. */
+const addError = ref('')
+
+/** What the template shows above the results: a refused search, else a refused add to the cart. */
+const notice = computed(() => lookupError.value || addError.value)
+
+/**
+ * Runs a lookup for the typed name across the offered extensions; a refusal of an earlier add to the
+ * cart no longer applies to the new results, so it is cleared.
+ *
+ * @param term Raw text the visitor typed.
+ * @returns Resolves once the rows are in the store.
+ */
+const search = (term: string): Promise<void> => {
+  addError.value = ''
+  return domainsStore.searchOfferedTlds(term)
+}
 
 /** The extension category the price table is filtered to. */
 const activeCategory = ref(ALL_CATEGORY)
@@ -113,8 +129,8 @@ onMounted(() => {
   }
 })
 
-// The cart needs a product to hang a domain order on; the catalogue store finds it.
-await usePayerAsyncData('domains:catalogue', () => catalogStore.loadProducts())
+// The cart needs a product to hang a domain order on; the backend finds it by its product type.
+await useAsyncData('domains:product', () => catalogStore.loadDomainProduct(), { watch: [locale] })
 
 /** The id of the product a domain cart line hangs on; null when the operator has none. */
 const domainProductId = computed(() => catalogStore.domainProductId)
@@ -126,21 +142,29 @@ const cartDomains = computed(() =>
 /**
  * Adds a domain registration to the cart.
  *
- * Silently does nothing when no domain product exists: the button is only shown
- * for available names, and an operator with no domain product configured has
- * nothing to sell here. The price row is already converted to the payer's currency by the
- * API (the TLD's own sell currency does not matter), so the cart line carries that amount.
+ * A name already in the cart is left as it is (its row shows as added). Every other reason the
+ * line cannot be built is told to the visitor in {@link addError}: no domain product (the API's
+ * own sentence for it), or no payer currency or price for the extension. The price row is already
+ * converted to the payer's currency by the API (the TLD's own sell currency does not matter), so
+ * the cart line carries that amount.
  *
  * @param domain Fully qualified domain the visitor chose.
  */
 const addDomain = (domain: string): void => {
-  if (!domainProductId.value || cartDomains.value.includes(domain) || !currencyStore.payerCode) {
+  if (cartDomains.value.includes(domain)) {
+    return
+  }
+
+  addError.value = ''
+  if (!domainProductId.value) {
+    addError.value = catalogStore.domainProductError || t('domains.cannotAdd')
     return
   }
 
   const tld = tldOf(domain)
   const row = priceRows.value.find((priceRow) => priceRow.tld === `.${tld}`)
-  if (!row) {
+  if (!currencyStore.payerCode || !row) {
+    addError.value = t('domains.cannotAdd')
     return
   }
 

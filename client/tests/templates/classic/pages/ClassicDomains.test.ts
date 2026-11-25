@@ -20,13 +20,13 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ClassicDomains from '~/templates/classic/pages/ClassicDomains.vue'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogStore } from '~/stores/catalog'
 import { useDomainsStore } from '~/stores/domains'
 import type { DomainCheckResult } from '~/types/domaincheckresult'
 import type { TldPricing } from '~/types/tldpricing'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
-import { ProductType } from '~/types/producttype'
 
 /** The price table the catalogue answers with. */
 const pricing: TldPricing = {
@@ -61,7 +61,8 @@ const checkedDomains = (): string[] =>
   requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => (bodyOf(request) as { domain: string }).domain)
 
 /**
- * Mounts the page and waits until the currencies, prices and domain product have loaded.
+ * Mounts the page and waits until the currencies and prices have loaded. The domain product is read first,
+ * as the domains page that renders the template does: the template only uses what the store holds.
  *
  * @param query Route query, e.g. a `domain` to search at once.
  * @returns The wrapper.
@@ -69,6 +70,7 @@ const checkedDomains = (): string[] =>
 const mountDomains = async (query: Record<string, string> = {}) => {
   stubPublicPageRuntime({ query })
   const wrapper = await mountPage(ClassicDomains)
+  await useCatalogStore().loadDomainProduct()
   await awaitCatalogue()
   return wrapper
 }
@@ -92,7 +94,7 @@ describe('ClassicDomains', () => {
     table = {
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`GET ${CatalogPath.TldPricing}`]: { body: pricing },
-      [`GET ${CatalogPath.Products}`]: { body: [{ id: 99, type: ProductType.Domain }] },
+      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 99 } },
     }
     stub = await startTransport(routeTable(table))
   })
@@ -157,6 +159,18 @@ describe('ClassicDomains', () => {
       amount: 10,
       currency: 'USD',
     })
+  })
+
+  it('tells the visitor why nothing was added when the operator has no domain product', async () => {
+    table[`GET ${CatalogPath.DomainProduct}`] = { status: 503, body: { type: 'DOMAIN_PRODUCT_NOT_CONFIGURED', detail: 'Domains cannot be ordered here.' } }
+    answerCheck({ domain: 'example.com', available: true, status: DomainAvailabilityStatus.Available })
+    const wrapper = await mountDomains()
+    await search(wrapper, 'example.com')
+
+    await wrapper.find('[data-testid="classic-domains-register"]').trigger('click')
+
+    expect(useCartStore().items).toEqual([])
+    expect(wrapper.find('[data-testid="classic-domains-error"]').text()).toBe('Domains cannot be ordered here.')
   })
 
   it('disables the register button once the domain is in the cart', async () => {

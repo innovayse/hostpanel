@@ -43,10 +43,9 @@ const bundle = (overrides: Partial<CatalogBundle> = {}): CatalogBundle => ({
   ...overrides,
 })
 
-/** The hosting plan and the domain product of the catalogue. */
+/** The hosting plan of the catalogue; the domain product is read apart, by its type. */
 const catalogue = [
   { id: 11, groupId: 1, name: 'Starter', pricing: { monthly: 10, annual: 100 } },
-  { id: 7, groupId: 2, name: 'Domain Registration' },
 ]
 
 /** A price table with one extension: ten a year to register, twelve to transfer. */
@@ -84,6 +83,7 @@ describe('bundle page', () => {
     table = {
       [readOf(CatalogPath.BillingCurrencies)]: { body: [USD_CURRENCY] },
       [readOf(CatalogPath.Products)]: { body: catalogue },
+      [readOf(CatalogPath.DomainProduct)]: { body: { id: 7 } },
       [readOf(CatalogPath.ProductBundles)]: { body: [bundle()] },
       [readOf(CatalogPath.TldPricing)]: { body: pricing },
     }

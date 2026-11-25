@@ -44,7 +44,7 @@ public sealed class GetActiveDomainProductHandler
             .AsNoTracking()
             .Where(p => p.Status == ProductStatus.Active && p.Type == ProductType.Domain)
             .OrderBy(p => p.Name)
-            .Select(p => new DomainProductDto(p.Id, p.Name))
+            .Select(p => new DomainProductDto(p.Id))
             .FirstOrDefaultAsync(ct);
 
         return product is null

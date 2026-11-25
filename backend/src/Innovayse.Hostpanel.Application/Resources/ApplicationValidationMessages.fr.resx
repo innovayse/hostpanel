@@ -383,7 +383,7 @@
     <value>Le statut doit être l'un des suivants : PendingRegistration, PendingTransfer, Active, Expired, Redemption, Transferred, Cancelled.</value>
   </data>
   <data name="DomainListRegistrarInvalid" xml:space="preserve">
-    <value>Le bureau d'enregistrement doit être l'un des suivants : NameAm, Namecheap.</value>
+    <value>Le bureau d'enregistrement doit être un plugin de bureau d'enregistrement installé.</value>
   </data>
   <data name="VatRateListKindInvalid" xml:space="preserve">
     <value>Le type doit être l'un des suivants : Standard, Reduced.</value>

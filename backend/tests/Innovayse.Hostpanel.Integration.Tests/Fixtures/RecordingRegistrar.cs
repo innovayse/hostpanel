@@ -31,6 +31,9 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     /// <summary>Gets the answer to a transfer cancellation when a test scripts one; otherwise the stub's success answers.</summary>
     public RegistrarResult? CancelTransferAnswer { get; init; }
 
+    /// <summary>Gets the answer to an auto renew change when a test scripts one; otherwise the stub's success answers.</summary>
+    public RegistrarResult? SetAutoRenewAnswer { get; init; }
+
     /// <summary>Gets a snapshot of the operations this registrar was asked for, as "Operation domain".</summary>
     public IReadOnlyList<string> Calls => [.. _calls];
 
@@ -81,7 +84,7 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     public Task<RegistrarResult> SetAutoRenewAsync(RegistrarFlagChange change, CancellationToken ct)
     {
         Note(nameof(SetAutoRenewAsync), change.Domain.Name);
-        return _inner.SetAutoRenewAsync(change, ct);
+        return SetAutoRenewAnswer is { } answer ? Task.FromResult(answer) : _inner.SetAutoRenewAsync(change, ct);
     }
 
     /// <inheritdoc/>

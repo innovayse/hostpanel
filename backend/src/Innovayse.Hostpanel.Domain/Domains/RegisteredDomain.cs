@@ -57,7 +57,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <summary>Gets the UTC date the current registration period expires.</summary>
     public DateTimeOffset ExpiresAt { get; private set; }
 
-    /// <summary>Gets whether automatic renewal is enabled for this domain.</summary>
+    /// <summary>Gets whether the panel renews this domain automatically (a setting separate from the registrar's own auto renew).</summary>
     public bool AutoRenew { get; private set; }
 
     /// <summary>Gets whether WHOIS privacy is enabled for this domain.</summary>
@@ -495,9 +495,10 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Enables or disables automatic renewal for this domain.
+    /// Enables or disables the panel's own automatic renewal for this domain: whether the panel raises its renewal
+    /// invoices and renews it. The registrar's auto renew is a separate setting the panel does not store.
     /// </summary>
-    /// <param name="value">The desired auto-renew flag value.</param>
+    /// <param name="value">The desired panel renewal flag value.</param>
     public void SetAutoRenew(bool value) => AutoRenew = value;
 
     /// <summary>

@@ -159,6 +159,12 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// </summary>
     public bool IsDigital => Type == ProductType.Digital;
 
+    /// <summary>
+    /// Gets whether the product is the one a domain order line hangs off: nothing is provisioned on it, so it has no
+    /// package, server group or trial, and the extension price list prices the domain itself.
+    /// </summary>
+    public bool IsDomain => Type == ProductType.Domain;
+
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private Product() { }
 
@@ -179,6 +185,10 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// <param name="isFeatured">Whether the product is the group's recommended plan.</param>
     /// <param name="sortOrder">Position inside the group, lowest first.</param>
     /// <returns>A new active <see cref="Product"/>.</returns>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductDomainShapeInvalid"/>: a <see cref="ProductType.Domain"/> product is given a package or a
+    /// server group.
+    /// </exception>
     public static Product Create(
         int groupId,
         string name,
@@ -194,6 +204,8 @@ public sealed class Product : BaseEntity, IAggregateRoot
         bool isFeatured = false,
         int sortOrder = 0)
     {
+        EnsureDomainShape(type, packageName, serverGroupId);
+
         var product = new Product
         {
             GroupId = groupId,
@@ -227,6 +239,10 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// <param name="serverGroupId">Optional FK to the server group, or null to clear.</param>
     /// <param name="isFeatured">New recommended-plan flag, or null to keep the current one.</param>
     /// <param name="sortOrder">New position inside the group, or null to keep the current one.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductDomainShapeInvalid"/>: a <see cref="ProductType.Domain"/> product is given a package or a
+    /// server group.
+    /// </exception>
     public void Update(
         string name,
         string? description,
@@ -239,6 +255,8 @@ public sealed class Product : BaseEntity, IAggregateRoot
         bool? isFeatured = null,
         int? sortOrder = null)
     {
+        EnsureDomainShape(Type, packageName, serverGroupId);
+
         Name = name;
         Description = description;
         Website = website;
@@ -379,10 +397,18 @@ public sealed class Product : BaseEntity, IAggregateRoot
     /// <param name="trial">The new settings; the reminder days are kept descending.</param>
     /// <exception cref="DomainRuleException">
     /// <see cref="ProductsErrors.ProductTrialInvalid"/>: the settings fail <see cref="ProductTrial.IsValid"/>.
+    /// <see cref="ProductsErrors.ProductDomainShapeInvalid"/>: the trial is switched on for a <see cref="ProductType.Domain"/> product.
     /// </exception>
     public void ConfigureTrial(ProductTrial trial)
     {
         ArgumentNullException.ThrowIfNull(trial);
+
+        if (IsDomain && trial.Enabled)
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductDomainShapeInvalid,
+                "A domain product cannot offer a trial: nothing is provisioned on it.");
+        }
 
         if (!ProductTrial.IsValid(trial.Days, trial.ReminderDays, trial.GracePeriodDays))
         {
@@ -539,6 +565,29 @@ public sealed class Product : BaseEntity, IAggregateRoot
         var code = currencyCode.ToUpperInvariant();
         return _prices.Any(p => p.CurrencyCode == code);
     }
+
+    /// <summary>
+    /// Refuses a hosting package or a server group on a <see cref="ProductType.Domain"/> product, the one
+    /// place that rule is written: a domain product is only what a domain order line hangs off, nothing is
+    /// provisioned on it and the extension price list prices the domain itself.
+    /// </summary>
+    /// <param name="type">The product's type; any type but <see cref="ProductType.Domain"/> is not checked.</param>
+    /// <param name="packageName">The hosting package name, which a domain product has none of.</param>
+    /// <param name="serverGroupId">The server group, which a domain product has none of.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="ProductsErrors.ProductDomainShapeInvalid"/>: the type is <see cref="ProductType.Domain"/> and a
+    /// package or a server group is given.
+    /// </exception>
+    private static void EnsureDomainShape(ProductType type, string? packageName, int? serverGroupId)
+    {
+        if (type == ProductType.Domain && (!string.IsNullOrWhiteSpace(packageName) || serverGroupId is not null))
+        {
+            throw new DomainRuleException(
+                ProductsErrors.ProductDomainShapeInvalid,
+                "A domain product has no package or server group: nothing is provisioned on it.");
+        }
+    }
+
 
     /// <summary>Parses metadata text and keeps it only when its root is a JSON object.</summary>
     /// <param name="metadata">The candidate metadata text.</param>

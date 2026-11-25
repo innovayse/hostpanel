@@ -453,6 +453,9 @@
   <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
     <value>Доменный продукт нельзя включить в набор. Включите опцию домена в наборе.</value>
   </data>
+  <data name="PRODUCT_DOMAIN_SHAPE_INVALID" xml:space="preserve">
+    <value>У доменного продукта нет пакета хостинга, группы серверов и пробного периода: на нём ничего не подключается, а цену домена задаёт прайс-лист доменов.</value>
+  </data>
   <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
     <value>Набор с доменом требует срока регистрации от 1 до 10 лет, а набор без домена срок указывать не должен.</value>
   </data>

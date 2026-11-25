@@ -672,4 +672,49 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await StateAsync()).Should().Be(((int?)null, false));
     }
+
+    /// <summary>
+    /// A domain product is edited like any other (renamed, hidden) and the storefront follows its status; a
+    /// package on it is refused with <c>PRODUCT_DOMAIN_SHAPE_INVALID</c> (400) and the stored product is left as it
+    /// was. Runs on a factory of its own, since the shared database holds the domain products other tests add.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateProduct_DomainProduct_EditsLikeAnyOtherAndRefusesAPackageAsync()
+    {
+        await using var isolated = new IntegrationTestFactory();
+        await isolated.InitializeAsync();
+        var client = await ProductsTestSeeds.AdminClientAsync(isolated);
+        var storefront = isolated.CreateClient();
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Domain Registration", type = ProductType.Domain, monthlyPrice = 0m, annualPrice = 0m,
+        });
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var renamed = await client.PutAsJsonAsync($"/api/products/{id}", new
+        {
+            name = "Domains", description = "Register and transfer", monthlyPrice = 0m, annualPrice = 0m, isHidden = false,
+        });
+        var withPackage = await client.PutAsJsonAsync($"/api/products/{id}", new
+        {
+            name = "Domains", packageName = "starter", monthlyPrice = 0m, annualPrice = 0m,
+        });
+        var afterRefusal = await ProductsTestSeeds.GetProductAsync(client, id);
+        (await storefront.GetAsync("/api/public/products/domain")).StatusCode.Should().Be(HttpStatusCode.OK);
+        var hidden = await client.PutAsJsonAsync($"/api/products/{id}", new
+        {
+            name = "Domains", monthlyPrice = 0m, annualPrice = 0m, isHidden = true,
+        });
+
+        renamed.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        withPackage.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ProductsTestSeeds.AssertCodeAsync(withPackage, HostpanelErrorCodes.PRODUCT_DOMAIN_SHAPE_INVALID);
+        afterRefusal.GetProperty("name").GetString().Should().Be("Domains");
+        afterRefusal.GetProperty("packageName").ValueKind.Should().Be(JsonValueKind.Null);
+        hidden.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ProductsTestSeeds.GetProductAsync(client, id)).GetProperty("status").GetString().Should().Be(nameof(ProductStatus.Inactive));
+        (await storefront.GetAsync("/api/public/products/domain")).StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+    }
 }

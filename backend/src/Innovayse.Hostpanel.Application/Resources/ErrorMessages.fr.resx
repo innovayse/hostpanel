@@ -447,6 +447,9 @@
   <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
     <value>Un produit de domaine ne peut pas faire partie d'une offre groupée. Activez plutôt le domaine inclus.</value>
   </data>
+  <data name="PRODUCT_DOMAIN_SHAPE_INVALID" xml:space="preserve">
+    <value>Un produit de domaine n'a ni forfait d'hébergement, ni groupe de serveurs, ni essai : rien n'y est provisionné et le prix du domaine est fixé par la grille tarifaire des domaines.</value>
+  </data>
   <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
     <value>Une offre groupée avec domaine nécessite une période d'enregistrement de 1 à 10 ans, et une offre sans domaine ne doit pas indiquer de période.</value>
   </data>

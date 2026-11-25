@@ -143,7 +143,8 @@ export const useMigrationStore = defineStore('migration', () => {
    */
   const replaceJob = (job: MigrationJob): void => {
     const idx = jobs.value.findIndex(j => j.id === job.id)
-    if (idx >= 0 && !isSameJob(jobs.value[idx], job)) {
+    const held = jobs.value[idx]
+    if (held !== undefined && !isSameJob(held, job)) {
       jobs.value[idx] = job
     }
     if (activeJob.value?.id === job.id && !isSameJob(activeJob.value, job)) {

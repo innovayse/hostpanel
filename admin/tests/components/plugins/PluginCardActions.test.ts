@@ -39,7 +39,7 @@ describe('PluginCardActions', () => {
 
     expect(wrapper.get('[data-testid="plugin-card-action-details-example-pay"]').text()).toBe('Details')
     expect(wrapper.get('[data-testid="plugin-card-action-checking-example-pay"]').attributes('aria-hidden')).toBe('true')
-    expect(wrapper.get('[data-testid="plugin-card-action-settings-example-pay"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-card-action-settings-example-pay"]').exists()).toBe(true)
   })
 
   it('shows the busy state on Install and Update and cannot be pressed again', async () => {

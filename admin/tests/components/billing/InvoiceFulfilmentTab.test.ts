@@ -130,7 +130,7 @@ describe('InvoiceFulfilmentTab', () => {
     const wrapper = await mountTab()
 
     expect(wrapper.get('[data-testid="ui-table-empty"]').text()).toContain('No fulfilment records')
-    expect(wrapper.get('[data-testid="ui-empty-state-icon"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ui-empty-state-icon"]').exists()).toBe(true)
   })
 
   it('shows the API sentence with Retry instead of an empty list when the load fails, and loads again', async () => {

@@ -49,20 +49,23 @@ export type ActivityFilter = (typeof ActivityFilter)[keyof typeof ActivityFilter
 export const groupActivityEvents = (events: ActivityEvent[], now: Date = new Date()): ActivityGroupBucket[] => {
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
   const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime()
-  const buckets: ActivityGroupBucket[] = [
-    { group: ActivityGroup.Upcoming, events: [] },
-    { group: ActivityGroup.Today, events: [] },
-    { group: ActivityGroup.Earlier, events: [] },
-  ]
+  const upcoming: ActivityEvent[] = []
+  const today: ActivityEvent[] = []
+  const earlier: ActivityEvent[] = []
   for (const event of events) {
     const at = new Date(event.occurredAt).getTime()
     if (at >= startOfTomorrow) {
-      buckets[0].events.push(event)
+      upcoming.push(event)
     } else if (at >= startOfToday) {
-      buckets[1].events.push(event)
+      today.push(event)
     } else {
-      buckets[2].events.push(event)
+      earlier.push(event)
     }
   }
+  const buckets: ActivityGroupBucket[] = [
+    { group: ActivityGroup.Upcoming, events: upcoming },
+    { group: ActivityGroup.Today, events: today },
+    { group: ActivityGroup.Earlier, events: earlier },
+  ]
   return buckets.filter((bucket) => bucket.events.length > 0)
 }

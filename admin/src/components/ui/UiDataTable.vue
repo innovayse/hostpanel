@@ -106,7 +106,7 @@ defineEmits<{
         <slot name="empty" />
       </template>
     </UiTable>
-    <template v-if="hasFooter" #footer>
+    <template v-if="page !== undefined && hasFooter" #footer>
       <UiPagination
         :page="page"
         :total="total"

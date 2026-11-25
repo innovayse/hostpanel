@@ -303,7 +303,7 @@ export const navTitleKey = (to: string): string => {
  * @returns The path of the most specific entry, or null when the address lies under none.
  */
 export const activeNavPath = (sections: readonly NavSection[], address: string): string | null => {
-  const path = address.split(/[?#]/)[0]
+  const path = address.split(/[?#]/)[0] ?? address
   let best: string | null = null
   for (const section of sections) {
     for (const item of section.items) {

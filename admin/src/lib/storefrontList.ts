@@ -27,7 +27,7 @@ export interface StorefrontListColumn extends Pick<SkeletonColumn, 'key' | 'size
  */
 export const storefrontListColumns = (columns: readonly SkeletonColumn[], t: StorefrontTranslate): StorefrontListColumn[] =>
   columns.flatMap((column) =>
-    column.label === undefined || column.actions === true
+    column.actions || column.label === undefined
       ? []
       : [{ key: column.key, caption: t(column.label), size: column.size, kind: column.kind, width: column.width, cardRole: column.cardRole }],
   )

@@ -66,6 +66,7 @@ describe('PluginServersCard', () => {
     const wrapper = await mountCard()
 
     expect(wrapper.get('[data-testid="plugin-servers-empty"]').text()).toContain('No server uses this plugin yet.')
+    expect(wrapper.find('[data-testid="plugin-servers-empty"] [data-testid="ui-empty-state-icon"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="plugin-servers-open"]').attributes('href')).toBe('/servers')
     expect(wrapper.find('[data-testid="plugin-servers-list"]').exists()).toBe(false)
   })

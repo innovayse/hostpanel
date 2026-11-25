@@ -17,7 +17,7 @@ const schema: ListSkeletonSchema = {
       { key: 'email', label: 'shared.email' },
       { key: 'role', label: 'clients.clientUsers.role' },
       { key: 'lastLogin', label: 'clients.clientUsers.lastLogin', kind: UiColumnKind.Date },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

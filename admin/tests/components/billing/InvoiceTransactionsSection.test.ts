@@ -39,7 +39,7 @@ describe('InvoiceTransactionsSection', () => {
     })
 
     const paymentsTable = wrapper.get('[data-testid="billing-invoice-payments-table"]')
-    expect(paymentsTable.text()).toContain('24000.00 AMD')
+    expect(paymentsTable.text()).toContain('24,000.00 AMD')
     expect(paymentsTable.text()).toContain('500.00 AMD')
     expect(paymentsTable.text()).not.toContain('$')
   })

@@ -61,8 +61,8 @@ describe('InvoiceCreditTab', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('1000.00 AMD available')
-    expect(wrapper.text()).not.toContain('$1000.00')
+    expect(wrapper.text()).toContain('1,000.00 AMD available')
+    expect(wrapper.text()).not.toContain('$1,000.00')
   })
 
   it('applies the credit and confirms it in the tab', async () => {
@@ -136,7 +136,7 @@ describe('InvoiceCreditTab', () => {
     await flushPromises()
 
     const body = wrapper.get('[data-testid="dialog-body"]').text()
-    expect(body).toContain('1500.00 AMD')
+    expect(body).toContain('1,500.00 AMD')
     expect(body).not.toContain('$')
   })
 })

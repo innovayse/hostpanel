@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
+using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Admin.Users.Commands.DeleteUser;
 
@@ -22,6 +23,9 @@ public sealed class DeleteUserHandler
     /// <summary>Tells which of the holders are still live accounts.</summary>
     private readonly IIdentityProvider _identity;
 
+    /// <summary>The data context, where the account's notification read marks are kept.</summary>
+    private readonly IHostpanelDbContext _context;
+
     /// <summary>The acting admin.</summary>
     private readonly ICurrentUserService _currentUser;
 
@@ -30,19 +34,22 @@ public sealed class DeleteUserHandler
     /// <param name="roles">Who holds the Admin role.</param>
     /// <param name="identity">Tells which of the holders are still live accounts.</param>
     /// <param name="currentUser">The acting admin.</param>
+    /// <param name="context">The data context, where the account's notification read marks are kept.</param>
     public DeleteUserHandler(
         IUserProvisioning provisioning,
         ISubjectRoleStore roles,
         IIdentityProvider identity,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IHostpanelDbContext context)
     {
         _provisioning = provisioning;
         _roles = roles;
         _identity = identity;
         _currentUser = currentUser;
+        _context = context;
     }
 
-    /// <summary>Deletes the account. Records that reference the subject are left alone.</summary>
+    /// <summary>Deletes the account. The account's notification read marks are deleted with it; other records that reference the subject are left alone.</summary>
     /// <param name="cmd">The subject to delete.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
@@ -64,7 +71,22 @@ public sealed class DeleteUserHandler
             return Result.FailureCode(HostpanelErrorCodes.USER_LAST_ADMIN);
         }
 
-        return await _provisioning.DeleteAsync(cmd.Id, ct);
+        var deleted = await _provisioning.DeleteAsync(cmd.Id, ct);
+        if (deleted.IsFailure)
+        {
+            return deleted;
+        }
+
+        // The notification read marks belong to the account, so they go with it; the other records that reference
+        // the subject stay.
+        var reads = await _context.ActivityReads.Where(r => r.UserId == cmd.Id).ToListAsync(ct);
+        if (reads.Count > 0)
+        {
+            _context.ActivityReads.RemoveRange(reads);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        return deleted;
     }
 
     /// <summary>

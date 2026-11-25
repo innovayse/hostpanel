@@ -147,7 +147,7 @@ const flow = useStorefrontForm<ServerLocation, ServerLocationPayload>({ store, f
       </template>
 
       <template #field-locale>
-        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="location-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="location-form-tab" />
       </template>
 
       <template #field-translations="{ id }">

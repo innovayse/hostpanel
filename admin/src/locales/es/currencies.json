@@ -22,8 +22,7 @@
     "decimals": "Decimales",
     "rateToBase": "Tasa a la base",
     "base": "Base",
-    "enabled": "Habilitada",
-    "actions": "Acciones"
+    "enabled": "Habilitada"
   },
   "makeBase": "Establecer como base",
   "baseBadge": "Base",

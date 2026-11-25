@@ -12,11 +12,10 @@ import { useRoute } from 'vue-router'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
-import UiText from '@/components/ui/UiText.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import { filterReports, REPORTS, reportGroupLabel } from '@/lib/reports'
 import { Icon, reportIcon } from '@/lib/icons'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
-import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { AppRoute, reportPagePath } from '@/lib/routes'
 import { UiInputType } from '@/utils/ui/input'
 import { UiSize } from '@/utils/ui/size'
@@ -69,15 +68,7 @@ const activeKey = computed<string | undefined>(() => {
           <UiIcon :markup="Icon.Search" :size="UiSize.Sm" />
         </template>
       </UiInput>
-      <UiText
-        v-if="items.length === 0"
-        :tone="UiTextTone.Muted"
-        :size="UiTextSize.Xs"
-        class="px-1 pt-2"
-        data-testid="reports-nav-empty"
-      >
-        {{ t('reports.sidebar.empty') }}
-      </UiText>
+      <UiEmptyState v-if="items.length === 0" compact :title="t('reports.sidebar.empty')" data-testid="reports-nav-empty" />
     </template>
   </UiSidebar>
 </template>

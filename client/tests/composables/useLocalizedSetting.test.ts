@@ -1,14 +1,15 @@
 /**
- * Tests for `useLocalizedSetting`: the per-language row when the visitor's language has one,
- * the default row otherwise.
+ * Tests for `useLocalizedSetting`: the row of the visitor's language when it has text, the default row
+ * otherwise, for every portal language alike.
  *
  * @module tests/composables/useLocalizedSetting.test
  */
 
 import { describe, expect, it } from 'vitest'
-import { ownRowFor, useLocalizedSetting } from '~/composables/useLocalizedSetting'
+import { readLocalized, useLocalizedSetting } from '~/composables/useLocalizedSetting'
 import type { LocalizedSettingSpec } from '~/composables/useLocalizedSetting'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
@@ -16,37 +17,32 @@ import { stubLocale } from '~/tests/helpers/runtimeStubs'
 const { replies } = usePortalSettingsServer()
 
 /** The office address rows, used as the sample setting. */
-const ADDRESS: LocalizedSettingSpec = {
-  default: { key: PortalSettingKey.ContactAddress, envKey: 'portalContactAddress' },
-  ru: { key: PortalSettingKey.ContactAddressRu, envKey: 'portalContactAddressRu' },
-  hy: { key: PortalSettingKey.ContactAddressHy, envKey: 'portalContactAddressHy' }
-}
+const ADDRESS: LocalizedSettingSpec = { key: PortalSettingKey.ContactAddress, envKey: 'portalContactAddress' }
 
 describe('useLocalizedSetting', () => {
   it('reads the default row for English', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.ContactAddress]: 'Default', [PortalSettingKey.ContactAddressRu]: 'Русский' })
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactAddress]: 'Default', [localizedSettingKey(PortalSettingKey.ContactAddress, 'ru')]: 'Русский' })
     stubLocale('en')
 
     expect(useLocalizedSetting().getLocalized(ADDRESS)).toBe('Default')
   })
 
-  it('reads the Russian row for a Russian visitor', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.ContactAddress]: 'Default', [PortalSettingKey.ContactAddressRu]: 'Русский' })
-    stubLocale('ru')
+  it.each([
+    ['ru', 'Русский'],
+    ['hy', 'Հայերեն'],
+    ['de', 'Deutsch'],
+    ['es', 'Español'],
+    ['fr', 'Français']
+  ])('reads the %s row for a visitor of that language', async (locale, text) => {
+    await loadPortalSettings(replies, { [PortalSettingKey.ContactAddress]: 'Default', [localizedSettingKey(PortalSettingKey.ContactAddress, locale)]: text })
+    stubLocale(locale)
 
-    expect(useLocalizedSetting().getLocalized(ADDRESS)).toBe('Русский')
-  })
-
-  it('reads the Armenian row for an Armenian visitor', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.ContactAddress]: 'Default', [PortalSettingKey.ContactAddressHy]: 'Հայերեն' })
-    stubLocale('hy')
-
-    expect(useLocalizedSetting().getLocalized(ADDRESS)).toBe('Հայերեն')
+    expect(useLocalizedSetting().getLocalized(ADDRESS)).toBe(text)
   })
 
   it('falls back to the default row when the language has none', async () => {
     await loadPortalSettings(replies, { [PortalSettingKey.ContactAddress]: 'Default' })
-    stubLocale('ru')
+    stubLocale('de')
 
     expect(useLocalizedSetting().getLocalized(ADDRESS)).toBe('Default')
   })
@@ -59,17 +55,30 @@ describe('useLocalizedSetting', () => {
   })
 })
 
-describe('ownRowFor', () => {
-  /** The rows of a setting stored once per language. */
-  const rows = { ru: 'russian row', hy: 'armenian row' }
+describe('readLocalized', () => {
+  /**
+   * A reader over a fixed table, ignoring the runtime-config key.
+   *
+   * @param rows The stored settings by key.
+   * @returns A reader that answers the row's text, or empty.
+   */
+  const reader = (rows: Record<string, string>) => (key: string): string => rows[key] ?? ''
 
-  it('picks the Russian and the Armenian row for those languages', () => {
-    expect(ownRowFor('ru', rows)).toBe('russian row')
-    expect(ownRowFor('hy', rows)).toBe('armenian row')
+  it('prefers the row of the language and falls back to the default one', () => {
+    const get = reader({ 'portal.contact.address': 'Default', 'portal.contact.address.de': 'Deutsch' })
+
+    expect(readLocalized(get, 'de', ADDRESS)).toBe('Deutsch')
+    expect(readLocalized(get, 'es', ADDRESS)).toBe('Default')
+    expect(readLocalized(get, 'en', ADDRESS)).toBe('Default')
   })
 
-  it('has no row of its own for English or any other language, which read the default row', () => {
-    expect(ownRowFor('en', rows)).toBeUndefined()
-    expect(ownRowFor('de', rows)).toBeUndefined()
+  it('names the runtime-config key of a language from the default one', () => {
+    const asked: string[] = []
+    readLocalized((_key, envKey) => {
+      asked.push(envKey)
+      return ''
+    }, 'ru', ADDRESS)
+
+    expect(asked).toEqual(['portalContactAddressRu', 'portalContactAddress'])
   })
 })

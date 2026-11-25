@@ -10,10 +10,12 @@ import { useI18n } from 'vue-i18n'
 import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
-import { storefrontColumnCaptions } from '@/lib/storefrontList'
+import { storefrontListColumns } from '@/lib/storefrontList'
+import type { StorefrontListColumn } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useLocationsStore } from '@/stores/locations'
 import type { ServerLocation } from '@/types/serverlocation'
@@ -35,8 +37,8 @@ const store = useLocationsStore()
 /** Delete confirmation and reorder state of the page. */
 const list = useStorefrontList<ServerLocation>(store)
 
-/** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
+/** Columns between the drag handle and the actions, with their translated captions. */
+const columns = computed<StorefrontListColumn[]>(() => storefrontListColumns(schema.table.columns, t))
 
 /**
  * The name to show for a location: the first written locale, an empty string when none.
@@ -112,9 +114,7 @@ const editRoute = (item: ServerLocation): string => editPath(AppRoute.Storefront
       </UiTableCell>
       <UiTableCell muted>{{ cityOf(item) || EMPTY_VALUE }}</UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
-          {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
-        </UiBadge>
+        <UiStatusBadge :state="item.isActive" :on-label="t('shared.active')" :off-label="t('shared.inactive')" />
       </UiTableCell>
     </template>
   </StorefrontListTable>

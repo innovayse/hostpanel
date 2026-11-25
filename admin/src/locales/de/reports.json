@@ -415,5 +415,24 @@
   "sidebar": {
     "search": "Berichte durchsuchen",
     "empty": "Keine Berichte gefunden"
+  },
+  "statusWord": {
+    "Active": "Aktiv",
+    "Paid": "Bezahlt",
+    "Completed": "Abgeschlossen",
+    "Pending": "Ausstehend",
+    "Invoice": "Rechnung",
+    "Payment": "Zahlung",
+    "Unpaid": "Unbezahlt",
+    "Suspended": "Gesperrt",
+    "Overdue": "Überfällig",
+    "Expired": "Abgelaufen",
+    "Refunded": "Erstattet",
+    "PartiallyRefunded": "Teilweise erstattet",
+    "Transferred": "Übertragen",
+    "Draft": "Entwurf",
+    "Inactive": "Inaktiv",
+    "Cancelled": "Storniert",
+    "Terminated": "Beendet"
   }
 }

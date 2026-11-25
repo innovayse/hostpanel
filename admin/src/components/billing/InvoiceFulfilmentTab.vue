@@ -219,6 +219,7 @@ watch(
       :density="UiTableDensity.Compact"
       :loading="loading"
       :empty="!loading && records.length === 0"
+      :empty-text="t('billing.invoiceFulfilmentTab.empty')"
       data-testid="billing-invoice-fulfilment-table"
     >
       <template #header>
@@ -232,7 +233,7 @@ watch(
           <UiTableHeader :size="UiColumnSize.Compact" numeric>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
           <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.lastError') }}</UiTableHeader>
           <UiTableHeader :size="UiColumnSize.Compact">{{ t('billing.invoiceFulfilmentTab.when') }}</UiTableHeader>
-          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader actions />
         </UiTableRow>
       </UiTableHead>
       <UiTableBody>
@@ -255,9 +256,6 @@ watch(
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>
-      <template #empty>
-        <UiText data-testid="billing-invoice-fulfilment-empty">{{ t('billing.invoiceFulfilmentTab.empty') }}</UiText>
-      </template>
     </UiDataTable>
 
     <UiDialog

@@ -25,4 +25,10 @@ describe('UiHtmlPreview', () => {
 
     expect(wrapper.find('#inner').exists()).toBe(false)
   })
+
+  it('is judged on the paper token, white in both themes, never a fixed colour class', () => {
+    const wrapper = mount(UiHtmlPreview, { props: { html: '<p>Hi</p>', title: 'Mail preview' } })
+
+    expect(wrapper.classes()).toContain('bg-surface-paper')
+  })
 })

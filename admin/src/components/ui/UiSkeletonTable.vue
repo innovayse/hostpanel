@@ -30,7 +30,7 @@ defineProps<{
     <UiTableHead>
       <UiTableRow>
         <UiTableHeader v-for="column in table.columns" :key="column.key" :align="column.align" :size="column.size">
-          {{ column.label ? t(column.label) : '' }}
+          <template v-if="column.label">{{ t(column.label) }}</template>
         </UiTableHeader>
       </UiTableRow>
     </UiTableHead>

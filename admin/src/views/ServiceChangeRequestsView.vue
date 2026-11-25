@@ -292,7 +292,11 @@ onMounted(() => {
             </UiLink>
           </UiTableCell>
           <UiTableCell>
-            <UiText truncate>{{ item.fromProductName }} → {{ item.toProductName }}</UiText>
+            <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center">
+              <UiText truncate>{{ item.fromProductName }}</UiText>
+              <UiIcon :markup="Icon.ArrowRight" :size="UiSize.Sm" />
+              <UiText truncate>{{ item.toProductName }}</UiText>
+            </UiStack>
             <UiText v-if="item.note" :tone="UiTextTone.Muted" :size="UiTextSize.Xs" truncate>{{ t('serviceChangeRequests.note') }}: {{ item.note }}</UiText>
           </UiTableCell>
           <UiTableCell>

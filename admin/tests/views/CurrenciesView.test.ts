@@ -14,6 +14,7 @@ import { flushPromises } from '@vue/test-utils'
 import { pickOption } from '../helpers/select'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** The base currency. */
 const usd: CurrencyDto = {
@@ -33,20 +34,17 @@ describe('CurrenciesView', () => {
     const { wrapper } = await mountScreen(CurrenciesView)
 
     expect(wrapper.get('h1').text()).toBe('Currencies')
-    expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('2.99 → $2.99')
+    expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('$2.99')
     expect(wrapper.get('[data-testid="currency-row-EUR"]').text()).toContain('0.92000000')
     expect(wrapper.get('[data-testid="currency-row-USD"]').text()).toContain('Base')
   })
 
-  it('draws the enabled state as an icon with an accessible name instead of a pill', async () => {
+  it('draws the enabled state as a labelled badge', async () => {
     stubRouteTable({ 'GET /admin/currencies': () => json([usd, { ...eur, isEnabled: false }]) })
     const { wrapper } = await mountScreen(CurrenciesView)
 
-    const usdIcon = wrapper.get('[data-testid="currency-row-USD"] [role="img"]')
-    const eurIcon = wrapper.get('[data-testid="currency-row-EUR"] [role="img"]')
-    expect(usdIcon.attributes('aria-label')).toBe('Enabled')
-    expect(usdIcon.text()).toBe('')
-    expect(eurIcon.attributes('aria-label')).toBe('Disabled')
+    expect(wrapper.get('[data-testid="currency-row-USD"]').getComponent(UiStatusBadge).text()).toBe('Enabled')
+    expect(wrapper.get('[data-testid="currency-row-EUR"]').getComponent(UiStatusBadge).text()).toBe('Disabled')
   })
 
   it('shows which bank the rates come from and saves another choice through the settings row', async () => {

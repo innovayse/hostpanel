@@ -11,7 +11,6 @@ export const UiButtonVariant = {
   Primary: 'primary',
   Secondary: 'secondary',
   Ghost: 'ghost',
-  Field: 'field',
   Danger: 'danger',
   Link: 'link',
 } as const
@@ -30,7 +29,7 @@ export const UiButtonType = {
 export type UiButtonType = (typeof UiButtonType)[keyof typeof UiButtonType]
 
 /**
- * Colour classes per look. `field` is a pill on the input-field surface (the search trigger of the top bar).
+ * Colour classes per look.
  *
  * Hover and the gradient apply only while the control is not disabled (`not-disabled:`, which also
  * matches a link), and each look has a disabled colour set of its own: a muted label on a flat
@@ -45,8 +44,6 @@ export const buttonVariantClasses: Record<UiButtonVariant, string> = {
     'bg-surface-field border border-border-control text-text-secondary font-medium not-disabled:hover:bg-surface-active not-disabled:hover:border-border-control-hover not-disabled:hover:text-text-primary not-disabled:active:bg-surface-active not-disabled:active:border-border-control-hover disabled:bg-transparent disabled:border-text-muted disabled:text-text-muted',
   ghost:
     'text-text-secondary not-disabled:hover:text-text-primary not-disabled:hover:bg-surface-hover not-disabled:active:bg-surface-active disabled:text-text-muted',
-  field:
-    'bg-surface-field text-text-secondary font-medium not-disabled:hover:bg-surface-hover not-disabled:hover:text-text-primary not-disabled:active:bg-surface-active disabled:text-text-muted',
   danger:
     'bg-tint-red border border-status-red/30 text-status-red font-medium not-disabled:hover:bg-status-red/20 not-disabled:hover:border-status-red/50 not-disabled:active:bg-status-red/30 disabled:bg-surface-hover disabled:border-border disabled:text-text-muted',
   link: 'text-text-accent underline-offset-2 not-disabled:hover:underline disabled:text-text-muted',
@@ -70,14 +67,10 @@ export const iconTriggerClasses =
 export const iconTriggerIconSize = iconButtonIconSize[UiSize.Md]
 
 /**
- * Corner radius of a button-like control: the `field` look is always a pill, every other look takes the radius of its size.
- * A control asked to be a `pill` (a back link) is a pill whatever its look. Radius comes from this one function, so no two
+ * Corner radius of a button-like control: the radius comes from its size. Radius comes from this one function, so no two
  * classes of the same property compete.
  *
- * @param variant - The look.
  * @param size - The size.
- * @param pill - Whether the control is a pill whatever its look.
  * @returns The radius class.
  */
-export const buttonRadiusClasses = (variant: UiButtonVariant, size: UiSize, pill = false): string =>
-  pill || variant === UiButtonVariant.Field ? 'rounded-pill' : controlRadiusClasses[size]
+export const buttonRadiusClasses = (size: UiSize): string => controlRadiusClasses[size]

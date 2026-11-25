@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { useContactHours } from '~/composables/useContactHours'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
@@ -41,7 +42,7 @@ describe('useContactHours', () => {
   it('uses the hours written for the visitor language, with the one time zone', async () => {
     await loadPortalSettings(replies, {
       [PortalSettingKey.ContactHours]: 'Mon-Fri',
-      [PortalSettingKey.ContactHoursRu]: 'Пн-Пт',
+      [localizedSettingKey(PortalSettingKey.ContactHours, 'ru')]: 'Пн-Пт',
       [PortalSettingKey.ContactTimezone]: 'UTC+4',
     })
     stubLocale('ru')

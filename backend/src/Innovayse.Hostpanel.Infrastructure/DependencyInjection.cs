@@ -13,6 +13,8 @@ using Innovayse.Hostpanel.Infrastructure.Currency.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
+using Innovayse.Hostpanel.Infrastructure.Hosting;
+using Innovayse.Hostpanel.Infrastructure.Hosting.Extensions;
 using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Extensions;
@@ -205,6 +207,9 @@ public static class DependencyInjection
             BrandingImageProcessor>();
         services.AddSingleton<IBrandingStorage,
             FileSystemBrandingStorage>();
+
+        // Reports an unwritable upload volume at boot instead of at the first logo upload.
+        services.AddHostedService<UploadFolderWritableCheck>();
 
         // Invoice PDFs: stateless, and the fonts it embeds are loaded once per process.
         services.AddSingleton<IValidateOptions<InvoicePdfOptions>, InvoicePdfOptionsValidator>();
@@ -799,8 +804,12 @@ public static class DependencyInjection
         services.AddScoped<IPluginPackageInspector, PluginPackageInspector>();
         var signatureVerifier = PluginSignatureVerifier.Create(signingOptions, environment);
         services.AddSingleton(signatureVerifier);
-        var allowUnsigned = signatureVerifier.Enforced
+
+        // Read straight from the database, because it is asked while the container is still being built (the loader at startup)
+        // and by a reload long after, which must see the setting as it is then.
+        var allowUnsignedReader = () => signatureVerifier.Enforced
             && AllowUnsignedSettingReader.Read(configuration.GetConnectionString("DefaultConnection"), loggerFactory.CreateLogger(nameof(PluginLoader)));
+        var allowUnsigned = allowUnsignedReader();
         // A staged upgrade is swapped in before any plugin folder is scanned, so no assembly of the old version is loaded.
         PluginUpgradeApplier.Apply(pluginOptions.InstallRoot, loggerFactory.CreateLogger(nameof(PluginUpgradeApplier)));
         PluginLoader.DiscoverAndRegister(
@@ -810,6 +819,24 @@ public static class DependencyInjection
             allowUnsigned,
             pluginOptions.MaxViewBytes,
             loggerFactory);
+
+        // A plugin version is loaded in a collectible context of its own, so a staged upgrade or a removal is applied inside the
+        // running process: the reloader drains the calls of the old version, unloads it and loads the new one. A change it cannot
+        // apply waits for the restart, which drains the running requests within Plugins:DrainSeconds and exits for the restart policy.
+        services.AddScoped<PluginUsageLeases>();
+        services.AddSingleton<IPluginHotReloader>(provider => new PluginHotReloader(
+            provider.GetRequiredService<PluginRegistry>(),
+            provider.GetRequiredService<IPluginIntegrationRegistry>(),
+            provider.GetRequiredService<PluginFolderLoader>(),
+            provider.GetRequiredService<PluginChangeStore>(),
+            provider.GetRequiredService<IPluginMigrationRetry>(),
+            provider.GetRequiredService<IPluginAvailabilityInvalidator>(),
+            pluginOptions.InstallRoot,
+            TimeSpan.FromSeconds(pluginOptions.DrainSeconds),
+            allowUnsignedReader,
+            provider.GetRequiredService<ILogger<PluginHotReloader>>()));
+        services.AddSingleton<IHostRestarter, HostRestarter>();
+        services.AddHostDrain();
 
         // Every plugin is turned into an instance by the one activator (its settings gate and configuration),
         // whichever resolver or runner asks for it. Scoped: it reads the settings through the request's context.
@@ -866,6 +893,9 @@ public static class DependencyInjection
         services.AddSingleton<PluginMigrationRunner>();
         services.AddHostedService(provider => provider.GetRequiredService<PluginMigrationRunner>());
         services.AddSingleton<IPluginMigrationRetry>(provider => provider.GetRequiredService<PluginMigrationRunner>());
+
+        // The outcome of the plugin changes a restart applied is written to the activity log once the host is up.
+        services.AddHostedService<PluginChangeReporter>();
 
         // Public demo. Last on purpose: when Demo:Enabled is true this swaps the outward ports
         // registered above (payment, registrar, provisioning, rates, monitoring) for offline fakes,

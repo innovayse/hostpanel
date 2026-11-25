@@ -5,11 +5,15 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { PLUGIN_FOLLOW_UP_INTERVAL_MS } from '@/lib/pluginView'
+import { POLL_INTERVALS_MS } from '@/lib/limits'
+import { PollKind } from '@/types/poller'
 import { PluginBlockKind, PluginBlockTone } from '@/types/pluginview'
 import { json, problem } from '../../../helpers/fetch'
 import { requestsOf } from '../../../helpers/routes'
 import { ext, mountPluginView } from '../../../helpers/pluginView'
+
+/** How often a follow-up reads its condition, in milliseconds. */
+const FOLLOW_UP_MS = POLL_INTERVALS_MS[PollKind.PluginFollowUp]
 
 afterEach(() => {
   vi.useRealTimers()
@@ -115,9 +119,9 @@ describe('PluginActionBlock', () => {
 
     await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
     await flushPromises()
-    await vi.advanceTimersByTimeAsync(PLUGIN_FOLLOW_UP_INTERVAL_MS)
-    await vi.advanceTimersByTimeAsync(PLUGIN_FOLLOW_UP_INTERVAL_MS)
-    await vi.advanceTimersByTimeAsync(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+    await vi.advanceTimersByTimeAsync(FOLLOW_UP_MS)
+    await vi.advanceTimersByTimeAsync(FOLLOW_UP_MS)
+    await vi.advanceTimersByTimeAsync(FOLLOW_UP_MS * 3)
 
     expect(requestsOf(fetch).filter((line) => line === `GET ${ext('build')}`)).toHaveLength(2)
     // The work has ended, so the sentence that said it was running is taken down.

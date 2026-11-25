@@ -10,9 +10,11 @@
 
 import { computed, inject, onMounted, provide, ref, shallowRef, useId, watch } from 'vue'
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
-import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS, PLUGIN_VIEW_READ_MAX_AGE_MS, pluginConditionHolds, pluginRouteMethod, pluginRouteRequest, readPluginField } from '@/lib/pluginView'
+import { PLUGIN_FOLLOW_UP_MAX_ATTEMPTS, PLUGIN_VIEW_READ_MAX_AGE_MS, pluginConditionHolds, pluginRouteMethod, pluginRouteRequest, readPluginField } from '@/lib/pluginView'
+import { usePoller } from '@/composables/usePoller'
 import { usePluginUiStore } from '@/stores/pluginUi'
 import { HttpMethod } from '@/types/http'
+import { PollKind } from '@/types/poller'
 import type { PluginCallResult, PluginFollowUp, PluginPageLink, PluginSource, PluginViewCondition, PluginViewRoute } from '@/types/pluginview'
 
 /** The context of one rendered plugin view. */
@@ -314,7 +316,7 @@ export const usePluginCondition = (
 
 /**
  * Runs an action's or a form's `followUp` after its call succeeded: every
- * {@link PLUGIN_FOLLOW_UP_INTERVAL_MS} it reads the condition's route and asks the named blocks to read
+ * {@link POLL_INTERVALS_MS} (kind `PluginFollowUp`) it reads the condition's route and asks the named blocks to read
  * again, and it stops once the condition holds, after {@link PLUGIN_FOLLOW_UP_MAX_ATTEMPTS} reads, or when
  * the view is left. The interval and the number of attempts are the host's, never the plugin's. Starting
  * again cancels a follow-up still running.
@@ -330,12 +332,13 @@ export const usePluginFollowUp = (
   /** The key a block without an id keeps its one watch under. */
   const instanceKey = `follow-up-${useId()}`
 
-  /** The pending wait before the next attempt. */
-  let timer: ReturnType<typeof setTimeout> | undefined
-  /** The number of the current follow-up; a read for an older one is ignored. */
-  let run = 0
+  /** The follow-up that is running and how many reads it has made; null when none runs. A read for another one is ignored. */
+  let following: { followUp: PluginFollowUp; attempt: number; settled: (() => void) | undefined } | null = null
   /** Lets the view go of the running watch once it has ended. */
   let release: (() => void) | undefined
+
+  /** The shared poller: the first read comes one interval after the call, and it pauses while the tab is hidden. */
+  const poller = usePoller({ kind: PollKind.PluginFollowUp, immediate: false, tick: () => attemptOnce() })
 
   /**
    * Ends the running follow-up, if any.
@@ -343,11 +346,8 @@ export const usePluginFollowUp = (
    * @returns Nothing.
    */
   const stop = (): void => {
-    run += 1
-    if (timer !== undefined) {
-      clearTimeout(timer)
-      timer = undefined
-    }
+    following = null
+    poller.stop()
   }
 
   /**
@@ -361,51 +361,56 @@ export const usePluginFollowUp = (
   }
 
   /**
-   * One attempt: reads the condition, refreshes the named blocks and waits for the next attempt unless it is over.
+   * Ends the follow-up that has run its course and lets the view go of it.
    *
-   * @param current - The follow-up this attempt belongs to.
-   * @param followUp - What to watch and refresh.
-   * @param attempt - The attempt's number, from 1.
-   * @param settled - Told when the condition held.
+   * @returns Nothing.
+   */
+  const end = (): void => {
+    stop()
+    letGo()
+  }
+
+  /**
+   * One attempt: reads the condition, refreshes the named blocks and ends the follow-up when the condition holds or
+   * the attempts are used up.
+   *
    * @returns Resolves when the attempt has ended.
    */
-  const attemptOnce = async (current: number, followUp: PluginFollowUp, attempt: number, settled: (() => void) | undefined): Promise<void> => {
-    timer = undefined
+  const attemptOnce = async (): Promise<void> => {
+    const current = following
+    if (current === null) {
+      return
+    }
+    current.attempt += 1
+    const { followUp, settled } = current
     const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
-    if (current !== run) {
+    if (following !== current) {
       return
     }
     if (result.unavailable) {
-      letGo()
+      end()
       return
     }
     const done = result.ok && pluginConditionHolds(followUp.until, result.data)
     // Refreshed after the read, so the blocks show exactly what the condition saw.
     context.refresh([...followUp.refresh])
     shareReadResult(context, store, followUp.until.route, result)
-    if (done || attempt >= PLUGIN_FOLLOW_UP_MAX_ATTEMPTS) {
-      letGo()
+    if (done || current.attempt >= PLUGIN_FOLLOW_UP_MAX_ATTEMPTS) {
+      end()
       if (done) {
         settled?.()
       }
-      return
     }
-    timer = setTimeout(() => {
-      void attemptOnce(current, followUp, attempt + 1, settled)
-    }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
   }
 
   return (followUp: PluginFollowUp | undefined, settled?: () => void): void => {
-    stop()
-    letGo()
+    end()
     if (!followUp || pluginRouteMethod(followUp.until.route) !== HttpMethod.Get) {
       return
     }
     release = context.adopt(owner() ?? instanceKey, stop)
-    const current = run
-    timer = setTimeout(() => {
-      void attemptOnce(current, followUp, 1, settled)
-    }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    following = { followUp, attempt: 0, settled }
+    poller.start()
   }
 }
 

@@ -178,6 +178,7 @@
   "title": "Título",
   "categories": "Categorías",
   "published": "Publicado",
+  "draft": "Borrador",
   "categoryName": "Nombre de la categoría",
   "enterCategoryName": "Ingresa el nombre de la categoría",
   "selectCategory": "Seleccionar categoría",

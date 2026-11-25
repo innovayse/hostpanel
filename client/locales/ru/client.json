@@ -350,7 +350,6 @@
       "colRegistrationDate": "Дата регистрации",
       "colNextDueDate": "Следующий платёж",
       "colStatus": "Статус",
-      "colActions": "Действия",
       "expiringSoon": "скоро",
       "backTo": "Назад к доменам",
       "notFound": "Домен не найден.",

@@ -57,7 +57,7 @@ export const REPLY_FORM_PART: FormSkeletonPart = {
 export const REPLIES_CATEGORIES_TABLE: SkeletonTable = {
   columns: [
     { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 
@@ -66,7 +66,7 @@ export const REPLIES_TABLE: SkeletonTable = {
   columns: [
     { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
     { key: 'category', label: 'shared.category' },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

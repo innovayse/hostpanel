@@ -39,6 +39,18 @@ describe('UiDataTable', () => {
     expect(wrapper.find('[data-testid="ui-card-footer"]').exists()).toBe(false)
   })
 
+  it('draws no empty footer strip under a single page', () => {
+    const wrapper = mount(UiDataTable, { props: { page: 1, total: 5, pageSize: 20 }, global: global() })
+
+    expect(wrapper.find('[data-testid="ui-card-footer"]').exists()).toBe(false)
+  })
+
+  it('keeps the footer while the list loads, so the layout does not jump', () => {
+    const wrapper = mount(UiDataTable, { props: { page: 1, total: 0, pageSize: 20, loading: true }, global: global() })
+
+    expect(wrapper.find('[data-testid="ui-card-footer"]').exists()).toBe(true)
+  })
+
   it('draws the pager in the card footer and forwards what the reader chooses', async () => {
     const wrapper = mount(UiDataTable, {
       props: { page: 1, total: 60, pageSize: 20, paginationTestid: 'probe-pagination' },

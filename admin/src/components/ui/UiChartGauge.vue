@@ -47,7 +47,7 @@ const dash = computed<string>(() => `${percent.value} ${ARC_LENGTH}`)
     data-testid="ui-chart-gauge"
   >
     <svg viewBox="0 0 100 56" class="h-3/4 max-h-full w-auto max-w-full" aria-hidden="true">
-      <path d="M 10 50 A 40 40 0 0 1 90 50" pathLength="100" fill="none" stroke-width="9" stroke-linecap="round" class="stroke-surface-hover" />
+      <path d="M 10 50 A 40 40 0 0 1 90 50" pathLength="100" fill="none" stroke-width="9" stroke-linecap="round" class="stroke-surface-track" />
       <path
         d="M 10 50 A 40 40 0 0 1 90 50"
         pathLength="100"

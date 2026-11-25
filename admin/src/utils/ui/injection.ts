@@ -66,12 +66,19 @@ export interface UiTableContext {
   registerColumn?: (index: number, column: () => UiTableColumn) => () => void
   /** The registered column at a position, which is where a cell finds its caption and role for the card layout. Absent outside a table. */
   columnAt?: (index: number) => UiTableColumn | undefined
+  /**
+   * Position of the amount column: the last registered column that is not the row actions column, which is where the
+   * figures of a line item table end and where its totals sit. Absent outside a table.
+   */
+  amountColumn?: number
   /** The selection of a selectable table; its rows and header draw the checkbox column. Absent on a plain table. */
   selection?: RowSelection
   /** Accessible name of the select-all checkbox in the header. */
   selectAllLabel?: string
   /** Accessible name of a row's checkbox. */
   selectRowLabel?: string
+  /** The caption the header of the row actions column draws by default: "Actions", in the active language. */
+  actionsLabel?: string
   /** `data-testid` of the select-all checkbox in the header. */
   selectAllTestid?: string
 }

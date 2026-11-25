@@ -178,6 +178,7 @@
   "title": "Заголовок",
   "categories": "Категории",
   "published": "Опубликовано",
+  "draft": "Черновик",
   "categoryName": "Название категории",
   "enterCategoryName": "Введите название категории",
   "selectCategory": "Выберите категорию",

@@ -350,7 +350,6 @@
       "colRegistrationDate": "Registrierungsdatum",
       "colNextDueDate": "Nächstes Fälligkeitsdatum",
       "colStatus": "Status",
-      "colActions": "Aktionen",
       "expiringSoon": "bald",
       "backTo": "Zurück zu den Domains",
       "notFound": "Domain nicht gefunden.",

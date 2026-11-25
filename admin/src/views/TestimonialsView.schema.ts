@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
       { key: 'quote', label: 'storefront.testimonials.quote' },
       { key: 'rating', label: 'storefront.testimonials.rating' },
       { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

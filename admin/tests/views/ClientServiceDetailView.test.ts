@@ -649,11 +649,23 @@ describe('ClientServiceDetailView', () => {
     expect(wrapper.text()).not.toContain('Dedicated IP')
   })
 
-  it('returns to the services of its client with the back pill', async () => {
+  it('draws the trail of its client above the title, the service itself last and no back link', async () => {
     const { wrapper } = await mountLoaded()
-    const back = wrapper.get('[data-testid="client-service-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
+    const hrefs = trail.findAll('a').map((link) => link.attributes('href'))
 
-    expect(back.attributes('href')).toMatch(/^\/clients\/[^/]+\/services$/)
-    expect(back.text()).toBe('Services')
+    expect(hrefs).toHaveLength(3)
+    expect(hrefs[0]).toBe('/clients')
+    expect(hrefs[2]).toMatch(/^\/clients\/[^/]+\/services$/)
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="client-service-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('draws the status badge inline beside the title', async () => {
+    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+
+    expect(wrapper.get('[data-testid="ui-page-header-title-row"]').find('[data-testid="client-service-status-badge"]').exists()).toBe(true)
   })
 })

@@ -10,6 +10,7 @@ import { onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useReleaseStatusStore } from '@/stores/releaseStatus'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -24,12 +25,6 @@ const { t } = useI18n()
 
 /** Release status store; provides the upgrade availability and the command. */
 const releaseStatus = useReleaseStatusStore()
-
-/** SVG path for the download/upgrade arrow icon. */
-const UPGRADE_ICON = '<path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>'
-
-/** SVG path for the copy icon. */
-const COPY_ICON = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>'
 
 /** True for two seconds after the command is copied, to show "Copied" feedback. */
 const copied = ref(false)
@@ -77,7 +72,7 @@ const copyCommand = async (): Promise<void> => {
     <UiStack :gap="UiGap.Xs">
       <!-- Header: icon + version label -->
       <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs">
-        <UiIcon :markup="UPGRADE_ICON" :size="UiSize.Sm" class="shrink-0 text-status-yellow" />
+        <UiIcon :markup="Icon.Download" :size="UiSize.Sm" class="shrink-0 text-status-yellow" />
         <UiText :size="UiTextSize.Sm" class="font-medium text-status-yellow">
           {{ t('layout.releaseUpdate.title', { version: releaseStatus.status.latestVersion }) }}
         </UiText>
@@ -113,7 +108,7 @@ const copyCommand = async (): Promise<void> => {
             data-testid="release-update-copy"
             @click="copyCommand"
           >
-            <UiIcon :markup="COPY_ICON" :size="UiSize.Sm" />
+            <UiIcon :markup="Icon.Copy" :size="UiSize.Sm" />
           </UiIconButton>
         </UiStack>
       </UiStack>

@@ -23,7 +23,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -289,10 +289,8 @@ const ruleActions = (rule: TaxRuleDto): UiMenuAction[] => [
             <UiTableCell muted>{{ rule.region ?? t('taxRules.wholeCountry') }}</UiTableCell>
             <UiTableCell numeric muted>{{ rule.ratePercent }}%</UiTableCell>
             <UiTableCell>
-              <UiStatusIcon
+              <UiStatusBadge
                 :state="rule.isEnabled"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
                 :on-label="t('taxRules.enabledBadge')"
                 :off-label="t('taxRules.disabledBadge')"
               />

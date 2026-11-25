@@ -160,11 +160,11 @@ describe('InvoiceRefundTab', () => {
     await flushPromises()
 
     const body = wrapper.get('[data-testid="dialog-body"]').text()
-    expect(body).toContain('24000.00 AMD')
+    expect(body).toContain('24,000.00 AMD')
     expect(body).not.toContain('$')
     const creditNotice = wrapper.get('[data-testid="billing-invoice-refund-credit"]').text()
-    expect(creditNotice).toContain('24000.00 AMD')
-    expect(creditNotice).toContain('5000.00 AMD')
+    expect(creditNotice).toContain('24,000.00 AMD')
+    expect(creditNotice).toContain('5,000.00 AMD')
     expect(creditNotice).not.toContain('$')
   })
 
@@ -222,7 +222,7 @@ describe('InvoiceRefundTab', () => {
     })
 
     const options = (wrapper.getComponent(UiSelect).props() as { options: { label: string }[] }).options
-    expect(options.map((option) => option.label)).toContain('#21 24000.00 AMD (Example Gateway)')
+    expect(options.map((option) => option.label)).toContain('#21 24,000.00 AMD (Example Gateway)')
     expect(options.map((option) => option.label).join(' ')).not.toContain('$')
   })
 })

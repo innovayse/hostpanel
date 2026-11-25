@@ -218,7 +218,7 @@ const reset = (field: ColourField): void => {
 
         <!-- What a filled button looks like on a light and a dark surface, with the text the storefront picks. The two grounds are the storefront's fixed white and near-black, not panel tokens, so they stay the same in both panel themes. -->
         <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
-          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="rounded-lg bg-white p-2">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="rounded-lg bg-surface-paper p-2">
             <UiColorSwatch
               :color="effective(field)"
               :text-color="bestTextOn(effective(field))"
@@ -226,7 +226,7 @@ const reset = (field: ColourField): void => {
             />
             <UiColorSwatch :text-color="shadeAt(field, LIGHT_SURFACE_SHADE)" :label="t('settings.brandColors.previewLink')" />
           </UiStack>
-          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="rounded-lg bg-neutral-950 p-2">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="rounded-lg bg-surface-ink p-2">
             <UiColorSwatch
               :color="effective(field)"
               :text-color="bestTextOn(effective(field))"

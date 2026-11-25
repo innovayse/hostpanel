@@ -9,6 +9,7 @@ import { ContentLanguage } from '@/locales/contentLanguage'
 import { useSettingsStore } from '@/stores/settings'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { callOf, invalid, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { stubRouteTable } from '../helpers/routes'
 import { installStoreHooks, NO_ANSWER } from '../helpers/storeHooks'
 
 /** A file standing in for the picked image. */
@@ -26,24 +27,61 @@ describe('settingsStore.uploadBrandingFile', () => {
   it('posts to the branding endpoint of the kind and returns the url', async () => {
     const fetchMock = stubFetch(json({ url: '/img/logo.png' }))
 
-    expect(await useSettingsStore().uploadBrandingFile('logo', file)).toBe('/img/logo.png')
+    expect(await useSettingsStore().uploadBrandingFile('logo', file)).toEqual({ url: '/img/logo.png', error: null })
     expect(fetchMock.mock.calls[0]![0]).toBe('/api/admin/settings/branding/logo')
   })
 
-  it('returns null and keeps the detail sentence of a problem+json refusal', async () => {
-    stubFetch(problem('Unsupported image type.'))
+  it('posts every slot to the endpoint of its own kind', async () => {
+    const fetchMock = stubFetch(json({ url: '/a' }), json({ url: '/b' }))
     const store = useSettingsStore()
 
-    expect(await store.uploadBrandingFile('favicon', file)).toBeNull()
-    expect(store.uploadError).toBe('Unsupported image type.')
+    await store.uploadBrandingFile('logodark', file)
+    await store.uploadBrandingFile('logo', file)
+
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      '/api/admin/settings/branding/logodark',
+      '/api/admin/settings/branding/logo',
+    ])
+  })
+
+  it('returns no url and the detail sentence of a problem+json refusal', async () => {
+    stubFetch(problem('Unsupported image type.'))
+
+    expect(await useSettingsStore().uploadBrandingFile('favicon', file)).toEqual({ url: null, error: 'Unsupported image type.' })
   })
 
   it('keeps the fallback when nothing answered', async () => {
     stubOffline()
+
+    expect(await useSettingsStore().uploadBrandingFile('favicon', file)).toEqual({
+      url: null,
+      error: 'Could not reach the server. Check your connection and try again.',
+    })
+  })
+
+  it('adds the declared size to the sentence when the image has too many pixels', async () => {
+    stubFetch(invalid('That image has too many pixels.', { dimensions: ['18641x8668'] }))
+
+    const outcome = await useSettingsStore().uploadBrandingFile('logo', file)
+
+    expect(outcome.url).toBeNull()
+    expect(outcome.error).toBe('That image has too many pixels. Your image is 18641 × 8668 pixels.')
+  })
+
+  it('gives each of two uploads running at once the answer to its own request', async () => {
+    stubRouteTable({
+      'POST /admin/settings/branding/logo': () => problem('That image is too large.', 413),
+      'POST /admin/settings/branding/favicon': () => json({ url: '/ok.png' }),
+    })
     const store = useSettingsStore()
 
-    expect(await store.uploadBrandingFile('favicon', file)).toBeNull()
-    expect(store.uploadError).toBe('Could not reach the server. Check your connection and try again.')
+    const [light, favicon] = await Promise.all([
+      store.uploadBrandingFile('logo', file),
+      store.uploadBrandingFile('favicon', file),
+    ])
+
+    expect(light).toEqual({ url: null, error: 'That image is too large.' })
+    expect(favicon).toEqual({ url: '/ok.png', error: null })
   })
 })
 
@@ -94,6 +132,21 @@ describe('settingsStore.saveSetting', () => {
     stubFetch(problem('Allowed values: Cba, Ecb.'))
 
     expect(await useSettingsStore().saveSetting(1, 'Boe')).toEqual({ saved: false, error: 'Allowed values: Cba, Ecb.' })
+  })
+
+  it('gives each of two saves running at once the answer to its own request, and leaves the shared banner alone', async () => {
+    stubRouteTable({
+      'PUT /admin/settings/1': () => problem('Allowed values: https addresses.', 400),
+      'PUT /admin/settings/2': () => new Response(null, { status: 204 }),
+      'GET /admin/settings': () => json([]),
+    })
+    const store = useSettingsStore()
+
+    const [refused, stored] = await Promise.all([store.saveSetting(1, 'x'), store.saveSetting(2, 'y')])
+
+    expect(refused).toEqual({ saved: false, error: 'Allowed values: https addresses.' })
+    expect(stored).toEqual({ saved: true, error: null })
+    expect(store.actionError).toBeNull()
   })
 })
 

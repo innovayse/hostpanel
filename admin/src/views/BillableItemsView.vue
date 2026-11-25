@@ -25,7 +25,7 @@ import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -279,10 +279,8 @@ onMounted(() => {
           <UiTableCell numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
           <UiTableCell muted>{{ typeLabel(item.type) }}</UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="item.isInvoiced"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('shared.yes')"
               :off-label="t('shared.no')"
             />

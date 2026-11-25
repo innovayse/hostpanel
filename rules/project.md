@@ -245,7 +245,33 @@ docker/                              compose set (shared·dev·prod·platform), 
   external plugins an operator installs from the Plugins page. A plugin package must never carry its own copy of
   `Hostpanel.Sdk.dll` into the load path: `Assembly.LoadFrom` over it would give the process two distinct
   `IPaymentPlugin` types with the same name, after which every cast in `PluginActivator` fails. Hosting panel plugins such as the
-  Control Web Panel one are installed the same way, and a newly installed plugin is loaded at the next start.
+  Control Web Panel one are installed the same way.
+- **Every plugin lives in its own collectible `AssemblyLoadContext`, and a change is applied by the host itself (#1449).**
+  `PluginFolderLoader` (`Infrastructure/Plugins`) is the one place a folder becomes a loaded plugin, at startup (`PluginLoader`) and
+  for a reload (`PluginHotReloader`): the plugin's assemblies load into a `PluginLoadContext`, which resolves a dependency from the
+  plugin's folder and leaves the SDK and the framework to the default context, so the SDK types are the host's own. **The host keeps
+  no plugin type outside `PluginRegistry`**: the service collection holds only the plugin's named HTTP client, and `PluginActivator`
+  builds each instance from the registry, so a context can be unloaded (`PluginLoaderTests` and `PluginHotReloaderTests` pin it with a
+  weak reference). Every instance is counted (`PluginUsage`, released by the scope that built it through `PluginUsageLeases`).
+  After an install, an update or a removal is staged, `PluginChangeApplier` (Application, the one place the answer is decided)
+  applies it at once: `IPluginHotReloader.ReloadAsync` swaps a staged version in without a restart when the plugin is loaded, keeps
+  its type and endpoints capability and is not hosted (the old version is gated behind the migration gate, its calls drain for at
+  most `Plugins:DrainSeconds`, its context is unloaded, `PluginUpgradeApplier.ApplyOne` swaps the files, the new version loads and
+  its migration hook runs), and `UnloadAsync` does the same for a removal. Anything else (a plugin id that was never loaded, a
+  hosted plugin, a changed type or capability, a drain that times out, a fresh install) starts the host's own restart
+  (`IHostRestarter`, `HostRestarter`): the stop starts after `Plugins:RestartDelaySeconds` so changes made in a row share one
+  restart, `GET /health` answers 503 `HOST_DRAINING` from then on, the host waits at most `Plugins:DrainSeconds` (it is the host's
+  `ShutdownTimeout`, `AddHostDrain`) for running requests and background jobs, and the process exits with code 75 for the container's
+  restart policy (`install.sh --check` fails without one). Restart now (`POST /api/admin/plugins/restart`, `RestartPluginHostCommand`,
+  admin policy, demo restricted, audited as `Restarted Plugin Host` before the stop starts) stays for staged changes that were not
+  applied. **A new version that fails to load never takes the host down and is never retried:** `PluginUpgradeApplier` keeps the version
+  a swap replaced in `.previous/{id}`; `PluginFolderLoader.LoadChanged` deletes it once the new version has loaded, and otherwise
+  restores it (`RestorePrevious`, which also drops the pending migration record) and loads it again. How the change ended is a file
+  per plugin under `.changes/` (`PluginChangeStore`, `IPluginChanges`, shown as `PluginListItemDto.LastChange`); the activity log line
+  of a change a restart applied is written by `PluginChangeReporter` once the host is up, and of one an admin's request applied by that
+  request (`Plugin Change Applied In Place`, `Applying By Restart`, `Failed And Restored`). A fresh install that does not load stays
+  in the list as refused with its load error. Tests that install plugins run with `RecordingHostRestarter`, because a real restart would
+  stop the shared test host.
 - **Plugin assembly names.** `PluginAssemblyNames` (the plugin packaging package, "Plugin package checks"; the host's names go in as a `PluginAssemblyOptions`, written once in `Infrastructure/Plugins/PluginHostAssemblies.Options` and used by every caller) reserves `Innovayse.Hostpanel.`, `System.`, `Microsoft.`, the SDK (`Hostpanel.Sdk`) and every
   trusted platform assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`), with one carve-out: `Innovayse.Hostpanel.Plugins.<Name>` is the
   plugin namespace and official plugins are named that way (`Innovayse.Hostpanel.Plugins.Stripe.dll`). The trailing dot is the
@@ -2455,7 +2481,8 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   state printed after a failed stop, download, pull or start, a rename blocked by a background worker, the exact
   messages after a half swap, a repeated rollback that moves forward, the early refusal of a database named
   postgres, the bounded per version retention, and that the volume name in the installer is the one in the compose
-  file). Needs bash and GNU `stat`. With
+  file) and `--check` (the API restart policy: `unless-stopped` and `always` pass, none, `no` and `on-failure` fail,
+  and the shipped hub, prod and dev compose files carry the policy and a `stop_grace_period`). Needs bash and GNU `stat`. With
   `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
   (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...`: fails when `plugins/` or `plugins-installed/` in a
@@ -2734,7 +2761,7 @@ reference numbers in `BrandPaletteTests`. Change the client file first; then the
 (`portal.analytics.gtm_id`) loads in `plugins/tracking.client.ts` only when set **and** the
 visitor's `cookie-consent` is `all`: `useCookieConsent()` is the one owner of that cookie, the
 banner writes it, the loader watches it. The live-chat widget (`portal.chat.provider`,
-`.base_url`, `.website_token[.ru|.hy]`) loads in `plugins/live-chat.ts` when all three are set,
+`.base_url`, `.website_token[.<language>]`) loads in `plugins/live-chat.ts` when all three are set,
 without waiting for consent, because it is how a visitor reaches a person. `app.vue` adds no
 script at all; vendor ids never live in the repository, they belong in the deployment `.env`.
 
@@ -2980,6 +3007,13 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
 that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` applies to every `.vue` and
 `.ts` file under `src/`** (the one carve-out is `lib/brandPalette.ts`, a generated byte-for-byte copy).
 
+- **One poller (`composables/usePoller.ts`).** Anything the admin reads on a timer (migration status, the restart
+  wait, a plugin follow-up, the demo countdown) goes through `usePoller({ kind: PollKind.X, tick })`; no store,
+  composable or view holds a `setInterval` or a `visibilitychange` listener of its own. The interval is the kind's
+  entry in `POLL_INTERVALS_MS` (`lib/limits.ts`), a read is never started while the previous one runs, the poll stops
+  while the tab is hidden and reads once when it is shown again (one shared listener that only schedules), and it
+  stops with the scope that made it. A tick that finds nothing new changes no state (`isSameJob`), so a poll never
+  re-renders a list or moves the selection.
 - **Flat layout, no `modules/`.** `src/views/<Page>View.vue` (routed screens), `src/layouts/`,
   `src/components/ui/` (the kit), `src/components/<area>/` (screen-specific parts composed from the
   kit), `src/stores/<area>.ts`, `src/composables/apis/use<Area>Api.ts`, `src/composables/useApi.ts`,
@@ -3006,7 +3040,8 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   components carry no raw `button/input/select/textarea/table/form/dialog/a` (`vue/no-restricted-html-elements`);
   a new visual need is a new `Ui*` with its test first. No `<style>`, no `style=`, no `v-html`
   (`UiIcon` builds SVG nodes with `h()` from a whitelist); Tailwind 4 classes are literals and colours
-  are theme tokens in `assets/main.css`. Every input-like has a `placeholder` (`local/require-placeholder`)
+  are theme tokens in `assets/main.css` (`tests/lint/noRawColours.test.ts` fails on a raw palette class, a hex or an rgb literal
+  anywhere in `src/` outside its short, reasoned allow-list; the portal has the same guard with a shrinking debt list). Every input-like has a `placeholder` (`local/require-placeholder`)
   and every interactive element a `data-testid` (`<area>-<element>[-<id>]`). chart.js is only used
   behind `UiChart`; reports share one scaffold (`ReportPage`, `ReportTable`, `ReportQueryPage`), and `ReportPage` draws everything the report's skeleton schema (`views/<Name>.schema.ts`) lists: the header buttons (`actions`, a closed `ReportAction` list of Refresh, Export and Print), the filters (the month, year and currency dropdowns need no slot), the tiles, the chart, the table (`size` per column, `grouped` heading rows) with its pager, the parts only the data fills in (`map`, `alert`, `summary`, `closing`, drawn as a placeholder while the report loads), the `note` naming the base currency and the `emptyText` sentence, so a view passes only the data and the slots of its custom controls and cells and `UiSkeletonOf` draws the same blocks.
 - **Closed sets are enums or `as const` objects with a derived union** (`AuthMode`, `TicketStatus`,
@@ -3021,13 +3056,21 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `translate('...')` with no `en` entry; `tests/locales/parity.test.ts` also checks values and
   `{placeholders}`. A server-decided sentence is never copied into a locale file.
 - **A value written once per language is one `UiLocalizedField`, never one field per language.** The kit's
-  `UiLocalizedField` is the only language tab strip of the admin: tabs for `STOREFRONT_LOCALES` (the one shared list),
-  a marker on a tab whose value is empty (`filled`), a red one on a tab the server refused (`errors`), the control of the
-  language on screen in its slot. A form with several fields per language draws the strip alone (no slot) and shows its
-  fields from the bound locale. A setting stored once per language (`portal.contact.address`, `.ru`, `.hy`) takes its drafts
-  from `useLocalizedSettingDrafts`; the saved keys and payloads are unchanged. A label such as "(Russian)" or a key such
+  `UiLocalizedField` is the only language tab strip of the admin: it has no `locales` prop, it draws a tab for every language
+  of `STOREFRONT_LOCALES` (the one shared list, built from `ContentLanguage`), a marker on a tab whose value is empty
+  (`filled`), a red one on a tab the server refused (`errors`), the control of the language on screen in its slot. A form with
+  several fields per language draws the strip alone (no slot) and shows its fields from the bound locale. A setting stored
+  once per language (`portal.contact.address`, then `.ru`, `.hy`, `.de`, `.es`, `.fr`) takes its drafts from
+  `useLocalizedSettingDrafts(settings, defaultKey)`, which names the other rows from the default key and the language
+  (`localizedSettingKey`); no per-language key is written out in the admin. A label such as "(Russian)" or a key such
   as `addressRu` in a locale file is the sign someone wrote the second implementation.
-- **The operator's own legal text (terms, privacy, refunds, acceptable use, cookies).** Fifteen `portal.legal.<page>[.ru|.hy]`
+- **Settings kept once per language (backend).** `PortalSettingKeys.LocalizedBases` names them (chat website token, About
+  text, contact address and hours, the five legal texts); the row of a language is `PortalSettingKeys.ForLanguage(key, code)`
+  (the key itself for `en`, else `<key>.<code>`), and `PortalSettingKeys.Defaults`, `LegalTexts` and the public set are built
+  from `LanguageCodes.All` (SharedKernel, the one list `SupportedLanguages` is also built from). A language added there gets
+  its empty rows seeded on the next start, editable and (but for the legal texts) public, with no constant, migration or
+  list to extend; the portal's `utils/localizedSetting.ts` names the same rows.
+- **The operator's own legal text (terms, privacy, refunds, acceptable use, cookies).** The `portal.legal.<page>[.<language>]`
   settings (`PortalSettingKeys.Legal*`, seeded empty, editable) are edited in the admin's `LegalTextsCard` (General tab, one
   `UiLocalizedField` of multi-line fields per page). They are the one kind of setting allowed more than
   `ProtectedValueLimits.SettingValue` (2000): `ProtectedValueLimits.LegalTextValue` = 12000, held by `UpdateSettingHandler`
@@ -3037,7 +3080,7 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `GET /api/settings/public/legal/{page}` (`GetPublicLegalTextQuery`, anonymous, rows named by `PortalSettingKeys.LegalTexts`,
   an unknown page is `SETTING_NOT_FOUND`) through the BFF `GET /api/portal/public/legal/:page`, `useContentStore.loadLegalText`
   and `useLegalSections(page, builtIn)`, the one place that decides: the operator's text in the visitor's language (the default
-  row standing in for a language without its own, `ownRowFor` being the one language rule shared with `useLocalizedSetting`),
+  row standing in for a language without its own, `localizedSettingKey` being the one language rule shared with `useLocalizedSetting`),
   else the built-in sections. There is no runtime-config fallback for them. `parseLegalText` reads the plain
   format (`## ` opens a section, a blank line ends a paragraph, `- ` is a list entry) into `LegalSection[]` of plain strings that
   `LegalDocument` draws as text, never HTML. A page with operator text hides the built-in "last updated" date, which dates only

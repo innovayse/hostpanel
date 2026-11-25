@@ -20,6 +20,26 @@ networks:
         - subnet: ${STACK_NETWORK_SUBNET:?STACK_NETWORK_SUBNET must be set}
 
 services:
+  # One-shot: hands the writable API volumes to the app user, then exits; the API starts only after it succeeded.
+  # A named volume keeps the owner it was created with, so one made by an older image (as root) would refuse every
+  # upload. It runs the API's own image as root with CAP_CHOWN alone (everything else dropped), which is all a chown needs,
+  # so the API itself stays unprivileged with no capabilities. Add every new writable volume of the API here.
+  hostpanel-volume-init:
+    logging: *logging
+    image: ${IMAGE_REGISTRY:?IMAGE_REGISTRY must be set}/api:${IMAGE_TAG}
+    user: "0"
+    entrypoint: ["sh", "-c", "chown -R \"$$APP_UID\" /app/wwwroot/uploads/branding /app/plugins-installed"]
+    volumes:
+      - hostpanel_branding:/app/wwwroot/uploads/branding
+      - hostpanel_plugins:/app/plugins-installed
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    restart: "no"
+
   hostpanel-api:
     logging: *logging
     container_name: hostpanel-api
@@ -131,6 +151,10 @@ services:
       # An extra plugin signing key the operator trusts (see PLUGIN_OPERATOR_KEY_ID in .env.example). Both empty: no key is added.
       PluginSigning__OperatorKeys__0__KeyId: ${PLUGIN_OPERATOR_KEY_ID:-}
       PluginSigning__OperatorKeys__0__PublicKey: ${PLUGIN_OPERATOR_PUBLIC_KEY:-}
+      # Seconds the host lets running requests finish before it exits for a plugin restart (PLUGIN_DRAIN_SECONDS in .env.example).
+      Plugins__DrainSeconds: ${PLUGIN_DRAIN_SECONDS:-30}
+      # Seconds the host waits after a staged plugin change, so changes made one after another share one restart (PLUGIN_RESTART_DELAY_SECONDS in .env.example).
+      Plugins__RestartDelaySeconds: ${PLUGIN_RESTART_DELAY_SECONDS:-3}
     volumes:
       # Operator-uploaded branding lives in the web root; without a volume every deploy erases it.
       - hostpanel_branding:/app/wwwroot/uploads/branding
@@ -149,13 +173,18 @@ services:
     cap_drop:
       - ALL
     depends_on:
+      hostpanel-volume-init:
+        condition: service_completed_successfully
       hostpanel-db:
         condition: service_healthy
       hostpanel-rabbitmq:
         condition: service_healthy
       hostpanel-redis:
         condition: service_healthy
+    # Restarts after a clean exit too (never on-failure): the host exits on purpose to apply a plugin change.
     restart: unless-stopped
+    # Longer than the plugin drain time (Plugins__DrainSeconds), so Docker does not kill a draining host.
+    stop_grace_period: ${API_STOP_GRACE_PERIOD:-45s}
 
   hostpanel-client:
     logging: *logging
@@ -230,6 +259,9 @@ services:
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN:-}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU:-}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY:-}
+      NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE:-}
+      NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES:-}
+      NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR:-}
       NUXT_PUBLIC_TASKS_URL: ${NUXT_PUBLIC_TASKS_URL:-}
       NUXT_PUBLIC_ERP_URL: ${NUXT_PUBLIC_ERP_URL:-}
       NUXT_PUBLIC_SHEETS_URL: ${NUXT_PUBLIC_SHEETS_URL:-}

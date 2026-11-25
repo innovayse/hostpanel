@@ -39,8 +39,8 @@ describe('InvoiceItemsSection', () => {
       },
     })
 
-    expect(wrapper.get('[data-testid="billing-invoice-items-table"]').text()).toContain('24000.00 AMD')
-    expect(wrapper.get('[data-testid="billing-invoice-items-table"]').text()).toContain('24000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-items-table"]').text()).toContain('24,000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-items-table"]').text()).toContain('24,000.00 AMD')
   })
 
   it('shows only the description and amount of a read-only line, since tax is invoice-wide', () => {
@@ -132,9 +132,29 @@ describe('InvoiceItemsSection', () => {
       .toBe('Renamed')
   })
 
-  it('previews the tax on the sub-total when a tax percentage is given', async () => {
+  it('shows the saved tax in the read-only totals when the invoice has a tax rate', () => {
+    const base = invoiceFixture()
     const wrapper = mountWithApp(InvoiceItemsSection, {
-      props: { invoice: invoiceFixture({ amounts: { ...invoiceFixture().amounts, taxRate: 10 } }), taxPercent: 10 },
+      props: { invoice: invoiceFixture({ amounts: { ...base.amounts, taxRate: 10, tax: 10, total: 105 } }), readonly: true },
+    })
+
+    expect(wrapper.get('[data-testid="billing-invoice-total-tax"]').text()).toBe('10.00 USD')
+  })
+
+  it('shows no tax row without a tax rate or under the reverse charge', () => {
+    const base = invoiceFixture()
+    const plain = mountWithApp(InvoiceItemsSection, { props: { invoice: base, readonly: true } })
+    const reverse = mountWithApp(InvoiceItemsSection, {
+      props: { invoice: invoiceFixture({ reverseCharge: true, amounts: { ...base.amounts, taxRate: 10 } }), readonly: true },
+    })
+
+    expect(plain.find('[data-testid="billing-invoice-total-tax"]').exists()).toBe(false)
+    expect(reverse.find('[data-testid="billing-invoice-total-tax"]').exists()).toBe(false)
+  })
+
+  it('previews the tax on the live sub-total at the invoice rate while editing', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, {
+      props: { invoice: invoiceFixture({ amounts: { ...invoiceFixture().amounts, taxRate: 10 } }) },
     })
     await flushPromises()
 
@@ -163,12 +183,48 @@ describe('InvoiceItemsSection', () => {
     })
 
     await flushPromises()
-    expect(wrapper.get('[data-testid="billing-invoice-items-editor"]').text()).toContain('48000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-items-editor"]').text()).toContain('48,000.00 AMD')
 
     await wrapper.get('[data-testid="billing-invoice-item-price-0"] input').setValue('1000')
 
     const table = wrapper.get('[data-testid="billing-invoice-items-editor"]').text()
-    expect(table).toContain('2000.00 AMD')
+    expect(table).toContain('2,000.00 AMD')
     expect(table).not.toContain('$')
+  })
+
+  it('draws the totals as the foot of the table, their figures in the amount column', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: invoiceFixture() } })
+    await flushPromises()
+
+    const foot = wrapper.get('[data-testid="billing-invoice-items-editor"] tfoot')
+    const first = foot.findAll('tr')[0]?.findAll('td') ?? []
+    expect(first[0]?.attributes('colspan')).toBe('4')
+    expect(first[1]?.attributes('data-testid')).toBe('billing-invoice-total-subtotal')
+    expect(first[1]?.classes()).toContain('text-end')
+  })
+
+  it('keeps the quantity and unit price headers on one line, sized to their content', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: invoiceFixture() } })
+    await flushPromises()
+
+    const headers = wrapper.get('[data-testid="billing-invoice-items-editor"]').findAll('th')
+    const unitPrice = headers.find((th) => th.text() === 'Unit price')
+    expect(unitPrice?.classes()).toContain('whitespace-nowrap')
+    expect(unitPrice?.classes()).toContain('w-px')
+  })
+
+  it('ends the editor with the shared action row inside the card, Cancel before Save', async () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: invoiceFixture() } })
+    await flushPromises()
+
+    const row = wrapper.get('[data-testid="billing-invoice-items"] [data-testid="ui-form-actions"]')
+    const ids = row.findAll('button').map((button) => button.attributes('data-testid'))
+    expect(ids).toEqual(['billing-invoice-items-cancel', 'billing-invoice-items-save'])
+  })
+
+  it('draws no action row read-only', () => {
+    const wrapper = mountWithApp(InvoiceItemsSection, { props: { invoice: invoiceFixture(), readonly: true } })
+
+    expect(wrapper.find('[data-testid="ui-form-actions"]').exists()).toBe(false)
   })
 })

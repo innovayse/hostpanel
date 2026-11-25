@@ -31,7 +31,7 @@ export const CONVERSATION_CARD = {
 /** A client's ticket: two actions (close or reopen, delete) and the three cards. */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { actions: 2 },
+  header: { crumbs: true, actions: 2 },
   columns: [[SETTINGS_CARD, REPLY_CARD, CONVERSATION_CARD]],
 }
 

@@ -9,7 +9,7 @@ describe('UiSkeletonBar', () => {
   it('draws a clipped bar on the hover surface token and keeps the caller classes', () => {
     const wrapper = mount(UiSkeletonBar, { attrs: { class: 'h-3 w-full rounded' } })
 
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['overflow-hidden', 'bg-surface-hover', 'h-3', 'w-full', 'rounded']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['overflow-hidden', 'bg-surface-track', 'h-3', 'w-full', 'rounded']))
   })
 
   it('takes its width from the width prop and leaves it to the caller otherwise', () => {

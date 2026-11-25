@@ -280,7 +280,7 @@ public sealed class BrandingImageProcessorTests
         result.ErrorCode.Should().Be(HostpanelErrorCodes.BRANDING_IMAGE_INVALID);
     }
 
-    /// <summary>An edge over the ceiling is refused from the header, as too large.</summary>
+    /// <summary>An edge over the ceiling is refused from the header, naming the pixel ceiling and the declared size.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task OversizedEdge_IsRefusedFromTheHeaderAsync()
@@ -289,7 +289,8 @@ public sealed class BrandingImageProcessorTests
             new BrandingSource(new MemoryStream(MakeImage(200, 50)), "big.png"), BrandingKind.Logo, default);
 
         result.IsFailure.Should().BeTrue();
-        result.ErrorCode.Should().Be(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE);
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.BRANDING_IMAGE_DIMENSIONS_TOO_LARGE);
+        result.Errors.Should().ContainKey("dimensions").WhoseValue.Should().Equal("200x50");
     }
 
     /// <summary>The pixel-area ceiling applies even when both edges fit.</summary>
@@ -301,7 +302,8 @@ public sealed class BrandingImageProcessorTests
             .RenderAsync(new BrandingSource(new MemoryStream(MakeImage(200, 200)), "big.png"), BrandingKind.Logo, default);
 
         result.IsFailure.Should().BeTrue();
-        result.ErrorCode.Should().Be(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE);
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.BRANDING_IMAGE_DIMENSIONS_TOO_LARGE);
+        result.Errors.Should().ContainKey("dimensions").WhoseValue.Should().Equal("200x200");
     }
 
     /// <summary>
@@ -319,6 +321,23 @@ public sealed class BrandingImageProcessorTests
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE);
         stream.BytesRead.Should().Be(1001);
+    }
+
+    /// <summary>
+    /// A small file whose pixels are over the ceiling is never reported as a byte-size problem: the two refusals carry
+    /// different codes, so the operator is told which limit the image broke.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task SmallFileWithTooManyPixels_IsNotReportedAsTooManyBytesAsync()
+    {
+        var content = MakeImage(200, 50);
+
+        var result = await Create(options: new BrandingOptions { MaxSourceEdge = 100 }).RenderAsync(
+            new BrandingSource(new MemoryStream(content), "small.png"), BrandingKind.Logo, default);
+
+        content.Length.Should().BeLessThan(new BrandingOptions().MaxBytes);
+        result.ErrorCode.Should().NotBe(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE);
     }
 
     /// <summary>An upload over the byte ceiling is refused before anything is decoded.</summary>

@@ -129,7 +129,8 @@ describe('InvoiceFulfilmentTab', () => {
     stubRoutes({ 'GET /api/billing/1/fulfilment': () => json([]) })
     const wrapper = await mountTab()
 
-    expect(wrapper.get('[data-testid="billing-invoice-fulfilment-empty"]').text()).toContain('No fulfilment records')
+    expect(wrapper.get('[data-testid="ui-table-empty"]').text()).toContain('No fulfilment records')
+    expect(wrapper.get('[data-testid="ui-empty-state-icon"]').exists()).toBe(true)
   })
 
   it('shows the API sentence with Retry instead of an empty list when the load fails, and loads again', async () => {
@@ -143,7 +144,7 @@ describe('InvoiceFulfilmentTab', () => {
     const wrapper = await mountTab()
 
     expect(wrapper.get('[data-testid="billing-invoice-fulfilment-error"]').text()).toContain('Fulfilment is unavailable.')
-    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-empty"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-table-empty"]').exists()).toBe(false)
 
     await wrapper.get('[data-testid="billing-invoice-fulfilment-error-retry"]').trigger('click')
     await flushPromises()

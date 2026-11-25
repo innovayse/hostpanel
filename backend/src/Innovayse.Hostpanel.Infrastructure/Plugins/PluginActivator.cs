@@ -55,12 +55,16 @@ public sealed class PluginActivator
     /// <summary>Tells whether a plugin's data migration is still pending, which keeps the plugin from being activated.</summary>
     private readonly IPluginRegistry _registry;
 
+    /// <summary>Marks each plugin instance as in use until this scope ends, which is what a reload waits for before it unloads a version.</summary>
+    private readonly PluginUsageLeases _leases;
+
     /// <summary>Initializes a new instance of the <see cref="PluginActivator"/> class.</summary>
     /// <param name="db">The data context, used to read the plugin's current settings rows.</param>
     /// <param name="cipher">Decrypts the stored secret fields before they reach the plugin.</param>
     /// <param name="serviceProvider">Service provider used to construct the plugin instance with its other dependencies.</param>
     /// <param name="hostConfiguration">Host application configuration; only the plugin's own section is ever read from it.</param>
     /// <param name="registry">Tells whether a plugin's data migration is still pending, which keeps the plugin from being activated.</param>
+    /// <param name="leases">Marks each plugin instance as in use until this scope ends, which is what a reload waits for before it unloads a version.</param>
     /// <param name="logger">Structured logger: a misconfigured plugin is left out silently otherwise, so each such gate logs why.</param>
     public PluginActivator(
         AppDbContext db,
@@ -68,9 +72,11 @@ public sealed class PluginActivator
         IServiceProvider serviceProvider,
         IConfiguration hostConfiguration,
         IPluginRegistry registry,
+        PluginUsageLeases leases,
         ILogger<PluginActivator> logger)
     {
         _registry = registry;
+        _leases = leases;
         _db = db;
         _cipher = cipher;
         _serviceProvider = serviceProvider;
@@ -209,8 +215,12 @@ public sealed class PluginActivator
         return new PreparedPluginActivation<TContract>(
             id,
             PluginActivationOutcome.Activated,
-            () => (TContract)ActivatorUtilities.CreateInstance(
-                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)),
+            () =>
+            {
+                _leases.Hold(plugin.Usage);
+                return (TContract)ActivatorUtilities.CreateInstance(
+                    _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id));
+            },
             values);
     }
 

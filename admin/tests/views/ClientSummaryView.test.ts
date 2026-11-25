@@ -450,7 +450,7 @@ describe('ClientSummaryView', () => {
     const wrapper = await mountSummary()
 
     const billing = wrapper.get('[data-testid="ui-detail-card-billing"]').text()
-    expect(billing).toContain('5000.00 AMD')
+    expect(billing).toContain('5,000.00 AMD')
     expect(billing).toContain('40.00 USD')
     expect(billing).not.toContain('40.00 AMD')
     expect(billing).not.toContain('$')
@@ -489,9 +489,9 @@ describe('ClientSummaryView', () => {
     const wrapper = await mountSummary()
 
     const billing = wrapper.get('[data-testid="ui-detail-card-billing"]').text()
-    expect(billing).toContain('20000.00 AMD')
+    expect(billing).toContain('20,000.00 AMD')
     expect(billing).toContain('50.00 USD')
-    expect(billing).toContain('19000.00 AMD')
+    expect(billing).toContain('19,000.00 AMD')
     expect(billing).not.toContain('20050')
   })
 
@@ -510,7 +510,7 @@ describe('ClientSummaryView', () => {
     })
     const wrapper = await mountSummary()
 
-    expect(wrapper.text()).toContain('24000.00 AMD')
-    expect(wrapper.text()).not.toContain('$24000.00')
+    expect(wrapper.text()).toContain('24,000.00 AMD')
+    expect(wrapper.text()).not.toContain('$24,000.00')
   })
 })

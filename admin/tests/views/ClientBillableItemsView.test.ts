@@ -116,7 +116,7 @@ describe('ClientBillableItemsView', () => {
     const wrapper = await mountItems()
 
     expect(wrapper.get('[data-testid="client-billable-uninvoiced-table"]').text()).toContain('12.00 AMD')
-    expect(wrapper.get('[data-testid="client-billable-invoiced-table"]').text()).toContain('5000.00 AMD')
+    expect(wrapper.get('[data-testid="client-billable-invoiced-table"]').text()).toContain('5,000.00 AMD')
     expect(wrapper.text()).toContain('Uninvoiced items: 12.00 AMD (1)')
     expect(wrapper.text()).not.toContain('$')
     expect(wrapper.text()).not.toContain('USD')
@@ -132,7 +132,7 @@ describe('ClientBillableItemsView', () => {
     })
     const wrapper = await mountItems()
 
-    expect(wrapper.text()).toContain('12.00 USD, 5000.00 AMD')
+    expect(wrapper.text()).toContain('12.00 USD, 5,000.00 AMD')
   })
 
   it('shows the count without an amount when there are no uninvoiced items', async () => {

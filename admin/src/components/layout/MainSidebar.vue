@@ -42,8 +42,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { Icon } from '@/lib/icons'
-import { AppRoute } from '@/lib/routes'
-import { NavAttention } from '@/lib/navigation'
+import { activeNavPath, isNavItemActive, NavAttention } from '@/lib/navigation'
 import type { NavChild, NavItem } from '@/lib/navigation'
 import { UI_BELOW_LG_QUERY } from '@/utils/ui/breakpoints'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -184,35 +183,24 @@ const labelOf = (item: NavItem): string => (item.labelKey === undefined ? item.l
  */
 const testidOf = (to: string): string => `nav-${to.replace(/^\//, '').replaceAll('/', '-')}`
 
-/**
- * Checks if a nav item or any of its children is currently active.
- *
- * @param item - The navigation item to check.
- * @returns True if the current route matches.
- */
-const isActive = (item: NavItem): boolean => {
-  // A plugin's entries nest inside each other (`/apps/x` and `/apps/x/usage`): only the page on screen is marked.
-  if (item.labelKey === undefined) {
-    return activePath.value === item.to
-  }
-  if (item.to !== AppRoute.Dashboard && activePath.value.startsWith(item.to)) {
-    return true
-  }
-  return activePath.value === item.to
-}
+/** The path of the one entry the current page belongs to (see {@link activeNavPath}): only it and its parent are marked. */
+const activeTo = computed<string | null>(() => activeNavPath(sections.value, activePath.value))
 
 /**
- * Checks if a child route is the currently active route.
+ * Checks if a nav item or any of its children holds the current page.
+ *
+ * @param item - The navigation item to check.
+ * @returns True if the current page is the item or one of its sub-menu links.
+ */
+const isActive = (item: NavItem): boolean => isNavItemActive(item, activeTo.value)
+
+/**
+ * Checks if a child route is the current page: only the most specific link is, never a sibling whose path it merely starts with.
  *
  * @param to - The child route path.
- * @returns True if the current route matches exactly.
+ * @returns True if the child is the entry the current page belongs to.
  */
-const isChildActive = (to: string): boolean => {
-  if (to === AppRoute.Clients) {
-    return activePath.value === to
-  }
-  return activePath.value.startsWith(to)
-}
+const isChildActive = (to: string): boolean => to === activeTo.value
 
 /**
  * Finds the sub-menu link of the current page.

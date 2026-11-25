@@ -176,8 +176,8 @@ describe('ServerFormModal', () => {
     const wrapper = mountModal({ server: serverDto({ credentials: { hasPassword: true, hasApiToken: false, hasAccessHash: false } }) })
     await wrapper.get('[data-testid="server-form-tab-details"]').trigger('click')
 
-    expect(wrapper.find('[data-testid="server-form-password-stored"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="server-form-api-token-stored"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="server-form-password-masked"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="server-form-api-token-masked"]').exists()).toBe(false)
 
     await wrapper.get('[data-testid="server-form-password-clear"]').trigger('click')
     expect(wrapper.find('[data-testid="server-form-password-pending-clear"]').exists()).toBe(true)

@@ -6,17 +6,19 @@
  * default slot, the paging state through `page`, `total` and `pageSize`, and the loading and empty states through
  * `loading`, `empty` and `emptyText` (or the `empty` slot for an empty state with a description or an action). The card
  * clips the table at its rounded corners and the pager sits in the card's footer, so a list never has a separate count
- * line or pager under it. The pager (`UiPagination`) draws the "x to y of n" range itself and renders nothing for a
- * single page. A list that is not paged leaves `page` out and gets no footer.
+ * line or pager under it. The pager (`UiPagination`) draws the "x to y of n" range itself; the card draws its footer strip
+ * only when the pager has something to show, so a single page, like a list that is not paged (it leaves `page` out), has no empty strip under the rows.
  *
  * The attributes a screen sets (the test id) go to the table; the card around it only frames it. `header` is the card's
  * title row, for a table that is one block of a larger screen; the table pads it and rules it off like the footer, so a
  * screen passes only the heading.
  */
+import { computed } from 'vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import type { RowSelection } from '@/composables/useRowSelection'
+import { pagerVisible } from '@/lib/paging'
 import { UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableMaxHeight } from '@/utils/ui/table'
 
@@ -24,7 +26,7 @@ import type { UiTableMaxHeight } from '@/utils/ui/table'
 defineOptions({ inheritAttrs: false })
 
 /** Props for UiDataTable. */
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   /** Padding of the cells; comfortable for a list, compact for a table that is a block of a larger screen. */
   density?: UiTableDensity
   /** Draws placeholder rows under the real header while the data loads. */
@@ -67,6 +69,11 @@ withDefaults(defineProps<{
   paginationTestid: undefined,
 })
 
+/** Whether the card has a footer: a paged table whose pager draws something; a single page leaves no empty strip under the rows. */
+const hasFooter = computed<boolean>(() =>
+  props.page !== undefined && pagerVisible(props.total, props.pageSize, props.loading, props.pageSizeOptions),
+)
+
 /** Events emitted by UiDataTable. */
 defineEmits<{
   /** Emitted with the page the reader chose. */
@@ -99,7 +106,7 @@ defineEmits<{
         <slot name="empty" />
       </template>
     </UiTable>
-    <template v-if="page !== undefined" #footer>
+    <template v-if="hasFooter" #footer>
       <UiPagination
         :page="page"
         :total="total"

@@ -128,4 +128,59 @@ describe('UiNumberInput', () => {
     expect(input.classes()).toEqual(expect.arrayContaining(['disabled:text-text-muted', 'rounded-control']))
     expect(wrapper.classes()).not.toContain('opacity-50')
   })
+
+  it('keeps a minimum width that fits the value and the spinner, wider with a suffix', () => {
+    expect(mount(UiNumberInput, { props: { modelValue: 1 } }).classes()).toContain('min-w-28')
+    expect(mount(UiNumberInput, { props: { modelValue: 1, suffix: 'min' } }).classes()).toContain('min-w-40')
+  })
+
+  it('keeps the spinner column inside the input border, with theme tokens only', () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 1 } })
+    const column = wrapper.get('[data-testid="number-increment"]').element.parentElement as HTMLElement
+
+    expect(column.className).toContain('right-px')
+    expect(column.className).toContain('border-border-control')
+    expect(column.className).toContain('overflow-hidden')
+    expect(column.className).not.toContain('bg-surface-elevated')
+    expect(wrapper.get('input').classes()).toEqual(expect.arrayContaining(['border-border-control', 'bg-surface-field', 'rounded-control', 'h-10.5']))
+    expect(wrapper.get('[data-testid="number-increment"]').classes()).toContain('bg-transparent')
+  })
+
+  it('shows a field that steps by fractions with two decimals once it is left', async () => {
+    const wrapper = mount(UiNumberInput, { props: { modelValue: 23.7, step: 0.01 } })
+    const input = wrapper.get('input')
+
+    expect((input.element as HTMLInputElement).value).toBe('23.70')
+
+    await input.trigger('focus')
+    expect((input.element as HTMLInputElement).value).toBe('23.7')
+
+    await input.trigger('blur')
+    expect((input.element as HTMLInputElement).value).toBe('23.70')
+  })
+
+  it('writes a typed amount in two decimals on blur and leaves a whole-number field alone', async () => {
+    const money = mount(UiNumberInput, { props: { modelValue: 5, step: 0.01 } })
+    const whole = mount(UiNumberInput, { props: { modelValue: 5, step: 1 } })
+
+    await money.get('input').setValue('7.5')
+    await money.get('input').trigger('blur')
+
+    expect((money.get('input').element as HTMLInputElement).value).toBe('7.50')
+    expect((whole.get('input').element as HTMLInputElement).value).toBe('5')
+  })
+
+  it('shows no decimals for an empty value of a money field', () => {
+    expect((mount(UiNumberInput, { props: { modelValue: null, step: 0.01 } }).get('input').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('marks the input required for the browser and assistive tech only when asked', () => {
+    const required = mount(UiNumberInput, { props: { modelValue: null, required: true } }).get('input')
+    const optional = mount(UiNumberInput, { props: { modelValue: null } }).get('input')
+
+    expect(required.attributes('required')).toBeDefined()
+    expect(required.attributes('aria-required')).toBe('true')
+    expect(optional.attributes('required')).toBeUndefined()
+    expect(optional.attributes('aria-required')).toBeUndefined()
+  })
 })

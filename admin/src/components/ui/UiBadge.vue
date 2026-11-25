@@ -4,8 +4,9 @@
  *
  * A tint of the status colour behind a readable label (12px, semibold, no border), so the status is always named in text and never
  * carried by colour alone. `tone` colours it from the theme tokens; `dot` prepends a status dot; `marker` draws the dot alone, with
- * no text, for a place too small for one (an unread marker on an icon). A long label wraps inside the pill over several lines at
- * the width the parent allows; the corner radius keeps a one line badge a capsule without turning a tall one into an oval.
+ * no text, for a place too small for one (an unread marker on an icon). A badge is always one line: the label never wraps and the
+ * height is fixed per size (24px, 16px small), so every status badge in a list is the same height whatever its text. A column
+ * that holds badges is as wide as its longest label.
  */
 import { computed } from 'vue'
 import { toneBadgeClasses, toneDotClasses } from '@/utils/ui/tone'
@@ -34,15 +35,15 @@ const toneClasses = computed<string>(() => toneBadgeClasses[props.tone])
 /** Colour class of the dot. */
 const dotClasses = computed<string>(() => toneDotClasses[props.tone])
 
-/** Padding and type size. */
-const sizeClasses = computed<string>(() => (props.small ? 'px-1.5 py-0 text-[0.65rem]' : 'px-2.5 py-1 text-xs'))
+/** Fixed height, padding and type size. */
+const sizeClasses = computed<string>(() => (props.small ? 'h-4 px-1.5 text-[0.65rem]' : 'h-6 px-2.5 text-xs'))
 </script>
 
 <template>
   <span v-if="marker" class="block h-2.5 w-2.5 rounded-full" :class="dotClasses" />
   <span
     v-else
-    class="inline-flex w-fit min-w-0 max-w-full items-center gap-1.5 rounded-2xl font-semibold whitespace-normal break-words"
+    class="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-2xl font-semibold whitespace-nowrap"
     :class="[toneClasses, sizeClasses]"
   >
     <span v-if="dot" class="h-1.5 w-1.5 shrink-0 rounded-full" :class="dotClasses" />

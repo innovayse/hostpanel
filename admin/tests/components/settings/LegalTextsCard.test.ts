@@ -18,13 +18,13 @@ beforeEach(() => {
 const PAGES = ['terms', 'privacy', 'refund', 'acceptable_use', 'cookies']
 
 /** The suffix of each language's row. */
-const SUFFIXES = ['', '.ru', '.hy']
+const SUFFIXES = ['', '.ru', '.hy', '.de', '.es']
 
 /** Every row the card edits, as the API seeds them: empty, except the English terms and the Russian refund policy. */
 const rows: Setting[] = PAGES.flatMap((page, pageIndex) => SUFFIXES.map((suffix, suffixIndex): Setting => {
   const key = `portal.legal.${page}${suffix}`
   const value = key === 'portal.legal.terms' ? '## Seller\n\nAcme Ltd.' : key === 'portal.legal.refund.ru' ? 'Возврат в течение 14 дней.' : ''
-  return { id: pageIndex * 3 + suffixIndex + 1, key, value }
+  return { id: pageIndex * SUFFIXES.length + suffixIndex + 1, key, value }
 }))
 
 /**
@@ -38,6 +38,19 @@ const valueOf = (wrapper: Awaited<ReturnType<typeof mountSettingsCard>>['wrapper
   (wrapper.get(`[data-testid="${testid}"]`).element as HTMLTextAreaElement).value
 
 describe('LegalTextsCard', () => {
+  it('draws a tab for every supported language of a page', async () => {
+    const { wrapper } = await mountSettingsCard(LegalTextsCard, rows)
+
+    expect(wrapper.findAll('[data-testid^="legal-terms-tab-"][role="tab"]').map((tab) => tab.attributes('data-testid'))).toEqual([
+      'legal-terms-tab-en',
+      'legal-terms-tab-ru',
+      'legal-terms-tab-hy',
+      'legal-terms-tab-de',
+      'legal-terms-tab-es',
+      'legal-terms-tab-fr',
+    ])
+  })
+
   it('draws one multi-line field per legal page, English first', async () => {
     const { wrapper } = await mountSettingsCard(LegalTextsCard, rows)
 

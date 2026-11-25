@@ -14,6 +14,24 @@
 export const pageCount = (total: number, pageSize: number): number => Math.max(1, Math.ceil(total / pageSize))
 
 /**
+ * Whether a pager has anything to show: while the list loads (the placeholder keeps the layout), over more than one page,
+ * or when a rows-per-page select could still shrink the page. The pager and the table card around it read the same answer,
+ * so the card draws its footer strip exactly when the pager draws something.
+ *
+ * @param total - Number of rows across all pages.
+ * @param pageSize - Rows per page.
+ * @param loading - Whether the list is loading.
+ * @param pageSizeOptions - The page sizes the reader can pick from, when the pager offers the choice.
+ * @returns True when the pager draws content.
+ */
+export const pagerVisible = (total: number, pageSize: number, loading: boolean, pageSizeOptions?: readonly number[]): boolean => {
+  if (loading || pageCount(total, pageSize) > 1) {
+    return true
+  }
+  return pageSizeOptions !== undefined && total > Math.min(...pageSizeOptions)
+}
+
+/**
  * Cuts one page out of an in-memory list.
  *
  * @param items - The whole list.

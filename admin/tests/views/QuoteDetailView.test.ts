@@ -205,14 +205,16 @@ describe('QuoteDetailView', () => {
     expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('20.00 EUR')
   })
 
-  it('returns to the quotes list with the back pill in the header', async () => {
+  it('draws the trail above the title, the quotes list as a link and the quote itself last', async () => {
     stubRoutes({ 'GET /api/quotes/3': () => json(quote) })
     const { wrapper } = await mountRouted(QuoteDetailView, '/billing/quotes/:id', '/billing/quotes/3')
     await flushPromises()
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    const back = wrapper.get('[data-testid="billing-quote-back"]')
-
-    expect(back.attributes('href')).toBe('/billing/quotes')
-    expect(back.text()).toBe('Quotes')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/billing', '/billing/quotes'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="billing-quote-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

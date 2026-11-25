@@ -11,7 +11,9 @@ import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -26,9 +28,6 @@ import type { PluginSlotWidgetBindingDto } from '@/types/plugin'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
-
-/** Icon markup (shape tags) of the chip's remove button. */
-const CLOSE_ICON = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
 
 /** Props for PluginSlotWidgetRow. */
 const props = defineProps<{
@@ -134,12 +133,14 @@ const submit = (): void => {
           :data-testid="`plugin-widget-remove-${item.id}`"
           @click="remove(item.id)"
         >
-          <UiIcon :markup="CLOSE_ICON" :size="UiSize.Sm" />
+          <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
         </UiIconButton>
       </UiBadge>
-      <UiText v-if="chosen.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-        {{ t('plugins.pluginSlotWidgets.noProducts') }}
-      </UiText>
+      <UiEmptyState v-if="chosen.length === 0" compact :title="t('plugins.pluginSlotWidgets.noProducts')" class="w-full" data-testid="plugin-widget-no-products">
+        <template #icon>
+          <UiIcon :markup="Icon.Inbox" :size="UiSize.Md" />
+        </template>
+      </UiEmptyState>
     </UiStack>
 
     <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>

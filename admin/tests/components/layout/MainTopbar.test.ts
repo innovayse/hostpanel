@@ -8,6 +8,8 @@ import MainTopbar from '@/components/layout/MainTopbar.vue'
 import { useCommandPaletteStore } from '@/stores/commandPalette'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { stubRoutes } from '../../helpers/routes'
+import { activityEvent, domainExpiring, serveActivityFeed } from '../../helpers/activityEvents'
+import type { ActivityEvent } from '@/types/activityevent'
 import { json } from '../../helpers/fetch'
 import { mountView } from '../../helpers/mount'
 import { stubPhone } from '../../helpers/phone'
@@ -17,8 +19,8 @@ import { AdminTheme } from '@/types/admintheme'
 
 /** Two events of the notification feed. */
 const events = [
-  { type: 'ClientRegistered', message: 'New client Ada', occurredAt: '2026-10-14T08:00:00Z', entityId: 7 },
-  { type: 'DomainExpiring', message: 'example.com expires', occurredAt: '2026-10-14T09:00:00Z', entityId: 3 },
+  activityEvent(),
+  { ...domainExpiring, occurredAt: '2026-10-14T09:00:00Z' },
 ]
 
 /**
@@ -28,8 +30,8 @@ const events = [
  * @param feed - Events the feed endpoint returns.
  * @returns The wrapper.
  */
-const mountBar = async (path: string, feed: unknown[] = events) => {
-  stubRoutes({ 'GET /api/admin/dashboard/activity': () => json(feed) })
+const mountBar = async (path: string, feed: ActivityEvent[] = events) => {
+  serveActivityFeed(feed)
   return mountView(MainTopbar, { path })
 }
 
@@ -56,8 +58,8 @@ describe('MainTopbar', () => {
     expect(wrapper.get('[data-testid="topbar-notification-count"]').text()).toBe('2')
     await wrapper.get('[data-testid="topbar-notifications"]').trigger('click')
 
-    expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('New client Ada')
-    expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('example.com expires')
+    expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('New client registered')
+    expect(wrapper.get('[data-testid="notifications-drawer"]').text()).toContain('example.com expires soon')
   })
 
   it('lists the notifications in a side panel on a wide screen and in a bottom sheet on a phone', async () => {
@@ -76,7 +78,7 @@ describe('MainTopbar', () => {
   })
 
   it('hangs the count off the bell corner, names the button with the count and caps it at 9+', async () => {
-    const many = Array.from({ length: 12 }, (_, i) => ({ type: 'ClientRegistered', message: `Client ${i}`, occurredAt: '2026-10-14T08:00:00Z', entityId: i }))
+    const many = Array.from({ length: 12 }, (_, i) => activityEvent({ entityId: i, key: `ClientRegistered:${i}:1` }))
     const wrapper = await mountBar('/dashboard', many)
 
     const badge = wrapper.get('[data-testid="topbar-notification-count"]')
@@ -204,9 +206,25 @@ describe('MainTopbar', () => {
     await wrapper.get('[data-testid="topbar-notifications"]').trigger('click')
 
     const drawer = wrapper.get('[data-testid="notifications-drawer"]')
-    expect(drawer.findAll('[data-testid^="notification-"]')).toHaveLength(3)
-    expect(drawer.findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(6)
+    expect(drawer.get('[data-testid="notifications-loading"]').findAll('[data-testid="ui-skeleton-bar"]')).toHaveLength(9)
     expect(drawer.text()).not.toContain('No notifications')
+  })
+
+  it('counts only the events the server says are unread, and counts down as the drawer reads them', async () => {
+    const server = serveActivityFeed(events)
+    const wrapper = await mountView(MainTopbar, { path: '/dashboard' })
+    expect(wrapper.get('[data-testid="topbar-notification-count"]').text()).toBe('2')
+
+    await wrapper.get('[data-testid="topbar-notifications"]').trigger('click')
+    await wrapper.get('[data-testid="notification-0-mark-read"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="topbar-notification-count"]').text()).toBe('1')
+    expect(server.read.size).toBe(1)
+
+    await wrapper.get('[data-testid="notifications-mark-all-read"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="topbar-notification-count"]').exists()).toBe(false)
   })
 
   it('draws the trail from the section down to the page in place of the plain section title', async () => {
@@ -240,6 +258,28 @@ describe('MainTopbar', () => {
     stubPhone(false)
     const wrapper = await mountView(MainTopbar, { path: '/orders/8', pattern: '/orders/:id' })
     usePageTitleStore().announce(Symbol('header'), 'Order 8')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Details')
+  })
+
+  it('leaves the trail to the page header when the screen draws its own, so no step is shown twice', async () => {
+    stubPhone(false)
+    const wrapper = await mountView(MainTopbar, { path: '/orders/8', pattern: '/orders/:id' })
+    usePageTitleStore().announce(Symbol('header'), 'Order 8', true)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="topbar-title"]').exists()).toBe(false)
+  })
+
+  it('draws the trail again when the header that owned it goes', async () => {
+    stubPhone(false)
+    const wrapper = await mountView(MainTopbar, { path: '/orders/8', pattern: '/orders/:id' })
+    const header = Symbol('header')
+    usePageTitleStore().announce(header, 'Order 8', true)
+    await flushPromises()
+    usePageTitleStore().release(header)
     await flushPromises()
 
     expect(wrapper.get('[data-testid="topbar-title"]').text()).toBe('Details')

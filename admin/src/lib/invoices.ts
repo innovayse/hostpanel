@@ -4,9 +4,10 @@
  */
 import { formatPlainAmount } from '@/lib/money'
 import { CurrencyCode } from '@/types/currency'
+import { CreditNoteBlock } from '@/types/creditnote'
 import type { CurrencyAmount } from '@/types/currency'
 import { InvoiceStatus } from '@/types/invoice'
-import type { Invoice } from '@/types/invoice'
+import type { Invoice, InvoiceDetail } from '@/types/invoice'
 
 /** How many invoices of one kind a page holds and what they add up to, one sum per currency. */
 interface InvoiceBucket {
@@ -81,3 +82,26 @@ export const bucketAmountText = (bucket: InvoiceBucket): string =>
   bucket.totals.length === 0
     ? formatPlainAmount(0)
     : bucket.totals.map(total => formatPlainAmount(total.amount, total.currency)).join(', ')
+
+/** The statuses whose invoice holds paid money a credit note can reverse. */
+const CREDITABLE_STATUSES: readonly string[] = [InvoiceStatus.Paid, InvoiceStatus.PartiallyRefunded]
+
+/**
+ * Says why no credit note can be issued on an invoice: the one place the rule lives, read by the credit notes tab for its
+ * button and its sentence alike.
+ *
+ * @param invoice - The invoice to check.
+ * @returns The reason, or null when a note can be issued.
+ */
+export const creditNoteBlock = (invoice: Pick<InvoiceDetail, 'isCreditTopUp' | 'status' | 'creditableAmount'>): CreditNoteBlock | null => {
+  if (invoice.isCreditTopUp) {
+    return CreditNoteBlock.TopUp
+  }
+  if (!CREDITABLE_STATUSES.includes(invoice.status)) {
+    return CreditNoteBlock.NotPaid
+  }
+  if (invoice.creditableAmount <= 0) {
+    return CreditNoteBlock.NothingLeft
+  }
+  return null
+}

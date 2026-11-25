@@ -219,13 +219,16 @@ describe('SupportTicketDetailView', () => {
     expect(wrapper.get('[data-testid="ticket-title"]').text()).toContain('DNS is down')
   })
 
-  it('returns to the tickets list with the back pill beside the title', async () => {
+  it('draws the trail above the title, the tickets list as a link and the ticket itself last', async () => {
     stubPathRoutes(loadRoutes)
 
     const wrapper = await mountView(SupportTicketDetailView, location)
-    const back = wrapper.get('[data-testid="ticket-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/support/tickets')
-    expect(back.text()).toBe('Tickets')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/support', '/support/tickets'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="ticket-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

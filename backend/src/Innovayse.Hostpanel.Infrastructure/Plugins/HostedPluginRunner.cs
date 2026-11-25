@@ -71,8 +71,7 @@ public sealed class HostedPluginRunner : IHostedLifecycleService
     public async Task StartedAsync(CancellationToken cancellationToken)
     {
         var hosted = _registry.LoadedPlugins
-            .Where(plugin => plugin.Manifest.Type == PluginType.Hosted
-                || typeof(IHostedPlugin).IsAssignableFrom(plugin.ImplementationType))
+            .Where(plugin => plugin.IsHosted)
             .OrderBy(plugin => plugin.Manifest.Id, StringComparer.Ordinal)
             .ToList();
         if (hosted.Count == 0)

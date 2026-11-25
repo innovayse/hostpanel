@@ -58,14 +58,67 @@ describe('migrationStore.createJob', () => {
 })
 
 describe('migrationStore polling', () => {
-  it('pollStatus updates the active job and the list, and stops once completed', async () => {
+  it('a read that found nothing new leaves the held job objects alone', async () => {
+    stubFetch(json({ id: 5, status: 'InProgress', overallPercent: 10 }))
+    const store = useMigrationStore()
+    store.jobs.push({ id: 5, status: MigrationStatus.InProgress, overallPercent: 10 } as never)
+    store.setActiveJob(store.jobs[0] as never)
+    const heldInList = store.jobs[0]
+    const heldActive = store.activeJob
+
+    await store.pollStatus(5)
+    expect(store.jobs[0]).toBe(heldInList)
+    expect(store.activeJob).toBe(heldActive)
+  })
+
+  it('pollStatus refreshes the list and the watched job when it is that job', async () => {
     stubFetch(json({ id: 5, status: 'Completed' }))
     const store = useMigrationStore()
     store.jobs.push({ id: 5, status: MigrationStatus.InProgress } as never)
+    store.setActiveJob(store.jobs[0] as never)
 
     await store.pollStatus(5)
     expect(store.activeJob).toEqual({ id: 5, status: 'Completed' })
     expect(store.jobs[0]?.status).toBe(MigrationStatus.Completed)
+  })
+
+  it('a manual selection survives a poll refresh of another job', async () => {
+    vi.useFakeTimers()
+    const mock = stubFetch(json({ id: 2, status: 'InProgress' }))
+    const store = useMigrationStore()
+    store.jobs.push({ id: 1, status: MigrationStatus.Completed } as never, { id: 2, status: MigrationStatus.Pending } as never)
+    store.setActiveJob(store.jobs[1] as never)
+    store.startPolling(2)
+
+    // The operator chooses the finished first job while the pending one is still being polled.
+    store.setActiveJob(store.jobs[0] as never)
+    await vi.advanceTimersByTimeAsync(4000)
+
+    expect(store.activeJob?.id).toBe(1)
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+
+  it('a poll tick that answers after the selection moved leaves the selection and the list copy of that job refreshed', async () => {
+    stubFetch(json({ id: 2, status: 'InProgress', overallPercent: 50 }))
+    const store = useMigrationStore()
+    store.jobs.push({ id: 1, status: MigrationStatus.Completed } as never, { id: 2, status: MigrationStatus.Pending } as never)
+    store.setActiveJob(store.jobs[0] as never)
+
+    await store.pollStatus(2)
+    expect(store.activeJob?.id).toBe(1)
+    expect(store.jobs[1]).toMatchObject({ id: 2, overallPercent: 50 })
+  })
+
+  it('the watched job is cleared only when it vanishes from the list', async () => {
+    stubFetch(new Response(null, { status: 204 }))
+    const store = useMigrationStore()
+    store.jobs.push({ id: 1 } as never, { id: 2 } as never)
+    store.setActiveJob(store.jobs[0] as never)
+
+    await store.deleteJob(2)
+    expect(store.activeJob?.id).toBe(1)
+    await store.deleteJob(1)
+    expect(store.activeJob).toBeNull()
   })
 
   it('a failed poll leaves the state and no sentence', async () => {

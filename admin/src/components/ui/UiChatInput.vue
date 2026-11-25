@@ -51,7 +51,7 @@ const showCount = computed<boolean>(() => props.maxLength !== undefined && lengt
 
 /** Class list of the frame. */
 const frameClasses = computed<string[]>(() => [
-  'flex w-full items-end gap-2 rounded-control border border-border px-3.5 py-1.5 transition-colors duration-200',
+  'flex w-full items-end gap-2 rounded-control border border-border-control px-3.5 py-1.5 transition-colors duration-200',
   'focus-within:border-text-accent focus-within:ring-2 focus-within:ring-text-accent/40',
   props.disabled ? 'cursor-not-allowed bg-surface-hover' : 'bg-surface-field',
 ])

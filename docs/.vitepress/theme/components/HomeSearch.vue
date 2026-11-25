@@ -4,6 +4,7 @@
  * popular guides section. Clicking the button opens the VitePress local search
  * dialog (the same one bound to Ctrl K / Cmd K in the navigation bar).
  */
+import { Search } from 'lucide-vue-next'
 import { useUi } from '../useUi'
 
 /**
@@ -22,9 +23,7 @@ const { ui } = useUi()
 <template>
   <div class="home-search">
     <button class="home-search-btn" :aria-label="ui.components.homeSearch.ariaLabel" @click="openSearch">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="home-search-icon" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-      </svg>
+      <Search class="home-search-icon" :size="16" :stroke-width="2" aria-hidden="true" />
       <span class="home-search-placeholder">{{ ui.components.homeSearch.placeholder }}</span>
       <span class="home-search-shortcut"><kbd>Ctrl</kbd><kbd>K</kbd></span>
     </button>

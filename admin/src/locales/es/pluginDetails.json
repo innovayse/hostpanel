@@ -37,7 +37,6 @@
     "label": "Clave de licencia",
     "placeholder": "Pega la clave de licencia",
     "save": "Guardar clave",
-    "remove": "Quitar clave",
     "needed": "Guarda una clave de licencia antes de instalar este complemento."
   },
   "versions": {

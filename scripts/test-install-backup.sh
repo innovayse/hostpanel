@@ -68,6 +68,16 @@ if [ "$1" = "compose" ] && [ "$2" = "-f" ]; then
     config)
       printf 'config %s\n' "$*" >> "$FAKE_LOG"
       if [ "${FAKE_CONFIG:-ok}" = "fail" ]; then exit 1; fi
+      case "$*" in
+        *--services*) ;;
+        *)
+          # The resolved file: the API service with the restart policy in FAKE_API_RESTART (none: no line).
+          printf 'name: hostpanel\nservices:\n  hostpanel-db:\n    restart: unless-stopped\n  hostpanel-api:\n    container_name: hostpanel-api\n'
+          policy="${FAKE_API_RESTART:-unless-stopped}"
+          if [ "$policy" != "none" ]; then printf '    restart: %s\n' "$policy"; fi
+          printf '    stop_grace_period: 45s\n  hostpanel-client:\n    restart: no\nvolumes:\n  pgdata: {}\n'
+          exit 0 ;;
+      esac
       for s in ${FAKE_SERVICES:-hostpanel-db hostpanel-rabbitmq hostpanel-redis hostpanel-api hostpanel-client hostpanel-admin hostpanel-caddy}; do
         printf '%s\n' "$s"
       done
@@ -169,7 +179,7 @@ new_install() {
   : > "$LOG"
   : > "$CURL_LOG"
   unset FAKE_DUMP FAKE_DB_RUNNING FAKE_RESTORE FAKE_DB_STATE FAKE_VOLUME FAKE_DB_READY FAKE_STOP \
-    FAKE_PULL FAKE_UP FAKE_CURL FAKE_SERVICES FAKE_CONFIG FAKE_STATE FAKE_STATE_AFTER
+    FAKE_PULL FAKE_UP FAKE_CURL FAKE_SERVICES FAKE_CONFIG FAKE_STATE FAKE_STATE_AFTER FAKE_API_RESTART
 }
 
 # Runs install.sh against $DIR with the fakes. Output goes to $DIR.out, the exit code is returned.
@@ -867,6 +877,65 @@ write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
 FAKE_STATE=fail run_installer --rollback --yes
 check "a rollback that cannot read the database list is refused" test "$?" -ne 0
 check "that refusal stops nothing" log_lacks '^stop'
+
+# ── Check of the restart policy ───────────────────────────────────────────────
+
+# Prints the value the compose file $1 gives to the key $2 of the API service, and nothing when it has none.
+compose_api_value() {
+  awk -v key="$2" -v svc="  ${INSTALLER_API_SERVICE}:" '
+    { sub(/[[:cntrl:]]$/, "") }
+    $0 == svc { inside = 1; next }
+    inside && /^ ? ?[^ ]/ { inside = 0 }
+    inside && index($0, "    " key ": ") == 1 { print substr($0, length(key) + 7); exit }
+  ' "$1"
+}
+
+INSTALLER_API_SERVICE="$(HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; printf %s "$API_SERVICE"' "$INSTALL_SH")"
+for shipped in hub prod dev; do
+  shipped_file="$(dirname "$COMPOSE_HUB")/docker-compose.$shipped.yml"
+  check "the $shipped compose file restarts the API after a clean exit" test "$(compose_api_value "$shipped_file" restart)" = "unless-stopped"
+  check "the $shipped compose file gives the API a stop grace period for the plugin drain" test -n "$(compose_api_value "$shipped_file" stop_grace_period)"
+done
+
+new_install 0.4.0
+run_installer --check
+check "--check passes when the API restarts unless stopped" test "$?" -eq 0
+check "--check says the API restarts after a clean exit" out_has 'restarts after a clean exit'
+check "--check changes nothing: no compose file download, stop, pull or start" log_lacks '^\(curl\|stop\|pull\|up\)'
+check "--check keeps the compose file" old_compose
+
+new_install 0.4.0
+FAKE_API_RESTART=always run_installer --check
+check "--check passes when the API restarts always" test "$?" -eq 0
+
+new_install 0.4.0
+FAKE_API_RESTART=none run_installer --check
+check "--check fails when the API has no restart policy" test "$?" -ne 0
+check "--check names the missing policy" out_has "restart policy 'none'"
+check "--check says how to fix it" out_has "Set 'restart: unless-stopped'"
+
+new_install 0.4.0
+FAKE_API_RESTART=on-failure run_installer --check
+check "--check fails when the API restarts only on failure" test "$?" -ne 0
+check "--check names the on-failure policy" out_has "restart policy 'on-failure'"
+
+new_install 0.4.0
+FAKE_API_RESTART=on-failure:3 run_installer --check
+check "--check fails for on-failure with a retry limit" test "$?" -ne 0
+
+new_install 0.4.0
+FAKE_CONFIG=fail run_installer --check
+check "--check fails when the compose file cannot be resolved" test "$?" -ne 0
+
+new_install 0.4.0
+rm -f "$DIR/.env"
+run_installer --check
+check "--check fails where there is no install" test "$?" -ne 0
+
+new_install 0.4.0
+run_installer --check --rollback
+check "--check with --rollback is refused" test "$?" -ne 0
+check "--check with --rollback restores nothing" log_lacks restore
 
 # ── Real postgres ─────────────────────────────────────────────────────────────
 

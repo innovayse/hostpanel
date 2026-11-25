@@ -47,6 +47,12 @@ describe('UiCommandDialog', () => {
     expect(find('command-dialog-backdrop')).toBeNull()
   })
 
+  it('dims the page with the overlay token, as the dialog and the drawer do', () => {
+    mountDialog({ open: true })
+
+    expect(find('command-dialog-backdrop')?.className).toContain('bg-(--overlay-backdrop)')
+  })
+
   it('is a named modal dialog whose panel carries the caller attributes and key handler', () => {
     const onKeydown = vi.fn()
     mountDialog({ open: true }, { 'data-testid': 'palette', onKeydown })

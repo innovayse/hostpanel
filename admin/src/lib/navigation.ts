@@ -4,8 +4,7 @@
  * draw this list, so their order cannot drift apart. The Add-ons section is built from the menu
  * items plugins declare ({@link withAddons}) and is left out while no plugin declares one.
  */
-import { Icon } from '@/lib/icons'
-import { pluginIconPath } from '@/lib/pluginView'
+import { Icon, pluginIcon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
 import type { PluginMenuLink } from '@/types/pluginui'
 
@@ -262,7 +261,7 @@ export const withAddons = (sections: readonly NavSection[], links: readonly Plug
   const addons: NavSection = {
     id: NavSectionId.Addons,
     labelKey: 'nav.sections.addons',
-    items: links.map((link) => ({ to: link.to, label: link.label, icon: `<path d="${pluginIconPath(link.icon)}"/>` })),
+    items: links.map((link) => ({ to: link.to, label: link.label, icon: pluginIcon(link.icon) })),
   }
   const system = sections.findIndex((section) => section.id === NavSectionId.System)
   const at = system === -1 ? sections.length : system
@@ -292,3 +291,39 @@ export const navTitleKey = (to: string): string => {
   }
   throw new Error(`No navigation entry for ${to}`)
 }
+
+/**
+ * The route path of the one navigation entry the address belongs to: the entry or sub-menu page with the longest
+ * path the address lies under, on a segment boundary (`/support/tickets/new` is its own page and not Tickets, `/support/tickets/7`
+ * is Tickets, `/support/tickets-archive` is no page of Tickets). A query string or hash is ignored. The sidebar marks
+ * exactly this entry, so a parent never lights up beside the page below it.
+ *
+ * @param sections - The navigation sections to search, plugin entries included.
+ * @param address - The path being shown, with or without a query string or hash.
+ * @returns The path of the most specific entry, or null when the address lies under none.
+ */
+export const activeNavPath = (sections: readonly NavSection[], address: string): string | null => {
+  const path = address.split(/[?#]/)[0]
+  let best: string | null = null
+  for (const section of sections) {
+    for (const item of section.items) {
+      for (const to of [item.to, ...(item.children ?? []).map((child) => child.to)]) {
+        const lies = path === to || path.startsWith(`${to}/`)
+        if (lies && (best === null || to.length > best.length)) {
+          best = to
+        }
+      }
+    }
+  }
+  return best
+}
+
+/**
+ * Whether a top-level entry holds the active page: it is the active entry itself or the active page is one of its sub-menu links.
+ *
+ * @param item - The top-level entry.
+ * @param active - The path from {@link activeNavPath}.
+ * @returns True when the entry should be marked.
+ */
+export const isNavItemActive = (item: NavItem, active: string | null): boolean =>
+  active !== null && (item.to === active || (item.children ?? []).some((child) => child.to === active))

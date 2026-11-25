@@ -1,0 +1,26 @@
+{
+  "type": {
+    "ClientRegistered": "Новый клиент зарегистрирован",
+    "InvoiceOverdue": "Счёт №{number} просрочен",
+    "DomainExpiring": "Домен {domain} скоро истекает",
+    "PaymentReceived": "Оплата по счёту №{number} получена",
+    "TicketOpened": "Новый тикет: {subject}"
+  },
+  "upcoming": "{date}",
+  "unread": "Не прочитано",
+  "unreadCount": "{count} непрочитанное | {count} непрочитанных | {count} непрочитанных",
+  "markRead": "Отметить как прочитанное",
+  "markAllRead": "Прочитать все",
+  "filter": {
+    "label": "Показать уведомления",
+    "all": "Все",
+    "unread": "Непрочитанные"
+  },
+  "group": {
+    "upcoming": "Скоро",
+    "today": "Сегодня",
+    "earlier": "Ранее"
+  },
+  "emptyUnread": "Нет непрочитанных уведомлений",
+  "emptyHint": "Здесь появляются новые клиенты, просроченные счета, оплаты, тикеты и истекающие домены."
+}

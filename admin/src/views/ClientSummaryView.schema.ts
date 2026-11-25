@@ -181,7 +181,7 @@ export const SUMMARY_SERVICES_TABLE: SkeletonTable = {
     { key: 'billingCycle', label: 'shared.billingCycle' },
     { key: 'nextDue', label: 'clients.clientSummary.nextDue', kind: UiColumnKind.Date },
     { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 
@@ -195,7 +195,7 @@ export const SUMMARY_DOMAINS_TABLE: SkeletonTable = {
     { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
     { key: 'expiresAt', label: 'shared.expiryDate', kind: UiColumnKind.Date },
     { key: 'autoRenew', label: 'shared.autoRenew', size: UiColumnSize.Compact },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 
@@ -209,7 +209,7 @@ export const SUMMARY_QUOTES_TABLE: SkeletonTable = {
     { key: 'validUntil', label: 'shared.validUntil', kind: UiColumnKind.Date },
     { key: 'total', label: 'shared.total', numeric: true },
     { key: 'stage', label: 'shared.stage', kind: UiColumnKind.Status },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

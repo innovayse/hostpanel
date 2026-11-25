@@ -42,7 +42,8 @@ public sealed class StorefrontImagesController : BaseApiController
     /// 200 with the stored picture's URL; 400 when the image is not acceptable;
     /// 413 when the file is over the size limit; 401 when the caller is not signed in;
     /// 403 when the caller's role is not allowed;
-    /// 429 when the rate limit is hit.
+    /// 429 when the rate limit is hit;
+    /// 503 with <c>STORAGE_NOT_WRITABLE</c> when the server's upload folder is not writable.
     /// </returns>
     [HttpPost("upload-image")]
     [RequestSizeLimit(BrandingUploadLimits.RequestSizeLimitBytes)]
@@ -51,6 +52,7 @@ public sealed class StorefrontImagesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UploadAsync(IFormFile file, CancellationToken ct)
     {
         await using var content = file?.OpenReadStream() ?? Stream.Null;

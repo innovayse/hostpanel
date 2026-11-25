@@ -124,7 +124,7 @@ describe('ClientInvoicesView', () => {
     const wrapper = await mountInvoices()
 
     const text = wrapper.text()
-    expect(text).toContain('24000.00 AMD')
+    expect(text).toContain('24,000.00 AMD')
     expect(text).not.toContain('$')
   })
 

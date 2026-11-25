@@ -38,7 +38,7 @@ describe('IntegrationConfigForm', () => {
   it('shows a stored secret masked, with no value in any input', () => {
     const wrapper = mountForm()
 
-    expect(wrapper.get('[data-testid="integration-field-secretKey-masked"]').text()).toContain('set')
+    expect(wrapper.get('[data-testid="integration-field-secretKey-masked"]').text()).toContain('Set')
     expect(wrapper.find('[data-testid="integration-field-secretKey-input"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="integration-field-secretKey-replace"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-field-secretKey-clear"]').exists()).toBe(true)
@@ -52,10 +52,23 @@ describe('IntegrationConfigForm', () => {
       }),
     })
 
-    expect(wrapper.get('[data-testid="integration-field-apiToken-masked"]').text()).toContain('set')
+    expect(wrapper.get('[data-testid="integration-field-apiToken-masked"]').text()).toContain('Set')
     expect(wrapper.find('[data-testid="integration-field-apiToken-input"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="integration-field-apiToken-replace"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-field-apiToken-clear"]').exists()).toBe(true)
+  })
+
+  it('draws a text field the API marks secret as the write only box, never a plain input', () => {
+    const wrapper = mountForm({
+      integration: integrationDetail({
+        config: { token: { value: null, isSecret: true, hasValue: true } },
+        fieldDefinitions: [{ key: 'token', label: 'Token', type: IntegrationFieldType.Text, required: false }],
+      }),
+    })
+
+    expect(wrapper.find('[data-testid="integration-field-token-masked"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-field-token-replace"]').exists()).toBe(true)
+    expect(wrapper.find('input[data-testid="integration-field-token"]').exists()).toBe(false)
   })
 
   it('leaves an untouched secret out of the save payload', async () => {

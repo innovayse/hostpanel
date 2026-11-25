@@ -1,0 +1,26 @@
+{
+  "type": {
+    "ClientRegistered": "Neuer Kunde registriert",
+    "InvoiceOverdue": "Rechnung Nr. {number} überfällig",
+    "DomainExpiring": "{domain} läuft bald ab",
+    "PaymentReceived": "Zahlung für Rechnung Nr. {number} eingegangen",
+    "TicketOpened": "Neues Ticket: {subject}"
+  },
+  "upcoming": "Am {date}",
+  "unread": "Ungelesen",
+  "unreadCount": "{count} ungelesen | {count} ungelesen",
+  "markRead": "Als gelesen markieren",
+  "markAllRead": "Alle als gelesen markieren",
+  "filter": {
+    "label": "Benachrichtigungen anzeigen",
+    "all": "Alle",
+    "unread": "Ungelesen"
+  },
+  "group": {
+    "upcoming": "Demnächst",
+    "today": "Heute",
+    "earlier": "Früher"
+  },
+  "emptyUnread": "Keine ungelesenen Benachrichtigungen",
+  "emptyHint": "Neue Kunden, überfällige Rechnungen, Zahlungen, Tickets und ablaufende Domains erscheinen hier."
+}

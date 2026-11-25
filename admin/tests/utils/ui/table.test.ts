@@ -165,6 +165,20 @@ describe('card layout vocabulary', () => {
       expect(columnSizeOf({ size: UiColumnSize.Fixed })).toContain('w-40')
     })
 
+    it('keeps the checkbox column compact, whatever its kind or size', () => {
+      expect(sizeOfColumn({ select: true })).toBe(UiColumnSize.Compact)
+      expect(sizeOfColumn({ select: true, size: UiColumnSize.Grow })).toBe(UiColumnSize.Compact)
+      expect(columnSizeOf({ select: true })).toContain('w-px')
+      expect(columnSizeOf({ select: true })).not.toContain('w-[28%]')
+    })
+
+    it('gives every image column the one fixed small width, and lets a named width win', () => {
+      expect(sizeOfColumn({ kind: UiColumnKind.Image })).toBe(UiColumnSize.Fixed)
+      expect(columnSizeOf({ kind: UiColumnKind.Image })).toContain('w-24')
+      expect(columnSizeOf({ kind: UiColumnKind.Image })).not.toContain('w-[28%]')
+      expect(columnSizeOf({ kind: UiColumnKind.Image, width: UiColumnWidth.Large })).toContain('w-64')
+    })
+
     it('truncates only a growing column of text', () => {
       expect(truncatesColumn({ label: 'Name' })).toBe(true)
       expect(truncatesColumn({ kind: UiColumnKind.Date })).toBe(false)

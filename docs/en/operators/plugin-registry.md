@@ -127,9 +127,9 @@ When the registry is on, the Plugins page has three tabs, Installed, Browse and 
 2. Search by name, or pick a category (Payment, Provisioning, Registrar, App or Other). The list is paged.
 3. Each card shows the name, the publisher, the newest version, the SDK version it was built for, its price (Free, Paid or Private) and a Verified badge when the registry marks it as verified.
 4. Press **Install** to install the newest version, or open the card for the details page (below) to choose another version.
-5. Restart when the banner offers it. A new plugin is loaded at the next start.
+5. Nothing more to press: the host applies the change itself, in place or by restarting itself. See [Applying a plugin change without a shell](../payments/plugins.md#applying-a-plugin-change).
 
-A plugin you already have shows as installed with its version. If the registry has a newer version, the button reads **Update to** that version. An update is staged like an uploaded upgrade: it is applied at the next restart. In the Installed tab, a plugin with a newer registry version shows an update badge.
+A plugin you already have shows as installed with its version. If the registry has a newer version, the button reads **Update to** that version. An update works like an uploaded upgrade: it is reloaded in place when that is possible and otherwise staged for a restart. In the Installed tab, a plugin with a newer registry version shows an update badge.
 
 An entry in the catalogue that has no usable version is left out of the list, and the rest of the page is shown. An entry that is not a plugin at all (a bad id, no name, an unknown price) still makes the whole page fail with `PLUGIN_REGISTRY_RESPONSE_INVALID`.
 
@@ -140,7 +140,7 @@ A card opens the plugin's own page (the gear button on the card and the card tit
 - The name, the publisher, the price, the Verified badge, the installed version, a staged version that waits for a restart, and the update that is available.
 - Links the publisher gave: documentation, support, source repository, where to buy a licence, and the licence of the plugin.
 - A **Versions** list. Each row shows the version, whether it is published, deprecated or yanked, the date, the host versions it runs on (and whether that includes this server), the release notes and the permissions it asks for. A yanked version cannot be installed, and neither can a version that does not run on this server.
-- **Uninstall** for a plugin you installed or uploaded. It asks first, removes the plugin's files and finishes after a restart. The data the plugin stored is kept until you delete it. A built-in plugin cannot be uninstalled.
+- **Uninstall** for a plugin you installed or uploaded. It asks first, removes the plugin's files and unloads the plugin, or finishes after a restart when it cannot be unloaded. The data the plugin stored is kept until you delete it. A built-in plugin cannot be uninstalled.
 
 Each version row has one action: **Install** for a plugin you do not have, **Update** for a version newer than the installed one, **Downgrade** for an older one, and nothing for the one that is installed. The panel asks you to confirm every install.
 
@@ -153,7 +153,7 @@ Release notes tell you what a version changes before you install it. They are Ma
 - **Browse tab.** A card with a version has a **What is new in** link that opens the release notes of the newest version inline. For a plugin you already have, when a newer version exists, a **What changed** link opens the details page, where the update is explained.
 - **Installed tab.** Each plugin has a **Release notes of** link for the installed version. A plugin with an update also has **What is new in** for the new version and **What changes in**, which opens the details page.
 - **Details page.** The rows of the **Versions** list open their release notes, and a plugin with an update shows **What changes from 1.0.0 to 1.2.0** above them.
-- **Update.** **Update** does not start at once. A confirmation dialog, "Update this plugin?", shows **What changes from 1.0.0 to 1.2.0** with the release notes of every version after the installed one up to the one you chose, newest first, so an update that skips versions still shows all of them. A version in between without notes shows "This version has no release notes." instead of being left out. Press **Update** in the dialog to stage the version, or cancel to leave things as they are. The update is applied at the next restart, as before.
+- **Update.** **Update** does not start at once. A confirmation dialog, "Update this plugin?", shows **What changes from 1.0.0 to 1.2.0** with the release notes of every version after the installed one up to the one you chose, newest first, so an update that skips versions still shows all of them. A version in between without notes shows "This version has no release notes." instead of being left out. Press **Update** in the dialog to stage the version, or cancel to leave things as they are. The update is reloaded in place when that is possible, and otherwise applied at the next restart (**Restart now**, for a change that was not applied).
 
 ### Licence keys
 

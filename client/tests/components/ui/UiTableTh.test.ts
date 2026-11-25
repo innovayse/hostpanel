@@ -21,4 +21,15 @@ describe('TableTh', () => {
   ])('aligns %s with %s', (align, expected) => {
     expect(mountWithKit(TableTh, { props: { align } }).classes()).toContain(expected)
   })
+
+  it('heads the actions column: right aligned and captioned "Actions" by default', () => {
+    const wrapper = mountWithKit(TableTh, { props: { actions: true } })
+
+    expect(wrapper.classes()).toContain('text-right')
+    expect(wrapper.text()).toBe('common.actions')
+  })
+
+  it('draws no caption of its own for a header that is not the actions column', () => {
+    expect(mountWithKit(TableTh).text()).toBe('')
+  })
 })

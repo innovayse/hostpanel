@@ -5,6 +5,20 @@
  * @module nuxt.config
  */
 
+import { APP_LOCALES } from './constants/appLocales'
+import { AppLocale } from './types/applocale'
+import { localizedRuntimeConfig } from './utils/localizedSetting'
+
+/** What the i18n module needs to know about each portal language beyond its code: its own name and its language tag. */
+const LOCALE_META: Record<AppLocale, { name: string, language: string }> = {
+  [AppLocale.En]: { name: 'English', language: 'en-US' },
+  [AppLocale.Ru]: { name: 'Русский', language: 'ru-RU' },
+  [AppLocale.Hy]: { name: 'Հայերեն', language: 'hy-AM' },
+  [AppLocale.De]: { name: 'Deutsch', language: 'de-DE' },
+  [AppLocale.Es]: { name: 'Español', language: 'es-ES' },
+  [AppLocale.Fr]: { name: 'Français', language: 'fr-FR' }
+}
+
 export default defineNuxtConfig({
   /**
    * Development only: render in the browser instead of on the server.
@@ -259,8 +273,7 @@ export default defineNuxtConfig({
       portalGtmId: process.env.NUXT_PUBLIC_PORTAL_GTM_ID || '',
       portalChatBaseUrl: process.env.NUXT_PUBLIC_PORTAL_CHAT_BASE_URL || '',
       portalChatWebsiteToken: process.env.NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN || '',
-      portalChatWebsiteTokenRu: process.env.NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU || '',
-      portalChatWebsiteTokenHy: process.env.NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY || '',
+      ...localizedRuntimeConfig('portalChatWebsiteToken', 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN', process.env),
       // Header app launcher. Off unless a deployment actually runs the sibling
       // apps it links to; every app URL below has a development default, so
       // presence of a URL cannot decide this on its own.
@@ -286,10 +299,8 @@ export default defineNuxtConfig({
       // Office address and an https map embed address for the contact page and footer; each is hidden when empty.
       portalContactAddress: process.env.NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS || '',
       // Per-language address and hours; empty uses the default ones above.
-      portalContactAddressRu: process.env.NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS_RU || '',
-      portalContactAddressHy: process.env.NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS_HY || '',
-      portalContactHoursRu: process.env.NUXT_PUBLIC_PORTAL_CONTACT_HOURS_RU || '',
-      portalContactHoursHy: process.env.NUXT_PUBLIC_PORTAL_CONTACT_HOURS_HY || '',
+      ...localizedRuntimeConfig('portalContactAddress', 'NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS', process.env),
+      ...localizedRuntimeConfig('portalContactHours', 'NUXT_PUBLIC_PORTAL_CONTACT_HOURS', process.env),
       portalContactMapUrl: process.env.NUXT_PUBLIC_PORTAL_CONTACT_MAP_URL || '',
       // Home hero figures and badge; each is hidden when empty.
       portalStatsClients: process.env.NUXT_PUBLIC_PORTAL_STATS_CLIENTS || '',
@@ -299,8 +310,7 @@ export default defineNuxtConfig({
       portalLegalTaxId: process.env.NUXT_PUBLIC_PORTAL_LEGAL_TAX_ID || '',
       // Company story on the About page, per language with the first as the fallback; empty sends visitors to contact.
       portalAboutText: process.env.NUXT_PUBLIC_PORTAL_ABOUT_TEXT || '',
-      portalAboutTextRu: process.env.NUXT_PUBLIC_PORTAL_ABOUT_TEXT_RU || '',
-      portalAboutTextHy: process.env.NUXT_PUBLIC_PORTAL_ABOUT_TEXT_HY || '',
+      ...localizedRuntimeConfig('portalAboutText', 'NUXT_PUBLIC_PORTAL_ABOUT_TEXT', process.env),
     }
   },
 
@@ -311,14 +321,7 @@ export default defineNuxtConfig({
     vueI18n: './i18n.config.ts',
     // Locale messages are loaded dynamically by plugins/i18n.ts via setLocaleMessage.
     // No langDir/files needed here: the plugin handles all locale JSON imports.
-    locales: [
-      { code: 'en', name: 'English', language: 'en-US' },
-      { code: 'ru', name: 'Русский', language: 'ru-RU' },
-      { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
-      { code: 'de', name: 'Deutsch', language: 'de-DE' },
-      { code: 'es', name: 'Español', language: 'es-ES' },
-      { code: 'fr', name: 'Français', language: 'fr-FR' }
-    ],
+    locales: APP_LOCALES.map(code => ({ code, ...LOCALE_META[code] })),
     defaultLocale: 'en',
     strategy: 'prefix_except_default',
     detectBrowserLanguage: false

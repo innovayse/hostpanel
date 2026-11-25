@@ -8,7 +8,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDomainsStore } from '@/stores/domains'
-import { domainStatusTone } from '@/lib/tones'
+import { DOMAIN_STATUS_OPTIONS } from '@/lib/constants'
+import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import type { DomainRegistration } from '@/types/domain'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -20,8 +21,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientDomainsListView.schema'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
-import { Icon } from '@/lib/icons'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
 import { useFilterQuery } from '@/composables/useFilterQuery'
@@ -128,14 +128,12 @@ onMounted(() => fetchDomains())
           <UiTableCell>{{ domain.name }}</UiTableCell>
           <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
-            <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
+            <UiBadge :tone="domainStatusTone(domain.status)" small>{{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}</UiBadge>
           </UiTableCell>
           <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="domain.autoRenew"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('shared.yes')"
               :off-label="t('shared.no')"
             />

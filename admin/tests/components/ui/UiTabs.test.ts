@@ -42,6 +42,26 @@ describe('UiTabs scrollbar', () => {
   })
 })
 
+describe('UiTabs focus ring', () => {
+  it('draws the keyboard ring inset and only on focus-visible, so the strip clip cannot open it into a box', () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
+    const classes = wrapper.get('[role="tab"]').classes()
+
+    expect(classes).toContain('focus-visible:ring-2')
+    expect(classes).toContain('focus-visible:ring-inset')
+    expect(classes.filter(name => name.startsWith('ring-') || name.startsWith('focus:'))).toEqual([])
+  })
+
+  it('draws the selected tab as an underline only', () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
+    const classes = wrapper.get('[role="tab"]').classes()
+
+    expect(classes).toContain('border-b-2')
+    expect(classes).toContain('border-primary-500')
+    expect(classes.filter(name => /^border-[trlxy]-/.test(name) || name === 'border')).toEqual(['border-b-2'])
+  })
+})
+
 describe('UiTabs', () => {
   it('renders a tablist with the selected tab marked', () => {
     const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
@@ -108,7 +128,7 @@ describe('UiTabs', () => {
   it('colours the selected tab with the primary accent and keeps idle tabs readable', () => {
     const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
 
-    expect(wrapper.get('[data-testid="tab-a"]').classes()).toContain('text-primary-500')
+    expect(wrapper.get('[data-testid="tab-a"]').classes()).toContain('text-text-accent')
     expect(wrapper.get('[data-testid="tab-c"]').classes()).toContain('text-text-secondary')
   })
 

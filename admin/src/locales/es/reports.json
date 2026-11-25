@@ -415,5 +415,24 @@
   "sidebar": {
     "search": "Buscar informes",
     "empty": "No se encontraron informes"
+  },
+  "statusWord": {
+    "Active": "Activo",
+    "Paid": "Pagada",
+    "Completed": "Completado",
+    "Pending": "Pendiente",
+    "Invoice": "Factura",
+    "Payment": "Pago",
+    "Unpaid": "Sin pagar",
+    "Suspended": "Suspendido",
+    "Overdue": "Vencida",
+    "Expired": "Caducado",
+    "Refunded": "Reembolsada",
+    "PartiallyRefunded": "Reembolsada parcialmente",
+    "Transferred": "Transferido",
+    "Draft": "Borrador",
+    "Inactive": "Inactivo",
+    "Cancelled": "Cancelado",
+    "Terminated": "Terminado"
   }
 }

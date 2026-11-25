@@ -33,6 +33,10 @@ const rows: Setting[] = [
   { id: 14, key: 'portal.contact.timezone', value: 'UTC+4' },
   { id: 15, key: 'portal.contact.address.ru', value: 'ул. Примерная, 1' },
   { id: 16, key: 'portal.contact.address.hy', value: 'Օրինակ փողոց 1' },
+  { id: 17, key: 'portal.contact.address.de', value: 'Beispielstrasse 1' },
+  { id: 18, key: 'portal.contact.address.es', value: 'Calle Ejemplo 1' },
+  { id: 19, key: 'portal.contact.hours.de', value: 'Mo-Fr 09:00-18:00' },
+  { id: 20, key: 'portal.contact.hours.es', value: 'Lu-Vi 09:00-18:00' },
 ]
 
 /**
@@ -115,6 +119,25 @@ describe('StorefrontContentCard', () => {
     expect(valueOf(wrapper, 'storefront-contact-address-ru')).toBe('ул. Примерная, 1')
     await wrapper.get('[data-testid="storefront-contact-address-tab-hy"]').trigger('click')
     expect(valueOf(wrapper, 'storefront-contact-address-hy')).toBe('Օրինակ փողոց 1')
+    await wrapper.get('[data-testid="storefront-contact-address-tab-de"]').trigger('click')
+    expect(valueOf(wrapper, 'storefront-contact-address-de')).toBe('Beispielstrasse 1')
+    await wrapper.get('[data-testid="storefront-contact-address-tab-es"]').trigger('click')
+    expect(valueOf(wrapper, 'storefront-contact-address-es')).toBe('Calle Ejemplo 1')
+    await wrapper.get('[data-testid="storefront-contact-hours-tab-de"]').trigger('click')
+    expect(valueOf(wrapper, 'storefront-contact-hours-de')).toBe('Mo-Fr 09:00-18:00')
+  })
+
+  it('draws a tab for every supported language, German and Spanish included', async () => {
+    const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
+
+    expect(wrapper.findAll('[data-testid^="storefront-contact-address-tab-"][role="tab"]').map((tab) => tab.attributes('data-testid'))).toEqual([
+      'storefront-contact-address-tab-en',
+      'storefront-contact-address-tab-ru',
+      'storefront-contact-address-tab-hy',
+      'storefront-contact-address-tab-de',
+      'storefront-contact-address-tab-es',
+      'storefront-contact-address-tab-fr',
+    ])
   })
 
   it('marks the language tabs whose row is empty', async () => {

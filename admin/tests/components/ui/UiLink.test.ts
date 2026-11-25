@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import UiLink from '@/components/ui/UiLink.vue'
 import { UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 describe('UiLink', () => {
   it('renders the native a with its slot', () => {
@@ -64,14 +65,6 @@ describe('UiLink', () => {
     expect(wrapper.classes()).toContain('text-[0.8125rem]')
   })
 
-  it('draws a button-like look as a pill when asked', () => {
-    const pill = mount(UiLink, { props: { variant: 'ghost', size: 'sm', pill: true } })
-    const plain = mount(UiLink, { props: { variant: 'ghost', size: 'sm' } })
-
-    expect(pill.classes()).toContain('rounded-pill')
-    expect(plain.classes()).not.toContain('rounded-pill')
-  })
-
   it('draws the icon of its action kind before the label, on a route and on an address', () => {
     const route = mount(UiLink, { props: { to: '/x', action: UiActionKind.Add }, slots: { default: 'Add' }, global: { stubs: { RouterLink: RouterLinkStub } } })
     const anchor = mount(UiLink, { props: { href: '/x', action: UiActionKind.Add }, slots: { default: 'Add' } })
@@ -79,5 +72,18 @@ describe('UiLink', () => {
     expect(route.find('svg').exists()).toBe(true)
     expect(anchor.find('svg').exists()).toBe(true)
     expect(mount(UiLink, { props: { href: '/x' } }).find('svg').exists()).toBe(false)
+  })
+
+  it('draws a create action primary, whatever look the call site asks for', () => {
+    const wrapper = mount(UiLink, { props: { href: '/x', action: UiActionKind.Add, variant: UiButtonVariant.Link } })
+
+    expect(wrapper.classes()).toContain('not-disabled:gradient-brand')
+    expect(wrapper.classes()).not.toContain('text-text-accent')
+  })
+
+  it('keeps the asked look for an added row', () => {
+    const wrapper = mount(UiLink, { props: { href: '/x', action: UiActionKind.AddRow, variant: UiButtonVariant.Secondary } })
+
+    expect(wrapper.classes()).toContain('bg-surface-field')
   })
 })

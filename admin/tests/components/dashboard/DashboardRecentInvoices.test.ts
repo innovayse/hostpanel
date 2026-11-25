@@ -21,6 +21,7 @@ describe('DashboardRecentInvoices', () => {
     const wrapper = mountWithApp(DashboardRecentInvoices, { props: { invoices: [], loading: false } })
 
     expect(wrapper.text()).toContain('No invoices yet.')
+    expect(wrapper.find('[data-testid="dashboard-recent-invoices-empty"]').exists()).toBe(true)
   })
 
   it('keeps the title row and shows placeholders while the first load runs', () => {

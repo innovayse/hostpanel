@@ -221,7 +221,7 @@ describe('InvoicesListView', () => {
 
     const rows = wrapper.findAll('[data-testid="billing-invoices-table"] tbody tr')
     expect(rows[0]?.text()).toContain('12.50 USD')
-    expect(rows[1]?.text()).toContain('53160.00 AMD')
+    expect(rows[1]?.text()).toContain('53,160.00 AMD')
     expect(rows[1]?.text()).not.toContain('USD')
   })
 

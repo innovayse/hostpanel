@@ -119,7 +119,7 @@ const LANGUAGE_LABEL_KEYS: Record<AppLocale, string> = {
 }
 
 /**
- * The languages the backend accepts, keyed by the codes in `LocaleOptions.SupportedLocales`: every portal language.
+ * The languages the backend accepts, keyed by the codes of `APP_LOCALES`: every portal language.
  * One vocabulary end to end: a language word such as "english" matches no supported locale and
  * would be served as English by accident.
  */

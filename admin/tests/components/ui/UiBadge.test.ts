@@ -13,12 +13,23 @@ describe('UiBadge', () => {
     expect(wrapper.classes()).toContain('rounded-2xl')
   })
 
-  it('wraps a long label inside its box instead of running out of it', () => {
+  it('keeps a long label on one line instead of wrapping it', () => {
     const classes = mount(UiBadge, { slots: { default: 'A very long sentence' } }).classes()
 
-    expect(classes).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full', 'whitespace-normal', 'break-words']))
-    expect(classes).not.toContain('whitespace-nowrap')
+    expect(classes).toEqual(expect.arrayContaining(['whitespace-nowrap', 'shrink-0']))
+    expect(classes).not.toContain('whitespace-normal')
+    expect(classes).not.toContain('break-words')
     expect(classes).not.toContain('rounded-pill')
+  })
+
+  it('has one fixed height per size and no vertical padding', () => {
+    const full = mount(UiBadge).classes()
+    const small = mount(UiBadge, { props: { small: true } }).classes()
+
+    expect(full).toContain('h-6')
+    expect(small).toContain('h-4')
+    expect(full.some((name) => /^py-/.test(name))).toBe(false)
+    expect(small.some((name) => /^py-/.test(name))).toBe(false)
   })
 
   it('takes its colours from the tone', () => {
@@ -49,7 +60,7 @@ describe('UiBadge', () => {
     expect(mount(UiBadge, { props: { small: true } }).classes()).toContain('text-[0.65rem]')
   })
 
-  it('sets the full size as the concept pill: 12px, semibold, 4px by 10px', () => {
-    expect(mount(UiBadge).classes()).toEqual(expect.arrayContaining(['text-xs', 'font-semibold', 'px-2.5', 'py-1']))
+  it('sets the full size as the concept pill: 12px, semibold, 24px high, 10px padding', () => {
+    expect(mount(UiBadge).classes()).toEqual(expect.arrayContaining(['text-xs', 'font-semibold', 'px-2.5', 'h-6']))
   })
 })

@@ -66,7 +66,7 @@ export const BLOCK_LIST_TABLE: SkeletonTable = {
     { key: 'value', label: 'shared.value', size: UiColumnSize.Grow },
     { key: 'note', label: 'fraud.blockList.note' },
     { key: 'addedAt', label: 'fraud.blockList.addedAt', kind: UiColumnKind.Date },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

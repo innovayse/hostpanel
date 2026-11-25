@@ -12,6 +12,7 @@ import { json } from '../helpers/fetch'
 import { DomainStatus } from '@/types/domain'
 import schema from '@/views/ClientDomainsListView.schema'
 import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** One domain of the client as the list endpoint returns it. */
 const domain = {
@@ -55,7 +56,7 @@ describe('ClientDomainsListView', () => {
     expect(mock.mock.calls.map(([url]) => url as string).at(-1)).toBe('/api/domains?clientId=5&page=3&pageSize=20')
   })
 
-  it('grows the domain column and shows the auto-renew state as an icon', async () => {
+  it('grows the domain column and shows the auto-renew state as a badge', async () => {
     stubRoutes({ 'GET /api/domains': () => json({ items: [domain], totalCount: 1 }) })
     const { wrapper } = await mountRouted(ClientDomainsListView, '/clients/:id/domains', '/clients/5/domains')
     await flushPromises()
@@ -64,7 +65,7 @@ describe('ClientDomainsListView', () => {
     expect(headers.find((header) => header.text() === 'Domain Name')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
     expect(headers.find((header) => header.text() === 'Auto-Renew')?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
     expect(headers.find((header) => header.text() === 'Auto-Renew')?.classes()).not.toContain('max-w-0')
-    expect(wrapper.get('tbody tr [role="img"]').attributes('aria-label')).toBe('Yes')
+    expect(wrapper.get('tbody tr').getComponent(UiStatusBadge).text()).toBe('Yes')
   })
 
   it('loads again from the Retry of a refused load', async () => {

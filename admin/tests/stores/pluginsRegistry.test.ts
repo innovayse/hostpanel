@@ -127,6 +127,16 @@ describe('pluginsStore.fetchRegistryUpdates', () => {
     expect(store.updateVersions).toEqual({ 'example-pay': '2.0.0' })
   })
 
+  it('is checking until the first check answers, then not, even after a refusal', async () => {
+    stubFetch(problem('Registry unavailable.', 503))
+    const store = usePluginsStore()
+    expect(store.registryUpdatesChecking).toBe(true)
+
+    await store.fetchRegistryUpdates()
+
+    expect(store.registryUpdatesChecking).toBe(false)
+  })
+
   it('leaves the list empty on a refusal, with no error shown', async () => {
     stubFetch(problem('Registry unavailable.', 503))
     const store = usePluginsStore()
@@ -356,7 +366,7 @@ describe('pluginsStore busy state', () => {
 describe('pluginsStore per call outcomes', () => {
   it('gives two parallel installs each its own result', async () => {
     stubRoutes({
-      'POST /api/admin/plugins/registry/slow-one/install': () => json({ requiresRestart: true, stagedVersion: '3.0.0' }),
+      'POST /api/admin/plugins/registry/slow-one/install': () => json({ requiresRestart: true, stagedVersion: '3.0.0', reloaded: false, restarting: false }),
       'POST /api/admin/plugins/registry/bad-one/install': () => problem('That publisher is not trusted.', 403),
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
@@ -369,8 +379,8 @@ describe('pluginsStore per call outcomes', () => {
       store.installFromRegistry('bad-one', '1.0.0'),
     ])
 
-    expect(first).toEqual({ ok: true, stagedVersion: '3.0.0', error: null })
-    expect(second).toEqual({ ok: false, stagedVersion: null, error: 'That publisher is not trusted.' })
+    expect(first).toEqual({ ok: true, stagedVersion: '3.0.0', reloaded: false, restarting: false, error: null })
+    expect(second).toEqual({ ok: false, stagedVersion: null, reloaded: false, restarting: false, error: 'That publisher is not trusted.' })
   })
 
   it('returns the sentence of a refused licence save and removal', async () => {

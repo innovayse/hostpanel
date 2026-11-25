@@ -22,7 +22,7 @@ import UiLabel from '@/components/ui/UiLabel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiDataTable from '@/components/ui/UiDataTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -107,10 +107,10 @@ const nonBaseCurrencies = computed<CurrencyDto[]>(() => store.currencies.filter(
  * Formats a sample amount with a currency's prefix, suffix and decimals.
  *
  * @param currency - The currency to format the sample for.
- * @returns The formatted sample string, e.g. "2.99 → $2.99".
+ * @returns The sample amount 2.99 formatted for the currency, e.g. "$2.99".
  */
 const formatSample = (currency: CurrencyDto): string =>
-  `2.99 → ${formatAffixed(2.99, currency)}`
+  formatAffixed(2.99, currency)
 
 /** Opens the dialog in create mode. */
 const openCreate = (): void => {
@@ -319,10 +319,8 @@ onMounted(() => Promise.all([store.fetchAll(), loadSettings()]))
             </UiBadge>
           </UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="c.isEnabled"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('currencies.enabledBadge')"
               :off-label="t('currencies.disabledBadge')"
             />

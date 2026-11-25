@@ -21,7 +21,7 @@ const schema: ListSkeletonSchema = {
       { key: 'kind', label: 'vatRates.table.kind', align: UiAlign.Left, kind: UiColumnKind.Status },
       { key: 'rate', label: 'vatRates.table.rate', numeric: true, size: UiColumnSize.Compact },
       { key: 'validFrom', label: 'vatRates.table.validFrom', align: UiAlign.Left, kind: UiColumnKind.Date },
-      { key: 'actions', label: 'vatRates.table.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

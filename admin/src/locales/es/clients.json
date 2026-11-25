@@ -36,11 +36,6 @@
     "consentHistory": "Historial de consentimiento"
   },
   "clientForm": {
-    "english": "Inglés",
-    "russian": "Ruso",
-    "armenian": "Armenio",
-    "german": "Alemán",
-    "spanish": "Español",
     "suspended": "Suspendido",
     "closed": "Cerrado",
     "emailIsRequired": "El correo electrónico es obligatorio",
@@ -212,7 +207,7 @@
     "registerDomain": "Registrar dominio",
     "registerThisDomainWithThe": "¿Registrar este dominio con el registrador?",
     "eppAuthorizationCode": "Código de autorización EPP",
-    "useThisCodeToTransfer": "Usa este código para transferir tu dominio a otro reg🆘istrador. Manténlo privado.",
+    "useThisCodeToTransfer": "Usa este código para transferir tu dominio a otro registrador. Manténlo privado.",
     "registrarCommandDone": "Listo. El registrador aceptó el cambio.",
     "contactSaved": "Detalles de contacto guardados."
   },
@@ -387,9 +382,7 @@
     "2fa": "2FA",
     "joined": "Unido",
     "userDeleted": "Usuario eliminado",
-    "twoFactorAuthenticationEnabled": "Autenticación de Dos Factores habilitada",
     "on": "Activado",
-    "twoFactorAuthenticationDisabled": "Autenticación de Dos Factores deshabilitada",
     "off": "Desactivado",
     "noClientsMatchYourFilters": "No hay clientes que coincidan con tus filtros",
     "noClientsFound": "No se encontraron clientes",

@@ -25,6 +25,16 @@ export enum CreditNoteMethod {
   GatewayRefund = 'GatewayRefund',
 }
 
+/** Why no credit note can be issued on an invoice right now; an invoice that can take one has none of these. */
+export enum CreditNoteBlock {
+  /** A credit top-up is credit already; a paid one is refunded by hand. */
+  TopUp = 'TopUp',
+  /** The invoice holds no paid money a note could reverse. */
+  NotPaid = 'NotPaid',
+  /** Earlier notes and refunds already cover the whole invoice. */
+  NothingLeft = 'NothingLeft',
+}
+
 /** A credit note as a list row or the top of its page. */
 export interface CreditNote {
   /** Primary key. */

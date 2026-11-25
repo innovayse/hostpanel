@@ -2,6 +2,7 @@
  * Unit tests for the shared limits: time units agree with each other, the notice and debounce
  * timings are positive, and the page sizes keep the values the lists were written against.
  */
+import { PollKind } from '@/types/poller'
 import { describe, expect, it } from 'vitest'
 import {
   BILLABLE_ITEM_DESCRIPTION_MAX_LENGTH,
@@ -14,7 +15,7 @@ import {
   MS_PER_MINUTE,
   MS_PER_SECOND,
   NOTICE_VISIBLE_MS,
-  POLL_INTERVAL_MS,
+  POLL_INTERVALS_MS,
   REPORT_PAGE_SIZE,
   SEARCH_DEBOUNCE_MS,
   SHORT_TEXT_MAX_LENGTH,
@@ -51,8 +52,16 @@ describe('limits', () => {
     expect(MAX_PERCENT).toBe(100)
   })
 
-  it('keeps the migration poll and copied-notice timings', () => {
-    expect(POLL_INTERVAL_MS).toBe(2000)
+  it('keeps the interval of every kind of poller', () => {
+    expect(POLL_INTERVALS_MS).toEqual({
+      [PollKind.MigrationStatus]: 2000,
+      [PollKind.ServerRestart]: 2000,
+      [PollKind.PluginFollowUp]: 3000,
+      [PollKind.DemoCountdown]: 60000,
+    })
+  })
+
+  it('keeps the copied-notice timing', () => {
     expect(COPIED_VISIBLE_MS).toBe(2000)
   })
 })

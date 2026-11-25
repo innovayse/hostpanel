@@ -4,13 +4,11 @@
  * what happens to the credit the payment created, and send it. A draft, cancelled or already
  * refunded invoice takes no refund, so the form is replaced by the reason. The refund is confirmed
  * first (amount and method in the prompt), and its outcome (success, or the API's sentence) shows
- * in the tab. The line items and the transaction ledgers sit below.
+ * in the tab.
  */
 import { computed, ref, watch } from 'vue'
 import { formatPlainAmount } from '@/lib/money'
 import { useI18n } from 'vue-i18n'
-import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
-import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -43,7 +41,7 @@ const { t } = useI18n()
 const props = defineProps<{
   /** The invoice to refund a payment of. */
   invoice: InvoiceDetail
-  /** True to show the notice and the items without the refund form. */
+  /** True to show the notice without the refund form. */
   readonly?: boolean
 }>()
 
@@ -345,8 +343,5 @@ const refund = async (): Promise<void> => {
         @close="dismiss"
       />
     </template>
-
-    <InvoiceItemsSection :invoice="invoice" :readonly="readonly" />
-    <InvoiceTransactionsSection :invoice="invoice" />
   </UiStack>
 </template>

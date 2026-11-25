@@ -14,7 +14,8 @@ import { useClientGroupsStore } from '@/stores/clientGroups'
 import { useListQuery } from '@/composables/useListQuery'
 import type { ClientFilters } from '@/types/client'
 import { ClientStatus } from '@/types/client'
-import { clientStatusTone } from '@/lib/tones'
+import { CLIENT_STATUS_OPTIONS } from '@/lib/constants'
+import { clientStatusTone, statusLabel } from '@/lib/tones'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { PAGE_SIZE_OPTIONS } from '@/lib/limits'
@@ -33,7 +34,7 @@ import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -306,7 +307,7 @@ onMounted(() => {
             <UiBadge v-if="client.isUserDeleted" :tone="UiTone.Danger" small>
               {{ t('clients.clientsList.userDeleted') }}
             </UiBadge>
-            <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
+            <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ statusLabel(CLIENT_STATUS_OPTIONS, client.status) }}</UiBadge>
           </UiTableCell>
           <UiTableCell hide-below="xl">
             <ClientGroupBadge
@@ -317,12 +318,10 @@ onMounted(() => {
             <template v-else>{{ EMPTY_VALUE }}</template>
           </UiTableCell>
           <UiTableCell hide-below="xl">
-            <UiStatusIcon
+            <UiStatusBadge
               :state="client.twoFactorEnabled"
-              :on-icon="Icon.ShieldCheck"
-              :off-icon="Icon.ShieldOff"
-              :on-label="t('clients.clientsList.twoFactorAuthenticationEnabled')"
-              :off-label="t('clients.clientsList.twoFactorAuthenticationDisabled')"
+              :on-label="t('shared.enabled')"
+              :off-label="t('shared.disabled')"
             />
           </UiTableCell>
           <UiTableCell muted hide-below="lg">{{ formatDate(client.createdAt) }}</UiTableCell>

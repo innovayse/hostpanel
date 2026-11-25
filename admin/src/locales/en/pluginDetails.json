@@ -37,7 +37,6 @@
     "label": "Licence key",
     "placeholder": "Paste the licence key",
     "save": "Save key",
-    "remove": "Remove key",
     "needed": "Save a licence key before you install this plugin."
   },
   "versions": {

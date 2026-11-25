@@ -107,6 +107,7 @@ internal static class PluginActivationTestSeeds
             services ?? new ServiceCollection().BuildServiceProvider(),
             new ConfigurationBuilder().Build(),
             registry ?? new PluginRegistry(),
+            new PluginUsageLeases(),
             NullLogger<PluginActivator>.Instance);
     }
 }

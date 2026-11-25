@@ -36,11 +36,6 @@
     "consentHistory": "Einwilligungsverlauf"
   },
   "clientForm": {
-    "english": "Englisch",
-    "russian": "Russisch",
-    "armenian": "Armenisch",
-    "german": "Deutsch",
-    "spanish": "Spanisch",
     "suspended": "Gesperrt",
     "closed": "Geschlossen",
     "emailIsRequired": "E-Mail ist erforderlich",
@@ -387,9 +382,7 @@
     "2fa": "2FA",
     "joined": "Registriert seit",
     "userDeleted": "Benutzer gelöscht",
-    "twoFactorAuthenticationEnabled": "Zwei-Faktor-Authentifizierung aktiviert",
     "on": "Ein",
-    "twoFactorAuthenticationDisabled": "Zwei-Faktor-Authentifizierung deaktiviert",
     "off": "Aus",
     "noClientsMatchYourFilters": "Keine Kunden entsprechen Ihren Filtern",
     "noClientsFound": "Keine Kunden gefunden",

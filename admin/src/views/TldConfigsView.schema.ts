@@ -30,7 +30,7 @@ const schema: ListSkeletonSchema = {
       { key: 'margin', label: 'settings.tldConfigs.margin', numeric: true, size: UiColumnSize.Compact },
       { key: 'categories', label: 'shared.categories', align: UiAlign.Left },
       { key: 'lastSynced', label: 'settings.tldConfigs.lastSynced', align: UiAlign.Left, kind: UiColumnKind.Date },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

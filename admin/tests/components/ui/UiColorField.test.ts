@@ -66,3 +66,12 @@ describe('UiColorField', () => {
     expect(entered).toBe(1)
   })
 })
+
+describe('UiColorField swatch frame', () => {
+  it('has the control border token and the height of the text field beside it', () => {
+    const frame = mount(UiColorField, { props: { modelValue: '#0ea5e9' } }).get('svg').element.parentElement as HTMLElement
+
+    expect(frame.className).toContain('border-border-control')
+    expect(frame.className).toContain('h-10.5')
+  })
+})

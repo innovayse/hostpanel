@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useDashboardApi } from '@/composables/apis/useDashboardApi'
 import { DashboardPeriod } from '@/types/dashboardcharts'
-import { json, problem, stubFetch } from '../../helpers/fetch'
+import { callOf, json, problem, stubFetch } from '../../helpers/fetch'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -32,6 +32,27 @@ describe('useDashboardApi', () => {
 
     await useDashboardApi().fetchActivity(5)
     expect(String(mock.mock.calls[0]?.[0])).toContain('/admin/dashboard/activity?limit=5')
+  })
+
+  it('markActivityRead posts the event key', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    await useDashboardApi().markActivityRead('InvoiceOverdue:33:1')
+
+    const call = callOf(mock)
+    expect(call.method).toBe('POST')
+    expect(call.url).toContain('/admin/dashboard/activity/read')
+    expect(call.body).toEqual({ eventKey: 'InvoiceOverdue:33:1' })
+  })
+
+  it('markAllActivityRead posts to the read-all route', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    await useDashboardApi().markAllActivityRead()
+
+    const call = callOf(mock)
+    expect(call.method).toBe('POST')
+    expect(call.url).toContain('/admin/dashboard/activity/read-all')
   })
 
   it('rejects when the API refuses', async () => {

@@ -64,7 +64,7 @@ const classes = computed<string[]>(() => [fitClasses[props.fit], roundedClasses[
 <template>
   <div
     v-if="fallback && !src"
-    class="flex items-center justify-center border border-border bg-surface-field text-text-muted"
+    class="flex items-center justify-center border border-border bg-surface-inset text-text-muted"
     :class="classes"
     data-testid="ui-image-fallback"
   >

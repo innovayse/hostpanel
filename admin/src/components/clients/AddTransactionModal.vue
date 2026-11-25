@@ -7,7 +7,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBillingStore } from '@/stores/billing'
 import { useClientTransactionsStore } from '@/stores/clientTransactions'
-import { GATEWAY_OPTIONS } from '@/lib/constants'
+import { GATEWAY_OPTIONS, INVOICE_STATUS_OPTIONS } from '@/lib/constants'
+import { statusLabel } from '@/lib/tones'
 import { toDateInputValue } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import type { Invoice } from '@/types/invoice'
@@ -84,7 +85,7 @@ const invoiceOptions = computed<UiSelectOption<number | null>[]>(() => [
   ...invoices.value.map(invoice => ({
     value: invoice.id,
     label: `#${invoice.id}`,
-    description: `${invoice.status} · ${formatPlainAmount(invoice.total, invoice.currency)}`,
+    description: `${statusLabel(INVOICE_STATUS_OPTIONS, invoice.status)} · ${formatPlainAmount(invoice.total, invoice.currency)}`,
     keywords: invoice.status,
   })),
 ])

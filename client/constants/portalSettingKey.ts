@@ -38,10 +38,6 @@ export enum PortalSettingKey {
   ChatBaseUrl = 'portal.chat.base_url',
   /** Live chat website token. */
   ChatWebsiteToken = 'portal.chat.website_token',
-  /** Live chat website token, Russian. */
-  ChatWebsiteTokenRu = 'portal.chat.website_token.ru',
-  /** Live chat website token, Armenian. */
-  ChatWebsiteTokenHy = 'portal.chat.website_token.hy',
   /** Live chat provider. */
   ChatProvider = 'portal.chat.provider',
   /** WhatsApp number. */
@@ -116,48 +112,16 @@ export enum PortalSettingKey {
   MigrationFree = 'portal.migration.free',
   /** Company story on the About page, default language. */
   AboutText = 'portal.about.text',
-  /** Company story for Russian visitors. */
-  AboutTextRu = 'portal.about.text.ru',
-  /** Company story for Armenian visitors. */
-  AboutTextHy = 'portal.about.text.hy',
   /** The operator's own terms of service, default language. */
   LegalTerms = 'portal.legal.terms',
-  /** The operator's own terms of service for Russian visitors. */
-  LegalTermsRu = 'portal.legal.terms.ru',
-  /** The operator's own terms of service for Armenian visitors. */
-  LegalTermsHy = 'portal.legal.terms.hy',
   /** The operator's own privacy policy, default language. */
   LegalPrivacy = 'portal.legal.privacy',
-  /** The operator's own privacy policy for Russian visitors. */
-  LegalPrivacyRu = 'portal.legal.privacy.ru',
-  /** The operator's own privacy policy for Armenian visitors. */
-  LegalPrivacyHy = 'portal.legal.privacy.hy',
   /** The operator's own refund policy, default language. */
   LegalRefund = 'portal.legal.refund',
-  /** The operator's own refund policy for Russian visitors. */
-  LegalRefundRu = 'portal.legal.refund.ru',
-  /** The operator's own refund policy for Armenian visitors. */
-  LegalRefundHy = 'portal.legal.refund.hy',
   /** The operator's own acceptable use policy, default language. */
   LegalAcceptableUse = 'portal.legal.acceptable_use',
-  /** The operator's own acceptable use policy for Russian visitors. */
-  LegalAcceptableUseRu = 'portal.legal.acceptable_use.ru',
-  /** The operator's own acceptable use policy for Armenian visitors. */
-  LegalAcceptableUseHy = 'portal.legal.acceptable_use.hy',
   /** The operator's own cookie policy, default language. */
   LegalCookies = 'portal.legal.cookies',
-  /** The operator's own cookie policy for Russian visitors. */
-  LegalCookiesRu = 'portal.legal.cookies.ru',
-  /** The operator's own cookie policy for Armenian visitors. */
-  LegalCookiesHy = 'portal.legal.cookies.hy',
-  /** Office address for Russian visitors. */
-  ContactAddressRu = 'portal.contact.address.ru',
-  /** Office address for Armenian visitors. */
-  ContactAddressHy = 'portal.contact.address.hy',
-  /** Support working hours for Russian visitors. */
-  ContactHoursRu = 'portal.contact.hours.ru',
-  /** Support working hours for Armenian visitors. */
-  ContactHoursHy = 'portal.contact.hours.hy',
   /** Home section switch: stats strip. */
   SectionStats = 'portal.sections.stats',
   /** Home section switch: partners. */

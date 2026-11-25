@@ -1810,4 +1810,7 @@
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
     <value>Курсор страницы регистратора слишком длинный.</value>
   </data>
+  <data name="ActivityEventKeyInvalid" xml:space="preserve">
+    <value>Это недопустимый идентификатор уведомления.</value>
+  </data>
 </root>

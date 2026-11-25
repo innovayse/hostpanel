@@ -8,6 +8,7 @@ import { defineComponent, h } from 'vue'
 import type { PropType } from 'vue'
 import type { VueWrapper } from '@vue/test-utils'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
+import { UiColumnKind } from '@/utils/ui/table'
 import { mountScreen } from '../../helpers/mount'
 
 vi.mock('vuedraggable', async () => {
@@ -64,7 +65,7 @@ const baseProps = {
     moveUp: 'widget-move-up',
     moveDown: 'widget-move-down',
   },
-  columns: ['Name'],
+  columns: [{ key: 'name', caption: 'Name' }],
   items: widgets,
   loading: false,
   error: null,
@@ -103,6 +104,22 @@ describe('StorefrontListTable', () => {
     expect(wrapper.get('[data-testid="widgets-view"]').text()).toContain('Widgets')
     expect(wrapper.findAll('[data-testid^="widget-row-"]').map((row) => row.attributes('data-testid'))).toEqual(['widget-row-2', 'widget-row-1'])
     expect(wrapper.get('[data-testid="cell-2"]').text()).toBe('First')
+  })
+
+  it('gives an image column the shared fixed width and a text column its share', async () => {
+    const { wrapper } = await mountScreen(hostWith({
+      columns: [
+        { key: 'logo', caption: 'Logo', kind: UiColumnKind.Image },
+        { key: 'name', caption: 'Name' },
+      ],
+    }))
+
+    const headers = wrapper.findAll('thead th')
+    const logo = headers.find((header) => header.text() === 'Logo')
+    const name = headers.find((header) => header.text() === 'Name')
+    expect(logo?.classes()).toEqual(expect.arrayContaining(['w-24', 'whitespace-nowrap']))
+    expect(logo?.classes()).not.toContain('w-[28%]')
+    expect(name?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'truncate']))
   })
 
   it('says so when there are no entries', async () => {

@@ -747,6 +747,12 @@
 <data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչի փաթեթի ստորագրությունը չի համապատասխանում նրա ֆայլերին։ Այն փոփոխվել է ստորագրելուց հետո։</value>
   </data>
+<data name="HOST_DRAINING" xml:space="preserve">
+    <value>Սերվերը վերագործարկվում է և նոր հարցումներ չի ընդունում։ Այն շուտով կվերադառնա։</value>
+  </data>
+<data name="PLUGIN_APPLY_FAILED" xml:space="preserve">
+    <value>Այս հավելագրիչի նոր տարբերակը չհաջողվեց բեռնել, ուստի վերականգնվեց նախորդ տարբերակը։ Պատճառը ցուցադրվում է հավելագրիչների ցանկում։</value>
+  </data>
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Այս հավելագրիչը սերվերի կազմում է և չի կարող հեռացվել կամ փոխարինվել։</value>
   </data>
@@ -838,7 +844,13 @@
     <value>Այդ ֆայլը հնարավոր չեղավ կարդալ որպես պատկեր։ Վերբեռնեք PNG, JPEG, WebP, GIF կամ BMP։</value>
   </data>
 <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
-    <value>Պատկերը չափազանց մեծ է։ Վերբեռնեք 5 ՄԲ-ից փոքր ֆայլ, կողմով առավելագույնը 8000 պիքսել։</value>
+    <value>Ֆայլը գերազանցում է 5 ՄԲ սահմանը։ Վերբեռնեք ավելի փոքր ֆայլ։</value>
+  </data>
+<data name="BRANDING_IMAGE_DIMENSIONS_TOO_LARGE" xml:space="preserve">
+    <value>Պատկերը մեկ կողմով ունի 8000-ից ավելի պիքսել կամ ընդհանուր առմամբ 40 միլիոնից ավելի պիքսել։ Փոքրացրեք և նորից վերբեռնեք։</value>
+  </data>
+<data name="STORAGE_NOT_WRITABLE" xml:space="preserve">
+    <value>Սերվերը այս պահին չի կարող պահպանել վերբեռնված ֆայլերը, քանի որ նրա վերբեռնման պանակը գրելու համար հասանելի չէ։ Խնդրեք ադմինիստրատորին ստուգել պանակի թույլտվությունները։</value>
   </data>
 <data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
     <value>Այս տեղակայման հաշիվները պատկանում են միասնական մուտքի ծառայությանը, ուստի հաշիվ այստեղ չի կարելի ստեղծել։ Նախ ավելացրեք անձին միասնական մուտքի ծառայությունը։</value>

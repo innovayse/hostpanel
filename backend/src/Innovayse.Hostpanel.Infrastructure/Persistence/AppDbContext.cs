@@ -77,6 +77,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <inheritdoc/>
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
+    /// <inheritdoc/>
+    public DbSet<ActivityRead> ActivityReads => Set<ActivityRead>();
+
     /// <summary>
     /// Gets the roles held by each subject. Separate from Identity's own role tables
     /// because it is keyed by whatever the configured identity provider calls a person,
@@ -408,7 +411,7 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
-    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
+    /// call marked the same activity event read, or another call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
     /// another call created the service of the same order line first, or another call recorded the same client's trial of
     /// the product first, or another attempt recorded the renewal of the same
     /// order line first, or another call opened a plan change request for the same service first, or another client
@@ -518,6 +521,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // key installer counts again from a fresh read and then finds the key already there.
             throw new ConcurrencyConflictException(
                 "Another add recorded the same SSH key on the service concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: ActivityReadConfiguration.PrimaryKeyName,
+        })
+        {
+            // Two marks of the same event by the same admin at once: the same lost race as a concurrent save.
+            // MarkActivityReadHandler answers it as the replay it is, because the event is read either way.
+            throw new ConcurrencyConflictException(
+                "Another call marked the same activity event read concurrently.", ex);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {

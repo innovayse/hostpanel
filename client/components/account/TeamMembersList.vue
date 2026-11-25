@@ -15,7 +15,7 @@
             <UiTableTh>{{ $t('client.users.colUser') }}</UiTableTh>
             <UiTableTh>{{ $t('client.users.colRole') }}</UiTableTh>
             <UiTableTh>{{ $t('client.users.lastLogin') }}</UiTableTh>
-            <UiTableTh />
+            <UiTableTh actions />
           </UiTableRow>
         </UiTableHead>
       </template>

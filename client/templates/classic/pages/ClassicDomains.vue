@@ -165,7 +165,7 @@
                     <UiTableTh align="center" class="text-xs font-semibold uppercase tracking-wider text-classic-muted">{{ $t('domains.pricing.register') }}</UiTableTh>
                     <UiTableTh align="center" class="text-xs font-semibold uppercase tracking-wider text-classic-muted">{{ $t('domains.pricing.transfer') }}</UiTableTh>
                     <UiTableTh align="center" class="text-xs font-semibold uppercase tracking-wider text-classic-muted">{{ $t('domains.pricing.renew') }}</UiTableTh>
-                    <UiTableTh class="!pr-6" />
+                    <UiTableTh actions class="!pr-6" />
                   </UiTableRow>
                 </UiTableHead>
                 <UiTableBody>

@@ -38,7 +38,7 @@ const plugin = {
 const mountList = async (props: Record<string, unknown> = {}, url = '/plugins') =>
   mountScreen(
     PluginInstalledList,
-    { plugins: [plugin], updateVersions: {}, loading: false, error: null, updatingIds: [], ...props },
+    { plugins: [plugin], updateVersions: {}, checkingUpdates: false, loading: false, error: null, updatingIds: [], ...props },
     url,
     '/plugins',
   )
@@ -55,13 +55,36 @@ describe('PluginInstalledList', () => {
     expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
   })
 
-  it('offers Update instead of the gear when a newer version is on offer, and emits it', async () => {
+  it('keeps the gear beside Update when a newer version is on offer, and emits the update', async () => {
     const { wrapper } = await mountList({ updateVersions: { 'example-pay': '2.0.0' } })
 
-    expect(wrapper.find('[data-testid="plugin-settings-example-pay"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-settings-example-pay"]').exists()).toBe(true)
     await wrapper.get('[data-testid="plugin-update-button-example-pay"]').trigger('click')
 
     expect(wrapper.emitted('update')).toEqual([['example-pay', '2.0.0']])
+  })
+
+  it('holds placeholders for the update badge and button, beside the gear, while the registry is checked', async () => {
+    const { wrapper } = await mountList({ checkingUpdates: true })
+
+    expect(wrapper.find('[data-testid="plugin-card-badge-checking-example-pay"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-update-checking-example-pay"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-update-button-example-pay"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-settings-example-pay"]').exists()).toBe(true)
+  })
+
+  it('draws no placeholder once the check is over', async () => {
+    const { wrapper } = await mountList()
+
+    expect(wrapper.find('[data-testid="plugin-card-badge-checking-example-pay"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-update-checking-example-pay"]').exists()).toBe(false)
+  })
+
+  it('waits for no update on a refused plugin', async () => {
+    const refused = { ...plugin, isLoaded: false, status: 'Refused', refusedRule: 'LabelKeyMissing', refusedDetail: null }
+    const { wrapper } = await mountList({ plugins: [refused], checkingUpdates: true })
+
+    expect(wrapper.find('[data-testid="plugin-update-checking-example-pay"]').exists()).toBe(false)
   })
 
   it('explains the broken rule of a refused plugin in the card notice', async () => {

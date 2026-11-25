@@ -59,6 +59,19 @@ public class Result<T> : Result
     public static new Result<T> Failure(string error, string? errorCode = null) =>
         new(false, default, error, errorCode);
 
+    /// <summary>
+    /// Re-types a refusal for a caller that passes another use case's or port's failure on: its code, sentence and
+    /// structured details (<c>Errors</c>) all travel, where <see cref="FailureCode"/> would keep the code alone.
+    /// </summary>
+    /// <param name="failed">The failed outcome to pass on.</param>
+    /// <returns>A failed <see cref="Result{T}"/> equal to <paramref name="failed"/> in everything but its value type.</returns>
+    public static Result<T> FailureFrom(Result failed)
+    {
+        ArgumentNullException.ThrowIfNull(failed);
+
+        return new(false, default, failed.Error, failed.ErrorCode, failed.Errors);
+    }
+
     /// <summary>Create failure result bound to a specific form field.</summary>
     /// <param name="error">Human-readable error message.</param>
     /// <param name="errorCode">Machine-readable error code.</param>

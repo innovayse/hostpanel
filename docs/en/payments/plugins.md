@@ -106,12 +106,94 @@ The rules are the same ones that refuse an upload, and each has the same text as
 To fix a refused plugin, correct the package and upload it again (see the next section). To get rid of it, remove it
 from the list; a refused plugin is removed like any other, by its folder name.
 
+## Applying a plugin change without a shell {#applying-a-plugin-change}
+
+Installing, updating or removing a plugin never needs a shell on the server, and you do not have to press anything. Right
+after the change is staged, the host applies it itself: first in place, with no restart, and when that is not possible
+it restarts itself. The plugin manager shows where each change stands:
+
+| State | Meaning |
+|---|---|
+| Staged | The change is saved and waits to be applied. |
+| Restarting | The host is draining and restarting to apply the change. |
+| Loaded and running | The new version is loaded and answers. |
+| Failed | The new version could not be loaded. The row shows the reason and the version that was restored. |
+
+### Reloading one plugin in place
+
+Every plugin is loaded in its own unloadable .NET load context. A change is reloaded in place when the plugin is already
+loaded, its plugin type and its endpoints capability stay the same, and it is not a hosted plugin. The old version is
+drained first (running calls finish within `Plugins__DrainSeconds` and no new call starts), then it is unloaded, the
+staged files are swapped in, the new version is loaded and its migration hook runs. The rest of the panel keeps working.
+Removing a plugin unloads it the same way. The host keeps no strong reference to plugin types outside the plugin's own
+context, which is what lets .NET unload it.
+
+### When the host restarts itself
+
+A change that cannot be reloaded in place uses the restart path. This is the fallback, and it applies when:
+
+- the plugin id was never loaded (a first install of a plugin that does not run yet),
+- the plugin is a hosted plugin,
+- the new version changes the plugin type or the endpoints capability,
+- the drain timed out because a call did not finish within `Plugins__DrainSeconds`.
+
+The host waits `Plugins__RestartDelaySeconds` (default 3, from 0 to 60) before it restarts, so several changes made one
+after another are applied by one restart. Then it drains: `GET /health` answers `503` with the error `HOST_DRAINING`, so
+an edge proxy stops sending traffic, and running requests and background jobs finish within `Plugins__DrainSeconds`.
+After that the process exits with the dedicated exit code 75, and the container restart policy starts it again. On the
+start the staged changes are applied.
+
+### Restart now
+
+**Restart now** stays in the plugin manager for staged changes that were not applied, for example after a failed apply.
+It is available to administrators only and does the same as `POST /api/admin/plugins/restart`, which is written to the
+activity log as "Restarted Plugin Host". While the host restarts, the panel shows a blocking **Restarting** window. It
+stays until `GET /health` answers with a new `processStartedAt`, which proves the new process is the one answering, and
+then shows **Loaded and running**.
+
+### When the new version fails to load
+
+If the new version of a plugin cannot be loaded, whether at the start after a restart or during an in place reload,
+the host keeps running. It takes the new version out and restores the previous version of that plugin. A new install
+that fails to load is shown as refused, with its load error. The change is recorded as **Failed** with the reason and the
+restored version, and the host never retries it, so there is no restart loop. To try again, install a corrected package.
+
+### Activity log
+
+Every change is written to the activity log with who made it, the old and the new version and the result:
+
+- the request itself writes "Plugin Change Applied In Place", "Plugin Change Applying By Restart" or "Plugin Change Failed And Restored",
+- after a restart the host writes "Plugin Change Applied By Restart" or "Plugin Change Failed By Restart" with the reason.
+
+### Drain time, delay and stop grace period
+
+`Plugins__DrainSeconds` (default 30, from 1 to 300) is the drain time of a reload and of a restart, and it is also the
+shutdown timeout of the host. Docker kills a container that does not stop within its stop grace period, so the API
+service sets `stop_grace_period` longer than the drain time: 45 seconds by default. In the compose files the options are
+`PLUGIN_DRAIN_SECONDS`, `PLUGIN_RESTART_DELAY_SECONDS` and `API_STOP_GRACE_PERIOD` (see the
+[configuration reference](../operators/configuration.md)). If you raise the drain time, raise the grace period above it.
+
+### The restart policy is required
+
+The automatic restart exits the host on purpose, with a clean exit, so the API container must have
+`restart: unless-stopped` or `restart: always`. `on-failure` does not start a container again after a clean exit, and
+without a policy the panel stays down after a change that needs a restart. The compose files that ship with Hostpanel
+have it. On a self hosted installation check it with
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh | bash -s -- --check
+```
+
+The check **fails** (exit code 1) when the API service of the installation's compose file has no restart policy or has
+`on-failure`, and says how to fix it. See [Upgrade](../operators/upgrade.md#check-the-installation).
+
 ## Uploading a newer version
 
 Uploading a package for a plugin that is already installed is an upgrade. It goes through the same checks as any
-upload (manifest, SDK reference and signature), and then it is **staged** instead of replacing the installed plugin,
-because the installed one is loaded and running. The folder of a loaded plugin is never overwritten in place, so this
-holds for the same version too. The upload answers that a restart is needed and names the staged version, and the list
+upload (manifest, SDK reference and signature). If the plugin can be reloaded in place (see above), the new version is
+applied at once. Otherwise it is **staged** instead of replacing the installed plugin, because the installed one is
+loaded and running. The folder of a loaded plugin is never overwritten in place, so this
+holds for the same version too. The upload answers with the staged version and says whether the host applied it in place or is restarting to apply it, and the list
 shows it next to the plugin. Uploading again before the restart replaces the staged package. Staging is audited:
 "Staged Plugin Upgrade", "Staged Plugin Replacement" (the same version again) or "Forced Plugin Downgrade".
 
@@ -156,7 +238,8 @@ even when the server refused it: its id stays taken, so an upload with the same 
 
 Removing a plugin deletes its package files (and any upgrade staged for it) and switches the plugin off. It does **not**
 delete what the plugin kept: its settings and its stored data stay, so installing it again later finds them. The plugin
-stays loaded until the next restart, but is switched off at once and answers nothing. A plugin shipped inside the server
+is unloaded at once when it can be (see [Applying a plugin change without a shell](#applying-a-plugin-change)), and
+otherwise stays loaded until the next restart, but is switched off at once and answers nothing. A plugin shipped inside the server
 image cannot be removed. If the files are already gone but the plugin was once switched on here, removing it again just
 switches it off. The removal is written to the activity log.
 

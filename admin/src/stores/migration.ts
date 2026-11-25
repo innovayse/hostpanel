@@ -20,7 +20,9 @@ import type {
   MigrationLogEntry,
   MigrationLogQuery,
 } from '@/types/migration'
-import { POLL_INTERVAL_MS } from '@/lib/limits'
+import { usePoller } from '@/composables/usePoller'
+import { isSameJob } from '@/lib/migrationStatus'
+import { PollKind } from '@/types/poller'
 
 /** Holds migration jobs and drives their lifecycle from the admin panel. */
 export const useMigrationStore = defineStore('migration', () => {
@@ -41,8 +43,14 @@ export const useMigrationStore = defineStore('migration', () => {
   /** Sentence for the last refused connection check, import start or log read, null when none. */
   const jobError = ref<string | null>(null)
 
-  /** Handle of the running status poll, null when not polling. */
-  let pollTimer: ReturnType<typeof setInterval> | null = null
+  /** Id of the job the running poll follows, null when not polling. */
+  let polledJobId: number | null = null
+
+  /** The shared poller that re-reads the followed job; it pauses with the tab and never overlaps its own reads. */
+  const poller = usePoller({
+    kind: PollKind.MigrationStatus,
+    tick: () => (polledJobId === null ? undefined : pollStatus(polledJobId)),
+  })
 
   /**
    * Fetches all migration jobs.
@@ -64,10 +72,8 @@ export const useMigrationStore = defineStore('migration', () => {
    * @returns Nothing.
    */
   const stopPolling = (): void => {
-    if (pollTimer) {
-      clearInterval(pollTimer)
-      pollTimer = null
-    }
+    poller.stop()
+    polledJobId = null
   }
 
   /**
@@ -124,17 +130,18 @@ export const useMigrationStore = defineStore('migration', () => {
   }
 
   /**
-   * Replaces a job in the list (and the active slot) with a fresh copy from the API.
+   * Replaces a job in the list (and the active slot) with a fresh copy from the API. A copy that reads the same as the
+   * one held changes nothing, so a poll tick that found no news re-renders nothing.
    *
    * @param job - The job as the API returned it.
    * @returns Nothing.
    */
   const replaceJob = (job: MigrationJob): void => {
     const idx = jobs.value.findIndex(j => j.id === job.id)
-    if (idx >= 0) {
+    if (idx >= 0 && !isSameJob(jobs.value[idx], job)) {
       jobs.value[idx] = job
     }
-    if (activeJob.value?.id === job.id) {
+    if (activeJob.value?.id === job.id && !isSameJob(activeJob.value, job)) {
       activeJob.value = job
     }
   }
@@ -185,9 +192,12 @@ export const useMigrationStore = defineStore('migration', () => {
   }
 
   /**
-   * Re-reads one job, keeps it as the active job and stops polling once it is finished.
+   * Re-reads one job and refreshes its copy in the list. The poll only updates data: the job being watched
+   * is left as the operator chose it (it is refreshed only when it is this very job), and the poll ends once
+   * the job is finished.
    *
-   * A failed read ends the poll without surfacing a sentence: the next list load reports it.
+   * A failed read ends the poll without surfacing a sentence: the next list load reports it. A read of a job
+   * the poll has since moved away from (the operator chose another one meanwhile) never ends the newer poll.
    *
    * @param jobId - Migration job id.
    * @returns Resolves when the read is over.
@@ -197,15 +207,14 @@ export const useMigrationStore = defineStore('migration', () => {
     const ignored = ref<string | null>(null)
     const result = await runAction(ignored, () => api.getJob(jobId))
     if (!result.ok) {
-      stopPolling()
+      if (polledJobId === jobId) {
+        stopPolling()
+      }
       return
     }
-    activeJob.value = result.value
-    const idx = jobs.value.findIndex(j => j.id === jobId)
-    if (idx >= 0) {
-      jobs.value[idx] = result.value
-    }
-    if (result.value.status === MigrationStatus.Completed || result.value.status === MigrationStatus.Failed) {
+    replaceJob(result.value)
+    const finished = result.value.status === MigrationStatus.Completed || result.value.status === MigrationStatus.Failed
+    if (finished && polledJobId === jobId) {
       stopPolling()
     }
   }
@@ -218,17 +227,21 @@ export const useMigrationStore = defineStore('migration', () => {
    */
   const startPolling = (jobId: number): void => {
     stopPolling()
-    void pollStatus(jobId)
-    pollTimer = setInterval(() => void pollStatus(jobId), POLL_INTERVAL_MS)
+    polledJobId = jobId
+    poller.start()
   }
 
   /**
-   * Sets the job being watched.
+   * Sets the job being watched. A poll that follows another job is stopped: it would only refresh data
+   * the operator is no longer looking at.
    *
    * @param job - The job to watch.
    * @returns Nothing.
    */
   const setActiveJob = (job: MigrationJob): void => {
+    if (polledJobId !== job.id) {
+      stopPolling()
+    }
     activeJob.value = job
   }
 

@@ -941,6 +941,31 @@ The block itself takes `send` (a streaming `post` route) and, all optional, `his
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)
 and nothing more is sent. Stop does not undo anything, so observe the token and leave your own work consistent.
 
+## Make the plugin unloadable {#unloadable}
+
+The host loads every plugin in its own collectible `AssemblyLoadContext`. When an administrator updates or removes a
+plugin, the host drains it (calls that are running get `Plugins__DrainSeconds` to finish), drops the instance and
+unloads the context, so the new version can be loaded without restarting the server. .NET can unload a context only
+when nothing outside it still refers to its types, so a plugin that holds on to anything keeps the old version in
+memory, and the host then falls back to a restart. To stay unloadable:
+
+- **No static references into host objects that outlive a call.** Do not store the host's services, the SDK's context
+  objects, loggers, `HttpClient` instances, delegates or tasks in `static` fields, static events or singletons. Take
+  what you need from the constructor or the call and let it go when the call ends.
+- **No threads or timers left running after the call.** Do not start a `Thread`, `Timer`, `Task.Run` loop or
+  background `Task` that outlives the call, and do not leave anything registered with a host event or a global
+  (`AppDomain`, `ThreadPool` or `Console` hooks included). Stop what you start, and observe the cancellation token.
+- **Keep nothing alive after the instance is disposed.** `Dispose` (or `DisposeAsync`) must release everything the
+  instance created: unsubscribe handlers, cancel and await its own work, close connections and clear caches that sit
+  in static state.
+- **Never ship `Hostpanel.Sdk.dll`.** The plugin must use the SDK that the host already loaded. A package that carries
+  its own copy is refused, and a second copy of the SDK types would also tie the plugin to the old load context.
+
+A plugin that is not unloadable still works. The host then applies the update by restarting itself, and the administrator can use
+**Restart now** for a change that was not applied. The cases that always need a restart (a plugin id that was never loaded, a hosted plugin, a changed
+plugin type or endpoints capability, a drain that timed out) are listed in
+[Applying a plugin change without a shell](../payments/plugins.md#applying-a-plugin-change).
+
 ## Package it
 
 Folder layout inside the ZIP:

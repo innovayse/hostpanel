@@ -717,7 +717,13 @@
   <data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
     <value>La firma de este paquete de complemento no coincide con sus archivos: se modificó después de firmarse.</value>
   </data>
-  <data name="PLUGIN_BUILT_IN" xml:space="preserve">
+  <data name="HOST_DRAINING" xml:space="preserve">
+    <value>El servidor se está reiniciando y no acepta nuevas solicitudes. Volverá en un momento.</value>
+  </data>
+<data name="PLUGIN_APPLY_FAILED" xml:space="preserve">
+    <value>No se pudo cargar la nueva versión de este complemento, por lo que se restauró la versión anterior. El motivo aparece en la lista de complementos.</value>
+  </data>
+<data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Este complemento se incluye con el servidor y no se puede eliminar ni reemplazar.</value>
   </data>
   <data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
@@ -808,7 +814,13 @@
     <value>No se pudo leer ese archivo como imagen. Cargue un PNG, JPEG, WebP, GIF o BMP.</value>
   </data>
   <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
-    <value>Esa imagen es demasiado grande. Cargue un archivo de menos de 5 MB y de no más de 8000 píxeles por lado.</value>
+    <value>Ese archivo supera el límite de 5 MB. Cargue un archivo más pequeño.</value>
+  </data>
+  <data name="BRANDING_IMAGE_DIMENSIONS_TOO_LARGE" xml:space="preserve">
+    <value>Esa imagen tiene más de 8000 píxeles por lado o más de 40 millones de píxeles en total. Redúzcala y vuelva a cargarla.</value>
+  </data>
+  <data name="STORAGE_NOT_WRITABLE" xml:space="preserve">
+    <value>El servidor no puede guardar archivos cargados ahora porque su carpeta de carga no es escribible. Pida al administrador que revise los permisos de la carpeta.</value>
   </data>
   <data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
     <value>Las cuentas de esta instalación pertenecen al servicio de inicio de sesión único, por lo que no se puede crear una cuenta aquí. Añada primero a la persona en el servicio de inicio de sesión único.</value>

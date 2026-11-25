@@ -10,6 +10,7 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import type { PaymentMethodOption, ProductGroup } from '@/types/product'
@@ -58,9 +59,7 @@ const allowedLabel = (group: ProductGroup): string => {
 <template>
   <UiDialog :title="t('settings.productGroups.title')" :size="UiDialogSize.Md" @close="emit('close')">
     <UiStack data-testid="product-groups-dialog">
-      <UiText v-if="groups.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="product-groups-empty">
-        {{ t('settings.productGroups.empty') }}
-      </UiText>
+      <UiEmptyState v-if="groups.length === 0" compact :title="t('settings.productGroups.empty')" data-testid="product-groups-empty" />
       <UiStack
         v-for="group in groups"
         :key="group.id"

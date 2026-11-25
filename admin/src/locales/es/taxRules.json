@@ -10,8 +10,7 @@
     "country": "País",
     "region": "Región",
     "rate": "Tipo",
-    "enabled": "Estado",
-    "actions": "Acciones"
+    "enabled": "Estado"
   },
   "wholeCountry": "Todo el país",
   "enabledBadge": "Activado",

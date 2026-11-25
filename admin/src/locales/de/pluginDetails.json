@@ -36,7 +36,6 @@
     "label": "Lizenzschlüssel",
     "placeholder": "Lizenzschlüssel einfügen",
     "save": "Schlüssel speichern",
-    "remove": "Schlüssel entfernen",
     "needed": "Speichern Sie einen Lizenzschlüssel, bevor Sie dieses Plugin installieren."
   },
   "versions": {

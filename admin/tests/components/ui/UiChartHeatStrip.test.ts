@@ -27,7 +27,7 @@ describe('UiChartHeatStrip', () => {
   it('keeps zero flat and gives the peak the strongest shade', () => {
     const cells = mount(UiChartHeatStrip, { props: { values: [0, 1, 4], describe: describeDay } }).findAll('[data-testid="ui-chart-heat-cell"]')
 
-    expect(cells[0]?.classes()).toContain('bg-surface-hover')
+    expect(cells[0]?.classes()).toContain('bg-surface-track')
     expect(cells[1]?.classes()).toContain('opacity-50')
     expect(cells[2]?.classes()).toContain('opacity-100')
   })
@@ -35,7 +35,7 @@ describe('UiChartHeatStrip', () => {
   it('draws an all zero strip flat', () => {
     const cells = mount(UiChartHeatStrip, { props: { values: [0, 0], describe: describeDay } }).findAll('[data-testid="ui-chart-heat-cell"]')
 
-    expect(cells.every(cell => cell.classes().includes('bg-surface-hover'))).toBe(true)
+    expect(cells.every(cell => cell.classes().includes('bg-surface-track'))).toBe(true)
   })
 })
 

@@ -27,6 +27,8 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiTone } from '@/utils/ui/tone'
+import { formatSymbolPrice } from '@/lib/money'
+import { CurrencyCode } from '@/types/currency'
 
 const { t } = useI18n()
 
@@ -171,7 +173,7 @@ onMounted(() => fetchServices())
             <UiTableCell>
               <UiNumberInput v-model="row.rate" :step="0.01" :min="0" placeholder="0.00" :data-testid="`clients-time-billing-rate-${idx}`" />
             </UiTableCell>
-            <UiTableCell muted numeric>${{ rowAmount(row).toFixed(2) }}</UiTableCell>
+            <UiTableCell muted numeric>{{ formatSymbolPrice(rowAmount(row), CurrencyCode.Usd) }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
       </UiTable>

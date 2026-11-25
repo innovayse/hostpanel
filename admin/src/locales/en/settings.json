@@ -1,7 +1,7 @@
 {
   "systemSettings": "System Settings",
   "secret": {
-    "set": "••••••, set",
+    "set": "Set",
     "notSet": "Not set",
     "replace": "Replace",
     "placeholder": "Type the new value",
@@ -273,6 +273,7 @@
   "branding": {
     "title": "Branding",
     "description": "The storefront's logos and browser tab icon. Changes take effect on the next page load.",
+    "imageSize": "Your image is {width} × {height} pixels.",
     "pasteUrl": "Or paste image URL",
     "logo": {
       "label": "Logo (light backgrounds)",
@@ -498,6 +499,7 @@
       "gateway-payment-without-reference-admin": "Gateway payment without reference (staff)",
       "invoice-renewal-reminder": "Invoice renewal reminder",
       "order-rejected": "Order rejected",
+      "plugin-change-ended-admin": "Plugin change finished (staff)",
       "service-termination-failed-admin": "Service termination failed (staff)",
       "user-email-change": "Email change confirmation",
       "user-email-changed-notice": "Email changed notice",

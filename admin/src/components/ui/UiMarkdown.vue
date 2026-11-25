@@ -103,7 +103,7 @@ const caretOnItem = (block: MarkdownBlock, item: MarkdownListItem): boolean =>
       </blockquote>
       <div v-else-if="block.kind === MarkdownBlockKind.Code" class="relative">
         <pre
-          class="overflow-x-auto whitespace-pre rounded-control border border-border bg-surface-field px-3.5 py-2.5 font-mono text-xs text-text-primary"
+          class="overflow-x-auto whitespace-pre rounded-control border border-border bg-surface-inset px-3.5 py-2.5 font-mono text-xs text-text-primary"
           :class="copyLabel ? 'pr-11' : ''"
         ><code>{{ block.code }}</code></pre>
         <UiCopyButton

@@ -49,6 +49,33 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         }
     }
 
+    /// <summary>
+    /// A fresh install is recorded as waiting for its first load, which is what lets a failed first load leave the plugin
+    /// uninstalled; removing the plugin drops the record again.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task FreshInstall_IsRecordedUntilTheFirstLoadAndDroppedByARemovalAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var record = Path.Combine(factory.PluginInstallRoot, ".fresh", pluginId);
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(pluginId)))
+                .StatusCode.Should().Be(HttpStatusCode.OK);
+            File.Exists(record).Should().BeTrue("the plugin has not been loaded yet");
+
+            (await client.DeleteAsync($"/api/admin/plugins/{pluginId}")).StatusCode.Should().Be(HttpStatusCode.OK);
+            File.Exists(record).Should().BeFalse("the plugin is gone, so nothing waits for its first load");
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
     /// <summary>Installing the same id again replaces the earlier upload's files.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

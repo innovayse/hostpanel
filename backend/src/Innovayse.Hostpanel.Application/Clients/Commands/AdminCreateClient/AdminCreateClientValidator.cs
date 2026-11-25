@@ -1,8 +1,8 @@
 using FluentValidation;
-using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Clients.Commands.AdminCreateClient;
@@ -81,7 +81,7 @@ public sealed class AdminCreateClientValidator : LocalizedValidator<AdminCreateC
         // against a literal here: an unlisted code would be stored, read back and then quietly
         // served English, which looks exactly like the save having failed.
         RuleFor(x => x.Preferences.Language)
-            .Must(l => LocaleOptions.SupportedLocales.Contains(l!, StringComparer.OrdinalIgnoreCase))
+            .Must(l => SupportedLanguages.All.Contains(l!, StringComparer.OrdinalIgnoreCase))
             .WithMessage(L["ClientLanguageInvalid"])
             .When(x => !string.IsNullOrEmpty(x.Preferences.Language));
 

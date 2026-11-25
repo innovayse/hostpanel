@@ -131,6 +131,8 @@ services:
       Demo__ContactEmail: ${DEMO_CONTACT_EMAIL:-}
       Demo__ContactPhone: ${DEMO_CONTACT_PHONE:-}
     depends_on: !override
+      hostpanel-volume-init:
+        condition: service_completed_successfully
       hostpanel-db:
         condition: service_healthy
       hostpanel-rabbitmq:

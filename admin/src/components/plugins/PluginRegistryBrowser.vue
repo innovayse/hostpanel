@@ -5,8 +5,8 @@
  *
  * The list has three columns on a wide screen, two on a medium one and one on a narrow one; while the
  * first page loads the same grid, total line and pager are drawn with card placeholders. Each card opens the plugin's details page and carries its
- * action in the footer: Install for a plugin that is not installed, Update for one with a newer version,
- * and Details in place of Install for a plugin that needs a licence key not yet saved. An installed plugin
+ * action in the footer: Install for a plugin that is not installed, Update for one with a newer version (the
+ * same primary button as Install), and Details in place of Install for a plugin that needs a licence key not yet saved. An installed plugin
  * also shows a gear that opens its details page, where it is configured and removed.
  * Only the card whose install or update runs is disabled. The component owns no data: it reports the
  * chosen page and the install, and the screen hands the result to the store.
@@ -14,25 +14,19 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import PluginCardActions from '@/components/plugins/PluginCardActions.vue'
 import PluginCardSkeleton from '@/components/plugins/PluginCardSkeleton.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiResultCount from '@/components/ui/UiResultCount.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { Icon } from '@/lib/icons'
 import { fromRegistry } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
-import { PluginPricing } from '@/types/plugin'
+import { PluginCardAction, PluginPricing } from '@/types/plugin'
 import type { PluginRegistryItemDto } from '@/types/plugin'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiSize } from '@/utils/ui/size'
 import { UiTextSize } from '@/utils/ui/text'
-import { UiActionKind } from '@/utils/ui/actions'
 import { UiGap } from '@/utils/ui/layout'
 
 /** Translation function. */
@@ -89,14 +83,6 @@ const emit = defineEmits<{
 const initialLoading = computed<boolean>(() => props.loading && props.items.length === 0)
 
 /**
- * Whether a listing offers an action: Install when absent, Update when a newer version exists.
- *
- * @param item - The listing.
- * @returns True when the card shows an install or update button.
- */
-const actionable = (item: PluginRegistryItemDto): boolean => !item.installed || item.updateAvailable
-
-/**
  * Whether a listing needs a licence key: what the listing says when it carries `requiresLicence`,
  * otherwise a paid or private price.
  *
@@ -115,6 +101,52 @@ const requiresKey = (item: PluginRegistryItemDto): boolean =>
  */
 const needsDetails = (item: PluginRegistryItemDto): boolean =>
   !item.installed && requiresKey(item) && !props.licensedIds.includes(item.id)
+
+/**
+ * The one list the footer of a card is drawn from, in order: the card's primary action (Details for a plugin that needs
+ * a key, Install when absent, Update when a newer version exists; Install and Update are the same primary button) and
+ * the gear of an installed plugin.
+ *
+ * @param item - The listing.
+ * @returns The actions of the card's footer.
+ */
+const actionsOf = (item: PluginRegistryItemDto): PluginCardAction[] => {
+  const actions: PluginCardAction[] = []
+  if (needsDetails(item)) {
+    actions.push(PluginCardAction.Details)
+  } else if (!item.installed) {
+    actions.push(PluginCardAction.Install)
+  } else if (item.updateAvailable) {
+    actions.push(PluginCardAction.Update)
+  }
+  if (item.installed) {
+    actions.push(PluginCardAction.Settings)
+  }
+  return actions
+}
+
+/** Test id prefix of each footer control of the registry; Install and Update are one button, so they share a prefix. */
+const actionTestids: Partial<Record<PluginCardAction, string>> = {
+  [PluginCardAction.Install]: 'registry-install',
+  [PluginCardAction.Update]: 'registry-install',
+  [PluginCardAction.Details]: 'registry-details',
+  [PluginCardAction.Settings]: 'registry-settings',
+}
+
+/**
+ * Reports the footer action the admin pressed: Install and Update ask for the version the listing offers, Details and the gear
+ * open the plugin's page.
+ *
+ * @param item - The listing whose card was pressed.
+ * @param action - The pressed action.
+ */
+const onAction = (item: PluginRegistryItemDto, action: PluginCardAction): void => {
+  if (action === PluginCardAction.Install || action === PluginCardAction.Update) {
+    emit('install', item.id, item.latestVersion)
+  } else {
+    emit('details', item.id)
+  }
+}
 </script>
 
 <template>
@@ -150,41 +182,14 @@ const needsDetails = (item: PluginRegistryItemDto): boolean =>
           :to="pluginPath(item.id)"
         >
           <template #action>
-            <UiButton :action="UiActionKind.View"
-              v-if="needsDetails(item)"
-              type="button"
-              :variant="UiButtonVariant.Primary"
-              :size="UiSize.Sm"
-              :data-testid="`registry-details-${item.id}`"
-              @click="emit('details', item.id)"
-            >
-              {{ t('shared.details') }}
-            </UiButton>
-            <UiButton :icon="Icon.Download"
-              v-else-if="actionable(item)"
-              type="button"
-              :variant="item.installed ? UiButtonVariant.Secondary : UiButtonVariant.Primary"
-              :size="UiSize.Sm"
-              :loading="installingIds.includes(item.id)"
-              :disabled="installingIds.includes(item.id)"
-              :data-testid="`registry-install-${item.id}`"
-              @click="emit('install', item.id, item.latestVersion)"
-            >
-              <template v-if="item.installed">
-                {{ t('plugins.pluginRegistry.update', { version: item.latestVersion }) }}
-              </template>
-              <template v-else>{{ t('shared.install') }}</template>
-            </UiButton>
-            <UiIconButton
-              v-if="item.installed"
-              :label="t('plugins.pluginRegistry.settings')"
-              :variant="UiButtonVariant.Ghost"
-              :size="UiSize.Sm"
-              :data-testid="`registry-settings-${item.id}`"
-              @click="emit('details', item.id)"
-            >
-              <UiIcon :markup="Icon.Settings" :size="UiSize.Sm" />
-            </UiIconButton>
+            <PluginCardActions
+              :plugin-id="item.id"
+              :actions="actionsOf(item)"
+              :version="item.latestVersion"
+              :busy="installingIds.includes(item.id)"
+              :testid-prefixes="actionTestids"
+              @select="onAction(item, $event)"
+            />
           </template>
         </PluginCard>
       </UiGrid>

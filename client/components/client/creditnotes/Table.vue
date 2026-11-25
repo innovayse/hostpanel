@@ -19,7 +19,7 @@
           <UiTableTh>{{ $t('client.creditNotes.colMethod') }}</UiTableTh>
           <UiTableTh align="right">{{ $t('client.creditNotes.colTotal') }}</UiTableTh>
           <UiTableTh align="center">{{ $t('client.creditNotes.colStatus') }}</UiTableTh>
-          <UiTableTh />
+          <UiTableTh actions />
         </UiTableRow>
       </UiTableHead>
     </template>

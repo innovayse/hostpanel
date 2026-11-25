@@ -27,7 +27,7 @@ const total = computed<number>(() => props.parts.reduce((sum, part) => sum + par
 
 <template>
   <div v-if="total > 0" :class="wide ? 'w-full max-sm:overflow-x-auto' : 'w-40'" data-testid="ui-chart-distribution">
-    <div class="flex h-3 w-full overflow-hidden rounded-full bg-surface-hover" :class="wide ? 'max-sm:min-w-72' : ''">
+    <div class="flex h-3 w-full overflow-hidden rounded-full bg-surface-track" :class="wide ? 'max-sm:min-w-72' : ''">
       <template v-for="(part, index) in parts" :key="index">
         <UiTooltip v-if="part.count > 0" :text="part.tooltip" class="h-full" :style="{ width: `${(part.count / total) * 100}%` }">
           <span class="block h-full w-full" :class="toneDotClasses[part.tone]" data-testid="ui-chart-distribution-part" />

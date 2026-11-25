@@ -178,6 +178,7 @@
   "title": "Title",
   "categories": "Categories",
   "published": "Published",
+  "draft": "Draft",
   "categoryName": "Category Name",
   "enterCategoryName": "Enter category name",
   "selectCategory": "Select category",

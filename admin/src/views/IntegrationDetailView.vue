@@ -3,19 +3,18 @@
  * Detail/config page for a single integration.
  *
  * Route: /integrations/:slug
- * Layout: the page header (the integration name, with a way back to the list) + the shared config panel (2/3 config form + 1/3 status sidebar).
+ * Layout: the page header (the integration name, with its breadcrumb trail above it) + the shared config panel (2/3 config form + 1/3 status sidebar).
  */
-import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import IntegrationConfigPanel from '@/components/integrations/IntegrationConfigPanel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { AppRoute } from '@/lib/routes'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useIntegrationsStore } from '@/stores/integrations'
 import { UiGap } from '@/utils/ui/layout'
 
-/** Translation function. */
-const { t } = useI18n()
+/** Builds the trail the header draws above the title: Integrations, the integration. */
+const { crumbs } = usePageCrumbs()
 
 /** Integrations store: the integration the panel below loads names the page. */
 const store = useIntegrationsStore()
@@ -32,8 +31,7 @@ const slug = route.params.slug as string
     <UiPageHeader
       :title="store.current?.name"
       :loading="store.current === null"
-      :back-to="AppRoute.Integrations"
-      :back-label="t('nav.integrations')"
+      :crumbs="crumbs(store.current?.name)"
     />
     <IntegrationConfigPanel :slug="slug" />
   </UiStack>

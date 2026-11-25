@@ -71,6 +71,27 @@ describe('PartnersView', () => {
     expect(rows[0]?.text()).toContain('https://acme.example.com')
   })
 
+  it('shows the stored logo as the thumbnail and the placeholder only for a partner with none', async () => {
+    stubRouteTable({ 'GET /admin/partners': () => json([entry(1, 'Acme', { logoUrl: '/uploads/content/acme.png' }), entry(2, 'Globex')]) })
+    const { wrapper } = await mountScreen(PartnersView)
+
+    const withLogo = wrapper.get('[data-testid="partner-row-1"]')
+    expect(withLogo.get('img').attributes('src')).toBe('/uploads/content/acme.png')
+    expect(withLogo.find('[data-testid="ui-image-fallback"]').exists()).toBe(false)
+    const without = wrapper.get('[data-testid="partner-row-2"]')
+    expect(without.find('img').exists()).toBe(false)
+    expect(without.find('[data-testid="ui-image-fallback"]').exists()).toBe(true)
+  })
+
+  it('gives the logo column the shared fixed image width and the name its share', async () => {
+    stubRouteTable({ 'GET /admin/partners': () => json(entries) })
+    const { wrapper } = await mountScreen(PartnersView)
+
+    const headers = wrapper.findAll('thead th')
+    expect(headers.find((header) => header.text() === 'Logo')?.classes()).toEqual(expect.arrayContaining(['w-24']))
+    expect(headers.find((header) => header.text() === 'Name')?.classes()).toEqual(expect.arrayContaining(['w-[28%]']))
+  })
+
   it('says so when there is nothing yet', async () => {
     stubRouteTable({ 'GET /admin/partners': () => json([]) })
     const { wrapper } = await mountScreen(PartnersView)

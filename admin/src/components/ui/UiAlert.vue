@@ -7,6 +7,9 @@
  * default slot: pass the server's sentence, never compose one.
  */
 import { computed } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { UiSize } from '@/utils/ui/size'
 import { toneAlertClasses, UiTone } from '@/utils/ui/tone'
 
 /** Live-region roles an alert announces itself with. */
@@ -34,14 +37,8 @@ const toneClasses = computed<string>(() => toneAlertClasses[tone.value])
 /** Live-region role: assertive for danger and warning, polite otherwise. */
 const role = computed<(typeof AlertRole)[keyof typeof AlertRole]>(() => (tone.value === UiTone.Danger || tone.value === UiTone.Warning ? AlertRole.Alert : AlertRole.Status))
 
-/** Triangle outline used for the warning variant. */
-const WARNING_PATH = 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z'
-
-/** Circle outline used for every other variant. */
-const CIRCLE_PATH = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z'
-
-/** Outline path of the variant's icon. */
-const iconPath = computed<string>(() => (tone.value === UiTone.Warning ? WARNING_PATH : CIRCLE_PATH))
+/** Markup of the variant's icon: a triangle for a warning, a circle for every other variant. */
+const iconMarkup = computed<string>(() => (tone.value === UiTone.Warning ? Icon.AlertTriangle : Icon.Alert))
 </script>
 
 <template>
@@ -50,11 +47,7 @@ const iconPath = computed<string>(() => (tone.value === UiTone.Warning ? WARNING
     :class="toneClasses"
     :role="role"
   >
-    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path :d="iconPath" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
+    <UiIcon :markup="iconMarkup" :size="UiSize.Lg" />
     <!-- The message takes the rest of the row, so content laid out inside it (a row with an
          action pushed to the far edge) spans the whole alert instead of its own width. -->
     <div class="flex-1 min-w-0 break-words text-sm text-text-primary" data-testid="ui-alert-body">

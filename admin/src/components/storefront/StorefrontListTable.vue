@@ -27,6 +27,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
+import type { StorefrontListColumn } from '@/lib/storefrontList'
 import type { StorefrontEntity, StorefrontListTestIds, StorefrontOrderItem } from '@/types/storefront'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
@@ -67,8 +68,8 @@ const props = defineProps<{
   moveDownLabel: string
   /** Test ids of the page, named in full by the page that uses the table. */
   testids: StorefrontListTestIds
-  /** Column captions between the drag handle and the actions (already translated). */
-  columns: string[]
+  /** Columns between the drag handle and the actions: translated captions with the width, kind and card role of the schema. */
+  columns: StorefrontListColumn[]
   /** The entries, in any order; the table sorts them by sort order. */
   items: T[]
   /** True while the list is loading. */
@@ -189,8 +190,8 @@ const onDragEnd = (): void => {
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Hidden"><UiText :as="UiTextTag.Span" class="sr-only">{{ t('storefront.list.reorder') }}</UiText></UiTableHeader>
-          <UiTableHeader v-for="(column, index) in columns" :key="column" :size="index === 0 ? UiColumnSize.Grow : undefined">{{ column }}</UiTableHeader>
-          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader v-for="column in columns" :key="column.key" :size="column.size" :kind="column.kind" :width="column.width" :card-role="column.cardRole">{{ column.caption }}</UiTableHeader>
+          <UiTableHeader actions />
         </UiTableRow>
       </UiTableHead>
       <UiSortableRows

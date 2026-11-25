@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
+using Innovayse.Hostpanel.SharedKernel.Localization;
 
 namespace Innovayse.Hostpanel.Domain.Settings;
 
@@ -133,14 +134,8 @@ public static class PortalSettingKeys
     /// <summary>Absolute <c>https://</c> origin of the live-chat server. Empty loads no widget.</summary>
     public const string ChatBaseUrl = "portal.chat.base_url";
 
-    /// <summary>Website token the chat widget identifies this storefront with.</summary>
+    /// <summary>Website token the chat widget identifies this storefront with, in the default language and for any language without its own row (see <see cref="LocalizedBases"/>).</summary>
     public const string ChatWebsiteToken = "portal.chat.website_token";
-
-    /// <summary>Russian-locale chat token; empty falls back to <see cref="ChatWebsiteToken"/>.</summary>
-    public const string ChatWebsiteTokenRu = "portal.chat.website_token.ru";
-
-    /// <summary>Armenian-locale chat token; empty falls back to <see cref="ChatWebsiteToken"/>.</summary>
-    public const string ChatWebsiteTokenHy = "portal.chat.website_token.hy";
 
     /// <summary>Headline client count shown in the hero, e.g. <c>120+</c>.</summary>
     public const string StatsClients = "portal.stats.clients";
@@ -154,7 +149,7 @@ public static class PortalSettingKeys
     /// <summary>Short claim shown in the hero badge.</summary>
     public const string HeroBadge = "portal.hero.badge";
 
-    /// <summary>Street address of the office, shown on the contact page and in the footer.</summary>
+    /// <summary>Street address of the office, shown on the contact page and in the footer, in the default language (see <see cref="LocalizedBases"/>).</summary>
     public const string ContactAddress = "portal.contact.address";
 
     /// <summary>Absolute <c>https://</c> address of the embeddable map of the office.</summary>
@@ -196,12 +191,6 @@ public static class PortalSettingKeys
 
     /// <summary>The company story shown on the About page, in English and for any language without its own text.</summary>
     public const string AboutText = "portal.about.text";
-
-    /// <summary>The company story for Russian visitors.</summary>
-    public const string AboutTextRu = "portal.about.text.ru";
-
-    /// <summary>The company story for Armenian visitors.</summary>
-    public const string AboutTextHy = "portal.about.text.hy";
 
     /// <summary>Whether the hero stats strip and trust bar section is shown on the home page: <c>true</c> or <c>false</c>.</summary>
     public const string SectionStats = "portal.sections.stats";
@@ -299,62 +288,43 @@ public static class PortalSettingKeys
     /// <summary>Typical phone response time shown on the phone support card, e.g. <c>immediate</c>.</summary>
     public const string SupportResponsePhone = "portal.support.response.phone";
 
-    /// <summary>Office address for Russian visitors. Empty uses <see cref="ContactAddress"/>.</summary>
-    public const string ContactAddressRu = "portal.contact.address.ru";
-
-    /// <summary>Office address for Armenian visitors. Empty uses <see cref="ContactAddress"/>.</summary>
-    public const string ContactAddressHy = "portal.contact.address.hy";
-
-    /// <summary>Support working hours for Russian visitors. Empty uses <see cref="ContactHours"/>.</summary>
-    public const string ContactHoursRu = "portal.contact.hours.ru";
-
-    /// <summary>Support working hours for Armenian visitors. Empty uses <see cref="ContactHours"/>.</summary>
-    public const string ContactHoursHy = "portal.contact.hours.hy";
-
     /// <summary>The operator's own text of the terms of service, default language; empty keeps the built-in text.</summary>
     public const string LegalTerms = "portal.legal.terms";
-
-    /// <summary>The operator's own text of the terms of service for Russian visitors. Empty uses <see cref="LegalTerms"/>.</summary>
-    public const string LegalTermsRu = "portal.legal.terms.ru";
-
-    /// <summary>The operator's own text of the terms of service for Armenian visitors. Empty uses <see cref="LegalTerms"/>.</summary>
-    public const string LegalTermsHy = "portal.legal.terms.hy";
 
     /// <summary>The operator's own text of the privacy policy, default language; empty keeps the built-in text.</summary>
     public const string LegalPrivacy = "portal.legal.privacy";
 
-    /// <summary>The operator's own text of the privacy policy for Russian visitors. Empty uses <see cref="LegalPrivacy"/>.</summary>
-    public const string LegalPrivacyRu = "portal.legal.privacy.ru";
-
-    /// <summary>The operator's own text of the privacy policy for Armenian visitors. Empty uses <see cref="LegalPrivacy"/>.</summary>
-    public const string LegalPrivacyHy = "portal.legal.privacy.hy";
-
     /// <summary>The operator's own text of the refund policy, default language; empty keeps the built-in text.</summary>
     public const string LegalRefund = "portal.legal.refund";
-
-    /// <summary>The operator's own text of the refund policy for Russian visitors. Empty uses <see cref="LegalRefund"/>.</summary>
-    public const string LegalRefundRu = "portal.legal.refund.ru";
-
-    /// <summary>The operator's own text of the refund policy for Armenian visitors. Empty uses <see cref="LegalRefund"/>.</summary>
-    public const string LegalRefundHy = "portal.legal.refund.hy";
 
     /// <summary>The operator's own text of the acceptable use policy, default language; empty keeps the built-in text.</summary>
     public const string LegalAcceptableUse = "portal.legal.acceptable_use";
 
-    /// <summary>The operator's own text of the acceptable use policy for Russian visitors. Empty uses <see cref="LegalAcceptableUse"/>.</summary>
-    public const string LegalAcceptableUseRu = "portal.legal.acceptable_use.ru";
-
-    /// <summary>The operator's own text of the acceptable use policy for Armenian visitors. Empty uses <see cref="LegalAcceptableUse"/>.</summary>
-    public const string LegalAcceptableUseHy = "portal.legal.acceptable_use.hy";
-
     /// <summary>The operator's own text of the cookie policy, default language; empty keeps the built-in text.</summary>
     public const string LegalCookies = "portal.legal.cookies";
 
-    /// <summary>The operator's own text of the cookie policy for Russian visitors. Empty uses <see cref="LegalCookies"/>.</summary>
-    public const string LegalCookiesRu = "portal.legal.cookies.ru";
+    /// <summary>
+    /// The settings written once per language: the key of the default-language row, which every language without a row
+    /// of its own reads, and beside it one row per language in <see cref="LanguageCodes.NonDefault"/> named by
+    /// <see cref="ForLanguage"/>. Adding a language adds its rows to every one of these, seeded empty, with no change here.
+    /// </summary>
+    public static readonly IReadOnlyList<string> LocalizedBases =
+    [
+        ChatWebsiteToken, AboutText, ContactAddress, ContactHours,
+        LegalTerms, LegalPrivacy, LegalRefund, LegalAcceptableUse, LegalCookies,
+    ];
 
-    /// <summary>The operator's own text of the cookie policy for Armenian visitors. Empty uses <see cref="LegalCookies"/>.</summary>
-    public const string LegalCookiesHy = "portal.legal.cookies.hy";
+    /// <summary>The key of the row a setting written once per language keeps for one language.</summary>
+    /// <param name="key">The default-language key, one of <see cref="LocalizedBases"/>.</param>
+    /// <param name="language">A supported language code.</param>
+    /// <returns>The key itself for the default language, else the key with a <c>.&lt;language&gt;</c> suffix, e.g. <c>portal.contact.address.de</c>.</returns>
+    public static string ForLanguage(string key, string language) =>
+        language == LanguageCodes.Default ? key : $"{key}.{language}";
+
+    /// <summary>The keys of every language's row of one setting written once per language, the default language first.</summary>
+    /// <param name="key">The default-language key, one of <see cref="LocalizedBases"/>.</param>
+    /// <returns>One key per language in <see cref="LanguageCodes.All"/>.</returns>
+    public static IReadOnlyList<string> RowsOf(string key) => [.. LanguageCodes.All.Select(language => ForLanguage(key, language))];
 
     /// <summary>The template a fresh install starts with. Mirrors <c>DEFAULT_TEMPLATE</c> in <c>client/templates/types.ts</c>.</summary>
     public const StorefrontTemplate DefaultTemplate = StorefrontTemplate.Classic;
@@ -533,16 +503,10 @@ public static class PortalSettingKeys
         };
 
     /// <summary>
-    /// The keys created on a fresh install, with the values a new install starts from and the
-    /// description the admin panel shows beside each.
-    /// <para>
-    /// Every contact channel and image starts empty, which the storefront renders as "hidden"
-    /// or "built-in" rather than as a broken link. <see cref="ThemeDefault"/> starts as
-    /// <c>dark</c> and <see cref="ThemeUserToggle"/> as <c>true</c> because that is what the
-    /// storefront did before either key existed: an upgrade changes nothing an operator sees.
-    /// </para>
+    /// The seeded rows written once, plus the default-language row of each key in <see cref="LocalizedBases"/>:
+    /// <see cref="Defaults"/> adds the row of every other language to these.
     /// </summary>
-    public static readonly IReadOnlyList<SettingDefault> Defaults =
+    private static readonly IReadOnlyList<SettingDefault> BaseDefaults =
     [
         new(Template,            TemplateValue(DefaultTemplate), "Active storefront template: classic, aurora or nova."),
         new(SiteName,            "",       "Site name used in the browser title, social previews and image alt text. Empty shows the built-in name."),
@@ -560,8 +524,6 @@ public static class PortalSettingKeys
         new(AnalyticsGtmId,      "",       "Google Tag Manager container id (GTM-XXXXXXX). Loads only after a visitor accepts all cookies. Empty loads nothing."),
         new(ChatBaseUrl,         "",       "Live chat server origin, https:// only. Empty hides the widget."),
         new(ChatWebsiteToken,    "",       "Live chat website token. Empty hides the widget."),
-        new(ChatWebsiteTokenRu,  "",       "Live chat website token for Russian visitors. Empty uses the default token."),
-        new(ChatWebsiteTokenHy,  "",       "Live chat website token for Armenian visitors. Empty uses the default token."),
         new(ContactWhatsapp,     "",       "WhatsApp number in international format, no leading +. Empty hides the action."),
         new(ContactTelegram,     "",       "Telegram handle without the @. Empty hides the action."),
         new(ChatProvider,        "",       "Live chat provider: chatwoot, or empty to disable the widget."),
@@ -591,25 +553,11 @@ public static class PortalSettingKeys
         new(SocialTwitter,       "",       "Twitter profile URL. Empty hides the icon."),
         new(ContactHours,        "",       "Support working hours shown on the contact page. Empty hides the row."),
         new(ContactTimezone,     "",       "IANA time zone (like Asia/Yerevan) the working hours are stated in, shown beside them. Ignored while the hours are empty."),
-        new(ContactAddressRu,    "",       "Office address for Russian visitors. Empty uses the default address."),
-        new(ContactAddressHy,    "",       "Office address for Armenian visitors. Empty uses the default address."),
-        new(ContactHoursRu,      "",       "Support working hours for Russian visitors. Empty uses the default hours."),
-        new(ContactHoursHy,      "",       "Support working hours for Armenian visitors. Empty uses the default hours."),
         new(LegalTerms, "", "Your own text of the terms of service: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
-        new(LegalTermsRu, "", "Your own text of the terms of service for Russian visitors. Empty uses the default text."),
-        new(LegalTermsHy, "", "Your own text of the terms of service for Armenian visitors. Empty uses the default text."),
         new(LegalPrivacy, "", "Your own text of the privacy policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
-        new(LegalPrivacyRu, "", "Your own text of the privacy policy for Russian visitors. Empty uses the default text."),
-        new(LegalPrivacyHy, "", "Your own text of the privacy policy for Armenian visitors. Empty uses the default text."),
         new(LegalRefund, "", "Your own text of the refund policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
-        new(LegalRefundRu, "", "Your own text of the refund policy for Russian visitors. Empty uses the default text."),
-        new(LegalRefundHy, "", "Your own text of the refund policy for Armenian visitors. Empty uses the default text."),
         new(LegalAcceptableUse, "", "Your own text of the acceptable use policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
-        new(LegalAcceptableUseRu, "", "Your own text of the acceptable use policy for Russian visitors. Empty uses the default text."),
-        new(LegalAcceptableUseHy, "", "Your own text of the acceptable use policy for Armenian visitors. Empty uses the default text."),
         new(LegalCookies, "", "Your own text of the cookie policy: a ## line starts a section, a blank line a paragraph, a - line a list entry. Empty shows the built-in text."),
-        new(LegalCookiesRu, "", "Your own text of the cookie policy for Russian visitors. Empty uses the default text."),
-        new(LegalCookiesHy, "", "Your own text of the cookie policy for Armenian visitors. Empty uses the default text."),
         new(FeaturesBackups,     "",       "Show the backups claims on the nova template: true or false. Empty hides them."),
         new(FeaturesStorage,     "",       "Show the storage claim on the nova template: true or false. Empty hides it."),
         new(FeaturesCaching,     "",       "Show the caching claim on the nova template: true or false. Empty hides it."),
@@ -618,8 +566,6 @@ public static class PortalSettingKeys
         new(FeaturesMalware,     "",       "Show the malware-scanning claim on the nova template: true or false. Empty hides it."),
         new(MigrationFree,       "",       "Show the free-migration badge on the nova template: true or false. Empty hides it."),
         new(AboutText,           "",       "Company story on the About page; a blank line starts a new paragraph. Empty hides the page."),
-        new(AboutTextRu,         "",       "Company story for Russian visitors. Empty uses the default text."),
-        new(AboutTextHy,         "",       "Company story for Armenian visitors. Empty uses the default text."),
         new(SectionStats, "true", "Show the hero stats strip and trust bar section on the home page: true or false."),
         new(SectionPartners, "true", "Show the partners strip section on the home page: true or false."),
         new(SectionServices, "true", "Show the why-choose-us and services blocks section on the home page: true or false."),
@@ -655,6 +601,34 @@ public static class PortalSettingKeys
     ];
 
     /// <summary>
+    /// The keys created on a fresh install, with the values a new install starts from and the
+    /// description the admin panel shows beside each.
+    /// <para>
+    /// Every contact channel and image starts empty, which the storefront renders as "hidden"
+    /// or "built-in" rather than as a broken link. <see cref="ThemeDefault"/> starts as
+    /// <c>dark</c> and <see cref="ThemeUserToggle"/> as <c>true</c> because that is what the
+    /// storefront did before either key existed: an upgrade changes nothing an operator sees.
+    /// </para>
+    /// </summary>
+    public static readonly IReadOnlyList<SettingDefault> Defaults = [.. BaseDefaults, .. LocalizedDefaults(BaseDefaults)];
+
+    /// <summary>
+    /// The row of every language but the default for each setting written once per language, seeded empty: no
+    /// language is written out here, the rows follow <see cref="LanguageCodes.NonDefault"/>.
+    /// </summary>
+    /// <param name="baseDefaults">The seeded rows, among them the default-language row of each key in <see cref="LocalizedBases"/>.</param>
+    /// <returns>One row per localized key and non-default language.</returns>
+    private static IReadOnlyList<SettingDefault> LocalizedDefaults(IReadOnlyList<SettingDefault> baseDefaults) =>
+    [
+        .. baseDefaults
+            .Where(d => LocalizedBases.Contains(d.Key))
+            .SelectMany(d => LanguageCodes.NonDefault.Select(language => new SettingDefault(
+                ForLanguage(d.Key, language),
+                string.Empty,
+                $"The '{language}' row of {d.Key}: what visitors reading the site in that language see. Empty uses the default row."))),
+    ];
+
+    /// <summary>
     /// Whether an empty value is a valid write for a key: true exactly when the key seeds
     /// empty, because empty then means "unset, use the built-in default". A key that seeds
     /// with a value (the template, the theme mode, the booleans) never had an empty state and
@@ -667,16 +641,16 @@ public static class PortalSettingKeys
 
     /// <summary>
     /// The operator's own legal texts: the page slug (the segment <c>GET /api/settings/public/legal/{page}</c> takes)
-    /// and the three rows of that page, default language first, then Russian, then Armenian.
+    /// and the rows of that page, one per language, the default language first.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> LegalTexts =
         new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
         {
-            ["terms"] = [LegalTerms, LegalTermsRu, LegalTermsHy],
-            ["privacy"] = [LegalPrivacy, LegalPrivacyRu, LegalPrivacyHy],
-            ["refund"] = [LegalRefund, LegalRefundRu, LegalRefundHy],
-            ["acceptable_use"] = [LegalAcceptableUse, LegalAcceptableUseRu, LegalAcceptableUseHy],
-            ["cookies"] = [LegalCookies, LegalCookiesRu, LegalCookiesHy],
+            ["terms"] = RowsOf(LegalTerms),
+            ["privacy"] = RowsOf(LegalPrivacy),
+            ["refund"] = RowsOf(LegalRefund),
+            ["acceptable_use"] = RowsOf(LegalAcceptableUse),
+            ["cookies"] = RowsOf(LegalCookies),
         };
 
     /// <summary>Every operator legal text key, the one set <see cref="IsLegalText"/> and <see cref="Public"/> read.</summary>
@@ -685,7 +659,7 @@ public static class PortalSettingKeys
 
     /// <summary>Tells whether a key holds an operator's legal text, the one kind of setting allowed a long value.</summary>
     /// <param name="key">The setting key.</param>
-    /// <returns><c>true</c> for the fifteen <c>portal.legal.*</c> text keys.</returns>
+    /// <returns><c>true</c> for every language row of the five <c>portal.legal.*</c> text keys.</returns>
     public static bool IsLegalText(string key) => LegalTextKeys.Contains(key);
 
     /// <summary>

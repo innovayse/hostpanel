@@ -23,7 +23,7 @@ public sealed class GetPublicLegalTextTests(IntegrationTestFactory factory) : IC
     public async Task ServesOnlyTheRequestedPage_AndKeepsLegalTextOutOfThePublicSettingsAsync()
     {
         var admin = await AdminTestSeeds.AdminClientAsync(factory);
-        var refundId = await AdminTestSeeds.FindSettingIdAsync(admin, PortalSettingKeys.LegalRefundHy);
+        var refundId = await AdminTestSeeds.FindSettingIdAsync(admin, PortalSettingKeys.ForLanguage(PortalSettingKeys.LegalRefund, "hy"));
         var privacyId = await AdminTestSeeds.FindSettingIdAsync(admin, PortalSettingKeys.LegalPrivacy);
         await admin.PutAsJsonAsync($"/api/admin/settings/{refundId}", new { value = "## Refunds\n\nWithin 14 days." });
         await admin.PutAsJsonAsync($"/api/admin/settings/{privacyId}", new { value = "We keep little data." });
@@ -35,7 +35,7 @@ public sealed class GetPublicLegalTextTests(IntegrationTestFactory factory) : IC
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var rows = await response.Content.ReadFromJsonAsync<List<JsonElement>>();
         rows!.Should().ContainSingle();
-        rows![0].GetProperty("key").GetString().Should().Be(PortalSettingKeys.LegalRefundHy);
+        rows![0].GetProperty("key").GetString().Should().Be(PortalSettingKeys.ForLanguage(PortalSettingKeys.LegalRefund, "hy"));
         rows[0].GetProperty("value").GetString().Should().Be("## Refunds\n\nWithin 14 days.");
         global!.Select(row => row.GetProperty("key").GetString()!).Where(PortalSettingKeys.IsLegalText).Should().BeEmpty();
 

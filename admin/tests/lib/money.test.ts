@@ -11,7 +11,9 @@ import {
   currencyLabel,
   baseCurrencyFormatter,
   currencySymbol,
+  fixedAmount,
   formatAffixed,
+  groupedAmount,
   formatCurrencyCode,
   formatCurrencyWhole,
   formatPrice,
@@ -41,7 +43,7 @@ describe('money', () => {
 describe('plain amounts with a currency code', () => {
   it('writes the number and the code of the currency it is in', () => {
     expect(formatPlainAmount(12.5, 'USD')).toBe('12.50 USD')
-    expect(formatPlainAmount(53160, 'AMD')).toBe('53160.00 AMD')
+    expect(formatPlainAmount(53160, 'AMD')).toBe('53,160.00 AMD')
   })
 
   it('reads a missing code as dollars and a missing amount as zero', () => {
@@ -122,5 +124,28 @@ describe('REPORT_CURRENCY_OPTIONS', () => {
   it('offers the four display currencies with a readable label', () => {
     expect(REPORT_CURRENCY_OPTIONS.map(option => option.value)).toEqual(['USD', 'EUR', 'RUB', 'AMD'])
     expect(REPORT_CURRENCY_OPTIONS[0]?.label).toContain('USD')
+  })
+})
+
+describe('grouping of amounts', () => {
+  it('groups thousands and keeps the decimals', () => {
+    expect(groupedAmount(9300)).toBe('9,300.00')
+    expect(groupedAmount(1234567.5)).toBe('1,234,567.50')
+    expect(groupedAmount(12, 0)).toBe('12')
+  })
+
+  it('groups a symbol price, a plain amount, an affixed amount and a price with its code', () => {
+    expect(formatSymbolPrice(9300, 'AMD')).toBe('֏9,300.00')
+    expect(formatPlainAmount(9300, 'AMD')).toBe('9,300.00 AMD')
+    expect(formatPrice(9300, 'AMD')).toBe('֏9,300.00 AMD')
+    expect(formatAffixed(9300, { prefix: '', suffix: ' ֏', decimals: 2 })).toBe('9,300.00 ֏')
+  })
+})
+
+describe('fixedAmount', () => {
+  it('always shows the decimals and never groups, so an editable amount reads 23.70', () => {
+    expect(fixedAmount(23.7)).toBe('23.70')
+    expect(fixedAmount(1234567.5)).toBe('1234567.50')
+    expect(fixedAmount(3, 0)).toBe('3')
   })
 })

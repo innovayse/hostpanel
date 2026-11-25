@@ -1,0 +1,26 @@
+{
+  "type": {
+    "ClientRegistered": "Գրանցվել է նոր հաճախորդ",
+    "InvoiceOverdue": "Հաշիվ #{number}-ը ժամկետանց է",
+    "DomainExpiring": "{domain} դոմենի ժամկետը շուտով լրանում է",
+    "PaymentReceived": "Ստացվել է վճարում #{number} հաշվի համար",
+    "TicketOpened": "Նոր տոմս՝ {subject}"
+  },
+  "upcoming": "{date}",
+  "unread": "Չկարդացված",
+  "unreadCount": "{count} չկարդացված | {count} չկարդացված",
+  "markRead": "Նշել որպես կարդացված",
+  "markAllRead": "Նշել բոլորը կարդացված",
+  "filter": {
+    "label": "Ցույց տալ ծանուցումները",
+    "all": "Բոլորը",
+    "unread": "Չկարդացված"
+  },
+  "group": {
+    "upcoming": "Շուտով",
+    "today": "Այսօր",
+    "earlier": "Ավելի վաղ"
+  },
+  "emptyUnread": "Չկարդացված ծանուցումներ չկան",
+  "emptyHint": "Այստեղ երևում են նոր հաճախորդները, ժամկետանց հաշիվները, վճարումները, տոմսերը և ժամկետը լրացող դոմենները։"
+}

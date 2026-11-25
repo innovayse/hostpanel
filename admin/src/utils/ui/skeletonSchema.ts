@@ -96,10 +96,8 @@ export interface SkeletonHeader {
   title?: string
   /** Locale key of the subtitle; absent when the screen has none. */
   subtitle?: string
-  /** Locale key of the short name of the place a back link returns to; absent when the screen has no back link. */
-  backLabel?: string
-  /** Whether the back link shows only below `md`, because the top bar's breadcrumb offers its target from `md` up. */
-  backMobileOnly?: boolean
+  /** Whether the real screen draws a breadcrumb trail above its title, so a bar stands where the trail will be. */
+  crumbs?: boolean
   /** Whether the subtitle is made of data, so a bar stands in for it while the title is drawn. */
   subtitleFromData?: boolean
   /** How many buttons sit in the actions area; each draws as a button shaped bar. A report counts only the controls of its own here: its standard buttons are the schema's `actions`. */
@@ -108,12 +106,10 @@ export interface SkeletonHeader {
   primaryAction?: number
 }
 
-/** One column of a table. */
-export interface SkeletonColumn {
+/** What every column of a table has, whatever it holds. */
+interface SkeletonColumnBase {
   /** Identifies the column. */
   key: string
-  /** Locale key of the header caption. */
-  label?: string
   /** Horizontal alignment of the column's cells; left when omitted. */
   align?: 'left' | 'center' | 'right'
   /** Width of the column as its header sets it; the table default when omitted. */
@@ -128,9 +124,26 @@ export interface SkeletonColumn {
   cardRole?: UiCardRole
   /** Heads a number or money column. */
   numeric?: boolean
-  /** Heads the row actions column; it has no caption of its own, so the real header draws a screen reader caption. */
-  actions?: boolean
 }
+
+/** A column of data: its header caption is the screen's own text. */
+export interface SkeletonDataColumn extends SkeletonColumnBase {
+  /** Locale key of the header caption. */
+  label?: string
+  /** Not the row actions column. */
+  actions?: false
+}
+
+/** The row actions column. It names no caption: the header is always the shared "Actions", so a screen cannot leave it nameless or name it differently. */
+export interface SkeletonActionsColumn extends SkeletonColumnBase {
+  /** Marks the row actions column. */
+  actions: true
+  /** An actions column has no caption of its own. */
+  label?: never
+}
+
+/** One column of a table: a data column or the row actions column. */
+export type SkeletonColumn = SkeletonDataColumn | SkeletonActionsColumn
 
 /** The toolbar over a list. */
 export interface SkeletonToolbar {

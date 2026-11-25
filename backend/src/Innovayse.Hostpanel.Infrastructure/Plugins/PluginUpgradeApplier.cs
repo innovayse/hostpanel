@@ -45,16 +45,21 @@ internal static class PluginUpgradeApplier
 
         foreach (var staged in Directory.GetDirectories(stagedRoot))
         {
-            var id = Path.GetFileName(staged);
-            var toVersion = ReadVersion(staged);
-            if (!PluginIdentifier.IsValid(id) || toVersion is null)
-            {
-                logger.LogWarning("Staged upgrade in {Dir} is not a readable plugin, skipping it", staged);
-                continue;
-            }
-
-            SwapOne(installRoot, id, staged, toVersion, logger);
+            TrySwap(installRoot, staged, logger);
         }
+    }
+
+    /// <summary>
+    /// Swaps in the staged upgrade of one plugin while the host runs. The caller has unloaded the installed version first, so
+    /// no assembly of it is held when its folder is replaced; the record of the pending migration is written exactly as at startup.
+    /// </summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="pluginId">The plugin whose staged upgrade is swapped in, already checked against the plugin id rule.</param>
+    /// <param name="logger">Records the swap or why it was not done.</param>
+    /// <returns><see langword="true"/> when the staged folder is now the installed one; <see langword="false"/> when there was nothing readable to swap or the swap failed and the installed version stays.</returns>
+    public static bool ApplyOne(string installRoot, string pluginId, ILogger logger)
+    {
+        return TrySwap(installRoot, Path.Combine(installRoot, PluginFolders.Staged, pluginId), logger);
     }
 
     /// <summary>
@@ -120,6 +125,24 @@ internal static class PluginUpgradeApplier
         }
     }
 
+    /// <summary>Swaps one staged folder in when it is a readable plugin, and logs the staged folders it skips.</summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="staged">The staged folder, named after the plugin id.</param>
+    /// <param name="logger">Records the swap or why it was not done.</param>
+    /// <returns><see langword="true"/> when the staged folder is now the installed one.</returns>
+    private static bool TrySwap(string installRoot, string staged, ILogger logger)
+    {
+        var id = Path.GetFileName(staged);
+        var toVersion = ReadVersion(staged);
+        if (!PluginIdentifier.IsValid(id) || toVersion is null)
+        {
+            logger.LogWarning("Staged upgrade in {Dir} is not a readable plugin, skipping it", staged);
+            return false;
+        }
+
+        return SwapOne(installRoot, id, staged, toVersion, logger);
+    }
+
     /// <summary>
     /// Swaps one staged upgrade in. The record is written first; when the swap then fails the record is put back as it
     /// was, because nothing changed.
@@ -129,7 +152,8 @@ internal static class PluginUpgradeApplier
     /// <param name="staged">The staged folder.</param>
     /// <param name="toVersion">The staged version.</param>
     /// <param name="logger">Records the swap or why it was not done.</param>
-    private static void SwapOne(string installRoot, string id, string staged, string toVersion, ILogger logger)
+    /// <returns><see langword="true"/> when the staged folder was swapped in; <see langword="false"/> when the swap failed and the installed version stays.</returns>
+    private static bool SwapOne(string installRoot, string id, string staged, string toVersion, ILogger logger)
     {
         var target = Path.Combine(installRoot, id);
         var fromVersion = ReadVersion(target);
@@ -165,12 +189,90 @@ internal static class PluginUpgradeApplier
             RestoreAfterFailedSwap(installRoot, id, target, previous, movedAside, needsRecord, earlier, logger);
             logger.LogError(
                 ex, "Could not swap in the staged upgrade of plugin {Id}, the installed version stays and the next start tries again", id);
-            return;
+            return false;
         }
 
         logger.LogInformation("Plugin {Id} upgraded from {From} to {To}", id, marker.FromVersion, toVersion);
         if (movedAside)
         {
+            KeepForRollback(installRoot, id, previous, logger);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Restores the version a swapped-in upgrade replaced, after the new version failed to load: the installed folder is
+    /// removed, the kept version takes its place and the pending migration record is dropped, because the data was never
+    /// migrated. When the change was a first install there is nothing to restore and the plugin is left uninstalled.
+    /// </summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="pluginId">The plugin whose new version failed, already checked against the plugin id rule.</param>
+    /// <param name="logger">Records the restore, or why it could not be done.</param>
+    /// <returns>The version that was restored; <see langword="null"/> when the plugin is now uninstalled or the restore failed.</returns>
+    public static string? RestorePrevious(string installRoot, string pluginId, ILogger logger)
+    {
+        var target = Path.Combine(installRoot, pluginId);
+        var kept = Path.Combine(installRoot, PluginFolders.Previous, pluginId);
+        try
+        {
+            if (Directory.Exists(target))
+            {
+                Directory.Delete(target, recursive: true);
+            }
+
+            DeleteMarker(installRoot, pluginId);
+            if (!Directory.Exists(kept))
+            {
+                logger.LogWarning("Plugin {Id} failed to load and had no earlier version, it is left uninstalled", pluginId);
+                return null;
+            }
+
+            Directory.Move(kept, target);
+            logger.LogWarning("Plugin {Id} failed to load, the previous version was restored", pluginId);
+            return ReadVersion(target);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogError(ex, "Could not restore the previous version of plugin {Id}", pluginId);
+            return null;
+        }
+    }
+
+    /// <summary>Deletes the version a swapped-in upgrade replaced, once the new version has loaded and is the one that runs.</summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="pluginId">The plugin id, already checked against the plugin id rule.</param>
+    /// <param name="logger">Records a folder that could not be deleted.</param>
+    public static void DiscardPrevious(string installRoot, string pluginId, ILogger logger)
+    {
+        var kept = Path.Combine(installRoot, PluginFolders.Previous, pluginId);
+        if (Directory.Exists(kept))
+        {
+            DeleteQuietly(kept, logger);
+        }
+    }
+
+    /// <summary>Moves the version a swap replaced into the rollback folder, where a failed load can find it.</summary>
+    /// <param name="installRoot">The upload folder.</param>
+    /// <param name="id">The plugin id.</param>
+    /// <param name="previous">The folder the replaced version was set aside in.</param>
+    /// <param name="logger">Records a failure to keep it; the set-aside folder is then deleted.</param>
+    private static void KeepForRollback(string installRoot, string id, string previous, ILogger logger)
+    {
+        var kept = Path.Combine(installRoot, PluginFolders.Previous, id);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(kept)!);
+            if (Directory.Exists(kept))
+            {
+                Directory.Delete(kept, recursive: true);
+            }
+
+            Directory.Move(previous, kept);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            logger.LogWarning(ex, "Could not keep the replaced version of plugin {Id}, a failed load cannot be rolled back", id);
             DeleteQuietly(previous, logger);
         }
     }

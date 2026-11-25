@@ -12,7 +12,13 @@ import { formatDateTime, EMPTY_VALUE } from '@/lib/format'
 import { pluginPagePath } from '@/lib/routes'
 import { HttpMethod } from '@/types/http'
 import type { PluginMenuLink, PluginUiMenuItemDto, PluginUiPageDto } from '@/types/pluginui'
-import { PluginBlockGroupKind, PluginBlockKind, PluginBlockTone, PluginChatStepState, PluginValueFormat } from '@/types/pluginview'
+import {
+  PluginBlockGroupKind,
+  PluginBlockKind,
+  PluginBlockTone,
+  PluginChatStepState,
+  PluginValueFormat,
+} from '@/types/pluginview'
 import type {
   PluginActionBlock,
   PluginActionBodyValue,
@@ -31,10 +37,7 @@ import type {
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
-/** How often a follow-up reads its condition, in milliseconds. */
-export const PLUGIN_FOLLOW_UP_INTERVAL_MS = 3000
-
-/** The most reads one follow-up makes (about a minute at the interval above). */
+/** The most reads one follow-up makes (about a minute at the follow-up interval of `POLL_INTERVALS_MS`). */
 export const PLUGIN_FOLLOW_UP_MAX_ATTEMPTS = 20
 
 /** How long the reads of a view are shared before a reader asks again, in milliseconds. */
@@ -69,39 +72,6 @@ const ROUTE_METHODS: Readonly<Record<string, HttpMethod>> = {
   patch: HttpMethod.Patch,
   delete: HttpMethod.Delete,
 }
-
-/**
- * Path data of the icons a plugin menu item may name, drawn by the sidebar like its own entries. Any
- * other name draws {@link DEFAULT_PLUGIN_ICON}; a name is never loaded as an address.
- */
-const PLUGIN_ICONS: Readonly<Record<string, string>> = {
-  apps: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
-  bot: 'M12 8V4H8M4 8h16v12H4zM2 14h2M20 14h2M15 13v2M9 13v2',
-  boxes: 'M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7L12 12l8.7-5M12 22V12',
-  chart: 'M18 20V10M12 20V4M6 20v-6',
-  chat: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
-  cloud: 'M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z',
-  globe: 'M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z',
-  grid: 'M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18',
-  mail: 'M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zM22 6l-10 7L2 6',
-  rocket: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z',
-  settings: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.82 1.17V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-2.82-1.17l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003 15.4H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6V3a2 2 0 014 0v.09a1.65 1.65 0 002.82 1.17l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 2z',
-  shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
-  sparkles: 'M12 3l1.9 5.8L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.2zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z',
-}
-
-/** Path data of the default plugin icon: a puzzle piece. */
-export const DEFAULT_PLUGIN_ICON =
-  'M19.4 13a2 2 0 100-4H18V6a2 2 0 00-2-2h-3V2.6a2 2 0 10-4 0V4H6a2 2 0 00-2 2v3h1.4a2 2 0 110 4H4v5a2 2 0 002 2h5v-1.4a2 2 0 114 0V20h1a2 2 0 002-2v-5z'
-
-/**
- * The icon path data of a plugin menu item.
- *
- * @param name - The icon name the plugin chose, or null.
- * @returns The icon from the host's set, or {@link DEFAULT_PLUGIN_ICON} for an unknown or missing name.
- */
-export const pluginIconPath = (name: string | null | undefined): string =>
-  (name && Object.hasOwn(PLUGIN_ICONS, name) ? PLUGIN_ICONS[name] : undefined) ?? DEFAULT_PLUGIN_ICON
 
 /**
  * The HTTP method of a view's route reference.

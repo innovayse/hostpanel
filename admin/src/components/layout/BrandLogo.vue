@@ -39,7 +39,7 @@ const lightSrc = computed<string>(() => branding.logoOnLightUrl || '/logo.svg')
  * variant, or no upload at all (the built-in light-text wordmark), needs none.
  */
 const darkPlate = computed<string>(() =>
-  branding.logoUrl && !branding.logoDarkUrl ? 'rounded-md bg-white/90 px-2 py-1' : '',
+  branding.logoUrl && !branding.logoDarkUrl ? 'rounded-md bg-surface-paper/90 px-2 py-1' : '',
 )
 </script>
 

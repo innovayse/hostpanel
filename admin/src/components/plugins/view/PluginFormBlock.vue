@@ -14,6 +14,8 @@ import UiForm from '@/components/ui/UiForm.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
+import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiSecretField from '@/components/ui/UiSecretField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -21,13 +23,14 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { usePluginFollowUp, usePluginView } from '@/composables/usePluginView'
+import { fieldInputType, PLUGIN_FIELD_RENDERINGS } from '@/lib/fieldControls'
 import { readPluginField } from '@/lib/pluginView'
 import { usePluginUiStore } from '@/stores/pluginUi'
+import { FieldControl } from '@/types/fieldcontrol'
 import { PluginFieldType } from '@/types/pluginview'
 import type { PluginFormBlock, PluginFormField } from '@/types/pluginview'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
-import { UiInputType } from '@/utils/ui/input'
 import { UiAlignItems, UiGap, UiJustify, UiDirection } from '@/utils/ui/layout'
 import { UiHeadingVariant, UiLabelVariant, UiTextSize } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -87,28 +90,35 @@ const fieldErrors = ref<Record<string, string>>({})
 const messageTone = computed<UiTone>(() => (failed.value ? UiTone.Danger : UiTone.Success))
 
 /**
- * The input type of a one-line field.
- *
- * @param type - The field type.
- * @returns The kit's input type; a secret is a password field, so it is not shown back.
- */
-const inputType = (type: PluginFieldType): UiInputType => {
-  if (type === PluginFieldType.Number) {
-    return UiInputType.Number
-  }
-  if (type === PluginFieldType.Url) {
-    return UiInputType.Url
-  }
-  return type === PluginFieldType.Secret ? UiInputType.Password : UiInputType.Text
-}
-
-/**
  * The choices of a select field.
  *
  * @param field - The field.
  * @returns The options, each shown as the value it sends.
  */
 const optionsOf = (field: PluginFormField): FieldOption[] => (field.options ?? []).map((option) => ({ value: option, label: option }))
+
+/**
+ * The value of a number field as the number the stepper shows.
+ *
+ * @param key - The field key.
+ * @returns The number, or null while the field is empty or holds text that is not a number.
+ */
+const numberOf = (key: string): number | null => {
+  const text = texts.value[key] ?? ''
+  const parsed = Number(text)
+  return text.trim() === '' || Number.isNaN(parsed) ? null : parsed
+}
+
+/**
+ * Sets one number value, kept as text like every other field; the body sends it as a number.
+ *
+ * @param key - The field key.
+ * @param value - The entered number; null (the field was cleared) stores the empty string.
+ * @returns Nothing.
+ */
+const setNumber = (key: string, value: number | null): void => {
+  setText(key, value === null ? '' : String(value))
+}
 
 /**
  * Sets one text value.
@@ -179,7 +189,7 @@ const submit = async (): Promise<void> => {
     <UiForm stacked @submit="submit">
       <UiHeading v-if="block.title" :level="3" :variant="UiHeadingVariant.Card">{{ block.title }}</UiHeading>
       <template v-for="field in block.fields" :key="field.key">
-        <UiLabel v-if="field.type === PluginFieldType.Boolean" :variant="UiLabelVariant.Inline">
+        <UiLabel v-if="PLUGIN_FIELD_RENDERINGS[field.type].control === FieldControl.Toggle" :variant="UiLabelVariant.Inline">
           <UiToggle
             :model-value="flags[field.key] ?? false"
             :data-testid="`plugin-form-${field.key}`"
@@ -196,7 +206,7 @@ const submit = async (): Promise<void> => {
         >
           <template #default="{ id, invalid }">
             <UiSelect
-              v-if="field.type === PluginFieldType.Select"
+              v-if="PLUGIN_FIELD_RENDERINGS[field.type].control === FieldControl.Select"
               :id="id"
               :model-value="texts[field.key] ?? ''"
               :options="optionsOf(field)"
@@ -206,7 +216,7 @@ const submit = async (): Promise<void> => {
               @update:model-value="setText(field.key, $event)"
             />
             <UiTextarea
-              v-else-if="field.type === PluginFieldType.Textarea"
+              v-else-if="PLUGIN_FIELD_RENDERINGS[field.type].control === FieldControl.Textarea"
               :id="id"
               :model-value="texts[field.key] ?? ''"
               :invalid="invalid"
@@ -215,15 +225,35 @@ const submit = async (): Promise<void> => {
               :data-testid="`plugin-form-${field.key}`"
               @update:model-value="setText(field.key, $event)"
             />
+            <UiSecretField
+              v-else-if="PLUGIN_FIELD_RENDERINGS[field.type].control === FieldControl.Secret"
+              :id="id"
+              :model-value="texts[field.key] ?? ''"
+              :has-value="false"
+              :invalid="invalid"
+              :placeholder="field.placeholder ?? field.label"
+              :testid="`plugin-form-${field.key}`"
+              @update:model-value="setText(field.key, $event)"
+            />
+            <UiNumberInput
+              v-else-if="PLUGIN_FIELD_RENDERINGS[field.type].control === FieldControl.Number"
+              :id="id"
+              :model-value="numberOf(field.key)"
+              nullable
+              :invalid="invalid"
+              :required="field.required"
+              :placeholder="field.placeholder ?? field.label"
+              :data-testid="`plugin-form-${field.key}`"
+              @update:model-value="setNumber(field.key, $event)"
+            />
             <UiInput
               v-else
               :id="id"
               :model-value="texts[field.key] ?? ''"
-              :type="inputType(field.type)"
+              :type="fieldInputType(PLUGIN_FIELD_RENDERINGS[field.type])"
               :invalid="invalid"
               :required="field.required"
               :placeholder="field.placeholder ?? field.label"
-              :autocomplete="field.type === PluginFieldType.Secret ? 'off' : undefined"
               :data-testid="`plugin-form-${field.key}`"
               @update:model-value="setText(field.key, $event)"
             />

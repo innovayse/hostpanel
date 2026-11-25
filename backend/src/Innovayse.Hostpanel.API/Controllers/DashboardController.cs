@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Application.Admin.Commands.MarkActivityRead;
+using Innovayse.Hostpanel.Application.Admin.Commands.MarkAllActivityRead;
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetDashboardCharts;
 using Innovayse.Hostpanel.Application.Admin.Queries.GetDashboardStats;
@@ -67,6 +69,34 @@ public sealed class DashboardController : BaseApiController
     public async Task<IActionResult> GetActivityAsync([FromQuery] GetRecentActivityQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ActivityEventDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Marks one event of the notification feed as read for the caller.</summary>
+    /// <param name="command">The key of the event, as the feed returned it.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 once the event is read, also when it already was; 400 when the key is missing or too long; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
+    [HttpPost("activity/read")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MarkActivityReadAsync([FromBody] MarkActivityReadCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Marks every event of the notification feed as read for the caller.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 once the feed is read, also when nothing was unread; 401 without a session; 403 for a caller who is not staff; 429 when the rate limit is hit.</returns>
+    [HttpPost("activity/read-all")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> MarkAllActivityReadAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new MarkAllActivityReadCommand(), ct);
         return HandleResult(outcome);
     }
 }

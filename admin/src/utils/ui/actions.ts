@@ -6,6 +6,7 @@
  * action with no kind here passes its own `icon` (an `Icon` entry) instead.
  */
 import { Icon } from '@/lib/icons'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 /** Closed set of action kinds. */
 export const UiActionKind = {
@@ -19,8 +20,10 @@ export const UiActionKind = {
   Delete: 'delete',
   /** Takes a part out of a larger whole (a line, a component), the whole staying. */
   Remove: 'remove',
-  /** Adds or creates a record. */
+  /** Creates a record. It is always the primary look (see {@link resolveActionVariant}), so every create button reads the same. */
   Add: 'add',
+  /** Adds a line, an entry or a secondary record inside a larger whole (a row of a form, a time entry, a group); never primary. */
+  AddRow: 'add-row',
   /** Opens a record for change. */
   Edit: 'edit',
   /** Reads again, renews or retries. */
@@ -69,11 +72,12 @@ export type UiActionKind = (typeof UiActionKind)[keyof typeof UiActionKind]
 /** The icon of each kind of action; the only place a common action is given its icon. */
 export const actionIcons: Record<UiActionKind, string> = {
   [UiActionKind.Save]: Icon.Check,
-  [UiActionKind.Cancel]: Icon.Undo,
+  [UiActionKind.Cancel]: Icon.Remove,
   [UiActionKind.Close]: Icon.Close,
   [UiActionKind.Delete]: Icon.Trash,
   [UiActionKind.Remove]: Icon.Remove,
   [UiActionKind.Add]: Icon.Add,
+  [UiActionKind.AddRow]: Icon.Add,
   [UiActionKind.Edit]: Icon.Edit,
   [UiActionKind.Refresh]: Icon.Refresh,
   [UiActionKind.Export]: Icon.Download,
@@ -105,6 +109,19 @@ export const actionIcons: Record<UiActionKind, string> = {
  */
 export const resolveActionIcon = (icon: string | undefined, action: UiActionKind | undefined): string | undefined =>
   icon ?? (action === undefined ? undefined : actionIcons[action])
+
+/**
+ * The look a button or link draws: the primary look for a create action, the caller's own look for every other one.
+ *
+ * `UiActionKind.Add` is the create action and is always primary, so a call site cannot override it; an add that is
+ * not the screen's main create (a row of a form) names `UiActionKind.AddRow` instead.
+ *
+ * @param variant - The look the caller asked for.
+ * @param action - Kind of the action, if the caller named one.
+ * @returns The look to draw.
+ */
+export const resolveActionVariant = (variant: UiButtonVariant, action: UiActionKind | undefined): UiButtonVariant =>
+  action === UiActionKind.Add ? UiButtonVariant.Primary : variant
 
 /** Classes of a row of action buttons on a phone: stacked, the primary action on top of the others, each as wide as the row. Dialog and drawer footers and form action bars share them. */
 export const ACTION_ROW_PHONE_CLASSES = 'max-sm:flex-col-reverse max-sm:items-stretch'

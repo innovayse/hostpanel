@@ -2,7 +2,7 @@
  * Pinia store for managing installed plugins.
  *
  * Handles list, the preview of a ZIP before its install (what it asks for), install or upgrade (multipart ZIP), forced downgrade, remove, purge of the data a
- * removed plugin kept, restart operations and the registry (browse with search, category and page,
+ * removed plugin kept, the restart (asked for, then waited through until the server answers as a new process) and the registry (browse with search, category and page,
  * the update list, install or update from it). The only caller of
  * `usePluginsApi`; a refused load is kept as the API's own sentence in `error`, a refused install or
  * remove in `actionError`, never thrown.
@@ -12,13 +12,18 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 import { usePluginsApi } from '@/composables/apis/usePluginsApi'
+import { useHealthApi } from '@/composables/apis/useHealthApi'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
-import { errorCode, errorStatus } from '@/lib/errorHandler'
-import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { errorCode, errorSentence, errorStatus } from '@/lib/errorHandler'
+import { DEFAULT_PAGE_SIZE, RESTART_TIMEOUT_MS } from '@/lib/limits'
+import { failedChangeOf } from '@/lib/pluginChange'
+import { usePoller } from '@/composables/usePoller'
+import { PollKind } from '@/types/poller'
 import { runAction } from '@/lib/runAction'
-import { PluginErrorCode, PluginStatus } from '@/types/plugin'
+import { PluginErrorCode, PluginRestartState, PluginStatus } from '@/types/plugin'
 import type {
   PluginActionOutcome,
+  PluginActionResultDto,
   PluginListItemDto,
   PluginPackagePreviewDto,
   PluginRegistryItemDto,
@@ -64,6 +69,9 @@ const runOwn = async <T>(
 /** Holds the installed plugin list and whether a restart is pending. */
 export const usePluginsStore = defineStore('plugins', () => {
   const api = usePluginsApi()
+
+  /** Liveness probe: its process start instant tells when a restarted server is back. */
+  const healthApi = useHealthApi()
 
   /** Products API: the only source of the products a widget can be bound to. */
   const productsApi = useSettingsApi()
@@ -119,6 +127,42 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** Version the last install staged for the next restart, null when it staged nothing. */
   const stagedVersion = ref<string | null>(null)
 
+  /** Whether the last install applied its change to the running server without a restart. */
+  const reloaded = ref(false)
+
+  /** Whether the last install made the host start its own restart, so the panel only has to wait for it. */
+  const restarting = ref(false)
+
+  /** Where the restart stands: no restart, waiting for the server to come back, back and running, or not back in time. */
+  const restartState = ref<PluginRestartState>(PluginRestartState.Idle)
+
+  /** The server's sentence when it refused the restart request itself, null otherwise. */
+  const restartError = ref<string | null>(null)
+
+  /** Ids of the plugins the restart applies: the ones that waited to load or to be replaced when it was asked for. */
+  const restartingPluginIds = ref<string[]>([])
+
+  /** Process start instant read right before the restart request; the server is back once it answers with another one. Null when it could not be read. */
+  let restartBaseline: string | null = null
+
+  /** Number of the restart wait that is current: a wait that finds a newer number stops, which is how it is cancelled. */
+  let restartRun = 0
+
+  /** Ends the restart wait that is running, at once; null when none runs. */
+  let cancelRestartWait: (() => void) | null = null
+
+  /**
+   * Starts a new restart number and ends the wait of the old one at once, so its poll and its timeout stop now and
+   * not on their next tick.
+   *
+   * @returns The new restart number.
+   */
+  const supersedeRestart = (): number => {
+    restartRun += 1
+    cancelRestartWait?.()
+    return restartRun
+  }
+
   /**
    * The archive the admin picked and the server described, waiting for the admin to confirm the install after reading
    * what it asks for; null when no upload waits for that decision.
@@ -164,6 +208,9 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** Sentence for the last failed load of the update list, null when none; kept off screen, the badges are only a hint. */
   const registryUpdatesError = ref<string | null>(null)
 
+  /** True until the first check of the registry for updates has answered and while a later one runs; the cards hold a placeholder for the update state meanwhile. */
+  const registryUpdatesChecking = ref(true)
+
   /** Sentence for the last refused registry install, null when none. */
   const registryInstallError = ref<string | null>(null)
 
@@ -184,11 +231,34 @@ export const usePluginsStore = defineStore('plugins', () => {
     Object.fromEntries(registryUpdates.value.map(item => [item.id, item.latestVersion])),
   )
 
+  /** The plugins the restart applied that run, with the version the server now runs; filled once the plugin list is read after the restart. */
+  const restartedPlugins = computed<PluginListItemDto[]>(() =>
+    plugins.value.filter(p => p.status === PluginStatus.Loaded && restartingPluginIds.value.includes(p.id) && failedChangeOf(p) === null),
+  )
+
+  /** The plugins the restart applied whose new version failed to load; the host kept or restored the previous one. */
+  const restartFailures = computed<PluginListItemDto[]>(() =>
+    plugins.value.filter(p => restartingPluginIds.value.includes(p.id) && failedChangeOf(p) !== null),
+  )
+
   /** The plugins that are on disk (loaded or refused): every row except a removed plugin that only keeps data. */
   const installed = computed<PluginListItemDto[]>(() => plugins.value.filter(p => p.status !== PluginStatus.Removed))
 
   /** Ids of removed plugins whose stored data the server still keeps; each can be purged. */
   const keptDataIds = computed<string[]>(() => plugins.value.filter(p => p.status === PluginStatus.Removed).map(p => p.id))
+
+  /**
+   * Raises the restart banner for an answer that needs a restart the host does not run by itself. Only ever raised: a
+   * change that needs no restart must not hide the banner an earlier one still needs, and one the host restarts for
+   * itself is waited for (see {@link followRestart}), not offered as a button.
+   *
+   * @param result - The answer of an install, update or removal.
+   */
+  const raiseRestart = (result: PluginActionResultDto): void => {
+    if (result.requiresRestart && !result.restarting) {
+      requiresRestart.value = true
+    }
+  }
 
   /**
    * Uploads one archive and records whether the server refused it as a downgrade.
@@ -236,11 +306,15 @@ export const usePluginsStore = defineStore('plugins', () => {
     loading.value = true
     downgradeFile.value = null
     stagedVersion.value = null
+    reloaded.value = false
+    restarting.value = false
     const result = await runAction(actionError, () => uploadArchive(file, force))
     loading.value = false
     if (result.ok) {
-      requiresRestart.value = result.value.requiresRestart
+      raiseRestart(result.value)
       stagedVersion.value = result.value.stagedVersion ?? null
+      reloaded.value = result.value.reloaded
+      restarting.value = result.value.restarting
       await fetchAll()
     }
     return result.ok
@@ -315,11 +389,7 @@ export const usePluginsStore = defineStore('plugins', () => {
     setBusy(id, true)
     const result = await runOwn(actionError, () => api.removePlugin(id))
     if (result.ok) {
-      // Only ever raised here: a removal that needs no restart (the files were already gone) must not hide the banner
-      // an earlier install or removal still needs.
-      if (result.value.requiresRestart) {
-        requiresRestart.value = true
-      }
+      raiseRestart(result.value)
       // Removal keeps the plugin's data, so the reloaded list answers with a Removed row the operator can purge.
       await Promise.all([
         fetchAll(),
@@ -329,7 +399,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       ])
     }
     setBusy(id, false)
-    return { ok: result.ok, stagedVersion: null, error: result.error }
+    return { ok: result.ok, stagedVersion: null, reloaded: result.ok && result.value.reloaded, restarting: result.ok && result.value.restarting, error: result.error }
   }
 
   /**
@@ -349,18 +419,172 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   /**
-   * Triggers a graceful server restart so installed/removed plugins take effect.
-   * After calling this, poll GET /health until the server responds.
+   * Reads when the server process started.
    *
-   * @returns Resolves when the restart request is over.
+   * @returns The ISO instant, or null while nothing answers (the server is down or restarting).
+   */
+  const readProcessStartedAt = async (): Promise<string | null> => {
+    try {
+      return (await healthApi.getHealth()).processStartedAt
+    } catch {
+      // A server that is down, or a proxy that has no upstream yet, is the expected state of a restart: keep waiting.
+      return null
+    }
+  }
+
+  /**
+   * Polls the liveness probe until the server answers as a new process, then reads the plugin list again. Ends in
+   * Running, or in TimedOut once {@link RESTART_TIMEOUT_MS} of wall clock time has passed: a timer of its own ends it,
+   * so a hidden tab (whose poll is paused) still ends the wait on time. A newer restart number cancels it at once.
+   *
+   * @param run - The restart number this wait belongs to.
+   * @returns Resolves when the wait is over or cancelled.
+   */
+  const waitForRestart = (run: number): Promise<void> => {
+    restartState.value = PluginRestartState.Restarting
+    const deadline = Date.now() + RESTART_TIMEOUT_MS
+    return new Promise<void>((resolve) => {
+      /** Whether the wait is over, so a probe that answers after it is ignored. */
+      let over = false
+
+      /** The wait's own poller: it reads only after a full interval, because the old process still answers for a moment while it drains. */
+      const poller = usePoller({
+        kind: PollKind.ServerRestart,
+        immediate: false,
+        tick: async () => {
+          const startedAt = await readProcessStartedAt()
+          if (over) {
+            return
+          }
+          if (startedAt !== null && startedAt !== restartBaseline) {
+            end()
+            await fetchAll()
+            if (run === restartRun) {
+              requiresRestart.value = false
+              restartState.value = PluginRestartState.Running
+            }
+            resolve()
+          } else if (Date.now() >= deadline) {
+            timeOut()
+          }
+        },
+      })
+
+      /** The timeout: the wall clock does not stop with the tab, so this runs although the poll is paused. */
+      const deadlineTimer = setTimeout(() => timeOut(), RESTART_TIMEOUT_MS)
+
+      /**
+       * Stops the poll and the timeout and forgets this wait.
+       *
+       * @returns Nothing.
+       */
+      const end = (): void => {
+        over = true
+        poller.stop()
+        clearTimeout(deadlineTimer)
+        if (cancelRestartWait === cancel) {
+          cancelRestartWait = null
+        }
+      }
+
+      /**
+       * Ends the wait in TimedOut.
+       *
+       * @returns Nothing.
+       */
+      const timeOut = (): void => {
+        if (over) {
+          return
+        }
+        end()
+        restartState.value = PluginRestartState.TimedOut
+        resolve()
+      }
+
+      /**
+       * Ends the wait because a newer restart took over; the state is that restart's to set.
+       *
+       * @returns Nothing.
+       */
+      const cancel = (): void => {
+        end()
+        resolve()
+      }
+
+      cancelRestartWait = cancel
+      poller.start()
+    })
+  }
+
+  /**
+   * Enters the Restarting state: cancels any earlier wait, clears the last refusal and notes which plugins the restart
+   * applies. The state changes in the same tick, so the screen's dialogs hand over without a gap.
+   *
+   * @returns The restart number the wait that follows belongs to.
+   */
+  const enterRestart = (): number => {
+    supersedeRestart()
+    restartError.value = null
+    restartState.value = PluginRestartState.Restarting
+    restartingPluginIds.value = plugins.value
+      .filter(p => p.status === PluginStatus.Loaded && (!p.isLoaded || p.stagedVersion !== null))
+      .map(p => p.id)
+    return restartRun
+  }
+
+  /**
+   * Waits for a restart the host started by itself (an install, update or removal answered `restarting`): takes the
+   * health baseline, enters Restarting and polls like {@link restart}, without posting a restart request.
+   *
+   * @returns Resolves when the server is back (Running) or did not come back in time (TimedOut).
+   */
+  const followRestart = async (): Promise<void> => {
+    const run = enterRestart()
+    restartBaseline = await readProcessStartedAt()
+    if (run === restartRun) {
+      await waitForRestart(run)
+    }
+  }
+
+  /**
+   * Restarts the server so staged plugin changes take effect, then waits until it answers as a new process. A server
+   * that drops the connection while it goes down is expected; one that refuses the request ends the flow with its
+   * sentence in `restartError`.
+   *
+   * @returns Resolves when the server is back (Running), did not come back in time (TimedOut) or refused (Idle).
    */
   const restart = async (): Promise<void> => {
-    loading.value = true
-    /** Local sink: a server that drops the connection while restarting is expected, not an error. */
-    const ignored = ref<string | null>(null)
-    await runAction(ignored, api.restartServer)
-    requiresRestart.value = false
-    loading.value = false
+    const run = enterRestart()
+    restartBaseline = await readProcessStartedAt()
+    try {
+      await api.restartServer()
+    } catch (cause) {
+      // An answer with a status is a refusal; no answer at all is the server already going down.
+      if (errorStatus(cause) !== null) {
+        restartError.value = errorSentence(cause)
+        restartState.value = PluginRestartState.Idle
+        return
+      }
+    }
+    if (run === restartRun) {
+      await waitForRestart(run)
+    }
+  }
+
+  /**
+   * Waits again for the server after a wait timed out, against the same process start instant, without asking for another restart.
+   *
+   * @returns Resolves when the server is back or the wait timed out again.
+   */
+  const retryRestartWait = async (): Promise<void> => {
+    await waitForRestart(supersedeRestart())
+  }
+
+  /** Ends the restart flow: stops any wait and returns to Idle. Called when the operator closes the result and when the dialog goes away. */
+  const resetRestart = (): void => {
+    supersedeRestart()
+    restartState.value = PluginRestartState.Idle
+    restartingPluginIds.value = []
   }
 
   /**
@@ -489,8 +713,13 @@ export const usePluginsStore = defineStore('plugins', () => {
    * @returns Resolves when the request is over.
    */
   const fetchRegistryUpdates = async (): Promise<void> => {
-    const result = await runAction(registryUpdatesError, () => guardRegistry(api.listRegistryUpdates, []))
-    registryUpdates.value = result.ok ? result.value : []
+    registryUpdatesChecking.value = true
+    try {
+      const result = await runAction(registryUpdatesError, () => guardRegistry(api.listRegistryUpdates, []))
+      registryUpdates.value = result.ok ? result.value : []
+    } finally {
+      registryUpdatesChecking.value = false
+    }
   }
 
   /**
@@ -598,7 +827,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       await fetchRegistryDetails(id)
     }
     setBusy(id, false)
-    return { ok: result.ok, stagedVersion: null, error: result.error }
+    return { ok: result.ok, stagedVersion: null, reloaded: false, restarting: false, error: result.error }
   }
 
   /**
@@ -614,7 +843,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       await fetchRegistryDetails(id)
     }
     setBusy(id, false)
-    return { ok: result.ok, stagedVersion: null, error: result.error }
+    return { ok: result.ok, stagedVersion: null, reloaded: false, restarting: false, error: result.error }
   }
 
   /**
@@ -632,9 +861,7 @@ export const usePluginsStore = defineStore('plugins', () => {
     const result = await runOwn(registryInstallError, () => api.installFromRegistry(id, { version, allowDowngrade }))
     let staged: string | null = null
     if (result.ok) {
-      if (result.value.requiresRestart) {
-        requiresRestart.value = true
-      }
+      raiseRestart(result.value)
       staged = result.value.stagedVersion ?? null
       stagedVersion.value = staged
       await Promise.all([
@@ -646,16 +873,16 @@ export const usePluginsStore = defineStore('plugins', () => {
       ])
     }
     setBusy(id, false)
-    return { ok: result.ok, stagedVersion: staged, error: result.error }
+    return { ok: result.ok, stagedVersion: staged, reloaded: result.ok && result.value.reloaded, restarting: result.ok && result.value.restarting, error: result.error }
   }
 
   return {
-    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, pluginServers, pluginServersError, pluginServersLoading, bindingError,
-    registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
+    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, reloaded, restartState, restartError, restartedPlugins, restartFailures, restarting, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, pluginServers, pluginServersError, pluginServersLoading, bindingError,
+    registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError, registryUpdatesChecking,
     registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
     registryInstance, registryInstanceBusy, registryInstanceError,
     isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
     fetchRegistry, setRegistryFilter, fetchRegistryUpdates, fetchRegistryInstance, retryRegistryInstance, installFromRegistry,
-    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgetsFor, fetchServersFor, saveSlotWidgetProducts,
+    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, followRestart, retryRestartWait, resetRestart, fetchSlotWidgetsFor, fetchServersFor, saveSlotWidgetProducts,
   }
 })

@@ -140,14 +140,6 @@ describe('UiButton', () => {
     expect(loading.find('svg').exists()).toBe(false)
   })
 
-  it('draws a button-like look as a pill when asked', () => {
-    const pill = mount(UiButton, { props: { variant: 'ghost', size: 'sm', pill: true } })
-    const plain = mount(UiButton, { props: { variant: 'ghost', size: 'sm' } })
-
-    expect(pill.classes()).toContain('rounded-pill')
-    expect(plain.classes()).not.toContain('rounded-pill')
-  })
-
   it('names a shortened label in full through its hint, as accessible name and tooltip', () => {
     const hinted = mount(UiButton, { props: { hint: 'Download PDF' }, slots: { default: 'PDF' } })
     const plain = mount(UiButton, { slots: { default: 'PDF' } })
@@ -157,5 +149,21 @@ describe('UiButton', () => {
     expect(hinted.text()).toBe('PDF')
     expect(plain.attributes('aria-label')).toBeUndefined()
     expect(plain.attributes('title')).toBeUndefined()
+  })
+
+  it('draws a create action primary, whatever look the call site asks for', () => {
+    const asked = mount(UiButton, { props: { action: UiActionKind.Add, variant: UiButtonVariant.Secondary } })
+    const bare = mount(UiButton, { props: { action: UiActionKind.Add } })
+
+    expect(asked.classes()).toContain('not-disabled:gradient-brand')
+    expect(asked.classes()).not.toContain('bg-surface-field')
+    expect(bare.classes()).toContain('not-disabled:gradient-brand')
+  })
+
+  it('keeps the asked look for an added row inside a form', () => {
+    const wrapper = mount(UiButton, { props: { action: UiActionKind.AddRow, variant: UiButtonVariant.Secondary } })
+
+    expect(wrapper.classes()).toContain('bg-surface-field')
+    expect(wrapper.classes()).not.toContain('not-disabled:gradient-brand')
   })
 })

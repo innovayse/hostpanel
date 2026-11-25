@@ -3,7 +3,7 @@
  * refusal at the range edges.
  */
 import { describe, expect, it } from 'vitest'
-import { StepDirection, stepValue } from '@/utils/ui/stepper'
+import { StepDirection, stepDecimals, stepValue } from '@/utils/ui/stepper'
 
 describe('stepValue', () => {
   it('moves the value one step up or down', () => {
@@ -27,5 +27,13 @@ describe('stepValue', () => {
 
   it('has no bounds unless given', () => {
     expect(stepValue(0, 1, StepDirection.Down)).toBe(-1)
+  })
+})
+
+describe('stepDecimals', () => {
+  it('counts the decimals a step is written with', () => {
+    expect(stepDecimals(1)).toBe(0)
+    expect(stepDecimals(0.25)).toBe(2)
+    expect(stepDecimals(0.001)).toBe(3)
   })
 })

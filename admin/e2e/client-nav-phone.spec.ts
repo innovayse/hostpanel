@@ -111,7 +111,7 @@ test('a tab far along the strip is brought into view when its section opens', as
   }).toBe(true)
 })
 
-test('the client header on a phone: the back link is a row above the name, the status sits beside the name and Export is a row of its own', async ({ page }) => {
+test('the client header on a phone: it has no back link of its own, the status sits beside the name and Export is a row of its own', async ({ page }) => {
   await stubApi(page, {
     signedIn: true,
     routes: [
@@ -129,17 +129,16 @@ test('the client header on a phone: the back link is a row above the name, the s
   await expect(page.getByTestId('client-header-name')).toBeVisible()
   await expect(page.getByTestId('client-layout-header').getByText(adaDetail.status, { exact: true })).toBeVisible()
   await expect(page.getByTestId('client-layout-export')).toBeVisible()
-  const back = await boxOf(page.getByTestId('client-layout-back'))
   const name = await boxOf(page.getByTestId('client-header-name'))
   const status = await boxOf(page.getByTestId('client-layout-header').getByText(adaDetail.status, { exact: true }))
   const exportButton = await boxOf(page.getByTestId('client-layout-export'))
 
-  // First row: the back link sits on a row of its own above the name.
-  expect(back.y + back.height).toBeLessThanOrEqual(name.y + 4)
-  // Second row: the status badge shares a line with the name, right after it.
+  // The way up is the page's own trail and the top bar, so the card has no back link.
+  await expect(page.getByTestId('client-layout-back')).toHaveCount(0)
+  // The status badge shares a line with the name, right after it.
   expect(Math.abs((status.y + status.height / 2) - (name.y + name.height / 2))).toBeLessThan(20)
   expect(status.x).toBeGreaterThanOrEqual(name.x + name.width - 4)
-  // Third row: Export is below the name and stays on screen.
+  // Export is below the name and stays on screen.
   expect(exportButton.y).toBeGreaterThan(name.y + name.height - 4)
   expect(exportButton.x + exportButton.width).toBeLessThanOrEqual(390)
 })

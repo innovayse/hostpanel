@@ -19,7 +19,7 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import { Icon } from '@/lib/icons'
-import { pageCount as countPages, pageEntryKey, pageFirstRow, pageLastRow, pageWindow } from '@/lib/paging'
+import { pageCount as countPages, pageEntryKey, pageFirstRow, pageLastRow, pageWindow, pagerVisible } from '@/lib/paging'
 import { UiButtonVariant } from '@/utils/ui/button'
 
 const { t } = useI18n()
@@ -61,15 +61,7 @@ const pageCount = computed<number>(() => countPages(props.total, props.pageSize)
 const entries = computed<(number | null)[]>(() => pageWindow(props.page, pageCount.value))
 
 /** Whether the pager is shown: while loading, more than one page, or a size select that can still shrink the page. */
-const visible = computed<boolean>(() => {
-  if (props.loading) {
-    return true
-  }
-  if (pageCount.value > 1) {
-    return true
-  }
-  return props.pageSizeOptions !== undefined && props.total > Math.min(...props.pageSizeOptions)
-})
+const visible = computed<boolean>(() => pagerVisible(props.total, props.pageSize, props.loading, props.pageSizeOptions))
 
 /** The "x to y of n" line. */
 const rangeText = computed<string>(() => t('ui.pagination.range', {

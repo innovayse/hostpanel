@@ -22,7 +22,7 @@ export const INVOICE_ITEMS_TABLE: SkeletonTable = {
 /** What the invoice screen is made of. */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { subtitle: 'billing.invoiceDetail.manageAndViewInvoiceDetails', actions: 3 },
+  header: { subtitle: 'billing.invoiceDetail.manageAndViewInvoiceDetails', crumbs: true, actions: 3 },
   columns: [
     [
       {

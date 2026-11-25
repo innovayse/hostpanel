@@ -74,7 +74,7 @@ onUnmounted(cancelReset)
   <div class="flex items-start gap-2">
     <code
       v-bind="$attrs"
-      class="block min-w-0 flex-1 whitespace-pre-wrap break-all rounded-control border border-border bg-surface-field px-3.5 py-2.5 font-mono text-xs text-text-primary"
+      class="block min-w-0 flex-1 whitespace-pre-wrap break-all rounded-control border border-border bg-surface-inset px-3.5 py-2.5 font-mono text-xs text-text-primary"
     >{{ props.code }}</code>
     <UiButton
       type="button"

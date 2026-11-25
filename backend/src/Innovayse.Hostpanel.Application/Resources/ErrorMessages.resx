@@ -747,6 +747,12 @@
 <data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
     <value>The signature of this plugin package does not match its files: it was changed after it was signed.</value>
   </data>
+<data name="HOST_DRAINING" xml:space="preserve">
+    <value>The server is restarting and takes no new requests. It is back in a moment.</value>
+  </data>
+<data name="PLUGIN_APPLY_FAILED" xml:space="preserve">
+    <value>The new version of this plugin could not be loaded, so the previous version was restored. The plugin list shows the reason.</value>
+  </data>
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>This plugin ships with the server and cannot be removed or replaced.</value>
   </data>
@@ -838,7 +844,13 @@
     <value>That file could not be read as an image. Upload a PNG, JPEG, WebP, GIF or BMP.</value>
   </data>
 <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
-    <value>That image is too large. Upload a file under 5 MB and no more than 8000 pixels on a side.</value>
+    <value>That file is over the 5 MB limit. Upload a smaller file.</value>
+  </data>
+<data name="BRANDING_IMAGE_DIMENSIONS_TOO_LARGE" xml:space="preserve">
+    <value>That image has more than 8000 pixels on one side or more than 40 million pixels in total. Resize it and upload it again.</value>
+  </data>
+<data name="STORAGE_NOT_WRITABLE" xml:space="preserve">
+    <value>The server cannot save uploaded files right now because its upload folder is not writable. Ask the administrator to check the folder permissions.</value>
   </data>
 <data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
     <value>This deployment's accounts belong to the sign-on service, so an account cannot be created here. Add the person in the sign-on service first.</value>

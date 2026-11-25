@@ -111,6 +111,8 @@ public sealed class StatusMappingTests
     [InlineData("SHARE_NOT_FOUND_UPSTREAM_FAILED", 404)]
     [InlineData(HostpanelErrorCodes.CONTACT_SEND_FAILED, 502)]
     [InlineData(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE, 413)]
+    [InlineData(HostpanelErrorCodes.BRANDING_IMAGE_DIMENSIONS_TOO_LARGE, 413)]
+    [InlineData(HostpanelErrorCodes.STORAGE_NOT_WRITABLE, 503)]
     [InlineData(HostpanelErrorCodes.SETUP_TOKEN_INVALID, 403)]
     [InlineData(SharedErrorCodes.DemoActionDisabled, 403)]
     [InlineData(HostpanelErrorCodes.CLIENT_PERMISSION_DENIED, 403)]

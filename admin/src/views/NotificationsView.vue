@@ -2,7 +2,7 @@
 /**
  * Full-page admin notification feed: the destination of the top bar bell's "View all" link.
  *
- * Shows every event type the feed carries (client registrations, overdue invoices, domain
+ * Shows every event type the feed carries (client registrations, overdue invoices, payments, opened tickets, domain
  * expiries), not just invoices. Reads `stores/activity`; each row links to the record it is about.
  * A refused load shows the API's sentence with a retry.
  */
@@ -18,7 +18,7 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { activityEventLink } from '@/lib/activityEventLink'
-import { formatRelativeFromNow } from '@/lib/format'
+import { useActivityEventText } from '@/composables/useActivityEventText'
 import { placeholderRows } from '@/lib/placeholderRows'
 import { ACTIVITY_EVENT_LOOK } from '@/lib/activityEventLook'
 import { useActivityStore } from '@/stores/activity'
@@ -26,8 +26,12 @@ import { UiWidth, UiGap } from '@/utils/ui/layout'
 import { UiRowLinkLook } from '@/utils/ui/rowLink'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { toneTextClasses } from '@/utils/ui/tone'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
+
+/** Title, detail and time of an event, in the active locale. */
+const text = useActivityEventText()
 
 /** Activity store: the feed and its load state. */
 const activity = useActivityStore()
@@ -72,12 +76,14 @@ onMounted(() => activity.fetchActivity(FEED_LIMIT))
         :to="event ? activityEventLink(event) : undefined"
         :look="UiRowLinkLook.Divided"
         :data-testid="`notification-${index}`"
+        @click="event && activity.markRead(event)"
       >
         <UiSkeletonBar v-if="event === null" class="h-4 w-4 rounded-full" aria-hidden="true" />
-        <UiIcon v-else :markup="ACTIVITY_EVENT_LOOK[event.type].icon" :size="UiSize.Sm" :class="ACTIVITY_EVENT_LOOK[event.type].color" />
+        <UiIcon v-else :markup="ACTIVITY_EVENT_LOOK[event.type].icon" :size="UiSize.Sm" :class="toneTextClasses[ACTIVITY_EVENT_LOOK[event.type].tone]" />
         <UiStack v-if="event" :gap="UiGap.Xs">
-          <UiText>{{ event.message }}</UiText>
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ formatRelativeFromNow(event.occurredAt, locale) }}</UiText>
+          <UiText>{{ text.title(event) }}</UiText>
+          <UiText v-if="text.detail(event) !== ''" :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ text.detail(event) }}</UiText>
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">{{ text.time(event) }}</UiText>
         </UiStack>
         <UiStack v-else :gap="UiGap.Xs" class="flex-1" aria-hidden="true">
           <UiSkeletonBar :width="UiWidth.TwoThirds" class="h-3.5 rounded" />

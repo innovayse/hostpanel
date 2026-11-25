@@ -9,7 +9,7 @@
  */
 import { computed, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts, SETTING_LOCALES, SettingLanguage } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
@@ -22,6 +22,7 @@ import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { ChatProvider } from '@/types/chatprovider'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
@@ -56,29 +57,26 @@ const providerOptions = computed(() => [
 /** The chat server address, a draft of the page's save bar. */
 const baseUrl = useSettingDraft(settings, SettingKey.ChatBaseUrl)
 
-/** The settings row of the website token of each language: the default token is the English tab's. */
-const TOKEN_KEYS: Record<SettingLanguage, SettingKey> = {
-  [SettingLanguage.En]: SettingKey.ChatWebsiteToken,
-  [SettingLanguage.Ru]: SettingKey.ChatWebsiteTokenRu,
-  [SettingLanguage.Hy]: SettingKey.ChatWebsiteTokenHy,
-}
+/** The website token, one draft per language; the default token is the English tab's. */
+const token = useLocalizedSettingDrafts(settings, SettingKey.ChatWebsiteToken)
 
-/** The website token, one draft per language. */
-const token = useLocalizedSettingDrafts(settings, TOKEN_KEYS)
+/**
+ * Placeholder of the token input of one language: the default token is explained, the others are optional.
+ *
+ * @param locale - The language of the input.
+ * @returns The placeholder sentence.
+ */
+const tokenPlaceholder = (locale: ContentLanguage): string =>
+  locale === ContentLanguage.En ? t('settings.trackingChat.chat.tokenHint') : t('settings.trackingChat.chat.tokenLocaleHint')
 
-/** Placeholder of the token input of each language: the default token is explained, the others are optional. */
-const tokenPlaceholders = computed<Record<SettingLanguage, string>>(() => ({
-  [SettingLanguage.En]: t('settings.trackingChat.chat.tokenHint'),
-  [SettingLanguage.Ru]: t('settings.trackingChat.chat.tokenLocaleHint'),
-  [SettingLanguage.Hy]: t('settings.trackingChat.chat.tokenLocaleHint'),
-}))
-
-/** Test id suffix of the token input of each language; the default token keeps the bare `token`. */
-const tokenTestids: Record<SettingLanguage, string> = {
-  [SettingLanguage.En]: 'tracking-chat-token',
-  [SettingLanguage.Ru]: 'tracking-chat-token-ru',
-  [SettingLanguage.Hy]: 'tracking-chat-token-hy',
-}
+/**
+ * Test id of the token input of one language; the default token keeps the bare `tracking-chat-token`.
+ *
+ * @param locale - The language of the input.
+ * @returns The `data-testid` of the input.
+ */
+const tokenTestid = (locale: ContentLanguage): string =>
+  locale === ContentLanguage.En ? 'tracking-chat-token' : `tracking-chat-token-${locale}`
 </script>
 
 <template>
@@ -130,7 +128,6 @@ const tokenTestids: Record<SettingLanguage, string> = {
 
       <UiLocalizedField
         :label="t('settings.trackingChat.chat.token')"
-        :locales="SETTING_LOCALES"
         :filled="token.filled.value"
         :errors="token.errors.value"
         testid="tracking-chat-token-tab"
@@ -138,15 +135,15 @@ const tokenTestids: Record<SettingLanguage, string> = {
         <template #default="{ locale }">
           <SettingNotSeeded
             v-if="!token.drafts[locale].setting.value"
-            :setting-key="TOKEN_KEYS[locale]"
-            :env-name="SettingEnv[TOKEN_KEYS[locale]]"
+            :setting-key="token.keys[locale]"
+            :env-name="token.envs[locale]"
           />
           <UiStack v-else :gap="UiGap.Xs">
             <UiInput
               v-model="token.drafts[locale].value.value"
-              :placeholder="tokenPlaceholders[locale]"
+              :placeholder="tokenPlaceholder(locale)"
               :maxlength="CHAT_SETTING_MAX_LENGTH"
-              :data-testid="tokenTestids[locale]"
+              :data-testid="tokenTestid(locale)"
             />
             <SettingOutcome :outcome="token.drafts[locale].outcome.value?.saved ? token.drafts[locale].outcome.value : null" />
           </UiStack>

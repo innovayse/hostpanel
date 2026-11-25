@@ -3,7 +3,7 @@
  * Summary tab of the invoice screen: who is billed, the dates and amounts, the status, and the
  * actions that move the invoice along (publish, cancel, mark paid). Cancel and mark paid are
  * confirmed first; the outcome of each action (success, or the API's sentence) shows next to the
- * buttons. The line items and the transaction ledgers sit below.
+ * buttons, and below them sit the line items and the transaction ledgers, which only this tab shows.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,7 +20,8 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { invoiceStatusTone } from '@/lib/tones'
+import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
+import { invoiceStatusTone, statusLabel } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceBulkAction, InvoiceStatus } from '@/types/invoice'
@@ -182,7 +183,7 @@ const markPaid = (): Promise<void> =>
           </UiStack>
           <UiStack :gap="UiGap.Xs" :align="UiAlignItems.End">
             <UiBadge :tone="invoiceStatusTone(invoice.status)" data-testid="billing-invoice-status">
-              {{ invoice.status }}
+              {{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}
             </UiBadge>
             <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
               {{ t('billing.invoiceSummaryTab.paymentMethod') }} {{ invoice.payment.method || t('shared.none') }}
@@ -201,7 +202,7 @@ const markPaid = (): Promise<void> =>
           >
             {{ t('billing.invoiceSummaryTab.publish') }}
           </UiButton>
-          <UiButton :action="UiActionKind.Stop"
+          <UiButton :action="UiActionKind.Cancel"
             v-if="canCancel"
             :variant="UiButtonVariant.Secondary"
             :loading="running === SummaryAction.Cancel"

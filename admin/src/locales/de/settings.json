@@ -1,7 +1,7 @@
 {
   "systemSettings": "Systemeinstellungen",
   "secret": {
-    "set": "••••••, gesetzt",
+    "set": "Gesetzt",
     "notSet": "Nicht gesetzt",
     "replace": "Ersetzen",
     "placeholder": "Neuen Wert eingeben",
@@ -273,6 +273,7 @@
   "branding": {
     "title": "Branding",
     "description": "Die Logos des Storefronts und das Symbol im Browser-Tab. Änderungen werden beim nächsten Laden der Seite wirksam.",
+    "imageSize": "Ihr Bild hat {width} × {height} Pixel.",
     "pasteUrl": "Oder Bild-URL einfügen",
     "logo": {
       "label": "Logo (für helle Hintergründe)",
@@ -502,6 +503,7 @@
       "gateway-payment-without-reference-admin": "Gateway-Zahlung ohne Referenz (Mitarbeiter)",
       "invoice-renewal-reminder": "Erinnerung an Verlängerungsrechnung",
       "order-rejected": "Bestellung abgelehnt",
+      "plugin-change-ended-admin": "Plugin-Änderung abgeschlossen (Mitarbeiter)",
       "service-termination-failed-admin": "Beendigung des Services fehlgeschlagen (Mitarbeiter)",
       "user-email-change": "Bestätigung der E-Mail-Änderung",
       "user-email-changed-notice": "Hinweis auf geänderte E-Mail-Adresse",

@@ -22,7 +22,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
 import { Icon } from '@/lib/icons'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
 import { ContentLanguage } from '@/locales/contentLanguage'
 import { useProjectsStore } from '@/stores/projects'
 import type { Project, ProjectPayload, ProjectTranslation } from '@/types/project'
@@ -231,7 +231,7 @@ const setImage = (index: number, url: string): void => {
       </template>
 
       <template #field-locales>
-        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="project-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="project-form-tab" />
       </template>
 
       <template #field-title="{ id }">

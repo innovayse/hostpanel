@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useLegalSections } from '~/composables/useLegalSections'
 import { LegalPage } from '~/constants/legalPage'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 import type { LegalSection } from '~/types/legalsection'
 import { legalTextPath } from '~/tests/helpers/contentPaths'
 import { readOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -103,11 +104,12 @@ describe('useLegalSections', () => {
     expect((await read(LegalPage.Privacy)).sections.value[0]?.title).toBe('privacy.title')
   })
 
-  it('reads the Russian text for a Russian visitor and the Armenian one for an Armenian visitor', async () => {
+  it('reads the text of the visitor language, whichever portal language it is', async () => {
     answer(LegalPage.Cookies, {
       [PortalSettingKey.LegalCookies]: 'English.',
-      [PortalSettingKey.LegalCookiesRu]: 'Русский.',
-      [PortalSettingKey.LegalCookiesHy]: 'Հայերեն։'
+      [localizedSettingKey(PortalSettingKey.LegalCookies, 'ru')]: 'Русский.',
+      [localizedSettingKey(PortalSettingKey.LegalCookies, 'hy')]: 'Հայերեն։',
+      [localizedSettingKey(PortalSettingKey.LegalCookies, 'fr')]: 'Français.'
     })
     const { sections } = await read(LegalPage.Cookies)
 
@@ -115,6 +117,8 @@ describe('useLegalSections', () => {
     expect(sections.value[0]?.paragraphs).toEqual(['Русский.'])
     locale.value = 'hy'
     expect(sections.value[0]?.paragraphs).toEqual(['Հայերեն։'])
+    locale.value = 'fr'
+    expect(sections.value[0]?.paragraphs).toEqual(['Français.'])
     locale.value = 'en'
     expect(sections.value[0]?.paragraphs).toEqual(['English.'])
   })
@@ -125,7 +129,7 @@ describe('useLegalSections', () => {
 
     expect((await read(LegalPage.AcceptableUse)).sections.value[0]?.paragraphs).toEqual(['English only.'])
 
-    answer(LegalPage.Cookies, { [PortalSettingKey.LegalCookiesRu]: 'Только русский.' })
+    answer(LegalPage.Cookies, { [localizedSettingKey(PortalSettingKey.LegalCookies, 'ru')]: 'Только русский.' })
     expect((await read(LegalPage.Cookies)).sections.value).toEqual(BUILT_IN.value)
   })
 })

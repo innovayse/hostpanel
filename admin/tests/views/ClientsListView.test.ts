@@ -13,6 +13,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { createTestI18n } from '../helpers/i18n'
 import { stubPathRoutes } from '../helpers/routes'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** A client in a group, as the list endpoint answers it. */
 const GROUPED_CLIENT = {
@@ -114,12 +115,10 @@ describe('ClientsListView', () => {
     expect(row.get('circle').attributes('fill')).toBe('#112233')
   })
 
-  it('shows two-factor sign-in as one icon named for assistive technology, in a narrow share column', async () => {
+  it('shows two-factor sign-in as a labelled badge, in a narrow share column', async () => {
     const { wrapper } = await mountGrouped()
 
-    const icon = wrapper.get('[data-testid="client-row"] [role="img"]')
-    expect(icon.attributes('aria-label')).toMatch(/disabled/i)
-    expect(icon.text()).toBe('')
+    expect(wrapper.get('[data-testid="client-row"]').getComponent(UiStatusBadge).text()).toBe('Disabled')
     expect(wrapper.findAll('th').find((header) => header.text().includes('2FA'))?.classes()).toEqual(expect.arrayContaining(['w-[14%]', 'whitespace-nowrap']))
   })
 

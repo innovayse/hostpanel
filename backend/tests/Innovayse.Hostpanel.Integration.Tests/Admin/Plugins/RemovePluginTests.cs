@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
@@ -45,7 +46,8 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
         var removeBody = await remove.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        removeBody.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
+        removeBody.GetProperty("requiresRestart").GetBoolean().Should().BeFalse("the plugin was never loaded, so nothing of it is in the running process");
+        removeBody.GetProperty("reloaded").GetBoolean().Should().BeTrue();
 
         var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/plugins");
         list!.Should().NotContain(p => p.GetProperty("id").GetString() == pluginId);
@@ -347,7 +349,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await remove.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
-        body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
+        body.GetProperty("requiresRestart").GetBoolean().Should().BeFalse("a plugin that was never loaded has nothing in the running process");
         Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/plugins");
         list!.Should().NotContain(p => p.GetProperty("id").GetString() == pluginId);
@@ -414,7 +416,8 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
             services.GetRequiredService<IActivityLogger>(),
             services.GetRequiredService<IHostpanelDbContext>(),
             services.GetRequiredService<IPluginAvailabilityInvalidator>(),
-            services.GetRequiredService<IClock>());
+            services.GetRequiredService<IClock>(),
+            services.GetRequiredService<PluginChangeApplier>());
     }
 
     /// <summary>Stores the plugin's switch row with the given value.</summary>

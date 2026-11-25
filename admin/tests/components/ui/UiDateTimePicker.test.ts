@@ -37,6 +37,7 @@ describe('UiDateTimePicker', () => {
 
     expect(stub.attributes('data-placeholder')).toBe('No start date')
     expect(stub.attributes('data-class')).toContain('bg-surface-field!')
+    expect(stub.attributes('data-class')).toContain('border-border-control!')
   })
 
   it('follows the panel scheme: the library is dark unless the light palette is applied', () => {

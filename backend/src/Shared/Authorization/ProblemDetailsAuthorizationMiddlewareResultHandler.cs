@@ -11,16 +11,22 @@ using Microsoft.Net.Http.Headers;
 namespace Innovayse.Hostpanel.Shared.Authorization;
 
 /// <summary>
-/// Decorates the framework's default <see cref="IAuthorizationMiddlewareResultHandler"/>: runs
-/// it first, then writes the product's own <see cref="ErrorResponse"/> body if the default
-/// handling left the response unwritten.
+/// Answers an authorization refusal with the product's own <see cref="ErrorResponse"/> body, and leaves every other
+/// outcome to the framework's default <see cref="IAuthorizationMiddlewareResultHandler"/>.
 /// </summary>
+/// <remarks>
+/// The refusal is written here and the default handler is not asked to handle it. Its handling of a refusal is to
+/// challenge or forbid <b>every</b> scheme the policy names, one after another; this product's policies name three
+/// (sign-on bearer, local bearer, session cookie). The first scheme to answer writes the body and starts the
+/// response, and the next one then sets a status on a response that has already started, which throws
+/// <see cref="InvalidOperationException"/> and ends in the exception middleware as a logged
+/// <c>BUSINESS_RULE_VIOLATION</c> for what was an ordinary 401 or 403.
+/// </remarks>
 public sealed class ProblemDetailsAuthorizationMiddlewareResultHandler : IAuthorizationMiddlewareResultHandler
 {
     /// <summary>
-    /// The stock handler this class wraps. Stateless and safe to share: it holds no per-request
-    /// data, only the logic that calls <c>ChallengeAsync</c>/<c>ForbidAsync</c> on the resolved
-    /// scheme.
+    /// The stock handler every outcome other than a refusal is delegated to. Stateless and safe to share: it holds
+    /// no per-request data.
     /// </summary>
     private static readonly AuthorizationMiddlewareResultHandler DefaultHandler = new();
 
@@ -34,12 +40,14 @@ public sealed class ProblemDetailsAuthorizationMiddlewareResultHandler : IAuthor
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(authorizeResult);
 
-        await DefaultHandler.HandleAsync(next, context, policy, authorizeResult);
+        if (!authorizeResult.Forbidden && !authorizeResult.Challenged)
+        {
+            await DefaultHandler.HandleAsync(next, context, policy, authorizeResult);
+            return;
+        }
 
-        // A scheme's own handler may already have written during the call above; a flushed
-        // response cannot be modified and trying throws, so this guards against double-writing
-        // as well as against a response flushed for an unrelated reason (streaming, a
-        // websocket upgrade).
+        // A flushed response cannot be modified and trying throws, so a response flushed for an unrelated
+        // reason (streaming, a websocket upgrade) is left as it is.
         if (context.Response.HasStarted)
         {
             return;
@@ -65,7 +73,7 @@ public sealed class ProblemDetailsAuthorizationMiddlewareResultHandler : IAuthor
         }
     }
 
-    /// <summary>Writes the localized <see cref="ErrorResponse"/> the default handler left unwritten.</summary>
+    /// <summary>Writes the localized <see cref="ErrorResponse"/> that answers the refusal.</summary>
     /// <param name="context">The current request.</param>
     /// <param name="status">401 or 403.</param>
     /// <param name="code">The registry code the status is answered with.</param>

@@ -9,7 +9,7 @@
  */
 import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts, SETTING_LOCALES, SettingLanguage } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import type { LocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import { useSettingDraft } from '@/composables/useSettingDraft'
 import type { SettingDraft } from '@/composables/useSettingDraft'
@@ -22,6 +22,7 @@ import SettingsTimezoneField from '@/components/settings/SettingsTimezoneField.v
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import { SettingEnv, SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
 import { SHORT_TEXT_MAX_LENGTH } from '@/lib/limits'
@@ -170,10 +171,8 @@ const TIMEZONE = useSettingDraft(settings, SettingKey.ContactTimezone)
 interface LocalizedStorefrontField {
   /** The group the field is drawn in. */
   group: StorefrontGroup
-  /** Suffix of the test ids: `<testid>` is the English input, `<testid>-ru` and `<testid>-hy` the others. */
+  /** Suffix of the test ids: `<testid>` is the English input, `<testid>-<language code>` the others. */
   testid: string
-  /** The settings row of each language. */
-  keys: Record<SettingLanguage, SettingKey>
   /** Locale key of the label. */
   labelKey: string
   /** Locale key of the placeholder. */
@@ -189,7 +188,7 @@ interface LocalizedStorefrontField {
  * @param testid - Suffix of the test ids.
  * @param labelKey - Locale key of the label.
  * @param hintKey - Locale key of the placeholder.
- * @param keys - The settings row of each language.
+ * @param key - The settings key of the default-language row; the other languages' rows are named from it.
  * @returns The field with its drafts.
  */
 const localizedField = (
@@ -197,21 +196,13 @@ const localizedField = (
   testid: string,
   labelKey: string,
   hintKey: string,
-  keys: Record<SettingLanguage, SettingKey>,
-): LocalizedStorefrontField => ({ group, testid, keys, labelKey, hintKey, localized: useLocalizedSettingDrafts(settings, keys) })
+  key: SettingKey,
+): LocalizedStorefrontField => ({ group, testid, labelKey, hintKey, localized: useLocalizedSettingDrafts(settings, key) })
 
 /** The contact details written per language: an empty language shows the English text on the storefront. */
 const LOCALIZED_FIELDS: LocalizedStorefrontField[] = [
-  localizedField(StorefrontGroup.Address, 'contact-address', 'settings.storefrontContent.contactAddress.label', 'settings.storefrontContent.contactAddress.hint', {
-    [SettingLanguage.En]: SettingKey.ContactAddress,
-    [SettingLanguage.Ru]: SettingKey.ContactAddressRu,
-    [SettingLanguage.Hy]: SettingKey.ContactAddressHy,
-  }),
-  localizedField(StorefrontGroup.Address, 'contact-hours', 'settings.storefrontContent.contactHours.label', 'settings.storefrontContent.contactHours.hint', {
-    [SettingLanguage.En]: SettingKey.ContactHours,
-    [SettingLanguage.Ru]: SettingKey.ContactHoursRu,
-    [SettingLanguage.Hy]: SettingKey.ContactHoursHy,
-  }),
+  localizedField(StorefrontGroup.Address, 'contact-address', 'settings.storefrontContent.contactAddress.label', 'settings.storefrontContent.contactAddress.hint', SettingKey.ContactAddress),
+  localizedField(StorefrontGroup.Address, 'contact-hours', 'settings.storefrontContent.contactHours.label', 'settings.storefrontContent.contactHours.hint', SettingKey.ContactHours),
 ]
 
 /**
@@ -221,8 +212,8 @@ const LOCALIZED_FIELDS: LocalizedStorefrontField[] = [
  * @param locale - The language of the input.
  * @returns The `data-testid` of the input.
  */
-const localizedInputTestid = (field: LocalizedStorefrontField, locale: SettingLanguage): string =>
-  locale === SettingLanguage.En ? `storefront-${field.testid}` : `storefront-${field.testid}-${locale}`
+const localizedInputTestid = (field: LocalizedStorefrontField, locale: ContentLanguage): string =>
+  locale === ContentLanguage.En ? `storefront-${field.testid}` : `storefront-${field.testid}-${locale}`
 
 /**
  * The sentence under a field whose current text breaks its rule.
@@ -272,7 +263,6 @@ const localizedOf = (group: StorefrontGroup): LocalizedStorefrontField[] => LOCA
         :key="field.testid"
         :label="t(field.labelKey)"
         :hint="t('settings.storefrontContent.localeFallbackHint')"
-        :locales="SETTING_LOCALES"
         :filled="field.localized.filled.value"
         :errors="field.localized.errors.value"
         :testid="`storefront-${field.testid}-tab`"
@@ -280,8 +270,8 @@ const localizedOf = (group: StorefrontGroup): LocalizedStorefrontField[] => LOCA
         <template #default="{ locale }">
           <SettingNotSeeded
             v-if="!field.localized.drafts[locale].setting.value"
-            :setting-key="field.keys[locale]"
-            :env-name="SettingEnv[field.keys[locale]]"
+            :setting-key="field.localized.keys[locale]"
+            :env-name="field.localized.envs[locale]"
           />
           <UiStack v-else :gap="UiGap.Xs">
             <UiInput

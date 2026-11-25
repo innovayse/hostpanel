@@ -2,7 +2,7 @@
  * The company story the operator publishes on the About page.
  *
  * The text is the operator's own, from the admin-managed `portal.about.text` settings (one per
- * language, the English one standing in for a language without its own) or the matching
+ * language, the default one standing in for a language without its own) or the matching
  * environment variables. Nothing is written in the source: a self-hosted install tells its own
  * story, and an install that sets none has no About page.
  *
@@ -24,11 +24,7 @@ export const useAboutText = () => {
   const { getLocalized } = useLocalizedSetting()
 
   /** The story in the active language, falling back to the default text. */
-  const text = computed(() => getLocalized({
-    default: { key: PortalSettingKey.AboutText, envKey: 'portalAboutText' },
-    ru: { key: PortalSettingKey.AboutTextRu, envKey: 'portalAboutTextRu' },
-    hy: { key: PortalSettingKey.AboutTextHy, envKey: 'portalAboutTextHy' }
-  }))
+  const text = computed(() => getLocalized({ key: PortalSettingKey.AboutText, envKey: 'portalAboutText' }))
 
   /** The story split into its paragraphs, blank ones dropped. */
   const paragraphs = computed(() =>

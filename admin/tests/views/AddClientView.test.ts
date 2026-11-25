@@ -117,12 +117,15 @@ describe('AddClientView', () => {
     expect(wrapper.find('[data-testid="add-client-status-confirm"]').exists()).toBe(false)
   })
 
-  it('returns to the clients list with the back pill in the header', async () => {
+  it('draws the trail above the title, the clients list as a link and the page itself last', async () => {
     const wrapper = await mountClientView(AddClientView)
-    const back = wrapper.get('[data-testid="add-client-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/clients')
-    expect(back.text()).toBe('Clients')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/clients'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="add-client-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('draws every section and field of its schema, with the new user credentials in the owner card', async () => {

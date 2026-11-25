@@ -140,7 +140,7 @@ public sealed class BrandingImageProcessor : IBrandingImageProcessor
         var decoded = Decode(content);
         if (decoded.IsFailure)
         {
-            return Result<IReadOnlyList<BrandingRendition>>.FailureCode(decoded.ErrorCode!);
+            return Result<IReadOnlyList<BrandingRendition>>.FailureFrom(decoded);
         }
 
         using var image = decoded.Value!;
@@ -228,8 +228,8 @@ public sealed class BrandingImageProcessor : IBrandingImageProcessor
 
         if (width > _options.MaxSourceEdge || height > _options.MaxSourceEdge)
         {
-            return TooLarge<SKBitmap>(
-                $"Source declares {width}x{height}; ceiling is {_options.MaxSourceEdge} per edge.");
+            return DimensionsTooLarge<SKBitmap>(
+                width, height, $"Source declares {width}x{height}; ceiling is {_options.MaxSourceEdge} per edge.");
         }
 
         // Area, not just edges. The buffer below is width * height * 4 bytes, so a shape that
@@ -237,7 +237,8 @@ public sealed class BrandingImageProcessor : IBrandingImageProcessor
         var pixels = (long)width * height;
         if (pixels > _options.MaxSourcePixels)
         {
-            return TooLarge<SKBitmap>($"Source declares {pixels} pixels; ceiling is {_options.MaxSourcePixels}.");
+            return DimensionsTooLarge<SKBitmap>(
+                width, height, $"Source declares {pixels} pixels; ceiling is {_options.MaxSourcePixels}.");
         }
 
         var info = new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
@@ -288,20 +289,29 @@ public sealed class BrandingImageProcessor : IBrandingImageProcessor
         return Result<T>.FailureCode(HostpanelErrorCodes.BRANDING_IMAGE_INVALID);
     }
 
-    /// <summary>Logs why an upload was refused for exceeding a ceiling, and answers the code for it.</summary>
+    /// <summary>Logs why an upload was refused for exceeding the byte ceiling, and answers the code for it.</summary>
     /// <param name="reason">Which ceiling was hit, written to the log and never returned.</param>
     /// <returns>A failed <see cref="Result{T}"/> carrying <c>BRANDING_IMAGE_TOO_LARGE</c>.</returns>
-    private Result<IReadOnlyList<BrandingRendition>> TooLarge(string reason) =>
-        TooLarge<IReadOnlyList<BrandingRendition>>(reason);
-
-    /// <summary>Logs why an upload was refused for exceeding a ceiling, and answers the code for it.</summary>
-    /// <typeparam name="T">The value type the caller's <see cref="Result{T}"/> carries on success.</typeparam>
-    /// <param name="reason">Which ceiling was hit, written to the log and never returned.</param>
-    /// <returns>A failed <see cref="Result{T}"/> carrying <c>BRANDING_IMAGE_TOO_LARGE</c>.</returns>
-    private Result<T> TooLarge<T>(string reason)
+    private Result<IReadOnlyList<BrandingRendition>> TooLarge(string reason)
     {
-        _logger.LogWarning("Branding upload exceeded a ceiling: {Reason}", reason);
-        return Result<T>.FailureCode(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE);
+        _logger.LogWarning("Branding upload exceeded the byte ceiling: {Reason}", reason);
+        return Result<IReadOnlyList<BrandingRendition>>.FailureCode(HostpanelErrorCodes.BRANDING_IMAGE_TOO_LARGE);
+    }
+
+    /// <summary>
+    /// Logs why an upload was refused for declaring too many pixels, and answers the code for it with the
+    /// declared size, so the operator sees what to resize rather than a bare "too large".
+    /// </summary>
+    /// <typeparam name="T">The value type the caller's <see cref="Result{T}"/> carries on success.</typeparam>
+    /// <param name="width">The declared width in pixels.</param>
+    /// <param name="height">The declared height in pixels.</param>
+    /// <param name="reason">Which ceiling was hit, written to the log.</param>
+    /// <returns>A failed <see cref="Result{T}"/> carrying <c>BRANDING_IMAGE_DIMENSIONS_TOO_LARGE</c> and <c>errors.dimensions</c>.</returns>
+    private Result<T> DimensionsTooLarge<T>(int width, int height, string reason)
+    {
+        _logger.LogWarning("Branding upload exceeded a pixel ceiling: {Reason}", reason);
+        return Result<T>.FailureWithDetail(
+            reason, HostpanelErrorCodes.BRANDING_IMAGE_DIMENSIONS_TOO_LARGE, "dimensions", $"{width}x{height}");
     }
 
     /// <summary>Renders the full square icon set from a favicon upload.</summary>

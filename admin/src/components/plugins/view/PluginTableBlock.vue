@@ -11,7 +11,9 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDataTable from '@/components/ui/UiDataTable.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -22,6 +24,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { usePluginSource, usePluginView } from '@/composables/usePluginView'
+import { Icon } from '@/lib/icons'
 import { placeholderRows } from '@/lib/placeholderRows'
 import { formatPluginValue, readPluginField } from '@/lib/pluginView'
 import { PluginTableDisplay, PluginValueFormat } from '@/types/pluginview'
@@ -129,7 +132,11 @@ watch(pageCount, (count) => {
   <UiStack :gap="UiGap.Sm" data-testid="plugin-table">
     <UiHeading v-if="block.title" :level="3" :variant="UiHeadingVariant.Card">{{ block.title }}</UiHeading>
     <UiText v-if="error && !loading" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-error">{{ error }}</UiText>
-    <UiText v-else-if="rows.length === 0 && !loading" :size="UiTextSize.Sm" :tone="UiTextTone.Muted" data-testid="plugin-table-empty">{{ t('plugins.pluginPage.tableEmpty') }}</UiText>
+    <UiEmptyState v-else-if="rows.length === 0 && !loading" compact :title="t('plugins.pluginPage.tableEmpty')" data-testid="plugin-table-empty">
+      <template #icon>
+        <UiIcon :markup="Icon.Inbox" :size="UiSize.Md" />
+      </template>
+    </UiEmptyState>
     <!-- The cards; while the rows load the same cards are drawn with bars where the cells go -->
     <UiStack v-else-if="block.display === PluginTableDisplay.Cards" :gap="UiGap.Sm" :aria-busy="loading ? 'true' : undefined" data-testid="plugin-table-cards">
       <UiCard v-for="(row, index) in cardRows" :key="row?.key ?? `placeholder-${index}`" :padding="UiCardPadding.Sm" data-testid="plugin-table-card">

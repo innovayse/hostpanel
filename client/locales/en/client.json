@@ -350,7 +350,6 @@
       "colRegistrationDate": "Registration Date",
       "colNextDueDate": "Next Due Date",
       "colStatus": "Status",
-      "colActions": "Actions",
       "expiringSoon": "soon",
       "backTo": "Back to domains",
       "notFound": "Domain not found.",

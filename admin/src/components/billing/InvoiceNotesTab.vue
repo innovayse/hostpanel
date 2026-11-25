@@ -1,13 +1,10 @@
 <script setup lang="ts">
 /**
  * Notes tab of the invoice screen: the admin-only notes (shown read-only or edited and saved),
- * with the line items and the transaction ledgers below. The outcome of a save (success, or the
- * API's sentence) shows under the editor.
+ * The outcome of a save (success, or the API's sentence) shows under the editor.
  */
 import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
-import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -29,7 +26,7 @@ const { t } = useI18n()
 const props = defineProps<{
   /** The invoice whose notes are shown. */
   invoice: InvoiceDetail
-  /** True to show the notes and the items without editing controls. */
+  /** True to show the notes without editing controls. */
   readonly?: boolean
 }>()
 
@@ -102,8 +99,5 @@ watch(() => props.invoice.notes, populate)
         </UiStack>
       </UiStack>
     </UiCard>
-
-    <InvoiceItemsSection :invoice="invoice" :readonly="readonly" />
-    <InvoiceTransactionsSection :invoice="invoice" />
   </UiStack>
 </template>

@@ -115,4 +115,42 @@ public sealed class PluginOptionsValidatorTests
     {
         _validator.Validate(null, new PluginOptions { MigrationTimeoutSeconds = seconds }).Succeeded.Should().BeTrue();
     }
+
+    /// <summary>A drain time outside 1 to the ceiling refuses startup, naming the key.</summary>
+    /// <param name="seconds">The out-of-range drain time.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    [InlineData(PluginOptions.MaxDrainSeconds + 1)]
+    public void ADrainTimeOutOfRange_Fails(int seconds)
+    {
+        var result = _validator.Validate(null, new PluginOptions { DrainSeconds = seconds });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(nameof(PluginOptions.DrainSeconds));
+    }
+
+    /// <summary>The ends of the drain range are accepted.</summary>
+    /// <param name="seconds">A drain time at an end of the range.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(PluginOptions.MaxDrainSeconds)]
+    public void ADrainTimeAtTheEndsOfTheRange_Passes(int seconds)
+    {
+        _validator.Validate(null, new PluginOptions { DrainSeconds = seconds }).Succeeded.Should().BeTrue();
+    }
+
+    /// <summary>A restart delay below zero or above the ceiling refuses startup, naming the key; zero is allowed.</summary>
+    /// <param name="seconds">The out-of-range restart delay.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(PluginOptions.MaxRestartDelaySeconds + 1)]
+    public void ARestartDelayOutOfRange_Fails(int seconds)
+    {
+        var result = _validator.Validate(null, new PluginOptions { RestartDelaySeconds = seconds });
+
+        result.Failed.Should().BeTrue();
+        result.FailureMessage.Should().Contain(nameof(PluginOptions.RestartDelaySeconds));
+        _validator.Validate(null, new PluginOptions { RestartDelaySeconds = 0 }).Succeeded.Should().BeTrue();
+    }
 }

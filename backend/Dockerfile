@@ -174,7 +174,8 @@ WORKDIR /app
 COPY --from=build /out .
 
 # The folders the API writes to belong to the unprivileged user. A named volume mounted on one of them
-# starts with this ownership; a volume created by an earlier root image is chowned once by the operator.
+# starts with this ownership; a volume created by an earlier root image is handed over by the compose files'
+# one-shot hostpanel-volume-init service before the API starts.
 RUN mkdir -p /app/wwwroot/uploads/branding /app/plugins-installed /app/logs \
     && chown -R $APP_UID /app/wwwroot/uploads /app/plugins-installed /app/logs
 

@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 import { ChatProvider } from '~/types/chatprovider'
 
 /** What the stub answers, by route; the hooks start the stub before each test and close it after. */
@@ -155,11 +156,20 @@ describe('live-chat plugin', () => {
 
   it('prefers the per-locale token over the default one', async () => {
     configureChat()
-    settings[PortalSettingKey.ChatWebsiteTokenRu] = 'tok-ru'
+    settings[localizedSettingKey(PortalSettingKey.ChatWebsiteToken, 'ru')] = 'tok-ru'
     locale.value = 'ru'
     await loadPlugin()
 
     expect(scripts()[0]!.innerHTML).toContain('tok-ru')
+  })
+
+  it('prefers the German token for a German visitor, a language with no dedicated code path', async () => {
+    configureChat()
+    settings[localizedSettingKey(PortalSettingKey.ChatWebsiteToken, 'de')] = 'tok-de'
+    locale.value = 'de'
+    await loadPlugin()
+
+    expect(scripts()[0]!.innerHTML).toContain('tok-de')
   })
 
   it('ignores an unsupported provider', async () => {

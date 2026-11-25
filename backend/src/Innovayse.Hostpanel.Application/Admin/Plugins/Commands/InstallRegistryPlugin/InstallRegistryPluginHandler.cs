@@ -52,6 +52,9 @@ public sealed class InstallRegistryPluginHandler
     /// <summary>Stages the install record of the accepted package.</summary>
     private readonly InstalledPluginRecorder _recorder;
 
+    /// <summary>Applies the accepted package in the running process when it can, and words the answer.</summary>
+    private readonly PluginChangeApplier _applier;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="inspector">Reads what an archive claims about itself and which keys the operator added.</param>
@@ -62,6 +65,7 @@ public sealed class InstallRegistryPluginHandler
     /// <param name="hostSdkVersion">The <c>Hostpanel.Sdk</c> package version this host ships.</param>
     /// <param name="reader">Reads what this host is shown of the plugin: its page, its licence key and its versions.</param>
     /// <param name="recorder">Stages the install record of the accepted package.</param>
+    /// <param name="applier">Applies the accepted package in the running process when it can, and words the answer.</param>
     public InstallRegistryPluginHandler(
         IPluginRegistryClient registry,
         IPluginPackageInspector inspector,
@@ -71,7 +75,8 @@ public sealed class InstallRegistryPluginHandler
         IInstalledVersionProvider hostVersion,
         IHostSdkVersionProvider hostSdkVersion,
         RegistryPluginReader reader,
-        InstalledPluginRecorder recorder)
+        InstalledPluginRecorder recorder,
+        PluginChangeApplier applier)
     {
         _registry = registry;
         _inspector = inspector;
@@ -82,6 +87,7 @@ public sealed class InstallRegistryPluginHandler
         _hostSdkVersion = hostSdkVersion;
         _reader = reader;
         _recorder = recorder;
+        _applier = applier;
     }
 
     /// <summary>Installs or stages the requested registry version and records it.</summary>
@@ -235,8 +241,7 @@ public sealed class InstallRegistryPluginHandler
         await _recorder.RecordAsync(outcome, PluginSource.Registry, ct);
         await _db.SaveChangesAsync(ct);
 
-        return Result<PluginActionResultDto>.Success(
-            new PluginActionResultDto(RequiresRestart: true, StagedVersion: staged ? outcome.Version : null));
+        return await _applier.AcceptedAsync(outcome, staged, ct);
     }
 
     /// <summary>Words the audit line title of an accepted registry install.</summary>

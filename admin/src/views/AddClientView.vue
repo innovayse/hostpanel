@@ -18,6 +18,7 @@ import { CLIENT_STATUS_OPTIONS, LANGUAGE_OPTIONS } from '@/lib/constants'
 import { ClientStatus } from '@/types/client'
 import { restrictsAccount, type RestrictiveClientStatus } from '@/lib/clientStatus'
 import { useGeoOptions } from '@/composables/useGeoOptions'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import ClientGroupSelect from '@/components/clients/ClientGroupSelect.vue'
 import { CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH, CLIENT_TAX_ID_MAX_LENGTH } from '@/lib/limits'
 import ClientStatusConfirmDialog from '@/components/clients/ClientStatusConfirmDialog.vue'
@@ -43,6 +44,9 @@ import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Clients, the new client. */
+const { crumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
@@ -293,10 +297,7 @@ onMounted(() => {
   <UiStack>
     <UiPageHeader :actions="headerActions"
       v-bind="schemaHeader(schema, t)"
-      :back-to="AppRoute.Clients"
-      :back-label="t('shared.clients')"
-      back-mobile-only
-      back-testid="add-client-back"
+      :crumbs="crumbs(schemaHeader(schema, t).title)"
     >
     </UiPageHeader>
 

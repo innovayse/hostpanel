@@ -2,7 +2,10 @@
  * Tests for the invoice list helpers: the paid, due and overdue rollup of a page and its printed amounts.
  */
 import { describe, expect, it } from 'vitest'
-import { bucketAmountText, summarizeInvoices } from '@/lib/invoices'
+import { bucketAmountText, creditNoteBlock, summarizeInvoices } from '@/lib/invoices'
+import { CreditNoteBlock } from '@/types/creditnote'
+import { InvoiceStatus } from '@/types/invoice'
+import { invoiceFixture } from '../helpers/billingFixtures'
 import { invoiceRowFixture } from '../helpers/billingFixtures'
 
 describe('summarizeInvoices', () => {
@@ -51,5 +54,36 @@ describe('bucketAmountText', () => {
 
   it('prints a zero for an empty bucket', () => {
     expect(bucketAmountText({ count: 0, totals: [] })).toBe('0.00 USD')
+  })
+})
+
+describe('creditNoteBlock', () => {
+  /**
+   * Builds an invoice a note can be issued on, with the given fields changed.
+   *
+   * @param overrides - Fields that differ.
+   * @returns The invoice.
+   */
+  const creditable = (overrides: Parameters<typeof invoiceFixture>[0] = {}) =>
+    invoiceFixture({ status: InvoiceStatus.Paid, creditableAmount: 10, isCreditTopUp: false, ...overrides })
+
+  it('lets a note through on a paid invoice with something left', () => {
+    expect(creditNoteBlock(creditable())).toBeNull()
+  })
+
+  it('lets a note through on a partly refunded invoice', () => {
+    expect(creditNoteBlock(creditable({ status: InvoiceStatus.PartiallyRefunded }))).toBeNull()
+  })
+
+  it('blocks a credit top-up first', () => {
+    expect(creditNoteBlock(creditable({ isCreditTopUp: true, status: InvoiceStatus.Unpaid }))).toBe(CreditNoteBlock.TopUp)
+  })
+
+  it('blocks an invoice that is not paid', () => {
+    expect(creditNoteBlock(creditable({ status: InvoiceStatus.Unpaid }))).toBe(CreditNoteBlock.NotPaid)
+  })
+
+  it('blocks a paid invoice with nothing left to credit', () => {
+    expect(creditNoteBlock(creditable({ creditableAmount: 0 }))).toBe(CreditNoteBlock.NothingLeft)
   })
 })

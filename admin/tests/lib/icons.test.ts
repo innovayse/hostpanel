@@ -3,7 +3,7 @@
  * one SVG shape node through the same whitelist `UiIcon` uses, and the report lookup falls back.
  */
 import { describe, expect, it } from 'vitest'
-import { FALLBACK_REPORT_ICON, Icon, REPORT_ICONS, reportIcon } from '@/lib/icons'
+import { DEFAULT_PLUGIN_ICON, FALLBACK_REPORT_ICON, Icon, pluginIcon, REPORT_ICONS, reportIcon } from '@/lib/icons'
 import { svgNodes } from '@/utils/ui/svgIcon'
 
 describe('Icon', () => {
@@ -91,5 +91,19 @@ describe('Icon.User and Icon.Activity', () => {
   it('draw a person and a heartbeat line, the icons of the identity and background job integration categories', () => {
     expect(svgNodes(Icon.User).map((node) => node.type)).toEqual(['path', 'circle'])
     expect(svgNodes(Icon.Activity).map((node) => node.type)).toEqual(['polyline'])
+  })
+})
+
+describe('pluginIcon', () => {
+  it('maps an icon name to a built-in icon and anything else to the default', () => {
+    expect(pluginIcon('chart')).not.toBe(DEFAULT_PLUGIN_ICON)
+    expect(pluginIcon('https://evil.test/x.svg')).toBe(DEFAULT_PLUGIN_ICON)
+    expect(pluginIcon('__proto__')).toBe(DEFAULT_PLUGIN_ICON)
+    expect(pluginIcon(null)).toBe(DEFAULT_PLUGIN_ICON)
+  })
+
+  it('draws every named icon and the default as shapes', () => {
+    expect(svgNodes(DEFAULT_PLUGIN_ICON).length).toBeGreaterThan(0)
+    expect(svgNodes(pluginIcon('rocket')).length).toBeGreaterThan(0)
   })
 })

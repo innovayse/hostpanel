@@ -1,13 +1,11 @@
 <script setup lang="ts">
 /**
- * Credit tab of the invoice screen: apply credit to the invoice or take it back, with the line
- * items and the transaction ledgers below. Taking credit back is confirmed first; the outcome of
+ * Credit tab of the invoice screen: apply credit to the invoice or take it back.
+ * Taking credit back is confirmed first; the outcome of
  * each action (success, or the API's sentence) shows in the tab.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
-import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -34,8 +32,6 @@ const { t } = useI18n()
 const props = defineProps<{
   /** The invoice to manage credit for. */
   invoice: InvoiceDetail
-  /** True to show the line items without editing controls. */
-  readonly?: boolean
 }>()
 
 const store = useBillingStore()
@@ -187,8 +183,5 @@ const removeCredit = async (): Promise<void> => {
       @confirm="removeCredit"
       @close="dismissRemove"
     />
-
-    <InvoiceItemsSection :invoice="invoice" :readonly="readonly" />
-    <InvoiceTransactionsSection :invoice="invoice" />
   </UiStack>
 </template>

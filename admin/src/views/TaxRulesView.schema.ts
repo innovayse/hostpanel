@@ -22,7 +22,7 @@ const schema: ListSkeletonSchema = {
       { key: 'region', label: 'taxRules.table.region', align: UiAlign.Left },
       { key: 'rate', label: 'taxRules.table.rate', numeric: true, size: UiColumnSize.Compact },
       { key: 'enabled', label: 'taxRules.table.enabled', align: UiAlign.Left, kind: UiColumnKind.Status },
-      { key: 'actions', label: 'taxRules.table.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

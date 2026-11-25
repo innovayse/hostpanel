@@ -12,11 +12,12 @@
  * `hint` is the full phrase of an action whose visible label is shortened because the icon already says the
  * word (`PDF` for "Download PDF"): it becomes the accessible name (`aria-label`) and the native tooltip (`title`).
  * The hint must contain the visible text (WCAG label in name), so a voice user saying the label still hits the button.
+ * A create action (`UiActionKind.Add`) is always primary whatever `variant` says; an add inside a form names `UiActionKind.AddRow`.
  * `data-testid` and listeners fall through to the native `<button>`.
  */
 import { computed } from 'vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import { resolveActionIcon } from '@/utils/ui/actions'
+import { resolveActionIcon, resolveActionVariant } from '@/utils/ui/actions'
 import type { UiActionKind } from '@/utils/ui/actions'
 import { buttonBaseClasses, buttonRadiusClasses, buttonSpinnerClasses, buttonVariantClasses, UiButtonVariant } from '@/utils/ui/button'
 import type { UiButtonType } from '@/utils/ui/button'
@@ -41,8 +42,6 @@ const props = withDefaults(defineProps<{
   action?: UiActionKind
   /** Own icon (an `Icon` entry) for an action with no kind; wins over the icon of `action`. */
   icon?: string
-  /** Draws a button-like look as a pill (fully rounded ends), whatever its size. */
-  pill?: boolean
   /** Full phrase for a shortened visible label; sets `aria-label` and `title`, and must contain the visible text. */
   hint?: string
 }>(), {
@@ -54,18 +53,20 @@ const props = withDefaults(defineProps<{
   block: false,
   action: undefined,
   icon: undefined,
-  pill: false,
   hint: undefined,
 })
 
 /** Markup of the icon drawn before the label; undefined for a button that names neither an action nor an icon. */
 const glyph = computed<string | undefined>(() => resolveActionIcon(props.icon, props.action))
 
+/** The look to draw: the primary look for a create action, the `variant` prop otherwise. */
+const look = computed<UiButtonVariant>(() => resolveActionVariant(props.variant, props.action))
+
 /** Class list for the chosen look and size; the link look keeps the type scale but has no padding. */
 const classes = computed<string[]>(() => {
   const width = props.block ? 'w-full' : ''
-  const sizing = props.variant === UiButtonVariant.Link ? buttonLinkSizeClasses[props.size] : buttonSizeClasses[props.size]
-  return [buttonBaseClasses, buttonVariantClasses[props.variant], sizing, buttonRadiusClasses(props.variant, props.size, props.pill), width]
+  const sizing = look.value === UiButtonVariant.Link ? buttonLinkSizeClasses[props.size] : buttonSizeClasses[props.size]
+  return [buttonBaseClasses, buttonVariantClasses[look.value], sizing, buttonRadiusClasses(props.size), width]
 })
 </script>
 

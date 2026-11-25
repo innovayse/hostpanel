@@ -1,5 +1,5 @@
 /**
- * Tests of the schema header reader: the title, the subtitle and the back link caption of a screen schema, and the
+ * Tests of the schema header reader: the title and the subtitle of a screen schema, and the
  * title or subtitle a screen overrides at run time.
  */
 import { describe, expect, it } from 'vitest'
@@ -14,14 +14,14 @@ import { schemaHeader } from '@/lib/schemaHeader'
 const t = (key: string): string => key.toUpperCase()
 
 describe('schemaHeader', () => {
-  it('translates the title, the subtitle and the back link caption of the schema', () => {
-    const header = schemaHeader({ header: { title: 'a.title', subtitle: 'a.subtitle', backLabel: 'a.back', backMobileOnly: true } }, t)
+  it('translates the title and the subtitle of the schema, and leaves the breadcrumb flag to the skeleton', () => {
+    const header = schemaHeader({ header: { title: 'a.title', subtitle: 'a.subtitle', crumbs: true } }, t)
 
-    expect(header).toEqual({ title: 'A.TITLE', subtitle: 'A.SUBTITLE', backLabel: 'A.BACK', backMobileOnly: true })
+    expect(header).toEqual({ title: 'A.TITLE', subtitle: 'A.SUBTITLE' })
   })
 
   it('leaves out what the schema does not name', () => {
-    expect(schemaHeader({ header: { actions: 1 } }, t)).toEqual({ title: undefined, subtitle: undefined, backLabel: undefined, backMobileOnly: undefined })
+    expect(schemaHeader({ header: { actions: 1 } }, t)).toEqual({ title: undefined, subtitle: undefined })
     expect(schemaHeader({}, t).title).toBeUndefined()
   })
 

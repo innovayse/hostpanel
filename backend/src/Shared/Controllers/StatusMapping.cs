@@ -38,6 +38,9 @@ public static class StatusMapping
             "CONFIRMATION_REQUIRED" => new(409, "Conflict"),
             "CONCURRENCY_LIMITED" => new(429, "Too Many Requests"),
             "UPLOAD_FAILED" => new(502, "Bad Gateway"),
+            // Exact row: the upload folder refuses the write, a fault of the deployment's volume ownership and not of the
+            // request or the caller's credentials; the name carries no token for a generic arm.
+            "STORAGE_NOT_WRITABLE" => new(503, "Service Unavailable"),
             // Exact row: the code names a policy, not a missing grant, so no FORBIDDEN token is in it.
             SharedErrorCodes.DemoActionDisabled => new(403, "Forbidden"),
             // Capacity, not configuration: naming it *_NOT_CONFIGURED would answer correctly by
@@ -91,6 +94,8 @@ public static class StatusMapping
             "SERVICE_CHANGE_INVALID_STATE" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
+            "PLUGIN_APPLY_FAILED" => new(409, "Conflict"),
+            "HOST_DRAINING" => new(503, "Service Unavailable"),
             // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host
             // assembly refusal; the CONFLICT in the name must not reach the generic arm below that answers 409.
             "PLUGIN_ASSEMBLY_CONFLICT" => new(400, "Bad Request"),

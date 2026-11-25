@@ -3,7 +3,7 @@
  * fall back on empty or implausible input, `toDateInputValue` cuts the day.
  */
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMonthDay, formatRelativeFromNow, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, joinParts, toDateInputValue } from '@/lib/format'
+import { formatCompactNumber, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMonthDay, formatRelativeFromNow, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, joinParts, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -101,6 +101,11 @@ describe('formatRelativeFromNow', () => {
 
   it('counts hours under a day', () => {
     expect(formatRelativeFromNow(ago(3 * 3600), 'en', NOW)).toBe('3 hours ago')
+  })
+
+  it('words the days in the locale it is given, not in English', () => {
+    expect(formatRelativeFromNow(ago(3 * 86400), 'hy', NOW)).toBe('3 օր առաջ')
+    expect(formatRelativeFromNow(ago(3 * 86400), 'hy', NOW)).not.toContain('ago')
   })
 
   it('counts days beyond that', () => {
@@ -228,6 +233,18 @@ describe('formatSizeBytes', () => {
 
   it('stays in gigabytes for a very large file', () => {
     expect(formatSizeBytes(2048 * 1024 * 1024 * 1024, 'en')).toBe('2,048 GB')
+  })
+})
+
+describe('formatCompactNumber', () => {
+  it('keeps a small count whole and shortens a large one in the locale', () => {
+    expect(formatCompactNumber(27, 'en')).toBe('27')
+    expect(formatCompactNumber(1234, 'en')).toBe('1.2K')
+    expect(formatCompactNumber(2500000, 'en')).toBe('2.5M')
+  })
+
+  it('writes the short form the locale uses', () => {
+    expect(formatCompactNumber(1500, 'de')).not.toBe(formatCompactNumber(1500, 'en'))
   })
 })
 

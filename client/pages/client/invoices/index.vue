@@ -31,7 +31,7 @@
             <UiTableTh>{{ $t('client.invoices.colDueDate') }}</UiTableTh>
             <UiTableTh align="right">{{ $t('client.invoices.colAmount') }}</UiTableTh>
             <UiTableTh align="center">{{ $t('client.invoices.colStatus') }}</UiTableTh>
-            <UiTableTh />
+            <UiTableTh actions />
           </UiTableRow>
         </UiTableHead>
       </template>

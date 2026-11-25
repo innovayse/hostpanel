@@ -62,7 +62,7 @@
     {
       "key": "servers",
       "icon": "server",
-      "links": ["/servers/", "/servers/servers", "/servers/cpanel", "/servers/ssh-key-agent", "/servers/provisioning"]
+      "links": ["/servers/", "/servers/servers", "/servers/cpanel", "/servers/ssh-key-agent", "/servers/provisioning", "/servers/existing-account"]
     },
     {
       "key": "migration",

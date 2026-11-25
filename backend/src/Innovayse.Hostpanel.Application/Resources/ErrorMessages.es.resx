@@ -366,6 +366,15 @@
   <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
     <value>Ya hay un servicio que utiliza esta cuenta en este servidor.</value>
   </data>
+  <data name="SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" xml:space="preserve">
+    <value>El panel de control del servidor no tiene ninguna cuenta con este nombre de usuario.</value>
+  </data>
+  <data name="SERVICE_HOSTING_ACCOUNT_UNVERIFIED" xml:space="preserve">
+    <value>El panel de control del servidor no puede confirmar que esta cuenta exista. Confírmelo para añadir el servicio de todos modos.</value>
+  </data>
+  <data name="SERVICE_DOMAIN_ALREADY_SERVED" xml:space="preserve">
+    <value>Otro servicio ya usa este dominio. Confírmelo para añadir también este.</value>
+  </data>
   <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Ya hay una solicitud de cancelación pendiente para este servicio.</value>
   </data>

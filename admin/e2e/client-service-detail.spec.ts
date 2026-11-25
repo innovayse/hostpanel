@@ -248,3 +248,43 @@ test('the Open panel button keeps the generic icon when no plugin serves the ser
   await expect(page.getByTestId('client-service-panel')).toBeVisible()
   await expect(page.getByTestId('client-service-panel').getByTestId('plugin-avatar')).toHaveCount(0)
 })
+
+test('a panel that cannot sign anybody in shows how to sign in by hand, with no password', async ({ page }) => {
+  const provisioned: ServiceDetail = { ...activeServiceDetail, account: { ...activeServiceDetail.account, provisioningRef: 'acct1' } }
+  const notSupported = { type: 'PANEL_OPERATION_NOT_SUPPORTED', title: 'Not supported', status: 409, detail: 'The panel does not offer single sign on.' }
+  await stubServicePage(page, provisioned, [
+    json(HttpMethod.Get, `/api/provisioning/${provisioned.id}/panel-sso`, notSupported, 409),
+    json(HttpMethod.Get, `/api/provisioning/${provisioned.id}/panel-login`, {
+      username: 'ada',
+      domain: 'shop.example.test',
+      serverAddress: '203.0.113.9',
+      loginUrl: 'https://panel.example.test:8083/login/',
+    }),
+  ])
+
+  await page.goto(pageUrl)
+  await page.getByTestId('client-service-panel').click()
+
+  const dialog = page.getByTestId('client-service-panel-login-dialog')
+  await expect(dialog.getByTestId('client-service-panel-login-link')).toHaveAttribute('href', 'https://panel.example.test:8083/login/')
+  await expect(dialog.getByTestId('client-service-panel-login-link')).toHaveAttribute('target', '_blank')
+  await expect(dialog.getByTestId('client-service-panel-login-username')).toHaveText('ada')
+  await expect(dialog.getByTestId('client-service-panel-login-server')).toHaveText('203.0.113.9')
+  await expect(dialog.locator('input')).toHaveCount(0)
+})
+
+test('a panel that offers neither a link nor login details toasts the API sentence', async ({ page }) => {
+  const provisioned: ServiceDetail = { ...activeServiceDetail, account: { ...activeServiceDetail.account, provisioningRef: 'acct1' } }
+  const sentence = 'The panel does not offer single sign on.'
+  const notSupported = { type: 'PANEL_OPERATION_NOT_SUPPORTED', title: 'Not supported', status: 409, detail: sentence }
+  await stubServicePage(page, provisioned, [
+    json(HttpMethod.Get, `/api/provisioning/${provisioned.id}/panel-sso`, notSupported, 409),
+    json(HttpMethod.Get, `/api/provisioning/${provisioned.id}/panel-login`, { ...notSupported, detail: 'No login details.' }, 409),
+  ])
+
+  await page.goto(pageUrl)
+  await page.getByTestId('client-service-panel').click()
+
+  await expect(toastWith(page, sentence)).toBeVisible()
+  await expect(page.getByTestId('client-service-panel-login-dialog')).toHaveCount(0)
+})

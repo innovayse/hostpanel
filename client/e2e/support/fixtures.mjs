@@ -1103,3 +1103,30 @@ export const SERVICE_PANEL = {
   suspensionSource: null,
   usage: null,
 }
+
+/** What the stub answers for the panel of {@link SERVICE_PANEL_BY_HAND}: how to sign in by hand, with no password. */
+export const PANEL_LOGIN_DETAILS = {
+  username: 'e2ehand',
+  domain: 'hand.e2e.test',
+  serverAddress: '203.0.113.9',
+  loginUrl: 'https://panel.e2e.test:8083/login/',
+}
+
+/** An active hosting service whose panel cannot sign anybody in: its sign-in answers "not supported" and its login details are shown instead. */
+export const SERVICE_PANEL_BY_HAND = {
+  id: 27,
+  productId: PLAN.id,
+  productName: PLAN.name,
+  billingCycle: 'monthly',
+  status: 'Active',
+  nextRenewalAt: '2030-02-01T00:00:00Z',
+  domain: null,
+  username: 'e2ehand',
+  price: 5,
+  firstPaymentAmount: 5,
+  paymentMethod: null,
+  server: { name: 'e2e-server-hand', hostname: 'panel.e2e.test', ipAddress: null, panelPlugin: null },
+  createdAt: '2030-01-01T00:00:00Z',
+  suspensionSource: null,
+  usage: null,
+}

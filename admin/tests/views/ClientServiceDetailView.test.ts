@@ -326,6 +326,66 @@ describe('ClientServiceDetailView', () => {
     expect(wrapper.text()).not.toContain('A control panel session could not be started.')
   })
 
+  it('opens the panel the API signs in to, with no dialog', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const { wrapper } = await mountLoaded(
+      { ...detail, status: ServiceStatus.Active },
+      undefined,
+      { 'GET /api/provisioning/9/panel-sso': () => json({ url: 'https://panel.example/sso' }) },
+    )
+
+    await wrapper.get('[data-testid="client-service-panel"]').trigger('click')
+    await flushPromises()
+
+    expect(open).toHaveBeenCalledWith('https://panel.example/sso', '_blank')
+    expect(wrapper.find('[data-testid="client-service-panel-login-dialog"]').exists()).toBe(false)
+    open.mockRestore()
+  })
+
+  it('shows how to sign in by hand when the panel cannot sign anybody in but has login details, and never a password', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const { wrapper } = await mountLoaded(
+      { ...detail, status: ServiceStatus.Active },
+      undefined,
+      {
+        'GET /api/provisioning/9/panel-sso': () => json({ type: 'PANEL_OPERATION_NOT_SUPPORTED', title: 'Not supported', status: 409, detail: 'The panel does not offer single sign on.' }, 409),
+        'GET /api/provisioning/9/panel-login': () => json({ username: 'ada', domain: 'site.example', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example:8083/login/' }),
+      },
+    )
+
+    await wrapper.get('[data-testid="client-service-panel"]').trigger('click')
+    await flushPromises()
+
+    const dialog = wrapper.get('[data-testid="client-service-panel-login-dialog"]')
+    const link = dialog.get('[data-testid="client-service-panel-login-link"]')
+    expect(link.attributes('href')).toBe('https://panel.example:8083/login/')
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toContain('noopener')
+    expect(dialog.get('[data-testid="client-service-panel-login-username"]').text()).toBe('ada')
+    expect(dialog.get('[data-testid="client-service-panel-login-server"]').text()).toBe('203.0.113.9')
+    expect(dialog.find('input').exists()).toBe(false)
+    expect(open).not.toHaveBeenCalled()
+    expect(toastMessages()).toEqual([])
+    open.mockRestore()
+  })
+
+  it('toasts the sign on sentence and shows no dialog when the panel offers neither a link nor login details', async () => {
+    const { wrapper } = await mountLoaded(
+      { ...detail, status: ServiceStatus.Active },
+      undefined,
+      {
+        'GET /api/provisioning/9/panel-sso': () => json({ type: 'PANEL_OPERATION_NOT_SUPPORTED', title: 'Not supported', status: 409, detail: 'The panel does not offer single sign on.' }, 409),
+        'GET /api/provisioning/9/panel-login': () => json({ type: 'PANEL_OPERATION_NOT_SUPPORTED', title: 'Not supported', status: 409, detail: 'No login details.' }, 409),
+      },
+    )
+
+    await wrapper.get('[data-testid="client-service-panel"]').trigger('click')
+    await flushPromises()
+
+    expect(toastMessages()).toEqual(['The panel does not offer single sign on.'])
+    expect(wrapper.find('[data-testid="client-service-panel-login-dialog"]').exists()).toBe(false)
+  })
+
   it('confirms a terminal status with the danger prompt before sending it', async () => {
     const { wrapper, mock } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
 

@@ -41,6 +41,7 @@ public sealed class MyServicesRoutesAreOwnershipScopedTests(IntegrationTestFacto
     public static TheoryData<string, string, string, object?> Routes() => new()
     {
         { "GET", "panel-sso", "panel-sso", null },
+        { "GET", "panel-login", "panel-login", null },
         { "POST", "cancel", "cancel", new { type = "Immediate", reason = "no longer needed" } },
         { "POST", "setup", "setup", new { domain = "example.com", username = "abcd", password = "Passw0rd!x" } },
         { "GET", "invoices", "invoices", null },

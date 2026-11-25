@@ -41,4 +41,29 @@ public sealed class PanelSsoLinkRulesTests
         PanelSsoLinkRules.Accept(link, "panel.example.test", null).Should().BeNull();
         PanelSsoLinkRules.Accept("https://panel.example.test/login").Should().BeNull();
     }
+
+    /// <summary>A panel's own sign in page passes on any host, over http or https, because a person opens it by hand.</summary>
+    /// <param name="page">The sign in page the plugin answered.</param>
+    [Theory]
+    [InlineData("https://panel.example.test:8083/login/")]
+    [InlineData("http://panel.example.test:8080/")]
+    [InlineData("https://other.example.test/login")]
+    public void AcceptLoginPage_WebAddress_Passes(string page)
+    {
+        PanelSsoLinkRules.AcceptLoginPage(page).Should().NotBeNull();
+    }
+
+    /// <summary>A sign in page that is not an absolute web address, or carries user info, is refused.</summary>
+    /// <param name="page">The sign in page the plugin answered.</param>
+    [Theory]
+    [InlineData("ftp://panel.example.test/login")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/login")]
+    [InlineData("https://user:pass@panel.example.test/login")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void AcceptLoginPage_AnythingElse_IsRefused(string? page)
+    {
+        PanelSsoLinkRules.AcceptLoginPage(page).Should().BeNull();
+    }
 }

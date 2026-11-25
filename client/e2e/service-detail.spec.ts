@@ -11,7 +11,7 @@
  * lookup (see `SERVICE_MANAGED` in the fixtures).
  */
 import { expect, test } from './support/test'
-import { CANCEL_REASON, NEW_SERVICE_PASSWORD, PANEL_PLUGIN, PANEL_SSO_URL, SERVICE_INVOICE, SERVICE_MANAGED, SERVICE_PANEL, SERVICE_PENDING, SERVICE_SUSPENDED } from './support/fixtures.mjs'
+import { CANCEL_REASON, NEW_SERVICE_PASSWORD, PANEL_LOGIN_DETAILS, PANEL_PLUGIN, PANEL_SSO_URL, SERVICE_INVOICE, SERVICE_MANAGED, SERVICE_PANEL, SERVICE_PANEL_BY_HAND, SERVICE_PENDING, SERVICE_SUSPENDED } from './support/fixtures.mjs'
 import { resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
 
 test.beforeEach(async ({ context, request, baseURL }) => {
@@ -122,4 +122,20 @@ test('the Open panel button keeps the generic icon on a server no plugin serves'
   await waitForHydration(page)
 
   await expect(page.getByTestId('service-panel-plugin-icon')).toHaveCount(0)
+})
+
+test('a panel that cannot sign anybody in shows how to sign in by hand, with no password, and opens nothing', async ({ page, context }) => {
+  await page.goto(`/client/services/${SERVICE_PANEL_BY_HAND.id}`)
+  await waitForHydration(page)
+  const popups: string[] = []
+  context.on('page', (opened) => popups.push(opened.url()))
+
+  await page.getByTestId('service-panel-login').click()
+
+  await expect(page.getByTestId('service-panel-login-link')).toHaveAttribute('href', PANEL_LOGIN_DETAILS.loginUrl)
+  await expect(page.getByTestId('service-panel-login-link')).toHaveAttribute('target', '_blank')
+  await expect(page.getByTestId('service-panel-login-username')).toContainText(PANEL_LOGIN_DETAILS.username)
+  await expect(page.getByTestId('service-panel-login-server')).toContainText(PANEL_LOGIN_DETAILS.serverAddress)
+  await expect(page.getByTestId('service-sso-error')).toHaveCount(0)
+  expect(popups).toEqual([])
 })

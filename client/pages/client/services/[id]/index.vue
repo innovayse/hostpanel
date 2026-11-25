@@ -20,6 +20,7 @@
     </UiAlert>
 
     <template v-else>
+      <ClientServicesServicePanelLoginDialog v-if="panelLogin" :details="panelLogin" @close="mgmt.closePanelLogin()" />
       <ClientServicesServiceHeader :service="service" :sso-loading="ssoLoading" @panel="openPanel" />
       <ClientServicesServiceNotices :service="service" :service-id="serviceId" :cancel-status="cancelStatus" />
 
@@ -119,7 +120,7 @@ const serviceId = route.params.id as string
 const mgmt = useServiceManagementStore()
 mgmt.reset()
 /** Reactive state of the store this component renders. */
-const { ssoLoading, ssoError } = storeToRefs(mgmt)
+const { ssoLoading, ssoError, panelLogin } = storeToRefs(mgmt)
 
 // The service, its hosting info and its cancellation status are read through the service store.
 /** Loading flag of the service read, and the action that reads it again. */

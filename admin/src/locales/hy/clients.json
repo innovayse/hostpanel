@@ -40,8 +40,7 @@
     "closed": "Փակված",
     "emailIsRequired": "Էլ. փոստը պարտադիր է",
     "firstNameIsRequired": "Անունը պարտադիր է",
-    "lastNameIsRequired": "Ազգանունը պարտադիր է",
-    "spanish": "Իսպաներեն"
+    "lastNameIsRequired": "Ազգանունը պարտադիր է"
   },
   "contactForm": {
     "editContact": "Խմբագրել կոնտակտը",

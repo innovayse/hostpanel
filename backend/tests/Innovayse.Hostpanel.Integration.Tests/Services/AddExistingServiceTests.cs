@@ -116,6 +116,51 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
         older.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
+    /// <summary>
+    /// A domain another live service already holds, on another server, is refused with 409 <c>SERVICE_DOMAIN_ALREADY_SERVED</c> (compared
+    /// without regard to case) until the admin confirms it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AddExisting_DomainHeldByAnotherLiveService_NeedsConfirmationAsync()
+    {
+        var ids = await SeedClientAndProductAsync();
+        var first = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22);
+        var second = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22);
+        var client = await ServicesTestSeeds.AdminClientAsync(factory);
+        var domain = $"{Guid.NewGuid():N}.example";
+        var body = new AddExistingServiceCommand(ids.ClientId, ids.ProductId, BillingCycle.Monthly, 5m, first, domain, "firstuser", null);
+        (await client.PostAsJsonAsync("/api/services/existing", body)).StatusCode.Should().Be(HttpStatusCode.Created);
+        var other = body with { ServerId = second, Username = "seconduser", Domain = domain.ToUpperInvariant() };
+
+        var refused = await client.PostAsJsonAsync("/api/services/existing", other);
+        var confirmed = await client.PostAsJsonAsync("/api/services/existing", other with { ConfirmSharedDomain = true });
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ServicesTestSeeds.CodeOfAsync(refused)).Should().Be(HostpanelErrorCodes.SERVICE_DOMAIN_ALREADY_SERVED);
+        confirmed.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    /// <summary>A domain whose only other service is terminated is free to add again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AddExisting_DomainOfATerminatedService_IsAcceptedAsync()
+    {
+        var ids = await SeedClientAndProductAsync();
+        var first = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22);
+        var second = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22);
+        var client = await ServicesTestSeeds.AdminClientAsync(factory);
+        var domain = $"{Guid.NewGuid():N}.example";
+        var body = new AddExistingServiceCommand(ids.ClientId, ids.ProductId, BillingCycle.Monthly, 5m, first, domain, "moveduser", null);
+        var created = await client.PostAsJsonAsync("/api/services/existing", body);
+        await SshTestSeeds.ChangeServiceQuietlyAsync(
+            factory, await created.Content.ReadFromJsonAsync<int>(), service => service.Terminate(TestMoments.Seeded));
+
+        var response = await client.PostAsJsonAsync("/api/services/existing", body with { ServerId = second });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
     /// <summary>A server id that names no server is refused with 404 <c>SERVER_NOT_FOUND</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

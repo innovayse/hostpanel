@@ -614,6 +614,15 @@ public static class HostpanelErrorCodes
     /// <summary>A service that is not terminated already holds that username on that server (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
     public const string SERVICE_HOSTING_ACCOUNT_EXISTS = "SERVICE_HOSTING_ACCOUNT_EXISTS";
 
+    /// <summary>The server's panel holds no account with that username, so there is nothing to add a service for (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER = "SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER";
+
+    /// <summary>The server's panel cannot read accounts, so the account cannot be checked and the admin has to confirm it by hand (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_HOSTING_ACCOUNT_UNVERIFIED = "SERVICE_HOSTING_ACCOUNT_UNVERIFIED";
+
+    /// <summary>Another service that is not terminated already holds that domain, so the admin has to confirm a shared domain (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_DOMAIN_ALREADY_SERVED = "SERVICE_DOMAIN_ALREADY_SERVED";
+
     // Services: SSH key management
 
     /// <summary>The pasted text is not a single, valid ED25519 public key (400).</summary>

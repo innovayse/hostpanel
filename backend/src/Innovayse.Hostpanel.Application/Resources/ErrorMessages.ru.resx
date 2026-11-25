@@ -366,6 +366,15 @@
 <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
     <value>Эта учётная запись на этом сервере уже привязана к услуге.</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" xml:space="preserve">
+    <value>На панели управления сервера нет аккаунта с таким именем пользователя.</value>
+  </data>
+<data name="SERVICE_HOSTING_ACCOUNT_UNVERIFIED" xml:space="preserve">
+    <value>Панель управления сервера не может подтвердить, что этот аккаунт существует. Подтвердите, чтобы всё равно добавить услугу.</value>
+  </data>
+<data name="SERVICE_DOMAIN_ALREADY_SERVED" xml:space="preserve">
+    <value>Другая услуга уже использует этот домен. Подтвердите, чтобы добавить и эту.</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Для этой услуги уже есть незавершённый запрос на отмену.</value>
   </data>

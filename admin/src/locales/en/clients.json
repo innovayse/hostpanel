@@ -536,11 +536,13 @@
   "addExistingService": {
     "open": "Add account",
     "title": "Add an existing hosting account",
-    "intro": "For an account that already exists on the server: restored, moved from another server, or set up by hand. The service starts Active; nothing is created on the panel and no email is sent.",
+    "intro": "For an account that already exists on the server: restored, moved from another server, or set up by hand. The service starts Active; nothing is created on the panel and no email is sent. The server's panel is asked first and must hold the account.",
     "username": "Panel username",
     "recurringAmount": "Recurring amount",
     "startedAt": "Current period started",
-    "today": "Today"
+    "today": "Today",
+    "confirmUnverified": "The server's panel cannot confirm this account. I confirm that it exists.",
+    "confirmSharedDomain": "Another service already holds this domain. I confirm adding this one as well."
   },
   "vat": {
     "title": "VAT number",

@@ -63,6 +63,9 @@ public static class StatusMapping
             // Exact row: the order number sequence outgrew the configured number length, a state of
             // the deployment rather than of the request, and the name carries no token for it.
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),
+            // Exact rows: the account a service is added for is not on the server, or the panel cannot say, so the admin has to
+            // confirm it: a state conflict, and neither name carries a CONFLICT / ALREADY token.
+            "SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" or "SERVICE_HOSTING_ACCOUNT_UNVERIFIED" => new(409, "Conflict"),
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
             "SERVICE_HOSTING_DETAILS_MISSING" or "CPANEL_USERNAME_INVALID" or "CPANEL_DOMAIN_INVALID" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),

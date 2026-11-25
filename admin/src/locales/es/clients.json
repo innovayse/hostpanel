@@ -536,11 +536,13 @@
   "addExistingService": {
     "open": "Agregar cuenta existente",
     "title": "Agregar una cuenta de alojamiento existente",
-    "intro": "Para una cuenta que ya existe en el servidor: restaurada, movida de otro servidor, o configurada a mano. El servicio comienza Activo; nada se crea en el panel y no se envía ningún correo electrónico.",
+    "intro": "Para una cuenta que ya existe en el servidor: restaurada, movida de otro servidor, o configurada a mano. El servicio comienza Activo; nada se crea en el panel y no se envía ningún correo electrónico. Primero se consulta el panel del servidor, que debe tener la cuenta.",
     "username": "Nombre de usuario del panel",
     "recurringAmount": "Monto recurrente",
     "startedAt": "Período actual iniciado",
-    "today": "Hoy"
+    "today": "Hoy",
+    "confirmUnverified": "El panel del servidor no puede confirmar esta cuenta. Confirmo que existe.",
+    "confirmSharedDomain": "Otro servicio ya usa este dominio. Confirmo añadir también este."
   },
   "vat": {
     "title": "Número de IVA",

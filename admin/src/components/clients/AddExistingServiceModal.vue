@@ -4,15 +4,16 @@
  * restored after a reinstall, moved from another server, or set up by hand. The service starts
  * Active; nothing is created on the panel and no welcome mail is sent.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { useServersStore } from '@/stores/servers'
 import { useServicesStore } from '@/stores/services'
 import { useSettingsStore } from '@/stores/settings'
-import { BillingCycle } from '@/types/service'
+import { AddExistingRefusal, BillingCycle } from '@/types/service'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -20,6 +21,7 @@ import UiForm from '@/components/ui/UiForm.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -27,7 +29,7 @@ import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiInputType } from '@/utils/ui/input'
-import { UiTextTone } from '@/utils/ui/text'
+import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -79,6 +81,18 @@ const startedAt = ref<string | null>(null)
 /** True while the request is in flight. */
 const saving = ref(false)
 
+/** True once the API said the server's panel cannot confirm the account, so the confirmation is offered. */
+const askUnverified = ref(false)
+
+/** True once the API said another live service holds the domain, so the confirmation is offered. */
+const askSharedDomain = ref(false)
+
+/** The admin's confirmation of an account the server's panel cannot be asked about. */
+const confirmUnverified = ref(false)
+
+/** The admin's confirmation of a domain another live service already holds. */
+const confirmSharedDomain = ref(false)
+
 /** Product options for the select. */
 const productOptions = computed(() => settingsStore.products.map(p => ({ value: p.id, label: p.name })))
 
@@ -111,12 +125,26 @@ const handleSave = async (): Promise<void> => {
     domain: domain.value.trim(),
     username: username.value.trim(),
     startedAt: startedAt.value,
+    confirmUnverified: confirmUnverified.value,
+    confirmSharedDomain: confirmSharedDomain.value,
   })
   saving.value = false
   if (ok) {
     emit('added')
+    return
   }
+  // A refusal the admin can confirm past keeps its sentence on screen and offers the checkbox for it.
+  askUnverified.value ||= store.addExistingCode === AddExistingRefusal.AccountUnverified
+  askSharedDomain.value ||= store.addExistingCode === AddExistingRefusal.DomainShared
 }
+
+// A confirmation vouches for one server, username and domain: changing any of them takes it back.
+watch([serverId, username, domain], () => {
+  askUnverified.value = false
+  askSharedDomain.value = false
+  confirmUnverified.value = false
+  confirmSharedDomain.value = false
+})
 
 onMounted(() => {
   store.actionError = null
@@ -175,6 +203,22 @@ onMounted(() => {
           />
         </UiField>
       </UiGrid>
+      <UiLabel v-if="askUnverified" :variant="UiLabelVariant.Inline">
+        <UiCheckbox
+          v-model="confirmUnverified"
+          :aria-label="t('clients.addExistingService.confirmUnverified')"
+          data-testid="add-existing-service-confirm-unverified"
+        />
+        {{ t('clients.addExistingService.confirmUnverified') }}
+      </UiLabel>
+      <UiLabel v-if="askSharedDomain" :variant="UiLabelVariant.Inline">
+        <UiCheckbox
+          v-model="confirmSharedDomain"
+          :aria-label="t('clients.addExistingService.confirmSharedDomain')"
+          data-testid="add-existing-service-confirm-shared-domain"
+        />
+        {{ t('clients.addExistingService.confirmSharedDomain') }}
+      </UiLabel>
       <UiFormActions>
         <UiButton :action="UiActionKind.Cancel" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="add-existing-service-cancel" @click="emit('close')">{{ t('shared.cancel') }}</UiButton>
         <UiButton :action="UiActionKind.Add"

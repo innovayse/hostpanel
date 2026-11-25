@@ -162,6 +162,9 @@
   <data name="CONTACT_SEND_FAILED" xml:space="preserve"><value>Ihre Nachricht konnte nicht zugestellt werden. Bitte versuchen Sie es in einigen Minuten erneut.</value></data>
   <data name="SERVICE_NOT_FOUND" xml:space="preserve"><value>Kundendienst nicht gefunden.</value></data>
   <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve"><value>Ein Dienst verwendet dieses Konto auf diesem Server bereits.</value></data>
+  <data name="SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" xml:space="preserve"><value>Das Bedienfeld des Servers hat kein Konto mit diesem Benutzernamen.</value></data>
+  <data name="SERVICE_HOSTING_ACCOUNT_UNVERIFIED" xml:space="preserve"><value>Das Bedienfeld des Servers kann nicht bestätigen, dass dieses Konto existiert. Bestätigen Sie, um den Dienst trotzdem hinzuzufügen.</value></data>
+  <data name="SERVICE_DOMAIN_ALREADY_SERVED" xml:space="preserve"><value>Ein anderer Dienst verwendet diese Domain bereits. Bestätigen Sie, um auch diesen hinzuzufügen.</value></data>
   <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve"><value>Für diesen Dienst liegt bereits eine Kündigungsanfrage vor.</value></data>
   <data name="SERVICE_ALREADY_TERMINATED" xml:space="preserve"><value>Dieser Dienst ist bereits beendet und kann daher nicht gekündigt werden.</value></data>
   <data name="CANCELLATION_REQUEST_NOT_FOUND" xml:space="preserve"><value>Kündigungsanfrage nicht gefunden.</value></data>

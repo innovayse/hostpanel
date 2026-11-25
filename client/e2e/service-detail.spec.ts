@@ -107,7 +107,7 @@ test('the Open panel button shows the icon of the plugin that serves the server 
 
   const icon = page.getByTestId('service-panel-login').getByTestId('service-panel-plugin-icon')
   await expect(icon).toHaveAttribute('alt', PANEL_PLUGIN.name)
-  await expect(icon).toHaveAttribute('src', `/api/portal/client/plugins/${PANEL_PLUGIN.id}/icon`)
+  await expect(icon).toHaveAttribute('src', `/api/portal/client/plugins/${PANEL_PLUGIN.id}/icon?v=${PANEL_PLUGIN.iconVersion}`)
   await expect.poll(() => icon.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
 
   await context.route(PANEL_SSO_URL, (route) => route.fulfill({ body: '' }))

@@ -24,10 +24,10 @@ public sealed class ServerPanelPluginReaderTests
 
         var plugin = reader.Find("HestiaCP");
 
-        plugin.Should().Be(new ServicePanelPluginDto("hestia", "Panel plugin", false));
+        plugin.Should().Be(new ServicePanelPluginDto("hestia", "Panel plugin", null));
     }
 
-    /// <summary>A plugin that ships an icon says so, so a screen knows the icon route will answer.</summary>
+    /// <summary>A plugin that ships an icon reports its version, so a screen knows the icon route will answer and can version the address.</summary>
     [Fact]
     public void Find_PluginWithIcon_ReportsIt()
     {
@@ -35,7 +35,7 @@ public sealed class ServerPanelPluginReaderTests
             with { Icon = new PluginIconDto("image/svg+xml", [1], "\"tag\"") };
         var reader = ReaderOver(withIcon);
 
-        reader.Find("hestiacp")!.HasIcon.Should().BeTrue();
+        reader.Find("hestiacp")!.IconVersion.Should().Be(withIcon.Manifest.Version);
     }
 
     /// <summary>The module the host provisions itself, with no plugin declaring it, has no serving plugin.</summary>

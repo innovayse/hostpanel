@@ -336,9 +336,10 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
    * Address of the icon the plugin serving a service's panel ships.
    *
    * @param pluginId - Plugin id as its manifest declares it.
+   * @param version - The plugin's version, as the API reports it next to the plugin.
    * @returns The same-origin address of the icon, for an `<img>`.
    */
-  const panelIconUrl = (pluginId: string): string => api.panelPluginIconPath(pluginId)
+  const panelIconUrl = (pluginId: string, version: string): string => api.panelPluginIconPath(pluginId, version)
 
   /**
    * Completes first-time setup on a newly provisioned service.

@@ -10,6 +10,7 @@
     "registerNow": "Registrar",
     "invalidDomain": "Introduzca un dominio válido con extensión (p. ej., misitio.com)",
     "checkFailed": "Error al comprobar el dominio. Inténtelo de nuevo.",
+    "cannotAdd": "Este dominio no se puede añadir al carrito ahora mismo. Inténtelo de nuevo.",
     "tldNotSupported": "Esta extensión no está disponible para registro",
     "alreadyInCart": "En el carrito",
     "tabRegister": "Registrar",

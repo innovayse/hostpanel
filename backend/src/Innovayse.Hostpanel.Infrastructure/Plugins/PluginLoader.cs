@@ -270,7 +270,7 @@ public static class PluginLoader
                         .Where(s => s.Required)
                         .Select(s => s.Key)
                         .ToList(),
-                    IconUrl: icon.Icon is null ? null : PluginIconPaths.For(manifest.Id)));
+                    IconUrl: icon.Icon is null ? null : PluginIconPaths.For(manifest.Id, manifest.Version)));
 
                 logger.LogInformation(
                     "Plugin {Id} registered as integration entry in category '{Category}'",

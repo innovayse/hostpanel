@@ -70,8 +70,8 @@ describe('useClientApi', () => {
     expectLastRequest(stub, row)
   })
 
-  it('panelPluginIconPath is the portal route of the plugin icon, with the id encoded', () => {
-    expect(api.panelPluginIconPath('acme-panel')).toBe('/api/portal/client/plugins/acme-panel/icon')
-    expect(api.panelPluginIconPath('a/b')).toBe('/api/portal/client/plugins/a%2Fb/icon')
+  it('panelPluginIconPath is the portal route of the plugin icon, with the id and the version encoded', () => {
+    expect(api.panelPluginIconPath('acme-panel', '1.2.0')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
+    expect(api.panelPluginIconPath('a/b', '1.0.0+5')).toBe('/api/portal/client/plugins/a%2Fb/icon?v=1.0.0%2B5')
   })
 })

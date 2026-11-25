@@ -24,6 +24,10 @@
         </UiStack>
       </UiStack>
 
+      <UiAlert v-if="error" :variant="UiAlertVariant.Error" class="mb-4 text-left" data-testid="domains-error">
+        {{ error }}
+      </UiAlert>
+
       <AuroraDomainResults
         :results="results"
         :pending="pending"
@@ -50,7 +54,7 @@ import { EYEBROW_CLASS, PAGE_TITLE_CLASS } from '~/templates/aurora/typography'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import type { DomainResult } from '~/types/domainresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
-import { UiStackTag } from '~/utils/ui/enums'
+import { UiAlertVariant, UiStackTag } from '~/utils/ui/enums'
 
 withDefaults(defineProps<{
   /** Priced extensions, for the price table and the "has zones" decision. */
@@ -67,6 +71,8 @@ withDefaults(defineProps<{
   inCart?: string[]
   /** The name the last search ran for; the search field shows it. */
   query?: string
+  /** The sentence for a refused search or add to the cart; empty when there is none to show. */
+  error?: string
 }>(), {
   priceRows: () => [],
   results: () => [],
@@ -75,6 +81,7 @@ withDefaults(defineProps<{
   activeCategory: ALL_CATEGORY,
   inCart: () => [],
   query: '',
+  error: '',
 })
 
 /** Events this component raises. */

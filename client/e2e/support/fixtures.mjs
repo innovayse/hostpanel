@@ -54,14 +54,15 @@ export const PLAN_PRO = {
 }
 
 /**
- * The product a domain order hangs on. The storefront finds it by name (a product whose name
- * contains "domain") and adds a domain to the cart only when it exists; it sits in a group of its
- * own so no hosting page lists it.
+ * The product a domain order hangs on. The backend finds it by its product type
+ * (`GET /api/public/products/domain`) and the storefront adds a domain to the cart only when it
+ * exists; it sits in a group of its own so no hosting page lists it.
  */
 export const DOMAIN_PRODUCT = {
   id: 90,
   groupId: 9,
   name: 'E2E Domain Registration',
+  type: 'Domain',
   description: 'The product domain orders are placed on',
   status: 'Active',
   pricing: { monthly: 0, annual: 0 },
@@ -1080,7 +1081,7 @@ export const SLOT_WIDGET_VIEWS = {
 export const SLOT_SLOW_VIEW_DELAY_MS = 8000
 
 /** The plugin that serves {@link SERVICE_PANEL}'s server: it ships an icon, which the stub answers at the plugin icon route. */
-export const PANEL_PLUGIN = { id: 'e2e-panel', name: 'E2E Panel', hasIcon: true }
+export const PANEL_PLUGIN = { id: 'e2e-panel', name: 'E2E Panel', iconVersion: '1.0.0' }
 
 /** The address the stub's panel sign-in answers with: an https address on the service's own server. */
 export const PANEL_SSO_URL = 'https://panel.e2e.test/sso-session'

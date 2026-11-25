@@ -53,5 +53,5 @@ const plugin = computed(() => props.service.server?.panelPlugin ?? null)
 
 /** Address of the plugin's picture; undefined when there is none to draw. */
 const iconSrc = computed<string | undefined>(() =>
-  plugin.value?.hasIcon && !failed.value ? store.panelIconUrl(plugin.value.id) : undefined)
+  plugin.value?.iconVersion && !failed.value ? store.panelIconUrl(plugin.value.id, plugin.value.iconVersion) : undefined)
 </script>

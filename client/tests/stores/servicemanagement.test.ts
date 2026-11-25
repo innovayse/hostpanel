@@ -211,8 +211,8 @@ describe('useServiceManagementStore', () => {
     expect(store.ssoError).toBe('The panel plugin is switched off.')
   })
 
-  it('panelIconUrl is the portal route of the plugin icon', () => {
-    expect(useServiceManagementStore().panelIconUrl('acme-panel')).toBe('/api/portal/client/plugins/acme-panel/icon')
+  it('panelIconUrl is the portal route of the plugin icon, versioned', () => {
+    expect(useServiceManagementStore().panelIconUrl('acme-panel', '1.2.0')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
   })
 
   it('setUpService marks the service list stale on success', async () => {

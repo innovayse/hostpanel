@@ -148,9 +148,12 @@ export const reportApiPath = (slug: string, suffix?: string): string =>
 
 /**
  * Builds the address of the icon an installed plugin ships, for an `<img>`: the same-origin staff route the plugin list's
- * `iconUrl` points at.
+ * `iconUrl` points at, with the plugin's version as the address's query (the same `v` the list's `iconUrl` carries), so an
+ * updated plugin is a new address and its new icon shows at once instead of when the cached one expires.
  *
  * @param pluginId - Plugin id as its manifest declares it.
- * @returns `/api/admin/plugins/<id>/icon`.
+ * @param version - The plugin's version, as the API reports it next to the plugin.
+ * @returns `/api/admin/plugins/<id>/icon?v=<version>`.
  */
-export const pluginIconPath = (pluginId: string): string => `${API_BASE}${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/icon`
+export const pluginIconPath = (pluginId: string, version: string): string =>
+  `${API_BASE}${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/icon?v=${encodeURIComponent(version)}`

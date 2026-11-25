@@ -280,7 +280,7 @@ public sealed class DomainsController : BaseApiController
     /// <returns>
     /// 200 with the name, availability flag and status (not available with the status <c>TldNotSupported</c> when no
     /// registrar sells the extension); 400 <c>VALIDATION_ERROR</c> when no name was
-    /// given. Anonymous: the storefront needs it before sign-in; 502 when the registrar gives no usable answer;
+    /// given or it is not a well-formed domain name. Anonymous: the storefront needs it before sign-in; 502 when the registrar gives no usable answer;
     /// 503 with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_NOT_CONFIGURED</c> when the registrar refuses the saved
     /// credentials or none is set up;
     /// 429 when the rate limit is hit.
@@ -304,7 +304,7 @@ public sealed class DomainsController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the name, availability flag and status (not available with the status <c>TldNotSupported</c> when no
-    /// registrar sells the extension); 400 <c>VALIDATION_ERROR</c> when no name was given.
+    /// registrar sells the extension); 400 <c>VALIDATION_ERROR</c> when no name was given or it is not a well-formed domain name.
     /// Anonymous: the storefront needs it before sign-in; 502 when the registrar gives no usable answer;
     /// 503 with <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_NOT_CONFIGURED</c> when the registrar refuses the saved
     /// credentials or none is set up;

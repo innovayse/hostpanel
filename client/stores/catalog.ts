@@ -25,6 +25,7 @@ import type { PlanCard } from '~/types/plancard'
 import type { PricingCycle } from '~/types/pricingcycle'
 import type { CatalogFilter } from '~/types/catalogfilter'
 import type { CountryOption } from '~/types/countryoption'
+import type { DomainProduct } from '~/types/domainproduct'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import type { ProductFeature } from '~/types/productfeature'
@@ -137,13 +138,36 @@ export const useCatalogStore = defineStore('catalog', () => {
   /** The hosting plans in display order, in the payer's currency; what the plan cards and the home page show. */
   const hostingPlans = computed(() => [...productsFor({ gid: HOSTING_GROUP_ID })].sort(comparePlans))
 
+  /** The product a domain cart line hangs on; null until {@link loadDomainProduct}, and after a refused read. */
+  const domainProduct = ref<DomainProduct | null>(null)
+
+  /** The sentence for the last refused read of the domain product; empty when there is none to show. */
+  const domainProductError = ref('')
+
   /**
-   * The id of the product a domain cart line hangs on, from the whole catalogue read by
-   * `loadProducts()`. Matched by name because the catalogue carries no flag that says a product
-   * is the domain one; null when none is configured (the cart then cannot take a domain).
+   * The id of the product a domain cart line hangs on; null when the operator sells none (the
+   * cart then cannot take a domain, and {@link domainProductError} says why).
    */
-  const domainProductId = computed<number | null>(() =>
-    productsFor().find(p => p.name.toLowerCase().includes('domain'))?.id ?? null)
+  const domainProductId = computed<number | null>(() => domainProduct.value?.id ?? null)
+
+  /**
+   * Reads the product a domain cart line hangs on.
+   *
+   * The backend picks it by its product type, never by a word in its name, so a renamed product
+   * or an unpriced one is still found.
+   *
+   * @returns The product; null after a refusal, which {@link domainProductError} then words.
+   */
+  const loadDomainProduct = async (): Promise<DomainProduct | null> => {
+    domainProductError.value = ''
+    try {
+      domainProduct.value = await api.fetchDomainProduct()
+    } catch (e: unknown) {
+      domainProduct.value = null
+      domainProductError.value = apiErrorMessage(e)
+    }
+    return domainProduct.value
+  }
 
   /**
    * Reads the hosting plans.
@@ -382,7 +406,10 @@ export const useCatalogStore = defineStore('catalog', () => {
     loadFamilies,
     productsFor,
     hostingPlans,
+    domainProduct,
+    domainProductError,
     domainProductId,
+    loadDomainProduct,
     loadHostingPlans,
     planCards,
     loadProductFeatures,

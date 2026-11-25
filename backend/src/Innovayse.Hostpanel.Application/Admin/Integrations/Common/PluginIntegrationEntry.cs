@@ -12,7 +12,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Keys of the settings the manifest marks required, which the list checks for "configured". Only keys: the form's
 /// labels are resolved per request in the reader's language by the detail read, never once at load (#854).
 /// </param>
-/// <param name="IconUrl">Path of the admin icon endpoint when the plugin ships an icon; <see langword="null"/> otherwise.</param>
+/// <param name="IconUrl">Path of the admin icon endpoint, with the plugin version in its query, when the plugin ships an icon; <see langword="null"/> otherwise.</param>
 public sealed record PluginIntegrationEntry(
     string Slug,
     string Name,

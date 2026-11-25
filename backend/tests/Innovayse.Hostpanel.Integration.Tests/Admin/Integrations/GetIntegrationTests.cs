@@ -51,7 +51,8 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
     {
         var pluginId = $"icon-detail-{Guid.NewGuid():N}";
         var registry = new FakePluginRegistry();
-        registry.Add(PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson(pluginId))!);
+        var manifest = PluginManifestReader.Deserialize(PluginsTestSeeds.ManifestJson(pluginId))!;
+        registry.Add(manifest);
         registry.AddIcon(pluginId, new PluginIconDto("image/png", [1, 2, 3], "\"t\""));
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPluginRegistry>(registry)));
@@ -62,7 +63,7 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
         var builtIn = await client.GetFromJsonAsync<JsonElement>("/api/admin/integrations/smtp");
 
         plugin.GetProperty("isPlugin").GetBoolean().Should().BeTrue();
-        plugin.GetProperty("iconUrl").GetString().Should().Be($"/api/admin/plugins/{pluginId}/icon");
+        plugin.GetProperty("iconUrl").GetString().Should().Be($"/api/admin/plugins/{pluginId}/icon?v={manifest.Version}");
         builtIn.GetProperty("isPlugin").GetBoolean().Should().BeFalse();
         builtIn.GetProperty("iconUrl").ValueKind.Should().Be(JsonValueKind.Null);
     }

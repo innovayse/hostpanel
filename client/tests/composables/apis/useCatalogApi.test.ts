@@ -30,6 +30,7 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchProducts sends the filters as a query', call: () => api.fetchProducts({ gid: 1, currency: 'USD' }), method: HttpMethod.Get, url: '/api/portal/public/products?gid=1&currency=USD' },
   { name: 'fetchProducts drops an undefined filter and sends no query at all', call: () => api.fetchProducts({ currency: undefined }), method: HttpMethod.Get, url: '/api/portal/public/products' },
   { name: 'fetchProducts sends the group list as one comma-separated value', call: () => api.fetchProducts({ gids: '1,3,4' }), method: HttpMethod.Get, url: '/api/portal/public/products?gids=1,3,4' },
+  { name: 'fetchDomainProduct reads the product a domain line hangs on', call: () => api.fetchDomainProduct(), method: HttpMethod.Get, url: '/api/portal/public/products/domain' },
   { name: 'fetchProductGroups reads the list', call: () => api.fetchProductGroups(), method: HttpMethod.Get, url: '/api/portal/public/product-groups' },
   { name: 'fetchProductBundles reads the list', call: () => api.fetchProductBundles(), method: HttpMethod.Get, url: '/api/portal/public/product-bundles' },
   { name: 'fetchProductFeatures asks for one group', call: () => api.fetchProductFeatures(7), method: HttpMethod.Get, url: '/api/portal/public/product-features?gid=7' },

@@ -83,4 +83,14 @@ describe('AuroraDomains', () => {
     expect(wrapper.emitted('add')).toEqual([['a.com']])
     expect(wrapper.find('[data-testid="domain-add-b.com"]').attributes('disabled')).toBeDefined()
   })
+
+  it('shows the sentence of a refused search or add to the cart, and nothing when there is none', async () => {
+    await loadGlobals()
+    const quiet = mountWithKit(AuroraDomains, { props: { priceRows: [ROW] } })
+    expect(quiet.find('[data-testid="domains-error"]').exists()).toBe(false)
+
+    const refused = mountWithKit(AuroraDomains, { props: { priceRows: [ROW], error: 'Domain name is not valid.' } })
+
+    expect(refused.find('[data-testid="domains-error"]').text()).toBe('Domain name is not valid.')
+  })
 })

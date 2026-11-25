@@ -38,7 +38,12 @@
         </UiLink>
       </UiStack>
 
-      <UiStack direction="row" align="center" gap="xs" class="shrink-0">
+      <!--
+        The controls wrap inside the bar instead of keeping their full width: on a 390px phone the pickers, the
+        theme toggle, the cart and the menu button add up to more than the container, and a group that refuses
+        to shrink pushed the whole page sideways.
+      -->
+      <UiStack direction="row" align="center" wrap justify="end" gap="xs" class="min-w-0 max-w-full" data-testid="header-controls">
         <AuroraAppLauncher />
         <UiLanguageSwitcher :trigger-class="PICKER_CONTROL" />
         <UiCurrencySwitcher :trigger-class="PICKER_CONTROL" />

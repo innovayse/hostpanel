@@ -115,11 +115,11 @@ describe('ServiceSidebar', () => {
 describe('ServiceSidebar panel icon', () => {
   it('shows the icon of the plugin that serves the server, named after the plugin', async () => {
     await grantPermissions(Permission.AllowSingleSignOn)
-    const served = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+    const served = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', iconVersion: '1.2.0' } }
     const wrapper = mountSidebar({ service: service({ server: served }) })
 
     const icon = wrapper.get('[data-testid="service-link-panel"] [data-testid="service-panel-plugin-icon"]')
-    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
     expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 })

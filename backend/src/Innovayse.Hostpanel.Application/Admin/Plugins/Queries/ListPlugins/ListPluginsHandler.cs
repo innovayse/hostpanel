@@ -80,7 +80,7 @@ public sealed class ListPluginsHandler
                 refusal?.Rule,
                 refusal?.Detail,
                 package.StagedVersion,
-                refusal is null && _registry.GetIcon(manifest.Id) is not null ? PluginIconPaths.For(manifest.Id) : null,
+                refusal is null && _registry.GetIcon(manifest.Id) is not null ? PluginIconPaths.For(manifest.Id, manifest.Version) : null,
                 refusal is null ? manifest.HostAccess : [],
                 refusal is null ? manifest.Changelog : null,
                 refusal is null ? manifest.MinHostVersion : null,

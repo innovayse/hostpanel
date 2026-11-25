@@ -48,14 +48,14 @@ describe('ServiceHeader', () => {
 })
 
 /** A server whose module a plugin with an icon serves. */
-const SERVED = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+const SERVED = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', iconVersion: '1.2.0' } }
 
 describe('ServiceHeader panel icon', () => {
   it('shows the icon of the plugin that serves the server, named after the plugin', () => {
     const wrapper = mountClient(ServiceHeader, { props: { service: service({ server: SERVED }), ssoLoading: false } })
 
     const icon = wrapper.get('[data-testid="service-panel-login"] [data-testid="service-panel-plugin-icon"]')
-    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
     expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 

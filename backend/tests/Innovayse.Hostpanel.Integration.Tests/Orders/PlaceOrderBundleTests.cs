@@ -128,7 +128,7 @@ public sealed class PlaceOrderBundleTests(IntegrationTestFactory factory) : ICla
     {
         await OrdersTestSeeds.EnableBankTransferAsync(factory);
         var hosting = await ProductsTestSeeds.SeedProductWithUsdPricesAsync(factory, (BillingCycle.Monthly, HostingPrice));
-        var tld = $"x{Guid.NewGuid():N}"[..9];
+        var tld = DomainsTestSeeds.UniqueTld();
         await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
         var domainProduct = await OrdersTestSeeds.SeedDomainProductAsync(factory);
         var bundle = await CreateBundleAsync([hosting], includesDomain: true, "Percentage", 10m);

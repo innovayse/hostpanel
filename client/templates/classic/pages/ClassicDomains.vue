@@ -361,9 +361,6 @@ const cart = useCartStore()
 const domainsStore = useDomainsStore()
 domainsStore.reset()
 
-/** Domain product ID fetched from the backend products endpoint. */
-const domainProductId = ref<number | null>(null)
-
 // SEO and structured data live in pages/domains/index.vue so both templates emit
 // the same head.
 
@@ -379,8 +376,11 @@ const result = computed(() => domainsStore.searchResult)
 /** The page's own validation sentence, shown before any request is made. */
 const validationError = ref('')
 
-/** The sentence to show: local validation first, else the store's API refusal. */
-const searchError = computed(() => validationError.value || domainsStore.searchError)
+/** The sentence for an add to the cart that could not be done; empty when there is none to show. */
+const addError = ref('')
+
+/** The sentence to show: local validation first, else the store's API refusal, else the refusal to add to the cart. */
+const searchError = computed(() => validationError.value || domainsStore.searchError || addError.value)
 
 /** Checks domain availability through the store. */
 const searchDomain = async (): Promise<void> => {
@@ -389,6 +389,7 @@ const searchDomain = async (): Promise<void> => {
     return
   }
   validationError.value = ''
+  addError.value = ''
   if (!domain.includes('.')) {
     validationError.value = t('domains.invalidDomain')
     return
@@ -405,20 +406,20 @@ const searchDomain = async (): Promise<void> => {
 const currencyStore = useCurrencyStore()
 
 // Auto-search if a domain query param is present (coming from /products)
-onMounted(async () => {
+onMounted(() => {
   currencyStore.init()
   currencyStore.load()
 
   if (searchQuery.value) {
     searchDomain()
   }
-
-  // Fetch the domain product PID for the cart; null disables cart add
-  domainProductId.value = await domainsStore.fetchDomainProductId()
 })
 
-/** Catalogue store: the TLD price table. */
+/** Catalogue store: the TLD price table, and the product a domain cart line hangs on (read by the domains page). */
 const catalogStore = useCatalogStore()
+
+/** The id of the product a domain cart line hangs on; null when the operator sells none. */
+const domainProductId = computed(() => catalogStore.domainProductId)
 
 /** The Nuxt instance, kept so a read that starts later still runs inside its context. */
 const nuxtApp = useNuxtApp()
@@ -461,21 +462,25 @@ const canAddDomain = (domain: string): boolean => {
 /**
  * Adds a domain registration to the cart.
  *
- * Refuses when the TLD has no registration price for the period. The price is the API's, already
- * converted to the payer's currency. Callers gate the button on {@link canAddDomain} first;
- * this is the second line of defence.
+ * Refuses, and says so in {@link addError}, when there is no domain product (the API's own sentence
+ * for it), no payer currency, or the TLD has no registration price for the period. The price is the
+ * API's, already converted to the payer's currency. Callers gate the button on {@link canAddDomain}
+ * first; this is the second line of defence.
  *
  * @param domain - Full domain name (e.g. "example.com").
  * @param years - Registration period in years.
  */
 const addDomainToCart = (domain: string, years: number = DEFAULT_YEARS): void => {
-  if (!domainProductId.value || !currencyStore.payerCode) {
+  addError.value = ''
+  if (!domainProductId.value) {
+    addError.value = catalogStore.domainProductError || t('domains.cannotAdd')
     return
   }
 
   const tld = tldOf(domain)
   const amount = priceForYears(tldPriceEntry(tldPricing.value, tld)?.register, years)
-  if (amount === null) {
+  if (!currencyStore.payerCode || amount === null) {
+    addError.value = t('domains.cannotAdd')
     return
   }
 

@@ -33,6 +33,9 @@ let table: StubRouteTable
 /** The product list read. */
 const PRODUCTS_PATH = '/api/portal/public/products'
 
+/** The domain product read, as a table key. */
+const DOMAIN_PRODUCT_ROUTE = `${HttpMethod.Get} ${CatalogPath.DomainProduct}`
+
 /** The product list read, as a table key. */
 const PRODUCTS_ROUTE = `${HttpMethod.Get} ${PRODUCTS_PATH}`
 
@@ -150,14 +153,39 @@ describe('useCatalogStore.loadProducts', () => {
     expect(store.error).toBe('')
   })
 
-  it('finds the domain product by name in the whole catalogue', async () => {
-    table[PRODUCTS_ROUTE] = { body: [{ id: 4, name: 'Hosting' }, { id: 9, name: 'Domain Registration' }] }
+  it('reads the domain product from the API, which finds it by its type and not by its name', async () => {
+    table[DOMAIN_PRODUCT_ROUTE] = { body: { id: 9 } }
     const store = useCatalogStore()
     expect(store.domainProductId).toBeNull()
 
-    await store.loadProducts()
+    await store.loadDomainProduct()
 
     expect(store.domainProductId).toBe(9)
+    expect(store.domainProductError).toBe('')
+    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(0)
+  })
+
+  it('words the refusal when no domain product is configured and offers no id', async () => {
+    table[DOMAIN_PRODUCT_ROUTE] = { status: 503, body: { type: 'DOMAIN_PRODUCT_NOT_CONFIGURED', detail: 'Domains cannot be ordered here.' } }
+    const store = useCatalogStore()
+
+    const product = await store.loadDomainProduct()
+
+    expect(product).toBeNull()
+    expect(store.domainProductId).toBeNull()
+    expect(store.domainProductError).toBe('Domains cannot be ordered here.')
+  })
+
+  it('forgets a refusal and a product once the next read succeeds', async () => {
+    table[DOMAIN_PRODUCT_ROUTE] = { status: 503, body: { detail: 'Not now.' } }
+    const store = useCatalogStore()
+    await store.loadDomainProduct()
+
+    table[DOMAIN_PRODUCT_ROUTE] = { body: { id: 4 } }
+    await store.loadDomainProduct()
+
+    expect(store.domainProductError).toBe('')
+    expect(store.domainProductId).toBe(4)
   })
 })
 

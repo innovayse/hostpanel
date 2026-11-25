@@ -26,7 +26,6 @@ import { DomainActionOutcome } from '~/types/domainactionoutcome'
 import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
 import type { DomainDetail } from '~/types/domaindetail'
 import { HttpMethod } from '~/types/httpmethod'
-import { ProductType } from '~/types/producttype'
 import { emptyContact } from '~/utils/domainContacts'
 import { EMPTY_AMOUNT } from '~/utils/formatCurrency'
 
@@ -38,9 +37,6 @@ let table: StubRouteTable
 
 /** The availability check. */
 const CHECK_ROUTE = writeOf(CatalogPath.DomainCheck)
-
-/** The catalogue read. */
-const PRODUCTS_ROUTE = readOf(CatalogPath.Products)
 
 /** The placing of a transfer order. */
 const TRANSFER_ROUTE = writeOf(DomainEndpoint.TransferOrder)
@@ -91,15 +87,6 @@ describe('useDomainsStore', () => {
     expect(store.searchError).toBe('Refused by the registrar.')
     expect(store.searchResult).toBeNull()
     expect(store.searching).toBe(false)
-  })
-
-  it('returns the domain product id, or null when the catalogue fails', async () => {
-    table[PRODUCTS_ROUTE] = { body: [{ id: 1, type: ProductType.SharedHosting }, { id: 7, type: ProductType.Domain }] }
-    const store = useDomainsStore()
-    expect(await store.fetchDomainProductId()).toBe(7)
-
-    table[PRODUCTS_ROUTE] = REFUSED
-    expect(await store.fetchDomainProductId()).toBeNull()
   })
 
   it('stores the transfer order on success', async () => {
@@ -312,6 +299,32 @@ describe('useDomainsStore storefront lookup', () => {
     expect(requestsTo(stub.requests, CatalogPath.DomainCheck)).toHaveLength(4)
     expect(store.lookupPending).toBe(false)
     expect(store.lookupTerm).toBe('My Site.xyz')
+  })
+
+  it('shows no rows for a name the API refuses as malformed, and holds its sentence instead', async () => {
+    table[CHECK_ROUTE] = {
+      status: 400,
+      body: { type: 'VALIDATION_ERROR', detail: 'Domain name is not valid.', errors: { Domain: ['Domain name may only contain letters, digits and hyphens.'] } },
+    }
+    const store = withPricing()
+
+    await store.searchOfferedTlds('bad name!')
+
+    expect(store.lookupResults).toEqual([])
+    expect(store.lookupError).toBe('Domain name may only contain letters, digits and hyphens.')
+    expect(requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => (bodyOf(request) as { domain: string }).domain)).toContain('bad-name!.com')
+  })
+
+  it('clears the sentence of a refused name when the next search is accepted', async () => {
+    table[CHECK_ROUTE] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { Domain: ['Not a name.'] } } }
+    const store = withPricing()
+    await store.searchOfferedTlds('-bad-')
+
+    table[CHECK_ROUTE] = { body: { domain: 'good.com', available: true, status: 'x' } }
+    await store.searchOfferedTlds('good')
+
+    expect(store.lookupError).toBe('')
+    expect(store.lookupResults).toHaveLength(4)
   })
 
   it('does not search for blank text', async () => {

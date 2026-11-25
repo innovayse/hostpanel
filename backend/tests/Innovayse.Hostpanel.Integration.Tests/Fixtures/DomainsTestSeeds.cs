@@ -313,7 +313,8 @@ internal static class DomainsTestSeeds
     /// <returns>The extension used and the anonymous body to post.</returns>
     public static NewTldPayload NewTldBody()
     {
-        var tld = $"tld-{Guid.NewGuid():N}"[..12];
+        // Letters only, so a name under this extension passes the domain name rule.
+        var tld = UniqueTld();
         var body = new
         {
             tld,

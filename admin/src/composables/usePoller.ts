@@ -140,6 +140,7 @@ export const usePoller = (options: PollerOptions): Poller => {
   /** What the shared listener calls. */
   const pausable: Pausable = {
     hide: clear,
+    /** Resumes the poll with one refresh when the tab shows again. */
     show: () => {
       // The read itself runs from a timer, so the listener returns at once. One read stands for all the time away.
       if (!reading) {

@@ -49,6 +49,7 @@ export const useMigrationStore = defineStore('migration', () => {
   /** The shared poller that re-reads the followed job; it pauses with the tab and never overlaps its own reads. */
   const poller = usePoller({
     kind: PollKind.MigrationStatus,
+    /** Polls the status of the followed job; nothing to poll while no job is followed. */
     tick: () => (polledJobId === null ? undefined : pollStatus(polledJobId)),
   })
 

@@ -451,6 +451,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       const poller = usePoller({
         kind: PollKind.ServerRestart,
         immediate: false,
+        /** Checks one batch of plugins for an update. */
         tick: async () => {
           const startedAt = await readProcessStartedAt()
           if (over) {

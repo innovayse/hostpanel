@@ -66,7 +66,9 @@ export const usePageCrumbs = (): PageCrumbs => {
   const originOf = (clientId: RouteId, section: ClientSection): ClientTrailOrigin => {
     const client = clients.current
     const clientName = client === null ? `#${clientId}` : `${client.firstName} ${client.lastName}`
-    return { clientId, clientName, section, translate: (key) => t(key) }
+    /** Translates a key in the active language. */
+    const translate = (key: string): string => t(key)
+    return { clientId, clientName, section, translate }
   }
 
   /**

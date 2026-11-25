@@ -22,6 +22,7 @@ public sealed class LanguageCodesTests
     }
 
     /// <summary>The platform answers in German and Spanish as well as the original three, which a per-language row must cover.</summary>
+    /// <param name="language">The language code that must be in the shared list.</param>
     [Theory]
     [InlineData("ru")]
     [InlineData("hy")]

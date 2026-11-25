@@ -337,8 +337,11 @@ export const usePluginFollowUp = (
   /** Lets the view go of the running watch once it has ended. */
   let release: (() => void) | undefined
 
+  /** Runs one follow up attempt. */
+  const tick = (): Promise<void> => attemptOnce()
+
   /** The shared poller: the first read comes one interval after the call, and it pauses while the tab is hidden. */
-  const poller = usePoller({ kind: PollKind.PluginFollowUp, immediate: false, tick: () => attemptOnce() })
+  const poller = usePoller({ kind: PollKind.PluginFollowUp, immediate: false, tick })
 
   /**
    * Ends the running follow-up, if any.

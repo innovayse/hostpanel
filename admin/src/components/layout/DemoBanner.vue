@@ -39,6 +39,7 @@ const now = ref(Date.now())
 const clock = usePoller({
   kind: PollKind.DemoCountdown,
   immediate: false,
+  /** Refreshes the clock the countdown reads. */
   tick: () => {
     now.value = Date.now()
   },

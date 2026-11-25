@@ -17,6 +17,9 @@ import { PortalSettingKey } from './portalSettingKey'
  * list below carries the key of each language's row, named by `localizedSettingKeys`, not a literal per language.
  */
 const LOCALIZED_PUBLIC_SETTINGS: readonly PortalSettingKey[] = [
+  PortalSettingKey.ChatWebsiteToken,
+  PortalSettingKey.AboutText,
+  PortalSettingKey.ContactAddress,
   PortalSettingKey.ContactHours
 ]
 
@@ -37,13 +40,11 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly string[] = [
   PortalSettingKey.BrandFontBody,
   PortalSettingKey.AnalyticsGtmId,
   PortalSettingKey.ChatBaseUrl,
-  PortalSettingKey.ChatWebsiteToken,
   PortalSettingKey.ChatProvider,
   PortalSettingKey.ContactWhatsapp,
   PortalSettingKey.ContactTelegram,
   PortalSettingKey.ContactEmail,
   PortalSettingKey.ContactPhone,
-  PortalSettingKey.ContactAddress,
   PortalSettingKey.ContactTimezone,
   PortalSettingKey.ContactMapUrl,
   PortalSettingKey.NewsletterActionUrl,
@@ -73,7 +74,6 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly string[] = [
   PortalSettingKey.FeaturesFirewall,
   PortalSettingKey.FeaturesMalware,
   PortalSettingKey.MigrationFree,
-  PortalSettingKey.AboutText,
   PortalSettingKey.SectionStats,
   PortalSettingKey.SectionPartners,
   PortalSettingKey.SectionServices,

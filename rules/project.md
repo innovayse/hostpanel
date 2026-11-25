@@ -3249,10 +3249,13 @@ Never spread one of these, and never restructure as a side effect of a feature.
   This is also why `Innovayse.Hostpanel.API.csproj` carries `<Watch Remove="logs/**/*" />`, and
   `<Content Remove>`, so a publish does not ship yesterday's logs.
 - **Wolverine logs `Invocation of {Message} failed!` at Error with a stack trace for every
-  handler exception**, before its own policies get a say, and 5.31.0 has no knob for it. A
-  staff identity with no client row is not a fault, and four such traces per dashboard load
-  made a healthy platform read as a failing one. `ControlFlowExceptionLogFilter` drops exactly
-  those lines; extend the filter rather than removing it.
+  handler exception**, before its own policies get a say, and 5.31.0 has no knob for it.
+  `ExpectedFailureLogger` (registered in `Program.cs` by `AddExpectedFailureLogDemotion`,
+  over the logger factory every logger comes from) writes that Error at Debug when its exception
+  is, or wraps, a validation rejection or a cancellation of a request the client aborted
+  (`HttpContextExtensions.IsClientAbort`, the one answer shared with `ExceptionHandlingMiddleware`
+  and `ActionTimingFilter`). A cancellation of any other cause and every other exception stay
+  Errors; extend the logger rather than removing it.
 - **The two-factor attempt cap and replay guard are per API instance.** `TwoFactorChallengeService`
   and `TwoFactorCodeGuard` keep their counters in `IMemoryCache` with `CacheItemPriority.NeverRemove`,
   so memory pressure cannot evict a counter and reopen the cap; they fail closed. They hold for one API

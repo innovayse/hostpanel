@@ -122,56 +122,97 @@ describe('useServiceManagementStore', () => {
     expect(store.relatedInvoices).toEqual([])
   })
 
-  it('fetchCpanelUrl returns the address on success', async () => {
-    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = { body: { url: 'https://panel.example/sso' } }
+  it('fetchPanelUrl returns the address on success', async () => {
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { body: { url: 'https://panel.example/sso' } }
     const store = useServiceManagementStore()
 
-    const url = await store.fetchCpanelUrl('3')
+    const url = await store.fetchPanelUrl('3')
 
     expect(url).toBe('https://panel.example/sso')
     expect(store.ssoError).toBe('')
     expect(store.ssoLoading).toBe(false)
   })
 
-  it('fetchCpanelUrl treats an empty address as a failure', async () => {
-    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = { body: { url: '' } }
+  it('fetchPanelUrl treats an empty address as a failure', async () => {
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { body: { url: '' } }
     const store = useServiceManagementStore()
 
-    const url = await store.fetchCpanelUrl('3')
+    const url = await store.fetchPanelUrl('3')
 
     expect(url).toBeNull()
     expect(store.ssoError).not.toBe('')
   })
 
-  it('openControlPanel opens the single-sign-on address', async () => {
+  it('openPanel opens the single-sign-on address', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
-    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = { body: { url: 'https://panel.example/sso' } }
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { body: { url: 'https://panel.example/sso' } }
     const store = useServiceManagementStore()
 
-    await store.openControlPanel('3', 'srv.test')
+    await store.openPanel('3')
 
     expect(open).toHaveBeenCalledWith('https://panel.example/sso', '_blank', 'noopener')
   })
 
-  it('openControlPanel falls back to the plain panel login on the server host', async () => {
+  it('openPanel reads the login details when the serving plugin cannot sign anybody in, and opens nothing', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
-    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = REFUSED
+    const details = { username: 'ada', domain: 'a.test', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example:8083/login/' }
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { status: 409, body: { type: 'PANEL_OPERATION_NOT_SUPPORTED', detail: 'The panel does not offer single sign on.' } }
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-login`] = { body: details }
     const store = useServiceManagementStore()
 
-    await store.openControlPanel('3', 'srv.test')
-
-    expect(open).toHaveBeenCalledWith('https://srv.test:2083', '_blank', 'noopener')
-    expect(store.ssoError).not.toBe('')
-  })
-
-  it('openControlPanel opens nothing when sign-in fails and the host is unknown', async () => {
-    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
-    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = REFUSED
-    const store = useServiceManagementStore()
-
-    await store.openControlPanel('3', '')
+    await store.openPanel('3')
 
     expect(open).not.toHaveBeenCalled()
+    expect(store.panelLogin).toEqual(details)
+    expect(store.ssoError).toBe('')
+    expect(store.ssoLoading).toBe(false)
+  })
+
+  it('openPanel keeps the sign-on sentence when the panel offers neither an address nor login details', async () => {
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { status: 409, body: { type: 'PANEL_OPERATION_NOT_SUPPORTED', detail: 'The panel does not offer single sign on.' } }
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-login`] = { status: 409, body: { type: 'PANEL_OPERATION_NOT_SUPPORTED', detail: 'No login details.' } }
+    const store = useServiceManagementStore()
+
+    await store.openPanel('3')
+
+    expect(store.panelLogin).toBeNull()
+    expect(store.ssoError).toBe('The panel does not offer single sign on.')
+  })
+
+  it('openPanel does not ask for login details after any other refusal', async () => {
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { status: 503, body: { type: 'PANEL_PLUGIN_UNAVAILABLE', detail: 'The panel plugin is switched off.' } }
+    const store = useServiceManagementStore()
+
+    await store.openPanel('3')
+
+    expect(requestsTo(stub.requests, `${SERVICE_3}/panel-login`)).toHaveLength(0)
+    expect(store.ssoError).toBe('The panel plugin is switched off.')
+  })
+
+  it('closePanelLogin forgets the details', async () => {
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { status: 409, body: { type: 'PANEL_OPERATION_NOT_SUPPORTED', detail: 'x' } }
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-login`] = { body: { username: 'ada', domain: '', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example/login' } }
+    const store = useServiceManagementStore()
+    await store.openPanel('3')
+
+    store.closePanelLogin()
+
+    expect(store.panelLogin).toBeNull()
+  })
+
+  it('openPanel opens nothing and keeps the API sentence when the sign-in is refused', async () => {
+    const open = vi.spyOn(window, 'open').mockImplementation(() => null)
+    table[`${HttpMethod.Get} ${SERVICE_3}/panel-sso`] = { status: 409, body: { type: 'PANEL_PLUGIN_UNAVAILABLE', detail: 'The panel plugin is switched off.' } }
+    const store = useServiceManagementStore()
+
+    await store.openPanel('3')
+
+    expect(open).not.toHaveBeenCalled()
+    expect(store.ssoError).toBe('The panel plugin is switched off.')
+  })
+
+  it('panelIconUrl is the portal route of the plugin icon', () => {
+    expect(useServiceManagementStore().panelIconUrl('acme-panel')).toBe('/api/portal/client/plugins/acme-panel/icon')
   })
 
   it('setUpService marks the service list stale on success', async () => {

@@ -56,6 +56,12 @@ export const PortalErrorCode = {
    */
   PluginPageNotFound: 'PLUGIN_PAGE_NOT_FOUND',
 
+  /**
+   * The serving panel plugin cannot do what was asked: it has no single sign on, or no login details. The Open panel button
+   * branches on it from the sign on to the details a person signs in with by hand; nothing else about it is special.
+   */
+  PanelOperationNotSupported: 'PANEL_OPERATION_NOT_SUPPORTED',
+
   /** The panel's own server refused a malformed address or id before asking the API (`requireRouteParam`). */
   BadRouteParam: 'BAD_ROUTE_PARAM',
 

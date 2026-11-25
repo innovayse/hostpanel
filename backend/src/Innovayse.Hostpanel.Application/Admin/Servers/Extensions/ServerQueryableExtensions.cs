@@ -65,6 +65,7 @@ public static class ServerQueryableExtensions
             s.Name,
             s.Hostname,
             s.IpAddress,
+            s.Module,
             s.IsOnline,
             s.LastTestedAt,
             s.AccountsCount,

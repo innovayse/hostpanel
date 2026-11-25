@@ -5,7 +5,7 @@ namespace Innovayse.Hostpanel.Application.Provisioning.Common;
 
 /// <summary>A time-limited control-panel single-sign-on address.</summary>
 /// <param name="Url">The address that signs the holder into the hosting control panel.</param>
-public sealed record ControlPanelSsoDto([property: SecretMember] string Url)
+public sealed record PanelSsoDto([property: SecretMember] string Url)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

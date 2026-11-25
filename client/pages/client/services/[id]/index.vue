@@ -20,7 +20,8 @@
     </UiAlert>
 
     <template v-else>
-      <ClientServicesServiceHeader :service="service" :sso-loading="ssoLoading" @cpanel="loginToCpanel" />
+      <ClientServicesServicePanelLoginDialog v-if="panelLogin" :details="panelLogin" @close="mgmt.closePanelLogin()" />
+      <ClientServicesServiceHeader :service="service" :sso-loading="ssoLoading" @panel="openPanel" />
       <ClientServicesServiceNotices :service="service" :service-id="serviceId" :cancel-status="cancelStatus" />
 
       <UiSplit ratio="end-wide" gap="lg">
@@ -32,7 +33,7 @@
             :sso-loading="ssoLoading"
             :sso-error="ssoError"
             :plugin-tabs="pluginTabs"
-            @cpanel="loginToCpanel"
+            @panel="openPanel"
           />
         </template>
 
@@ -53,7 +54,7 @@
             <ClientServicesServiceQuickActions
               :service="service"
               :sso-loading="ssoLoading"
-              @cpanel="loginToCpanel"
+              @panel="openPanel"
               @invoices="loadInvoices"
               @cancel="activeTab = ServiceTab.Cancel"
             />
@@ -119,7 +120,7 @@ const serviceId = route.params.id as string
 const mgmt = useServiceManagementStore()
 mgmt.reset()
 /** Reactive state of the store this component renders. */
-const { ssoLoading, ssoError } = storeToRefs(mgmt)
+const { ssoLoading, ssoError, panelLogin } = storeToRefs(mgmt)
 
 // The service, its hosting info and its cancellation status are read through the service store.
 /** Loading flag of the service read, and the action that reads it again. */
@@ -200,12 +201,12 @@ const loadInvoices = (): Promise<void> => mgmt.loadInvoices(serviceId)
 /**
  * Signs the customer in to the control panel in a new tab.
  *
- * When the automatic sign-in fails the store keeps the reason in `ssoError`, and the panel's own
- * login form is still opened so the reader is not stranded.
+ * When the sign-in is refused the store keeps the API's own sentence in `ssoError` (the sidebar shows it) and
+ * nothing is opened.
  *
  * @returns Resolves when the attempt has ended.
  */
-const loginToCpanel = (): Promise<void> => mgmt.openControlPanel(serviceId, service.value?.server?.hostname)
+const openPanel = (): Promise<void> => mgmt.openPanel(serviceId)
 
 // A service that still waits for setup (Pending, as the backend requires; never a digital one) is not manageable yet: send it to the setup wizard.
 watch(service, (current) => {

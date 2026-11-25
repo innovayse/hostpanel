@@ -57,7 +57,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <summary>How many times <see cref="GetCredentialsAsync"/> was called.</summary>
     public int CredentialsCalls { get; private set; }
 
-    /// <summary>How many times <see cref="GetCPanelSsoUrlAsync"/> was called.</summary>
+    /// <summary>How many times <see cref="GetPanelSsoUrlAsync"/> was called.</summary>
     public int SsoCalls { get; private set; }
 
     /// <summary>How many times <see cref="ChangePasswordAsync"/> was called.</summary>
@@ -131,7 +131,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     }
 
     /// <inheritdoc/>
-    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct)
+    public Task<string> GetPanelSsoUrlAsync(PanelSsoOrder req, CancellationToken ct)
     {
         SsoCalls++;
         ThrowIfShouldFail();

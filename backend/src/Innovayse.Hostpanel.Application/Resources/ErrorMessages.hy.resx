@@ -426,7 +426,7 @@
 <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց վերականգնել ծառայությունը հոսթինգի սերվերի վրա։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
-<data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+<data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
     <value>Չհաջողվեց բացել կառավարման վահանակի աշխատաշրջանը։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
 <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
@@ -1180,7 +1180,7 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Դադարեցման ամսաթիվը կարելի է ուղղել միայն դադարեցված ծառայության համար։</value>
   </data>
-  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+  <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
     <value>Կառավարման վահանակի նիստը չհաջողվեց սկսել։ Վահանակը վերադարձրել է հասցե, որը նրա սերվերի վրա չէ։</value>
   </data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">

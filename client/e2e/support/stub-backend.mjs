@@ -100,7 +100,12 @@ import {
   SEEDED_TICKET_THREAD,
   SERVICE,
   SERVICE_INVOICE,
+  PANEL_LOGIN_DETAILS,
+  PANEL_PLUGIN,
+  PANEL_SSO_URL,
   SERVICE_MANAGED,
+  SERVICE_PANEL,
+  SERVICE_PANEL_BY_HAND,
   SSH_ACCESS,
   SERVICE_PENDING,
   SERVICE_SUSPENDED,
@@ -257,9 +262,9 @@ let profile = { ...CLIENT }
 /**
  * Builds the services the stub starts with, so a reset can restore them.
  *
- * @returns {Record<string, unknown>[]} A fresh list: the set-up service with a domain, the set-up one without, the one that needs setup and the suspended one.
+ * @returns {Record<string, unknown>[]} A fresh list: the set-up service with a domain, the set-up one without, the one that needs setup, the suspended one, the one on a plugin served server and the one whose panel cannot sign anybody in.
  */
-const seedServices = () => [{ ...SERVICE }, { ...SERVICE_MANAGED }, { ...SERVICE_PENDING }, { ...SERVICE_SUSPENDED }]
+const seedServices = () => [{ ...SERVICE }, { ...SERVICE_MANAGED }, { ...SERVICE_PENDING }, { ...SERVICE_SUSPENDED }, { ...SERVICE_PANEL }, { ...SERVICE_PANEL_BY_HAND }]
 
 /** @type {Record<string, unknown>[]} The customer's services; a finished setup gives one a control-panel user, a reset restores them. */
 let services = seedServices()
@@ -738,6 +743,28 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   }
   if (isGet && path === '/api/me/services') {
     send(res, 200, services)
+    return true
+  }
+  // A panel that cannot sign anybody in: the sign-in answers "not supported" and its login details answer how to sign in by hand.
+  const panelByHandMatch = path.match(/^\/api\/me\/services\/(\d+)\/(panel-sso|panel-login)$/)
+  if (isGet && panelByHandMatch && Number(panelByHandMatch[1]) === SERVICE_PANEL_BY_HAND.id) {
+    if (panelByHandMatch[2] === 'panel-login') {
+      send(res, 200, PANEL_LOGIN_DETAILS)
+    } else {
+      sendProblem(res, 409, 'PANEL_OPERATION_NOT_SUPPORTED', 'The panel does not offer single sign on.')
+    }
+    return true
+  }
+  // The panel sign-in: the one generic route every panel answers through, and the icon of the plugin that serves the server.
+  const panelSsoMatch = path.match(/^\/api\/me\/services\/(\d+)\/panel-sso$/)
+  if (isGet && panelSsoMatch) {
+    send(res, 200, { url: PANEL_SSO_URL })
+    return true
+  }
+  if (isGet && path === `/api/me/plugins/${PANEL_PLUGIN.id}/icon`) {
+    // Raw bytes: `send` would serialise the markup as a JSON string.
+    res.writeHead(200, { 'Content-Type': 'image/svg+xml' })
+    res.end('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8" fill="#1d4ed8"/></svg>')
     return true
   }
   if (isGet && path === '/api/me/domains') {

@@ -29,6 +29,7 @@ import type { ClientTicket } from '~/types/clientticket'
 import type { CancellationStatus } from '~/types/cancellationstatus'
 import type { CancellationType } from '~/types/cancellationtype'
 import type { HostingInfo } from '~/types/hostinginfo'
+import type { PanelLoginDetails } from '~/types/panellogindetails'
 import type { ServicePlanChangeOption } from '~/types/serviceplanchangeoption'
 import type { ServicePlanChangeResult } from '~/types/serviceplanchangeresult'
 import { HttpMethod } from '~/types/httpmethod'
@@ -354,10 +355,30 @@ export const useClientApi = () => {
    * @param id - Service id.
    * @returns The URL to open; it is short-lived, so it is fetched at click time rather than
    * rendered into the page.
-   * @throws Whatever `apiFetch` throws: the caller falls back to the plain login page.
+   * @throws Whatever `apiFetch` throws: the API's own refusal, which the caller shows as it is.
    */
-  const fetchCpanelSsoUrl = (id: string): Promise<{ url: string }> =>
-    apiFetch<{ url: string }>(`/api/portal/client/services/${id}/cpanel-sso`)
+  const fetchPanelSsoUrl = (id: string): Promise<{ url: string }> =>
+    apiFetch<{ url: string }>(`/api/portal/client/services/${id}/panel-sso`)
+
+  /**
+   * Reads how the client signs in by hand to the service's panel, for a panel that cannot issue a single sign on address.
+   *
+   * @param id - Service id.
+   * @returns The panel's sign in page and the account's details; never a password.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchPanelLoginDetails = (id: string): Promise<PanelLoginDetails> =>
+    apiFetch<PanelLoginDetails>(`/api/portal/client/services/${id}/panel-login`)
+
+  /**
+   * Address of the icon the plugin serving a service's panel ships, for an `<img>`: the portal's own route, which
+   * asks the API for it with the caller's session.
+   *
+   * @param pluginId - Plugin id as its manifest declares it.
+   * @returns The same-origin address of the icon.
+   */
+  const panelPluginIconPath = (pluginId: string): string =>
+    `/api/portal/client/plugins/${encodeURIComponent(pluginId)}/icon`
 
   /**
    * Completes first-time setup on a newly provisioned hosting service.
@@ -397,7 +418,9 @@ export const useClientApi = () => {
     cancelService,
     fetchPlanChangeOptions,
     requestPlanChange,
-    fetchCpanelSsoUrl,
+    fetchPanelSsoUrl,
+    fetchPanelLoginDetails,
+    panelPluginIconPath,
     setUpService,
     fetchSshAccess,
     fetchSshKeys,

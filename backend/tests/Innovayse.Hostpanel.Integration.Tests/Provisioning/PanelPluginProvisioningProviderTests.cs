@@ -357,7 +357,7 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
         harness.Script.Sso = PanelSsoResult.Issued("https://panel.example.test:2083/login?t=abc");
 
-        var url = await harness.Provider().GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "acct-7", "203.0.113.50"), CancellationToken.None);
+        var url = await harness.Provider().GetPanelSsoUrlAsync(new PanelSsoOrder(7, "acct-7", "203.0.113.50"), CancellationToken.None);
 
         url.Should().Be("https://panel.example.test:2083/login?t=abc");
         var context = harness.Script.Received.Single().Should().BeOfType<PanelSsoContext>().Which;
@@ -365,21 +365,25 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         context.Service.Should().Be(new PanelService(7, "acct-7"));
     }
 
-    /// <summary>A link that is not an http or https address is never handed to a browser.</summary>
+    /// <summary>A link that is not an https address on the server's own host, or carries user info, is never handed to a browser.</summary>
     /// <param name="url">What the plugin answers.</param>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Theory]
     [InlineData("javascript:alert(1)")]
     [InlineData("/relative/path")]
     [InlineData("ftp://panel.example.test/")]
-    public async Task SsoUrl_NotAWebAddress_IsRefusedAsync(string url)
+    [InlineData("http://panel.example.test/login")]
+    [InlineData("https://admin:secret@panel.example.test/login")]
+    [InlineData("https://other.example.test/login")]
+    [InlineData("https://panel.example.test.evil.example/login")]
+    public async Task SsoUrl_NotASecureAddressOnTheServer_IsRefusedAsync(string url)
     {
         using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
         harness.Script.Sso = PanelSsoResult.Issued(url);
 
-        var act = () => harness.Provider().GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "acct-7", null), CancellationToken.None);
+        var act = () => harness.Provider().GetPanelSsoUrlAsync(new PanelSsoOrder(7, "acct-7", null), CancellationToken.None);
 
-        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED);
     }
 
     /// <summary>A sign in link refused or not supported by the panel answers its own code.</summary>
@@ -390,7 +394,7 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
         harness.Script.Sso = PanelSsoResult.NotSupported();
 
-        var act = () => harness.Provider().GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "acct-7", null), CancellationToken.None);
+        var act = () => harness.Provider().GetPanelSsoUrlAsync(new PanelSsoOrder(7, "acct-7", null), CancellationToken.None);
 
         (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED);
     }
@@ -410,6 +414,24 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         credentials.ServerIp.Should().Be("203.0.113.9");
         credentials.CpanelUrl.Should().Be("https://panel.example.test:2087");
         harness.Script.Received.Single().Should().BeOfType<PanelAccountContext>().Which.Service.Should().Be(new PanelService(7, "acct-7"));
+    }
+
+    /// <summary>A sign in page that is not an http or https address, or carries user info, is never passed on as login details.</summary>
+    /// <param name="page">What the plugin answers.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/relative/login")]
+    [InlineData("ftp://panel.example.test/")]
+    [InlineData("https://admin:secret@panel.example.test/login")]
+    public async Task Credentials_SignInPageNotAWebAddress_IsRefusedAsync(string page)
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
+        harness.Script.Login = ValueResult<PanelLoginDetails, PanelRefusalReason>.Done(new PanelLoginDetails("acct-1", null, "one.example.test", "203.0.113.9", page));
+
+        var act = () => harness.Provider().GetCredentialsAsync(new AccountCredentialsOrder(7, "acct-7"), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_CREDENTIALS_UPSTREAM_FAILED);
     }
 
     /// <summary>A plugin without the login capability is never asked for credentials: the host answers that the action is not supported.</summary>

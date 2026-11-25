@@ -297,6 +297,12 @@
   "clientServiceDetail": {
     "serviceIdProductname": "Service #{id}: {productName}",
     "loginToControlPanel": "Open control panel",
+    "panelLoginTitle": "Sign in to the control panel",
+    "panelLoginIntro": "This panel cannot sign you in automatically. Open its sign in page and use the details below.",
+    "panelLoginOpen": "Open the sign in page",
+    "panelLoginDomain": "Domain",
+    "panelLoginServer": "Server",
+    "panelLoginNoPassword": "The password is not shown here. Use the password set for the account.",
     "serviceInfo": "Service Info",
     "order": "Order #",
     "server": "Server",

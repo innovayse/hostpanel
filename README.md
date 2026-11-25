@@ -75,11 +75,11 @@ Taken from the local development stack with its seeded sample data.
 | Hosting provisioning | Products and services, orders, automatic account creation, suspension and termination on your servers |
 | Support tickets | Client tickets, predefined replies, announcements, network issues |
 | Knowledge base | Public articles for the storefront, managed from the admin panel |
-| Storefront content | Testimonials, partners, projects and FAQs in English, Russian and Armenian, managed from the admin panel; empty sections are hidden |
+| Storefront content | Testimonials, partners, projects and FAQs in English, Russian, Armenian, German and Spanish, managed from the admin panel; empty sections are hidden |
 | Client portal | Order, pay invoices, manage services and domains, open tickets; three switchable storefront designs, brandable without code |
 | Admin panel | Clients, orders, products, gateways, integrations, e-mail templates, plugins, reports, audit log |
 | Demo mode | Fake payments, registrar and provisioning, caught mail, fixed sample data reset on a schedule, on a network isolated from production |
-| Languages | English, Russian and Armenian in both the portal and the admin panel |
+| Languages | The admin panel in English, Russian, Armenian, German and Spanish; the client portal in those and in French |
 | Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
 | Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
 | Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: install as plugins. Control panels: cPanel built in, others as plugins. Notifications: Telegram |
@@ -214,7 +214,7 @@ production stack on the same host. See [docker/README.md](docker/README.md). A p
 ## Storefront content
 
 Testimonials, partners, projects and FAQs are rows in the database, not files in the code. Manage them in the admin
-panel under **Storefront content**, each with English, Russian and Armenian translations. The public site reads them from
+panel under **Storefront content**, each with English, Russian, Armenian, German and Spanish translations. The public site reads them from
 `/api/public/testimonials`, `/api/public/partners`, `/api/public/projects` and `/api/public/faqs`, and hides any section
 that has no entries.
 
@@ -308,7 +308,7 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 | Messaging | RabbitMQ with the Wolverine outbox | Reliable events between modules |
 | Client portal `client/` | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia | Server-rendered storefront; pages own data and SEO, `templates/` hold the switchable designs |
 | Admin panel `admin/` | Vite, Vue 3, TypeScript, Tailwind | Single-page app served by nginx |
-| Plugins | `Hostpanel.Sdk` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The integrations listed under Features are built into the core; payment gateways such as card processors are not built in and are installed as plugins. The core names no deployment-specific plugin namespace; an architecture test enforces it |
+| Plugins | `Hostpanel.Sdk` (the contract) and the plugins installed from the marketplace or by upload | Seven plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning (hosting panels) providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for), hosted (`IHostedPlugin`: a background worker) and app (`IPluginEndpoints`: routes and pages with no provider role). The integrations listed under Features are built into the core; payment gateways such as card processors are not built in and are installed as plugins. The core names no deployment-specific plugin namespace; an architecture test enforces it |
 | Auth | ASP.NET Core Identity, JWT in an httpOnly cookie | `local` mode by default |
 
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar

@@ -297,6 +297,12 @@
   "clientServiceDetail": {
     "serviceIdProductname": "Service #{id}: {productName}",
     "loginToControlPanel": "Control Panel öffnen",
+    "panelLoginTitle": "Beim Control Panel anmelden",
+    "panelLoginIntro": "Dieses Panel kann Sie nicht automatisch anmelden. Öffnen Sie die Anmeldeseite und verwenden Sie die folgenden Angaben.",
+    "panelLoginOpen": "Anmeldeseite öffnen",
+    "panelLoginDomain": "Domain",
+    "panelLoginServer": "Server",
+    "panelLoginNoPassword": "Das Passwort wird hier nicht angezeigt. Verwenden Sie das für das Konto festgelegte Passwort.",
     "serviceInfo": "Service-Informationen",
     "order": "Bestellung Nr.",
     "server": "Server",

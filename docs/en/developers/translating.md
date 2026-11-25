@@ -5,7 +5,7 @@ description: Fix or complete a translation in the admin panel, client portal or 
 
 # Translating Hostpanel
 
-Hostpanel ships in English, Russian and Armenian.
+Hostpanel ships in English, Russian, Armenian, German and Spanish, and the client portal and the API also in French.
 
 <Callout type="note">
 English is the source language and the fallback when a text is missing in another language.

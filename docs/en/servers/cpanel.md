@@ -114,6 +114,6 @@ WHM's own error text is never shown or logged, because it can name the account.
   with no user name or password in it, its host is the server's own host name or IP address,
   compared without regard to case (a trailing dot makes it a different name), and its port is the
   cPanel port (`Provisioning__CPanelUserPort`). The browser is given the checked address in its parsed form. Any other link is dropped, the client sees
-  `SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED`, and nothing of the link is logged.
+  `SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED`, and nothing of the link is logged.
 - WHM calls go through the outbound address guard, like the other panels. A server on a private
   address needs a [private network route](./servers#private-network-routes).

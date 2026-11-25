@@ -5,14 +5,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { canSignInToControlPanel, controlPanelUrl, hasLiveHostingAccount, webmailUrl, websiteUrl } from '~/utils/controlPanel'
+import { canSignInToControlPanel, hasLiveHostingAccount, webmailUrl, websiteUrl } from '~/utils/controlPanel'
 import { ServiceStatus } from '~/types/servicestatus'
 
-describe('control panel addresses', () => {
-  it('builds the secure panel sign-in address with the panel port', () => {
-    expect(controlPanelUrl('srv.test')).toBe('https://srv.test:2083')
-  })
-
+describe('service addresses', () => {
   it('builds the secure webmail address with the webmail port', () => {
     expect(webmailUrl('srv.test')).toBe('https://srv.test:2096')
   })
@@ -23,7 +19,7 @@ describe('control panel addresses', () => {
 })
 
 /** A known server. */
-const SERVER = { name: 'srv', hostname: 'srv.test', ipAddress: null }
+const SERVER = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: null }
 
 describe('hasLiveHostingAccount', () => {
   it('is true for a pending, active or suspended service', () => {

@@ -8,8 +8,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { translate } from '@/lib/translate'
 import { useServicesStore } from '@/stores/services'
-import { BillingCycle, PanelSyncField, PanelSyncOutcome, ServiceStatus } from '@/types/service'
+import { BillingCycle, PanelEntryKind, PanelSyncField, PanelSyncOutcome, ServiceStatus } from '@/types/service'
 import { json, problem, stubFetch, stubOffline, callOf, invalid } from '../helpers/fetch'
+
+/**
+ * The refusal a panel plugin answers when it cannot do an operation.
+ *
+ * @param detail - The sentence the API sends.
+ * @returns A 409 problem response carrying the `PANEL_OPERATION_NOT_SUPPORTED` code.
+ */
+const notSupported = (detail: string): Response =>
+  json({ type: 'PANEL_OPERATION_NOT_SUPPORTED', title: 'Not supported', status: 409, detail }, 409)
 
 describe('servicesStore', () => {
   beforeEach(() => {
@@ -205,13 +214,38 @@ describe('servicesStore', () => {
     expect(store.syncResult).toBeNull()
   })
 
-  it('fetchPanelLoginUrl returns the url, null when refused', async () => {
+  it('fetchPanelEntry returns the single sign on address the panel issues', async () => {
     const store = useServicesStore()
     stubFetch(json({ url: 'https://panel.example/login' }))
-    expect(await store.fetchPanelLoginUrl(4)).toBe('https://panel.example/login')
 
-    stubFetch(problem('No panel.', 400))
-    expect(await store.fetchPanelLoginUrl(4)).toBeNull()
+    expect(await store.fetchPanelEntry(4)).toEqual({ kind: PanelEntryKind.SignedIn, url: 'https://panel.example/login' })
+    expect(store.actionError).toBeNull()
+  })
+
+  it('fetchPanelEntry returns the login details when the plugin cannot sign anybody in but has them', async () => {
+    const store = useServicesStore()
+    const details = { username: 'ada', domain: 'site.example', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example:8083/login/' }
+    const mock = stubFetch(notSupported('The panel does not offer single sign on.'), json(details))
+
+    expect(await store.fetchPanelEntry(4)).toEqual({ kind: PanelEntryKind.LoginDetails, details })
+    expect(callOf(mock, 1).url).toBe('/api/provisioning/4/panel-login')
+    expect(store.actionError).toBeNull()
+  })
+
+  it('fetchPanelEntry keeps the sign on sentence when the panel offers neither a link nor login details', async () => {
+    const store = useServicesStore()
+    stubFetch(notSupported('The panel does not offer single sign on.'), notSupported('The panel plugin does not declare the login capability.'))
+
+    expect(await store.fetchPanelEntry(4)).toBeNull()
+    expect(store.actionError).toBe('The panel does not offer single sign on.')
+  })
+
+  it('fetchPanelEntry does not ask for login details after any other refusal', async () => {
+    const store = useServicesStore()
+    const mock = stubFetch(problem('No panel.', 400))
+
+    expect(await store.fetchPanelEntry(4)).toBeNull()
     expect(store.actionError).toBe('No panel.')
+    expect(mock).toHaveBeenCalledTimes(1)
   })
 })

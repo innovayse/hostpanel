@@ -1078,3 +1078,55 @@ export const SLOT_WIDGET_VIEWS = {
 
 /** How long the stub holds the `slow` widget's view, in milliseconds: past the widget's 5000 ms limit. */
 export const SLOT_SLOW_VIEW_DELAY_MS = 8000
+
+/** The plugin that serves {@link SERVICE_PANEL}'s server: it ships an icon, which the stub answers at the plugin icon route. */
+export const PANEL_PLUGIN = { id: 'e2e-panel', name: 'E2E Panel', hasIcon: true }
+
+/** The address the stub's panel sign-in answers with: an https address on the service's own server. */
+export const PANEL_SSO_URL = 'https://panel.e2e.test/sso-session'
+
+/** An active hosting service on a server that a panel plugin serves (no domain, for the same reason as {@link SERVICE_MANAGED}). */
+export const SERVICE_PANEL = {
+  id: 26,
+  productId: PLAN.id,
+  productName: PLAN.name,
+  billingCycle: 'monthly',
+  status: 'Active',
+  nextRenewalAt: '2030-02-01T00:00:00Z',
+  domain: null,
+  username: 'e2epanel',
+  price: 5,
+  firstPaymentAmount: 5,
+  paymentMethod: null,
+  server: { name: 'e2e-server', hostname: 'panel.e2e.test', ipAddress: null, panelPlugin: PANEL_PLUGIN },
+  createdAt: '2030-01-01T00:00:00Z',
+  suspensionSource: null,
+  usage: null,
+}
+
+/** What the stub answers for the panel of {@link SERVICE_PANEL_BY_HAND}: how to sign in by hand, with no password. */
+export const PANEL_LOGIN_DETAILS = {
+  username: 'e2ehand',
+  domain: 'hand.e2e.test',
+  serverAddress: '203.0.113.9',
+  loginUrl: 'https://panel.e2e.test:8083/login/',
+}
+
+/** An active hosting service whose panel cannot sign anybody in: its sign-in answers "not supported" and its login details are shown instead. */
+export const SERVICE_PANEL_BY_HAND = {
+  id: 27,
+  productId: PLAN.id,
+  productName: PLAN.name,
+  billingCycle: 'monthly',
+  status: 'Active',
+  nextRenewalAt: '2030-02-01T00:00:00Z',
+  domain: null,
+  username: 'e2ehand',
+  price: 5,
+  firstPaymentAmount: 5,
+  paymentMethod: null,
+  server: { name: 'e2e-server-hand', hostname: 'panel.e2e.test', ipAddress: null, panelPlugin: null },
+  createdAt: '2030-01-01T00:00:00Z',
+  suspensionSource: null,
+  usage: null,
+}

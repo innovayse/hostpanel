@@ -9,4 +9,5 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 /// <param name="Name">The server's display name.</param>
 /// <param name="Hostname">The server's host name.</param>
 /// <param name="IpAddress">The server's IP address, when one is recorded.</param>
-public record ServerBriefDto(int Id, string Name, string Hostname, string? IpAddress);
+/// <param name="Module">The server's control panel module id, as stored.</param>
+public record ServerBriefDto(int Id, string Name, string Hostname, string? IpAddress, string Module);

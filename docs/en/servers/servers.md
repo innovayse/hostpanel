@@ -23,7 +23,7 @@ Type part of a name, host name or IP address in the search box to find a server.
 **DEFAULT** badge marks the default server for its module. When other things are equal, the default server is preferred within its group or module when a server is picked for a new account (see [Fill types](#fill-types)).
 
 <Callout type="note">
-<strong>cPanel</strong> provisions accounts automatically and is built in; it is new and not yet tested against a live WHM server, see <a href="./cpanel">cPanel servers</a>. Every other panel is provisioned by its plugin: install and switch on the plugin, and its panel types (for example DirectAdmin) appear in the Module list, ready to pick, to test and to provision accounts on. An entry in the list with no plugin behind it (DirectAdmin, Lukittu, Virtualmin, HyperVm) is stored but does not provision accounts automatically and cannot be tested. A server that uses a panel type whose plugin is switched off answers that the plugin is not available. Control Web Panel (CWP) is supported through the CWP plugin: install it from the plugin registry, switch it on in Integrations, and note that a newly installed plugin is loaded at the next start.
+<strong>cPanel</strong> provisions accounts automatically and is built in; it is new and not yet tested against a live WHM server, see <a href="./cpanel">cPanel servers</a>. Every other control panel, Control Web Panel (CWP) and DirectAdmin among them, works only through its plugin: install the plugin from the plugin registry or by upload, switch it on in Integrations (a newly installed plugin is loaded at the next start), and its panel types appear in the Module list, ready to pick, to test and to provision accounts on. The Module list holds only cPanel, the Linux server below and the types of the installed plugins, so a panel with no plugin is not offered. A server that uses a panel type whose plugin is switched off, not configured or missing answers that the plugin is not available (<code>PANEL_PLUGIN_UNAVAILABLE</code>), and two installed plugins that claim one panel type are refused (<code>PANEL_PLUGIN_CONFLICT</code>); the host never falls back to another provider.
 </Callout>
 
 A server with no control panel at all is added with the **Linux server (no control panel)** module. It is not a product, so orders never pick it: add it with the existing service flow, give it an SSH key and the agent installs the built-in `generic-linux` profile, which supports SSH accounts, websites and databases (see [Plain Linux servers](./ssh-key-agent#plain-linux-servers-generic-linux)).
@@ -68,15 +68,19 @@ When editing, credential fields show **(blank = keep)**. Secrets are stored encr
 
 Click **Test Connection** on a server row. Hostpanel calls the server's panel API and updates the status badge. The result is shown inline, not as a page error.
 
-**Success:** "Online · _n_ accounts · _version_"
+**Success:** "Online · _n_ accounts · _version_". A panel that does not report an account count or a version leaves that part out; it never shows "0 accounts" for a count it does not know.
 
-**Failure codes shown in the test result:**
+**Failure codes shown in the test result.** The result carries the code (`errorCode`) beside its sentence:
 
 | Code | What to check |
 |------|---------------|
 | `SERVER_CONNECTION_UNREACHABLE` | Hostname or IP is wrong, the panel API port is blocked, or the panel is down |
 | `SERVER_CONNECTION_NO_ACCESS_HASH` | No access hash is stored for this server; add one on the Details tab |
 | `SERVER_CONNECTION_NO_API_KEY` | No API key or access hash is stored; add credentials on the Details tab |
+| `SERVER_CONNECTION_NOT_CONFIGURED` | The connection details are incomplete for this control panel; fill in what the panel's plugin asks for on the Details tab |
+| `SERVER_CONNECTION_AUTH_FAILED` | The control panel refused the saved credentials; enter them again |
+| `SERVER_CONNECTION_TIMED_OUT` | The panel did not answer within the plugin call time limit (`PluginApi__CallTimeoutSeconds`, 30 seconds by default); check that it is running and that a firewall does not drop the connection |
+| `SERVER_CONNECTION_TLS_FAILED` | The secure connection failed; check the panel's certificate, or allow its self signed certificate in the server settings |
 | `PANEL_PLUGIN_UNAVAILABLE` | No installed plugin serves this module, or the plugin is switched off, not configured or not working; check the Plugins page |
 
 ## Edit and delete a server

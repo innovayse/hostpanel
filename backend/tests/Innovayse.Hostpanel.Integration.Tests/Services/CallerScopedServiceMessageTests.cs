@@ -3,8 +3,10 @@ using Innovayse.Hostpanel.Application.Billing.Queries.GetMyServiceInvoices;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangeMyServicePassword;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangePassword;
-using Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
-using Innovayse.Hostpanel.Application.Provisioning.Queries.GetMyServiceControlPanelSsoUrl;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetMyServicePanelLoginDetails;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetMyServicePanelSsoUrl;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetPanelLoginDetails;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetPanelSsoUrl;
 using Innovayse.Hostpanel.Application.Services.Commands.AddMySshKey;
 using Innovayse.Hostpanel.Application.Services.Commands.CancelMyService;
 using Innovayse.Hostpanel.Application.Services.Commands.CancelService;
@@ -80,7 +82,8 @@ public sealed class CallerScopedServiceMessageTests
     [Fact]
     public void SharedUseCasesTheAdminRoutesDispatch_AreNotCallerScoped()
     {
-        Assert.False(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(GetControlPanelSsoUrlQuery)));
+        Assert.False(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(GetPanelSsoUrlQuery)));
+        Assert.False(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(GetPanelLoginDetailsQuery)));
         Assert.False(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(ChangePasswordCommand)));
         Assert.False(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(CancelServiceCommand)));
         Assert.False(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(SetupServiceCommand)));
@@ -94,7 +97,8 @@ public sealed class CallerScopedServiceMessageTests
     [Fact]
     public void TheClientFacingServiceMessages_AreCallerScoped()
     {
-        Assert.True(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(GetMyServiceControlPanelSsoUrlQuery)));
+        Assert.True(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(GetMyServicePanelSsoUrlQuery)));
+        Assert.True(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(GetMyServicePanelLoginDetailsQuery)));
         Assert.True(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(ChangeMyServicePasswordCommand)));
         Assert.True(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(CancelMyServiceCommand)));
         Assert.True(typeof(ICallerScopedServiceMessage).IsAssignableFrom(typeof(SetupMyServiceCommand)));

@@ -223,7 +223,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
             () => provider.UnsuspendAsync(new UnsuspendAccountOrder(7, reference), CancellationToken.None),
             () => provider.TerminateAsync(new TerminateAccountOrder(7, reference, "Cancelled"), CancellationToken.None),
             () => provider.GetCredentialsAsync(new AccountCredentialsOrder(7, reference), CancellationToken.None),
-            () => provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, reference, null), CancellationToken.None),
+            () => provider.GetPanelSsoUrlAsync(new PanelSsoOrder(7, reference, null), CancellationToken.None),
             () => provider.ChangePasswordAsync(new ChangeAccountPasswordOrder(7, reference, "N3w-pass"), CancellationToken.None),
             () => provider.ChangePackageAsync(new ChangeAccountPackageOrder(7, reference, "Pro"), CancellationToken.None),
         };
@@ -430,7 +430,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Session);
 
-        var url = await provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
+        var url = await provider.GetPanelSsoUrlAsync(new PanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         url.Should().Be("https://192.0.2.10:2083/cpsess123/login/?session=testuser:abc");
         AssertCall(whm.Requests.Should().ContainSingle().Subject, "create_user_session", "user=testuser&service=cpaneld");
@@ -445,7 +445,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var address = $"https://{host}:2083/cpsess123/login/";
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.SessionAt(address.ToUpperInvariant()));
 
-        var url = await provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
+        var url = await provider.GetPanelSsoUrlAsync(new PanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         // The scheme and host come back in their parsed, lower case form; the path keeps its case.
         url.Should().Be($"https://{host}:2083/CPSESS123/LOGIN/");
@@ -472,10 +472,10 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var logger = new CapturingLogger<WhmProvisioningProvider>();
         var provider = BuildProvider(logger, WhmReplies.SessionAt(url));
 
-        var act = () => provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
+        var act = () => provider.GetPanelSsoUrlAsync(new PanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         var thrown = await act.Should().ThrowAsync<DomainRuleException>();
-        thrown.Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
+        thrown.Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED);
         thrown.Which.Message.Should().NotContain("evil").And.NotContain("secret").And.NotContain("cpsess123");
         logger.Messages.Should().NotContain(m => m.Contains("evil") || m.Contains("secret") || m.Contains("cpsess123"));
     }
@@ -487,7 +487,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     {
         var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused);
 
-        var act = () => provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, "testuser", null), CancellationToken.None);
+        var act = () => provider.GetPanelSsoUrlAsync(new PanelSsoOrder(7, "testuser", null), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

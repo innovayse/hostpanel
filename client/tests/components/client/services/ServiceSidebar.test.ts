@@ -66,14 +66,14 @@ describe('ServiceSidebar', () => {
     const unknown = mountSidebar({ service: service({ server: null }) })
 
     expect(known.find('[data-testid="service-link-webmail"]').attributes('href')).toBe('https://srv1.example.net:2096')
-    expect(unknown.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+    expect(unknown.find('[data-testid="service-link-panel"]').exists()).toBe(false)
   })
 
   it('does not offer the control panel on a terminated service', async () => {
     await grantPermissions(Permission.AllowSingleSignOn)
     const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Terminated }) })
 
-    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-link-panel"]').exists()).toBe(false)
   })
 
   it('offers neither the webmail link nor the password and SSH panels on a terminated service', async () => {
@@ -99,16 +99,28 @@ describe('ServiceSidebar', () => {
     await grantPermissions(Permission.AllowSingleSignOn)
     const wrapper = mountSidebar({ service: service({ server: null }) })
 
-    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-link-panel"]').exists()).toBe(false)
   })
 
-  it('asks for the control panel and shows a sign-in failure', async () => {
+  it('asks for the control panel and shows the API sentence of a refused sign-in', async () => {
     const wrapper = mountSidebar({ ssoError: 'No answer' })
 
-    await wrapper.find('[data-testid="service-link-cpanel"]').trigger('click')
+    await wrapper.find('[data-testid="service-link-panel"]').trigger('click')
 
-    expect(wrapper.emitted('cpanel')).toHaveLength(1)
+    expect(wrapper.emitted('panel')).toHaveLength(1)
     expect(wrapper.find('[data-testid="service-sso-error"]').text()).toBe('No answer')
+  })
+})
+
+describe('ServiceSidebar panel icon', () => {
+  it('shows the icon of the plugin that serves the server, named after the plugin', async () => {
+    await grantPermissions(Permission.AllowSingleSignOn)
+    const served = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+    const wrapper = mountSidebar({ service: service({ server: served }) })
+
+    const icon = wrapper.get('[data-testid="service-link-panel"] [data-testid="service-panel-plugin-icon"]')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 })
 
@@ -121,7 +133,7 @@ describe('ServiceSidebar permissions', () => {
     expect(wrapper.find('[data-testid="service-tab-password"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="service-tab-cancel"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="service-open-ticket"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-link-panel"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="service-link-webmail"]').exists()).toBe(true)
   })
 
@@ -130,7 +142,7 @@ describe('ServiceSidebar permissions', () => {
     await grantPermissions(Permission.ViewProductsServices | Permission.ViewModifyPasswords | Permission.AllowSingleSignOn)
 
     expect(wrapper.find('[data-testid="service-tab-password"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="service-link-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="service-tab-cancel"]').exists()).toBe(false)
   })
 

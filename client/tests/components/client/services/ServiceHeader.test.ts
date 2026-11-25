@@ -26,7 +26,7 @@ describe('ServiceHeader', () => {
   it('offers the control-panel button for an active service on a known server', () => {
     const wrapper = mountClient(ServiceHeader, { props: { service: service(), ssoLoading: false } })
 
-    expect(wrapper.find('[data-testid="service-cpanel-login"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="service-panel-login"]').exists()).toBe(true)
   })
 
   it.each([
@@ -35,15 +35,35 @@ describe('ServiceHeader', () => {
   ])('hides the control-panel button for %j', (overrides) => {
     const wrapper = mountClient(ServiceHeader, { props: { service: service(overrides), ssoLoading: false } })
 
-    expect(wrapper.find('[data-testid="service-cpanel-login"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-panel-login"]').exists()).toBe(false)
   })
 
   it('asks for the control panel when the button is clicked', async () => {
     const wrapper = mountClient(ServiceHeader, { props: { service: service(), ssoLoading: false } })
 
-    await wrapper.find('[data-testid="service-cpanel-login"]').trigger('click')
+    await wrapper.find('[data-testid="service-panel-login"]').trigger('click')
 
-    expect(wrapper.emitted('cpanel')).toHaveLength(1)
+    expect(wrapper.emitted('panel')).toHaveLength(1)
+  })
+})
+
+/** A server whose module a plugin with an icon serves. */
+const SERVED = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+
+describe('ServiceHeader panel icon', () => {
+  it('shows the icon of the plugin that serves the server, named after the plugin', () => {
+    const wrapper = mountClient(ServiceHeader, { props: { service: service({ server: SERVED }), ssoLoading: false } })
+
+    const icon = wrapper.get('[data-testid="service-panel-login"] [data-testid="service-panel-plugin-icon"]')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('alt')).toBe('Acme Panel')
+  })
+
+  it('keeps the generic icon when no plugin serves the server', () => {
+    const wrapper = mountClient(ServiceHeader, { props: { service: service(), ssoLoading: false } })
+
+    expect(wrapper.find('[data-testid="service-panel-plugin-icon"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="service-panel-login"]').find('svg').exists()).toBe(true)
   })
 })
 
@@ -52,9 +72,9 @@ describe('ServiceHeader permissions', () => {
     const wrapper = mountClient(ServiceHeader, { props: { service: service(), ssoLoading: false } })
 
     await grantPermissions(Permission.ViewProductsServices)
-    expect(wrapper.find('[data-testid="service-cpanel-login"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-panel-login"]').exists()).toBe(false)
 
     await grantPermissions(Permission.ViewProductsServices | Permission.AllowSingleSignOn)
-    expect(wrapper.find('[data-testid="service-cpanel-login"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="service-panel-login"]').exists()).toBe(true)
   })
 })

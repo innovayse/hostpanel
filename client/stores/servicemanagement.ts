@@ -18,10 +18,10 @@ import type { CancellationStatus } from '~/types/cancellationstatus'
 import type { CancellationType } from '~/types/cancellationtype'
 import type { HostingInfo } from '~/types/hostinginfo'
 import type { ClientService } from '~/types/clientservice'
+import type { PanelLoginDetails } from '~/types/panellogindetails'
 import type { ServiceInvoice } from '~/types/serviceinvoice'
 import type { ServiceInvoices } from '~/types/serviceinvoices'
 import { apiErrorCode, apiErrorMessage, PortalErrorCode } from '~/lib/errorHandler'
-import { controlPanelUrl } from '~/utils/controlPanel'
 
 /**
  * Service-management state for the service pages.
@@ -78,6 +78,10 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
   const ssoLoading = ref(false)
   /** Why the last automatic control-panel sign-in failed; empty when there is nothing to report. */
   const ssoError = ref('')
+  /** The panel's sign in page and the account's details, set when the serving plugin cannot sign anybody in; null while there is nothing to show. */
+  const panelLogin = ref<PanelLoginDetails | null>(null)
+  /** The code of the last refused control-panel sign-in; empty when there is none or the answer carried no code. */
+  const ssoErrorCode = ref('')
 
   /** True while first-time setup is in flight. */
   const setupSubmitting = ref(false)
@@ -109,6 +113,8 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
     invoicesError.value = null
     ssoLoading.value = false
     ssoError.value = ''
+    panelLogin.value = null
+    ssoErrorCode.value = ''
     setupSubmitting.value = false
     setupError.value = ''
   }
@@ -253,14 +259,16 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
    * @returns The address to open, or null when none could be obtained
    * ({@link ssoError} holds the sentence to show). A call made while one is in flight returns null.
    */
-  const fetchCpanelUrl = async (serviceId: string): Promise<string | null> => {
+  const fetchPanelUrl = async (serviceId: string): Promise<string | null> => {
     if (ssoLoading.value) {
       return null
     }
     ssoLoading.value = true
     ssoError.value = ''
+    ssoErrorCode.value = ''
+    panelLogin.value = null
     try {
-      const { url } = await api.fetchCpanelSsoUrl(serviceId)
+      const { url } = await api.fetchPanelSsoUrl(serviceId)
       // An empty address would open a blank tab, which reads as a panel that failed to load.
       if (!url) {
         throw new Error('No control-panel address was returned.')
@@ -268,6 +276,7 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
       return url
     } catch (e: unknown) {
       ssoError.value = apiErrorMessage(e)
+      ssoErrorCode.value = apiErrorCode(e) ?? ''
       return null
     } finally {
       ssoLoading.value = false
@@ -275,24 +284,61 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
   }
 
   /**
-   * Opens a service's control panel in a new tab: through single sign-on when the API gives an
-   * address, else the panel's plain sign-in page on the service's server. The one place this
-   * choice is made, so every button that opens the panel behaves the same.
+   * Reads how the client signs in by hand to a service's panel, for a panel whose serving plugin cannot issue a single sign-on
+   * address. A refusal leaves the sign-on sentence in {@link ssoError} as it was, so a panel that offers neither still says why.
    *
    * @param serviceId - Service id.
-   * @param hostname - The service's server host name; null or absent when the server is not known.
-   * @returns Nothing; a failed single sign-in leaves its sentence in {@link ssoError}.
+   * @returns Nothing; the details are left in {@link panelLogin}.
    */
-  const openControlPanel = async (serviceId: string, hostname?: string | null): Promise<void> => {
-    const url = await fetchCpanelUrl(serviceId)
+  const loadPanelLogin = async (serviceId: string): Promise<void> => {
+    ssoLoading.value = true
+    try {
+      panelLogin.value = await api.fetchPanelLoginDetails(serviceId)
+      ssoError.value = ''
+    } catch {
+      // The sign-on sentence already says why the panel cannot be opened; the details are only the way around it.
+      panelLogin.value = null
+    } finally {
+      ssoLoading.value = false
+    }
+  }
+
+  /**
+   * Opens a service's control panel through the API, which is the only way in: the single sign-on address of whichever provider
+   * serves the service's server, opened in a new tab, or, when that provider cannot sign anybody in, the panel's sign-in page and
+   * the account's details in {@link panelLogin} for the screen to show. No panel's own page is guessed at here. The one place the
+   * panel is opened, so every button that opens it behaves the same.
+   *
+   * @param serviceId - Service id.
+   * @returns Nothing; a refusal leaves the API's own sentence in {@link ssoError} and opens nothing.
+   */
+  const openPanel = async (serviceId: string): Promise<void> => {
+    const url = await fetchPanelUrl(serviceId)
     if (url) {
       window.open(url, '_blank', 'noopener')
       return
     }
-    if (hostname) {
-      window.open(controlPanelUrl(hostname), '_blank', 'noopener')
+    if (ssoErrorCode.value === PortalErrorCode.PanelOperationNotSupported) {
+      await loadPanelLogin(serviceId)
     }
   }
+
+  /**
+   * Closes the panel sign-in details.
+   *
+   * @returns Nothing.
+   */
+  const closePanelLogin = (): void => {
+    panelLogin.value = null
+  }
+
+  /**
+   * Address of the icon the plugin serving a service's panel ships.
+   *
+   * @param pluginId - Plugin id as its manifest declares it.
+   * @returns The same-origin address of the icon, for an `<img>`.
+   */
+  const panelIconUrl = (pluginId: string): string => api.panelPluginIconPath(pluginId)
 
   /**
    * Completes first-time setup on a newly provisioned service.
@@ -344,14 +390,17 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
     invoicesError,
     ssoLoading,
     ssoError,
+    panelLogin,
     setupSubmitting,
     setupError,
     reset,
     changePassword,
     cancelService,
     loadInvoices,
-    fetchCpanelUrl,
-    openControlPanel,
+    fetchPanelUrl,
+    openPanel,
+    closePanelLogin,
+    panelIconUrl,
     setUpService
   }
 })

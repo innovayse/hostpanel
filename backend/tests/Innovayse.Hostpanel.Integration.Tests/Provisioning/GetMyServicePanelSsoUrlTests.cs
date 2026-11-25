@@ -11,16 +11,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 
 /// <summary>
-/// Integration tests for <c>GET /api/me/services/{id}/cpanel-sso</c>: the caller may obtain an
+/// Integration tests for <c>GET /api/me/services/{id}/panel-sso</c>: the caller may obtain an
 /// control-panel sign-in link for their own provisioned service, a stranger's is refused.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
-public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
+public sealed class GetMyServicePanelSsoUrlTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The owner can fetch their own service's control-panel sign-in link.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task GetControlPanelSsoUrl_TheCallersOwnService_Returns200()
+    public async Task GetPanelSsoUrl_TheCallersOwnService_Returns200()
     {
         var http = factory.CreateClient();
         var adminToken = await factory.GetAdminTokenAsync();
@@ -28,7 +28,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
         (await http.PostAsync($"/api/provisioning/{serviceId}/provision", null)).EnsureSuccessStatusCode();
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
 
-        var response = await http.GetAsync($"/api/me/services/{serviceId}/cpanel-sso");
+        var response = await http.GetAsync($"/api/me/services/{serviceId}/panel-sso");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -38,7 +38,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     /// <summary>A stranger's service is refused, not told which part is wrong.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task GetControlPanelSsoUrl_AStrangersService_Returns404WithServiceNotFound()
+    public async Task GetPanelSsoUrl_AStrangersService_Returns404WithServiceNotFound()
     {
         var http = factory.CreateClient();
         var adminToken = await factory.GetAdminTokenAsync();
@@ -57,7 +57,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
         var strangerToken = await factory.GetClientTokenAsync(strangerEmail, "Pass@123!");
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", strangerToken);
 
-        var response = await http.GetAsync($"/api/me/services/{ownerServiceId}/cpanel-sso");
+        var response = await http.GetAsync($"/api/me/services/{ownerServiceId}/panel-sso");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_FOUND);
@@ -66,11 +66,11 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     /// <summary>Requesting the control-panel sign-in link without authentication is refused.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task GetControlPanelSsoUrl_Returns401_WithoutAuthAsync()
+    public async Task GetPanelSsoUrl_Returns401_WithoutAuthAsync()
     {
         var http = factory.CreateClient();
 
-        var response = await http.GetAsync($"/api/me/services/{ProvisioningTestSeeds.NoSuchServiceId}/cpanel-sso");
+        var response = await http.GetAsync($"/api/me/services/{ProvisioningTestSeeds.NoSuchServiceId}/panel-sso");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -82,7 +82,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     {
         var (client, _) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "getmyservicecontrolpanelssourl-validation");
 
-        var response = await client.GetAsync("/api/me/services/0/cpanel-sso");
+        var response = await client.GetAsync("/api/me/services/0/panel-sso");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
@@ -91,7 +91,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     /// <summary>An account that does not allow single sign-on is refused with 403 and no link is issued.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task GetControlPanelSsoUrl_ByAccountWithSsoDisabled_Returns403WithClientSsoDisabled()
+    public async Task GetPanelSsoUrl_ByAccountWithSsoDisabled_Returns403WithClientSsoDisabled()
     {
         var http = factory.CreateClient();
         var adminToken = await factory.GetAdminTokenAsync();
@@ -106,7 +106,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
 
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
 
-        var response = await http.GetAsync($"/api/me/services/{serviceId}/cpanel-sso");
+        var response = await http.GetAsync($"/api/me/services/{serviceId}/panel-sso");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.CLIENT_SSO_DISABLED);

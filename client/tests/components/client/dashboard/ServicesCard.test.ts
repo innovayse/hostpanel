@@ -19,16 +19,15 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { ServiceStatus } from '~/types/servicestatus'
-import { controlPanelUrl } from '~/utils/controlPanel'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import { ServiceAction, servicePath } from '~/tests/helpers/accountPaths'
 import { clientServicePath, clientServiceSetupPath } from '~/constants/clientRoutes'
 
 /** The BFF path that answers the single sign-on address of the control panel of service 1. */
-const SSO_PATH = servicePath(1, ServiceAction.CpanelSso)
+const SSO_PATH = servicePath(1, ServiceAction.PanelSso)
 
 /** The single sign-on address the BFF hands out. */
-const SSO_URL = 'https://srv.test:2083/sso-session'
+const SSO_URL = 'https://srv.test/sso-session'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -37,7 +36,7 @@ let stub: StubServer
 let table: StubRouteTable
 
 /** A provisioned active service on a known host. */
-const ACTIVE = makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: { name: 'srv', hostname: 'srv.test', ipAddress: null } })
+const ACTIVE = makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: null } })
 
 /** A paid service that is not provisioned yet. */
 const PENDING = makeClientService({ id: 2, productName: 'Pro', domain: null, username: null, status: ServiceStatus.Pending, server: null })
@@ -108,11 +107,11 @@ describe('ClientDashboardServicesCard', () => {
 
   it('offers the control panel only for an active service on a known host', async () => {
     const wrapper = mountClient(ServicesCard)
-    useClientStore().services = [ACTIVE, { ...PENDING, id: 3, username: 'x', status: ServiceStatus.Suspended, server: { name: 'srv', hostname: 'srv.test', ipAddress: null } }]
+    useClientStore().services = [ACTIVE, { ...PENDING, id: 3, username: 'x', status: ServiceStatus.Suspended, server: { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: null } }]
     await nextTick()
 
-    expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="dashboard-service-cpanel-3"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="dashboard-service-panel-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="dashboard-service-panel-3"]').exists()).toBe(false)
   })
 
   it('hides the control panel from a user without the single sign-on permission', async () => {
@@ -120,7 +119,7 @@ describe('ClientDashboardServicesCard', () => {
     await grantPermissions(Permission.ViewProductsServices)
     useClientStore().services = [ACTIVE]
     await nextTick()
-    expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="dashboard-service-panel-1"]').exists()).toBe(false)
   })
 
   it('shows the control panel button when single sign-on is granted', async () => {
@@ -129,7 +128,7 @@ describe('ClientDashboardServicesCard', () => {
     useClientStore().services = [ACTIVE]
     await nextTick()
 
-    expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="dashboard-service-panel-1"]').exists()).toBe(true)
   })
 
   it('signs the clicked service in through the BFF and opens the panel it answers with', async () => {
@@ -138,21 +137,58 @@ describe('ClientDashboardServicesCard', () => {
     useClientStore().services = [ACTIVE]
     await nextTick()
 
-    await wrapper.find('[data-testid="dashboard-service-cpanel-1"]').trigger('click')
+    await wrapper.find('[data-testid="dashboard-service-panel-1"]').trigger('click')
 
     await waitUntil(() => expect(open).toHaveBeenCalledWith(SSO_URL, '_blank', 'noopener'))
     expect(requestsTo(stub.requests, SSO_PATH)).toHaveLength(1)
   })
 
-  it('falls back to the plain sign-in page of the service host when single sign-on is refused', async () => {
-    table[`GET ${SSO_PATH}`] = { status: 502, body: { detail: 'The panel is unreachable.' } }
+  it('shows the API sentence under the list and opens nothing when the panel refuses the sign-in', async () => {
+    table[`GET ${SSO_PATH}`] = { status: 409, body: { type: 'PANEL_PLUGIN_UNAVAILABLE', detail: 'The panel plugin is switched off.' } }
     const open = vi.spyOn(window, 'open').mockReturnValue(null)
     const wrapper = mountClient(ServicesCard)
     useClientStore().services = [ACTIVE]
     await nextTick()
 
-    await wrapper.find('[data-testid="dashboard-service-cpanel-1"]').trigger('click')
+    await wrapper.find('[data-testid="dashboard-service-panel-1"]').trigger('click')
 
-    await waitUntil(() => expect(open).toHaveBeenCalledWith(controlPanelUrl('srv.test'), '_blank', 'noopener'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="dashboard-sso-error"]').text()).toBe('The panel plugin is switched off.'))
+    expect(open).not.toHaveBeenCalled()
+  })
+
+  it('draws the icon of the plugin that serves the server on the panel shortcut, named after the plugin', async () => {
+    const served = { ...ACTIVE, server: { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } } }
+    const wrapper = mountClient(ServicesCard)
+    useClientStore().services = [served]
+    await nextTick()
+
+    const icon = wrapper.get('[data-testid="dashboard-service-panel-1"] [data-testid="service-panel-plugin-icon"]')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('alt')).toBe('Acme Panel')
+  })
+
+  it('keeps the generic icon when no plugin serves the server', async () => {
+    const wrapper = mountClient(ServicesCard)
+    useClientStore().services = [ACTIVE]
+    await nextTick()
+
+    const button = wrapper.get('[data-testid="dashboard-service-panel-1"]')
+    expect(button.find('[data-testid="service-panel-plugin-icon"]').exists()).toBe(false)
+    expect(button.find('svg').exists()).toBe(true)
+  })
+
+  it('shows how to sign in by hand, and opens nothing, when the panel cannot sign anybody in but has login details', async () => {
+    table[`GET ${SSO_PATH}`] = { status: 409, body: { type: 'PANEL_OPERATION_NOT_SUPPORTED', detail: 'The panel does not offer single sign on.' } }
+    table[`GET ${servicePath(1, ServiceAction.PanelLogin)}`] = { body: { username: 'ada', domain: 'a.test', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example:8083/login/' } }
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const wrapper = mountClient(ServicesCard)
+    useClientStore().services = [ACTIVE]
+    await nextTick()
+
+    await wrapper.find('[data-testid="dashboard-service-panel-1"]').trigger('click')
+
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-panel-login-link"]').attributes('href')).toBe('https://panel.example:8083/login/'))
+    expect(wrapper.find('[data-testid="dashboard-sso-error"]').exists()).toBe(false)
+    expect(open).not.toHaveBeenCalled()
   })
 })

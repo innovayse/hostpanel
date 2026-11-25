@@ -27,14 +27,19 @@ public sealed class GetMyServicesHandler
     /// <summary>Tells the moment a trial's days left are counted from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Names the panel plugin that serves each server's module.</summary>
+    private readonly IServerPanelPluginReader _panelPlugins;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">Reaches the Products and Servers modules for the names behind the ids.</param>
     /// <param name="access">Resolves the account the caller acts for, owner or linked user; the query does not say whose, and must not.</param>
     /// <param name="clock">Tells the moment a trial's days left are counted from.</param>
-    public GetMyServicesHandler(IHostpanelDbContext context, IMessageBus bus, IClientAccess access, IClock clock)
+    /// <param name="panelPlugins">Names the panel plugin that serves each server's module.</param>
+    public GetMyServicesHandler(IHostpanelDbContext context, IMessageBus bus, IClientAccess access, IClock clock, IServerPanelPluginReader panelPlugins)
     {
         _clock = clock;
+        _panelPlugins = panelPlugins;
         _context = context;
         _bus = bus;
         _access = access;
@@ -96,7 +101,7 @@ public sealed class GetMyServicesHandler
                 ServiceServerDto? server = null;
                 if (svc.ServerId.HasValue && servers.TryGetValue(svc.ServerId.Value, out var srv))
                 {
-                    server = new ServiceServerDto(srv.Name, srv.Hostname, srv.IpAddress);
+                    server = new ServiceServerDto(srv.Name, srv.Hostname, srv.IpAddress, _panelPlugins.Find(srv.Module));
                 }
 
                 ServiceUsageDto? serviceUsage = null;

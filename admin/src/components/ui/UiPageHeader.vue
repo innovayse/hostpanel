@@ -22,6 +22,8 @@
  * sizes instead of the text, for a title that comes from data still loading; the actions stay where they will be.
  * `subtitleLoading` is the smaller state of the two: the title is known and drawn, and only a bar stands in for a subtitle that
  * is made of data still loading.
+ * An action may carry `pluginIcon` (the plugin it runs through): its picture is drawn on the button in place of the generic icon, named after
+ * the plugin because the label does not say it, while the phone menu row keeps the generic icon.
  *
  * The header sits 22px (the concept's section gap) above the content on every screen: its bottom margin is 22px less the
  * gap of the stack it is in (`--stack-gap`, published by `gapClasses`), so a screen's own stack gap never adds to it.
@@ -37,6 +39,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiMenu from '@/components/ui/UiMenu.vue'
+import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useCollapsedActions } from '@/composables/useCollapsedActions'
@@ -44,6 +47,7 @@ import { usePageTitleStore } from '@/stores/pageTitle'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
 import { barActionToMenu } from '@/utils/ui/actionBar'
+import { UiSize } from '@/utils/ui/size'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
@@ -131,7 +135,8 @@ const { buttons, rows, hasPrimary } = useCollapsedActions(
           <UiLink v-if="action.to !== undefined" :to="action.to" :variant="action.variant" :icon="action.icon" :title="action.title" :data-testid="action.testid">
             {{ action.label }}
           </UiLink>
-          <UiButton v-else type="button" :variant="action.variant" :icon="action.icon" :title="action.title" :loading="action.loading" :disabled="action.disabled" :data-testid="action.testid" @click="action.onSelect?.()">
+          <UiButton v-else type="button" :variant="action.variant" :icon="action.pluginIcon ? undefined : action.icon" :title="action.title" :loading="action.loading" :disabled="action.disabled" :data-testid="action.testid" @click="action.onSelect?.()">
+            <UiPluginAvatar v-if="action.pluginIcon && !action.loading" :name="action.pluginIcon.name" :icon-url="action.pluginIcon.iconUrl" :size="UiSize.Xs" data-testid="ui-page-header-plugin-icon" />
             {{ action.label }}
           </UiButton>
         </template>

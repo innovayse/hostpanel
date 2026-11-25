@@ -236,6 +236,24 @@ describe('UiPageHeader', () => {
       expect(wrapper.find('[data-testid="ui-page-header-more"]').exists()).toBe(false)
     })
 
+    it('draws the plugin icon on an action that runs through a plugin, named after the plugin, in place of the generic icon', () => {
+      const action: UiHeaderAction = { ...ACTIONS[0]!, pluginIcon: { name: 'Acme Panel', iconUrl: '/api/admin/plugins/acme/icon' } }
+      const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: [action] } })
+
+      const button = wrapper.get('[data-testid="h-refresh"]')
+      expect(button.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/api/admin/plugins/acme/icon')
+      expect(button.get('[data-testid="plugin-avatar-image"]').attributes('alt')).toBe('Acme Panel')
+      expect(button.find('svg').exists()).toBe(false)
+      expect(button.text()).toBe('Refresh')
+    })
+
+    it('keeps the generic icon on an action with no plugin', () => {
+      const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: [ACTIONS[0]!] } })
+
+      expect(wrapper.find('[data-testid="plugin-avatar"]').exists()).toBe(false)
+      expect(wrapper.get('[data-testid="h-refresh"]').find('svg').exists()).toBe(true)
+    })
+
     it('runs the action when its button is pressed, unless it is disabled', async () => {
       let ran = 0
       const wrapper = mount(UiPageHeader, {

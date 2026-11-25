@@ -103,7 +103,9 @@ export enum ServiceAction {
   /** Changes the service password. */
   ChangePassword = 'change-password',
   /** Opens the control panel without a password. */
-  CpanelSso = 'cpanel-sso',
+  PanelSso = 'panel-sso',
+  /** The details to sign in by hand to the service's panel. */
+  PanelLogin = 'panel-login',
   /** The service invoices. */
   Invoices = 'invoices',
   /** Changes the plan. */

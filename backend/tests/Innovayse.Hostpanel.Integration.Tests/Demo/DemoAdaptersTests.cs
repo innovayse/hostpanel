@@ -67,7 +67,7 @@ public sealed class DemoAdaptersTests
         var result = await provider.ProvisionAsync(
             new ProvisionAccountOrder(1, "example.com", "user1", "secret", "basic", 3, "owner@example.com", "Owner Name"), CancellationToken.None);
         var credentials = await provider.GetCredentialsAsync(new AccountCredentialsOrder(7, result.ProvisioningRef!), CancellationToken.None);
-        var sso = await provider.GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(7, result.ProvisioningRef!, "203.0.113.50"), CancellationToken.None);
+        var sso = await provider.GetPanelSsoUrlAsync(new PanelSsoOrder(7, result.ProvisioningRef!, "203.0.113.50"), CancellationToken.None);
 
         result.Outcome.Should().Be(ProvisioningOutcome.Created);
         result.ProvisioningRef.Should().Be("demo-user1@example.com");

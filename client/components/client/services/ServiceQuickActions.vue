@@ -7,11 +7,11 @@
         variant="ghost"
         size="sm"
         :loading="ssoLoading"
-        data-testid="service-quick-cpanel"
-        @click="emit('cpanel')"
+        data-testid="service-quick-panel"
+        @click="emit('panel')"
       >
-        <ChevronRight :size="14" :stroke-width="2" class="mr-1.5" />
-        {{ $t('client.services.actionLoginCpanel') }}
+        <ClientServicesServicePanelIcon v-if="!ssoLoading" :service="service" :fallback="ChevronRight" class="mr-1.5" />
+        {{ $t('client.services.actionOpenPanel') }}
       </UiButton>
       <UiButton
         v-if="store.mayDo(Permission.ViewPayInvoices)"
@@ -68,7 +68,7 @@ const canSignIn = computed(() => canSignInToControlPanel(props.service, store.ma
 /** Events the component raises. */
 const emit = defineEmits<{
   /** The reader asked to sign in to the control panel. */
-  cpanel: []
+  panel: []
   /** The reader asked to reload the related invoices. */
   invoices: []
   /** The reader asked to start a cancellation. */

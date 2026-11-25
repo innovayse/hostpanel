@@ -429,7 +429,7 @@
 <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>The service could not be reactivated on the hosting server. Please try again or contact support.</value>
   </data>
-<data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+<data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
     <value>A control panel session could not be started. Please try again or contact support.</value>
   </data>
 <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
@@ -1183,7 +1183,7 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Only a terminated service has a termination date to correct.</value>
   </data>
-  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+  <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
     <value>A control panel session could not be started. The panel returned an address that is not on its server.</value>
   </data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">

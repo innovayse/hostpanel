@@ -40,7 +40,8 @@ public sealed class MyServicesRoutesAreOwnershipScopedTests(IntegrationTestFacto
     /// <returns>One row per route: method, route template after the service id, concrete path after the service id, and a JSON body or <see langword="null"/>.</returns>
     public static TheoryData<string, string, string, object?> Routes() => new()
     {
-        { "GET", "cpanel-sso", "cpanel-sso", null },
+        { "GET", "panel-sso", "panel-sso", null },
+        { "GET", "panel-login", "panel-login", null },
         { "POST", "cancel", "cancel", new { type = "Immediate", reason = "no longer needed" } },
         { "POST", "setup", "setup", new { domain = "example.com", username = "abcd", password = "Passw0rd!x" } },
         { "GET", "invoices", "invoices", null },

@@ -23,7 +23,7 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// </para>
 /// <para>
 /// Only <b>client-facing</b> messages carry this. The shared use cases an admin route also
-/// dispatches, <c>GetControlPanelSsoUrlQuery</c>, <c>ChangePasswordCommand</c> and their siblings,
+/// dispatches, <c>GetPanelSsoUrlQuery</c>, <c>ChangePasswordCommand</c> and their siblings,
 /// deliberately do not, because an administrator acting on any client's service is legitimate and
 /// a marker on the shared message would refuse them.
 /// </para>

@@ -76,7 +76,7 @@ public interface IProvisioningProvider
     /// <param name="req">The service, the account reference and the address of the browser that will open the link, which only panels that bind a session to it read.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A time-limited control-panel sign-in link string.</returns>
-    public Task<string> GetCPanelSsoUrlAsync(ControlPanelSsoOrder req, CancellationToken ct);
+    public Task<string> GetPanelSsoUrlAsync(PanelSsoOrder req, CancellationToken ct);
 
     /// <summary>
     /// Changes the password of a provisioned hosting account.

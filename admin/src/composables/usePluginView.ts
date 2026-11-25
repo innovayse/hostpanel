@@ -337,7 +337,11 @@ export const usePluginFollowUp = (
   /** Lets the view go of the running watch once it has ended. */
   let release: (() => void) | undefined
 
-  /** Runs one follow up attempt. */
+  /**
+   * Runs one follow up attempt.
+   *
+   * @returns A promise that settles when the attempt ended.
+   */
   const tick = (): Promise<void> => attemptOnce()
 
   /** The shared poller: the first read comes one interval after the call, and it pauses while the tab is hidden. */

@@ -552,8 +552,8 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     return true
   }
   if (isGet && path === '/api/public/products/domain') {
-    // Like the real endpoint: the id and name of the active product whose type is Domain.
-    send(res, 200, { id: DOMAIN_PRODUCT.id, name: DOMAIN_PRODUCT.name })
+    // Like the real endpoint: the id of the active product whose type is Domain.
+    send(res, 200, { id: DOMAIN_PRODUCT.id })
     return true
   }
   if (isGet && path === '/api/public/products') {

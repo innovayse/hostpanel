@@ -8,6 +8,4 @@
 export interface DomainProduct {
   /** Product primary key; the cart line's product id. */
   id: number
-  /** The product's display name. */
-  name: string
 }

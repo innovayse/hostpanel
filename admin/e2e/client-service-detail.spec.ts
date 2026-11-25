@@ -222,7 +222,7 @@ test('the Open panel button shows the icon of the plugin that serves the server,
   const provisioned: ServiceDetail = {
     ...activeServiceDetail,
     account: { ...activeServiceDetail.account, provisioningRef: 'acct1' },
-    server: { name: 'srv', hostname: 'srv.example.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } },
+    server: { name: 'srv', hostname: 'srv.example.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', iconVersion: '1.2.0' } },
   }
   const ssoPath = `/api/provisioning/${provisioned.id}/panel-sso`
   const api = await stubServicePage(page, provisioned, [json(HttpMethod.Get, ssoPath, { url: 'https://panel.example.test/sso' })])

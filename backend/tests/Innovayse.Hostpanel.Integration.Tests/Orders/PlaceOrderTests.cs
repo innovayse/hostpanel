@@ -702,7 +702,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     public async Task GuestCheckoutOrdersADomainOfAUsdTldInTheChosenCurrency()
     {
         await EnableBankTransferAsync();
-        var tld = $"x{Guid.NewGuid():N}"[..9];
+        var tld = DomainsTestSeeds.UniqueTld();
         const decimal usdSellPrice = 10m;
         var expectedAmd = await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, usdSellPrice);
         var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
@@ -756,7 +756,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     public async Task StorefrontLowerCaseDomainActionIsStoredByMemberName()
     {
         await EnableBankTransferAsync();
-        var tld = $"x{Guid.NewGuid():N}"[..9];
+        var tld = DomainsTestSeeds.UniqueTld();
         await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
         var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
 
@@ -799,7 +799,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     public async Task DomainPriceIsReadTheSameUnderEveryRequestLanguage()
     {
         await EnableBankTransferAsync();
-        var tld = $"x{Guid.NewGuid():N}"[..9];
+        var tld = DomainsTestSeeds.UniqueTld();
         const decimal usdSellPrice = 9.99m;
         await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, usdSellPrice);
         var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
@@ -996,7 +996,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     public async Task RenewalOfADomainNotHeldIsRefusedAtCheckout()
     {
         await EnableBankTransferAsync();
-        var tld = $"x{Guid.NewGuid():N}"[..9];
+        var tld = DomainsTestSeeds.UniqueTld();
         await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
         var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
         var email = $"guest-{Guid.NewGuid():N}@example.test";
@@ -1208,7 +1208,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await EnableBankTransferAsync();
         var productId = await SeedProductAsync(usdMonthly: 40m);
         var domainProductId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
-        var tld = $"x{Guid.NewGuid():N}"[..9];
+        var tld = DomainsTestSeeds.UniqueTld();
         await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
         var admin = await ClientsTestSeeds.AdminClientAsync(factory);
         var groupId = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 50m);

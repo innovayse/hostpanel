@@ -20,6 +20,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ClassicDomains from '~/templates/classic/pages/ClassicDomains.vue'
 import { useCartStore } from '~/stores/cart'
+import { useCatalogStore } from '~/stores/catalog'
 import { useDomainsStore } from '~/stores/domains'
 import type { DomainCheckResult } from '~/types/domaincheckresult'
 import type { TldPricing } from '~/types/tldpricing'
@@ -60,7 +61,8 @@ const checkedDomains = (): string[] =>
   requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => (bodyOf(request) as { domain: string }).domain)
 
 /**
- * Mounts the page and waits until the currencies, prices and domain product have loaded.
+ * Mounts the page and waits until the currencies and prices have loaded. The domain product is read first,
+ * as the domains page that renders the template does: the template only uses what the store holds.
  *
  * @param query Route query, e.g. a `domain` to search at once.
  * @returns The wrapper.
@@ -68,6 +70,7 @@ const checkedDomains = (): string[] =>
 const mountDomains = async (query: Record<string, string> = {}) => {
   stubPublicPageRuntime({ query })
   const wrapper = await mountPage(ClassicDomains)
+  await useCatalogStore().loadDomainProduct()
   await awaitCatalogue()
   return wrapper
 }
@@ -91,7 +94,7 @@ describe('ClassicDomains', () => {
     table = {
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`GET ${CatalogPath.TldPricing}`]: { body: pricing },
-      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 99, name: 'Domain Registration' } },
+      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 99 } },
     }
     stub = await startTransport(routeTable(table))
   })

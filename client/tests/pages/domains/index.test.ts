@@ -104,7 +104,7 @@ describe('domains page', () => {
     stubTemplateSlots({ [TemplateSlot.Domains]: TemplateDomains })
     window.localStorage.clear()
     Object.assign(replies, {
-      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 7, name: 'Domain Registration' } },
+      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 7 } },
       [`GET ${DomainPath.TldPricing}`]: { body: pricing('USD') },
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`POST ${DomainPath.DomainCheck}`]: { body: { domain: 'example.com', available: true } },

@@ -362,7 +362,7 @@
     <value>Der Domainname muss ein gültiger vollqualifizierter Domainname sein (z. B. 'example.com').</value>
   </data>
   <data name="DomainNameInvalid" xml:space="preserve">
-    <value>Der Domainname darf in jedem Teil nur Buchstaben, Ziffern und Bindestriche enthalten, ein Teil darf nicht mit einem Bindestrich beginnen oder enden und nicht länger als 63 Zeichen sein, und der Name braucht eine Endung (z. B. 'example.com').</value>
+    <value>Der Domainname darf in jedem Teil nur lateinische Buchstaben, Ziffern und Bindestriche enthalten, ein Teil darf nicht mit einem Bindestrich beginnen oder enden und nicht länger als 63 Zeichen sein, und der Name braucht eine Endung aus Buchstaben (z. B. 'example.com').</value>
   </data>
   <data name="DomainYearsRange" xml:space="preserve">
     <value>Die Laufzeit in Jahren muss zwischen 1 und 10 liegen.</value>

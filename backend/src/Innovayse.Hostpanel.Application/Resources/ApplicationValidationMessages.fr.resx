@@ -362,7 +362,7 @@
     <value>Le nom de domaine doit être un nom de domaine pleinement qualifié valide (par exemple « example.com »).</value>
   </data>
   <data name="DomainNameInvalid" xml:space="preserve">
-    <value>Le nom de domaine ne peut contenir dans chaque partie que des lettres, des chiffres et des tirets, une partie ne peut ni commencer ni finir par un tiret ni dépasser 63 caractères, et le nom doit avoir une extension (par exemple « example.com »).</value>
+    <value>Le nom de domaine ne peut contenir dans chaque partie que des lettres latines, des chiffres et des tirets, une partie ne peut ni commencer ni finir par un tiret ni dépasser 63 caractères, et le nom doit avoir une extension composée de lettres (par exemple « example.com »).</value>
   </data>
   <data name="DomainYearsRange" xml:space="preserve">
     <value>Le nombre d'années doit être compris entre 1 et 10.</value>

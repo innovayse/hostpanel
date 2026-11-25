@@ -18,7 +18,7 @@ let backend: StubServer
 let route: RouteModule
 
 beforeEach(async () => {
-  backend = await startBackend(() => ({ body: { id: 9, name: 'Domain Registration' } }))
+  backend = await startBackend(() => ({ body: { id: 9 } }))
   route = await import('~/server/api/portal/public/products/domain.get')
 })
 
@@ -32,7 +32,7 @@ describe('GET /api/portal/public/products/domain', () => {
 
     expect(backend.requests[0]?.url).toBe('/api/public/products/domain')
     expect(backend.requests[0]?.headers['x-language']).toBe('ru')
-    expect(result).toEqual({ id: 9, name: 'Domain Registration' })
+    expect(result).toEqual({ id: 9 })
   })
 
   it('passes the refusal for an operator with no domain product through with its code and sentence', async () => {

@@ -10,6 +10,6 @@ export interface ServicePanelPlugin {
   id: string
   /** Display name of the plugin. */
   name: string
-  /** True when the plugin ships an icon the portal's icon route serves. */
-  hasIcon: boolean
+  /** The plugin's version when it ships an icon the portal's icon route serves, null when it ships none. */
+  iconVersion: string | null
 }

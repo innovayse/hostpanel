@@ -110,7 +110,7 @@ public sealed class ProductsController : BaseApiController
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the product's id and name; 503 with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c> when this installation
+    /// 200 with the product's id (the name is not published); 503 with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c> when this installation
     /// sells no domain product; 429 when the rate limit is hit.
     /// </returns>
     [HttpGet("/api/public/products/domain")]

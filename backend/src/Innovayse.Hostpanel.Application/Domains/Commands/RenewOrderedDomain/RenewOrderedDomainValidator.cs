@@ -14,7 +14,10 @@ public sealed class RenewOrderedDomainValidator : LocalizedValidator<RenewOrdere
         : base(localizer)
     {
         RuleFor(x => x.ClientId).MustBePositiveId(L["ClientIdInvalid"]);
-        RuleFor(x => x.DomainName).NotEmpty().WithMessage(L["DomainNameRequired"]);
+        RuleFor(x => x.DomainName)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(L["DomainNameRequired"])
+            .MustBeDomainName(L["DomainNameInvalid"]);
         RuleFor(x => x.Years).InclusiveBetween(1, 10).WithMessage(L["DomainYearsRange"]);
         RuleFor(x => x.OrderItemId).GreaterThan(0).WithMessage(L["OrderItemIdInvalid"]).When(x => x.OrderItemId is not null);
     }

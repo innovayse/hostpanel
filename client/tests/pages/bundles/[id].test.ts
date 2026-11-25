@@ -83,7 +83,7 @@ describe('bundle page', () => {
     table = {
       [readOf(CatalogPath.BillingCurrencies)]: { body: [USD_CURRENCY] },
       [readOf(CatalogPath.Products)]: { body: catalogue },
-      [readOf(CatalogPath.DomainProduct)]: { body: { id: 7, name: 'Domain Registration' } },
+      [readOf(CatalogPath.DomainProduct)]: { body: { id: 7 } },
       [readOf(CatalogPath.ProductBundles)]: { body: [bundle()] },
       [readOf(CatalogPath.TldPricing)]: { body: pricing },
     }

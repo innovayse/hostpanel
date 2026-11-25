@@ -76,8 +76,8 @@ public sealed class GetIntegrationHandler
         // A built-in integration wins over a plugin of the same slug, as it does in the list.
         var isPlugin = !IntegrationCatalogue.All.ContainsKey(query.Slug) && _plugins.IsLoaded(query.Slug);
         var loadedManifest = _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == query.Slug);
-        var iconUrl = isPlugin && loadedManifest is not null && _plugins.GetIcon(query.Slug) is not null
-            ? PluginIconPaths.For(query.Slug, loadedManifest.Version)
+        var iconUrl = isPlugin && loadedManifest?.Version is { } version && _plugins.GetIcon(query.Slug) is not null
+            ? PluginIconPaths.For(query.Slug, version)
             : null;
 
         // A built-in slug the test knows keeps its own test. A plugin can be tested through IPluginStatus, or, for a

@@ -362,7 +362,7 @@
     <value>Domain name must be a valid fully-qualified domain name (e.g. 'example.com').</value>
   </data>
   <data name="DomainNameInvalid" xml:space="preserve">
-    <value>Domain name may only contain letters, digits and hyphens in each part, a part cannot start or end with a hyphen or be longer than 63 characters, and the name needs an extension (e.g. 'example.com').</value>
+    <value>Domain name may only contain Latin letters, digits and hyphens in each part, a part cannot start or end with a hyphen or be longer than 63 characters, and the name needs an extension of letters (e.g. 'example.com').</value>
   </data>
   <data name="DomainYearsRange" xml:space="preserve">
     <value>Years must be between 1 and 10.</value>

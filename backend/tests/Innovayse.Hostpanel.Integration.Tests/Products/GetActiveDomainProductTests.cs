@@ -100,7 +100,7 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
 
     /// <summary>
     /// The anonymous storefront route answers the product by its type: <c>GET /api/public/products/domain</c> is 200
-    /// with the id and name of the active domain product, no sign-in needed.
+    /// with the id of the active domain product and nothing else, no sign-in needed.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -127,7 +127,7 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("id").GetInt32().Should().Be(expected);
-        body.GetProperty("name").GetString().Should().NotBeNullOrWhiteSpace();
+        body.EnumerateObject().Select(member => member.Name).Should().Equal("id");
     }
 
     /// <summary>

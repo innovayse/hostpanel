@@ -299,6 +299,16 @@ internal static class DomainsTestSeeds
         domain.Activate(registrarRef, expiresAt, occurredAt);
     }
 
+    /// <summary>
+    /// Builds an extension no other test uses and the domain name rule accepts: nine lower-case letters, because an
+    /// extension is letters only, drawn from a fresh <see cref="Guid"/> so two tests never share one.
+    /// </summary>
+    /// <returns>The extension, without the dot.</returns>
+    public static string UniqueTld()
+    {
+        return new string(Guid.NewGuid().ToString("N")[..9].Select(c => (char)('a' + (c % 26))).ToArray());
+    }
+
     /// <summary>Builds the create body for a fresh TLD configuration under a unique extension.</summary>
     /// <returns>The extension used and the anonymous body to post.</returns>
     public static NewTldPayload NewTldBody()

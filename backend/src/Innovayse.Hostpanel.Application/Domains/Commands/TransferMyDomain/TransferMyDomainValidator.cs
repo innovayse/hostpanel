@@ -23,9 +23,9 @@ public sealed class TransferMyDomainValidator : LocalizedValidator<TransferMyDom
         : base(localizer)
     {
         RuleFor(x => x.DomainName)
-            .NotEmpty()
-            .Must(name => name.Contains('.'))
-            .WithMessage(L["DomainNameRequired"]);
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(L["DomainNameRequired"])
+            .MustBeDomainName(L["DomainNameInvalid"]);
         RuleFor(x => x.EppCode)
             .NotEmpty()
             .MinimumLength(MinEppCodeLength)

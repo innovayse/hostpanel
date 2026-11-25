@@ -53,11 +53,11 @@ describe('reportApiPath', () => {
 })
 
 describe('pluginIconPath', () => {
-  it('points at the staff plugin icon route under the proxy base', () => {
-    expect(pluginIconPath('acme-panel')).toBe('/api/admin/plugins/acme-panel/icon')
+  it('points at the staff plugin icon route under the proxy base, versioned like the list address', () => {
+    expect(pluginIconPath('acme-panel', '1.2.0')).toBe('/api/admin/plugins/acme-panel/icon?v=1.2.0')
   })
 
-  it('encodes an id so it can never leave its path segment', () => {
-    expect(pluginIconPath('a/b')).toBe('/api/admin/plugins/a%2Fb/icon')
+  it('encodes an id and a version so neither can leave its place in the address', () => {
+    expect(pluginIconPath('a/b', '1.0.0+build 5')).toBe('/api/admin/plugins/a%2Fb/icon?v=1.0.0%2Bbuild%205')
   })
 })

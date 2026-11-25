@@ -5,7 +5,7 @@ namespace Innovayse.Hostpanel.Domain.Tests.Domains;
 /// <summary>Unit tests for <see cref="DomainNameRules"/>, the one rule for what a domain name looks like.</summary>
 public sealed class DomainNameRulesTests
 {
-    /// <summary>Ordinary names, a nested one, a hyphen inside a label, digits and an internationalised label pass.</summary>
+    /// <summary>Ordinary names, a nested one, a hyphen inside a label, digits and an encoded internationalised label pass.</summary>
     /// <param name="name">A well-formed name.</param>
     [Theory]
     [InlineData("example.com")]
@@ -13,8 +13,7 @@ public sealed class DomainNameRulesTests
     [InlineData("my-shop.com")]
     [InlineData("123.io")]
     [InlineData("xn--bcher-kva.de")]
-    [InlineData("münchen.de")]
-    [InlineData("  example.com  ")]
+    [InlineData("EXAMPLE.COM")]
     public void IsValidName_AcceptsAWellFormedName(string name)
     {
         DomainNameRules.IsValidName(name).Should().BeTrue();
@@ -36,11 +35,32 @@ public sealed class DomainNameRulesTests
     [InlineData("exa..mple.com")]
     [InlineData("example.-com")]
     [InlineData("example.com/path")]
+    [InlineData("münchen.de")]
+    [InlineData("example.münchen")]
+    [InlineData("example.123")]
+    [InlineData("example.c")]
+    [InlineData("example.c0m")]
+    [InlineData("example.xn--p1ai")]
+    [InlineData("  example.com  ")]
     [InlineData("")]
     [InlineData("   ")]
     public void IsValidName_RefusesAMalformedName(string name)
     {
         DomainNameRules.IsValidName(name).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// A name registration would refuse is no name here: the rule is the one registration holds, so a name
+    /// that passes it can be ordered as typed.
+    /// </summary>
+    [Fact]
+    public void IsValidName_HoldsTheRuleRegistrationHolds()
+    {
+        DomainNameRules.IsValidName("shop.example.com").Should().BeTrue();
+        DomainNameRules.IsValidName("a.co").Should().BeTrue();
+        DomainNameRules.IsValidName("example.com ").Should().BeFalse();
+        DomainNameRules.IsValidName("example.com
+").Should().BeFalse();
     }
 
     /// <summary>A missing text is not a name.</summary>
@@ -85,5 +105,19 @@ public sealed class DomainNameRulesTests
         DomainNameRules.IsValidLabel("-a").Should().BeFalse();
         DomainNameRules.IsValidLabel("a-").Should().BeFalse();
         DomainNameRules.IsValidLabel("a b").Should().BeFalse();
+        DomainNameRules.IsValidLabel("münchen").Should().BeFalse();
+    }
+
+    /// <summary>An extension is at least two letters and never a number or a mix of letters and digits.</summary>
+    [Fact]
+    public void IsValidExtension_NeedsTwoOrMoreLetters()
+    {
+        DomainNameRules.IsValidExtension("com").Should().BeTrue();
+        DomainNameRules.IsValidExtension("io").Should().BeTrue();
+        DomainNameRules.IsValidExtension("c").Should().BeFalse();
+        DomainNameRules.IsValidExtension("123").Should().BeFalse();
+        DomainNameRules.IsValidExtension("c0m").Should().BeFalse();
+        DomainNameRules.IsValidExtension("xn--p1ai").Should().BeFalse();
+        DomainNameRules.IsValidExtension(string.Empty).Should().BeFalse();
     }
 }

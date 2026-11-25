@@ -209,9 +209,9 @@ public static class ValidationRuleExtensions
     }
 
     /// <summary>
-    /// Requires a well-formed fully-qualified domain name: every label of letters, digits and inner hyphens, no label
-    /// over 63 characters, the whole name within 253, and an extension. The rule is <see cref="DomainNameRules"/>, so
-    /// every use case that takes a name from a visitor refuses the same ones.
+    /// Requires a well-formed fully-qualified domain name: every label of ASCII letters, digits and inner hyphens, no
+    /// label over 63 characters, the whole name within 253, and an extension of letters. The rule is
+    /// <see cref="DomainNameRules"/>, so every use case that takes a name from a visitor refuses the same ones.
     /// </summary>
     /// <typeparam name="T">The command or query being validated.</typeparam>
     /// <param name="rule">The rule builder for the domain name property.</param>

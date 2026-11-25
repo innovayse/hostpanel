@@ -17,9 +17,6 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
 /// </remarks>
 public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
 {
-    /// <summary>Longest domain name, the order line column's limit.</summary>
-    private const int DomainNameMaxLength = 253;
-
     /// <summary>Shortest registration period a domain line may ask for, in years.</summary>
     private const int MinYears = 1;
 
@@ -69,10 +66,13 @@ public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
             item.When(i => i.DomainAction is not null, () =>
             {
                 item.RuleFor(i => i.DomainAction!.Value).IsInEnum().WithMessage(L["PlaceOrderItemDomainActionInvalid"]);
+                // The one domain name rule, so a name registration would refuse is refused here, before the payer pays
+                // for a line the fulfilment could never register.
                 item.RuleFor(i => i.Domain)
-                    .NotEmpty()
-                    .MaximumLength(DomainNameMaxLength)
-                    .WithMessage(L["DomainNameRequired"]);
+                    .Cascade(CascadeMode.Stop)
+                    .NotEmpty().WithMessage(L["DomainNameRequired"])
+                    .Transform(domain => domain ?? string.Empty)
+                    .MustBeDomainName(L["DomainNameInvalid"]);
                 item.RuleFor(i => i.Years)
                     .InclusiveBetween(MinYears, MaxYears)
                     .When(i => i.Years is not null)

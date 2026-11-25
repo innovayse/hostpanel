@@ -17,7 +17,10 @@ public sealed class TransferDomainValidator : LocalizedValidator<TransferDomainC
         : base(localizer)
     {
         RuleFor(x => x.ClientId).MustBePositiveId(L["DomainClientIdRequired"]);
-        RuleFor(x => x.DomainName).NotEmpty().WithMessage(L["DomainNameRequired"]);
+        RuleFor(x => x.DomainName)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage(L["DomainNameRequired"])
+            .MustBeDomainName(L["DomainNameInvalid"]);
         RuleFor(x => x.EppCode)
             .NotEmpty()
             .MinimumLength(MinEppCodeLength)

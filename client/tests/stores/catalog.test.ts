@@ -154,7 +154,7 @@ describe('useCatalogStore.loadProducts', () => {
   })
 
   it('reads the domain product from the API, which finds it by its type and not by its name', async () => {
-    table[DOMAIN_PRODUCT_ROUTE] = { body: { id: 9, name: 'Renamed product' } }
+    table[DOMAIN_PRODUCT_ROUTE] = { body: { id: 9 } }
     const store = useCatalogStore()
     expect(store.domainProductId).toBeNull()
 
@@ -181,7 +181,7 @@ describe('useCatalogStore.loadProducts', () => {
     const store = useCatalogStore()
     await store.loadDomainProduct()
 
-    table[DOMAIN_PRODUCT_ROUTE] = { body: { id: 4, name: 'Domains' } }
+    table[DOMAIN_PRODUCT_ROUTE] = { body: { id: 4 } }
     await store.loadDomainProduct()
 
     expect(store.domainProductError).toBe('')

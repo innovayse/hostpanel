@@ -5,6 +5,10 @@
  * keep an image from being run: `nosniff` and a policy that allows nothing but its own inline style, so an SVG
  * can never script the portal.
  *
+ * The address the portal draws carries `?v={plugin version}` (`panelPluginIconPath`): the browser caches the icon by address,
+ * so an updated plugin is a new address. The version is only that cache key, the API route answers the same bytes for any value,
+ * so it is not forwarded.
+ *
  * @module server/api/portal/client/plugins/[plugin]/icon.get
  */
 

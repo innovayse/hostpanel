@@ -415,7 +415,7 @@ onMounted(() => {
   }
 })
 
-/** Catalogue store: the TLD price table and the product a domain cart line hangs on. */
+/** Catalogue store: the TLD price table, and the product a domain cart line hangs on (read by the domains page). */
 const catalogStore = useCatalogStore()
 
 /** The id of the product a domain cart line hangs on; null when the operator sells none. */
@@ -430,9 +430,6 @@ const nuxtApp = useNuxtApp()
 const { pending: pricingPending } = await usePayerAsyncData('domains:classic-tld-pricing', () => nuxtApp.runWithContext(() => catalogStore.loadTldPricing()), {
   watch: [locale]
 })
-
-// The cart needs a product to hang a domain order on; the backend finds it by its product type.
-await useAsyncData('domains:classic-product', () => nuxtApp.runWithContext(() => catalogStore.loadDomainProduct()), { watch: [locale] })
 
 /** The price table (owned by the catalogue store). */
 const tldPricing = computed(() => catalogStore.tldPricing)

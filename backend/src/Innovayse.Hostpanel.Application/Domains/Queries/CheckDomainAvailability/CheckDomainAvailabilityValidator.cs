@@ -13,11 +13,14 @@ public sealed class CheckDomainAvailabilityValidator : LocalizedValidator<CheckD
     public CheckDomainAvailabilityValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
+        RuleFor(x => x.Domain).NotEmpty().WithMessage(L["DomainNameRequired"]);
+
         // A malformed name is refused here, before the registrar is asked: a registrar answers "not available"
-        // for text that is no name at all, and the storefront would show it as a taken domain.
+        // for text that is no name at all, and the storefront would show it as a taken domain. The handler trims
+        // the name it is given, so the rule reads the name the handler will use; a blank one is already refused above.
         RuleFor(x => x.Domain)
-            .Cascade(CascadeMode.Stop)
-            .NotEmpty().WithMessage(L["DomainNameRequired"])
-            .MustBeDomainName(L["DomainNameInvalid"]);
+            .Transform(domain => domain?.Trim() ?? string.Empty)
+            .MustBeDomainName(L["DomainNameInvalid"])
+            .When(x => !string.IsNullOrWhiteSpace(x.Domain));
     }
 }

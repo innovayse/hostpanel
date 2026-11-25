@@ -39,7 +39,7 @@ describe('ServiceQuickActions', () => {
 
 describe('ServiceQuickActions panel icon', () => {
   it('shows the icon of the plugin that serves the server, named after the plugin', () => {
-    const served = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } }
+    const served = { name: 'srv', hostname: 'srv.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', iconVersion: '1.2.0' } }
     const wrapper = mountClient(ServiceQuickActions, { props: { service: service({ server: served }), ssoLoading: false } })
 
     const icon = wrapper.get('[data-testid="service-quick-panel"] [data-testid="service-panel-plugin-icon"]')

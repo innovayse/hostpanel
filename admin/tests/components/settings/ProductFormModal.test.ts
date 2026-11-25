@@ -585,7 +585,7 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form-package"]').setValue('pro')
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
-    const payload = (wrapper.emitted('save') as unknown[][])[0][0] as Record<string, unknown>
+    const payload = (wrapper.emitted('save')?.[0]?.[0] ?? {}) as Record<string, unknown>
     expect(payload.type).toBe('Vps')
     expect(payload.packageName).toBe('pro')
     expect(payload.trial).toBeDefined()
@@ -615,7 +615,7 @@ describe('ProductFormModal', () => {
     expect(wrapper.find('[data-testid="product-form-prices"]').exists()).toBe(false)
     await wrapper.get('[data-testid="product-form"]').trigger('submit')
 
-    const payload = (wrapper.emitted('save') as unknown[][])[0][0] as Record<string, unknown>
+    const payload = (wrapper.emitted('save')?.[0]?.[0] ?? {}) as Record<string, unknown>
     expect(payload.type).toBe('Domain')
     expect(payload.prices).toEqual([{ currencyCode: 'USD', monthly: 0, annual: 0, quarterly: null, semiAnnual: null, biennial: null }])
     expect(payload.packageName).toBeNull()

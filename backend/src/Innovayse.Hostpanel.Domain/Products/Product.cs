@@ -588,7 +588,6 @@ public sealed class Product : BaseEntity, IAggregateRoot
         }
     }
 
-
     /// <summary>Parses metadata text and keeps it only when its root is a JSON object.</summary>
     /// <param name="metadata">The candidate metadata text.</param>
     /// <returns>The parsed object, or <see langword="null"/> when the text is empty, not JSON, or not an object.</returns>

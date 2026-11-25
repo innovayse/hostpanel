@@ -142,7 +142,7 @@ Hostpanel-ը աջակցում է նույնականացման երկու ռեժ�
   { name: 'ALLOWED_HOSTS', type: 'string', default: 'panel.example.test;hostpanel-api;localhost', description: 'Հոսթ-անուններ, որոնց API-ն պատասխանում է, բաժանված կետ-ստորակետով։ Ներառեք հանրային հոսթը, hostpanel-api-ն և localhost-ը։ Պարտադիր է։ Մակարդակներ՝ բոլորը։' },
   { name: 'PANEL_DEV_ORIGIN', type: 'string', default: 'http://panel.example.test', description: 'Dev-պրոքսիի origin-ը, որը API-ն թույլատրում է localhost-ի կողքին (CORS)։ Մակարդակներ՝ dev։' },
   { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Հանրային հասցե(ներ), որտեղից այս տեղադրումը միանում է SSH բանալիների գործակալներին, բաժանված ստորակետով։ Նոր է 0.4.0-ում։ Մակարդակներ՝ prod, hub։' },
-  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Կառավարման վահանակներ, որոնք հասանելի են միայն VPN-ով, hostname=address զույգերով՝ բաժանված ստորակետով։ Նոր է 0.4.0-ում։ Մակարդակներ՝ prod, hub։' },
+  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Կառավարման վահանակներ, որոնք հասանելի են միայն VPN-ով, hostname=address զույգերով՝ բաժանված ստորակետով (PanelNetwork__HostAddresses)։ API-ի հասցեն կարելի է նաև սահմանել յուրաքանչյուր սերվերի համար ադմինի վահանակում, տես «Սերվերներ և սերվերների խմբեր»։ Նոր է 0.4.0-ում։ Մակարդակներ՝ prod, hub։' },
 ]" />
 
 SSH_AGENT_SOURCE_ADDRESSES-ը սահմանելուց հետո Servers → SSH էջը ցույց է տալիս firewall-ի ճշգրիտ կանոնները։ Տե՛ս [SSH բանալիների գործակալ](/hy/servers/ssh-key-agent)։

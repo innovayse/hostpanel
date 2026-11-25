@@ -142,7 +142,7 @@ Hostpanel поддерживает два режима аутентификац�
   { name: 'ALLOWED_HOSTS', type: 'string', default: 'panel.example.test;hostpanel-api;localhost', description: 'Имена хостов, на которые отвечает API, через точку с запятой. Укажите публичный хост, hostpanel-api и localhost. Обязательна. Уровни: все.' },
   { name: 'PANEL_DEV_ORIGIN', type: 'string', default: 'http://panel.example.test', description: 'Источник прокси для разработки, который API разрешает наряду с localhost (CORS). Уровни: dev.' },
   { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Публичные адреса, с которых эта установка подключается к агентам SSH-ключей, через запятую. Новое в 0.4.0. Уровни: prod, hub.' },
-  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Панели управления, доступные только по VPN, в виде пар hostname=address через запятую. Новое в 0.4.0. Уровни: prod, hub.' },
+  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Панели управления, доступные только по VPN, в виде пар hostname=address через запятую (PanelNetwork__HostAddresses). Адрес API можно также задать для каждого сервера в панели администратора, см. «Серверы и группы серверов». Новое в 0.4.0. Уровни: prod, hub.' },
 ]" />
 
 Раздел «Серверы → SSH» показывает точные правила межсетевого экрана, когда задан SSH_AGENT_SOURCE_ADDRESSES. См. [Агент SSH-ключей](/ru/servers/ssh-key-agent).

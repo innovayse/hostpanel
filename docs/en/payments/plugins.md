@@ -206,6 +206,12 @@ The admin API is `GET /api/admin/plugins/{pluginId}/slot-widgets`, which lists t
 `PUT /api/admin/plugins/{pluginId}/slot-widgets/{slotId}/{widgetId}` with the body `{ "productIds": [3, 7] }`, which
 answers the same shape with the products that were stored. An empty list clears the binding. When two saves of the same widget keep colliding the answer is 409. A widget the plugin does not declare in that slot answers 404 `PLUGIN_SLOT_WIDGET_NOT_FOUND`.
 
+## Panel plugins and their servers
+
+A plugin that serves hosting panels (it declares `provisioningPanel` and lists `serverModules`) shows its servers on its own page. Open the plugin from the Installed tab and choose the **Settings** tab: the **Servers** section lists every server stored on a module the plugin declares. Each row has the server name (a link to the Servers page narrowed to that name), its host name, its last known connection state (Online, Offline or Not tested) and when it was last tested, or that it never was. With no matching server the section says so and links to the Servers page, where one can be added. A plugin that declares no server module shows no such section. The list comes from `GET /api/admin/plugins/{pluginId}/servers`, which answers `PLUGIN_NOT_FOUND` (404) for an id that is not loaded.
+
+A panel plugin keeps its connection per server, not as one connection. The status card beside its settings on the Integrations page therefore reflects its servers and shows how many are online: **Online** when at least one tested server is online and none is offline, **Partially online** when some are online and some are offline, **Offline** when every tested server is down, and **Not tested** when none has been tested yet. The state of each server is the one its last connection test left, see [Test a connection](../servers/servers.md#test-a-connection).
+
 ## Plugin errors
 
 The API returns these error codes as the `type` field of the error response body.

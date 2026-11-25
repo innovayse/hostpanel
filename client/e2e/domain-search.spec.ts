@@ -39,6 +39,20 @@ test('a registered name is reported as taken and offers no add button', async ({
   await expect(page.getByTestId(`domain-result-${name}.net`)).toHaveAttribute('data-status', 'available')
 })
 
+test('the search field and its button have the same height and sit on one line', async ({ page }) => {
+  await page.goto('/domains')
+  await waitForHydration(page)
+
+  const input = await page.getByTestId('domain-search-input').boundingBox()
+  const button = await page.getByTestId('domain-search-submit').boundingBox()
+  if (!input || !button) {
+    throw new Error('The search field and its button are not laid out.')
+  }
+
+  expect(Math.abs(button.height - input.height)).toBeLessThanOrEqual(1)
+  expect(Math.abs(button.y - input.y)).toBeLessThanOrEqual(1)
+})
+
 test.describe('before the page is hydrated', () => {
   test.use({ javaScriptEnabled: false })
 

@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiButton from '~/components/ui/UiButton.vue'
+import UiInput from '~/components/ui/UiInput.vue'
 import { UiButtonVariant, UiSize } from '~/utils/ui/enums'
 import { BUTTON_SIZE_CLASSES, CONTROL_SIZE_CLASSES } from '~/utils/ui/tones'
 
@@ -119,6 +120,31 @@ describe('UiButton', () => {
     expect(wrapper.classes()).toContain('inline-flex')
     expect(wrapper.classes()).not.toContain('px-4')
     expect(wrapper.classes().some(name => name.startsWith('bg-'))).toBe(false)
+  })
+
+  it('takes a kit size step on a bare button only when one is given', () => {
+    const sized = mountWithKit(UiButton, { props: { variant: UiButtonVariant.Bare, size: UiSize.Lg } })
+
+    expect(sized.classes()).toEqual(expect.arrayContaining(['min-h-14', 'px-6', 'text-lg']))
+    expect(sized.classes().some(name => name.startsWith('bg-'))).toBe(false)
+  })
+
+  it('draws a bare button and a field of the same step with the same height, vertical padding and type size', () => {
+    for (const size of Object.values(UiSize)) {
+      const button = mountWithKit(UiButton, { props: { variant: UiButtonVariant.Bare, size } }).classes()
+      const field = mountWithKit(UiInput, { props: { size, placeholder: 'x' } }).find('input').classes()
+
+      /**
+       * Keeps the classes that set a control's height, vertical padding and type size.
+       *
+       * @param classes Class list of the rendered element.
+       * @returns The height, vertical padding and type size classes.
+       */
+      const shape = (classes: string[]): string[] => classes.filter(name => /^(sm:)?min-h-|^py-|^text-(sm|base|lg)$/.test(name))
+
+      expect(shape(button)).toEqual(shape(field))
+      expect(shape(button).length).toBeGreaterThan(0)
+    }
   })
 
   it('does not animate the outline, so a mouse press never flashes one', () => {

@@ -36,6 +36,7 @@
                 testid="newsletter-email"
                 :label="t('aurora.footer.newsletterTitle')"
                 :placeholder="t('aurora.footer.newsletterPlaceholder')"
+                :size="UiSize.Md"
                 class="min-w-[180px] flex-1"
                 @blur="emailTouched = true"
               />
@@ -43,7 +44,8 @@
                 type="submit"
                 variant="bare"
                 data-testid="newsletter-submit"
-                class="whitespace-nowrap rounded-xl bg-brand px-[18px] py-3 text-sm font-bold text-on-brand hover:brightness-110"
+                :size="UiSize.Md"
+                class="rounded-xl bg-brand font-bold text-on-brand hover:brightness-110"
               >
                 {{ t('aurora.footer.newsletterCta') }}
               </UiButton>
@@ -127,7 +129,7 @@
 import LogoLockup from '~/components/LogoLockup.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { useContactDetails } from '~/composables/useContactDetails'
-import { UiBlockTag, UiFooterLinkVariant, UiTextTag } from '~/utils/ui/enums'
+import { UiBlockTag, UiFooterLinkVariant, UiSize, UiTextTag } from '~/utils/ui/enums'
 import {
   SITE_ACCEPTABLE_USE_PATH,
   SITE_ABOUT_PATH,

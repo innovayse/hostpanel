@@ -10,7 +10,7 @@ public sealed partial class NoVendorNamesTests
 {
     /// <summary>Matches a vendor or external product name anywhere in a type name, case-insensitively.</summary>
     /// <returns>The compiled expression.</returns>
-    [GeneratedRegex("Stripe|Cwp|CPanel|Inecobank|Idram|Ameriabank|Whmcs|Plesk|Namecheap|DirectAdmin|Hestia|PayPal|Cloudflare", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("Stripe|Cwp|CPanel|Inecobank|Idram|Ameriabank|Whmcs|Plesk|Namecheap|NameAm|DirectAdmin|Hestia|PayPal|Cloudflare", RegexOptions.IgnoreCase)]
     private static partial Regex VendorName();
 
     /// <summary>No type in the kernel, domain, application, shared, API or SDK assemblies carries a vendor name.</summary>
@@ -55,6 +55,27 @@ public sealed partial class NoVendorNamesTests
             .ToList();
 
         offenders.Should().BeEmpty("demo seed text names no outside product; use the capability name");
+    }
+
+    /// <summary>
+    /// No validation message in any language names a vendor: the text says what the registrar must be (an installed
+    /// plugin), never which registrars exist, so a translation cannot keep a name the neutral text no longer has.
+    /// </summary>
+    [Fact]
+    public void ValidationMessageResources_CarryNoVendorName()
+    {
+        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var resources = Path.Combine(backendRoot, "src", "Innovayse.Hostpanel.Application", "Resources");
+
+        var files = Directory.EnumerateFiles(resources, "ApplicationValidationMessages*.resx").ToList();
+        files.Should().NotBeEmpty("the scan must find the resource files, or it passes without reading anything");
+
+        var offenders = files
+            .Where(path => VendorName().IsMatch(File.ReadAllText(path)))
+            .Select(path => Path.GetRelativePath(backendRoot, path).Replace('\\', '/'))
+            .ToList();
+
+        offenders.Should().BeEmpty("validation messages name the capability, never a vendor");
     }
 
     /// <summary>

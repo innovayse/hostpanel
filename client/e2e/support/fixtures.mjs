@@ -54,14 +54,15 @@ export const PLAN_PRO = {
 }
 
 /**
- * The product a domain order hangs on. The storefront finds it by name (a product whose name
- * contains "domain") and adds a domain to the cart only when it exists; it sits in a group of its
- * own so no hosting page lists it.
+ * The product a domain order hangs on. The backend finds it by its product type
+ * (`GET /api/public/products/domain`) and the storefront adds a domain to the cart only when it
+ * exists; it sits in a group of its own so no hosting page lists it.
  */
 export const DOMAIN_PRODUCT = {
   id: 90,
   groupId: 9,
   name: 'E2E Domain Registration',
+  type: 'Domain',
   description: 'The product domain orders are placed on',
   status: 'Active',
   pricing: { monthly: 0, annual: 0 },

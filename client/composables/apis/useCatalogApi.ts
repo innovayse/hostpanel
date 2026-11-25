@@ -13,6 +13,7 @@ import { apiFetch } from '~/composables/useApi'
 import type { CatalogBundle } from '~/types/catalogbundle'
 import type { CountryOption } from '~/types/countryoption'
 import type { DomainCheckResult } from '~/types/domaincheckresult'
+import type { DomainProduct } from '~/types/domainproduct'
 import type { PortalCurrency } from '~/types/portalcurrency'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
@@ -56,6 +57,18 @@ export const useCatalogApi = () => {
    */
   const fetchProducts = <T = PortalProduct>(query?: PortalProductQuery): Promise<T[]> =>
     read<T[]>('/api/portal/public/products', { query })
+
+  /**
+   * Reads the product a domain cart line is placed against.
+   *
+   * The backend finds it by its product type, not by its name, and refuses with
+   * `DOMAIN_PRODUCT_NOT_CONFIGURED` when the operator sells no domain product.
+   *
+   * @returns The domain product.
+   * @throws Whatever `apiFetch` throws: that refusal included.
+   */
+  const fetchDomainProduct = (): Promise<DomainProduct> =>
+    read<DomainProduct>('/api/portal/public/products/domain')
 
   /**
    * Reads the product groups the storefront shows as product families.
@@ -142,6 +155,7 @@ export const useCatalogApi = () => {
 
   return {
     fetchProducts,
+    fetchDomainProduct,
     fetchProductGroups,
     fetchProductBundles,
     fetchProductFeatures,

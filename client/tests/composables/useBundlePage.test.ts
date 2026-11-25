@@ -36,10 +36,9 @@ const baseBundle: CatalogBundle = {
   components: [{ productId: 11, name: 'Starter', isPrimary: true }],
 }
 
-/** The hosting plan and the domain product of the catalogue. */
+/** The hosting plan of the catalogue; the domain product is read apart, by its type. */
 const catalogue = [
   { id: 11, groupId: 1, name: 'Starter', pricing: { monthly: 10, annual: 100 } },
-  { id: 7, groupId: 2, name: 'Domain Registration' },
 ]
 
 /** A price table with one extension. */
@@ -93,6 +92,7 @@ describe('useBundlePage', () => {
     table = {
       [readOf(CatalogPath.BillingCurrencies)]: { body: [USD_CURRENCY] },
       [readOf(CatalogPath.Products)]: { body: catalogue },
+      [readOf(CatalogPath.DomainProduct)]: { body: { id: 7, name: 'Domain Registration' } },
       [readOf(CatalogPath.ProductBundles)]: { body: [baseBundle] },
       [readOf(CatalogPath.TldPricing)]: { body: pricing },
     }
@@ -137,6 +137,17 @@ describe('useBundlePage', () => {
     expect(page.domainError.value).toBe('domains.invalidDomain')
     page.chooseDomain({ action: DomainOrderAction.Register, name: 'example.org', eppCode: '' })
     expect(page.domainError.value).toBe('domains.tldNotSupported')
+    expect(page.domainChoice.value).toBeNull()
+  })
+
+  it('refuses a domain when the operator has no domain product', async () => {
+    table[readOf(CatalogPath.ProductBundles)] = { body: [{ ...baseBundle, includesDomain: true, domainYears: 1 }] }
+    table[readOf(CatalogPath.DomainProduct)] = { status: 503, body: { type: 'DOMAIN_PRODUCT_NOT_CONFIGURED', detail: 'Domains cannot be ordered here.' } }
+    const page = await runInPage()
+
+    page.chooseDomain({ action: DomainOrderAction.Register, name: 'example.com', eppCode: '' })
+
+    expect(page.domainError.value).toBe('bundles.domain.unavailable')
     expect(page.domainChoice.value).toBeNull()
   })
 

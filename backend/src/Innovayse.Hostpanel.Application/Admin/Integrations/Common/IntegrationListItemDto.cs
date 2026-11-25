@@ -21,7 +21,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <c>PluginApi:StatusCacheSeconds</c>; <see langword="null"/> for a built-in integration and for any other plugin.
 /// </param>
 /// <param name="IconUrl">
-/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a plugin entry that ships an icon;
+/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon?v={version}</c>, the plugin version in the address so an update is never shown the cached old icon) for a plugin entry that ships an icon;
 /// <see langword="null"/> for a built-in integration and for a plugin without an icon.
 /// </param>
 /// <param name="Description">

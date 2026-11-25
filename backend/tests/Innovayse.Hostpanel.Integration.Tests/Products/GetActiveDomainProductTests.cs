@@ -1,3 +1,6 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
@@ -93,5 +96,55 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
 
         result.IsFailure.Should().BeTrue();
         result.ErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_PRODUCT_NOT_CONFIGURED);
+    }
+
+    /// <summary>
+    /// The anonymous storefront route answers the product by its type: <c>GET /api/public/products/domain</c> is 200
+    /// with the id and name of the active domain product, no sign-in needed.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GetDomainProduct_Anonymous_AnswersTheActiveDomainProductAsync()
+    {
+        int expected;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var group = ProductGroup.Create($"domains-{Guid.NewGuid():N}", null);
+            context.ProductGroups.Add(group);
+            await context.SaveChangesAsync(CancellationToken.None);
+            context.Products.Add(Product.Create(group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, SeededAt));
+            await context.SaveChangesAsync(CancellationToken.None);
+            expected = await context.Products.AsNoTracking()
+                .Where(p => p.Status == ProductStatus.Active && p.Type == ProductType.Domain)
+                .OrderBy(p => p.Name)
+                .Select(p => p.Id)
+                .FirstAsync(CancellationToken.None);
+        }
+
+        var response = await factory.CreateClient().GetAsync("/api/public/products/domain");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("id").GetInt32().Should().Be(expected);
+        body.GetProperty("name").GetString().Should().NotBeNullOrWhiteSpace();
+    }
+
+    /// <summary>
+    /// With no active domain product the route answers 503 with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c>, so the
+    /// storefront can say why a domain cannot be added instead of failing silently. Runs on a factory of its own.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GetDomainProduct_NoActiveDomainProduct_Answers503WithTheCodeAsync()
+    {
+        await using var isolated = new IntegrationTestFactory();
+        await isolated.InitializeAsync();
+
+        var response = await isolated.CreateClient().GetAsync("/api/public/products/domain");
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.DOMAIN_PRODUCT_NOT_CONFIGURED);
     }
 }

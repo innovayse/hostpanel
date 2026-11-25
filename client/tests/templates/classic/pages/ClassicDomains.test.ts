@@ -26,7 +26,6 @@ import type { TldPricing } from '~/types/tldpricing'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
-import { ProductType } from '~/types/producttype'
 
 /** The price table the catalogue answers with. */
 const pricing: TldPricing = {
@@ -92,7 +91,7 @@ describe('ClassicDomains', () => {
     table = {
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`GET ${CatalogPath.TldPricing}`]: { body: pricing },
-      [`GET ${CatalogPath.Products}`]: { body: [{ id: 99, type: ProductType.Domain }] },
+      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 99, name: 'Domain Registration' } },
     }
     stub = await startTransport(routeTable(table))
   })
@@ -157,6 +156,18 @@ describe('ClassicDomains', () => {
       amount: 10,
       currency: 'USD',
     })
+  })
+
+  it('tells the visitor why nothing was added when the operator has no domain product', async () => {
+    table[`GET ${CatalogPath.DomainProduct}`] = { status: 503, body: { type: 'DOMAIN_PRODUCT_NOT_CONFIGURED', detail: 'Domains cannot be ordered here.' } }
+    answerCheck({ domain: 'example.com', available: true, status: DomainAvailabilityStatus.Available })
+    const wrapper = await mountDomains()
+    await search(wrapper, 'example.com')
+
+    await wrapper.find('[data-testid="classic-domains-register"]').trigger('click')
+
+    expect(useCartStore().items).toEqual([])
+    expect(wrapper.find('[data-testid="classic-domains-error"]').text()).toBe('Domains cannot be ordered here.')
   })
 
   it('disables the register button once the domain is in the cart', async () => {

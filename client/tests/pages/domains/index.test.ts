@@ -63,6 +63,7 @@ const TemplateDomains = defineComponent({
     categories: { type: Array, default: () => [] },
     activeCategory: { type: String, default: '' },
     inCart: { type: Array, default: () => [] },
+    error: { type: String, default: '' },
   },
   emits: ['search', 'update:category', 'add'],
   setup(props) {
@@ -103,7 +104,7 @@ describe('domains page', () => {
     stubTemplateSlots({ [TemplateSlot.Domains]: TemplateDomains })
     window.localStorage.clear()
     Object.assign(replies, {
-      [`GET ${CatalogPath.Products}`]: { body: [{ id: 7, groupId: 2, name: 'Domain Registration' }] },
+      [`GET ${CatalogPath.DomainProduct}`]: { body: { id: 7, name: 'Domain Registration' } },
       [`GET ${DomainPath.TldPricing}`]: { body: pricing('USD') },
       [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
       [`POST ${DomainPath.DomainCheck}`]: { body: { domain: 'example.com', available: true } },
@@ -165,14 +166,44 @@ describe('domains page', () => {
     expect(items[0]).toMatchObject({ domain: 'example.com', amount: 10, currency: 'USD' })
   })
 
-  it('adds nothing when the operator has no domain product', async () => {
-    replies[`GET ${CatalogPath.Products}`] = { body: [] }
+  it('adds nothing and shows the API sentence when the operator has no domain product', async () => {
+    replies[`GET ${CatalogPath.DomainProduct}`] = { status: 503, body: { type: 'DOMAIN_PRODUCT_NOT_CONFIGURED', detail: 'Domains cannot be ordered here.' } }
     const wrapper = await mountDomains()
 
     wrapper.findComponent(TemplateDomains).vm.$emit('add', 'example.com')
     await flushPromises()
 
     expect(useCartStore().items).toEqual([])
+    expect(received.props.error).toBe('Domains cannot be ordered here.')
+  })
+
+  it('finds the domain product by its type and never reads the catalogue for it', async () => {
+    await mountDomains()
+
+    expect(requestsTo(stub().requests, CatalogPath.DomainProduct)).toHaveLength(1)
+    expect(requestsTo(stub().requests, CatalogPath.Products)).toHaveLength(0)
+  })
+
+  it('tells the visitor when an extension has no price instead of doing nothing, and clears it on the next search', async () => {
+    const wrapper = await mountDomains()
+
+    wrapper.findComponent(TemplateDomains).vm.$emit('add', 'example.org')
+    await flushPromises()
+    expect(received.props.error).toBe('domains.cannotAdd')
+
+    wrapper.findComponent(TemplateDomains).vm.$emit('search', 'example')
+    await flushPromises()
+    expect(received.props.error).toBe('')
+  })
+
+  it('hands the template the sentence of a name the API refused', async () => {
+    replies[`POST ${DomainPath.DomainCheck}`] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { Domain: ['Domain name is not valid.'] } } }
+    const wrapper = await mountDomains()
+
+    wrapper.findComponent(TemplateDomains).vm.$emit('search', 'bad name!')
+    await until(() => received.props.error === 'Domain name is not valid.', 'the refusal to reach the template')
+
+    expect(received.props.results).toEqual([])
   })
 
   it('looks the typed name up at once when the address carries it', async () => {

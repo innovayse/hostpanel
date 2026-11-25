@@ -361,6 +361,9 @@
   <data name="DomainNameRequired" xml:space="preserve">
     <value>El nombre de dominio debe ser un nombre de dominio completo válido (p. ej., «example.com»).</value>
   </data>
+  <data name="DomainNameInvalid" xml:space="preserve">
+    <value>El nombre de dominio solo puede contener letras, dígitos y guiones en cada parte, una parte no puede empezar ni terminar con un guion ni superar los 63 caracteres, y el nombre necesita una extensión (p. ej., «example.com»).</value>
+  </data>
   <data name="DomainYearsRange" xml:space="preserve">
     <value>Los años deben estar entre 1 y 10.</value>
   </data>

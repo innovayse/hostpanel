@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 using Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Queries.GetActiveDomainProduct;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProductOptions;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProducts;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductTrialDefaults;
@@ -98,6 +99,27 @@ public sealed class ProductsController : BaseApiController
     public async Task<IActionResult> ListCatalogAsync([FromQuery] ListCatalogProductsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<CatalogProductDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// The product a domain order line is placed against: the active product whose type is
+    /// <c>Domain</c>. Anonymous: the storefront needs it before sign-in to put a domain in the cart. It is read
+    /// by type, not from the priced catalogue, because a domain is priced from the extension table and the
+    /// product itself carries no price the catalogue would list it by.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the product's id and name; 503 with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c> when this installation
+    /// sells no domain product; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("/api/public/products/domain")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(DomainProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetDomainProductAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<DomainProductDto>>(new GetActiveDomainProductQuery(), ct);
         return HandleResult(outcome);
     }
 

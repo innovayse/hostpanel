@@ -127,6 +127,66 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     }
 
     /// <summary>
+    /// A malformed name is refused by the validator before any registrar is asked, so the storefront never
+    /// reads it as a taken domain: 400 <c>VALIDATION_ERROR</c> with the message on the <c>domain</c> field.
+    /// </summary>
+    /// <param name="name">A name that is no domain name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("bad name!.com")]
+    [InlineData("-bad-.com")]
+    [InlineData("bad-.com")]
+    [InlineData("example")]
+    [InlineData("exa..mple.com")]
+    public async Task CheckAvailabilityPost_WithMalformedDomain_Returns400ValidationErrorAsync(string name)
+    {
+        var httpClient = factory.CreateClient();
+
+        var response = await httpClient.PostAsJsonAsync("/api/domains/check", new { domain = name });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("type").GetString().Should().Be(SharedErrorCodes.ValidationError);
+        body.GetProperty("errors").EnumerateObject().Should().NotBeEmpty();
+    }
+
+    /// <summary>The GET form refuses a malformed name the same way as the POST form.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CheckAvailability_WithMalformedDomain_Returns400ValidationErrorAsync()
+    {
+        var httpClient = factory.CreateClient();
+
+        var response = await httpClient.GetAsync($"/api/domains/check?name={Uri.EscapeDataString("bad name!.com")}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("type").GetString().Should().Be(SharedErrorCodes.ValidationError);
+    }
+
+    /// <summary>The refusal of a malformed name is worded in the request's language, in every language the API speaks.</summary>
+    /// <param name="language">The <c>X-Language</c> value.</param>
+    /// <param name="script">A pattern only text in that language's script matches.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("ru", "[А-Яа-яЁё]")]
+    [InlineData("hy", "[Ա-Ֆա-ֆ]")]
+    [InlineData("de", "Domainname")]
+    [InlineData("es", "nombre de dominio")]
+    [InlineData("fr", "nom de domaine")]
+    public async Task CheckAvailabilityPost_WithMalformedDomain_AnswersInTheRequestLanguageAsync(string language, string script)
+    {
+        var httpClient = factory.CreateClient();
+        httpClient.DefaultRequestHeaders.Add("X-Language", language);
+
+        var response = await httpClient.PostAsJsonAsync("/api/domains/check", new { domain = "-bad-.com" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("detail").GetString().Should().MatchRegex(script);
+    }
+
+    /// <summary>
     /// Anonymous caller hits <c>GET /api/domains/check?name=available.com</c>.
     /// <see cref="StubRegistrarProvider"/> always answers available, so the result reads available.
     /// </summary>

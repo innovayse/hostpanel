@@ -23,7 +23,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// </param>
 /// <param name="IsPlugin">True when the integration comes from an installed plugin (not built-in).</param>
 /// <param name="IconUrl">
-/// Path of the admin icon endpoint for a plugin integration that ships an icon; <see langword="null"/> for a built-in
+/// Path of the admin icon endpoint, with the plugin version in its query, for a plugin integration that ships an icon; <see langword="null"/> for a built-in
 /// integration and for a plugin without an icon.
 /// </param>
 public sealed record IntegrationDetailDto(

@@ -262,13 +262,14 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         try
         {
             var registry = new FakePluginRegistry();
-            registry.Add(PluginActivationTestSeeds.Plugin(withIconId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
+            var withIconManifest = PluginActivationTestSeeds.Plugin(withIconId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest;
+            registry.Add(withIconManifest);
             registry.Add(PluginActivationTestSeeds.Plugin(plainId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
             registry.AddIcon(withIconId, new PluginIconDto("image/png", [1, 2, 3], "\"t\""));
 
             var rows = await NewHandler(registry).HandleAsync(new ListPluginsQuery(), CancellationToken.None);
 
-            rows.Value!.Single(r => r.Id == withIconId).IconUrl.Should().Be($"/api/admin/plugins/{withIconId}/icon");
+            rows.Value!.Single(r => r.Id == withIconId).IconUrl.Should().Be($"/api/admin/plugins/{withIconId}/icon?v={Uri.EscapeDataString(withIconManifest.Version)}");
             rows.Value!.Single(r => r.Id == plainId).IconUrl.Should().BeNull();
         }
         finally

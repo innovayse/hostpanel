@@ -10,6 +10,7 @@
     "registerNow": "Registrieren",
     "invalidDomain": "Bitte geben Sie eine gültige Domain mit Endung ein (z. B. meineseite.de)",
     "checkFailed": "Domain-Prüfung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "cannotAdd": "Diese Domain kann gerade nicht in den Warenkorb gelegt werden. Bitte versuchen Sie es erneut.",
     "tldNotSupported": "Diese TLD kann nicht registriert werden",
     "alreadyInCart": "Im Warenkorb",
     "tabRegister": "Registrieren",

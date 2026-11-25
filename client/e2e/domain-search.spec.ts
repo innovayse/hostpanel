@@ -38,3 +38,26 @@ test('a registered name is reported as taken and offers no add button', async ({
   await expect(page.getByTestId(`domain-add-${TAKEN_DOMAIN}`)).toHaveCount(0)
   await expect(page.getByTestId(`domain-result-${name}.net`)).toHaveAttribute('data-status', 'available')
 })
+
+test.describe('before the page is hydrated', () => {
+  test.use({ javaScriptEnabled: false })
+
+  test('Enter in the search field is a GET to the domains page that carries the typed name', async ({ page }) => {
+    await page.goto('/domains')
+
+    const input = page.getByTestId('domain-search-input')
+    await input.fill(FREE_TERM)
+    await input.press('Enter')
+
+    await expect(page).toHaveURL(new RegExp(`/domains\\?domain=${FREE_TERM}$`))
+  })
+})
+
+test('the page fits a phone screen without sideways scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/domains')
+  await waitForHydration(page)
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+  expect(overflow).toBeLessThanOrEqual(0)
+})

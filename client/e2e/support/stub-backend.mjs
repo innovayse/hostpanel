@@ -73,6 +73,7 @@ import {
   DEPARTMENTS,
   TOP_UP_INVOICE_ID,
   DOMAIN,
+  DOMAIN_PRODUCT,
   DOMAIN_NAMESERVERS,
   DOMAIN_ORDER,
   EPP_CODE,
@@ -548,6 +549,11 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   }
   if (isGet && path === '/api/public/product-groups') {
     send(res, 200, PRODUCT_GROUPS)
+    return true
+  }
+  if (isGet && path === '/api/public/products/domain') {
+    // Like the real endpoint: the id and name of the active product whose type is Domain.
+    send(res, 200, { id: DOMAIN_PRODUCT.id, name: DOMAIN_PRODUCT.name })
     return true
   }
   if (isGet && path === '/api/public/products') {

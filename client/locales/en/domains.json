@@ -10,6 +10,7 @@
     "registerNow": "Register",
     "invalidDomain": "Please enter a valid domain with extension (e.g. mysite.com)",
     "checkFailed": "Domain check failed. Please try again.",
+    "cannotAdd": "This domain cannot be added to the cart right now. Please try again.",
     "tldNotSupported": "This TLD is not available for registration",
     "alreadyInCart": "In cart",
     "tabRegister": "Register",

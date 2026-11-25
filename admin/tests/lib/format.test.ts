@@ -3,7 +3,7 @@
  * fall back on empty or implausible input, `toDateInputValue` cuts the day.
  */
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMonthDay, formatRelativeFromNow, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, toDateInputValue } from '@/lib/format'
+import { formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMonthDay, formatRelativeFromNow, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, joinParts, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -30,6 +30,18 @@ describe('format', () => {
     expect(toDateInputValue('2026-03-04T10:00:00Z')).toBe('2026-03-04')
     expect(toDateInputValue(null)).toBe('')
     expect(toDateInputValue('nonsense')).toBe('')
+  })
+})
+
+describe('joinParts', () => {
+  it('joins the present segments with the separator', () => {
+    expect(joinParts(['Online', '15 accounts', '7.4.2'])).toBe('Online · 15 accounts · 7.4.2')
+  })
+
+  it('skips missing and blank segments so no separator dangles', () => {
+    expect(joinParts(['Online', null, undefined, '  ', '7.4.2'])).toBe('Online · 7.4.2')
+    expect(joinParts(['Online', ''])).toBe('Online')
+    expect(joinParts([null, ''])).toBe('')
   })
 })
 

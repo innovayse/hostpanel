@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The permissions list of a plugin (Overview tab and install dialog) shows a label for every capability the plugin SDK defines (#1450), in every admin language, instead of the raw message key. A test fails when the SDK gets a capability the admin has no label for.
 - The connection status of a panel plugin on its Settings tab reflects its servers (#1450), how many are online, offline or not tested, instead of "Not tested yet".
+- A server connection test whose panel reports no account count no longer says "0 accounts" (#1455): an unknown count is left out of the result line and shown as a dash in the server choice of a service, and a missing version no longer leaves a separator at the end of the line.
+- The connection status of a panel plugin says "Partially online" when some of its servers are online and some offline (#1455), instead of "Offline"; it says "Offline" only when every tested server is down.
+- The Change package dialog asks to choose the package while it shows the panel's list, and asks to type the name only when the panel cannot list packages (#1455).
+- The plugin icons on the plugins list carry the plugin's name as their alt text (#1455); they stay hidden from assistive technology only where the name is shown right beside them in a header.
 
 ## [0.10.0] - 2026-11-24
 

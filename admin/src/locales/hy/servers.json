@@ -98,7 +98,8 @@
     "deleteServer": "Ջնջել սերվերը",
     "deleteGroup": "Ջնջել խումբը",
     "connectionFailed": "Միացումը ձախողվեց",
-    "onlineDetails": "Առցանց · հաշիվներ՝ {accounts} · {version}",
+    "accountsCount": "հաշիվներ՝ {count}",
+    "partiallyOnline": "Մասամբ առցանց",
     "deleteServerMessage": "Ջնջե՞լ «{name}»-ը։ Այս գործողությունը հնարավոր չէ չեղարկել։",
     "deleteGroupMessage": "Ջնջե՞լ «{name}» խումբը։ Դրա սերվերները կապանջատվեն։"
   },

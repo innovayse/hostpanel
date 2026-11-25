@@ -328,6 +328,7 @@
     "newPassword": "Neues Passwort",
     "enterNewPassword": "Neues Passwort eingeben",
     "enterTheNewHostingPackage": "Geben Sie den Namen des neuen Hosting-Pakets ein.",
+    "chooseTheNewHostingPackage": "Wählen Sie das neue Hosting-Paket aus.",
     "packageName": "Paketname",
     "eGStarterPlan": "z. B. starter_plan",
     "suspendService": "Service sperren",

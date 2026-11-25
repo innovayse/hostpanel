@@ -76,10 +76,16 @@ describe('IntegrationStatusSidebar', () => {
     })
 
     const servers = wrapper.get('[data-testid="integration-status-servers"]')
-    expect(servers.get('[data-testid="integration-status-servers-state"]').text()).toBe('Offline')
+    expect(servers.get('[data-testid="integration-status-servers-state"]').text()).toBe('Partially online')
     expect(servers.text()).toContain('2 of 3 servers online')
     expect(servers.text()).toContain('1 offline')
     expect(wrapper.find('[data-testid="integration-status-idle"]').exists()).toBe(false)
+  })
+
+  it('says offline when every tested server is offline', () => {
+    const wrapper = mountSidebar({ servers: [serverOptionDto({ id: 1, isOnline: false }), serverOptionDto({ id: 2, isOnline: false })] })
+
+    expect(wrapper.get('[data-testid="integration-status-servers-state"]').text()).toBe('Offline')
   })
 
   it('names the servers never tested', () => {

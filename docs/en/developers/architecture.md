@@ -43,11 +43,11 @@ Dependencies point inward. Outer layers may reference inner ones; inner layers n
 | **API** | `Innovayse.Hostpanel.API` | Controllers, middleware, startup. The composition root: wires everything together. |
 | **Shared** | `Shared` | Cross-cutting code for the main project: `BaseApiController`, `StatusMapping`, shared models. Plugins do not reference this project. |
 
-## The plugin SDK and bundled plugins
+## The plugin SDK and plugins
 
 The SDK lives at `backend/src/Hostpanel.Sdk` as a git submodule (hosted separately at `github.com/innovayse/hostpanel-sdk`). Clone the repository with `--recurse-submodules`, or run `git submodule update --init` after a plain clone.
 
-Bundled plugins ship with the server image and live under `backend/src/Innovayse.Providers.*`. They are the reference implementations for plugin authors.
+No plugin is built or shipped with the server image. Payment gateways, registrars and hosting panels (other than the cPanel provider the host still drives itself) are plugins that an operator installs from the plugin registry or by upload, and each one lives in a repository of its own, named `hostpanel-<name>`. Read the code of an existing plugin from the [plugin marketplace](https://plugins-hostpanel.innovayse.com) before you write your own.
 
 See the [Write a plugin](./write-a-plugin) guide for the full plugin authoring guide.
 

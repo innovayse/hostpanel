@@ -48,7 +48,7 @@ Setup becomes available once the first invoice is paid in full.
 Click a service to open it. The **Overview** tab shows your plan, billing details and quick links.
 
 - **Change Password**: enter a new password and click **Change Password**. Requires the **View & Modify Product Passwords** permission.
-- **Login to Control Panel**: opens your hosting control panel directly.
+- **Open control panel**: opens your hosting control panel in a new tab, already signed in. The button shows the icon of the panel's plugin when the provider has one. It needs the **Perform Single Sign-On** permission and an account that allows single sign-on (otherwise you are told that single sign-on is not enabled for the account). Some panels cannot sign you in from outside. For those a dialog shows the panel's sign in page as a link that opens in a new tab, with your user name, your domain and the server; it never shows a password, so sign in with the password you set for the account. If the panel refuses, you see its message and nothing opens.
 - **Request Cancellation**: choose **Immediate** (cancels straight away) or **End of Billing Period** (runs until the end of the current period), enter a reason and click **Submit Cancellation Request**. Requires the **Place New Orders/Upgrades/Cancellations** permission.
 - **Change Plan**: the **Change Plan** tab lists the other plans of the same product group with the prorated amount for the rest of the current billing period. An upgrade raises an invoice and the plan changes once you pay it. A downgrade credits the amount to your balance, at once or after staff approve it, depending on how your provider has set it up.
 

@@ -142,7 +142,7 @@ Updating to a release that moves the sign-on client package to 5.1 resets the ad
   { name: 'ALLOWED_HOSTS', type: 'string', default: 'panel.example.test;hostpanel-api;localhost', description: 'Host names the API answers to, semicolon-separated. Include the public host, hostpanel-api and localhost. Required. Tiers: all.' },
   { name: 'PANEL_DEV_ORIGIN', type: 'string', default: 'http://panel.example.test', description: 'Dev-proxy origin the API allows alongside localhost (CORS). Tiers: dev.' },
   { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Public address(es) this installation connects to SSH key agents from, comma-separated. New in 0.4.0. Tiers: prod, hub.' },
-  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Control panels reachable only over a VPN, as hostname=address pairs, comma-separated. New in 0.4.0. Tiers: prod, hub.' },
+  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Control panels reachable only over a VPN, as hostname=address pairs, comma-separated (PanelNetwork__HostAddresses). A server can also carry its own API address in the admin panel, see Servers and server groups. New in 0.4.0. Tiers: prod, hub.' },
 ]" />
 
 Servers → SSH shows the exact firewall rules once SSH_AGENT_SOURCE_ADDRESSES is set. See [SSH key agent](/servers/ssh-key-agent).

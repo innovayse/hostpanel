@@ -221,6 +221,27 @@ public sealed partial class ResourceCoverageTests
     }
 
     /// <summary>
+    /// No resource file declares one key twice. The compiler only warns (MSB3568) and keeps one of the entries, so a duplicate
+    /// that differs would silently answer with whichever wins; the source files are read because the compiled set has no duplicate.
+    /// </summary>
+    [Fact]
+    public void EveryResourceFile_DeclaresEachKeyOnce()
+    {
+        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+
+        var duplicates = Directory.EnumerateFiles(Path.Combine(backendRoot, "src"), "*.resx", SearchOption.AllDirectories)
+            .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .SelectMany(file => System.Xml.Linq.XDocument.Load(file).Descendants("data")
+                .Select(data => (string?)data.Attribute("name"))
+                .GroupBy(name => name, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1)
+                .Select(group => $"{Path.GetFileName(file)}: {group.Key}"))
+            .ToList();
+
+        duplicates.Should().BeEmpty("a resource key must appear once per file");
+    }
+
+    /// <summary>
     /// Matches a localizer lookup by a literal key, <c>L["Key"]</c> or <c>L["Key", arg]</c> as a validator writes it,
     /// or <c>_localizer["Key"]</c> as a handler holding the localizer in a field writes it, or
     /// <c>localizer["Key"]</c> as a shared rule that is handed the localizer writes it.

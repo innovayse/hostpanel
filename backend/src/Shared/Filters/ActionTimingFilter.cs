@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -56,6 +57,14 @@ public sealed class ActionTimingFilter : IAsyncActionFilter
 
             if (executed.Exception is not null && !executed.ExceptionHandled)
             {
+                // MVC hands an action's exception back here instead of throwing it, so a request the
+                // client aborted (a reload) arrives on this path as well as in the catch below.
+                if (context.HttpContext.IsClientAbort(executed.Exception))
+                {
+                    LogCancelled(operation, elapsedMs);
+                    return;
+                }
+
                 _logger.LogError(
                     executed.Exception, "ACTION FAILED: {Operation} in {ElapsedMs}ms", operation, elapsedMs);
                 return;
@@ -79,11 +88,9 @@ public sealed class ActionTimingFilter : IAsyncActionFilter
                     statusCode);
             }
         }
-        catch (OperationCanceledException) when (context.HttpContext.RequestAborted.IsCancellationRequested)
+        catch (Exception exception) when (context.HttpContext.IsClientAbort(exception))
         {
-            // The client went away: an expected outcome, not a server failure.
-            var elapsedMs = (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds;
-            _logger.LogInformation("ACTION CANCELLED: {Operation} in {ElapsedMs}ms", operation, elapsedMs);
+            LogCancelled(operation, (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds);
             throw;
         }
         catch (Exception exception)
@@ -92,6 +99,17 @@ public sealed class ActionTimingFilter : IAsyncActionFilter
             _logger.LogError(exception, "ACTION FAILED: {Operation} in {ElapsedMs}ms", operation, elapsedMs);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Logs an action the client aborted: an expected outcome, not a server failure, so one
+    /// Information line and no exception.
+    /// </summary>
+    /// <param name="operation">The operation name.</param>
+    /// <param name="elapsedMs">Milliseconds from the start of the action.</param>
+    private void LogCancelled(string operation, long elapsedMs)
+    {
+        _logger.LogInformation("ACTION CANCELLED: {Operation} in {ElapsedMs}ms", operation, elapsedMs);
     }
 
     /// <summary>`{Controller}.{Action}`, the controller named without its `Controller` suffix.</summary>

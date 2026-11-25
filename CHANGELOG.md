@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A request the browser cancels (a page reload or a navigation) is no longer logged as a server failure. The `ACTION FAILED` line of the action timing filter and Wolverine's `Invocation of {Message} failed!` line both showed the cancelled database call as an error with a stack trace although the response was fine; they now read as an Information line (`ACTION CANCELLED`) and a Debug entry. A cancellation that is not a client abort, such as a timeout or a host that is stopping, and every real handler exception are still logged as errors. The demotion of expected Wolverine errors, which was written but never switched on, is now registered at start.
 - The permissions list of a plugin (Overview tab and install dialog) shows a label for every capability the plugin SDK defines (#1450), in every admin language, instead of the raw message key. A test fails when the SDK gets a capability the admin has no label for.
 - The connection status of a panel plugin on its Settings tab reflects its servers (#1450), how many are online, offline or not tested, instead of "Not tested yet".
 - A server connection test whose panel reports no account count no longer says "0 accounts" (#1455): an unknown count is left out of the result line and shown as a dash in the server choice of a service, and a missing version no longer leaves a separator at the end of the line.

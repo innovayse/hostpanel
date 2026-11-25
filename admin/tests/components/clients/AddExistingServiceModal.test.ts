@@ -99,13 +99,13 @@ const fill = async (wrapper: VueWrapper): Promise<void> => {
 }
 
 /**
- * Reads the JSON body of the create call.
+ * Reads the JSON body of the last create call.
  *
  * @param mock - The stubbed `fetch`.
  * @returns The parsed body, undefined when the modal made no create call.
  */
 const createBody = (mock: ReturnType<typeof vi.fn>): unknown => {
-  const call = mock.mock.calls.find(
+  const call = [...mock.mock.calls].reverse().find(
     ([url, init]) => `${(init as RequestInit | undefined)?.method ?? 'GET'} ${String(url)}` === CREATE_LINE,
   )
   return call === undefined ? undefined : JSON.parse(String((call[1] as RequestInit).body))

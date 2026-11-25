@@ -140,7 +140,7 @@ export const useServicesApi = () => {
    * @returns The URL.
    */
   const getPanelLoginUrl = (id: number | string): Promise<{ url: string }> =>
-    request<{ url: string }>(`${ApiPath.Provisioning}/${id}/cpanel-sso`)
+    request<{ url: string }>(`${ApiPath.Provisioning}/${id}/panel-sso`)
 
   /**
    * Provisions a pending service.

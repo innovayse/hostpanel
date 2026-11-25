@@ -228,7 +228,7 @@
       "sectionManage": "Управление",
       "sectionActions": "Действия",
       "sectionQuickLinks": "Быстрые ссылки",
-      "actionLoginCpanel": "Открыть панель управления",
+      "actionOpenPanel": "Открыть панель управления",
       "actionOpenTicket": "Создать тикет",
       "linkWebmail": "Открыть веб-почту",
       "whatToday": "Что вы хотите сделать сегодня?",

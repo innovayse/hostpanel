@@ -217,3 +217,34 @@ test('syncing a service with its panel asks first, sends the password choice and
   expect(syncs).toHaveLength(1)
   expect(syncs[0]?.body).toEqual({ pushPassword: true })
 })
+
+test('the Open panel button shows the icon of the plugin that serves the server, and opens the panel through the generic sign-in route', async ({ page }) => {
+  const provisioned: ServiceDetail = {
+    ...activeServiceDetail,
+    account: { ...activeServiceDetail.account, provisioningRef: 'acct1' },
+    server: { name: 'srv', hostname: 'srv.example.test', ipAddress: null, panelPlugin: { id: 'acme-panel', name: 'Acme Panel', hasIcon: true } },
+  }
+  const ssoPath = `/api/provisioning/${provisioned.id}/panel-sso`
+  const api = await stubServicePage(page, provisioned, [json(HttpMethod.Get, ssoPath, { url: 'https://panel.example.test/sso' })])
+  await page.route('**/api/admin/plugins/acme-panel/icon', (route) =>
+    route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8"/></svg>' }))
+
+  await page.goto(pageUrl)
+
+  const icon = page.getByTestId('client-service-panel').getByTestId('plugin-avatar-image')
+  await expect(icon).toHaveAttribute('alt', 'Acme Panel')
+  await expect(icon).toHaveAttribute('src', '/api/admin/plugins/acme-panel/icon')
+  await page.context().route('https://panel.example.test/**', (route) => route.fulfill({ body: '' }))
+  await page.getByTestId('client-service-panel').click()
+  await expect.poll(() => api.calls.filter((call) => call.path === ssoPath).length).toBe(1)
+})
+
+test('the Open panel button keeps the generic icon when no plugin serves the server', async ({ page }) => {
+  const provisioned: ServiceDetail = { ...activeServiceDetail, account: { ...activeServiceDetail.account, provisioningRef: 'acct1' } }
+  await stubServicePage(page, provisioned, [])
+
+  await page.goto(pageUrl)
+
+  await expect(page.getByTestId('client-service-panel')).toBeVisible()
+  await expect(page.getByTestId('client-service-panel').getByTestId('plugin-avatar')).toHaveCount(0)
+})

@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangePassword;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ProvisionService;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.SyncServiceWithPanel;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
-using Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetPanelSsoUrl;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.GetServiceCredentials;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.ListServicePackages;
 using Innovayse.Hostpanel.Application.Services.Commands.SuspendService;
@@ -279,12 +279,12 @@ public sealed class ProvisioningController : BaseApiController
     /// 200 with the control-panel sign-in link; 400 with <c>VALIDATION_ERROR</c>,
     /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id
     /// names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
-    /// 502 with <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot
-    /// issue one, or <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
+    /// 502 with <c>SERVICE_PANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot
+    /// issue one, or <c>SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
     /// 429 when the rate limit is hit.
     /// </returns>
-    [HttpGet("{id:int}/cpanel-sso")]
-    [ProducesResponseType(typeof(ControlPanelSsoDto), StatusCodes.Status200OK)]
+    [HttpGet("{id:int}/panel-sso")]
+    [ProducesResponseType(typeof(PanelSsoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
@@ -292,9 +292,9 @@ public sealed class ProvisioningController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> GetPanelSsoUrlAsync(int id, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<ControlPanelSsoDto>>(new GetControlPanelSsoUrlQuery(id), ct);
+        var outcome = await _bus.InvokeAsync<Result<PanelSsoDto>>(new GetPanelSsoUrlQuery(id), ct);
         return HandleResult(outcome);
     }
 }

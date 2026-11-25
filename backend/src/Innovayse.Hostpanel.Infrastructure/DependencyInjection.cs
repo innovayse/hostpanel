@@ -821,6 +821,7 @@ public static class DependencyInjection
         // connection tester and the disk usage service.
         services.AddScoped<IServerModulePluginResolver, ServerModulePluginResolver>();
         services.AddScoped<IServerModuleCatalog, ServerModuleCatalog>();
+        services.AddScoped<IServerPanelPluginReader, ServerPanelPluginReader>();
         services.AddScoped<PanelPluginCaller>();
         services.AddScoped<PanelConnectionReader>();
         services.AddScoped<PanelPluginAccountReader>();

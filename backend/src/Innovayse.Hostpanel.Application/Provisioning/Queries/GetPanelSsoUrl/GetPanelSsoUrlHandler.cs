@@ -9,12 +9,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Wolverine;
 
-namespace Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
+namespace Innovayse.Hostpanel.Application.Provisioning.Queries.GetPanelSsoUrl;
 
 /// <summary>
 /// Generates a time-limited control-panel sign-in link for direct client access to their hosting account.
 /// </summary>
-public sealed class GetControlPanelSsoUrlHandler
+public sealed class GetPanelSsoUrlHandler
 {
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
@@ -29,7 +29,7 @@ public sealed class GetControlPanelSsoUrlHandler
     private readonly ICurrentUserService _caller;
 
     /// <summary>Logs a provider failure without putting its detail on the wire.</summary>
-    private readonly ILogger<GetControlPanelSsoUrlHandler> _logger;
+    private readonly ILogger<GetPanelSsoUrlHandler> _logger;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
@@ -37,12 +37,12 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <param name="providerFactory">Creates the provisioning provider configured for the service's server.</param>
     /// <param name="caller">The caller, whose address a panel may bind the sign-in session to.</param>
     /// <param name="logger">Logs a provider failure without putting its detail on the wire.</param>
-    public GetControlPanelSsoUrlHandler(
+    public GetPanelSsoUrlHandler(
         IHostpanelDbContext context,
         IMessageBus bus,
         IProvisioningProviderFactory providerFactory,
         ICurrentUserService caller,
-        ILogger<GetControlPanelSsoUrlHandler> logger)
+        ILogger<GetPanelSsoUrlHandler> logger)
     {
         _context = context;
         _bus = bus;
@@ -61,16 +61,16 @@ public sealed class GetControlPanelSsoUrlHandler
     /// <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
     /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server,
-    /// <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not an
+    /// <c>SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not an
     /// https address on its own server, or the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses with a reason, or
-    /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one.
+    /// <c>SERVICE_PANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one.
     /// </returns>
-    public async Task<Result<ControlPanelSsoDto>> HandleAsync(GetControlPanelSsoUrlQuery query, CancellationToken ct)
+    public async Task<Result<PanelSsoDto>> HandleAsync(GetPanelSsoUrlQuery query, CancellationToken ct)
     {
         var service = await _context.ClientServices.FirstOrDefaultAsync(s => s.Id == query.ServiceId, ct);
         if (service is null)
         {
-            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
+            return Result<PanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
         }
 
         // A terminated service's reference outlives its account: the panel no longer holds it, so
@@ -78,26 +78,26 @@ public sealed class GetControlPanelSsoUrlHandler
         var account = service.RequireHostingAccount();
         if (account.IsFailure)
         {
-            return Result<ControlPanelSsoDto>.FailureCode(account.ErrorCode!);
+            return Result<PanelSsoDto>.FailureCode(account.ErrorCode!);
         }
 
         var server = await _bus.FindServerAsync(service, ct);
         if (server is null)
         {
-            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NO_SERVER_ASSIGNED);
+            return Result<PanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NO_SERVER_ASSIGNED);
         }
 
         // The browser that asked is the one that opens the link. Some panels open a
         // session only from the address it was issued for; behind the portal's BFF this is the
         // visitor's address, forwarded in X-Forwarded-For and resolved by the trusted-proxy step.
-        // SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED is the provider saying the panel named an address that is not on its own
+        // SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED is the provider saying the panel named an address that is not on its own
         // server: the caller only learns that the session was not accepted.
         var url = await PanelCall.RunAsync(
-            () => _providerFactory.CreateFor(server).GetCPanelSsoUrlAsync(new ControlPanelSsoOrder(service.Id, account.Value!, _caller.IpAddress), ct),
-            _logger, "Issuing a control panel SSO URL", service.Id, server.Id, HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED,
-            HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
+            () => _providerFactory.CreateFor(server).GetPanelSsoUrlAsync(new PanelSsoOrder(service.Id, account.Value!, _caller.IpAddress), ct),
+            _logger, "Issuing a control panel SSO URL", service.Id, server.Id, HostpanelErrorCodes.SERVICE_PANEL_SSO_UPSTREAM_FAILED,
+            HostpanelErrorCodes.SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED);
         return url.IsSuccess
-            ? Result<ControlPanelSsoDto>.Success(new ControlPanelSsoDto(url.Value!))
-            : Result<ControlPanelSsoDto>.FailureCode(url.ErrorCode!);
+            ? Result<PanelSsoDto>.Success(new PanelSsoDto(url.Value!))
+            : Result<PanelSsoDto>.FailureCode(url.ErrorCode!);
     }
 }

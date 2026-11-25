@@ -20,7 +20,7 @@ public sealed class PanelRefusalCodesTests(IntegrationTestFactory factory) : ICl
         {
             ["change-package"] = (http, id) => http.PostAsJsonAsync($"/api/provisioning/{id}/change-package", new { newPackage = "premium" }),
             ["change-password"] = (http, id) => http.PostAsJsonAsync($"/api/provisioning/{id}/change-password", new { newPassword = "N3wPassw0rd!" }),
-            ["cpanel-sso"] = (http, id) => http.GetAsync($"/api/provisioning/{id}/cpanel-sso"),
+            ["panel-sso"] = (http, id) => http.GetAsync($"/api/provisioning/{id}/panel-sso"),
             ["credentials"] = (http, id) => http.GetAsync($"/api/provisioning/{id}/credentials"),
         };
 
@@ -79,11 +79,11 @@ public sealed class PanelRefusalCodesTests(IntegrationTestFactory factory) : ICl
     [Theory]
     [InlineData("change-package", HostpanelErrorCodes.PANEL_PACKAGE_UNKNOWN, HttpStatusCode.Conflict)]
     [InlineData("change-password", HostpanelErrorCodes.PANEL_PASSWORD_REJECTED, HttpStatusCode.Conflict)]
-    [InlineData("cpanel-sso", HostpanelErrorCodes.PANEL_ACCOUNT_NOT_FOUND, HttpStatusCode.Conflict)]
+    [InlineData("panel-sso", HostpanelErrorCodes.PANEL_ACCOUNT_NOT_FOUND, HttpStatusCode.Conflict)]
     [InlineData("credentials", HostpanelErrorCodes.PANEL_OPERATION_NOT_SUPPORTED, HttpStatusCode.Conflict)]
     [InlineData("change-package", HostpanelErrorCodes.PANEL_PLUGIN_UNAVAILABLE, HttpStatusCode.ServiceUnavailable)]
     [InlineData("change-password", HostpanelErrorCodes.PANEL_ACCESS_DENIED, HttpStatusCode.BadGateway)]
-    [InlineData("cpanel-sso", HostpanelErrorCodes.PANEL_PLUGIN_CONFLICT, HttpStatusCode.Conflict)]
+    [InlineData("panel-sso", HostpanelErrorCodes.PANEL_PLUGIN_CONFLICT, HttpStatusCode.Conflict)]
     [InlineData("credentials", HostpanelErrorCodes.PANEL_REFUSED, HttpStatusCode.BadGateway)]
     public async Task PanelRefusal_IsAnsweredWithItsOwnCodeAsync(string route, string code, HttpStatusCode status)
     {
@@ -104,7 +104,7 @@ public sealed class PanelRefusalCodesTests(IntegrationTestFactory factory) : ICl
     [Theory]
     [InlineData("change-package", HostpanelErrorCodes.SERVICE_PACKAGE_UPSTREAM_FAILED)]
     [InlineData("change-password", HostpanelErrorCodes.SERVICE_PASSWORD_UPSTREAM_FAILED)]
-    [InlineData("cpanel-sso", HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED)]
+    [InlineData("panel-sso", HostpanelErrorCodes.SERVICE_PANEL_SSO_UPSTREAM_FAILED)]
     [InlineData("credentials", HostpanelErrorCodes.SERVICE_CREDENTIALS_UPSTREAM_FAILED)]
     public async Task OtherFailure_KeepsTheGenericUpstreamCodeAsync(string route, string code)
     {

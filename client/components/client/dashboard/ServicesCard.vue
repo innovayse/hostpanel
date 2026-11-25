@@ -32,20 +32,24 @@
         <UiStack direction="row" align="center" gap="sm">
           <UiIconButton
             v-if="canSignIn(service)"
-            :icon="ssoLoading === service.id ? Loader : Monitor"
-            :label="$t('client.services.actionLoginCpanel')"
-            :title="$t('client.services.actionLoginCpanel')"
+            :icon="ssoLoading === service.id ? Loader : undefined"
+            :label="$t('client.services.actionOpenPanel')"
+            :title="$t('client.services.actionOpenPanel')"
             variant="ghost"
             size="sm"
             :disabled="ssoLoading === service.id"
-            :testid="`dashboard-service-cpanel-${service.id}`"
-            @click.stop.prevent="loginToCpanel(service)"
-          />
+            :testid="`dashboard-service-panel-${service.id}`"
+            @click.stop.prevent="openPanel(service)"
+          >
+            <ClientServicesServicePanelIcon v-if="ssoLoading !== service.id" :service="service" :fallback="Monitor" :size="14" />
+          </UiIconButton>
           <UiBadge v-if="serviceAwaitsSetup(service)" variant="info" size="sm">{{ $t('client.dashboard.needsSetup') }}</UiBadge>
           <ClientStatusBadge v-else :status="service.status" />
         </UiStack>
       </ClientDashboardListRow>
     </UiStack>
+
+    <UiText v-if="ssoError" size="xs" tone="danger" class="mt-3" data-testid="dashboard-sso-error">{{ ssoError }}</UiText>
   </UiCard>
 </template>
 
@@ -67,6 +71,12 @@ import { SITE_HOSTING_PATH } from '~/constants/siteRoutes'
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()
 
+/** Service management store: opens the panel and keeps the sentence of a refused sign-in. */
+const management = useServiceManagementStore()
+
+/** The API's sentence for the last refused panel sign-in; empty when none was refused. */
+const { ssoError } = storeToRefs(management)
+
 /**
  * Whether the control-panel shortcut is offered for a service.
  *
@@ -80,18 +90,18 @@ const canSignIn = (service: ClientService): boolean =>
 const ssoLoading = ref<number | null>(null)
 
 /**
- * Opens the service's control panel through single sign-on, falling back to the plain login page.
+ * Opens the service's control panel through single sign-on; a refusal leaves the API's own sentence under the list.
  *
  * @param service - The service whose control panel to open.
  * @returns Nothing.
  */
-const loginToCpanel = async (service: ClientService): Promise<void> => {
+const openPanel = async (service: ClientService): Promise<void> => {
   if (ssoLoading.value) {
     return
   }
   ssoLoading.value = service.id
   try {
-    await useServiceManagementStore().openControlPanel(String(service.id), service.server?.hostname)
+    await management.openPanel(String(service.id))
   } finally {
     ssoLoading.value = null
   }

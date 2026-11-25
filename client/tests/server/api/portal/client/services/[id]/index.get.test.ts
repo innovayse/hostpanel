@@ -27,7 +27,7 @@ afterEach(async () => {
 
 describe('GET /api/portal/client/services/:id', () => {
   it('answers the matching service unchanged', async () => {
-    const match = { id: 7, productId: 2, productName: 'Hosting M', billingCycle: 'Annual', status: 'Active', nextRenewalAt: null, domain: null, username: null, price: 5, firstPaymentAmount: 5, paymentMethod: 'card', server: { name: 'srv', hostname: 'srv.test', ipAddress: '1.2.3.4' }, createdAt: '2026-01-05T09:00:00Z' }
+    const match = { id: 7, productId: 2, productName: 'Hosting M', billingCycle: 'Annual', status: 'Active', nextRenewalAt: null, domain: null, username: null, price: 5, firstPaymentAmount: 5, paymentMethod: 'card', server: { name: 'srv', hostname: 'srv.test', ipAddress: '1.2.3.4', panelPlugin: null }, createdAt: '2026-01-05T09:00:00Z' }
     backend.respondWith(() => ({ body: [{ id: 3, productId: 1, productName: 'Other' }, match] }))
 
     const result = await route.default(makeEvent({ params: { id: '7' }, cookies: await signedIn('jwt'), headers: { 'x-language': 'hy' } }))

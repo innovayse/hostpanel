@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyServiceInvoices;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangeMyServicePassword;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
-using Innovayse.Hostpanel.Application.Provisioning.Queries.GetMyServiceControlPanelSsoUrl;
+using Innovayse.Hostpanel.Application.Provisioning.Queries.GetMyServicePanelSsoUrl;
 using Innovayse.Hostpanel.Application.Services.Commands.AddMySshKey;
 using Innovayse.Hostpanel.Application.Services.Commands.CancelMyService;
 using Innovayse.Hostpanel.Application.Services.Commands.OrderMyService;
@@ -41,7 +41,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// No action here checks ownership, and none may: the rule lives in the client-facing
 /// <c>My*</c> handlers, which resolve the caller from the credential themselves. That is not
 /// only the thin-controller rule: two of the use cases behind these routes
-/// (<c>GetControlPanelSsoUrlQuery</c>, <c>ChangePasswordCommand</c>) are also dispatched by the admin
+/// (<c>GetPanelSsoUrlQuery</c>, <c>ChangePasswordCommand</c>) are also dispatched by the admin
 /// <c>ProvisioningController</c>, where acting on any client's service is legitimate, so a check
 /// written here would have guaranteed nothing about the message itself and a check written on
 /// the shared use case would have broken the admin path.
@@ -158,14 +158,14 @@ public sealed class MyServicesController : BaseApiController
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>AllowSingleSignOn</c>, or <c>CLIENT_SSO_DISABLED</c> when the
     /// account does not allow single sign-on; 404 with
     /// <c>SERVICE_NOT_FOUND</c> when the service is not the caller's; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
-    /// 502 with <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one, or
-    /// <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
+    /// 502 with <c>SERVICE_PANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot issue one, or
+    /// <c>SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
     /// 429 when the rate limit is hit.
     /// </returns>
-    [HttpGet("{id:int}/cpanel-sso")]
+    [HttpGet("{id:int}/panel-sso")]
     [Authorize(Policy = Policies.Client)]
     [RequiresClientPermission(ClientPermission.AllowSingleSignOn)]
-    [ProducesResponseType(typeof(ControlPanelSsoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PanelSsoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
@@ -173,10 +173,10 @@ public sealed class MyServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> GetCPanelSsoUrlAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> GetPanelSsoUrlAsync(int id, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<ControlPanelSsoDto>>(
-            new GetMyServiceControlPanelSsoUrlQuery(id), ct);
+        var outcome = await _bus.InvokeAsync<Result<PanelSsoDto>>(
+            new GetMyServicePanelSsoUrlQuery(id), ct);
         return HandleResult(outcome);
     }
 

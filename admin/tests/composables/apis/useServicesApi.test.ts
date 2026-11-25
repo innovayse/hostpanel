@@ -90,7 +90,7 @@ describe('useServicesApi', () => {
     const mock = stubFetch(json({ url: 'https://panel.example/login' }))
 
     expect(await useServicesApi().getPanelLoginUrl(4)).toEqual({ url: 'https://panel.example/login' })
-    expect(callOf(mock).url).toBe('/api/provisioning/4/cpanel-sso')
+    expect(callOf(mock).url).toBe('/api/provisioning/4/panel-sso')
   })
 
   it('syncServiceWithPanel POSTs the password choice to the admin route and returns what was done', async () => {

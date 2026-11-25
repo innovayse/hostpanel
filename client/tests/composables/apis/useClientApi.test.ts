@@ -56,7 +56,7 @@ const rows: ExpectedRequest[] = [
   { name: 'cancelService posts the type as a member name', call: () => api.cancelService('9', { type: CancellationType.EndOfBillingPeriod, reason: 'moving' }), method: HttpMethod.Post, url: '/api/portal/client/services/9/cancel', body: { type: 'EndOfBillingPeriod', reason: 'moving' } },
   { name: 'fetchPlanChangeOptions reads the sub-resource', call: () => api.fetchPlanChangeOptions('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/plan-change-options' },
   { name: 'requestPlanChange posts the target product', call: () => api.requestPlanChange('9', 12), method: HttpMethod.Post, url: '/api/portal/client/services/9/plan-change', body: { toProductId: 12 } },
-  { name: 'fetchCpanelSsoUrl reads the sign-in address', call: () => api.fetchCpanelSsoUrl('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/cpanel-sso' },
+  { name: 'fetchPanelSsoUrl reads the sign-in address', call: () => api.fetchPanelSsoUrl('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/panel-sso' },
   { name: 'setUpService posts the setup answers', call: () => api.setUpService('9', { domain: 'a.com' }), method: HttpMethod.Post, url: '/api/portal/client/services/9/setup', body: { domain: 'a.com' } },
 ]
 
@@ -67,5 +67,10 @@ describe('useClientApi', () => {
     await row.call()
 
     expectLastRequest(stub, row)
+  })
+
+  it('panelPluginIconPath is the portal route of the plugin icon, with the id encoded', () => {
+    expect(api.panelPluginIconPath('acme-panel')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(api.panelPluginIconPath('a/b')).toBe('/api/portal/client/plugins/a%2Fb/icon')
   })
 })

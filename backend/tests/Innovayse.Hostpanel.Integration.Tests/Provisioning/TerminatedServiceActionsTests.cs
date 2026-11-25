@@ -55,7 +55,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
             await http.PostAsJsonAsync($"/api/provisioning/{serviceId}/change-password", new { newPassword = "N3wPassw0rd!" }),
             await http.PostAsJsonAsync($"/api/provisioning/{serviceId}/change-package", new { newPackage = "gold" }),
             await http.GetAsync($"/api/provisioning/{serviceId}/credentials"),
-            await http.GetAsync($"/api/provisioning/{serviceId}/cpanel-sso"),
+            await http.GetAsync($"/api/provisioning/{serviceId}/panel-sso"),
         ];
     }
 

@@ -51,7 +51,7 @@ public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClas
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().ContainSingle().Which.Should().Be(
-            new ServerBriefDto(serverId, name, "brief.example.test", "192.0.2.10"));
+            new ServerBriefDto(serverId, name, "brief.example.test", "192.0.2.10", ServerModules.CPanel));
     }
 
     /// <summary>An empty id list answers an empty list.</summary>

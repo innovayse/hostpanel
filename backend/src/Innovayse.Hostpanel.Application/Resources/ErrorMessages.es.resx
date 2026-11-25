@@ -453,6 +453,9 @@
   <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
     <value>Un producto de dominio no puede formar parte de un paquete. Active en su lugar el dominio incluido.</value>
   </data>
+  <data name="PRODUCT_DOMAIN_SHAPE_INVALID" xml:space="preserve">
+    <value>Un producto de dominio no tiene paquete de alojamiento, grupo de servidores ni prueba: no se aprovisiona nada en él y el precio del dominio lo fija la lista de precios de dominios.</value>
+  </data>
   <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
     <value>Un paquete con dominio necesita un período de registro de 1 a 10 años, y un paquete sin dominio no debe indicar ningún período.</value>
   </data>

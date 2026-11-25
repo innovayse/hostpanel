@@ -4,7 +4,10 @@
  *
  * Shows the product type cards (create mode only), the group selector, the name, slug and
  * package fields, the server group, the description, the SKU, the metadata (a JSON object) and
- * the grace period, a pricing grid with one row per configured currency, and a hidden toggle.
+ * the grace period, a pricing grid with one row per configured currency, and a hidden toggle. A
+ * domain product (what a domain order line hangs off) shows none of the hosting fields, the trial, the
+ * limits or the pricing grid, because nothing is provisioned on it and the domain price list prices a
+ * domain; it is saved with no package or server group and the base currency at zero.
  * Emits `save` with the payload on submit, and `close` on cancel, Escape or a backdrop click. A
  * refused save is toasted by the screen that saves; the API's per-field messages
  * (the `fieldErrors` prop) show under their inputs and go away, through `clearFieldError`, as
@@ -53,6 +56,9 @@ import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
+
+/** Billing cycles a domain product carries a price on; the price is zero, as the domain price list prices a domain. */
+const DOMAIN_PRODUCT_CYCLES: readonly ProductPriceCycle[] = ['monthly', 'annual']
 
 /** Grace period a new product starts with, the same default the API applies. */
 const DEFAULT_GRACE_PERIOD_DAYS = 7
@@ -118,6 +124,7 @@ const productTypes = computed(() => [
   { value: ProductType.Vps, label: t('settings.productForm.vps'), icon: Icon.Cloud },
   { value: ProductType.Dedicated, label: t('settings.productForm.dedicated'), icon: Icon.Dedicated },
   { value: ProductType.Email, label: t('settings.productForm.email'), icon: Icon.Mail },
+  { value: ProductType.Domain, label: t('settings.productForm.domain'), icon: Icon.Globe },
   { value: ProductType.Addon, label: t('settings.productForm.addon'), icon: Icon.Puzzle },
   { value: ProductType.Backup, label: t('settings.productForm.backup'), icon: Icon.Archive },
   { value: ProductType.Digital, label: t('settings.productForm.digital'), icon: Icon.Download },
@@ -126,6 +133,12 @@ const productTypes = computed(() => [
 
 /** Selected product type. */
 const type = ref<string>(ProductType.SharedHosting)
+
+/**
+ * Whether the product is the one a domain order line hangs off. Nothing is provisioned on it, so the
+ * hosting fields, the trial and the pricing grid do not apply, and the domain price list prices a domain.
+ */
+const isDomain = computed<boolean>(() => type.value === ProductType.Domain)
 
 /** Selected product group ID. */
 const groupId = ref(0)
@@ -397,6 +410,25 @@ const buildPricesPayload = (): ProductPrice[] =>
     }))
 
 /**
+ * Builds the `prices` payload of a domain product: the base currency alone, with the monthly and annual
+ * cycles at zero and the rest not sold. A domain is priced by the domain price list, never by the product.
+ *
+ * @returns One entry for the base currency, or none when no base currency is configured.
+ */
+const buildDomainPricesPayload = (): ProductPrice[] => {
+  const base = currenciesStore.enabledCurrencies.find((currency) => currency.isBase)
+  if (!base) {
+    return []
+  }
+  return [{
+    currencyCode: base.code,
+    ...(Object.fromEntries(
+      PRODUCT_PRICE_CYCLES.map((cycle) => [cycle, DOMAIN_PRODUCT_CYCLES.includes(cycle) ? 0 : null]),
+    ) as ProductPriceAmounts),
+  }]
+}
+
+/**
  * Reads the reminder days the operator typed.
  *
  * @returns The days, or null when any entry is not a whole number.
@@ -498,35 +530,53 @@ watch([trialEnabled, trialDays, trialAutoConvert, trialReminders, trialGracePeri
 })
 
 /**
- * Submits the form by emitting the save event with the current field values. The SKU and
+ * Submits the form by emitting the save event with the current field values. A domain product sends no
+ * package, server group, limits or trial and a zero price. The SKU and
  * metadata are always sent, empty text included, because on update an empty string clears the
  * stored value while an omitted one keeps it.
  */
 const handleSubmit = (): void => {
-  if (trialEnabled.value) {
+  if (!isDomain.value && trialEnabled.value) {
     const message = validateTrial()
     if (message !== null) {
       trialMessage.value = message
       return
     }
   }
-  emit('save', {
+  /** The fields every product type sends the same way. */
+  const shared = {
     groupId: groupId.value,
     name: name.value,
     description: description.value || null,
     website: null,
     slug: slug.value || null,
-    packageName: packageName.value || null,
     type: type.value,
-    prices: buildPricesPayload(),
-    serverGroupId: serverGroupId.value || null,
-    isFeatured: isFeatured.value,
     sortOrder: Math.max(0, Math.trunc(Number(sortOrder.value)) || 0),
     sku: sku.value.trim(),
     metadata: metadata.value.trim(),
-    gracePeriodDays: Number(gracePeriodDays.value),
     isHidden: isHidden.value,
     isDigitalService: isDigitalService.value,
+  }
+  if (isDomain.value) {
+    // Nothing is provisioned on a domain product: no package, server group, limits or trial, and a zero price.
+    emit('save', {
+      ...shared,
+      packageName: null,
+      prices: buildDomainPricesPayload(),
+      serverGroupId: null,
+      isFeatured: false,
+      maxActiveServices: 0,
+      onePerClient: false,
+    })
+    return
+  }
+  emit('save', {
+    ...shared,
+    packageName: packageName.value || null,
+    prices: buildPricesPayload(),
+    serverGroupId: serverGroupId.value || null,
+    isFeatured: isFeatured.value,
+    gracePeriodDays: Number(gracePeriodDays.value),
     // 0 is unlimited: always sent, so clearing the field on update clears the stored cap.
     maxActiveServices: Math.max(0, Math.trunc(Number(maxActiveServices.value)) || 0),
     onePerClient: onePerClient.value,
@@ -596,7 +646,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.packageName')" :hint="t('settings.productForm.hostingPackageNameUsedFor')">
+      <UiField v-if="!isDomain" :label="t('settings.productForm.packageName')" :hint="t('settings.productForm.hostingPackageNameUsedFor')">
         <template #default="{ id, describedby }">
           <UiInput
             :id="id"
@@ -609,7 +659,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.serverGroup')" :hint="t('settings.productForm.assignToAServerGroup')">
+      <UiField v-if="!isDomain" :label="t('settings.productForm.serverGroup')" :hint="t('settings.productForm.assignToAServerGroup')">
         <UiSelect
           v-model="serverGroupModel"
           :options="serverGroupOptions"
@@ -670,7 +720,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors[ProductField.GracePeriodDays]">
+      <UiField v-if="!isDomain" :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors[ProductField.GracePeriodDays]">
         <UiNumberInput
           v-model="gracePeriodDays"
           :step="1"
@@ -679,7 +729,7 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
-      <UiField :label="t('settings.productForm.maxActiveServices')" :hint="t('settings.productForm.maxActiveServicesHint')" :error="props.fieldErrors[ProductField.MaxActiveServices]">
+      <UiField v-if="!isDomain" :label="t('settings.productForm.maxActiveServices')" :hint="t('settings.productForm.maxActiveServicesHint')" :error="props.fieldErrors[ProductField.MaxActiveServices]">
         <UiNumberInput
           v-model="maxActiveServices"
           nullable
@@ -690,66 +740,67 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
-      <!-- Free trial -->
-      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
-        <UiStack :gap="UiGap.Xs">
-          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.trial') }}</UiText>
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.trialHint') }}</UiText>
-        </UiStack>
-        <UiToggle v-model="trialEnabled" data-testid="product-form-trial-enabled" />
-      </UiStack>
-
-      <template v-if="trialEnabled">
-        <UiField :label="t('settings.productForm.trialDays')">
-          <UiNumberInput
-            v-model="trialDays"
-            nullable
-            :min="1"
-            :step="1"
-            :placeholder="t('settings.productForm.trialDaysPlaceholder')"
-            data-testid="product-form-trial-days"
-          />
-        </UiField>
-
-        <UiField :label="t('settings.productForm.trialReminderDays')" :hint="t('settings.productForm.trialReminderDaysHint')">
-          <template #default="{ id, describedby }">
-            <UiInput
-              :id="id"
-              v-model="trialReminders"
-              :type="UiInputType.Text"
-              :aria-describedby="describedby"
-              :placeholder="t('settings.productForm.trialReminderDaysPlaceholder')"
-              data-testid="product-form-trial-reminders"
-            />
-          </template>
-        </UiField>
-
-        <UiField :label="t('settings.productForm.trialGracePeriod')" :hint="t('settings.productForm.trialGracePeriodHint')">
-          <UiNumberInput
-            v-model="trialGracePeriodDays"
-            nullable
-            :min="0"
-            :step="1"
-            :placeholder="t('settings.productForm.trialGracePeriodPlaceholder')"
-            data-testid="product-form-trial-grace-period"
-          />
-        </UiField>
-
+      <template v-if="!isDomain">
+        <!-- Free trial -->
         <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
           <UiStack :gap="UiGap.Xs">
-            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.trialAutoConvert') }}</UiText>
-            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.trialAutoConvertHint') }}</UiText>
+            <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.trial') }}</UiText>
+            <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.trialHint') }}</UiText>
           </UiStack>
-          <UiToggle v-model="trialAutoConvert" data-testid="product-form-trial-auto-convert" />
+          <UiToggle v-model="trialEnabled" data-testid="product-form-trial-enabled" />
         </UiStack>
 
+        <template v-if="trialEnabled">
+          <UiField :label="t('settings.productForm.trialDays')">
+            <UiNumberInput
+              v-model="trialDays"
+              nullable
+              :min="1"
+              :step="1"
+              :placeholder="t('settings.productForm.trialDaysPlaceholder')"
+              data-testid="product-form-trial-days"
+            />
+          </UiField>
+
+          <UiField :label="t('settings.productForm.trialReminderDays')" :hint="t('settings.productForm.trialReminderDaysHint')">
+            <template #default="{ id, describedby }">
+              <UiInput
+                :id="id"
+                v-model="trialReminders"
+                :type="UiInputType.Text"
+                :aria-describedby="describedby"
+                :placeholder="t('settings.productForm.trialReminderDaysPlaceholder')"
+                data-testid="product-form-trial-reminders"
+              />
+            </template>
+          </UiField>
+
+          <UiField :label="t('settings.productForm.trialGracePeriod')" :hint="t('settings.productForm.trialGracePeriodHint')">
+            <UiNumberInput
+              v-model="trialGracePeriodDays"
+              nullable
+              :min="0"
+              :step="1"
+              :placeholder="t('settings.productForm.trialGracePeriodPlaceholder')"
+              data-testid="product-form-trial-grace-period"
+            />
+          </UiField>
+
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+            <UiStack :gap="UiGap.Xs">
+              <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.trialAutoConvert') }}</UiText>
+              <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.trialAutoConvertHint') }}</UiText>
+            </UiStack>
+            <UiToggle v-model="trialAutoConvert" data-testid="product-form-trial-auto-convert" />
+          </UiStack>
+        </template>
+
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="product-form-trial-notice">{{ t('settings.productForm.trialNotice') }}</UiText>
+        <UiStatusMessage :message="trialMessage ?? props.fieldErrors[ProductField.Trial] ?? null" :tone="UiTone.Danger" data-testid="product-form-trial-error" />
       </template>
 
-      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="product-form-trial-notice">{{ t('settings.productForm.trialNotice') }}</UiText>
-      <UiStatusMessage :message="trialMessage ?? props.fieldErrors[ProductField.Trial] ?? null" :tone="UiTone.Danger" data-testid="product-form-trial-error" />
-
       <!-- Pricing grid -->
-      <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
+      <UiField v-if="!isDomain" :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
         <UiDataTable :density="UiTableDensity.Compact" data-testid="product-form-prices">
           <UiTableHead>
             <UiTableRow>
@@ -784,9 +835,10 @@ const handleSubmit = (): void => {
           </UiTableBody>
         </UiDataTable>
       </UiField>
+      <UiText v-else :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="product-form-domain-notice">{{ t('settings.productForm.domainPricedByTlds') }}</UiText>
 
       <!-- Recommended-plan toggle -->
-      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+      <UiStack v-if="!isDomain" :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
         <UiStack :gap="UiGap.Xs">
           <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.featured') }}</UiText>
           <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.featuredHint') }}</UiText>
@@ -813,7 +865,7 @@ const handleSubmit = (): void => {
       </UiStack>
 
       <!-- One-per-client toggle -->
-      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
+      <UiStack v-if="!isDomain" :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between">
         <UiStack :gap="UiGap.Xs">
           <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('settings.productForm.onePerClient') }}</UiText>
           <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('settings.productForm.onePerClientHint') }}</UiText>

@@ -456,6 +456,9 @@
   <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
     <value>A domain product cannot be part of a bundle. Turn on the included domain instead.</value>
   </data>
+  <data name="PRODUCT_DOMAIN_SHAPE_INVALID" xml:space="preserve">
+    <value>A domain product has no hosting package, server group or trial: nothing is provisioned on it, and the domain price list sets what a domain costs.</value>
+  </data>
   <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
     <value>A bundle with a domain needs a registration period of 1 to 10 years, and a bundle without one must not name a period.</value>
   </data>

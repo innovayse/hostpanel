@@ -449,6 +449,8 @@
     "addon": "Add-on",
     "backup": "Backup",
     "digital": "Digital",
+    "domain": "Domain",
+    "domainPricedByTlds": "A domain product has no package, server group, trial or price of its own: the domain price list prices every domain. It is the product a domain in the cart is ordered against.",
     "other": "Other",
     "vps": "VPS"
   },

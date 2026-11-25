@@ -453,6 +453,9 @@
   <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
     <value>Դոմենի արտադրանքը չի կարող լինել փաթեթի մաս։ Փոխարենը միացրեք փաթեթի դոմենը։</value>
   </data>
+  <data name="PRODUCT_DOMAIN_SHAPE_INVALID" xml:space="preserve">
+    <value>Դոմենի ապրանքն ունի ո՛չ հոսթինգի փաթեթ, ո՛չ սերվերների խումբ, ո՛չ փորձաշրջան. դրա վրա ոչինչ չի տրամադրվում, իսկ դոմենի գինը սահմանում է դոմենների գնացուցակը։</value>
+  </data>
   <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
     <value>Դոմենով փաթեթը պահանջում է 1-ից 10 տարի գրանցման ժամկետ, իսկ առանց դոմենի փաթեթը ժամկետ չպետք է նշի։</value>
   </data>

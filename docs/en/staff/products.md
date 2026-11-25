@@ -32,13 +32,14 @@ Type part of a name, SKU or slug in the search box to find a product. The **Filt
 | VPS | Virtual private server |
 | Dedicated | Dedicated server |
 | Email | Mailboxes and mail hosting |
+| Domain | The product a domain in the cart is ordered against; priced by TLD Pricing |
 | Add-on | An extra attached to another service |
 | Backup | Backup storage and restore |
 | Digital | A licence, credit pack or digital good delivered by a fulfilment plugin |
 | Other | Any other or custom service |
 
 <Callout type="note">
-Domain and SSL are not offered as type cards on the create form. Domain pricing is configured on the <a href="./tld-pricing">TLD Pricing screen</a> and SSL products are created through the Other type.
+A domain order line needs one active **Domain** product to hang off, so an installation that sells domains creates one here: pick the Domain type, a group and a name (for example "Domain Registration"). A domain product has no package, server group, trial, limits or price of its own, so those fields are hidden and the product is saved with the base currency at zero. What a domain costs is set on the <a href="./tld-pricing">TLD Pricing screen</a>. Keep one domain product active; with several, the first by name is used, and with none the storefront answers `DOMAIN_PRODUCT_NOT_CONFIGURED`. SSL products are created through the Other type.
 </Callout>
 
 ## Create a product

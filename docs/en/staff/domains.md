@@ -130,5 +130,5 @@ The **Domain Renewal Reminder Emails** report (under Reports) lists all reminder
 | `DOMAIN_RENEWAL_UPSTREAM_FAILED` | Renewal failed at the registrar; check balance and domain status |
 | `DOMAIN_TRANSFER_UPSTREAM_FAILED` | Transfer failed; check the EPP code and the domain's registrar lock status |
 | `DOMAIN_EPP_CODE_UPSTREAM_FAILED` | Could not retrieve the EPP code; check the registrar connection |
-| `DOMAIN_PRODUCT_NOT_CONFIGURED` | No domain product is linked to this TLD; check TLD Pricing |
+| `DOMAIN_PRODUCT_NOT_CONFIGURED` | The installation has no active domain product; create one under Settings → Products with the Domain type |
 | `DOMAIN_ALREADY_REGISTERED` | A domain record for this name already exists in the system |

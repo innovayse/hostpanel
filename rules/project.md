@@ -1815,6 +1815,16 @@ addresses. Module `Products`; this slice stores and serves the options and does 
   The domain route answers only `{ id }` of the first active `Domain` product by name (the same query the renew and transfer
   orders use), so an inactive product is never offered and no staff-written name is published; the BFF route
   `/api/portal/public/products/domain` forwards it and the domains page reads it once for both templates.
+- **The domain product is created by the admin, like any other product (#1478).** A domain order line hangs off an active
+  `ProductType.Domain` product, and a fresh installation has none until an operator makes it: the admin product form offers a
+  Domain type card (`ProductFormModal`) and, for a domain product, hides the package, server group, trial, limits, featured and
+  pricing fields (nothing is provisioned on it, and the extension table prices a domain) and saves it with no package or server
+  group and the base currency at zero (`buildDomainPricesPayload`). `CreateProduct` and `UpdateProduct` accept it with no new
+  command: the aggregate is the one place the shape is judged (`Product.EnsureDomainShape`, `Product.ConfigureTrial`), so a package,
+  a server group or an enabled trial on a domain product is `PRODUCT_DOMAIN_SHAPE_INVALID` (400), whatever caller sends it. Its price
+  is not refused, because the demo catalogue's domain add-ons carry one and no order path reads a domain product's price. More than one
+  active domain product is allowed (the query takes the first by name), so the model needs no uniqueness rule. The dev and demo
+  seeders still create their own domain product directly: they build a different, fuller catalogue and no shared factory fits both.
 - **Reads and mapping live once** in `Products/Extensions/ProductOptionGroupExtensions` (`ReadProductOptionGroupsAsync`, the one
   projection to `ProductOptionGroupDto`; `FindGroupOfOptionAsync`, the tracked load for a change). The field rules every option and
   group validator repeats are the shared `MustBeName`, `MustBeNonNegative` and `MustBeDefinedEnum` in
@@ -1895,6 +1905,19 @@ after staff checked the registrar, with an activity log line; the line stays una
 domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
 of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
 first (`billing.renewals.releaseMessage`, and `docs/en/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
+
+**A domain's renewal and the registrar's auto renew are two separate settings (#1475).** `RegisteredDomain.AutoRenew` is the
+panel's own flag: whether the panel raises renewal invoices and renews the domain. `SetAutoRenew` changes only that flag and never
+calls a registrar; the admin route is `PUT /api/domains/{id}/auto-renew`, and the client portal's `SetMyDomainAutoRenew`
+(`PUT /api/me/domains/{id}/auto-renew`, after the ownership check) and the Upcoming Renewals page dispatch it too, so a client or
+a renewals row never touches the registrar's setting. `SetRegistrarAutoRenew` (`PUT /api/domains/{id}/registrar-auto-renew`, staff
+only) is the other half: it calls the registrar plugin's `SetAutoRenewAsync` and nothing else, answers `DOMAIN_NO_REGISTRAR_REF`
+for a domain never placed at a registrar and `DOMAIN_AUTO_RENEW_UPSTREAM_FAILED` (or the registrar's own `REGISTRAR_*` code) when
+the registrar refuses, and never reads or writes the panel flag. That lets a domain the panel renews have auto renew off at the
+registrar, so the registrar does not renew it a second time. The panel does not store the registrar's state (there is no read
+operation on `IRegistrarProvider` for it), so the admin domain page offers "turn on" and "turn off at the registrar" actions on the
+Registrar tab beside the "Renew from the panel" switch on the Management tab; storing the state to show it as a switch needs a new
+`RegisteredDomain` column and its migration.
 
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a
@@ -3249,10 +3272,13 @@ Never spread one of these, and never restructure as a side effect of a feature.
   This is also why `Innovayse.Hostpanel.API.csproj` carries `<Watch Remove="logs/**/*" />`, and
   `<Content Remove>`, so a publish does not ship yesterday's logs.
 - **Wolverine logs `Invocation of {Message} failed!` at Error with a stack trace for every
-  handler exception**, before its own policies get a say, and 5.31.0 has no knob for it. A
-  staff identity with no client row is not a fault, and four such traces per dashboard load
-  made a healthy platform read as a failing one. `ControlFlowExceptionLogFilter` drops exactly
-  those lines; extend the filter rather than removing it.
+  handler exception**, before its own policies get a say, and 5.31.0 has no knob for it.
+  `ExpectedFailureLogger` (registered in `Program.cs` by `AddExpectedFailureLogDemotion`,
+  over the logger factory every logger comes from) writes that Error at Debug when its exception
+  is, or wraps, a validation rejection or a cancellation of a request the client aborted
+  (`HttpContextExtensions.IsClientAbort`, the one answer shared with `ExceptionHandlingMiddleware`
+  and `ActionTimingFilter`). A cancellation of any other cause and every other exception stay
+  Errors; extend the logger rather than removing it.
 - **The two-factor attempt cap and replay guard are per API instance.** `TwoFactorChallengeService`
   and `TwoFactorCodeGuard` keep their counters in `IMemoryCache` with `CacheItemPriority.NeverRemove`,
   so memory pressure cannot evict a counter and reopen the cap; they fail closed. They hold for one API

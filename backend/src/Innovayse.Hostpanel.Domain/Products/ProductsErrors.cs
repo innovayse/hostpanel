@@ -42,6 +42,13 @@ public static class ProductsErrors
     public const string ProductTrialInvalid = "PRODUCT_TRIAL_INVALID";
 
     /// <summary>
+    /// A <see cref="Enums.ProductType.Domain"/> product is given a hosting package, a server group or a
+    /// trial (400): <see cref="Product.Create"/>, <see cref="Product.Update"/> and
+    /// <see cref="Product.ConfigureTrial"/>. Nothing is provisioned on a domain product.
+    /// </summary>
+    public const string ProductDomainShapeInvalid = "PRODUCT_DOMAIN_SHAPE_INVALID";
+
+    /// <summary>
     /// The cap on live services is negative (400): <see cref="Product.SetMaxActiveServices"/>. Zero is the unlimited
     /// cap on the command and never reaches the aggregate.
     /// </summary>

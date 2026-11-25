@@ -99,15 +99,15 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     /// <summary>A flag change on an existing domain goes to the registrar the domain's TLD is configured for, and only to it.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task SetAutoRenew_DomainsOfTwoTlds_EachGoesToItsOwnRegistrarAsync()
+    public async Task SetRegistrarAutoRenew_DomainsOfTwoTlds_EachGoesToItsOwnRegistrarAsync()
     {
         var (admin, firstTld, secondTld) = await ConfigureTwoRegistrarsAsync();
         var first = await SeedDomainAsync(firstTld);
         var second = await SeedDomainAsync(secondTld);
 
-        (await admin.PutAsJsonAsync($"/api/domains/{first.Id}/auto-renew", new { value = true })).StatusCode
+        (await admin.PutAsJsonAsync($"/api/domains/{first.Id}/registrar-auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
-        (await admin.PutAsJsonAsync($"/api/domains/{second.Id}/auto-renew", new { value = true })).StatusCode
+        (await admin.PutAsJsonAsync($"/api/domains/{second.Id}/registrar-auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
         _firstRegistrar.Calls.Should().Contain($"SetAutoRenewAsync {first.Name}").And.NotContain($"SetAutoRenewAsync {second.Name}");
@@ -152,7 +152,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
 
         (await admin.PostAsJsonAsync($"/api/domains/{domainId}/renew", new { years = 1 })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
-        (await admin.PutAsJsonAsync($"/api/domains/{domainId}/auto-renew", new { value = true })).StatusCode
+        (await admin.PutAsJsonAsync($"/api/domains/{domainId}/registrar-auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
         _firstRegistrar.Calls.Should().Contain($"RenewAsync {name}").And.Contain($"SetAutoRenewAsync {name}");

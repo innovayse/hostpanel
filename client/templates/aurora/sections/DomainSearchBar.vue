@@ -17,6 +17,7 @@
         <UiInput
           v-model="query"
           testid="domain-search-input"
+          :size="UiSize.Lg"
           :name="DOMAIN_SEARCH_QUERY_PARAM"
           :disabled="!hasZones"
           :placeholder="t('aurora.domainSearch.placeholder')"
@@ -27,7 +28,8 @@
           variant="bare"
           :disabled="!hasZones"
           data-testid="domain-search-submit"
-          :class="[BRAND_BUTTON, 'px-[26px] py-4 text-base']"
+          :size="UiSize.Lg"
+          :class="BRAND_BUTTON"
         >
           {{ t('ui.searchButton') }}
         </UiButton>
@@ -62,6 +64,7 @@ import { BRAND_BUTTON } from '~/templates/aurora/buttons'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
 import type { ChipTab } from '~/types/chiptab'
 import { tldCategoryLabel } from '~/utils/tldCategory'
+import { UiSize } from '~/utils/ui/enums'
 
 /** Props with their defaults applied. */
 const props = withDefaults(defineProps<{

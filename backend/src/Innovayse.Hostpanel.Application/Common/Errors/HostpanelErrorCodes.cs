@@ -1842,6 +1842,12 @@ public static class HostpanelErrorCodes
     public const string PRODUCT_TRIAL_INVALID = Domain.Products.ProductsErrors.ProductTrialInvalid;
 
     /// <summary>
+    /// A domain product is given a hosting package, a server group or a trial (400):
+    /// <see cref="Domain.Products.Product.Create"/>, <see cref="Domain.Products.Product.Update"/> and <see cref="Domain.Products.Product.ConfigureTrial"/>.
+    /// </summary>
+    public const string PRODUCT_DOMAIN_SHAPE_INVALID = Domain.Products.ProductsErrors.ProductDomainShapeInvalid;
+
+    /// <summary>
     /// The cap on live services is negative (400): <see cref="Domain.Products.Product.SetMaxActiveServices"/>. Zero is
     /// the unlimited cap on the command and never reaches the aggregate.
     /// </summary>

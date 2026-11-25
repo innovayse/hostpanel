@@ -145,7 +145,7 @@ export const useDomainsStore = defineStore('domains', () => {
     mutate(() => api.renewDomain(id, years))
 
   /**
-   * Toggles auto-renew for a domain.
+   * Toggles the panel's own renewal for a domain; the registrar is not asked.
    *
    * @param id - Domain primary key.
    * @param enabled - Whether auto-renew should be enabled.
@@ -153,6 +153,16 @@ export const useDomainsStore = defineStore('domains', () => {
    */
   const setAutoRenew = (id: number | string, enabled: boolean): Promise<boolean> =>
     mutate(() => api.setAutoRenew(id, { enabled }))
+
+  /**
+   * Turns auto renew on or off at the registrar only; the panel's own renewal flag is not touched.
+   *
+   * @param id - Domain primary key.
+   * @param enabled - Whether auto renew should be on at the registrar.
+   * @returns True when accepted; false when refused (see `actionError`).
+   */
+  const setRegistrarAutoRenew = (id: number | string, enabled: boolean): Promise<boolean> =>
+    mutate(() => api.setRegistrarAutoRenew(id, { enabled }))
 
   /**
    * Toggles WHOIS privacy for a domain.
@@ -290,7 +300,7 @@ export const useDomainsStore = defineStore('domains', () => {
   return {
     domains, current, pageSize, totalCount, loading, error, actionError, fieldErrors,
     fetchAll, fetchClientPage, fetchById, update, register, renew,
-    setAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
+    setAutoRenew, setRegistrarAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
     modifyContact, getEppCode, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,
     addForwardingRule, updateForwardingRule, deleteForwardingRule,

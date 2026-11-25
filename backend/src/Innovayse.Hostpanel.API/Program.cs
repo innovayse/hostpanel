@@ -51,6 +51,11 @@ try
                   .Enrich.With<CampaignTokenPathEnricher>());
     }
 
+    // Wolverine logs every handler exception at Error before its own policies run. This demotes the
+    // expected ones (a validation rejection, a request the client aborted) to Debug at the one place
+    // all loggers come from, after Serilog has registered its factory so the decorator wraps that one.
+    builder.Services.AddExpectedFailureLogDemotion();
+
     // The layers, each registering itself. Application first (validators), then Infrastructure
     // (EF Core, Identity, external clients, plugin discovery), then Wolverine, then the web edge:
     // localization, authentication and authorization each get their own well-named extension, since

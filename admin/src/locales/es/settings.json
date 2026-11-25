@@ -449,6 +449,8 @@
     "addon": "Complemento",
     "backup": "Copia de seguridad",
     "digital": "Digital",
+    "domain": "Dominio",
+    "domainPricedByTlds": "Un producto de dominio no tiene paquete, grupo de servidores, prueba ni precio propios: la lista de precios de dominios fija el precio de cada dominio. Es el producto contra el que se pide un dominio del carrito.",
     "other": "Otro",
     "vps": "VPS"
   },

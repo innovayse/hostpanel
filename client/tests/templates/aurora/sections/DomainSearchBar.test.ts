@@ -24,6 +24,22 @@ describe('DomainSearchBar', () => {
     expect(wrapper.find('[data-testid="domain-search-submit"]').attributes('type')).toBe('submit')
   })
 
+  it('draws the field and the search button at one size step, so they have the same height', async () => {
+    await loadGlobals()
+    const wrapper = mountWithKit(DomainSearchBar)
+
+    /**
+     * Reads the minimum-height classes of one element of the bar.
+     *
+     * @param selector Selector of the element.
+     * @returns Its `min-h-*` classes.
+     */
+    const heights = (selector: string): string[] => wrapper.find(selector).classes().filter(name => /^(sm:)?min-h-/.test(name))
+
+    expect(heights('[data-testid="domain-search-submit"]')).toEqual(heights('[data-testid="domain-search-input"]'))
+    expect(heights('[data-testid="domain-search-submit"]')).not.toHaveLength(0)
+  })
+
   it('submits natively to the domains page with the name in the query the page reads, so Enter works before hydration', async () => {
     await loadGlobals()
     const wrapper = mountWithKit(DomainSearchBar)

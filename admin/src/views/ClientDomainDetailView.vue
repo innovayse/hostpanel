@@ -421,13 +421,23 @@ const handleToggleEmailForwarding = async (val: boolean): Promise<void> => {
 }
 
 /**
- * Toggles auto-renew for the domain.
+ * Toggles the panel's own renewal for the domain; the registrar is not asked.
  *
  * @param val - The desired toggle state.
  * @returns Promise that resolves when the action completes.
  */
 const handleToggleAutoRenew = async (val: boolean): Promise<void> => {
   await runCommand(() => store.setAutoRenew(domainId.value, val))
+}
+
+/**
+ * Turns auto renew on or off at the registrar only; the panel's own renewal switch is a separate setting.
+ *
+ * @param val - Whether auto renew should be on at the registrar.
+ * @returns Promise that resolves when the action completes.
+ */
+const handleSetRegistrarAutoRenew = async (val: boolean): Promise<void> => {
+  await runCommand(() => store.setRegistrarAutoRenew(domainId.value, val))
 }
 
 /**
@@ -632,6 +642,24 @@ onBeforeUnmount(() => {
                 @click="handleToggleIdProtection"
               >
                 {{ domain.features.whoisPrivacy ? t('clients.clientDomainDetail.disableIdProtection') : t('clients.clientDomainDetail.enableIdProtection') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Apply"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                data-testid="client-domain-registrar-auto-renew-on"
+                @click="handleSetRegistrarAutoRenew(true)"
+              >
+                {{ t('clients.clientDomainDetail.registrarAutoRenewOn') }}
+              </UiButton>
+              <UiButton :action="UiActionKind.Stop"
+                type="button"
+                :variant="UiButtonVariant.Secondary"
+                :loading="commandLoading"
+                data-testid="client-domain-registrar-auto-renew-off"
+                @click="handleSetRegistrarAutoRenew(false)"
+              >
+                {{ t('clients.clientDomainDetail.registrarAutoRenewOff') }}
               </UiButton>
             </UiStack>
           </template>

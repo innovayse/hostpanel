@@ -449,6 +449,8 @@
     "addon": "Add-on",
     "backup": "Backup",
     "digital": "Digital",
+    "domain": "Domain",
+    "domainPricedByTlds": "Ein Domain-Produkt hat kein eigenes Paket, keine Servergruppe, keine Testphase und keinen eigenen Preis: Die Domain-Preisliste bepreist jede Domain. Gegen dieses Produkt wird eine Domain im Warenkorb bestellt.",
     "other": "Sonstiges",
     "vps": "VPS"
   },

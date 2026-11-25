@@ -5,7 +5,7 @@ namespace Innovayse.Hostpanel.Shared.Extensions;
 
 /// <summary>
 /// Registers <see cref="ExpectedFailureLoggerFactory"/> over the application's logger factory, so an
-/// expected validation rejection stops arriving in the Error log.
+/// expected validation rejection, or a request the client aborted, stops arriving in the Error log.
 /// </summary>
 public static class ExpectedFailureLoggingExtensions
 {
@@ -19,6 +19,9 @@ public static class ExpectedFailureLoggingExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        // The decorated loggers ask which request an exception belongs to.
+        services.AddHttpContextAccessor();
+
         var descriptor = services.LastOrDefault(d => d.ServiceType == typeof(ILoggerFactory) && !d.IsKeyedService);
         if (descriptor is null)
         {
@@ -28,7 +31,8 @@ public static class ExpectedFailureLoggingExtensions
 
         services.Remove(descriptor);
         services.AddSingleton<ILoggerFactory>(
-            provider => new ExpectedFailureLoggerFactory(ResolveInner(provider, descriptor)));
+            provider => new ExpectedFailureLoggerFactory(
+                ResolveInner(provider, descriptor), provider.GetRequiredService<IHttpContextAccessor>()));
 
         return services;
     }

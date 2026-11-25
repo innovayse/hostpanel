@@ -112,15 +112,18 @@ public sealed class MyDomainsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Enables or disables automatic renewal for a domain owned by the authenticated client.</summary>
+    /// <summary>
+    /// Enables or disables the panel's automatic renewal for a domain owned by the authenticated client. The registrar's
+    /// auto renew is not reached from here.
+    /// </summary>
     /// <param name="id">Domain primary key; wins over any id in the body.</param>
-    /// <param name="command">The desired auto-renew flag value.</param>
+    /// <param name="command">The desired panel renewal flag value.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 on success; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's; 502
-    /// when the registrar rejects the update; 401 without a session; 403 for a caller who is not a client;
+    /// 204 on success; 404 with <c>DOMAIN_NOT_FOUND</c> when the domain is not the caller's; 401 without a session;
+    /// 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
-    /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 400 when the body, query or route fails validation; 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("{id:int}/auto-renew")]
     [Authorize(Policy = Policies.Client)]
@@ -130,9 +133,6 @@ public sealed class MyDomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> SetAutoRenewAsync(
         int id, [FromBody] SetMyDomainAutoRenewCommand command, CancellationToken ct)
     {

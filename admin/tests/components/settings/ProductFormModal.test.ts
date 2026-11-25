@@ -1,5 +1,5 @@
 /**
- * Tests for ProductFormModal: create and edit modes, the slug that follows the name until it is
+ * Tests for ProductFormModal: create and edit modes, the domain product type, the slug that follows the name until it is
  * edited by hand, the pricing grid built from the configured currencies, and the emitted payload.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -511,6 +511,116 @@ describe('ProductFormModal', () => {
     await wrapper.get('[data-testid="product-form-metadata"]').setValue('{}')
 
     expect(wrapper.emitted('clearFieldError')).toBeUndefined()
+  })
+
+  it('offers a domain product type card in create mode', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    const domain = wrapper.get('[data-testid="product-form-type-Domain"]')
+
+    expect(domain.text()).toContain('Domain')
+    await domain.trigger('click')
+    expect(domain.attributes('aria-pressed')).toBe('true')
+  })
+
+  it('hides the hosting fields, the trial, the limits and the pricing grid for a domain product and says the domain price list prices it', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+    const hidden = [
+      'product-form-package', 'product-form-server-group', 'product-form-grace-period', 'product-form-max-active-services',
+      'product-form-trial-enabled', 'product-form-trial-notice', 'product-form-prices', 'product-form-featured',
+      'product-form-one-per-client',
+    ]
+    for (const testid of hidden) {
+      expect(wrapper.find(`[data-testid="${testid}"]`).exists(), testid).toBe(true)
+    }
+    expect(wrapper.find('[data-testid="product-form-domain-notice"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="product-form-type-Domain"]').trigger('click')
+
+    for (const testid of hidden) {
+      expect(wrapper.find(`[data-testid="${testid}"]`).exists(), testid).toBe(false)
+    }
+    expect(wrapper.get('[data-testid="product-form-domain-notice"]').text()).toContain('domain price list')
+    expect(wrapper.find('[data-testid="product-form-name"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="product-form-hidden"]').exists()).toBe(true)
+  })
+
+  it('emits a domain product with no package, server group, limits or trial and the base currency at zero', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-type-Domain"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Domain Registration')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    expect(wrapper.emitted('save')).toEqual([[{
+      groupId: 5,
+      name: 'Domain Registration',
+      description: null,
+      website: null,
+      slug: 'domain-registration',
+      packageName: null,
+      type: 'Domain',
+      prices: [{ currencyCode: 'USD', monthly: 0, annual: 0, quarterly: null, semiAnnual: null, biennial: null }],
+      serverGroupId: null,
+      isFeatured: false,
+      sortOrder: 0,
+      sku: '',
+      metadata: '',
+      isHidden: false,
+      isDigitalService: false,
+      maxActiveServices: 0,
+      onePerClient: false,
+    }]])
+  })
+
+  it('brings the hosting fields back when the type is switched from domain to a hosting type', async () => {
+    stubRouteTable(lists)
+    const { wrapper } = await mountScreen(ProductFormModal, { product: null, groups, saving: false })
+
+    await wrapper.get('[data-testid="product-form-type-Domain"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-type-Vps"]').trigger('click')
+    await wrapper.get('[data-testid="product-form-name"]').setValue('Plan')
+    await wrapper.get('[data-testid="product-form-package"]').setValue('pro')
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    const payload = (wrapper.emitted('save')?.[0]?.[0] ?? {}) as Record<string, unknown>
+    expect(payload.type).toBe('Vps')
+    expect(payload.packageName).toBe('pro')
+    expect(payload.trial).toBeDefined()
+  })
+
+  it('opens an existing domain product without the hosting fields and saves it with a zero price', async () => {
+    stubRouteTable(lists)
+    const domainProduct: Product = {
+      ...stored,
+      id: 11,
+      name: 'Domain Registration',
+      slug: 'domain-registration',
+      type: 'Domain',
+      status: 'Active',
+      packageName: null,
+      serverGroupId: null,
+      isFeatured: false,
+      onePerClient: false,
+      maxActiveServices: null,
+      pricing: { monthly: 0, annual: 0, quarterly: null, semiAnnual: null, biennial: null },
+      prices: [{ currencyCode: 'USD', monthly: 0, annual: 0, quarterly: null, semiAnnual: null, biennial: null }],
+      trial: { enabled: false, days: 14, autoConvert: true, reminderDays: [3, 1], gracePeriodDays: 3 },
+    }
+    const { wrapper } = await mountScreen(ProductFormModal, { product: domainProduct, groups, saving: false })
+
+    expect(wrapper.find('[data-testid="product-form-package"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="product-form-prices"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="product-form"]').trigger('submit')
+
+    const payload = (wrapper.emitted('save')?.[0]?.[0] ?? {}) as Record<string, unknown>
+    expect(payload.type).toBe('Domain')
+    expect(payload.prices).toEqual([{ currencyCode: 'USD', monthly: 0, annual: 0, quarterly: null, semiAnnual: null, biennial: null }])
+    expect(payload.packageName).toBeNull()
+    expect(payload.serverGroupId).toBeNull()
+    expect(payload).not.toHaveProperty('trial')
   })
 
   it('closes from Cancel and blocks Save while saving', async () => {

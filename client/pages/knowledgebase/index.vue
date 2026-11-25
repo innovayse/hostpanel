@@ -18,6 +18,7 @@
             v-model="searchQuery"
             class="flex-1"
             :placeholder="t('kb.searchPlaceholder')"
+            :size="UiSize.Lg"
             testid="kb-search-input"
           >
             <template #prefix>
@@ -175,7 +176,7 @@ import type { KbArticleSummary } from '~/types/kbarticlesummary'
 import type { KbCategory } from '~/types/kbcategory'
 import { kbCategorySlug } from '~/utils/kbCategory'
 import { siteKnowledgebaseCategoryPath } from '~/constants/siteRoutes'
-import { UiTextTag } from '~/utils/ui/enums'
+import { UiSize, UiTextTag } from '~/utils/ui/enums'
 
 /** Localised path builder from the i18n module. */
 const localePath = useLocalePath()

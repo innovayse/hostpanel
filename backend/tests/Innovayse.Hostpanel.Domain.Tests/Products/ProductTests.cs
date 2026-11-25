@@ -519,6 +519,89 @@ public class ProductTests
         Assert.Equal(expected, Product.IsPlaceLimited(max, onePerClient));
     }
 
+    /// <summary>A domain product is the one a domain order line hangs off, so it answers <see cref="Product.IsDomain"/>.</summary>
+    [Fact]
+    public void IsDomain_IsTrueOnlyForTheDomainType()
+    {
+        Assert.True(NewProduct(ProductType.Domain).IsDomain);
+        Assert.False(NewProduct(ProductType.SharedHosting).IsDomain);
+    }
+
+    /// <summary>A domain product is created with no package, no server group and a zero price.</summary>
+    [Fact]
+    public void Create_DomainProductWithoutHostingDetails_Succeeds()
+    {
+        var product = Product.Create(1, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, Now);
+
+        Assert.True(product.IsDomain);
+        Assert.Equal(ProductStatus.Active, product.Status);
+        Assert.Null(product.PackageName);
+        Assert.Null(product.ServerGroupId);
+    }
+
+    /// <summary>A package name or a server group on a domain product is refused: nothing is provisioned on it.</summary>
+    /// <param name="packageName">The package name given to the product.</param>
+    /// <param name="serverGroupId">The server group given to the product.</param>
+    [Theory]
+    [InlineData("starter", null)]
+    [InlineData(null, 3)]
+    [InlineData("starter", 3)]
+    public void Create_DomainProductWithAHostingDetail_IsRefused(string? packageName, int? serverGroupId)
+    {
+        var ex = Assert.Throws<DomainRuleException>(() => Product.Create(
+            1, "Domain Registration", null, null, null, packageName, ProductType.Domain, 0m, 0m, Now, serverGroupId));
+
+        Assert.Equal(ProductsErrors.ProductDomainShapeInvalid, ex.Code);
+    }
+
+    /// <summary>A product that is not a domain product keeps its package and server group.</summary>
+    [Fact]
+    public void Create_HostingProductWithAPackageAndServerGroup_Succeeds()
+    {
+        var product = Product.Create(1, "Starter", null, null, null, "starter", ProductType.SharedHosting, 5m, 50m, Now, serverGroupId: 3);
+
+        Assert.Equal("starter", product.PackageName);
+        Assert.Equal(3, product.ServerGroupId);
+    }
+
+    /// <summary>Updating a domain product refuses a package or a server group the same way creating does.</summary>
+    [Fact]
+    public void Update_DomainProductWithAHostingDetail_IsRefused()
+    {
+        var product = NewProduct(ProductType.Domain);
+
+        var withPackage = Assert.Throws<DomainRuleException>(() => product.Update("Domains", null, null, null, "starter", 0m, 0m, null));
+        var withGroup = Assert.Throws<DomainRuleException>(() => product.Update("Domains", null, null, null, null, 0m, 0m, 3));
+
+        Assert.Equal(ProductsErrors.ProductDomainShapeInvalid, withPackage.Code);
+        Assert.Equal(ProductsErrors.ProductDomainShapeInvalid, withGroup.Code);
+    }
+
+    /// <summary>A domain product is renamed and kept free of hosting details by an update that names none.</summary>
+    [Fact]
+    public void Update_DomainProductWithoutHostingDetails_Renames()
+    {
+        var product = NewProduct(ProductType.Domain);
+
+        product.Update("Domains", "Register and transfer", null, "domains", null, 0m, 0m, null);
+
+        Assert.Equal("Domains", product.Name);
+        Assert.Equal("domains", product.Slug);
+    }
+
+    /// <summary>A trial cannot be switched on for a domain product, but its settings can stay switched off.</summary>
+    [Fact]
+    public void ConfigureTrial_DomainProduct_RefusesAnEnabledTrialOnly()
+    {
+        var product = NewProduct(ProductType.Domain);
+
+        var ex = Assert.Throws<DomainRuleException>(() => product.ConfigureTrial(ProductTrial.Default with { Enabled = true }));
+        product.ConfigureTrial(ProductTrial.Default);
+
+        Assert.Equal(ProductsErrors.ProductDomainShapeInvalid, ex.Code);
+        Assert.False(product.TrialEnabled);
+    }
+
     /// <summary>Creates a product of the given type with fixed, irrelevant values.</summary>
     /// <param name="type">The product type.</param>
     /// <returns>A new active product.</returns>

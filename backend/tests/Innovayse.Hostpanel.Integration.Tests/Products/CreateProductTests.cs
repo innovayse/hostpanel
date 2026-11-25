@@ -4,6 +4,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
@@ -453,5 +454,105 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
         var plainDto = await ProductsTestSeeds.GetProductAsync(client, await plain.Content.ReadFromJsonAsync<int>());
         plainDto.GetProperty("maxActiveServices").ValueKind.Should().Be(JsonValueKind.Null);
         plainDto.GetProperty("onePerClient").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>
+    /// An installation with no domain product can create one through the API as an admin does: the product is
+    /// stored as an active domain product priced at zero, and the anonymous storefront route then answers its id,
+    /// so a domain can be put in the cart. Runs on a factory of its own, since the shared database holds the
+    /// domain products other tests add.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_DomainProduct_IsOfferedToTheStorefrontAsync()
+    {
+        await using var isolated = new IntegrationTestFactory();
+        await isolated.InitializeAsync();
+        var storefront = isolated.CreateClient();
+        (await storefront.GetAsync("/api/public/products/domain")).StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        var client = await ProductsTestSeeds.AdminClientAsync(isolated);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Domain Registration",
+            type = ProductType.Domain,
+            prices = new[] { new { currencyCode = "USD", monthly = (decimal?)0m, annual = (decimal?)0m } },
+        });
+
+        created.StatusCode.Should().Be(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+        var id = await created.Content.ReadFromJsonAsync<int>();
+        var dto = await ProductsTestSeeds.GetProductAsync(client, id);
+        dto.GetProperty("type").GetString().Should().Be(nameof(ProductType.Domain));
+        dto.GetProperty("status").GetString().Should().Be(nameof(ProductStatus.Active));
+        var response = await storefront.GetAsync("/api/public/products/domain");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32().Should().Be(id);
+    }
+
+    /// <summary>
+    /// A domain product created hidden is stored inactive, so the storefront still answers that no domain
+    /// product is configured: only an active one is offered. Runs on a factory of its own.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_HiddenDomainProduct_IsNotOfferedToTheStorefrontAsync()
+    {
+        await using var isolated = new IntegrationTestFactory();
+        await isolated.InitializeAsync();
+        var client = await ProductsTestSeeds.AdminClientAsync(isolated);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+
+        var created = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Domain Registration", type = ProductType.Domain, monthlyPrice = 0m, annualPrice = 0m, isHidden = true,
+        });
+
+        created.StatusCode.Should().Be(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+        var response = await isolated.CreateClient().GetAsync("/api/public/products/domain");
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.DOMAIN_PRODUCT_NOT_CONFIGURED);
+    }
+
+    /// <summary>
+    /// A domain product takes no hosting package, server group or trial: each is refused with
+    /// <c>PRODUCT_DOMAIN_SHAPE_INVALID</c> (400).
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CreateProduct_DomainProductWithHostingDetails_IsRefusedAsync()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ProductsTestSeeds.CreateGroupAsync(client);
+        var serverGroup = await client.PostAsJsonAsync("/api/admin/server-groups", new
+        {
+            name = $"servers-{Guid.NewGuid():N}", fillType = ServerFillType.LeastFull, serverIds = Array.Empty<int>(),
+        });
+        var serverGroupId = await serverGroup.Content.ReadFromJsonAsync<int>();
+
+        var withPackage = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Domain With Package", type = ProductType.Domain, packageName = "starter", monthlyPrice = 0m, annualPrice = 0m,
+        });
+        var withServerGroup = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId, name = "Domain With Servers", type = ProductType.Domain, serverGroupId, monthlyPrice = 0m, annualPrice = 0m,
+        });
+        var withTrial = await client.PostAsJsonAsync("/api/products", new
+        {
+            groupId,
+            name = "Domain With Trial",
+            type = ProductType.Domain,
+            monthlyPrice = 0m,
+            annualPrice = 0m,
+            trial = new { enabled = true, days = 14, autoConvert = true, reminderDays = new[] { 3 }, gracePeriodDays = 3 },
+        });
+
+        foreach (var response in new[] { withPackage, withServerGroup, withTrial })
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync());
+            await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_DOMAIN_SHAPE_INVALID);
+        }
     }
 }

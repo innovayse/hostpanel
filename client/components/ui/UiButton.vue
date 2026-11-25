@@ -34,7 +34,7 @@ import { BUTTON_SIZE_CLASSES, FOCUS_RING, FOCUS_RING_OFFSET } from '~/utils/ui/t
 interface Props {
   /** Visual weight of the button. */
   variant?: `${UiButtonVariant}`
-  /** Size step. */
+  /** Size step; medium when omitted. A bare button takes a step only when one is given. */
   size?: `${UiSize}`
   /** Native button type; ignored when rendered as a link. */
   type?: `${UiButtonType}`
@@ -63,7 +63,7 @@ interface Props {
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
   variant: UiButtonVariant.Primary,
-  size: UiSize.Md,
+  size: undefined,
   type: UiButtonType.Button,
   disabled: false,
   loading: false,
@@ -122,12 +122,13 @@ const buttonClasses = computed(() => {
   const base = 'ui-btn inline-flex items-center justify-center whitespace-nowrap font-medium transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
   const width = props.fullWidth ? 'w-full' : ''
   const radius = props.pill ? 'rounded-full' : 'rounded-lg'
-  // A bare button carries no palette and no padding step: the screen owns both, and the offset
-  // ring (drawn in the page colour) would show as a halo on a surface it does not know.
+  // A bare button carries no palette: the screen owns it, and the offset ring (drawn in the page
+  // colour) would show as a halo on a surface it does not know. It takes the kit size step only
+  // when asked, so a bare button beside a field of the same step is exactly as tall as the field.
   if (props.variant === UiButtonVariant.Bare) {
-    return [base, radius, FOCUS_RING, width].filter(Boolean).join(' ')
+    return [base, radius, FOCUS_RING, props.size ? BUTTON_SIZE_CLASSES[props.size as UiSize] : '', width].filter(Boolean).join(' ')
   }
-  return [base, radius, `ui-btn-${props.variant}`, FOCUS_RING_OFFSET, OFFSET_SURFACE, VARIANT_CLASSES[props.variant as UiButtonVariant], BUTTON_SIZE_CLASSES[props.size as UiSize], width]
+  return [base, radius, `ui-btn-${props.variant}`, FOCUS_RING_OFFSET, OFFSET_SURFACE, VARIANT_CLASSES[props.variant as UiButtonVariant], BUTTON_SIZE_CLASSES[(props.size ?? UiSize.Md) as UiSize], width]
     .filter(Boolean)
     .join(' ')
 })

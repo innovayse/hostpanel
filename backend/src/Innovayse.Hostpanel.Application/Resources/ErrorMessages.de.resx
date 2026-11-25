@@ -191,6 +191,7 @@
   <data name="PRODUCT_BUNDLE_NOT_AVAILABLE" xml:space="preserve"><value>Dieses Paket kann nicht bestellt werden.</value></data>
   <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve"><value>Eines der Produkte im Paket existiert nicht.</value></data>
   <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve"><value>Ein Domain-Produkt kann nicht Teil eines Pakets sein. Aktivieren Sie stattdessen die enthaltene Domain.</value></data>
+  <data name="PRODUCT_DOMAIN_SHAPE_INVALID" xml:space="preserve"><value>Ein Domain-Produkt hat kein Hosting-Paket, keine Servergruppe und keine Testphase: Darauf wird nichts bereitgestellt, und den Domainpreis legt die Domain-Preisliste fest.</value></data>
   <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve"><value>Ein Paket mit Domain benötigt eine Registrierungsdauer von 1 bis 10 Jahren, und ein Paket ohne Domain darf keine Dauer angeben.</value></data>
   <data name="PRODUCT_BUNDLE_DISCOUNT_INVALID" xml:space="preserve"><value>Der Rabatt passt nicht zu seinem Typ: Ein Prozentwert liegt zwischen 0 und 100, ein fester Betrag ist nicht negativ und benötigt eine Währung, und ohne Rabatt ist beides nicht erforderlich.</value></data>
   <data name="PRODUCT_BUNDLE_ITEMS_REQUIRED" xml:space="preserve"><value>Ein Paket benötigt mindestens ein Produkt.</value></data>

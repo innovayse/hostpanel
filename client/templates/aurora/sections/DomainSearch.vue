@@ -14,6 +14,7 @@
         <UiInput
           v-model="query"
           testid="home-domain-search-input"
+          :size="UiSize.Md"
           :disabled="!hasZones"
           :placeholder="t('aurora.domainSearch.placeholder')"
           class="min-w-0 flex-1"
@@ -23,7 +24,8 @@
           variant="bare"
           :disabled="!hasZones"
           data-testid="home-domain-search-submit"
-          :class="[BRAND_BUTTON, 'px-[22px] py-[15px] text-[15px]']"
+          :size="UiSize.Md"
+          :class="BRAND_BUTTON"
         >
           {{ t('ui.searchButton') }}
         </UiButton>
@@ -57,7 +59,7 @@
         appears to work but returns nothing reads as a broken site. Say why.
       -->
       <UiText v-if="!hasZones" size="sm" tone="inherit" class="text-mut2">{{ t('aurora.domainSearch.noZones') }}</UiText>
-      <UiSkeleton v-else-if="pending" :lines="3" data-testid="domain-search-pending" />
+      <UiResultSkeleton v-else-if="pending" :with-action="false" dense data-testid="domain-search-pending" />
       <UiText v-else-if="results.length === 0" size="sm" tone="inherit" class="text-mut2">
         {{ t('aurora.domainSearch.empty') }}
       </UiText>
@@ -101,7 +103,7 @@ import { BRAND_BUTTON } from '~/templates/aurora/buttons'
 import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_LABEL_CLASSES } from '~/utils/domainStatus'
 import type { DomainResult } from '~/types/domainresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
-import { UiTextTag } from '~/utils/ui/enums'
+import { UiSize, UiTextTag } from '~/utils/ui/enums'
 
 /** Props with their defaults applied. */
 const props = withDefaults(defineProps<{

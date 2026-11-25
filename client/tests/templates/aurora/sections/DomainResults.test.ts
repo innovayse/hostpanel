@@ -34,6 +34,14 @@ describe('DomainResults', () => {
     expect(mountWithKit(DomainResults, { props: { results: [] } }).find('[data-testid="domain-results-empty"]').exists()).toBe(true)
   })
 
+  it('stands result-shaped rows in for the lookup, each with a name, a price and an action', async () => {
+    await loadGlobals()
+    const pending = mountWithKit(DomainResults, { props: { pending: true } }).find('[data-testid="domain-results-pending"]')
+
+    expect(pending.findAll('[data-testid="ui-result-skeleton-row"]')).toHaveLength(3)
+    expect(pending.find('[data-testid="ui-result-skeleton-action"]').exists()).toBe(true)
+  })
+
   it('marks each row with its status for the e2e specs', async () => {
     await loadGlobals()
     const wrapper = mountWithKit(DomainResults, { props: { results: RESULTS } })

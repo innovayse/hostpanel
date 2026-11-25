@@ -86,6 +86,15 @@ describe('useDomainsApi', () => {
     expect(callOf(mock, 1).body).toEqual({ value: false })
   })
 
+  it('setRegistrarAutoRenew PUTs { value } to the registrar route and never to the panel flag route', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const api = useDomainsApi()
+    await api.setRegistrarAutoRenew(3, { enabled: false })
+    await api.setRegistrarAutoRenew(3, { enabled: true })
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/registrar-auto-renew', method: 'PUT', body: { value: false } })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/domains/3/registrar-auto-renew', method: 'PUT', body: { value: true } })
+  })
+
   it('modifyContact POSTs the contact and initiateOutgoingTransfer returns the code', async () => {
     const mock = stubFetch(json({ eppCode: 'abc123' }))
     const api = useDomainsApi()

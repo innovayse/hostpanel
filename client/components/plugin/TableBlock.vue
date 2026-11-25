@@ -36,7 +36,6 @@
               <UiButton
                 v-if="block.rowLink && cell.first"
                 variant="bare"
-                size="sm"
                 data-testid="plugin-table-row-open"
                 @click="openRow(row.data)"
               >

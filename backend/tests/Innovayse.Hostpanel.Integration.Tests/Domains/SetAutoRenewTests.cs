@@ -1,8 +1,10 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -135,6 +137,36 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
         (await context.ActivityLogs.AsNoTracking()
             .AnyAsync(l => l.ClientId == clientId && l.Description.StartsWith("Set Domain Auto Renew")))
             .Should().BeFalse();
+    }
+
+    /// <summary>
+    /// The panel's renewal flag is changed without asking the registrar: a domain placed at a registrar switches its
+    /// panel flag on and off and the registrar is never called, because the registrar's auto renew is a separate setting.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SetAutoRenew_DomainAtARegistrar_ChangesOnlyThePanelFlagAsync()
+    {
+        var registrar = new RecordingRegistrar(new ManualTimeProvider(TestMoments.Seeded));
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IRegistrarProvider>(registrar)));
+        int domainId;
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            domainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
+        }
+
+        var admin = host.CreateClient();
+        admin.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+        (await admin.PutAsJsonAsync($"/api/domains/{domainId}/auto-renew", new { value = true }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ReadAutoRenewAsync(admin, domainId)).Should().BeTrue();
+        (await admin.PutAsJsonAsync($"/api/domains/{domainId}/auto-renew", new { value = false }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ReadAutoRenewAsync(admin, domainId)).Should().BeFalse();
+
+        registrar.Calls.Should().NotContain(call => call.StartsWith("SetAutoRenewAsync"));
     }
 
     /// <summary>Reads the auto-renew switch of a domain through the admin detail route.</summary>

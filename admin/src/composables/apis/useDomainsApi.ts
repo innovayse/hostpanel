@@ -84,7 +84,7 @@ export const useDomainsApi = () => {
     request<void>(`${ApiPath.Domains}/${id}/renew`, { method: HttpMethod.Post, body: JSON.stringify({ years }) })
 
   /**
-   * Turns auto-renew on or off.
+   * Turns the panel's own renewal on or off; the registrar is not asked (see {@link setRegistrarAutoRenew}).
    *
    * The API reads this switch from `value`, unlike the other domain toggles that read `enabled`.
    * Sending `enabled` binds nothing, so the flag silently falls back to false and switches
@@ -96,6 +96,20 @@ export const useDomainsApi = () => {
    */
   const setAutoRenew = (id: number | string, toggle: DomainToggle): Promise<void> =>
     request<void>(`${ApiPath.Domains}/${id}/auto-renew`, {
+      method: HttpMethod.Put,
+      body: JSON.stringify({ value: toggle.enabled }),
+    })
+
+  /**
+   * Turns auto renew on or off at the registrar that holds the domain. Only the registrar is asked: the panel's own
+   * renewal flag (see {@link setAutoRenew}) is a separate setting and stays as it is.
+   *
+   * @param id - Domain id.
+   * @param toggle - The wanted registrar state.
+   * @returns Nothing.
+   */
+  const setRegistrarAutoRenew = (id: number | string, toggle: DomainToggle): Promise<void> =>
+    request<void>(`${ApiPath.Domains}/${id}/registrar-auto-renew`, {
       method: HttpMethod.Put,
       body: JSON.stringify({ value: toggle.enabled }),
     })
@@ -232,7 +246,7 @@ export const useDomainsApi = () => {
 
   return {
     listDomains, getDomain, updateDomain, registerDomain, renewDomain,
-    setAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
+    setAutoRenew, setRegistrarAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
     modifyContact, initiateOutgoingTransfer, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,
     addForwardingRule, updateForwardingRule, deleteForwardingRule,

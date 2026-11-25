@@ -110,6 +110,15 @@ describe('domainsStore writes', () => {
     expect(callOf(mock, 2)).toMatchObject({ url: '/api/domains/3/dns', method: 'POST' })
   })
 
+  it('setRegistrarAutoRenew sends { value } to the registrar route only', async () => {
+    const store = useDomainsStore()
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    expect(await store.setRegistrarAutoRenew(3, false)).toBe(true)
+    expect(mock).toHaveBeenCalledTimes(1)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/registrar-auto-renew', method: 'PUT', body: { value: false } })
+  })
+
   it('getEppCode returns the code, null with actionError when refused', async () => {
     const store = useDomainsStore()
     stubFetch(json({ eppCode: 'abc123' }))

@@ -58,7 +58,7 @@ Open a client, go to their **Domains** tab and click a domain to open its detail
 |------|---------|
 | Domain Info | Order, order type, domain name, registrar, first payment amount, recurring amount |
 | Nameservers | Nameserver 1-5; saved to the registrar on change (`NAMESERVERS_UPSTREAM_FAILED` if the registrar refuses) |
-| Registrar Commands | Register, Renew, Modify Contact Details, Get EPP Code, Enable / Disable ID Protection |
+| Registrar Commands | Register, Renew, Modify Contact Details, Get EPP Code, Enable / Disable ID Protection, Turn auto renew on / off at the registrar |
 | Dates & Billing | Registration period, expiry date, renewal price, subscription ID |
 | Management Tools | DNS Management, Email Forwarding, ID Protection, Auto Renew, Registrar Lock |
 | Admin Notes | Staff-only notes |
@@ -70,8 +70,10 @@ Open a client, go to their **Domains** tab and click a domain to open its detail
 - **DNS Management**: enables the DNS record table.
 - **Email Forwarding**: enables the email forwarding table.
 - **ID Protection** / **WHOIS Privacy**: hides registrant contact details in WHOIS (`WHOIS_PRIVACY_UPSTREAM_FAILED` if refused; `REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE` if the registrar does not support it).
-- **Auto Renew**: controls whether a renewal invoice is raised automatically before expiry.
+- **Renew from the panel**: controls whether a renewal invoice is raised automatically before expiry. It never changes anything at the registrar.
 - **Registrar Lock**: prevents unauthorised transfers out (`REGISTRAR_LOCK_UPSTREAM_FAILED` if the registrar refuses).
+
+The registrar's own auto renew is a separate setting, changed with **Turn on auto renew at the registrar** and **Turn off auto renew at the registrar** on the Registrar tab (`DOMAIN_AUTO_RENEW_UPSTREAM_FAILED` if the registrar refuses). Turn it off at the registrar for a domain the panel renews, so the registrar does not renew it a second time. These two actions do not change the **Renew from the panel** switch.
 
 A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when a registrar command is attempted. Cancelling a domain that cannot be cancelled returns `DOMAIN_CANCEL_NOT_ALLOWED`.
 
@@ -83,7 +85,7 @@ A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when 
 
 A renewal invoice is raised automatically by a daily job (runs at **05:00 UTC** by default). Renewal reminder emails are sent by another daily job (runs at **06:00 UTC** by default) on the days configured in `billing.renewal.reminder_days`.
 - The domain must be Active.
-- Auto Renew must be enabled on the domain.
+- Renew from the panel must be enabled on the domain.
 - The invoice is raised `billing.renewal.invoice_days_before` days before the expiry date.
 
 After payment, Hostpanel sends a renewal request to the registrar. If the registrar accepts, the expiry date is extended and the customer receives `domain-renewed`. If the registrar refuses, staff receive `domain-renewal-failed-admin`.

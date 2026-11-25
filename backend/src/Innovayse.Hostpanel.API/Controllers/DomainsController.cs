@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Domains.Commands.InitiateOutgoingTransfer;
 using Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.SetAutoRenew;
+using Innovayse.Hostpanel.Application.Domains.Commands.SetRegistrarAutoRenew;
 using Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.UpdateDomain;
 using Innovayse.Hostpanel.Application.Domains.Common;
@@ -176,16 +177,46 @@ public sealed class DomainsController : BaseApiController
         return HandleResult(outcome);
     }
 
-    /// <summary>Enables or disables automatic renewal for a domain.</summary>
+    /// <summary>
+    /// Enables or disables the panel's own automatic renewal for a domain. The registrar is not called: its auto renew
+    /// is a separate setting (<see cref="SetRegistrarAutoRenewAsync"/>).
+    /// </summary>
     /// <param name="id">Domain primary key; wins over any id in the body.</param>
-    /// <param name="command">The desired auto-renew flag value.</param>
+    /// <param name="command">The desired panel renewal flag value.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 on success; 404 when the id names no domain; 502 when the registrar rejects the
-    /// update; 401 without a session; 403 for a caller who is not staff;
-    /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// 204 on success; 404 when the id names no domain; 401 without a session; 403 for a caller who is not staff;
+    /// 400 when the body, query or route fails validation; 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("{id:int}/auto-renew")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetAutoRenewAsync(
+        int id, [FromBody] SetAutoRenewCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { DomainId = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Turns automatic renewal on or off at the registrar that holds a domain. Only the registrar plugin is called: the
+    /// panel's own renewal flag is not changed.
+    /// </summary>
+    /// <param name="id">Domain primary key; wins over any id in the body.</param>
+    /// <param name="command">The wanted registrar auto renew state.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 404 when the id names no domain; 400 when the body, query or route fails validation or with
+    /// <c>DOMAIN_NO_REGISTRAR_REF</c> when the domain was never placed at a registrar; 502 when the registrar rejects the
+    /// update; 401 without a session; 403 for a caller who is not staff; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c>
+    /// or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active
+    /// there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
+    /// </returns>
+    [HttpPut("{id:int}/registrar-auto-renew")]
     [Authorize(Policy = Policies.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -195,8 +226,8 @@ public sealed class DomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> SetAutoRenewAsync(
-        int id, [FromBody] SetAutoRenewCommand command, CancellationToken ct)
+    public async Task<IActionResult> SetRegistrarAutoRenewAsync(
+        int id, [FromBody] SetRegistrarAutoRenewCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { DomainId = id }, ct);
         return HandleResult(outcome);

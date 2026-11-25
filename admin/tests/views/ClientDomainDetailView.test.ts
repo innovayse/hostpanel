@@ -237,6 +237,42 @@ describe('ClientDomainDetailView', () => {
     expect(put?.body).toEqual(expect.objectContaining({ promotionCode: 'SAVE10' }))
   })
 
+  it('the panel renewal switch asks only the panel flag route, never the registrar one', async () => {
+    const mock = stubRoutes({
+      'PUT /api/domains/3/auto-renew': () => new Response(null, { status: 204 }),
+      'GET /api/domains/3': () => domain('Active'),
+    })
+    const wrapper = await mountDomain()
+    await openTab(wrapper, 'management')
+
+    expect(wrapper.get('[data-testid="client-domain-toggle-auto-renew"]').element.parentElement?.textContent).toContain('Renew from the panel')
+    await wrapper.get('[data-testid="client-domain-toggle-auto-renew"]').trigger('click')
+    await flushPromises()
+
+    const puts = mock.mock.calls.map((_, index) => callOf(mock, index)).filter((call) => call.method === 'PUT')
+    expect(puts.map((call) => call.url)).toEqual(['/api/domains/3/auto-renew'])
+    expect(puts[0]?.body).toEqual({ value: true })
+  })
+
+  it('the registrar auto renew buttons ask only the registrar route, never the panel flag one', async () => {
+    const mock = stubRoutes({
+      'PUT /api/domains/3/registrar-auto-renew': () => new Response(null, { status: 204 }),
+      'GET /api/domains/3': () => domain('Active'),
+    })
+    const wrapper = await mountDomain()
+    await openTab(wrapper, 'registrar')
+
+    await wrapper.get('[data-testid="client-domain-registrar-auto-renew-off"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="client-domain-registrar-auto-renew-on"]').trigger('click')
+    await flushPromises()
+
+    const puts = mock.mock.calls.map((_, index) => callOf(mock, index)).filter((call) => call.method === 'PUT')
+    expect(puts.map((call) => call.url)).toEqual(['/api/domains/3/registrar-auto-renew', '/api/domains/3/registrar-auto-renew'])
+    expect(puts.map((call) => call.body)).toEqual([{ value: false }, { value: true }])
+    expect(wrapper.get('[data-testid="client-domain-saved"]').text()).toBe('Done. The registrar accepted the change.')
+  })
+
   it('returns to the domains of its client with the back pill', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const wrapper = await mountDomain()

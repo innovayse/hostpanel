@@ -6,8 +6,8 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Domains.Commands.SetMyDomainAutoRenew;
 
 /// <summary>
-/// Sets automatic renewal on one of the calling client's own domains, refusing every domain that is
-/// not theirs.
+/// Sets the panel's automatic renewal on one of the calling client's own domains, refusing every domain that is
+/// not theirs. The registrar's auto renew is staff's to set and is never reached from here.
 /// </summary>
 /// <remarks>
 /// The check lives here rather than at the endpoint, so it travels with the message: nothing can
@@ -37,8 +37,7 @@ public sealed class SetMyDomainAutoRenewHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success once the setting has been applied, or <c>DOMAIN_NOT_FOUND</c> when the domain is
-    /// not the caller's, when no such domain exists, or when the caller has no client record, or
-    /// <c>DOMAIN_AUTO_RENEW_UPSTREAM_FAILED</c> when the registrar rejects the update.
+    /// not the caller's, when no such domain exists, or when the caller has no client record.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     public async Task<Result> HandleAsync(SetMyDomainAutoRenewCommand cmd, CancellationToken ct)

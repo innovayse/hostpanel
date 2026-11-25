@@ -416,6 +416,24 @@ public sealed class PanelPluginProvisioningProviderTests(IntegrationTestFactory 
         harness.Script.Received.Single().Should().BeOfType<PanelAccountContext>().Which.Service.Should().Be(new PanelService(7, "acct-7"));
     }
 
+    /// <summary>A sign in page that is not an http or https address, or carries user info, is never passed on as login details.</summary>
+    /// <param name="page">What the plugin answers.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/relative/login")]
+    [InlineData("ftp://panel.example.test/")]
+    [InlineData("https://admin:secret@panel.example.test/login")]
+    public async Task Credentials_SignInPageNotAWebAddress_IsRefusedAsync(string page)
+    {
+        using var harness = await PanelPluginHarness.CreateAsync(factory, typeof(FakePanelPlugin));
+        harness.Script.Login = ValueResult<PanelLoginDetails, PanelRefusalReason>.Done(new PanelLoginDetails("acct-1", null, "one.example.test", "203.0.113.9", page));
+
+        var act = () => harness.Provider().GetCredentialsAsync(new AccountCredentialsOrder(7, "acct-7"), CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_CREDENTIALS_UPSTREAM_FAILED);
+    }
+
     /// <summary>A plugin without the login capability is never asked for credentials: the host answers that the action is not supported.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

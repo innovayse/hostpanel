@@ -192,6 +192,14 @@ public sealed class PanelPluginProvisioningProvider : IProvisioningProvider
                 HostpanelErrorCodes.SERVICE_CREDENTIALS_UPSTREAM_FAILED, "The panel plugin answered success without login details.");
         }
 
+        // The sign in page is shown to a person who opens it by hand, so only an http or https address without user info passes.
+        if (PanelSsoLinkRules.AcceptLoginPage(details.LoginUrl) is null)
+        {
+            _logger.LogWarning("Panel plugin {PluginId} answered a sign in page that is not an http or https address.", _pluginId);
+            throw new DomainRuleException(
+                HostpanelErrorCodes.SERVICE_CREDENTIALS_UPSTREAM_FAILED, "The panel plugin answered a sign in page that is not a web address.");
+        }
+
         return new ServiceCredentials(
             details.Username, details.Password, details.Domain ?? string.Empty, details.ServerIp ?? _server.IpAddress ?? _server.Hostname, details.LoginUrl);
     }

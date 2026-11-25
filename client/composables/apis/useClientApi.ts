@@ -29,6 +29,7 @@ import type { ClientTicket } from '~/types/clientticket'
 import type { CancellationStatus } from '~/types/cancellationstatus'
 import type { CancellationType } from '~/types/cancellationtype'
 import type { HostingInfo } from '~/types/hostinginfo'
+import type { PanelLoginDetails } from '~/types/panellogindetails'
 import type { ServicePlanChangeOption } from '~/types/serviceplanchangeoption'
 import type { ServicePlanChangeResult } from '~/types/serviceplanchangeresult'
 import { HttpMethod } from '~/types/httpmethod'
@@ -360,6 +361,16 @@ export const useClientApi = () => {
     apiFetch<{ url: string }>(`/api/portal/client/services/${id}/panel-sso`)
 
   /**
+   * Reads how the client signs in by hand to the service's panel, for a panel that cannot issue a single sign on address.
+   *
+   * @param id - Service id.
+   * @returns The panel's sign in page and the account's details; never a password.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchPanelLoginDetails = (id: string): Promise<PanelLoginDetails> =>
+    apiFetch<PanelLoginDetails>(`/api/portal/client/services/${id}/panel-login`)
+
+  /**
    * Address of the icon the plugin serving a service's panel ships, for an `<img>`: the portal's own route, which
    * asks the API for it with the caller's session.
    *
@@ -408,6 +419,7 @@ export const useClientApi = () => {
     fetchPlanChangeOptions,
     requestPlanChange,
     fetchPanelSsoUrl,
+    fetchPanelLoginDetails,
     panelPluginIconPath,
     setUpService,
     fetchSshAccess,

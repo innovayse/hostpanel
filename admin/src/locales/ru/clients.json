@@ -298,6 +298,12 @@
   "clientServiceDetail": {
     "serviceIdProductname": "Услуга №{id}: {productName}",
     "loginToControlPanel": "Открыть панель управления",
+    "panelLoginTitle": "Вход в панель управления",
+    "panelLoginIntro": "Эта панель не умеет входить автоматически. Откройте её страницу входа и используйте данные ниже.",
+    "panelLoginOpen": "Открыть страницу входа",
+    "panelLoginDomain": "Домен",
+    "panelLoginServer": "Сервер",
+    "panelLoginNoPassword": "Пароль здесь не показывается. Используйте пароль, заданный для аккаунта.",
     "serviceInfo": "Сведения об услуге",
     "order": "Заказ №",
     "server": "Сервер",

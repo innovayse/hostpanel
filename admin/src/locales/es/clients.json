@@ -297,6 +297,12 @@
   "clientServiceDetail": {
     "serviceIdProductname": "Servicio #{id} — {productName}",
     "loginToControlPanel": "Iniciar sesión en el Panel de Control",
+    "panelLoginTitle": "Iniciar sesión en el panel de control",
+    "panelLoginIntro": "Este panel no puede iniciar su sesión automáticamente. Abra su página de inicio de sesión y use los datos siguientes.",
+    "panelLoginOpen": "Abrir la página de inicio de sesión",
+    "panelLoginDomain": "Dominio",
+    "panelLoginServer": "Servidor",
+    "panelLoginNoPassword": "La contraseña no se muestra aquí. Use la contraseña definida para la cuenta.",
     "serviceInfo": "Información del servicio",
     "order": "Orden #",
     "server": "Servidor",

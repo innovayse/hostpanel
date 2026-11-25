@@ -57,6 +57,7 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchPlanChangeOptions reads the sub-resource', call: () => api.fetchPlanChangeOptions('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/plan-change-options' },
   { name: 'requestPlanChange posts the target product', call: () => api.requestPlanChange('9', 12), method: HttpMethod.Post, url: '/api/portal/client/services/9/plan-change', body: { toProductId: 12 } },
   { name: 'fetchPanelSsoUrl reads the sign-in address', call: () => api.fetchPanelSsoUrl('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/panel-sso' },
+  { name: 'fetchPanelLoginDetails reads how to sign in by hand', call: () => api.fetchPanelLoginDetails('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/panel-login' },
   { name: 'setUpService posts the setup answers', call: () => api.setUpService('9', { domain: 'a.com' }), method: HttpMethod.Post, url: '/api/portal/client/services/9/setup', body: { domain: 'a.com' } },
 ]
 

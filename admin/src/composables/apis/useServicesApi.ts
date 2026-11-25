@@ -9,6 +9,7 @@ import { buildQuery, useApi } from '@/composables/useApi'
 import type { PaginatedList } from '@/types/paginatedlist'
 import {
   type AddExistingServicePayload,
+  type PanelLoginDetails,
   type ProvisioningReasonPayload,
   type ServiceAutomationPayload,
   type ServiceBillingTermsPayload,
@@ -143,6 +144,16 @@ export const useServicesApi = () => {
     request<{ url: string }>(`${ApiPath.Provisioning}/${id}/panel-sso`)
 
   /**
+   * Reads how a person signs in to the service's panel by hand (the panel's sign in page, the user name, the domain and the
+   * server), for a panel that cannot issue a single sign on link. It never carries a password.
+   *
+   * @param id - Service id.
+   * @returns The login details.
+   */
+  const getPanelLoginDetails = (id: number | string): Promise<PanelLoginDetails> =>
+    request<PanelLoginDetails>(`${ApiPath.Provisioning}/${id}/panel-login`)
+
+  /**
    * Provisions a pending service.
    *
    * @param id - Service id.
@@ -231,7 +242,7 @@ export const useServicesApi = () => {
 
   return {
     addExistingService, listServices, getService, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes,
-    changeStatus, correctTerminationDate, getPanelLoginUrl,
+    changeStatus, correctTerminationDate, getPanelLoginUrl, getPanelLoginDetails,
     provisionService, changePassword, changePackage, listPackages, syncServiceWithPanel, suspendService, unsuspendService, terminateService,
   }
 }

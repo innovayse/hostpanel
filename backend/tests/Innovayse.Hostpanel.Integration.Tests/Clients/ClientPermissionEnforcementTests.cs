@@ -44,6 +44,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
         { "POST", "/api/me/services", ClientPermission.PlaceNewOrders },
         { "POST", "/api/me/services/1/cancel", ClientPermission.PlaceNewOrders },
         { "GET", "/api/me/services/1/panel-sso", ClientPermission.AllowSingleSignOn },
+        { "GET", "/api/me/services/1/panel-login", ClientPermission.AllowSingleSignOn },
         { "GET", "/api/me/plugins/acme-panel/icon", ClientPermission.AllowSingleSignOn },
         { "POST", "/api/me/services/1/change-password", ClientPermission.ViewModifyPasswords },
         { "GET", "/api/me/domains", ClientPermission.ViewDomains },

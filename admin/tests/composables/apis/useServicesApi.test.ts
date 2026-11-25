@@ -93,6 +93,14 @@ describe('useServicesApi', () => {
     expect(callOf(mock).url).toBe('/api/provisioning/4/panel-sso')
   })
 
+  it('getPanelLoginDetails reads how to sign in by hand', async () => {
+    const details = { username: 'ada', domain: 'site.example', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example:8083/login/' }
+    const mock = stubFetch(json(details))
+
+    expect(await useServicesApi().getPanelLoginDetails(4)).toEqual(details)
+    expect(callOf(mock).url).toBe('/api/provisioning/4/panel-login')
+  })
+
   it('syncServiceWithPanel POSTs the password choice to the admin route and returns what was done', async () => {
     const answer = { fields: [{ field: PanelSyncField.Status, outcome: PanelSyncOutcome.Applied, panelValue: 'Suspended' }] }
     const mock = stubFetch(json(answer))

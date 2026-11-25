@@ -298,6 +298,12 @@
   "clientServiceDetail": {
     "serviceIdProductname": "Ծառայություն №{id}՝ {productName}",
     "loginToControlPanel": "Բացել կառավարման վահանակը",
+    "panelLoginTitle": "Մուտք կառավարման վահանակ",
+    "panelLoginIntro": "Այս վահանակը չի կարող ավտոմատ մուտք գործել։ Բացեք նրա մուտքի էջը և օգտագործեք ստորև բերված տվյալները։",
+    "panelLoginOpen": "Բացել մուտքի էջը",
+    "panelLoginDomain": "Դոմեն",
+    "panelLoginServer": "Սերվեր",
+    "panelLoginNoPassword": "Գաղտնաբառն այստեղ չի ցուցադրվում։ Օգտագործեք հաշվի համար սահմանված գաղտնաբառը։",
     "serviceInfo": "Տեղեկություններ ծառայության մասին",
     "order": "Պատվեր №",
     "server": "Սերվեր",

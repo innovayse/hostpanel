@@ -50,6 +50,8 @@
     </UiStack>
 
     <UiText v-if="ssoError" size="xs" tone="danger" class="mt-3" data-testid="dashboard-sso-error">{{ ssoError }}</UiText>
+
+    <ClientServicesServicePanelLoginDialog v-if="panelLogin" :details="panelLogin" @close="management.closePanelLogin()" />
   </UiCard>
 </template>
 
@@ -75,8 +77,8 @@ const store = useClientStore()
 /** Service management store: opens the panel and keeps the sentence of a refused sign-in. */
 const management = useServiceManagementStore()
 
-/** The API's sentence for the last refused panel sign-in; empty when none was refused. */
-const { ssoError } = storeToRefs(management)
+/** The API's sentence for the last refused panel sign-in, and the details to sign in by hand when the panel cannot sign anybody in. */
+const { ssoError, panelLogin } = storeToRefs(management)
 
 /**
  * Whether the control-panel shortcut is offered for a service.

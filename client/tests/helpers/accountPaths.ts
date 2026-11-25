@@ -104,6 +104,8 @@ export enum ServiceAction {
   ChangePassword = 'change-password',
   /** Opens the control panel without a password. */
   PanelSso = 'panel-sso',
+  /** The details to sign in by hand to the service's panel. */
+  PanelLogin = 'panel-login',
   /** The service invoices. */
   Invoices = 'invoices',
   /** Changes the plan. */

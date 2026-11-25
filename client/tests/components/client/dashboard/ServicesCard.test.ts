@@ -176,4 +176,19 @@ describe('ClientDashboardServicesCard', () => {
     expect(button.find('[data-testid="service-panel-plugin-icon"]').exists()).toBe(false)
     expect(button.find('svg').exists()).toBe(true)
   })
+
+  it('shows how to sign in by hand, and opens nothing, when the panel cannot sign anybody in but has login details', async () => {
+    table[`GET ${SSO_PATH}`] = { status: 409, body: { type: 'PANEL_OPERATION_NOT_SUPPORTED', detail: 'The panel does not offer single sign on.' } }
+    table[`GET ${servicePath(1, ServiceAction.PanelLogin)}`] = { body: { username: 'ada', domain: 'a.test', serverAddress: '203.0.113.9', loginUrl: 'https://panel.example:8083/login/' } }
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const wrapper = mountClient(ServicesCard)
+    useClientStore().services = [ACTIVE]
+    await nextTick()
+
+    await wrapper.find('[data-testid="dashboard-service-panel-1"]').trigger('click')
+
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-panel-login-link"]').attributes('href')).toBe('https://panel.example:8083/login/'))
+    expect(wrapper.find('[data-testid="dashboard-sso-error"]').exists()).toBe(false)
+    expect(open).not.toHaveBeenCalled()
+  })
 })

@@ -394,3 +394,34 @@ export interface AddExistingServicePayload {
   /** When the current billing period began (ISO date), or null for today. */
   startedAt: string | null
 }
+
+/** How a person signs in to a panel by hand, for a panel that cannot issue a single sign on link; it never carries a password. */
+export interface PanelLoginDetails {
+  /** The user name the account signs in with. */
+  username: string
+  /** The primary domain of the account; empty when the panel reports none. */
+  domain: string
+  /** The address of the server the account lives on. */
+  serverAddress: string
+  /** The address of the panel's own sign in page, opened by the person in a new tab. */
+  loginUrl: string
+}
+
+/** The codes of panel refusals the admin branches on. */
+export enum PanelErrorCode {
+  /** The serving plugin cannot do the operation (it has no single sign on, or no login details). */
+  OperationNotSupported = 'PANEL_OPERATION_NOT_SUPPORTED',
+}
+
+/** What the Open panel button of a service resolves to. */
+export enum PanelEntryKind {
+  /** A single sign on address the panel issued: it is opened as it is. */
+  SignedIn = 'signedIn',
+  /** The panel cannot sign the person in: its sign in page and the account's details are shown instead. */
+  LoginDetails = 'loginDetails',
+}
+
+/** The way into a service's panel: a single sign on address, or the details to sign in by hand. */
+export type PanelEntry =
+  | { kind: PanelEntryKind.SignedIn; url: string }
+  | { kind: PanelEntryKind.LoginDetails; details: PanelLoginDetails }

@@ -8,19 +8,23 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useServicesApi } from '@/composables/apis/useServicesApi'
+import { errorCode, errorSentence } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
 import type { PaginatedList } from '@/types/paginatedlist'
-import type {
-  AddExistingServicePayload,
-  ServiceAutomationPayload,
-  ServiceBillingTermsPayload,
-  ServiceDetail,
-  ServiceHostingAccountPayload,
-  ServiceListFilters,
-  ServiceListItem,
-  ServiceNotesPayload,
-  ServiceStatus,
-  ServiceSyncResult,
+import {
+  PanelEntryKind,
+  PanelErrorCode,
+  type AddExistingServicePayload,
+  type PanelEntry,
+  type ServiceAutomationPayload,
+  type ServiceBillingTermsPayload,
+  type ServiceDetail,
+  type ServiceHostingAccountPayload,
+  type ServiceListFilters,
+  type ServiceListItem,
+  type ServiceNotesPayload,
+  type ServiceStatus,
+  type ServiceSyncResult,
 } from '@/types/service'
 import { DEFAULT_PAGE_SIZE, LOOKUP_PAGE_SIZE } from '@/lib/limits'
 
@@ -48,6 +52,9 @@ export const useServicesStore = defineStore('services', () => {
 
   /** Sentence for the last failed save or provisioning command, null when none. */
   const actionError = ref<string | null>(null)
+
+  /** Sentence for the last refused read of the login details, kept apart so it never replaces the sign on sentence. */
+  const loginDetailsError = ref<string | null>(null)
 
   /** Per-field messages of the last refused save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
@@ -222,14 +229,29 @@ export const useServicesStore = defineStore('services', () => {
     mutate(() => api.correctTerminationDate(id, { terminatedAt }))
 
   /**
-   * Asks the provisioning server for a one-time control-panel login URL.
+   * Finds the way into a service's control panel: the single sign on address the panel issues, or, when the serving plugin
+   * says it cannot sign anybody in (it answers `PANEL_OPERATION_NOT_SUPPORTED`), the details to sign in by hand. Whatever
+   * else refuses, and a panel that offers neither, leave the API's own sentence about the sign on in `actionError`.
    *
    * @param id - Service primary key.
-   * @returns The URL, or null when refused (see `actionError`).
+   * @returns The way in, or null when refused (see `actionError`).
    */
-  const fetchPanelLoginUrl = async (id: number | string): Promise<string | null> => {
-    const result = await runAction(actionError, () => api.getPanelLoginUrl(id))
-    return result.ok ? result.value.url : null
+  const fetchPanelEntry = async (id: number | string): Promise<PanelEntry | null> => {
+    actionError.value = null
+    try {
+      const { url } = await api.getPanelLoginUrl(id)
+      return { kind: PanelEntryKind.SignedIn, url }
+    } catch (cause) {
+      const sentence = errorSentence(cause)
+      if (errorCode(cause) === PanelErrorCode.OperationNotSupported) {
+        const details = await runAction(loginDetailsError, () => api.getPanelLoginDetails(id))
+        if (details.ok) {
+          return { kind: PanelEntryKind.LoginDetails, details: details.value }
+        }
+      }
+      actionError.value = sentence
+      return null
+    }
   }
 
   /**
@@ -319,6 +341,6 @@ export const useServicesStore = defineStore('services', () => {
     services, current, pageSize, totalCount, loading, error, actionError, fieldErrors, syncResult,
     fetchAll, fetchClientPage, fetchById, fetchClientServices,
     addExisting, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
-    fetchPanelLoginUrl, provision, changePassword, changePackage, fetchPackages, syncWithPanel, clearSyncResult, suspend, unsuspend, terminate,
+    fetchPanelEntry, provision, changePassword, changePackage, fetchPackages, syncWithPanel, clearSyncResult, suspend, unsuspend, terminate,
   }
 })

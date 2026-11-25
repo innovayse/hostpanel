@@ -5,7 +5,7 @@
       :key="index"
       padding="none"
       aria-hidden="true"
-      class="px-5 py-[18px]"
+      :class="dense ? 'px-[15px] py-[13px]' : 'px-5 py-[18px]'"
       data-testid="ui-result-skeleton-row"
     >
       <UiStack direction="row" align="center" justify="between" gap="md">
@@ -16,8 +16,8 @@
           <div class="w-16" data-testid="ui-result-skeleton-price">
             <UiSkeleton />
           </div>
-          <div class="w-24" data-testid="ui-result-skeleton-action">
-            <UiSkeleton :shape="UiSkeletonShape.Block" class="h-10" />
+          <div v-if="withAction" class="w-24" data-testid="ui-result-skeleton-action">
+            <UiSkeleton :shape="UiSkeletonShape.Block" class="h-[42px]" />
           </div>
         </UiStack>
       </UiStack>
@@ -30,7 +30,7 @@
  * UiResultSkeleton: the loading placeholder of a list of result rows.
  *
  * Each row repeats the shape of a real result: a name that stops short, a price and an action
- * button, all drawn with the kit's `UiSkeleton`, so the list does not jump when the rows arrive.
+ * button (left out where the real rows have none), all drawn with the kit's `UiSkeleton`, so the list does not jump when the rows arrive.
  * The group announces one loading status; the rows themselves are hidden from assistive tech.
  */
 import { UiSkeletonShape, UiSkeletonWidth } from '~/utils/ui/enums'
@@ -39,9 +39,15 @@ import { UiSkeletonShape, UiSkeletonWidth } from '~/utils/ui/enums'
 interface Props {
   /** Number of placeholder rows. */
   rows?: number
+  /** Whether each row ends in an action button, as the full results list does. */
+  withAction?: boolean
+  /** Whether the rows use the compact padding of the home page search card. */
+  dense?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   rows: 3,
+  withAction: true,
+  dense: false,
 })
 </script>

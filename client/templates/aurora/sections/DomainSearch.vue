@@ -59,7 +59,7 @@
         appears to work but returns nothing reads as a broken site. Say why.
       -->
       <UiText v-if="!hasZones" size="sm" tone="inherit" class="text-mut2">{{ t('aurora.domainSearch.noZones') }}</UiText>
-      <UiResultSkeleton v-else-if="pending" data-testid="domain-search-pending" />
+      <UiResultSkeleton v-else-if="pending" :with-action="false" dense data-testid="domain-search-pending" />
       <UiText v-else-if="results.length === 0" size="sm" tone="inherit" class="text-mut2">
         {{ t('aurora.domainSearch.empty') }}
       </UiText>

@@ -26,7 +26,14 @@ describe('UiResultSkeleton', () => {
     const row = mountWithKit(UiResultSkeleton).find('[data-testid="ui-result-skeleton-row"]')
 
     expect(row.find('[data-testid="ui-result-skeleton-name"] [data-testid="ui-skeleton"]').classes()).toContain('w-3/4')
-    expect(row.find('[data-testid="ui-result-skeleton-action"] [data-testid="ui-skeleton"]').classes()).toEqual(expect.arrayContaining(['rounded-xl', 'h-10']))
+    expect(row.find('[data-testid="ui-result-skeleton-action"] [data-testid="ui-skeleton"]').classes()).toEqual(expect.arrayContaining(['rounded-xl', 'h-[42px]']))
+  })
+
+  it('leaves out the action and uses the compact padding for the home page card', () => {
+    const row = mountWithKit(UiResultSkeleton, { props: { withAction: false, dense: true } }).find('[data-testid="ui-result-skeleton-row"]')
+
+    expect(row.find('[data-testid="ui-result-skeleton-action"]').exists()).toBe(false)
+    expect(row.classes()).toEqual(expect.arrayContaining(['px-[15px]', 'py-[13px]']))
   })
 
   it('announces one loading status and hides the rows from assistive tech', () => {

@@ -59,6 +59,46 @@ describe('runAction', () => {
   })
 })
 
+describe('runAction refusal code', () => {
+  it('stores the API code of a refusal and clears it on the next success', async () => {
+    /** The action error the helper writes to. */
+    const error = ref<string | null>(null)
+    /** The code the helper writes to. */
+    const code = ref<string | null>(null)
+
+    await runAction(
+      error,
+      async () => {
+        throw new ApiError(409, { type: 'SERVICE_HOSTING_ACCOUNT_UNVERIFIED', detail: 'Confirm it.' })
+      },
+      undefined,
+      code,
+    )
+    expect(code.value).toBe('SERVICE_HOSTING_ACCOUNT_UNVERIFIED')
+
+    await runAction(error, async () => 1, undefined, code)
+    expect(code.value).toBeNull()
+  })
+
+  it('leaves the code null for a failure that carried none', async () => {
+    /** The action error the helper writes to. */
+    const error = ref<string | null>(null)
+    /** The code the helper writes to. */
+    const code = ref<string | null>('OLD')
+
+    await runAction(
+      error,
+      async () => {
+        throw new Error('network')
+      },
+      undefined,
+      code,
+    )
+
+    expect(code.value).toBeNull()
+  })
+})
+
 describe('dropFieldError', () => {
   it('removes one field and keeps the others', () => {
     /** The field errors under test. */

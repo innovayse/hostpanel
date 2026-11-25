@@ -59,6 +59,9 @@ export const useServicesStore = defineStore('services', () => {
   /** Per-field messages of the last refused save, keyed by camelCase field name. */
   const fieldErrors = ref<Record<string, string>>({})
 
+  /** Machine-readable code of the last refused add of an existing account (an `AddExistingRefusal` when it can be confirmed), null otherwise. */
+  const addExistingCode = ref<string | null>(null)
+
   /** What the last panel sync did about each field, null until one ran and after it is cleared. */
   const syncResult = ref<ServiceSyncResult | null>(null)
 
@@ -173,10 +176,10 @@ export const useServicesStore = defineStore('services', () => {
    * Adds a service for a hosting account that already exists on a server.
    *
    * @param payload - The client, product, billing terms and account.
-   * @returns True when added; false when refused (see `actionError` and `fieldErrors`).
+   * @returns True when added; false when refused (see `actionError`, `fieldErrors` and `addExistingCode`).
    */
-  const addExisting = (payload: AddExistingServicePayload): Promise<boolean> =>
-    mutate(() => api.addExistingService(payload))
+  const addExisting = async (payload: AddExistingServicePayload): Promise<boolean> =>
+    (await runAction(actionError, () => api.addExistingService(payload), fieldErrors, addExistingCode)).ok
 
   /**
    * Saves the hosting account record of a service.
@@ -338,7 +341,7 @@ export const useServicesStore = defineStore('services', () => {
     mutate(() => api.terminateService(id, { reason }))
 
   return {
-    services, current, pageSize, totalCount, loading, error, actionError, fieldErrors, syncResult,
+    services, current, pageSize, totalCount, loading, error, actionError, fieldErrors, addExistingCode, syncResult,
     fetchAll, fetchClientPage, fetchById, fetchClientServices,
     addExisting, updateBillingTerms, updateHostingAccount, updateAutomation, updateNotes, changeStatus, correctTerminationDate,
     fetchPanelEntry, provision, changePassword, changePackage, fetchPackages, syncWithPanel, clearSyncResult, suspend, unsuspend, terminate,

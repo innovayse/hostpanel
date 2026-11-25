@@ -366,6 +366,15 @@
 <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
     <value>A service already holds this account on this server.</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" xml:space="preserve">
+    <value>The server's control panel has no account with this username.</value>
+  </data>
+<data name="SERVICE_HOSTING_ACCOUNT_UNVERIFIED" xml:space="preserve">
+    <value>The server's control panel cannot confirm that this account exists. Confirm it to add the service anyway.</value>
+  </data>
+<data name="SERVICE_DOMAIN_ALREADY_SERVED" xml:space="preserve">
+    <value>Another service already holds this domain. Confirm to add this one as well.</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>A cancellation request is already pending for this service.</value>
   </data>
@@ -417,9 +426,6 @@
 <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
     <value>The hosting account could not be read from the control panel. Please try again or contact support.</value>
   </data>
-<data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The hosting account could not be read from the control panel. Please try again or contact support.</value>
-    </data>
 <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
     <value>The service could not be suspended on the hosting server. Please try again or contact support.</value>
   </data>

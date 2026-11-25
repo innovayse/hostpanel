@@ -2,8 +2,10 @@
 /**
  * One plugin as a card, drawn from a {@link PluginCardModel} so the same card serves the installed list
  * and the registry. Top to bottom: the title row (logo, name, verified mark and the state badges), one
- * meta line (publisher, category, price), the description clamped to two lines, one row of tags, and a
- * footer with the downloads and version on the left and the `action` slot on the right.
+ * meta line (publisher, category, price), the description clamped to two lines, one row of tags that wraps
+ * onto further lines rather than overflowing, and a footer with the downloads and version on the left and the `action`
+ * slot on the right. The footer's figures never break inside themselves; when they and the action do not fit on one
+ * line the action drops to the next line instead of overlapping them.
  *
  * The whole card opens the plugin's details page: the name is a link stretched over the card, so a
  * click anywhere follows it and a keyboard user reaches it by tab. The `action` and `notice` slots sit
@@ -161,7 +163,8 @@ const metaParts = computed<string[]>(() =>
       :direction="UiDirection.Row"
       :align="UiAlignItems.Center"
       :gap="UiGap.Xs"
-      class="overflow-hidden"
+      wrap
+      class="min-w-0 overflow-hidden"
       :data-testid="`plugin-card-tags-${plugin.id}`"
     >
       <UiBadge v-for="tag in plugin.tags" :key="tag" :tone="UiTone.Neutral" small>
@@ -173,19 +176,19 @@ const metaParts = computed<string[]>(() =>
       <slot name="notice" />
     </UiStack>
 
-    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Sm" class="mt-auto border-t border-border pt-3">
-      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" class="min-w-0">
-        <UiStack v-if="plugin.downloads !== null" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" :data-testid="`plugin-card-downloads-${plugin.id}`">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :justify="UiJustify.Between" :gap="UiGap.Sm" wrap class="mt-auto border-t border-border pt-3">
+      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md" wrap class="min-w-0">
+        <UiStack v-if="plugin.downloads !== null" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Xs" class="shrink-0" :data-testid="`plugin-card-downloads-${plugin.id}`">
           <UiIcon :markup="Icon.Download" :size="UiSize.Sm" />
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs">
+          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="whitespace-nowrap">
             {{ t('plugins.pluginRegistry.downloads', { count: downloadFormat.format(plugin.downloads) }) }}
           </UiText>
         </UiStack>
-        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="font-mono" :data-testid="`plugin-card-version-${plugin.id}`">
+        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" class="shrink-0 whitespace-nowrap font-mono" :data-testid="`plugin-card-version-${plugin.id}`">
           {{ t('plugins.pluginRegistry.version', { version: plugin.version }) }}
         </UiText>
       </UiStack>
-      <UiStack v-if="$slots.action" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="relative shrink-0">
+      <UiStack v-if="$slots.action" :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="relative ml-auto shrink-0">
         <slot name="action" />
       </UiStack>
     </UiStack>

@@ -11,7 +11,7 @@ public sealed class UnwritableUploadFolder : IDisposable
     {
         WebRoot = Path.Combine(Path.GetTempPath(), $"hostpanel-unwritable-{Guid.NewGuid():n}");
         Directory.CreateDirectory(Path.Combine(LogoDirectory, ExistingUploadId));
-        if (CanBeMadeUnwritable)
+        if (!OperatingSystem.IsWindows() && CanBeMadeUnwritable)
         {
             File.SetUnixFileMode(LogoDirectory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
             File.SetUnixFileMode(BrandingDirectory, UnixFileMode.UserRead | UnixFileMode.UserExecute);
@@ -39,7 +39,7 @@ public sealed class UnwritableUploadFolder : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        if (CanBeMadeUnwritable)
+        if (!OperatingSystem.IsWindows() && CanBeMadeUnwritable)
         {
             File.SetUnixFileMode(BrandingDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             File.SetUnixFileMode(LogoDirectory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);

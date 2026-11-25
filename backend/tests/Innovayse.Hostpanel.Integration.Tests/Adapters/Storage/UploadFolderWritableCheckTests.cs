@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Storage;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -72,7 +71,7 @@ public sealed class UploadFolderWritableCheckTests
     [Fact]
     public void UnwritablePluginFolder_IsReportedAlone()
     {
-        if (!UnwritableUploadFolder.CanBeMadeUnwritable)
+        if (OperatingSystem.IsWindows() || !UnwritableUploadFolder.CanBeMadeUnwritable)
         {
             return;
         }

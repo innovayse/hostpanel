@@ -61,7 +61,7 @@ public sealed class GetRecentActivityTests(IntegrationTestFactory factory) : ICl
         var events = feed.EnumerateArray().Where(e => e.GetProperty("clientId").GetInt32() == clientId).ToList();
         events.Select(e => e.GetProperty("type").GetString()).Should().Equal("TicketOpened", "PaymentReceived", "InvoiceOverdue");
         events.Should().OnlyContain(e => e.GetProperty("clientName").GetString() == $"Ada {lastName}");
-        events.Should().OnlyContain(e => !e.TryGetProperty("message", out _));
+        events.Select(e => e.TryGetProperty("message", out _)).Should().AllSatisfy(hasMessage => hasMessage.Should().BeFalse());
         events.Should().OnlyContain(e => !e.GetProperty("isRead").GetBoolean());
 
         var ticket = events[0];

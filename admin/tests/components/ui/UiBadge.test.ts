@@ -28,8 +28,8 @@ describe('UiBadge', () => {
 
     expect(full).toContain('h-6')
     expect(small).toContain('h-4')
-    expect(full.some((name) => /^py-/.test(name))).toBe(false)
-    expect(small.some((name) => /^py-/.test(name))).toBe(false)
+    expect(full.some((name) => name.startsWith('py-'))).toBe(false)
+    expect(small.some((name) => name.startsWith('py-'))).toBe(false)
   })
 
   it('takes its colours from the tone', () => {

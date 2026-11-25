@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Admin.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Storage;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

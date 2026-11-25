@@ -62,10 +62,10 @@ const GLYPH_ALLOWED: readonly AllowedFile[] = [
 ]
 
 /** Text characters that read as icons: dingbats, arrows, bullets, geometric shapes, the multiplication sign, the vertical ellipsis, emoji. */
-const GLYPH = /[←-⇿•‣⋮⋯■-◿☀-➿⬀-⯿×️\u{1F000}-\u{1FAFF}]/u
+const GLYPH = /[←-⇿•‣⋮⋯■-◿☀-➿⬀-⯿×\u{1F000}-\u{1FAFF}]|\uFE0F/u
 
 /** Emoji only, the range the locale files are held to. */
-const EMOJI = /[☀-➿⬀-⯿️\u{1F000}-\u{1FAFF}]/u
+const EMOJI = /[☀-➿⬀-⯿\u{1F000}-\u{1FAFF}]|\uFE0F/u
 
 /** An opening `<svg` tag. */
 const SVG_TAG = /<svg[\s>]/

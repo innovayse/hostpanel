@@ -107,10 +107,12 @@ export const useRegistrarDomainsStore = defineStore('registrarDomains', () => {
    * @returns True when shown; false when this is the first page or the registrar refused (see `error`).
    */
   const fetchPrevious = async (module: string): Promise<boolean> => {
-    if (position.value === 0) {
+    // The first page is position 0, whose predecessor index reads as undefined: no earlier cursor, so nothing to show.
+    const cursor = cursors.value[position.value - 1]
+    if (cursor === undefined) {
       return false
     }
-    const shown = await show(module, cursors.value[position.value - 1])
+    const shown = await show(module, cursor)
     if (shown) {
       position.value -= 1
     }
@@ -134,7 +136,11 @@ export const useRegistrarDomainsStore = defineStore('registrarDomains', () => {
     return result.ok
   }
 
-  /** Forgets the pages and the sentences, for the next time the dialog opens. */
+  /**
+   * Forgets the pages and the sentences, for the next time the dialog opens.
+   *
+   * @returns Nothing; the store is back to its empty state.
+   */
   const reset = (): void => {
     domains.value = []
     nextCursor.value = null

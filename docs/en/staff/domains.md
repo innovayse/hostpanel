@@ -81,6 +81,26 @@ A domain that has no registrar reference returns `DOMAIN_NO_REGISTRAR_REF` when 
 
 - **Domains**: shows all domain records across all clients. Use the search box to find a domain by name, and the Filters button to narrow the list by status (for example pending registrations or transfers) and by registrar. The search, the filters and the page stay in the address, so a link or a reload opens the same list. The registrar filter uses the registrar module, so older domains with no module set do not show when a registrar is chosen.
 
+## Import from registrar
+
+A domain that was registered before Hostpanel was set up can be brought into a client without ordering it again. On the **Domains** list click **Import from registrar**:
+
+1. Choose the registrar. Only installed registrar plugins that can list the domains of their account are offered.
+2. Choose the client who will own the domains. Every import button stays off until a client is chosen.
+3. Find the domain in the table, which shows the domains the registrar holds one page at a time (use **Next** and **Previous**), and click **Import**. A domain already in the panel, whoever owns it, is marked **In the panel** and cannot be imported again. A domain the registrar gives no expiry for is marked **No expiry reported** and cannot be imported.
+
+**What an import does:**
+- It adds the domain to the client with the registrar's own reference and the expiry date the registrar reports.
+- The status follows the expiry: **Expired** when the expiry has already passed, **Active** otherwise.
+- The next due date follows the expiry, and the registration date is the day of the import, because the registrar does not report when the domain was first registered.
+- The recurring amount is the renew price of the extension for one year, converted to the client's billing currency. It is zero when the extension is not configured in TLD pricing, has no one year renew price or has no exchange rate, and can be edited on the domain.
+- **Renew from the panel** is off. Switch it on on the domain when the panel should raise renewal invoices for it.
+- It writes one line, `Imported Domain From Registrar`, to the client's activity log.
+
+**What an import does not do:** it creates no order, no invoice and no charge, sends no email to the client, and changes nothing at the registrar. It reads only the domain's name, reference and expiry from the registrar, so nameservers and contacts are not copied.
+
+The import answers `REGISTRAR_DOMAIN_NOT_FOUND` when the registrar's list does not hold the name, `DOMAIN_IMPORT_EXPIRY_UNKNOWN` when it gives no expiry, `DOMAIN_ALREADY_REGISTERED` when the panel already has the name and `REGISTRAR_OPERATION_UNSUPPORTED` when the registrar offers no domain list.
+
 ## Domain renewal
 
 A renewal invoice is raised automatically by a daily job (runs at **05:00 UTC** by default). Renewal reminder emails are sent by another daily job (runs at **06:00 UTC** by default) on the days configured in `billing.renewal.reminder_days`.

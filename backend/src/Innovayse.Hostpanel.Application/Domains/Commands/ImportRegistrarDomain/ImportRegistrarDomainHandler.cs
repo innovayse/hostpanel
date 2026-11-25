@@ -107,12 +107,11 @@ public sealed class ImportRegistrarDomainHandler
 
         var provider = await _factory.GetProviderAsync(module, ct);
         var held = await FindHeldAsync(provider, storedName, ct);
-        if (held.IsFailure)
+        if (held is not { IsSuccess: true, Value: { } listing })
         {
-            return Result<int>.FailureCode(held.ErrorCode!);
+            return Result<int>.FailureCode(held.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
         }
 
-        var listing = held.Value!;
         if (listing.ExpiresAt is not { } expiresAt)
         {
             return Result<int>.FailureCode(HostpanelErrorCodes.DOMAIN_IMPORT_EXPIRY_UNKNOWN);
@@ -120,13 +119,13 @@ public sealed class ImportRegistrarDomainHandler
 
         var payer = await _payerCurrency.ForClientAsync(cmd.ClientId, ct);
         var recurring = await RenewPriceAsync(storedName, payer.Code, ct);
-        if (recurring.IsFailure)
+        if (recurring is not { IsSuccess: true, Value: var recurringAmount })
         {
-            return Result<int>.FailureCode(recurring.ErrorCode!);
+            return Result<int>.FailureCode(recurring.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
         }
 
         var domain = RegisteredDomain.ImportFromRegistrar(
-            cmd.ClientId, storedName, module, listing.RegistrarRef, expiresAt, _clock.UtcNow, payer.Code, recurring.Value);
+            cmd.ClientId, storedName, module, listing.RegistrarRef, expiresAt, _clock.UtcNow, payer.Code, recurringAmount);
         _context.Domains.Add(domain);
         await _activity.RecordAsync(
             new ActivityLogEntry(cmd.ClientId, $"Imported Domain From Registrar - Domain: {domain.Name}, Registrar: {module}"), ct);
@@ -145,18 +144,18 @@ public sealed class ImportRegistrarDomainHandler
         for (var read = 0; read < MaxScannedPages; read++)
         {
             var page = await provider.ListDomainsAsync(cursor, ct);
-            if (page.IsFailure)
+            if (page is not { IsSuccess: true, Value: { } listed })
             {
-                return Result<RegistrarHeldDomain>.FailureCode(page.ErrorCode!);
+                return Result<RegistrarHeldDomain>.FailureCode(page.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
             }
 
-            var match = page.Value!.Domains.FirstOrDefault(d => RegisteredDomain.NormaliseName(d.Name) == storedName);
+            var match = listed.Domains.FirstOrDefault(d => RegisteredDomain.NormaliseName(d.Name) == storedName);
             if (match is not null)
             {
                 return Result.Success(match);
             }
 
-            cursor = page.Value.NextCursor;
+            cursor = listed.NextCursor;
             if (cursor is null)
             {
                 break;
@@ -171,26 +170,36 @@ public sealed class ImportRegistrarDomainHandler
     /// <param name="currency">The ISO 4217 code of the currency to price in.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The price; zero when the extension is not configured, has no renew price for the year or has no exchange rate to
-    /// convert it with, because an unpriced domain is still a domain the client holds; the failure code when the conversion
-    /// itself is refused.
+    /// The price; zero when the extension is not configured (<c>TLD_CONFIG_NOT_FOUND</c>), has no renew price for the year or
+    /// has no exchange rate to convert it with, because an unpriced domain is still a domain the client holds; any other
+    /// refusal, of the price read or of the conversion, is returned as the failure code.
     /// </returns>
     private async Task<Result<decimal>> RenewPriceAsync(string storedName, string currency, CancellationToken ct)
     {
         var configured = await _bus.InvokeAsync<Result<TldRenewPriceDto>>(new GetTldRenewPriceQuery(storedName, RenewalYears), ct);
-        if (configured.Value is not { SellPrice: { } sell } tld)
+        if (configured.ErrorCode == HostpanelErrorCodes.TLD_CONFIG_NOT_FOUND)
+        {
+            return Result.Success(0m);
+        }
+
+        if (configured is not { IsSuccess: true, Value: { } tld })
+        {
+            return Result<decimal>.FailureCode(configured.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
+        }
+
+        if (tld.SellPrice is not { } sell)
         {
             return Result.Success(0m);
         }
 
         var converted = await _bus.InvokeAsync<Result<ConvertedAmountsDto>>(
             new ConvertAmountsQuery(currency, [new CurrencyAmountDto(sell, tld.SellCurrency)]), ct);
-        if (converted.IsFailure)
+        if (converted is not { IsSuccess: true, Value: { } convertedAmounts })
         {
-            return Result<decimal>.FailureCode(converted.ErrorCode!);
+            return Result<decimal>.FailureCode(converted.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
         }
 
-        var price = converted.Value!.Amounts[0];
+        var price = convertedAmounts.Amounts[0];
         return Result.Success(price.Converted ? price.Amount : 0m);
     }
 }

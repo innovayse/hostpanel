@@ -12,6 +12,7 @@ import { createSSRApp, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { createPinia } from 'pinia'
 import PluginSlot from '~/components/plugin/Slot.vue'
+import { knownCustomerPinia } from '~/tests/helpers/knownCustomer'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import { slotIndex, slotPath, slotWidgetPath, throwingView, workingView } from '~/tests/helpers/pluginSlotFixture'
@@ -36,7 +37,7 @@ afterEach(async () => {
  * @returns The mounted slot.
  */
 const mountSlot = (slotId = PluginSlotId.DashboardCards, context?: Record<string, string>) =>
-  mountClient(PluginSlot, { props: { slotId, ...(context ? { context } : {}) }, components: PLUGIN_COMPONENTS })
+  mountClient(PluginSlot, { props: { slotId, ...(context ? { context } : {}) }, components: PLUGIN_COMPONENTS, pinia: knownCustomerPinia() })
 
 describe('PluginSlot', () => {
   it('renders nothing with no plugins', async () => {

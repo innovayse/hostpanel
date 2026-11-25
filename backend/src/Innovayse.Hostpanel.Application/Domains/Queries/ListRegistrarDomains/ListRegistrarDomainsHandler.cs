@@ -49,13 +49,12 @@ public sealed class ListRegistrarDomainsHandler
 
         var provider = await _factory.GetProviderAsync(module, ct);
         var page = await provider.ListDomainsAsync(query.Cursor, ct);
-        if (page.IsFailure)
+        if (page is not { IsSuccess: true, Value: { } registrarPage })
         {
-            return Result<RegistrarDomainListDto>.FailureCode(page.ErrorCode!);
+            return Result<RegistrarDomainListDto>.FailureCode(page.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
         }
 
         // Stored names are lower case (RegisteredDomain.NormaliseName), so the registrar's spelling is brought to that form.
-        var registrarPage = page.Value!;
         var listed = registrarPage.Domains;
         var names = listed.Select(d => RegisteredDomain.NormaliseName(d.Name)).ToList();
         var stored = await _context.Domains

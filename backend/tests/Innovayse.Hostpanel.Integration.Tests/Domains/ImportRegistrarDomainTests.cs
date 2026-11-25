@@ -102,35 +102,85 @@ public sealed class ImportRegistrarDomainTests(IntegrationTestFactory factory) :
         domain.ExpiresAt.Should().BeCloseTo(expiry, TimeSpan.FromMilliseconds(1));
     }
 
+    /// <summary>Configures an extension of the test registrar with the given sell currency and renew prices.</summary>
+    /// <param name="tld">The extension, without the leading dot.</param>
+    /// <param name="sellCurrency">The ISO 4217 code the sell prices are set in.</param>
+    /// <param name="renew">The renew sell prices keyed by period in years.</param>
+    /// <returns>A task that completes when the extension is stored.</returns>
+    private async Task SeedTldAsync(string tld, string sellCurrency, Dictionary<int, decimal> renew)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var config = TldConfig.Create(tld, TestRegistrarModules.First, sellCurrency, sellCurrency, true, 0, []);
+        config.UpdateSellPrices([], [], renew);
+        context.TldConfigs.Add(config);
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Reads the code of the store's base currency, the one a client with no recorded currency is billed in.</summary>
+    /// <returns>The ISO 4217 code of the base currency.</returns>
+    private async Task<string> BaseCurrencyAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return (await context.Currencies.AsNoTracking().SingleAsync(c => c.IsBase)).Code;
+    }
+
+    /// <summary>Imports one domain the test registrar lists and reads the stored row back.</summary>
+    /// <param name="name">The domain's name.</param>
+    /// <returns>The stored domain.</returns>
+    private async Task<RegisteredDomain> ImportListedAsync(string name)
+    {
+        var clientId = await SeedClientAsync();
+        var admin = await RegistrarImportTestSeeds.AdminClientAsync(
+            factory,
+            RegistrarImportTestSeeds.PluginHolding(RegistrarImportTestSeeds.Listed(name, "REF-PRICE", DateTimeOffset.UtcNow.AddYears(1))));
+
+        var response = await admin.PostAsJsonAsync($"/api/domains/registrar/{TestRegistrarModules.First}/import", new { clientId, domainName = name });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return await StoredAsync(IdOf(response));
+    }
+
     /// <summary>The recurring amount is the extension's one year renew price, in the client's billing currency.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Import_FollowsTheExtensionsRenewPriceAsync()
     {
         var tld = DomainsTestSeeds.UniqueTld();
-        string currency;
-        using (var scope = factory.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            currency = (await context.Currencies.AsNoTracking().SingleAsync(c => c.IsBase)).Code;
-            var config = TldConfig.Create(tld, TestRegistrarModules.First, currency, currency, true, 0, []);
-            config.UpdateSellPrices([], [], new Dictionary<int, decimal> { [1] = 14.5m, [2] = 28m });
-            context.TldConfigs.Add(config);
-            await context.SaveChangesAsync(CancellationToken.None);
-        }
+        var currency = await BaseCurrencyAsync();
+        await SeedTldAsync(tld, currency, new Dictionary<int, decimal> { [1] = 14.5m, [2] = 28m });
 
-        var name = $"priced.{tld}";
-        var clientId = await SeedClientAsync();
-        var admin = await RegistrarImportTestSeeds.AdminClientAsync(
-            factory,
-            RegistrarImportTestSeeds.PluginHolding(RegistrarImportTestSeeds.Listed(name, "REF-PRICED", DateTimeOffset.UtcNow.AddYears(1))));
+        var domain = await ImportListedAsync($"priced.{tld}");
 
-        var response = await admin.PostAsJsonAsync($"/api/domains/registrar/{TestRegistrarModules.First}/import", new { clientId, domainName = name });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var domain = await StoredAsync(IdOf(response));
         domain.RecurringAmount.Should().Be(14.5m);
         domain.PriceCurrency.Should().Be(currency);
+    }
+
+    /// <summary>An extension that sets no renew price for the year leaves the recurring amount at zero, and the domain is still imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Import_AnExtensionWithNoOneYearRenewPrice_ImportsWithNoRecurringAmountAsync()
+    {
+        var tld = DomainsTestSeeds.UniqueTld();
+        await SeedTldAsync(tld, await BaseCurrencyAsync(), new Dictionary<int, decimal> { [2] = 28m });
+
+        var domain = await ImportListedAsync($"twoyears.{tld}");
+
+        domain.RecurringAmount.Should().Be(0m);
+    }
+
+    /// <summary>An extension priced in a currency with no exchange rate leaves the recurring amount at zero, and the domain is still imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Import_AnExtensionPricedInAnUnratedCurrency_ImportsWithNoRecurringAmountAsync()
+    {
+        var tld = DomainsTestSeeds.UniqueTld();
+        await SeedTldAsync(tld, "XXX", new Dictionary<int, decimal> { [1] = 14.5m });
+
+        var domain = await ImportListedAsync($"unrated.{tld}");
+
+        domain.RecurringAmount.Should().Be(0m);
     }
 
     /// <summary>An extension with no configuration leaves the recurring amount at zero, and the domain is still imported.</summary>

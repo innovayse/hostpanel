@@ -145,8 +145,7 @@ jobs:
 
   # The SSH key agent (backend/agent/ssh-key-agent): its Python unit tests, which also run every helper for real against
   # a stand-in server tree, then a syntax check and shellcheck of the provider helpers. The same job as agent:test in
-  # .gitlab-ci.yml. shellcheck is installed here at a pinned version: the self-hosted runners behind ubuntu-latest do
-  # not ship it, and the job must pass on every runner it lands on.
+  # .gitlab-ci.yml. The job installs a pinned shellcheck, so it does not depend on the runner image.
   agent:
     name: SSH key agent (unit tests + shell helpers)
     runs-on: ubuntu-latest

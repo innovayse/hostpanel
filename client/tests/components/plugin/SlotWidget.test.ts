@@ -17,6 +17,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VueWrapper } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import PluginSlotWidget from '~/components/plugin/SlotWidget.vue'
+import { knownCustomerPinia } from '~/tests/helpers/knownCustomer'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import {
@@ -70,7 +71,7 @@ const mountPageWith = (ids: string[], options: MountOptions = {}): VueWrapper =>
       ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
     })),
   ]),
-}), { components: PLUGIN_COMPONENTS, errorHandler: error => options.errors?.push(error) })
+}), { components: PLUGIN_COMPONENTS, errorHandler: error => options.errors?.push(error), pinia: knownCustomerPinia() })
 
 /**
  * Mounts one widget on its own, so a test can change its props.
@@ -81,7 +82,7 @@ const mountPageWith = (ids: string[], options: MountOptions = {}): VueWrapper =>
  * @returns The mounted widget.
  */
 const mountWidget = (id: string, slotId: PluginSlotId, context: Record<string, string>): VueWrapper =>
-  mountClient(PluginSlotWidget, { props: { slotId, widget: slotEntry(id), context }, components: PLUGIN_COMPONENTS })
+  mountClient(PluginSlotWidget, { props: { slotId, widget: slotEntry(id), context }, components: PLUGIN_COMPONENTS, pinia: knownCustomerPinia() })
 
 /**
  * The selector of a widget's note.

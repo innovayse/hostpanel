@@ -10,6 +10,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import RegistrarDomainImportDialog from '@/components/domains/RegistrarDomainImportDialog.vue'
 import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
+import type { UiSelectOption } from '@/utils/ui/select'
 import { createTestI18n } from '../../helpers/i18n'
 import { callOf, json, problem } from '../../helpers/fetch'
 import { stubRoutes } from '../../helpers/routes'
@@ -67,6 +68,20 @@ const mountDialog = async (): Promise<VueWrapper> => {
 }
 
 /**
+ * Finds the registrar select among the dialog's selects.
+ *
+ * @param wrapper - The mounted dialog.
+ * @returns The registrar select; throws when the dialog has none.
+ */
+const registrarSelect = (wrapper: VueWrapper): VueWrapper => {
+  const select = wrapper.findAllComponents(UiSelect).find(candidate => candidate.attributes('data-testid') === 'registrar-import-registrar')
+  if (select === undefined) {
+    throw new Error('No registrar select')
+  }
+  return select
+}
+
+/**
  * Chooses the registrar in its select.
  *
  * @param wrapper - The mounted dialog.
@@ -74,11 +89,7 @@ const mountDialog = async (): Promise<VueWrapper> => {
  * @returns Promise resolving once the list has loaded.
  */
 const chooseRegistrar = async (wrapper: VueWrapper, id: string): Promise<void> => {
-  const select = wrapper.findAllComponents(UiSelect).find(candidate => candidate.attributes('data-testid') === 'registrar-import-registrar')
-  if (select === undefined) {
-    throw new Error('No registrar select')
-  }
-  select.vm.$emit('update:modelValue', id)
+  registrarSelect(wrapper).vm.$emit('update:modelValue', id)
   await flushPromises()
 }
 
@@ -107,9 +118,9 @@ describe('RegistrarDomainImportDialog', () => {
     stubRoutes({ ...lookups, ...pages })
     const wrapper = await mountDialog()
 
-    const select = wrapper.findAllComponents(UiSelect).find(candidate => candidate.attributes('data-testid') === 'registrar-import-registrar')
+    const options = (registrarSelect(wrapper).props() as unknown as { options: UiSelectOption<string>[] }).options
 
-    expect(select?.props('options')).toEqual([{ value: 'registrar-one', label: 'Registrar One' }])
+    expect(options).toEqual([{ value: 'registrar-one', label: 'Registrar One' }])
   })
 
   it('lists no domain until a registrar is chosen, then lists them with what the panel has', async () => {

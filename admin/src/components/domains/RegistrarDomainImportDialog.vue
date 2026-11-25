@@ -137,12 +137,20 @@ watch(registrarId, (chosen: string) => {
   void store.fetchFirst(chosen)
 })
 
-/** Shows the page before the one on screen. */
+/**
+ * Shows the page before the one on screen.
+ *
+ * @returns Nothing.
+ */
 const handlePrevious = (): void => {
   void store.fetchPrevious(registrarId.value)
 }
 
-/** Shows the page after the one on screen. */
+/**
+ * Shows the page after the one on screen.
+ *
+ * @returns Nothing.
+ */
 const handleNext = (): void => {
   void store.fetchNext(registrarId.value)
 }

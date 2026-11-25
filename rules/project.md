@@ -61,8 +61,9 @@ repositories. What is specific to this project is short:
   type is `Domain`, which the storefront needs to put a domain in the cart before sign-in; the route carries no name or price
   (the extension table prices a domain), and answers 503 `DOMAIN_PRODUCT_NOT_CONFIGURED` when the installation sells none.
 - **One rule for what a domain name looks like: `DomainNameRules` (Domain).** Every validator that takes a name from a caller
-  asks it through `MustBeDomainName` (`CheckDomainAvailability`, `RegisterDomain`, `TransferDomain`, `TransferMyDomain`,
-  `RenewOrderedDomain`), and `DomainNameValidatorsTests` pins them to the same answer. It is the rule registration has always
+  asks it (`CheckDomainAvailability`, `PlaceOrder`, `RegisterDomain`, `TransferDomain`, `TransferMyDomain`,
+  `RenewOrderedDomain`), through `MustBeDomainName` or `DomainNameRules.IsValidName` where the name is trimmed or optional,
+  and `DomainNameValidatorsTests` pins them to the same answer. It is the rule registration has always
   held: ASCII letters, digits and inner hyphens in each label (1 to 63 characters), the whole name within 253, at least two
   labels, and an extension of two or more letters, so `example.123` is no name. An internationalised name is ordered in its
   `xn--` form, because nothing between the order and the registrar converts it. The rule takes the text as given: the

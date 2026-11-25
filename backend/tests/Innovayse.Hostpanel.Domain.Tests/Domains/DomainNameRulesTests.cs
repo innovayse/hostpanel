@@ -59,8 +59,7 @@ public sealed class DomainNameRulesTests
         DomainNameRules.IsValidName("shop.example.com").Should().BeTrue();
         DomainNameRules.IsValidName("a.co").Should().BeTrue();
         DomainNameRules.IsValidName("example.com ").Should().BeFalse();
-        DomainNameRules.IsValidName("example.com
-").Should().BeFalse();
+        DomainNameRules.IsValidName("example.com\n").Should().BeFalse();
     }
 
     /// <summary>A missing text is not a name.</summary>

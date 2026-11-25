@@ -163,7 +163,7 @@ describe('ClientDashboardServicesCard', () => {
     await nextTick()
 
     const icon = wrapper.get('[data-testid="dashboard-service-panel-1"] [data-testid="service-panel-plugin-icon"]')
-    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
     expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 

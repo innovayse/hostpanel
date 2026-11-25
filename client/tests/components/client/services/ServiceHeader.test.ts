@@ -55,7 +55,7 @@ describe('ServiceHeader panel icon', () => {
     const wrapper = mountClient(ServiceHeader, { props: { service: service({ server: SERVED }), ssoLoading: false } })
 
     const icon = wrapper.get('[data-testid="service-panel-login"] [data-testid="service-panel-plugin-icon"]')
-    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
     expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 

@@ -226,14 +226,14 @@ test('the Open panel button shows the icon of the plugin that serves the server,
   }
   const ssoPath = `/api/provisioning/${provisioned.id}/panel-sso`
   const api = await stubServicePage(page, provisioned, [json(HttpMethod.Get, ssoPath, { url: 'https://panel.example.test/sso' })])
-  await page.route('**/api/admin/plugins/acme-panel/icon', (route) =>
+  await page.route('**/api/admin/plugins/acme-panel/icon?v=1.2.0', (route) =>
     route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><rect width="8" height="8"/></svg>' }))
 
   await page.goto(pageUrl)
 
   const icon = page.getByTestId('client-service-panel').getByTestId('plugin-avatar-image')
   await expect(icon).toHaveAttribute('alt', 'Acme Panel')
-  await expect(icon).toHaveAttribute('src', '/api/admin/plugins/acme-panel/icon')
+  await expect(icon).toHaveAttribute('src', '/api/admin/plugins/acme-panel/icon?v=1.2.0')
   await page.context().route('https://panel.example.test/**', (route) => route.fulfill({ body: '' }))
   await page.getByTestId('client-service-panel').click()
   await expect.poll(() => api.calls.filter((call) => call.path === ssoPath).length).toBe(1)

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Domain.Domains;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Domains.Queries.CheckDomainAvailability;
@@ -19,8 +20,8 @@ public sealed class CheckDomainAvailabilityValidator : LocalizedValidator<CheckD
         // for text that is no name at all, and the storefront would show it as a taken domain. The handler trims
         // the name it is given, so the rule reads the name the handler will use; a blank one is already refused above.
         RuleFor(x => x.Domain)
-            .Transform(domain => domain?.Trim() ?? string.Empty)
-            .MustBeDomainName(L["DomainNameInvalid"])
+            .Must(domain => DomainNameRules.IsValidName(domain.Trim()))
+            .WithMessage(L["DomainNameInvalid"])
             .When(x => !string.IsNullOrWhiteSpace(x.Domain));
     }
 }

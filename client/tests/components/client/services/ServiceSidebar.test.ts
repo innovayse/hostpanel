@@ -119,7 +119,7 @@ describe('ServiceSidebar panel icon', () => {
     const wrapper = mountSidebar({ service: service({ server: served }) })
 
     const icon = wrapper.get('[data-testid="service-link-panel"] [data-testid="service-panel-plugin-icon"]')
-    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon')
+    expect(icon.attributes('src')).toBe('/api/portal/client/plugins/acme-panel/icon?v=1.2.0')
     expect(icon.attributes('alt')).toBe('Acme Panel')
   })
 })

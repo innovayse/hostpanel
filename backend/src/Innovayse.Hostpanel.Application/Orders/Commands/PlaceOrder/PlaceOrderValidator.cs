@@ -1,6 +1,7 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Microsoft.Extensions.Localization;
@@ -71,8 +72,7 @@ public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
                 item.RuleFor(i => i.Domain)
                     .Cascade(CascadeMode.Stop)
                     .NotEmpty().WithMessage(L["DomainNameRequired"])
-                    .Transform(domain => domain ?? string.Empty)
-                    .MustBeDomainName(L["DomainNameInvalid"]);
+                    .Must(DomainNameRules.IsValidName).WithMessage(L["DomainNameInvalid"]);
                 item.RuleFor(i => i.Years)
                     .InclusiveBetween(MinYears, MaxYears)
                     .When(i => i.Years is not null)

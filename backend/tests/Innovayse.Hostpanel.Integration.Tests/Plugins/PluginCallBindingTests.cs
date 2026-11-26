@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Domain.Clients.Enums;
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
 /// <summary>
-/// <see cref="PluginCallBinding"/>: only two shapes exist, a client with its reference and permissions, or no client,
+/// <see cref="PluginCallBinding"/>: only three shapes exist, a client with its reference and permissions, an administrator about a client (reference, no permissions), or no client,
 /// no reference and no permissions, each with the area it came through (client or admin); a blank plugin id or client reference is refused.
 /// </summary>
 public sealed class PluginCallBindingTests
@@ -37,6 +37,31 @@ public sealed class PluginCallBindingTests
         binding.ClientRef.Should().BeNull();
         binding.Permissions.Should().Be(ClientPermission.None);
         binding.Area.Should().Be(PluginArea.Admin);
+    }
+
+    /// <summary>An admin binding about a client keeps the client and its reference, holds no permission and stays in the admin area.</summary>
+    [Fact]
+    public void ForAdminAboutClient_KeepsTheClientAndHoldsNoPermissions()
+    {
+        var binding = PluginCallBinding.ForAdminAboutClient(PluginId, 42, "ref-42");
+
+        binding.PluginId.Should().Be(PluginId);
+        binding.ClientId.Should().Be(42);
+        binding.ClientRef.Should().Be("ref-42");
+        binding.Permissions.Should().Be(ClientPermission.None);
+        binding.Area.Should().Be(PluginArea.Admin);
+    }
+
+    /// <summary>An admin binding about a client with a blank reference is refused, naming the reference.</summary>
+    /// <param name="clientRef">The blank reference.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ForAdminAboutClient_BlankClientRef_IsRefused(string clientRef)
+    {
+        var build = () => PluginCallBinding.ForAdminAboutClient(PluginId, 42, clientRef);
+
+        build.Should().Throw<ArgumentException>().WithParameterName("clientRef");
     }
 
     /// <summary>A client binding with an empty or white-space reference is refused, naming the reference.</summary>

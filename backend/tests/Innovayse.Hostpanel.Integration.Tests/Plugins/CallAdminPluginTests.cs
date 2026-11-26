@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -223,6 +224,60 @@ public sealed class CallAdminPluginTests : IClassFixture<AppPluginFixture>
         var row = await scope.ServiceProvider.GetRequiredService<AppDbContext>().PluginDataEntries.AsNoTracking()
             .SingleAsync(d => d.PluginId == _fixture.PluginId && d.Key == key);
         row.ClientRef.Should().BeNull();
+    }
+
+    /// <summary>
+    /// An admin call made in the context of a service (<c>?serviceId=</c>) hands the plugin the reference of the client that
+    /// owns the service, the very one the client panel passes for that client, and scopes the plugin's store to it; the
+    /// caller stays an administrator, so no permission is held and no host fact is shown.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AnAdminCallInAServiceContext_SeesTheOwningClientsRef_AndNoFacts()
+    {
+        var owner = await ClientsTestSeeds.RegisterClientAsync(_fixture.Factory, "admin-door-service-owner");
+        var service = await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, owner.ClientId);
+        using var admin = await _fixture.AdminClientAsync();
+        var key = $"admin-service-scope-{Guid.NewGuid():N}";
+        _fixture.Probe.Behaviour = call =>
+        {
+            var ct = CancellationToken.None;
+            call.Store.SetAsync(key, "v", ct).GetAwaiter().GetResult();
+            return PluginReply.Json(new
+            {
+                clientRef = call.Caller.ClientRef,
+                permissions = call.Caller.Permissions.Count(),
+                services = call.Host.ListServicesAsync(ct).GetAwaiter().GetResult().Count,
+                invoices = call.Host.ListInvoicesAsync(ct).GetAwaiter().GetResult().Count,
+            });
+        };
+
+        var response = await CallAsync(admin, HttpMethod.Get, _fixture.PluginId, $"stats?serviceId={service}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var seen = await JsonOfAsync(response);
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var expected = scope.ServiceProvider.GetRequiredService<IPluginReferences>().ForClient(_fixture.PluginId, owner.ClientId);
+        seen.GetProperty("clientRef").GetString().Should().Be(expected);
+        seen.GetProperty("permissions").GetInt32().Should().Be(0);
+        seen.GetProperty("services").GetInt32().Should().Be(0);
+        seen.GetProperty("invoices").GetInt32().Should().Be(0);
+        var row = await scope.ServiceProvider.GetRequiredService<AppDbContext>().PluginDataEntries.AsNoTracking()
+            .SingleAsync(d => d.PluginId == _fixture.PluginId && d.Key == key);
+        row.ClientRef.Should().Be(expected);
+    }
+
+    /// <summary>A service that does not exist leaves the admin call without a client, as if none had been named.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AnAdminCallNamingAMissingService_SeesNoClient()
+    {
+        using var admin = await _fixture.AdminClientAsync();
+
+        var response = await CallAsync(admin, HttpMethod.Get, _fixture.PluginId, $"stats?serviceId={int.MaxValue}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await JsonOfAsync(response)).GetProperty("clientRef").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     /// <summary>A plugin-wide store over its quota answers 402 <c>PLUGIN_STORE_QUOTA_EXCEEDED</c> with the standard error body.</summary>

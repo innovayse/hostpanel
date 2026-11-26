@@ -79,6 +79,12 @@ public static class DependencyInjection
         // The slot, caller and context checks the client slot index and the slot widget view share.
         services.AddScoped<ClientPluginSlotGate>();
 
+        // The slot and context checks the admin slot index and the admin slot widget view share.
+        services.AddScoped<AdminPluginSlotGate>();
+
+        // Reads the view of a widget the slot index lists, shared by the client and the admin slot widget views.
+        services.AddScoped<PluginSlotWidgetViewReader>();
+
         // The one path a key reaches a hosting account by and the one it leaves by, shared by the client's own SSH use
         // cases and the plugin SSH access.
         services.AddScoped<SshKeyInstaller>();

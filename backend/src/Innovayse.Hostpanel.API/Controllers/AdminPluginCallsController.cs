@@ -46,6 +46,11 @@ public sealed class AdminPluginCallsController : BaseApiController
     /// <summary>Calls a route of a serving plugin in the admin area.</summary>
     /// <param name="id">The plugin id.</param>
     /// <param name="path">The path below the plugin's admin prefix, matched against its declared routes.</param>
+    /// <param name="serviceId">
+    /// The service the administrator's page shows, when the call is made in its context. The host reads the client that owns it
+    /// from its own records and hands that client's reference to the plugin as the caller's client; without it, or for a
+    /// service that does not exist, the plugin sees no client. Never a client id: the client always comes from the service.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The plugin's own success (200, 201, 202, 203 with its JSON, or 204; a route that declares streaming may answer 200
@@ -78,10 +83,10 @@ public sealed class AdminPluginCallsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
-    public async Task<IActionResult> CallAsync(string id, string? path, CancellationToken ct)
+    public async Task<IActionResult> CallAsync(string id, string? path, [FromQuery] int? serviceId, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginReplyDto>>(
-            new CallAdminPluginCommand(id, PluginHttpInputReader.Read(Request, path)), ct);
+            new CallAdminPluginCommand(id, PluginHttpInputReader.Read(Request, path), serviceId), ct);
         return HandleForwarded(outcome);
     }
 }

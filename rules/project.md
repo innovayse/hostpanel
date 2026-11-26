@@ -1478,6 +1478,14 @@ docker/                              compose set (shared·dev·prod·platform), 
     permitted, filtered out by product or of a plugin that is off, a missing view) into one 404
     `PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND` with the same body, as the page endpoint does; only `IDENTITY_PLUGIN_UNAVAILABLE` (503)
     differs. The client reads each widget on its own, so a slow or broken one never holds up the page or the others.
+  - Admin widget view (#1500): `GET /api/admin/plugins/slots/{slotId}/widgets/{pluginId}/{widgetId}?serviceId=&clientId=`
+    (`GetAdminPluginSlotWidgetQuery`) answers the same `PluginSlotWidgetViewDto` (empty `externalOrigins`). It shares
+    `AdminPluginSlotGate` with the admin index (so the context keeps the index's codes) and `PluginSlotWidgetViewReader`
+    with the client view; a widget the index does not list, or without a view, is `PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND`.
+  - Admin plugin calls in a service context (#1500): the admin page sends `?serviceId=` on `/api/admin/plugins/{id}/ext/{path}`;
+    the host reads the owning client from its own service record and binds the call with `PluginCallBinding.ForAdminAboutClient`
+    (the client's reference exactly as the client panel passes it, no permissions, admin area). No `serviceId`, or a service that
+    does not exist, keeps the call without a client. The client is never taken from the request.
   - Order of checks, which is the contract: the slot (unknown or of the other panel is `PLUGIN_SLOT_NOT_FOUND`), the
     caller's account, the context, then the index. A client slot's service must be the caller's own
     (`SERVICE_NOT_FOUND` for foreign and missing alike, one query that also yields the product); an admin context must

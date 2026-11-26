@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Plugins.Queries.GetAdminPluginSlot;
+using Innovayse.Hostpanel.Application.Plugins.Queries.GetAdminPluginSlotWidget;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -48,6 +49,34 @@ public sealed class AdminPluginSlotsController : BaseApiController
     public async Task<IActionResult> GetAsync(string slotId, [FromQuery] GetAdminPluginSlotQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginSlotIndexDto>>(query with { SlotId = slotId }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Reads the view of one widget of an admin area slot, for the page the administrator is on.</summary>
+    /// <param name="slotId">The slot id, such as <c>admin.service.panels</c>.</param>
+    /// <param name="pluginId">The plugin that declares the widget.</param>
+    /// <param name="widgetId">The widget id.</param>
+    /// <param name="query">The context of the page: <c>serviceId</c> and <c>clientId</c> for the slots that offer them.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the widget and its view; 400 with <c>PLUGIN_SLOT_CONTEXT_REQUIRED</c> when the slot needs a service or client
+    /// and none is named; 401 without a session; 403 for a caller who is not an administrator; 404 with
+    /// <c>PLUGIN_SLOT_NOT_FOUND</c> when the host offers no such admin slot, with <c>SERVICE_NOT_FOUND</c> when the service
+    /// does not exist or the client named with it is not its own, with <c>CLIENT_NOT_FOUND</c> when the client does not
+    /// exist, or with <c>PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND</c> when the widget is unknown, hidden, bound to another product
+    /// or of a plugin that is off, or has no view; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{slotId}/widgets/{pluginId}/{widgetId}")]
+    [ProducesResponseType(typeof(PluginSlotWidgetViewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWidgetAsync(
+        string slotId, string pluginId, string widgetId, [FromQuery] GetAdminPluginSlotWidgetQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PluginSlotWidgetViewDto>>(
+            query with { SlotId = slotId, PluginId = pluginId, WidgetId = widgetId }, ct);
         return HandleResult(outcome);
     }
 }

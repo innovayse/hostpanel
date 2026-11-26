@@ -37,3 +37,23 @@ describe('usePluginSlotsApi', () => {
     await expect(usePluginSlotsApi().getSlot(PluginSlotId.AdminClientPanels, { clientId: 1 })).rejects.toBeTruthy()
   })
 })
+
+describe('usePluginSlotsApi getSlotWidget', () => {
+  it('reads one widget with its view, the record in the query', async () => {
+    const widgetView = { pluginId: 'sites', id: 'usage', title: null, externalOrigins: [], view: { schema: 1, blocks: [] } }
+    const mock = stubFetch(json(widgetView))
+
+    const read = await usePluginSlotsApi().getSlotWidget(PluginSlotId.AdminServicePanels, 'sites', 'usage', { serviceId: 9 })
+
+    expect(read).toEqual(widgetView)
+    expect(String(mock.mock.calls[0]?.[0])).toContain('/admin/plugins/slots/admin.service.panels/widgets/sites/usage?serviceId=9')
+  })
+
+  it('encodes the plugin and widget ids and rejects when the API refuses', async () => {
+    const mock = stubFetch(problem('Not found.', 404))
+
+    await expect(usePluginSlotsApi().getSlotWidget(PluginSlotId.AdminClientPanels, 'a b', 'c/d', { clientId: 1 })).rejects.toBeTruthy()
+
+    expect(String(mock.mock.calls[0]?.[0])).toContain('/widgets/a%20b/c%2Fd?clientId=1')
+  })
+})

@@ -1,7 +1,3 @@
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Slots;
-using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -15,18 +11,18 @@ namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetAdminPluginSlot;
 /// </summary>
 public sealed class GetAdminPluginSlotHandler
 {
-    /// <summary>Reads the service and client the page shows.</summary>
-    private readonly IPluginSlotContextReader _context;
+    /// <summary>Checks the slot and the context the page shows.</summary>
+    private readonly AdminPluginSlotGate _gate;
 
     /// <summary>Lists the widgets of the slot.</summary>
     private readonly PluginSlotIndexBuilder _index;
 
     /// <summary>Initializes the handler.</summary>
-    /// <param name="context">Reads the service and client the page shows.</param>
+    /// <param name="gate">Checks the slot and the context the page shows.</param>
     /// <param name="index">Lists the widgets of the slot.</param>
-    public GetAdminPluginSlotHandler(IPluginSlotContextReader context, PluginSlotIndexBuilder index)
+    public GetAdminPluginSlotHandler(AdminPluginSlotGate gate, PluginSlotIndexBuilder index)
     {
-        _context = context;
+        _gate = gate;
         _index = index;
     }
 
@@ -40,43 +36,18 @@ public sealed class GetAdminPluginSlotHandler
     /// </returns>
     public async Task<Result<PluginSlotIndexDto>> HandleAsync(GetAdminPluginSlotQuery query, CancellationToken ct)
     {
-        var slot = PluginSlots.Find(query.SlotId);
-        if (slot is not { Area: PluginArea.Admin })
+        var slot = AdminPluginSlotGate.FindSlot(query.SlotId);
+        if (slot.IsFailure)
         {
-            return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.PLUGIN_SLOT_NOT_FOUND);
+            return Result<PluginSlotIndexDto>.FailureCode(slot.ErrorCode!);
         }
 
-        int? productId = null;
-        if (slot.Offers(PluginSlotContextKeys.ServiceId))
+        var product = await _gate.VerifyContextAsync(slot.Value!, query.ServiceId, query.ClientId, ct);
+        if (product.IsFailure)
         {
-            if (query.ServiceId is not { } serviceId)
-            {
-                return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_REQUIRED);
-            }
-
-            var service = await _context.FindServiceAsync(serviceId, ct);
-
-            // A client id offered next to the service must be the service's own, or the context contradicts itself.
-            if (service is null || (query.ClientId is { } clientId && clientId != service.ClientId))
-            {
-                return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
-            }
-
-            productId = service.ProductId;
-        }
-        else if (slot.Offers(PluginSlotContextKeys.ClientId))
-        {
-            if (query.ClientId is not { } clientId)
-            {
-                return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.PLUGIN_SLOT_CONTEXT_REQUIRED);
-            }
-
-            if (!await _context.ClientExistsAsync(clientId, ct))
-            {
-                return Result<PluginSlotIndexDto>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
-            }
+            return Result<PluginSlotIndexDto>.FailureCode(product.ErrorCode!);
         }
 
-        return Result<PluginSlotIndexDto>.Success(await _index.BuildAsync(slot, ClientPermission.None, productId, ct));
+        return Result<PluginSlotIndexDto>.Success(await _index.BuildAsync(slot.Value!, ClientPermission.None, product.Value, ct));
     }
 }

@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
@@ -44,15 +43,10 @@ public sealed class HttpCallerAccessToken : ICallerAccessToken
 
         // The signature was already checked by authentication; here only the issuer is read, to tell
         // the provider's token from one this product minted. Anything unreadable is not forwarded.
-        var handler = new JwtSecurityTokenHandler();
-        if (!handler.CanReadToken(token))
-        {
-            return null;
-        }
-
-        var issuer = handler.ReadJwtToken(token).Issuer;
-        return string.IsNullOrEmpty(issuer) || string.Equals(issuer, _localIssuer, StringComparison.Ordinal)
-            ? null
-            : token;
+        return BearerTokenIssuer.TryRead(token, out var issuer)
+            && !string.IsNullOrEmpty(issuer)
+            && !string.Equals(issuer, _localIssuer, StringComparison.Ordinal)
+                ? token
+                : null;
     }
 }

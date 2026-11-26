@@ -155,6 +155,8 @@ export const Icon = {
   Send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
   /** A right arrow, for "go" and "next". */
   ArrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  /** A left arrow, for "previous": the mirror of {@link Icon.ArrowRight}, never a page's way up. */
+  ArrowLeft: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
 } as const
 
 /**

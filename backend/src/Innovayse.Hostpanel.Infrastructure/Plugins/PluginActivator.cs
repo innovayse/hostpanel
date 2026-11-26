@@ -217,7 +217,13 @@ public sealed class PluginActivator
             PluginActivationOutcome.Activated,
             () =>
             {
-                _leases.Hold(plugin.Usage);
+                // Checked again here, atomically with the count a reload drains: the migration gate above may have been
+                // passed just before a reload closed this version.
+                if (!_leases.TryHold(plugin.Usage))
+                {
+                    throw new InvalidOperationException($"Plugin '{id}' is being reloaded and takes no new call until it is back.");
+                }
+
                 return (TContract)ActivatorUtilities.CreateInstance(
                     _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id));
             },

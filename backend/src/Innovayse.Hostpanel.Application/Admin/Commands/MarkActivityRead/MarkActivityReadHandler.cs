@@ -1,18 +1,15 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Shared.Constants;
-using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Admin.Commands.MarkActivityRead;
 
 /// <summary>Handles <see cref="MarkActivityReadCommand"/>: remembers that the calling admin has read one event.</summary>
 public sealed class MarkActivityReadHandler
 {
-    /// <summary>The data context, where the read marks are kept.</summary>
-    private readonly IHostpanelDbContext _context;
+    /// <summary>The store the read marks are kept in.</summary>
+    private readonly IActivityReadStore _reads;
 
     /// <summary>The caller, whose subject the mark is stored under.</summary>
     private readonly ICurrentUserService _currentUser;
@@ -21,12 +18,12 @@ public sealed class MarkActivityReadHandler
     private readonly IClock _clock;
 
     /// <summary>Initializes the handler.</summary>
-    /// <param name="context">The data context, where the read marks are kept.</param>
+    /// <param name="reads">The store the read marks are kept in.</param>
     /// <param name="currentUser">The caller, whose subject the mark is stored under.</param>
     /// <param name="clock">The source of the current moment.</param>
-    public MarkActivityReadHandler(IHostpanelDbContext context, ICurrentUserService currentUser, IClock clock)
+    public MarkActivityReadHandler(IActivityReadStore reads, ICurrentUserService currentUser, IClock clock)
     {
-        _context = context;
+        _reads = reads;
         _currentUser = currentUser;
         _clock = clock;
     }
@@ -43,21 +40,7 @@ public sealed class MarkActivityReadHandler
             return Result.FailureCode(SharedErrorCodes.Unauthorized);
         }
 
-        var alreadyRead = await _context.ActivityReads.AnyAsync(r => r.UserId == userId && r.EventKey == command.EventKey, ct);
-        if (alreadyRead)
-        {
-            return Result.Success();
-        }
-
-        try
-        {
-            _context.ActivityReads.Add(ActivityRead.Create(userId, command.EventKey, _clock.UtcNow));
-            await _context.SaveChangesAsync(ct);
-        }
-        catch (ConcurrencyConflictException)
-        {
-            // Another call marked the same event between the check and the save: the event is read either way.
-        }
+        await _reads.MarkReadAsync(userId, [command.EventKey], _clock.UtcNow, ct);
 
         return Result.Success();
     }

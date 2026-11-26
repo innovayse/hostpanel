@@ -65,7 +65,7 @@ public sealed class PluginHotReloaderTests
         using var harness = PluginReloadHarness.Create(Patient);
         harness.Stage("1.1.0");
         var running = harness.Registry.Find(PluginReloadHarness.PluginId)!;
-        running.Usage.Enter();
+        running.Usage.TryEnter().Should().BeTrue();
 
         var reload = harness.Reloader.ReloadAsync(PluginReloadHarness.PluginId, CancellationToken.None);
         await Task.Delay(300);
@@ -80,6 +80,48 @@ public sealed class PluginHotReloaderTests
         harness.Registry.Find(PluginReloadHarness.PluginId)!.Manifest.Version.Should().Be("1.1.0");
     }
 
+    /// <summary>
+    /// A request that is cancelled while the old version drains neither cuts the drain short nor leaves the plugin closed:
+    /// the reload goes on once the running call ends, and the gate is lifted after the swap.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Reload_ACancelledRequestDuringTheDrain_StillSwapsAndLiftsTheGateAsync()
+    {
+        using var harness = PluginReloadHarness.Create(Patient);
+        harness.Stage("1.1.0");
+        var running = harness.Registry.Find(PluginReloadHarness.PluginId)!;
+        running.Usage.TryEnter().Should().BeTrue();
+        using var request = new CancellationTokenSource();
+
+        var reload = harness.Reloader.ReloadAsync(PluginReloadHarness.PluginId, request.Token);
+        await Task.Delay(200);
+        await request.CancelAsync();
+        running.Usage.Leave();
+
+        (await reload).Should().Be(PluginReloadOutcome.Applied);
+        harness.Registry.Find(PluginReloadHarness.PluginId)!.Manifest.Version.Should().Be("1.1.0");
+        harness.Registry.IsMigrationPending(PluginReloadHarness.PluginId).Should().BeFalse("the swap lifts the drain gate on its way out");
+    }
+
+    /// <summary>While the old version drains no new instance can be built from it, so a call cannot slip in after the drain found it idle.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Reload_ANewCallDuringTheDrain_IsRefusedByTheOldVersionAsync()
+    {
+        using var harness = PluginReloadHarness.Create(Patient);
+        harness.Stage("1.1.0");
+        var running = harness.Registry.Find(PluginReloadHarness.PluginId)!;
+        running.Usage.TryEnter().Should().BeTrue();
+
+        var reload = harness.Reloader.ReloadAsync(PluginReloadHarness.PluginId, CancellationToken.None);
+        await Task.Delay(200);
+
+        running.Usage.TryEnter().Should().BeFalse("the drain closed the old version to new instances");
+        running.Usage.Leave();
+        (await reload).Should().Be(PluginReloadOutcome.Applied);
+    }
+
     /// <summary>A call that does not finish within the drain time leaves the plugin exactly as it was and the change for the restart.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -87,7 +129,7 @@ public sealed class PluginHotReloaderTests
     {
         using var harness = PluginReloadHarness.Create(TimeSpan.FromMilliseconds(100));
         harness.Stage("1.1.0");
-        harness.Registry.Find(PluginReloadHarness.PluginId)!.Usage.Enter();
+        harness.Registry.Find(PluginReloadHarness.PluginId)!.Usage.TryEnter().Should().BeTrue();
 
         var outcome = await harness.Reloader.ReloadAsync(PluginReloadHarness.PluginId, CancellationToken.None);
 
@@ -96,6 +138,7 @@ public sealed class PluginHotReloaderTests
         harness.InstalledVersion().Should().Be("1.0.0");
         Directory.Exists(Path.Combine(harness.Root, ".staged", PluginReloadHarness.PluginId)).Should().BeTrue("the staged version waits for the restart");
         harness.Registry.IsMigrationPending(PluginReloadHarness.PluginId).Should().BeFalse("the gate is lifted, the old version goes on serving");
+        harness.Registry.Find(PluginReloadHarness.PluginId)!.Usage.TryEnter().Should().BeTrue("a drain that gave up opens the old version to new calls again");
     }
 
     /// <summary>A new version that cannot be loaded is rolled back: the previous version runs again and the failure is recorded.</summary>
@@ -169,7 +212,7 @@ public sealed class PluginHotReloaderTests
     public async Task Unload_ACallThatOutlastsTheDrain_LeavesThePluginLoadedAsync()
     {
         using var harness = PluginReloadHarness.Create(TimeSpan.FromMilliseconds(100));
-        harness.Registry.Find(PluginReloadHarness.PluginId)!.Usage.Enter();
+        harness.Registry.Find(PluginReloadHarness.PluginId)!.Usage.TryEnter().Should().BeTrue();
 
         var outcome = await harness.Reloader.UnloadAsync(PluginReloadHarness.PluginId, CancellationToken.None);
 

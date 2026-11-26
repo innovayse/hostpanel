@@ -12,14 +12,20 @@ public sealed class PluginUsageLeases : IDisposable
     /// <summary>The usage counters this scope entered and has not left.</summary>
     private readonly List<PluginUsage> _held = [];
 
-    /// <summary>Marks a plugin instance as in use until the scope ends.</summary>
-    /// <param name="usage">The usage counter of the plugin version the instance was built from.</param>
-    public void Hold(PluginUsage usage)
+    /// <summary>Marks a plugin instance as in use until the scope ends, unless a reload has closed its version.</summary>
+    /// <param name="usage">The usage counter of the plugin version the instance is built from.</param>
+    /// <returns><see langword="true"/> when the instance may be built; <see langword="false"/> while the version drains.</returns>
+    public bool TryHold(PluginUsage usage)
     {
         lock (_gate)
         {
-            usage.Enter();
+            if (!usage.TryEnter())
+            {
+                return false;
+            }
+
             _held.Add(usage);
+            return true;
         }
     }
 

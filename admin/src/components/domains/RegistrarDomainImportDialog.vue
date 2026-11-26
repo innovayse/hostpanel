@@ -221,7 +221,7 @@ onMounted(() => {
       </UiDataTable>
       <UiStack v-if="registrarId !== '' && !store.error" :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
         <UiButton
-          :icon="Icon.Back"
+          :action="UiActionKind.Previous"
           :type="UiButtonType.Button"
           :variant="UiButtonVariant.Secondary"
           :disabled="!store.hasPrevious || store.loading"

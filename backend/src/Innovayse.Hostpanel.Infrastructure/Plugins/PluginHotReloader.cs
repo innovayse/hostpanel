@@ -117,12 +117,12 @@ internal sealed class PluginHotReloader : IPluginHotReloader
                 return PluginReloadOutcome.NeedsRestart;
             }
 
-            if (!await DrainAsync(current, ct))
+            if (!await DrainAsync(current))
             {
                 return PluginReloadOutcome.NeedsRestart;
             }
 
-            return await SwapAsync(current, ct);
+            return await SwapAsync(current);
         }
         finally
         {
@@ -151,7 +151,7 @@ internal sealed class PluginHotReloader : IPluginHotReloader
                 return PluginReloadOutcome.NeedsRestart;
             }
 
-            if (!await DrainAsync(current, ct))
+            if (!await DrainAsync(current))
             {
                 return PluginReloadOutcome.NeedsRestart;
             }
@@ -183,56 +183,78 @@ internal sealed class PluginHotReloader : IPluginHotReloader
     }
 
     /// <summary>
-    /// Closes the plugin to new calls and waits for the instances already built to be released. When the wait runs out the
-    /// gate is lifted again, so the plugin goes on exactly as before.
+    /// Closes the plugin to new calls and waits for the instances already built to be released. When the wait runs out, or
+    /// ends in an error, the gate is lifted again, so the plugin goes on exactly as before.
     /// </summary>
+    /// <remarks>
+    /// The wait is not tied to the caller's request: a request that is cancelled while the plugin is closed would otherwise
+    /// end the wait halfway, and the drain is bounded by <see cref="Settings.PluginOptions.DrainSeconds"/> anyway.
+    /// </remarks>
     /// <param name="current">The plugin to drain.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> when no call runs in the plugin any more and the gate is closed.</returns>
-    private async Task<bool> DrainAsync(LoadedPlugin current, CancellationToken ct)
+    private async Task<bool> DrainAsync(LoadedPlugin current)
     {
         var id = current.Manifest.Id;
         var alreadyPending = _registry.IsMigrationPending(id);
         _registry.MarkMigrationPending(id);
 
-        if (await current.Usage.WaitForIdleAsync(_drain, ct))
+        var idle = false;
+        try
         {
-            return true;
+            idle = await current.Usage.DrainAsync(_drain);
+        }
+        finally
+        {
+            if (!idle && !alreadyPending)
+            {
+                _registry.ClearMigrationPending(id);
+            }
         }
 
-        if (!alreadyPending)
+        if (!idle)
         {
-            _registry.ClearMigrationPending(id);
+            _logger.LogWarning(
+                "Plugin {Id} still had running calls after {Seconds} s, the change waits for the restart", id, _drain.TotalSeconds);
         }
 
-        _logger.LogWarning(
-            "Plugin {Id} still had running calls after {Seconds} s, the change waits for the restart", id, _drain.TotalSeconds);
-        return false;
+        return idle;
     }
 
     /// <summary>
     /// Unloads the drained version, swaps the staged files in, loads them and runs the migration hook.
     /// </summary>
+    /// <remarks>
+    /// Once the old version is released the swap runs to its end whatever happens to the caller's request, and the gate is
+    /// settled on every exit: the migration hook lifts it unless the new version has a migration still to run, so an error
+    /// in the swap or the load never leaves the plugin closed for good.
+    /// </remarks>
     /// <param name="current">The drained plugin, which is released here.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns><see cref="PluginReloadOutcome.Applied"/> when the new version is loaded and is not a plugin the host would start at startup.</returns>
-    private async Task<PluginReloadOutcome> SwapAsync(LoadedPlugin current, CancellationToken ct)
+    private async Task<PluginReloadOutcome> SwapAsync(LoadedPlugin current)
     {
         var id = current.Manifest.Id;
-        Release(current);
+        bool swapped;
+        LoadedPlugin? loaded;
+        try
+        {
+            Release(current);
 
-        // The old assemblies are no longer in use, so the installed folder can be replaced. A swap that fails leaves the
-        // installed version in place and the load below brings that version back.
-        var swapped = PluginUpgradeApplier.ApplyOne(_installRoot, id, _logger);
-        _registry.ClearRefused(id);
+            // The old assemblies are no longer in use, so the installed folder can be replaced. A swap that fails leaves the
+            // installed version in place and the load below brings that version back.
+            swapped = PluginUpgradeApplier.ApplyOne(_installRoot, id, _logger);
+            _registry.ClearRefused(id);
 
-        // The caller's own request writes the activity log line, so the record is already reported.
-        var loaded = _loader.LoadChanged(
-            Path.Combine(_installRoot, id), PluginOrigin.Uploaded, new HashSet<string>(StringComparer.OrdinalIgnoreCase), _allowUnsigned(), reported: true);
-        _availability.Invalidate();
-
-        // A restored version has no migration pending: the restore dropped the record, and this lifts the drain gate.
-        await _migrations.RetryAsync(id, ct);
+            // The caller's own request writes the activity log line, so the record is already reported.
+            loaded = _loader.LoadChanged(
+                Path.Combine(_installRoot, id), PluginOrigin.Uploaded, new HashSet<string>(StringComparer.OrdinalIgnoreCase), _allowUnsigned(), reported: true);
+            _availability.Invalidate();
+        }
+        finally
+        {
+            // Runs the new version's migration, or lifts the drain gate when none is pending (a restored version has none:
+            // the restore dropped the record).
+            await _migrations.RetryAsync(id, CancellationToken.None);
+        }
 
         if (swapped && _changes.Find(id)?.Result == PluginChangeResult.Failed)
         {

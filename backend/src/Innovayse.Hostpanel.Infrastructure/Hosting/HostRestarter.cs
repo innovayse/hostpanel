@@ -59,14 +59,28 @@ public sealed class HostRestarter : IHostRestarter
         _ = StopAfterDelayAsync();
     }
 
-    /// <summary>Waits the pause, then starts the graceful stop with the restart exit code.</summary>
-    /// <returns>A task that completes when the stop has started.</returns>
+    /// <summary>
+    /// Waits the pause, then starts the graceful stop with the restart exit code. Nobody awaits this task, so a failure is
+    /// logged here and the request is cleared, which lets a later restart try again.
+    /// </summary>
+    /// <returns>A task that completes when the stop has started or has failed.</returns>
     private async Task StopAfterDelayAsync()
     {
-        await Task.Delay(_delay);
-        _logger.LogInformation("Restarting the host: draining running requests, then exiting with code {ExitCode}", ExitCode);
-        Environment.ExitCode = ExitCode;
-        Volatile.Write(ref _draining, 1);
-        _lifetime.StopApplication();
+        try
+        {
+            await Task.Delay(_delay);
+            _logger.LogInformation("Restarting the host: draining running requests, then exiting with code {ExitCode}", ExitCode);
+            Environment.ExitCode = ExitCode;
+            Volatile.Write(ref _draining, 1);
+            _lifetime.StopApplication();
+        }
+        catch (Exception ex)
+        {
+            // The stop did not start, so the host keeps running: it must not report draining or exit with the restart code later.
+            Volatile.Write(ref _draining, 0);
+            Environment.ExitCode = 0;
+            Volatile.Write(ref _requested, 0);
+            _logger.LogError(ex, "Restarting the host failed; a later request for a restart will try again");
+        }
     }
 }

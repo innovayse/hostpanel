@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -39,6 +40,33 @@ public sealed class HostRestartTests
         restarter.IsRestarting.Should().BeTrue("the health probe reports draining once the stop has started");
         lifetime.StopCalls.Should().Be(1);
         Environment.ExitCode.Should().Be(HostRestarter.ExitCode);
+        Environment.ExitCode = 0;
+    }
+
+    /// <summary>
+    /// A stop that fails is logged instead of going unobserved, the host does not report draining, and the next request for a
+    /// restart runs again instead of finding the first one still pending.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Restart_AFailingStop_IsLoggedAndALaterRestartRunsAgainAsync()
+    {
+        var lifetime = new CountingLifetime { FailingStops = 1 };
+        var logger = new CapturingLogger();
+        var restarter = new HostRestarter(lifetime, Options.Create(new PluginOptions { RestartDelaySeconds = 0 }), logger);
+
+        restarter.Restart();
+        var failure = await logger.Failed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        failure.Should().BeOfType<InvalidOperationException>();
+        restarter.IsRestarting.Should().BeFalse("the stop never started");
+        Environment.ExitCode.Should().Be(0, "the host keeps running, so it must not later exit as a restart");
+
+        restarter.Restart();
+        await lifetime.Stopped.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        lifetime.StopCalls.Should().Be(2);
+        restarter.IsRestarting.Should().BeTrue();
         Environment.ExitCode = 0;
     }
 
@@ -102,11 +130,43 @@ public sealed class HostRestartTests
         provider.GetRequiredService<IOptions<HostOptions>>().Value.ShutdownTimeout.Should().Be(TimeSpan.FromSeconds(42));
     }
 
-    /// <summary>A host lifetime that counts the stops it is asked for.</summary>
+    /// <summary>A logger that hands over the exception of the first error it records.</summary>
+    private sealed class CapturingLogger : ILogger<HostRestarter>
+    {
+        /// <summary>Gets the task that completes with the exception of the first error that is logged.</summary>
+        public TaskCompletionSource<Exception?> Failed { get; } = new();
+
+        /// <inheritdoc/>
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull
+        {
+            return null;
+        }
+
+        /// <inheritdoc/>
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Error)
+            {
+                Failed.TrySetResult(exception);
+            }
+        }
+    }
+
+    /// <summary>A host lifetime that counts the stops it is asked for and can fail the first ones.</summary>
     private sealed class CountingLifetime : IHostApplicationLifetime
     {
         /// <summary>How many times the stop was asked for.</summary>
         private int _stopCalls;
+
+        /// <summary>Gets or sets how many of the first stops throw instead of completing.</summary>
+        public int FailingStops { get; set; }
 
         /// <summary>Gets the task that completes when the stop is asked for.</summary>
         public TaskCompletionSource Stopped { get; } = new();
@@ -126,7 +186,11 @@ public sealed class HostRestartTests
         /// <inheritdoc/>
         public void StopApplication()
         {
-            Interlocked.Increment(ref _stopCalls);
+            if (Interlocked.Increment(ref _stopCalls) <= FailingStops)
+            {
+                throw new InvalidOperationException("The stop failed.");
+            }
+
             Stopped.TrySetResult();
         }
     }

@@ -76,6 +76,29 @@ public sealed class MarkActivityReadTests(IntegrationTestFactory factory) : ICla
         (await context.ActivityReads.CountAsync(r => r.EventKey == key, CancellationToken.None)).Should().Be(1);
     }
 
+    /// <summary>
+    /// Marking the same event twice and then another one through the store in a single scope fails no save and stores
+    /// each event once: nothing stays tracked from the repeated mark.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RepeatedMarkInOneScope_DoesNotBreakALaterMarkAsync()
+    {
+        var userId = $"user-{Guid.NewGuid():N}";
+        var first = $"ClientRegistered:{Guid.NewGuid():N}:3";
+        var second = $"ClientRegistered:{Guid.NewGuid():N}:4";
+        using var scope = factory.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IActivityReadStore>();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var readAt = DateTimeOffset.UtcNow;
+
+        await store.MarkReadAsync(userId, [first], readAt, CancellationToken.None);
+        await store.MarkReadAsync(userId, [first, second], readAt, CancellationToken.None);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        (await context.ActivityReads.CountAsync(r => r.UserId == userId, CancellationToken.None)).Should().Be(2);
+    }
+
     /// <summary>A key that is missing or longer than the column holds is a validation error.</summary>
     /// <param name="key">The key sent.</param>
     /// <returns>A task that completes when the test has run.</returns>

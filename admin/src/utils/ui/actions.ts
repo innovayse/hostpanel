@@ -58,6 +58,8 @@ export const UiActionKind = {
   Send: 'send',
   /** Moves on to the next step. */
   Next: 'next',
+  /** Goes back one step or one page within the same screen; never the way up to another page. */
+  Previous: 'previous',
   /** Makes a copy. */
   Copy: 'copy',
   /** Searches. */
@@ -95,6 +97,7 @@ export const actionIcons: Record<UiActionKind, string> = {
   [UiActionKind.Test]: Icon.Zap,
   [UiActionKind.Send]: Icon.Send,
   [UiActionKind.Next]: Icon.ArrowRight,
+  [UiActionKind.Previous]: Icon.ArrowLeft,
   [UiActionKind.Copy]: Icon.Copy,
   [UiActionKind.Search]: Icon.Search,
   [UiActionKind.Stop]: Icon.Stop,

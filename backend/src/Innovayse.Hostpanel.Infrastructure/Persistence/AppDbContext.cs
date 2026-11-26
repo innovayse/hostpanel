@@ -525,17 +525,6 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: ActivityReadConfiguration.PrimaryKeyName,
-        })
-        {
-            // Two marks of the same event by the same admin at once: the same lost race as a concurrent save.
-            // MarkActivityReadHandler answers it as the replay it is, because the event is read either way.
-            throw new ConcurrencyConflictException(
-                "Another call marked the same activity event read concurrently.", ex);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
             ConstraintName: ClientServiceConfiguration.OrderItemIndex,
         })
         {

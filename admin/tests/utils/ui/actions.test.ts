@@ -13,6 +13,7 @@ describe('actionIcons', () => {
 
   it('draws the common actions the same way everywhere', () => {
     expect(actionIcons[UiActionKind.Save]).toBe(Icon.Check)
+    expect(actionIcons[UiActionKind.Previous]).toBe(Icon.ArrowLeft)
     expect(actionIcons[UiActionKind.Delete]).toBe(Icon.Trash)
     expect(actionIcons[UiActionKind.Add]).toBe(Icon.Add)
     expect(actionIcons[UiActionKind.AddRow]).toBe(Icon.Add)

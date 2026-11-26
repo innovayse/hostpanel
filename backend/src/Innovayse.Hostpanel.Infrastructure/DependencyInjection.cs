@@ -344,6 +344,7 @@ public static class DependencyInjection
         // block above because it does not depend on Identity being registered at all:
         // which is the point, since single sign-on mode will stop registering it.
         services.AddScoped<ISubjectRoleStore, SubjectRoleStore>();
+        services.AddScoped<IActivityReadStore, ActivityReadStore>();
 
         // The client portal keeps its sign-in sessions in Redis; a back-channel logout ends them too.
         // In both modes, beside the mode's own revoker: the handler asks every registered one. With

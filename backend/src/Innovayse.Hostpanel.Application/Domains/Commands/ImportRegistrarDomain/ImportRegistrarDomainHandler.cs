@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Queries.ConvertAmounts;
+using Innovayse.Hostpanel.Application.Clients.Common;
+using Innovayse.Hostpanel.Application.Clients.Queries.GetClient;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
@@ -94,9 +96,11 @@ public sealed class ImportRegistrarDomainHandler
             return Result<int>.FailureCode(HostpanelErrorCodes.REGISTRAR_NOT_CONFIGURED);
         }
 
-        if (!await _context.Clients.AsNoTracking().AnyAsync(c => c.Id == cmd.ClientId, ct))
+        // The client belongs to the Clients module, so it is read through that module's query, never its table.
+        var client = await _bus.InvokeAsync<Result<ClientDto>>(new GetClientQuery(cmd.ClientId), ct);
+        if (!client.IsSuccess)
         {
-            return Result<int>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
+            return Result<int>.FailureCode(client.ErrorCode ?? HostpanelErrorCodes.CLIENT_NOT_FOUND);
         }
 
         var storedName = RegisteredDomain.NormaliseName(cmd.DomainName);

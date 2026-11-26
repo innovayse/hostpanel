@@ -1,14 +1,7 @@
 #!/bin/sh
-# Runs from /docker-entrypoint.d before nginx starts: turns ADMIN_BASE_URL_PATH into the SPA's
-# runtime config.js and the <base href> of index.html, so one image serves any base path.
+# Runs from /docker-entrypoint.d before nginx starts: turns the environment into the SPA's runtime
+# config.js, so one image serves any domain. The admin is always served at the root of its own host.
 set -eu
-
-: "${ADMIN_BASE_URL_PATH:?ADMIN_BASE_URL_PATH must be set}"
-
-if ! printf '%s' "$ADMIN_BASE_URL_PATH" | grep -Eq '^/[A-Za-z0-9._~/-]*$'; then
-  echo "ADMIN_BASE_URL_PATH must start with / and contain only letters, digits and ._~/-" >&2
-  exit 1
-fi
 
 # The two optional addresses below are checked only when set: printf of an empty string writes no line, so
 # grep would see no input and report no match, and the check would refuse the very value it documents as allowed.
@@ -28,13 +21,4 @@ if [ -n "$DOCS_URL" ] && ! printf '%s' "$DOCS_URL" | grep -Eq '^(https?://[A-Za-
 fi
 
 root=/usr/share/nginx/html
-base=$(printf '%s' "$ADMIN_BASE_URL_PATH" | sed 's|/*$||')
-if [ -z "$base" ]; then
-  base=/
-  href=/
-else
-  href="$base/"
-fi
-
-ADMIN_BASE_URL_PATH="$base" CLIENT_BASE_URL="$CLIENT_BASE_URL" DOCS_URL="$DOCS_URL" envsubst '${ADMIN_BASE_URL_PATH} ${CLIENT_BASE_URL} ${DOCS_URL}' < /etc/admin/config.js.template > "$root/config.js"
-sed -i "s|<base href=\"[^\"]*\">|<base href=\"$href\">|" "$root/index.html"
+CLIENT_BASE_URL="$CLIENT_BASE_URL" DOCS_URL="$DOCS_URL" envsubst '${CLIENT_BASE_URL} ${DOCS_URL}' < /etc/admin/config.js.template > "$root/config.js"

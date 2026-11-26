@@ -16,7 +16,7 @@ FROM node:22.23.4-alpine3.24@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a4
 
 WORKDIR /app
 
-# Nothing environment-specific is baked in: the base path comes from ADMIN_BASE_URL_PATH at start.
+# Nothing environment-specific is baked in: the storefront and documentation addresses come from the environment at start.
 
 COPY admin/package.json admin/package-lock.json ./
 RUN npm ci
@@ -37,8 +37,8 @@ RUN chown 101:0 /usr/share/nginx/html
 COPY docker/nginx/admin.conf /etc/nginx/conf.d/default.conf
 COPY docker/nginx/snippets/security-headers.conf docker/nginx/snippets/admin-csp.conf /etc/nginx/snippets/
 
-# At start, /docker-entrypoint.d/40-admin-runtime-config.sh writes config.js and <base href>
-# from ADMIN_BASE_URL_PATH (required; the script refuses to start without it).
+# At start, /docker-entrypoint.d/40-admin-runtime-config.sh writes config.js from CLIENT_BASE_URL and
+# DOCS_URL (both optional; the script refuses a malformed value).
 COPY docker/nginx/admin-config.js.template /etc/admin/config.js.template
 COPY --chmod=755 docker/nginx/admin-entrypoint.sh /docker-entrypoint.d/40-admin-runtime-config.sh
 

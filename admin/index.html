@@ -2,7 +2,7 @@
 <html lang="">
   <head>
     <meta charset="UTF-8">
-    <!-- Rewritten at container start from ADMIN_BASE_URL_PATH; every relative URL resolves against it. -->
+    <!-- The admin is served at the root of its own host; every relative URL resolves against it. -->
     <base href="/">
     <!-- A classic script on purpose: it is replaced at container start, so the bundler must leave it alone (vite-ignore). -->
     <script src="config.js" vite-ignore></script>
@@ -38,11 +38,10 @@
       Without the manifest Android ignores the 192/512 pair entirely, and the maskable
       variants have nothing to declare them.
 
-      This href is absolute so Vite rewrites it to the deployment base. A relative one would
-      resolve against whatever route the SPA was deep-linked to: fine at /admin/, a 404 at
-      /admin/settings/system. The icon paths *inside* the manifest stay relative for the
-      mirror-image reason: Vite does not rewrite a static JSON file, and they resolve against
-      the manifest's own URL, which is already base-correct.
+      This href is absolute so it does not depend on the route the SPA was deep-linked to: a
+      relative one would resolve against /settings/system there and 404. The icon paths *inside*
+      the manifest stay relative for the mirror-image reason: Vite does not rewrite a static JSON
+      file, and they resolve against the manifest's own URL, which is already correct.
     -->
     <link rel="manifest" href="/site.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">

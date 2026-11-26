@@ -13,7 +13,6 @@ import type { MeResponse, SignInResult } from '@/types/auth'
 import { errorSentence } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
 import { translate } from '@/lib/translate'
-import { getRuntimeConfig } from '@/lib/runtimeConfig'
 
 /** Query parameter the SSO end-session endpoint reads the address to send the browser back to. */
 const POST_LOGOUT_PARAM = 'post_logout_redirect_uri'
@@ -415,14 +414,14 @@ export const useAuthStore = defineStore('auth', () => {
     // Tell the SSO where to send the browser afterwards. Without this the end-session endpoint
     // has nowhere to go and answers 200 with an empty body, which is a blank white page: the
     // sign-out worked, but it looked like the app had died. The address must be one registered
-    // for this client on the SSO side, which the origin plus the deployment's base path is.
+    // for this client on the SSO side, which the root of this origin is.
     const endSessionUrl = await api.endSessionUrl()
     if (!endSessionUrl) {
       location.href = '/'
       return
     }
     const url = new URL(endSessionUrl)
-    url.searchParams.set(POST_LOGOUT_PARAM, new URL(getRuntimeConfig().basePath, location.origin).href)
+    url.searchParams.set(POST_LOGOUT_PARAM, new URL('/', location.origin).href)
     location.href = url.toString()
   }
 

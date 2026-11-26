@@ -311,8 +311,7 @@ services:
       dockerfile: admin/Dockerfile
       target: prod
     environment:
-      # Read at container start: nginx entrypoint writes config.js and <base href> from it.
-      ADMIN_BASE_URL_PATH: ${ADMIN_BASE_URL_PATH}
+      # Read at container start: the nginx entrypoint writes config.js from the two addresses below.
       # The storefront's public origin: the admin resolves the storefront's relative image paths against it.
       CLIENT_BASE_URL: ${CLIENT_BASE_URL:-}
       # Public address of the documentation website; empty hides all documentation links.

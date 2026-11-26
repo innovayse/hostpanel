@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Buffers.Text;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -12,7 +13,7 @@ namespace Innovayse.Hostpanel.API.Auth;
 /// <remarks>
 /// The scheme selector runs before any validation, so it sees whatever a caller put in the header. The
 /// token libraries only offer readers that throw on a broken token (and their <c>CanReadToken</c> checks the
-/// shape, not the encoding), so this reads the payload with the framework's non-throwing base64url decoder
+/// shape, not the encoding), so this reads the payload with the framework's status-returning base64url decoder (its <c>Try</c> variant throws on bad characters)
 /// and answers false for anything that is not a compact token carrying a string <c>iss</c>. The answer only
 /// routes the request to a scheme; that scheme still validates the token completely.
 /// </remarks>
@@ -42,7 +43,7 @@ public static class BearerTokenIssuer
 
         var encoded = segments[PayloadSegment];
         var payload = new byte[Base64Url.GetMaxDecodedLength(encoded.Length)];
-        if (!Base64Url.TryDecodeFromChars(encoded, payload, out var written))
+        if (Base64Url.DecodeFromChars(encoded, payload, out _, out var written) != OperationStatus.Done)
         {
             return false;
         }

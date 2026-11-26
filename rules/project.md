@@ -2502,6 +2502,14 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   (`vMAJOR.MINOR.PATCH`, pre-releases ignored) reachable from `HEAD`, without the `v`, plus `+<8 character commit id>`,
   for example `0.5.0+1a2b3c4d`. It fails when no release tag is reachable. `scripts/test-image-version.sh` tests it in
   throwaway repositories (GitLab `image-version:test`, GitHub `image-version`).
+- `scripts/image-tags.sh <image> <target> <commit>` is the one naming rule of the CI image jobs: a `prod` image is
+  `:latest` and `:<commit>`, any other target carries its name in both tags (`:dev`, `:dev-<commit>`), so a dev image
+  never takes a tag `deploy:prod` pulls (it once did, and the dev admin replaced the production one).
+  `scripts/check-image.sh <image> <target>` runs in `.build-image` before the push and fails a prod image that starts the
+  development server (`npm run dev`, `yarn dev`, `dotnet watch`) and a dev image that does not.
+  `scripts/check-image-tags.sh` fails when two image jobs of `.gitlab-ci.yml` build the same service and target or push
+  the same tag. `scripts/test-image-tags.sh` tests the three (GitLab `deploy-scripts:test`, GitHub `deploy-scripts`).
+  The Docker Hub workflow builds only the `prod` target and tags `<component>-<version>`, so it has no dev tag to collide with.
 
 All are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
 "Illegal option" on a CRLF copy.

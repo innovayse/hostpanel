@@ -212,7 +212,17 @@ variables:
     # build arg), so it is not stored in the image layers or its history. The client and admin
     # Dockerfiles never mount the secret. NUXT_PUBLIC_PORTAL_CHAT_BASE_URL is the client's build-time
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
-    - docker build "$@" --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    # The references the image is tagged and pushed under come from scripts/image-tags.sh, the one naming rule: the
+    # prod image is :latest and :<commit>, any other target carries its name in both tags (:dev, :dev-<commit>). A
+    # dev job used to push :<commit> as well, and the last job to finish decided what deploy:prod pulled.
+    - |
+      refs="$(sh scripts/image-tags.sh "$IMAGE" "$IMAGE_TARGET" "$CI_COMMIT_SHORT_SHA")"
+      for ref in $refs; do
+        set -- "$@" -t "$ref"
+      done
+    - docker build "$@" --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" "$BUILD_CONTEXT"
+    # A prod image that starts the development server, or a dev image that does not, never leaves the job.
+    - sh scripts/check-image.sh "${refs%%[[:space:]]*}" "$IMAGE_TARGET"
     # Both tags come from the one build above. A push that stalls would hold the job until the job
     # timeout, so each push goes through scripts/retry-bounded.sh: a limit per attempt and a bounded
     # number of attempts. Layers already uploaded are skipped on a retry, but a layer cut off half way
@@ -222,8 +232,8 @@ variables:
     # case is about 31 minutes per tag, 62 minutes for both, on top of the build, which is why the job
     # limit above is two hours. Any failed push is retried, an authentication failure included.
     - |
-      for tag in "$TAG" "$CI_COMMIT_SHORT_SHA"; do
-        sh scripts/retry-bounded.sh docker push "$IMAGE:$tag"
+      for ref in $refs; do
+        sh scripts/retry-bounded.sh docker push "$ref"
       done
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
@@ -447,7 +457,8 @@ installer:test:backup:
         - install.sh
         - scripts/test-install-backup.sh
 
-# Runs the deploy helper tests: the bounded retry and the rollback guard of deploy:prod.
+# Runs the deploy helper tests: the bounded retry, the rollback guard of deploy:prod and the image tag guards, and
+# refuses a pipeline file in which two image jobs push the same tag.
 deploy-scripts:test:
   stage: test
   tags: [builder]
@@ -455,6 +466,8 @@ deploy-scripts:test:
   script:
     - sh scripts/test-retry-bounded.sh
     - sh scripts/test-deploy-rollback.sh
+    - sh scripts/test-image-tags.sh
+    - sh scripts/check-image-tags.sh
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
       changes:
@@ -462,6 +475,10 @@ deploy-scripts:test:
         - scripts/retry-bounded.sh
         - scripts/test-retry-bounded.sh
         - scripts/test-deploy-rollback.sh
+        - scripts/image-tags.sh
+        - scripts/check-image.sh
+        - scripts/check-image-tags.sh
+        - scripts/test-image-tags.sh
 
 # Runs the SSH key agent's Python unit tests (the helpers run for real against a stand-in server tree), then a syntax
 # check and shellcheck of its provider helpers. The same checks as the agent job of .github/workflows/ci.yml.
@@ -585,14 +602,14 @@ backend:test:migration-addon:
 # the pipeline's own tag ($CI_COMMIT_SHORT_SHA), so every pipeline on main has to push every one of them.
 backend:build:api:prod:
   extends: .build-image
-  variables: { SERVICE: api, DOCKERFILE: backend/Dockerfile, BUILD_CONTEXT: backend, IMAGE_TARGET: prod, TAG: latest }
+  variables: { SERVICE: api, DOCKERFILE: backend/Dockerfile, BUILD_CONTEXT: backend, IMAGE_TARGET: prod }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
 backend:build:api:dev:
   extends: .build-image
-  variables: { SERVICE: api, DOCKERFILE: backend/Dockerfile, BUILD_CONTEXT: backend, IMAGE_TARGET: dev, TAG: dev }
+  variables: { SERVICE: api, DOCKERFILE: backend/Dockerfile, BUILD_CONTEXT: backend, IMAGE_TARGET: dev }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
       changes: [backend/Dockerfile]
@@ -642,14 +659,14 @@ client:e2e:
 
 client:build:prod:
   extends: .build-image
-  variables: { SERVICE: client, DOCKERFILE: client/Dockerfile, BUILD_CONTEXT: client, IMAGE_TARGET: prod, TAG: latest }
+  variables: { SERVICE: client, DOCKERFILE: client/Dockerfile, BUILD_CONTEXT: client, IMAGE_TARGET: prod }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
 client:build:dev:
   extends: .build-image
-  variables: { SERVICE: client, DOCKERFILE: client/Dockerfile, BUILD_CONTEXT: client, IMAGE_TARGET: dev, TAG: dev }
+  variables: { SERVICE: client, DOCKERFILE: client/Dockerfile, BUILD_CONTEXT: client, IMAGE_TARGET: dev }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
       changes: [client/Dockerfile]
@@ -703,14 +720,14 @@ admin:e2e:
 
 admin:build:prod:
   extends: .build-image
-  variables: { SERVICE: admin, DOCKERFILE: admin/Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: prod, TAG: latest }
+  variables: { SERVICE: admin, DOCKERFILE: admin/Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: prod }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
 admin:build:dev:
   extends: .build-image
-  variables: { SERVICE: admin, DOCKERFILE: admin/Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: dev, TAG: dev }
+  variables: { SERVICE: admin, DOCKERFILE: admin/Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: dev }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
       changes: [admin/Dockerfile, docker/nginx/admin.conf]

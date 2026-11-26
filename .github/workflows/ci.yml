@@ -107,6 +107,8 @@ jobs:
           submodules: true
       - name: Build the prod image
         run: docker build --file backend/Dockerfile --target prod --build-arg AUTH_MODE=local --tag hostpanel-api:ci backend
+      - name: Check the image does not start the development server
+        run: sh scripts/check-image.sh hostpanel-api:ci prod
       - name: Report the image size and its largest layers
         run: |
           docker image inspect hostpanel-api:ci --format 'image size: {{.Size}} bytes'
@@ -123,8 +125,8 @@ jobs:
           HOSTPANEL_TEST_POSTGRES: "1"
         run: bash scripts/test-install-backup.sh
 
-  # The two deploy helper tests, the same ones as deploy-scripts:test in .gitlab-ci.yml: the bounded retry and
-  # the marker handling of the production deploy, which runs against a fake docker and git.
+  # The deploy helper tests, the same ones as deploy-scripts:test in .gitlab-ci.yml: the bounded retry, the
+  # marker handling of the production deploy (a fake docker and git) and the image tag guards.
   deploy-scripts:
     name: Deploy helper scripts
     runs-on: ubuntu-latest
@@ -133,6 +135,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: sh scripts/test-retry-bounded.sh
       - run: sh scripts/test-deploy-rollback.sh
+      - run: sh scripts/test-image-tags.sh
+      - run: sh scripts/check-image-tags.sh
 
   image-version:
     name: Image version script

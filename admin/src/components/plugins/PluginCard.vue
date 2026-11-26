@@ -142,7 +142,7 @@ const metaParts = computed<string[]>(() =>
       <UiLink
         :to="to"
         :variant="UiButtonVariant.Link"
-        class="min-w-0 after:absolute after:inset-0 after:content-['']"
+        class="min-w-0 flex-1 after:absolute after:inset-0 after:content-['']"
         :data-testid="`plugin-card-link-${plugin.id}`"
       >
         <UiText :as="UiTextTag.Span" :tone="UiTextTone.Primary" :size="UiTextSize.Lg" class="line-clamp-2 min-w-0 break-words font-semibold">{{ plugin.name }}</UiText>
@@ -165,6 +165,7 @@ const metaParts = computed<string[]>(() =>
         :tone="badgeTone[badge]"
         :dot="dotBadges.includes(badge)"
         small
+        :title="badgeLabel(badge)"
         :data-testid="`plugin-card-badge-${badge}-${plugin.id}`"
       >
         {{ badgeLabel(badge) }}

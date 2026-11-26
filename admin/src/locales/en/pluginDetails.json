@@ -18,7 +18,7 @@
   },
   "byAuthor": "by {author}",
   "installedVersion": "Installed {version}",
-  "staged": "Version {version} staged, applies after restart",
+  "staged": "Version {version} not applied yet",
   "updateAvailable": "Update available: {version}",
   "updateTo": "Update to {version}",
   "links": {

@@ -18,7 +18,7 @@
   },
   "byAuthor": "автор: {author}",
   "installedVersion": "Установлена {version}",
-  "staged": "Версия {version} подготовлена, применится после перезапуска",
+  "staged": "Версия {version} ещё не применена",
   "updateAvailable": "Доступно обновление: {version}",
   "updateTo": "Обновить до {version}",
   "links": {

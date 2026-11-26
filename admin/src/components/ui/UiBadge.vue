@@ -43,10 +43,11 @@ const sizeClasses = computed<string>(() => (props.small ? 'h-4 px-1.5 text-[0.65
   <span v-if="marker" class="block h-2.5 w-2.5 rounded-full" :class="dotClasses" />
   <span
     v-else
-    class="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-2xl font-semibold whitespace-nowrap"
+    class="inline-flex w-fit max-w-full shrink-0 items-center gap-1.5 rounded-2xl font-semibold whitespace-nowrap"
     :class="[toneClasses, sizeClasses]"
   >
     <span v-if="dot" class="h-1.5 w-1.5 shrink-0 rounded-full" :class="dotClasses" />
-    <slot />
+    <!-- A label longer than its row ends in an ellipsis instead of overflowing what sits beside it. -->
+    <span class="min-w-0 truncate"><slot /></span>
   </span>
 </template>

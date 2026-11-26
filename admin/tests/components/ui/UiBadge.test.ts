@@ -13,6 +13,14 @@ describe('UiBadge', () => {
     expect(wrapper.classes()).toContain('rounded-2xl')
   })
 
+  it('ends a label longer than its row in an ellipsis, never wider than the row', () => {
+    const wrapper = mount(UiBadge, { slots: { default: 'A very long sentence' } })
+
+    expect(wrapper.classes()).toContain('max-w-full')
+    expect(wrapper.get('.truncate').classes()).toContain('min-w-0')
+    expect(wrapper.get('.truncate').text()).toBe('A very long sentence')
+  })
+
   it('keeps a long label on one line instead of wrapping it', () => {
     const classes = mount(UiBadge, { slots: { default: 'A very long sentence' } }).classes()
 

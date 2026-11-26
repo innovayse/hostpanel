@@ -4,7 +4,7 @@
     "pendingRestart": "Neustart ausstehend",
     "refused": "Abgelehnt",
     "loadFailed": "Laden fehlgeschlagen",
-    "staged": "Version {version} bereitgestellt, wird nach dem Neustart angewendet",
+    "staged": "Version {version} noch nicht angewendet",
     "changeFailed": "Aktualisierung fehlgeschlagen",
     "changeFailedReason": "Aktualisierung fehlgeschlagen: {error}",
     "changeFailedRestored": "Aktualisierung fehlgeschlagen: {error} Version {version} läuft weiter.",

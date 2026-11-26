@@ -4,7 +4,7 @@
     "pendingRestart": "Pending restart",
     "refused": "Refused",
     "loadFailed": "Failed to load",
-    "staged": "Version {version} staged, applies after restart",
+    "staged": "Version {version} not applied yet",
     "changeFailed": "Update failed",
     "changeFailedReason": "Update failed: {error}",
     "changeFailedRestored": "Update failed: {error} Version {version} is still running.",

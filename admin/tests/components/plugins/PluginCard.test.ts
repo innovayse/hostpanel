@@ -184,6 +184,23 @@ describe('PluginCard', () => {
     expect(mountCard().find('[data-testid="act"]').exists()).toBe(false)
   })
 
+  it('keeps a long name beside the logo and a long staged badge on its own row, cut short with the full text as a tooltip', () => {
+    const name = 'Domain registrar connector with an unusually long plugin name'
+    const wrapper = mountCard({ name, badges: [PluginCardBadge.Active, PluginCardBadge.Staged], stagedVersion: '1.4.3' })
+    const title = wrapper.get('[data-testid="plugin-card-title-example-pay"]')
+    const link = wrapper.get('[data-testid="plugin-card-link-example-pay"]')
+    const staged = wrapper.get('[data-testid="plugin-card-badge-staged-example-pay"]')
+
+    expect(link.text()).toBe(name)
+    expect(link.classes()).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']))
+    expect(link.find('.line-clamp-2').exists()).toBe(true)
+    expect(title.find('[data-testid="plugin-card-badge-staged-example-pay"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="plugin-card-badges-example-pay"]').classes()).toContain('flex-wrap')
+    expect(staged.attributes('title')).toBe('Version 1.4.3 not applied yet')
+    expect(staged.classes()).toContain('max-w-full')
+    expect(staged.find('.truncate').exists()).toBe(true)
+  })
+
   it('keeps a long tag list inside the card: the chips that do not fit are counted in the "+N" chip', () => {
     const wrapper = mountCard({ tags: ['control-panel', 'authorize-net', 'hosted-payment-page', 'openlitespeed'] })
     const tags = wrapper.get('[data-testid="plugin-card-tags-example-pay"]')

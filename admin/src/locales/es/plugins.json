@@ -4,7 +4,7 @@
     "pendingRestart": "Reinicio pendiente",
     "refused": "Rechazado",
     "loadFailed": "No se pudo cargar",
-    "staged": "Versión {version} preparada, se aplica tras el reinicio",
+    "staged": "Versión {version} aún no aplicada",
     "changeFailed": "Actualización fallida",
     "changeFailedReason": "Actualización fallida: {error}",
     "changeFailedRestored": "Actualización fallida: {error} La versión {version} sigue en funcionamiento.",

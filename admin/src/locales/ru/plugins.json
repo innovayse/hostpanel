@@ -4,7 +4,7 @@
     "pendingRestart": "Ожидает перезапуска",
     "refused": "Отклонён",
     "loadFailed": "Не загрузился",
-    "staged": "Версия {version} подготовлена, применится после перезапуска",
+    "staged": "Версия {version} ещё не применена",
     "changeFailed": "Обновление не удалось",
     "changeFailedReason": "Обновление не удалось: {error}",
     "changeFailedRestored": "Обновление не удалось: {error} Продолжает работать версия {version}.",

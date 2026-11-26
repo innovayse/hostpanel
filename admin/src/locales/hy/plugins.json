@@ -4,7 +4,7 @@
     "pendingRestart": "Սպասում է վերագործարկման",
     "refused": "Մերժված",
     "loadFailed": "Չբեռնվեց",
-    "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
+    "staged": "{version} տարբերակը դեռ կիրառված չէ",
     "changeFailed": "Թարմացումը ձախողվեց",
     "changeFailedReason": "Թարմացումը ձախողվեց՝ {error}",
     "changeFailedRestored": "Թարմացումը ձախողվեց՝ {error} Շարունակում է աշխատել {version} տարբերակը։",

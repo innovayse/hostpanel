@@ -3,7 +3,7 @@
  * `slot:plugin:widget` entries it holds and the names that key a record.
  */
 import { describe, expect, it } from 'vitest'
-import { contextKey, HIDDEN_SLOT_WIDGETS_SETTING, hiddenWidgetRefs, PluginSlotId, widgetRef } from '@/types/pluginslot'
+import { contextCallQuery, contextKey, contextValues, HIDDEN_SLOT_WIDGETS_SETTING, hiddenWidgetRefs, PluginSlotId, widgetRef } from '@/types/pluginslot'
 import type { PluginSlotWidgetDto } from '@/types/pluginslot'
 
 /** A widget as the host lists it. */
@@ -51,5 +51,17 @@ describe('contextKey', () => {
   it('separates a client from a service with the same number', () => {
     expect(contextKey({ clientId: 7 })).toBe('client:7')
     expect(contextKey({ serviceId: 7 })).toBe('service:7')
+  })
+})
+
+describe('contextValues and contextCallQuery', () => {
+  it('names a service page by its id and sends the service on route calls', () => {
+    expect(contextValues({ serviceId: 9 })).toEqual({ serviceId: '9' })
+    expect(contextCallQuery({ serviceId: 9 })).toEqual({ serviceId: '9' })
+  })
+
+  it('names a client page by its id and sends nothing on route calls', () => {
+    expect(contextValues({ clientId: 4 })).toEqual({ clientId: '4' })
+    expect(contextCallQuery({ clientId: 4 })).toEqual({})
   })
 })

@@ -23,6 +23,8 @@ export interface PluginViewContext {
   pluginId: string
   /** The page parameter values by name, read from the address. */
   values: Record<string, string>
+  /** Query parameters sent with every route call the view makes, such as the `serviceId` of the page a widget sits on; none when absent. */
+  query?: Record<string, string>
   /** The plugin's allowed link origins. */
   externalOrigins: string[]
   /** A counter per block id, bumped to make that block read its source again. */
@@ -140,16 +142,17 @@ const readPluginRoute = (
   route: PluginViewRoute,
   query: Record<string, string> = {},
 ): Promise<PluginCallResult> => {
-  const request = pluginRouteRequest(route, context.values, query)
+  const sent = { ...context.query, ...query }
+  const request = pluginRouteRequest(route, context.values, sent)
   if (request === null || request.method !== HttpMethod.Get) {
-    return store.callRoute(context.pluginId, route, context.values, undefined, query)
+    return store.callRoute(context.pluginId, route, context.values, undefined, sent)
   }
   const shared = sharedReads(context, store)
   const held = shared.reads.get(request.url)
   if (held !== undefined) {
     return held
   }
-  const read = store.callRoute(context.pluginId, route, context.values, undefined, query)
+  const read = store.callRoute(context.pluginId, route, context.values, undefined, sent)
   shared.reads.set(request.url, read)
   void read.then((result) => {
     if (!result.ok && shared.reads.get(request.url) === read) {
@@ -174,7 +177,7 @@ const shareReadResult = (
   route: PluginViewRoute,
   result: PluginCallResult,
 ): void => {
-  const request = pluginRouteRequest(route, context.values)
+  const request = pluginRouteRequest(route, context.values, context.query)
   if (request !== null && request.method === HttpMethod.Get && result.ok) {
     sharedReads(context, store).reads.set(request.url, Promise.resolve(result))
   }
@@ -390,7 +393,7 @@ export const usePluginFollowUp = (
     }
     current.attempt += 1
     const { followUp, settled } = current
-    const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
+    const result = await store.callRoute(context.pluginId, followUp.until.route, context.values, undefined, context.query)
     if (following !== current) {
       return
     }

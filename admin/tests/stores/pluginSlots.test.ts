@@ -202,3 +202,24 @@ describe('pluginSlotsStore.hide', () => {
     expect(store.actionError).toBe('Settings unavailable.')
   })
 })
+
+describe('usePluginSlotsStore loadWidget', () => {
+  it('returns the widget with its view', async () => {
+    const answer = { pluginId: 'sites', id: 'usage', title: null, externalOrigins: [], view: { schema: 1, blocks: [] } }
+    stubRoutes({ 'GET /api/admin/plugins/slots/admin.service.panels/widgets/sites/usage?serviceId=9': () => json(answer) })
+
+    const read = await usePluginSlotsStore().loadWidget(PluginSlotId.AdminServicePanels, { serviceId: 9 }, widget('usage'))
+
+    expect(read).toEqual(answer)
+  })
+
+  it('returns null when the host refuses, without touching the hide error', async () => {
+    stubRoutes({ 'GET /api/admin/plugins/slots/': () => problem('Not found.', 404) })
+    const store = usePluginSlotsStore()
+
+    const read = await store.loadWidget(PluginSlotId.AdminServicePanels, { serviceId: 9 }, widget('usage'))
+
+    expect(read).toBeNull()
+    expect(store.actionError).toBeNull()
+  })
+})

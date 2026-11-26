@@ -6,7 +6,7 @@
 
 import { buildQuery, useApi } from '@/composables/useApi'
 import { ApiPath } from '@/lib/apiPaths'
-import type { PluginSlotContext, PluginSlotId, PluginSlotIndexDto } from '@/types/pluginslot'
+import type { PluginSlotContext, PluginSlotId, PluginSlotIndexDto, PluginSlotWidgetViewDto } from '@/types/pluginslot'
 
 /**
  * Endpoint functions for `/admin/plugins/slots`.
@@ -27,5 +27,25 @@ export const usePluginSlotsApi = () => {
   const getSlot = (slotId: PluginSlotId, context: PluginSlotContext): Promise<PluginSlotIndexDto> =>
     request<PluginSlotIndexDto>(`${ApiPath.AdminPluginSlots}/${slotId}${buildQuery({ ...context })}`)
 
-  return { getSlot }
+  /**
+   * Reads one widget of a slot with its view document. The host checks the record, the widget's plugin and the
+   * operator's right before the plugin is asked for the view.
+   *
+   * @param slotId - Id of the slot.
+   * @param pluginId - Id of the plugin that declares the widget.
+   * @param widgetId - Id of the widget inside its plugin.
+   * @param context - The client or service the page shows.
+   * @returns The widget with its view, its labels in the operator's language.
+   */
+  const getSlotWidget = (
+    slotId: PluginSlotId,
+    pluginId: string,
+    widgetId: string,
+    context: PluginSlotContext,
+  ): Promise<PluginSlotWidgetViewDto> =>
+    request<PluginSlotWidgetViewDto>(
+      `${ApiPath.AdminPluginSlots}/${slotId}/widgets/${encodeURIComponent(pluginId)}/${encodeURIComponent(widgetId)}${buildQuery({ ...context })}`,
+    )
+
+  return { getSlot, getSlotWidget }
 }

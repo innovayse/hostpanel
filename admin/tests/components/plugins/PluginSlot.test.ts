@@ -1,5 +1,5 @@
 /**
- * Unit tests for PluginSlot: nothing renders without widgets, one card per widget, a throwing, a
+ * Unit tests for PluginSlot: nothing renders without widgets, one card per widget with its view as the body, a refused, a
  * pending and a healthy widget side by side leave each other alone, another record never shows
  * the previous record's widgets, and Hide goes through the slot's setting row.
  */
@@ -32,37 +32,20 @@ const widget = (id: string, order = 1): PluginSlotWidgetDto => ({
  */
 const clientPanels = (...widgets: PluginSlotWidgetDto[]) => ({ slotId: 'admin.client.panels', widgets })
 
-/** A body that renders at once. */
-const Healthy = defineComponent({ render: () => h('p', { 'data-testid': 'body-ok' }, 'fine') })
-
-/** A body whose setup throws. */
-const Throwing = defineComponent({
-  setup: () => {
-    throw new Error('plugin exploded')
-  },
-  render: () => null,
+/**
+ * Builds the answer of a widget's view read: a view with one text block.
+ *
+ * @param text - The text the block shows.
+ * @returns The widget with its view.
+ */
+const widgetView = (text: string) => ({
+  pluginId: 'sites', id: 'any', title: null, externalOrigins: [], view: { schema: 1, blocks: [{ kind: 'text', text }] },
 })
 
-/** A body that never settles. */
-const Never = defineComponent({
-  setup: async () => {
-    await new Promise<void>(() => undefined)
-    return () => h('p', 'never shown')
-  },
-})
-
-/** The page: a slot whose widgets get a body by their id. */
+/** The page: a slot of the client panels. */
 const Page = defineComponent({
   props: { clientId: { type: Number, required: true } },
-  setup: (props) => () =>
-    h(
-      PluginSlot,
-      { slotId: PluginSlotId.AdminClientPanels, context: { clientId: props.clientId } },
-      {
-        widget: ({ widget: entry }: { widget: PluginSlotWidgetDto }) =>
-          h(entry.id === 'boom' ? Throwing : entry.id === 'slow' ? Never : Healthy),
-      },
-    ),
+  setup: (props) => () => h(PluginSlot, { slotId: PluginSlotId.AdminClientPanels, context: { clientId: props.clientId } }),
 })
 
 /** The hide setting row of the client panels slot. */
@@ -79,7 +62,7 @@ afterEach(() => {
 
 describe('PluginSlot', () => {
   it('renders nothing when no plugin offers a widget', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => json(clientPanels()) })
+    stubRoutes({ 'GET /api/admin/plugins/slots/admin.client.panels?': () => json(clientPanels()) })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
 
@@ -88,30 +71,57 @@ describe('PluginSlot', () => {
   })
 
   it('renders nothing when the slot cannot be loaded', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => problem('Client not found.', 404) })
+    stubRoutes({ 'GET /api/admin/plugins/slots/admin.client.panels?': () => problem('Client not found.', 404) })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
 
     expect(wrapper.text()).toBe('')
   })
 
-  it('keeps a throwing and a pending widget from breaking the healthy one', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => json(clientPanels(widget('boom', 1), widget('slow', 2), widget('ok', 3))) })
+  it('renders the body of each widget from its view', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins/slots/admin.client.panels/widgets/sites/ok': () => json(widgetView('usage is fine')),
+      'GET /api/admin/plugins/slots/admin.client.panels?': () => json(clientPanels(widget('ok', 1))),
+    })
+    const wrapper = mountWithApp(Page, { props: { clientId: 7 } })
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugin-widget-sites-ok"]').text()).toContain('usage is fine')
+    expect(mock.mock.calls.map((call) => String(call[0]))).toContain('/api/admin/plugins/slots/admin.client.panels/widgets/sites/ok?clientId=7')
+  })
+
+  it('keeps a refused and a pending widget from breaking the healthy one', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) => {
+      if (url.includes('/widgets/sites/boom')) {
+        return Promise.resolve(problem('Plugin exploded.', 502))
+      }
+      if (url.includes('/widgets/sites/slow')) {
+        return new Promise<Response>(() => undefined)
+      }
+      if (url.includes('/widgets/sites/ok')) {
+        return Promise.resolve(json(widgetView('fine')))
+      }
+      return Promise.resolve(json(clientPanels(widget('boom', 1), widget('slow', 2), widget('ok', 3))))
+    }))
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugin-widget-note-sites-boom"]').text()).toBe('This widget could not be shown.')
     expect(wrapper.find('[data-testid="plugin-widget-loading-sites-slow"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="plugin-widget-sites-ok"] [data-testid="body-ok"]').text()).toBe('fine')
+    expect(wrapper.get('[data-testid="plugin-widget-sites-ok"]').text()).toContain('fine')
 
     await vi.advanceTimersByTimeAsync(10_000)
 
     expect(wrapper.get('[data-testid="plugin-widget-note-sites-slow"]').text()).toBe('This widget took too long to load.')
-    expect(wrapper.get('[data-testid="plugin-widget-sites-ok"] [data-testid="body-ok"]').text()).toBe('fine')
+    expect(wrapper.get('[data-testid="plugin-widget-sites-ok"]').text()).toContain('fine')
   })
 
-  it('leaves its neighbours and every timer alone when it is destroyed', async () => {
-    stubRoutes({ 'GET /api/admin/plugins/slots': () => json(clientPanels(widget('slow', 1), widget('ok', 2))) })
+  it('leaves no timer behind when it is destroyed while a widget is pending', async () => {
+    vi.stubGlobal('fetch', vi.fn((url: string) =>
+      url.includes('/widgets/')
+        ? new Promise<Response>(() => undefined)
+        : Promise.resolve(json(clientPanels(widget('slow', 1)))),
+    ))
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })
     await flushPromises()
     expect(vi.getTimerCount()).toBe(1)
@@ -144,7 +154,7 @@ describe('PluginSlot', () => {
 
   it('hides a widget through the slot setting', async () => {
     const routes = stubRoutes({
-      'GET /api/admin/plugins/slots': () => json(clientPanels(widget('ok', 1), widget('other', 2))),
+      'GET /api/admin/plugins/slots/admin.client.panels?': () => json(clientPanels(widget('ok', 1), widget('other', 2))),
       'GET /api/admin/settings': () => json([hiddenRow]),
       'PUT /api/admin/settings/5': () => new Response(null, { status: 204 }),
     })
@@ -162,7 +172,7 @@ describe('PluginSlot', () => {
 
   it('shows the refusal and keeps the widget when the row was never seeded', async () => {
     stubRoutes({
-      'GET /api/admin/plugins/slots': () => json(clientPanels(widget('ok', 1))),
+      'GET /api/admin/plugins/slots/admin.client.panels?': () => json(clientPanels(widget('ok', 1))),
       'GET /api/admin/settings': () => json([]),
     })
     const wrapper = mountWithApp(Page, { props: { clientId: 1 } })

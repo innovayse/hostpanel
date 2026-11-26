@@ -7,9 +7,10 @@
  * load still running or a refused load (the page owns its own error state, and a plugin must
  * never take the page down). The page keys the slot by its record, so another client or service
  * mounts a fresh slot, and the store keeps each record's list apart besides.
- * The body of a widget comes through the `widget` scoped slot.
+ * The body of each widget is its view document, read and rendered by {@link PluginSlotWidgetBody}.
  */
 import { computed, onMounted, watch } from 'vue'
+import PluginSlotWidgetBody from '@/components/plugins/PluginSlotWidgetBody.vue'
 import PluginWidget from '@/components/plugins/PluginWidget.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -24,11 +25,6 @@ const props = defineProps<{
   slotId: PluginSlotId
   /** The client or service the page shows. */
   context: PluginSlotContext
-}>()
-
-defineSlots<{
-  /** Body of one widget; rendered inside that widget's own failure boundary. */
-  widget(props: { widget: PluginSlotWidgetDto }): unknown
 }>()
 
 /** Slot store: the widgets per slot and record. */
@@ -61,7 +57,7 @@ watch(() => [props.slotId, contextKey(props.context)], () => store.load(props.sl
       :widget="widget"
       @hide="hide(widget)"
     >
-      <slot name="widget" :widget="widget" />
+      <PluginSlotWidgetBody :slot-id="slotId" :context="context" :widget="widget" />
     </PluginWidget>
   </UiStack>
 </template>

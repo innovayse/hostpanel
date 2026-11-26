@@ -7,6 +7,8 @@
  * setting, localised the label and put them in order, so the admin neither filters nor translates.
  */
 
+import type { PluginView } from '@/types/pluginview'
+
 /** Closed set of slot ids an admin page offers; the strings are the stable ids the SDK publishes. */
 export const PluginSlotId = {
   /** Panels on a client's summary page. */
@@ -79,3 +81,36 @@ export const hiddenWidgetRefs = (value: string | null): string[] =>
  */
 export const contextKey = (context: PluginSlotContext): string =>
   'clientId' in context ? `client:${context.clientId}` : `service:${context.serviceId}`
+
+/**
+ * Names the values a widget's view fills its route `{param}` segments from.
+ *
+ * @param context - The slot's context.
+ * @returns The context as strings by name, e.g. `{ serviceId: '9' }`.
+ */
+export const contextValues = (context: PluginSlotContext): Record<string, string> =>
+  'clientId' in context ? { clientId: String(context.clientId) } : { serviceId: String(context.serviceId) }
+
+/**
+ * Names the query a widget's route calls carry so the host can bind the call to the record: the service a
+ * widget sits on. A client page carries nothing, since the host reads that client from the slot itself.
+ *
+ * @param context - The slot's context.
+ * @returns `{ serviceId }` for a service page; empty for a client page.
+ */
+export const contextCallQuery = (context: PluginSlotContext): Record<string, string> =>
+  'serviceId' in context ? { serviceId: String(context.serviceId) } : {}
+
+/** One widget with its view document (`PluginSlotWidgetViewDto`), as `GET /api/admin/plugins/slots/{slotId}/widgets/{pluginId}/{widgetId}` answers. */
+export interface PluginSlotWidgetViewDto {
+  /** Id of the plugin that declares the widget. */
+  pluginId: string
+  /** Id of the widget inside its plugin. */
+  id: string
+  /** Title in the operator's language; null when the widget declares none. */
+  title: string | null
+  /** The only origins an absolute link of the widget may open; empty allows host-relative links only. */
+  externalOrigins: string[]
+  /** The view document, its labels resolved by the host. */
+  view: PluginView
+}

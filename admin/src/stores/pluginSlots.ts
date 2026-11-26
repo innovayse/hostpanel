@@ -15,7 +15,7 @@ import { runAction } from '@/lib/runAction'
 import { translate } from '@/lib/translate'
 import { useSettingsStore } from '@/stores/settings'
 import { contextKey, HIDDEN_SLOT_WIDGETS_SETTING, hiddenWidgetRefs, widgetRef } from '@/types/pluginslot'
-import type { PluginSlotContext, PluginSlotId, PluginSlotWidgetDto } from '@/types/pluginslot'
+import type { PluginSlotContext, PluginSlotId, PluginSlotWidgetDto, PluginSlotWidgetViewDto } from '@/types/pluginslot'
 
 /**
  * Names the list a slot holds for one record.
@@ -71,6 +71,25 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
   }
 
   /**
+   * Reads one widget's view document for a record.
+   *
+   * @param slotId - Id of the slot.
+   * @param context - The slot's context.
+   * @param widget - The widget, as the slot lists it.
+   * @returns The widget with its view; null when the host refused (the widget then shows its own note).
+   */
+  const loadWidget = async (
+    slotId: PluginSlotId,
+    context: PluginSlotContext,
+    widget: PluginSlotWidgetDto,
+  ): Promise<PluginSlotWidgetViewDto | null> => {
+    // The sentence of a refused read has nowhere to go: the widget shows its own neutral note instead.
+    const refusal = ref<string | null>(null)
+    const result = await runAction(refusal, () => api.getSlotWidget(slotId, widget.pluginId, widget.id, context))
+    return result.ok ? result.value : null
+  }
+
+  /**
    * Hides a widget in its slot: adds its `slot:plugin:widget` entry to the hide setting, then drops it from the list.
    *
    * @param slotId - Id of the slot.
@@ -113,5 +132,5 @@ export const usePluginSlotsStore = defineStore('pluginSlots', () => {
     return true
   }
 
-  return { actionError, widgetsFor, load, hide }
+  return { actionError, widgetsFor, load, loadWidget, hide }
 })

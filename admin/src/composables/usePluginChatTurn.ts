@@ -28,9 +28,17 @@ export interface PluginChatTransport {
    * @param pluginId - The plugin.
    * @param route - The route.
    * @param values - The values its `{param}` segments are filled from.
+   * @param body - Nothing: a read has no body.
+   * @param query - Query parameters.
    * @returns The outcome; never throws.
    */
-  callRoute: (pluginId: string, route: PluginViewRoute, values: Record<string, string>) => Promise<PluginCallResult>
+  callRoute: (
+    pluginId: string,
+    route: PluginViewRoute,
+    values: Record<string, string>,
+    body?: Record<string, unknown>,
+    query?: Record<string, string>,
+  ) => Promise<PluginCallResult>
   /**
    * Opens a streaming POST route and hands each event over as it arrives.
    *
@@ -228,7 +236,7 @@ export const usePluginChatTurn = (options: PluginChatTurnOptions): PluginChatTur
     const asked = generation
     const history = block().history
     if (history) {
-      const result = await store.callRoute(context.pluginId, history, context.values)
+      const result = await store.callRoute(context.pluginId, history, context.values, undefined, context.query)
       // A refresh started a new conversation while this read was out: its answer belongs to the old one.
       if (asked !== generation) {
         return

@@ -107,6 +107,8 @@ jobs:
           submodules: true
       - name: Build the prod image
         run: docker build --file backend/Dockerfile --target prod --build-arg AUTH_MODE=local --tag hostpanel-api:ci backend
+      - name: Check the image does not start the development server
+        run: sh scripts/check-image.sh hostpanel-api:ci prod
       - name: Report the image size and its largest layers
         run: |
           docker image inspect hostpanel-api:ci --format 'image size: {{.Size}} bytes'

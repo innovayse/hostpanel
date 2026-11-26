@@ -175,6 +175,26 @@ describe('ClientServiceDetailView', () => {
     expect(wrapper.get('[data-testid="client-service-status-badge"]').text()).toBe('Terminated')
   })
 
+  it('hints the address field with an example from the documentation range, never a private address', async () => {
+    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+
+    expect(wrapper.get('[data-testid="client-service-dedicated-ip"]').attributes('placeholder')).toBe('203.0.113.10')
+  })
+
+  it('names the open service in the switcher although the lookup page of the client does not list it', async () => {
+    const others = [
+      { ...listed, id: 3, productName: 'Basic' },
+      { ...listed, id: 4, productName: 'Plus' },
+    ]
+    const { wrapper } = await mountLoaded(detail, undefined, {
+      'GET /api/services?': () => json({ items: others, totalCount: 2 }),
+    })
+
+    const switcher = wrapper.get('[data-testid="client-service-switcher"]')
+    expect(switcher.text()).toContain('#9 Starter')
+    expect(switcher.text()).not.toContain('Product/Service')
+  })
+
   it('shows one tab at a time', async () => {
     const { wrapper } = await mountLoaded()
 
@@ -661,26 +681,6 @@ describe('ClientServiceDetailView', () => {
 
     expect(wrapper.text()).toContain('Assigned IP')
     expect(wrapper.text()).not.toContain('Dedicated IP')
-  })
-
-  it('hints the address field with an example from the documentation range, never a private address', async () => {
-    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
-
-    expect(wrapper.get('[data-testid="client-service-dedicated-ip"]').attributes('placeholder')).toBe('203.0.113.10')
-  })
-
-  it('names the open service in the switcher although the lookup page of the client does not list it', async () => {
-    const others = [
-      { ...listed, id: 3, productName: 'Basic' },
-      { ...listed, id: 4, productName: 'Plus' },
-    ]
-    const { wrapper } = await mountLoaded(detail, undefined, {
-      'GET /api/services?': () => json({ items: others, totalCount: 2 }),
-    })
-
-    const switcher = wrapper.get('[data-testid="client-service-switcher"]')
-    expect(switcher.text()).toContain('#9 Starter')
-    expect(switcher.text()).not.toContain('Product/Service')
   })
 
   it('returns to the services of its client with the back pill', async () => {

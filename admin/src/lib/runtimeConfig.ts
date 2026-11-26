@@ -1,22 +1,8 @@
 /**
- * Runtime configuration helpers: the deployment base path and origin from `config.js`, and URLs for public files and stored storefront images.
+ * Runtime configuration helpers: the deployment's storefront and documentation addresses from `config.js`, and URLs for stored storefront images.
  */
 
 import type { AppRuntimeConfig } from '@/types/runtimeConfig'
-
-/**
- * Normalises a raw base path: a leading slash, no trailing slash, `/` for empty input.
- *
- * @param raw - The configured value, possibly missing or malformed.
- * @returns The canonical base path (`/` or `/segment[/segment]`).
- */
-export const normalizeBasePath = (raw: string | undefined): string => {
-  const trimmed = (raw ?? '').trim().replace(/\/+$/, '')
-  if (trimmed === '') {
-    return '/'
-  }
-  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
-}
 
 /**
  * Normalises a configured origin: trimmed, no trailing slash, `''` for empty input.
@@ -29,22 +15,12 @@ export const normalizeOrigin = (raw: string | undefined): string => (raw ?? '').
 /**
  * Reads the runtime configuration injected by `config.js`.
  *
- * @returns The configuration with every field normalised; the root base when `config.js` is absent.
+ * @returns The configuration with every field normalised; empty addresses when `config.js` is absent.
  */
 export const getRuntimeConfig = (): AppRuntimeConfig => ({
-  basePath: normalizeBasePath(window.__APP_CONFIG__?.basePath),
   clientBaseUrl: normalizeOrigin(window.__APP_CONFIG__?.clientBaseUrl),
   docsUrl: normalizeOrigin(window.__APP_CONFIG__?.docsUrl),
 })
-
-/**
- * Builds the URL of a file in `public/` under the deployment's base path.
- *
- * @param file - Path inside `public/`, without a leading slash.
- * @returns The root-relative URL including the base path.
- */
-export const publicAssetUrl = (file: string): string =>
-  `${getRuntimeConfig().basePath.replace(/\/+$/, '')}/${file}`
 
 /** Path prefix of operator uploads, which the API serves and the admin's own origin proxies to it. */
 const UPLOADS_PREFIX = '/uploads/'

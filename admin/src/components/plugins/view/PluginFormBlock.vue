@@ -167,7 +167,7 @@ const submit = async (): Promise<void> => {
     return
   }
   sending.value = true
-  const result = await store.callRoute(context.pluginId, props.block.submit.route, context.values, body())
+  const result = await store.callRoute(context.pluginId, props.block.submit.route, context.values, body(), context.query)
   sending.value = false
   failed.value = !result.ok
   fieldErrors.value = result.fieldErrors

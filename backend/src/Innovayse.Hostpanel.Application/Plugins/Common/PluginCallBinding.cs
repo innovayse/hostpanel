@@ -11,8 +11,9 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// <see cref="Permissions"/>, so the caller, the facts and the store can never describe two different clients.
 /// </summary>
 /// <remarks>
-/// Only two shapes exist, and only the two factories build them: <see cref="ForClient"/> (a client, its reference and the
-/// caller's permissions) and <see cref="WithoutClient"/> (no client, no reference, no permissions). The constructor is
+/// Only three shapes exist, and only the three factories build them: <see cref="ForClient"/> (a client, its reference and the
+/// caller's permissions), <see cref="ForAdminAboutClient"/> (an administrator acting in the context of one client's
+/// service: the client and its reference, no permissions) and <see cref="WithoutClient"/> (no client, no reference, no permissions). The constructor is
 /// private and every property is get-only, so no caller can pair a client with a missing reference, a reference with no
 /// client, or permissions with no account; a positional record would have allowed each through its public constructor
 /// and <c>with</c>.
@@ -42,7 +43,7 @@ public sealed class PluginCallBinding
 
     /// <summary>
     /// The panel the call came through: <see cref="PluginArea.Client"/> for <see cref="ForClient"/>,
-    /// <see cref="PluginArea.Admin"/> for <see cref="WithoutClient"/>. Access to a client's hosting is granted only on a
+    /// <see cref="PluginArea.Admin"/> for <see cref="WithoutClient"/> and <see cref="ForAdminAboutClient"/>. Access to a client's hosting is granted only on a
     /// client-area call, and this is where the host API reads the area from, never from the plugin.
     /// </summary>
     public PluginArea Area { get; }
@@ -73,10 +74,7 @@ public sealed class PluginCallBinding
         string pluginId, int clientId, string clientRef, ClientPermission permissions)
     {
         EnsurePluginId(pluginId);
-        if (string.IsNullOrWhiteSpace(clientRef))
-        {
-            throw new ArgumentException("A client binding needs the client's reference.", nameof(clientRef));
-        }
+        EnsureClientRef(clientRef);
 
         return new PluginCallBinding(pluginId, clientId, clientRef, permissions, PluginArea.Client);
     }
@@ -89,6 +87,36 @@ public sealed class PluginCallBinding
     {
         EnsurePluginId(pluginId);
         return new PluginCallBinding(pluginId, null, null, ClientPermission.None, PluginArea.Admin);
+    }
+
+    /// <summary>
+    /// The binding of an admin call made in the context of one client's service: the plugin sees that client's reference,
+    /// the same one <see cref="ForClient"/> passes, and scopes its store to it, but the caller is an administrator, so the
+    /// area stays <see cref="PluginArea.Admin"/> and no client permission is held (the host facts show nothing of the
+    /// account, and no hosting access is granted).
+    /// </summary>
+    /// <param name="pluginId">The plugin being called.</param>
+    /// <param name="clientId">The host id of the client that owns the service the administrator is looking at.</param>
+    /// <param name="clientRef">The plugin's opaque reference of <paramref name="clientId"/>.</param>
+    /// <returns>A binding carrying the client and its reference, with no permissions.</returns>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> or <paramref name="clientRef"/> is blank.</exception>
+    public static PluginCallBinding ForAdminAboutClient(string pluginId, int clientId, string clientRef)
+    {
+        EnsurePluginId(pluginId);
+        EnsureClientRef(clientRef);
+
+        return new PluginCallBinding(pluginId, clientId, clientRef, ClientPermission.None, PluginArea.Admin);
+    }
+
+    /// <summary>Refuses a blank client reference, which would scope the store to no client.</summary>
+    /// <param name="clientRef">The client reference to check.</param>
+    /// <exception cref="ArgumentException"><paramref name="clientRef"/> is blank.</exception>
+    private static void EnsureClientRef(string clientRef)
+    {
+        if (string.IsNullOrWhiteSpace(clientRef))
+        {
+            throw new ArgumentException("A client binding needs the client's reference.", nameof(clientRef));
+        }
     }
 
     /// <summary>Refuses a blank plugin id, which would scope the store and the references to no plugin.</summary>

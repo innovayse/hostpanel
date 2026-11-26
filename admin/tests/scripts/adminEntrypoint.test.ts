@@ -26,7 +26,6 @@ const SCRIPT = join(__dirname, '..', '..', '..', 'docker', 'nginx', 'admin-entry
 const runEntrypoint = (env: Record<string, string | undefined>): { status: number | null, stderr: string } => {
   const merged: Record<string, string | undefined> = {
     PATH: process.env.PATH,
-    ADMIN_BASE_URL_PATH: '/admin',
     CLIENT_BASE_URL: 'https://host.example.com',
     DOCS_URL: 'https://hostpanel.innovayse.com/docs',
     ...env

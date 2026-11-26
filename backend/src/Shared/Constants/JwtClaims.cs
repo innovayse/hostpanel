@@ -10,6 +10,9 @@ public static class JwtClaims
     /// <summary>Subject: user ID.</summary>
     public const string Sub = "sub";
 
+    /// <summary>Issuer: who minted the token.</summary>
+    public const string Issuer = "iss";
+
     /// <summary>Email address.</summary>
     public const string Email = "email";
 

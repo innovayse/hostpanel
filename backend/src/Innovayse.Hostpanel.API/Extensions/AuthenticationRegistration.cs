@@ -159,24 +159,16 @@ public static class AuthenticationRegistration
                         // this deployment. SignOnClientBinding below does, on the token's client id.
                         ValidateAudience = false,
                     };
-                    // If the JWT was issued by our local server, forward to LocalJwt scheme
                     // A token this product minted itself goes to the LocalJwt scheme; anything else,
-                    // including a header that is not a readable JWT at all, stays on the default.
+                    // including a header that is not a readable JWT at all, stays on the default and is
+                    // refused there as an ordinary invalid token. The selector runs before any validation,
+                    // so it must answer for every header a caller can send and never throw.
                     opts.ForwardDefaultSelector = context =>
-                    {
-                        if (!BearerHeader.TryRead(context.Request, out var token))
-                        {
-                            return null;
-                        }
-
-                        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                        if (handler.CanReadToken(token) && handler.ReadJwtToken(token).Issuer == localJwtIssuer)
-                        {
-                            return LocalJwtScheme.Name;
-                        }
-
-                        return null;
-                    };
+                        BearerHeader.TryRead(context.Request, out var token)
+                        && BearerTokenIssuer.TryRead(token, out var issuer)
+                        && issuer == localJwtIssuer
+                            ? LocalJwtScheme.Name
+                            : null;
                     // The subject the sign-on provider issued is the identifier this product uses, so there is
                     // nothing to map it onto and no local copy of the user to keep.
                     //

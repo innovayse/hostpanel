@@ -1,5 +1,5 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Shared.Models;
 
@@ -22,24 +22,19 @@ public sealed class GetClientPluginSlotWidgetHandler
     /// <summary>Lists the widgets the caller may see, the one rule for whether a widget shows.</summary>
     private readonly PluginSlotIndexBuilder _index;
 
-    /// <summary>The available plugins with their view documents.</summary>
-    private readonly IPluginUiSource _plugins;
-
-    /// <summary>Works out the origins the widget's absolute links may point at for the caller.</summary>
-    private readonly PluginFrameOriginResolver _origins;
+    /// <summary>Reads the view of the widget the index lists, the part shared with the admin widget view.</summary>
+    private readonly PluginSlotWidgetViewReader _views;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="gate">Checks the slot, the caller and the context.</param>
     /// <param name="index">Lists the widgets the caller may see.</param>
-    /// <param name="plugins">The available plugins with their view documents.</param>
-    /// <param name="origins">Works out the origins the widget's absolute links may point at for the caller.</param>
+    /// <param name="views">Reads the view of the widget the index lists.</param>
     public GetClientPluginSlotWidgetHandler(
-        ClientPluginSlotGate gate, PluginSlotIndexBuilder index, IPluginUiSource plugins, PluginFrameOriginResolver origins)
+        ClientPluginSlotGate gate, PluginSlotIndexBuilder index, PluginSlotWidgetViewReader views)
     {
         _gate = gate;
         _index = index;
-        _plugins = plugins;
-        _origins = origins;
+        _views = views;
     }
 
     /// <summary>Reads the widget's view for the caller and the context.</summary>
@@ -76,30 +71,9 @@ public sealed class GetClientPluginSlotWidgetHandler
         }
 
         var index = await _index.BuildAsync(slot.Value!, caller.Value!.Held, product.Value, ct);
-        var widget = index.Widgets.FirstOrDefault(w =>
-            string.Equals(w.PluginId, query.PluginId, StringComparison.Ordinal)
-            && string.Equals(w.Id, query.WidgetId, StringComparison.Ordinal));
-        if (widget is null)
-        {
-            return NotFound();
-        }
+        var view = await _views.ReadAsync(index, query.PluginId, query.WidgetId, PluginArea.Client, caller.Value!.Held, ct);
 
-        // The index already decided the widget shows; the package is read only for its view document and its texts.
-        // It can only narrow that answer: a plugin that went unavailable between the two reads answers the same 404,
-        // and nothing it holds can widen what the index listed.
-        var package = await _plugins.FindAvailableAsync(widget.PluginId, ct);
-        if (package?.Views.Localised(widget.View, PluginUiTexts.For(package.Manifest)) is not { } document)
-        {
-            return NotFound();
-        }
-
-        // Same rule as a plugin page: the manifest's origins plus the https host of the caller's own bound services.
-        var frameOrigins = await _origins.ResolveAsync(package.Manifest, caller.Value!.Held, ct);
-
-        var linkOrigins = PluginFrameOriginResolver.LinkOrigins(package.Manifest, frameOrigins);
-
-        return Result<PluginSlotWidgetViewDto>.Success(
-            new PluginSlotWidgetViewDto(widget.PluginId, widget.Id, widget.Title, document, linkOrigins));
+        return view is null ? NotFound() : Result<PluginSlotWidgetViewDto>.Success(view);
     }
 
     /// <summary>Reads the optional service id of the query string.</summary>

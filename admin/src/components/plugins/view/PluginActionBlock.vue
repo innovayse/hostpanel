@@ -96,7 +96,7 @@ const run = async (): Promise<void> => {
     return
   }
   running.value = true
-  const result = await store.callRoute(context.pluginId, props.block.route, context.values, sending)
+  const result = await store.callRoute(context.pluginId, props.block.route, context.values, sending, context.query)
   running.value = false
   confirming.value = false
   const target = tab && result.ok && openUrlFrom ? pluginOpenUrlTarget(result.data, openUrlFrom, context.externalOrigins) : null

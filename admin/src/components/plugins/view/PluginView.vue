@@ -28,6 +28,8 @@ const props = withDefaults(defineProps<{
   view: PluginView
   /** The values route and page parameters are filled from, by parameter name. */
   values?: Record<string, string>
+  /** Query parameters sent with every route call of the view, e.g. the `serviceId` of the page a widget sits on. */
+  query?: Record<string, string>
   /** The only origins an absolute link may open; empty allows host-relative links only. */
   externalOrigins?: string[]
 }>(), {
@@ -113,6 +115,7 @@ const open = (link: PluginPageLink, row: unknown): void => {
 providePluginView({
   pluginId: props.pluginId,
   values: props.values,
+  query: props.query,
   externalOrigins: props.externalOrigins,
   refreshes,
   refresh,

@@ -151,10 +151,12 @@ public sealed class FileSystemBrandingStorage : IBrandingStorage
                 _logger.LogInformation("Removed the superseded branding upload {Directory}.", uploadDir);
             }
         }
-        catch (UnauthorizedAccessException ex)
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
             // The new value is already saved and the old files are no longer referenced: failing the request now would
-            // report a refusal for a change that took effect. The leftover is only disk space, so it is logged.
+            // report a refusal for a change that took effect. The leftover is only disk space, so it is logged. A denied
+            // file delete surfaces as UnauthorizedAccessException, but a denied removal of the emptied folder itself
+            // surfaces as IOException, so both mean the folder is not writable.
             _logger.LogWarning(ex, "Could not remove the superseded branding upload {Directory}: the folder is not writable.", uploadDir);
         }
 

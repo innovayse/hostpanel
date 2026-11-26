@@ -669,7 +669,7 @@ describe('ClientServiceDetailView', () => {
     expect(wrapper.get('[data-testid="client-service-dedicated-ip"]').attributes('placeholder')).toBe('203.0.113.10')
   })
 
-  it('names the open service in the switcher although the client's lookup page does not list it', async () => {
+  it('names the open service in the switcher although the lookup page of the client does not list it', async () => {
     const others = [
       { ...listed, id: 3, productName: 'Basic' },
       { ...listed, id: 4, productName: 'Plus' },

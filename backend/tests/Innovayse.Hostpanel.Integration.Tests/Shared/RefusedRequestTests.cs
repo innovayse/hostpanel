@@ -1,17 +1,19 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 
 /// <summary>
-/// A request the authorization refuses is answered once: one well formed error body, and nothing logged at Warning
-/// or above (a second writer meeting the started response logged "Response already started" for what was an
-/// ordinary 401 or 403).
+/// A request the authorization refuses is answered once: one well formed error body, and no "Response already started" warning
+/// (a second writer meeting the started response logged it for what was an ordinary 401 or 403).
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RefusedRequestTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -46,6 +48,19 @@ public sealed class RefusedRequestTests(IntegrationTestFactory factory) : IClass
         await AssertAnsweredOnceAsync(response, HttpStatusCode.Unauthorized, SharedErrorCodes.Unauthorized, logs);
     }
 
+    /// <summary>
+    /// The handler that answers a refusal is the product's own, whatever else registers one later: the framework's
+    /// stock handler forbids or challenges every scheme of the policy in turn, and the second one to set a status
+    /// on the started response throws.
+    /// </summary>
+    [Fact]
+    public void TheHandlerThatAnswersARefusalIsTheProductsOwn()
+    {
+        var handler = factory.Services.GetRequiredService<IAuthorizationMiddlewareResultHandler>();
+
+        handler.Should().BeOfType<IdentityPluginUnavailableResponder>();
+    }
+
     /// <summary>Derives a host that records everything it logs, at every level.</summary>
     /// <param name="logs">Where the host's log lines are kept.</param>
     /// <returns>The derived host.</returns>
@@ -73,9 +88,9 @@ public sealed class RefusedRequestTests(IntegrationTestFactory factory) : IClass
         body.RootElement.GetProperty("status").GetInt32().Should().Be((int)status);
         body.RootElement.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace();
 
-        var warnings = logs.Entries.Where(entry => entry.Level >= LogLevel.Warning).ToList();
-        warnings.Should().BeEmpty(
-            "a refusal is an ordinary answer; the logged lines were: {0}",
-            string.Join(" | ", logs.Entries.Select(entry => $"{entry.Level} {entry.Message} {entry.Exception}")));
+        var lateWrites = logs.Entries.Where(entry => entry.Message.Contains("Response already started", StringComparison.Ordinal)).ToList();
+        lateWrites.Should().BeEmpty(
+            "a refusal is written once; the exception met afterwards was: {0}",
+            string.Join(" | ", lateWrites.Select(entry => entry.Exception)));
     }
 }

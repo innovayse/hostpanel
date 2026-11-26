@@ -13,6 +13,7 @@ import type { Ref } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { createPinia } from 'pinia'
 import { usePluginSlot } from '~/composables/usePluginSlot'
+import { knownCustomerPinia } from '~/tests/helpers/knownCustomer'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { SERVICE_NOT_FOUND, slotIndex } from '~/tests/helpers/pluginSlotFixture'
 import { heldReply, queryOf } from '~/tests/helpers/stubRoutes'
@@ -56,7 +57,7 @@ describe('usePluginSlot', () => {
   it('reads the slot with its context once mounted, and again when the context changes', async () => {
     /** The service the slot is read for; changed to make the composable read again. */
     const serviceId = ref('4')
-    mountClient(hostFor(serviceId))
+    mountClient(hostFor(serviceId), { pinia: knownCustomerPinia() })
 
     await waitUntil(() => expect(seen).toEqual(['tab']))
     expect(stub.requests[0]?.url).toBe('/api/portal/client/plugins/slots/client.service.tabs?serviceId=4')
@@ -74,7 +75,7 @@ describe('usePluginSlot', () => {
         usePluginSlot(() => slotId.value, () => ({ serviceId: '4' }))
         return () => h('div')
       },
-    }))
+    }), { pinia: knownCustomerPinia() })
     await waitUntil(() => expect(stub.requests).toHaveLength(1))
 
     slotId.value = PluginSlotId.DashboardCards
@@ -88,7 +89,7 @@ describe('usePluginSlot', () => {
     stub.respondWith(request => queryOf(request).serviceId === '4' ? held.reply() : { body: slotIndex(PluginSlotId.ServiceTabs, ['five']) })
     /** The service the slot is read for; held back while its first reply is pending. */
     const serviceId = ref('4')
-    mountClient(hostFor(serviceId))
+    mountClient(hostFor(serviceId), { pinia: knownCustomerPinia() })
     await waitUntil(() => expect(held.waiting()).toBe(1))
 
     serviceId.value = '5'
@@ -103,7 +104,7 @@ describe('usePluginSlot', () => {
   it('9. empties the widgets at once when the context changes, before the new reply', async () => {
     /** The service the slot is read for; changed while a reply is still pending. */
     const serviceId = ref('4')
-    mountClient(hostFor(serviceId))
+    mountClient(hostFor(serviceId), { pinia: knownCustomerPinia() })
     await waitUntil(() => expect(seen).toEqual(['tab']))
     const held = heldReply()
     stub.respondWith(held.reply)
@@ -117,7 +118,7 @@ describe('usePluginSlot', () => {
 
   it('leaves the widgets empty when the backend refuses the service', async () => {
     stub.respondWith(() => SERVICE_NOT_FOUND)
-    mountClient(hostFor(ref('9')))
+    mountClient(hostFor(ref('9')), { pinia: knownCustomerPinia() })
 
     await waitUntil(() => expect(stub.requests).toHaveLength(1))
     expect(seen).toEqual([])

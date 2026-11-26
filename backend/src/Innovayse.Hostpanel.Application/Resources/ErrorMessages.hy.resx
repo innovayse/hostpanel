@@ -366,6 +366,15 @@
 <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
     <value>Այս server-ի այս հաշիվն արդեն կապված է ծառայության հետ։</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" xml:space="preserve">
+    <value>Սերվերի կառավարման վահանակում այս օգտանունով հաշիվ չկա։</value>
+  </data>
+<data name="SERVICE_HOSTING_ACCOUNT_UNVERIFIED" xml:space="preserve">
+    <value>Սերվերի կառավարման վահանակը չի կարող հաստատել, որ այս հաշիվը գոյություն ունի։ Հաստատեք՝ ծառայությունն ամեն դեպքում ավելացնելու համար։</value>
+  </data>
+<data name="SERVICE_DOMAIN_ALREADY_SERVED" xml:space="preserve">
+    <value>Մեկ այլ ծառայություն արդեն օգտագործում է այս դոմենը։ Հաստատեք՝ սա էլ ավելացնելու համար։</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Այս ծառայության համար արդեն կա չեղարկման սպասող հայտ։</value>
   </data>
@@ -1686,5 +1695,8 @@
   </data>
   <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>Տեղադրված ոչ մի պլագին չի տրամադրում SSH բանալիների գործակալի այս պրոֆիլը։</value>
+  </data>
+  <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
+    <value>Գրանցողը չի հայտնում այս դոմենի ավարտի ժամկետը, ուստի այն հնարավոր չէ ներմուծել։</value>
   </data>
 </root>

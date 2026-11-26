@@ -1,9 +1,9 @@
 {
   "client": {
     "noProfile": {
-      "title": "Ce compte n'est pas un compte client",
-      "body": "Vous êtes connecté, mais ce compte n'a pas de profil client : il n'y a donc rien à afficher dans l'espace client. Les comptes du personnel gèrent la plateforme depuis le panneau d'administration.",
-      "browseAction": "Voir l'hébergement"
+      "title": "Pas encore de profil client",
+      "body": "Vous êtes connecté, mais ce compte n'a pas encore de profil client. Il est créé avec votre première commande : d'ici là, il n'y a rien à afficher ici. Les comptes du personnel gèrent la plateforme depuis le panneau d'administration.",
+      "browseAction": "Passer la première commande"
     },
     "nav": {
       "dashboard": "Tableau de bord",

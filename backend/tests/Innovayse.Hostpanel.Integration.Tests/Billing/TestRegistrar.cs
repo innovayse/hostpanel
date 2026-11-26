@@ -138,4 +138,7 @@ public abstract class TestRegistrar : IRegistrarProvider
 
     /// <inheritdoc/>
     public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct) => _inner.GetTldPricingAsync(ct);
+
+    /// <inheritdoc/>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct) => _inner.ListDomainsAsync(cursor, ct);
 }

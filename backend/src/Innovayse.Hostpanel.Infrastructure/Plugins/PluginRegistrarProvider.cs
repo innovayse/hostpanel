@@ -24,9 +24,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// unknown, which is what the port promises.
 /// </para>
 /// <para>
-/// An optional operation (DNS management, email forwarding, WHOIS) is reached only when the manifest declares the capability
-/// and the plugin implements its interface; otherwise it answers <c>REGISTRAR_OPERATION_UNSUPPORTED</c>. The other optional
-/// capabilities a registrar plugin may declare (balance, child nameservers, DNSSEC, restore, domain list, suggestions) have
+/// An optional operation (DNS management, email forwarding, WHOIS, the domain list) is reached only when the manifest declares
+/// the capability and the plugin implements its interface; otherwise it answers <c>REGISTRAR_OPERATION_UNSUPPORTED</c>. The
+/// other optional capabilities a registrar plugin may declare (balance, child nameservers, DNSSEC, restore, suggestions) have
 /// no operation in the port yet and are accepted but not called.
 /// </para>
 /// </remarks>
@@ -46,6 +46,9 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
 
     /// <summary>The plugin as its WHOIS contract, or <see langword="null"/> when it does not declare the capability.</summary>
     private readonly IRegistrarWhoisPlugin? _whois;
+
+    /// <summary>The plugin as its domain list contract, or <see langword="null"/> when it does not declare the capability.</summary>
+    private readonly IRegistrarDomainListPlugin? _domainList;
 
     /// <summary>The connection built from the plugin's saved settings, handed to the plugin with every call.</summary>
     private readonly RegistrarConnection _connection;
@@ -71,6 +74,7 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
         _dnsManagement = manifest.Declares(PluginCapabilities.RegistrarDnsManagement) ? plugin as IRegistrarDnsManagementPlugin : null;
         _emailForwarding = manifest.Declares(PluginCapabilities.RegistrarEmailForwarding) ? plugin as IRegistrarEmailForwardingPlugin : null;
         _whois = manifest.Declares(PluginCapabilities.RegistrarWhois) ? plugin as IRegistrarWhoisPlugin : null;
+        _domainList = manifest.Declares(PluginCapabilities.RegistrarDomainList) ? plugin as IRegistrarDomainListPlugin : null;
     }
 
     /// <inheritdoc />
@@ -417,6 +421,28 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
         }
 
         return ReadFailure<IReadOnlyList<TldPricing>>(nameof(GetTldPricingAsync), answer.Outcome, answer.Reason);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>A plugin that does not declare the domain list answers <c>REGISTRAR_OPERATION_UNSUPPORTED</c> and is never asked.</remarks>
+    public async Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct)
+    {
+        if (_domainList is null)
+        {
+            return Result<RegistrarHeldDomainPage>.FailureCode(HostpanelErrorCodes.REGISTRAR_OPERATION_UNSUPPORTED);
+        }
+
+        var answer = await _domainList.ListDomainsAsync(new RegistrarDomainListContext(_connection, cursor), ct);
+        if (RegistrarRefusalMap.FailureCode(answer.Outcome, answer.Reason) is null && answer.Value is { } page)
+        {
+            return Result<RegistrarHeldDomainPage>.Success(new RegistrarHeldDomainPage(
+                page.Domains
+                    .Select(d => new RegistrarHeldDomain(d.Domain.Name, d.Domain.RegistrarRef, d.ExpiresAt))
+                    .ToList(),
+                page.NextCursor));
+        }
+
+        return ReadFailure<RegistrarHeldDomainPage>(nameof(ListDomainsAsync), answer.Outcome, answer.Reason);
     }
 
     /// <summary>Names a domain the way the SDK addresses it.</summary>

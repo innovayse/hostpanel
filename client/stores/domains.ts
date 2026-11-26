@@ -34,6 +34,8 @@ import type { TldPeriodPrice } from '~/types/tldperiodprice'
 import { ONE_YEAR, priceForYears } from '~/utils/tldPeriodPrice'
 import { EMPTY_AMOUNT } from '~/utils/formatCurrency'
 import { formatMoney } from '~/utils/formatMoney'
+import { isValidDomainBase } from '~/utils/domainName'
+import { translate } from '~/utils/translate'
 import { contactFromRegistrant } from '~/utils/domainContacts'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
 import type { AccountContact } from '~/types/accountcontact'
@@ -160,9 +162,11 @@ export const useDomainsStore = defineStore('domains', () => {
    *
    * A check that fails is reported as `unknown` rather than dropped or shown as taken: the row
    * count stays stable, and a registrar that is unconfigured or unreachable reads as a fault
-   * instead of as a name somebody owns. A name the API refuses as malformed is refused for every
-   * extension alike, so it is not a row at all: the rows are emptied and {@link lookupError}
-   * holds the API's sentence.
+   * instead of as a name somebody owns. A name that is malformed is refused for every extension
+   * alike, so it is not a row at all: the rows are emptied and {@link lookupError} holds the
+   * sentence. The browser judges the typed text first with the API's own rule
+   * ({@link isValidDomainBase}), so that refusal is immediate and sends no request; a name it lets
+   * through is still checked by the API, whose refusal stays the source of truth.
    *
    * @param term - Raw text the visitor typed.
    * @returns Nothing; the rows land in {@link lookupResults}.
@@ -173,6 +177,12 @@ export const useDomainsStore = defineStore('domains', () => {
       return
     }
     lookupTerm.value = term.trim()
+
+    if (!isValidDomainBase(base)) {
+      lookupError.value = translate('domains.invalidName')
+      lookupResults.value = []
+      return
+    }
 
     lookupError.value = ''
     lookupPending.value = true

@@ -6,11 +6,14 @@
  * The search text, the status and registrar filters and the page live in the address (`useFilterQuery`), so a reload,
  * a shared link and the back button restore the same list, and the API applies them before it pages. Shows domain
  * name, client, registrar, registration period, status, renewal dates, renewal price and the auto-renew flag. A domain
- * name opens its detail page under the owning client. Reads `stores/domains`; a refused load shows `store.error`.
+ * name opens its detail page under the owning client. The header offers "Import from registrar", a dialog that brings a domain
+ * a registrar already holds into a client (see `RegistrarDomainImportDialog`) and reloads the page after an import. Reads
+ * `stores/domains`; a refused load shows `store.error`.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
+import RegistrarDomainImportDialog from '@/components/domains/RegistrarDomainImportDialog.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDataTable from '@/components/ui/UiDataTable.vue'
@@ -22,6 +25,7 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -114,6 +118,38 @@ loadOnChange(load)
 // The registrar filter lists the installed registrar plugins.
 onMounted(loadRegistrars)
 
+/** Whether the import dialog is open. */
+const importing = ref(false)
+
+/**
+ * Opens the registrar import dialog.
+ *
+ * @returns Nothing.
+ */
+const openImport = (): void => {
+  importing.value = true
+}
+
+/** The header action that opens the registrar import dialog. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  {
+    label: t('domains.domainsList.importFromRegistrar'),
+    icon: Icon.Download,
+    variant: UiButtonVariant.Secondary,
+    testid: 'domains-import-registrar',
+    onSelect: openImport,
+  },
+])
+
+/**
+ * Reloads the page the address names after a domain was imported, so the new row shows at once.
+ *
+ * @returns Nothing.
+ */
+const handleImported = (): void => {
+  void load()
+}
+
 /** Whether the current page has any domain to list. */
 const hasRows = computed<boolean>(() => store.domains.length > 0)
 
@@ -139,6 +175,7 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
 <template>
   <UiStack>
     <UiPageHeader
+      :actions="headerActions"
       v-bind="schemaHeader(schema, t)"
       data-testid="domains-header"
     />
@@ -264,5 +301,7 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
         </UiEmptyState>
       </template>
     </UiDataTable>
+
+    <RegistrarDomainImportDialog v-if="importing" @imported="handleImported" @close="importing = false" />
   </UiStack>
 </template>

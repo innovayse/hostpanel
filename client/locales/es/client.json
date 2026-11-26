@@ -1,9 +1,9 @@
 {
   "client": {
     "noProfile": {
-      "title": "Esta cuenta no es una cuenta de cliente",
-      "body": "Ha iniciado sesión, pero esta cuenta no tiene perfil de cliente, por lo que no hay nada que mostrar en el área de clientes. Las cuentas del personal gestionan la plataforma desde el panel de administración.",
-      "browseAction": "Ver hosting"
+      "title": "Aún no hay perfil de cliente",
+      "body": "Ha iniciado sesión, pero esta cuenta aún no tiene perfil de cliente. Se crea con su primer pedido, por lo que hasta entonces no hay nada que mostrar aquí. Las cuentas del personal gestionan la plataforma desde el panel de administración.",
+      "browseAction": "Hacer el primer pedido"
     },
     "nav": {
       "dashboard": "Panel",

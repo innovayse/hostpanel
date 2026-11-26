@@ -102,17 +102,21 @@ public sealed class ServicesController : BaseApiController
     }
 
     /// <summary>
-    /// Adds a service to a client for a hosting account that already exists on a server. The service
-    /// starts Active; nothing is created on the panel and no welcome mail is sent.
+    /// Adds a service to a client for a hosting account that already exists on a server. The server's panel is asked first whether it
+    /// holds the account. The service starts Active; nothing is created on the panel and no welcome mail is sent.
     /// </summary>
-    /// <param name="command">The client, product, billing terms and the existing account.</param>
+    /// <param name="command">The client, product, billing terms, the existing account and the admin's confirmations.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the new service's id; 400 when a field is refused; 404 with <c>CLIENT_NOT_FOUND</c>,
     /// <c>PRODUCT_NOT_FOUND</c> or <c>SERVER_NOT_FOUND</c>; 409 with <c>SERVICE_HOSTING_ACCOUNT_EXISTS</c>
-    /// when a live service already holds that username on that server, or <c>CPANEL_USERNAME_INVALID</c>
-    /// when the username breaks the cPanel account rules; 401 when the caller is not
-    /// signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// when a live service already holds that username on that server, <c>SERVICE_DOMAIN_ALREADY_SERVED</c> when another live
+    /// service holds the domain and <c>confirmSharedDomain</c> is not set, <c>SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER</c> when the panel
+    /// has no such account, <c>SERVICE_HOSTING_ACCOUNT_UNVERIFIED</c> when the panel cannot read accounts and <c>confirmUnverified</c>
+    /// is not set, or <c>CPANEL_USERNAME_INVALID</c> when the username breaks the cPanel account rules; 502 with
+    /// <c>SERVICE_PANEL_SYNC_UPSTREAM_FAILED</c> when the panel cannot be read; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when the
+    /// plugin that serves the panel is off; 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when
+    /// the rate limit is hit.
     /// </returns>
     [HttpPost("existing")]
     [Authorize(Policy = Policies.Admin)]
@@ -122,6 +126,8 @@ public sealed class ServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> AddExistingAsync([FromBody] AddExistingServiceCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<int>>(command, ct);

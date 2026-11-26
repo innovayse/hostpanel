@@ -19,7 +19,10 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import CartPage from '~/pages/cart/index.vue'
 import CartHero from '~/components/cart/CartHero.vue'
 import CartContent from '~/components/cart/CartContent.vue'
+import { makeUserWithoutClientRecord } from '~/tests/helpers/clientUser'
+import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { useClientStore } from '~/stores/client'
 import { useCurrencyStore } from '~/stores/currency'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
@@ -114,6 +117,21 @@ describe('cart page', () => {
 
     expect(useCartStore().items).toEqual([])
     expect(wrapper.find('[data-testid="cart-empty"]').exists()).toBe(true)
+  })
+
+  it('shows the lines and leads to checkout for a signed-in person who has no client record yet', async () => {
+    const wrapper = await mountCart()
+    const identity = makeUserWithoutClientRecord()
+    useAuthStore().user = identity
+    useClientStore().user = identity
+    useClientStore().clientProfileMissing = true
+
+    await addLine(1, 'Starter', 5, 'USD')
+
+    expect(wrapper.find('[data-testid="cart-page"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="cart-item-name"]').text()).toBe('Starter')
+    expect(wrapper.find('[data-testid="cart-total"]').text()).toContain('5.00')
+    expect(wrapper.find('[data-testid="cart-checkout"]').attributes('href')).toBe('/en/checkout')
   })
 
   it('leads to checkout', async () => {

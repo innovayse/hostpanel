@@ -9,6 +9,7 @@
     "taken": "Ya registrado",
     "registerNow": "Registrar",
     "invalidDomain": "Introduzca un dominio válido con extensión (p. ej., misitio.com)",
+    "invalidName": "Un nombre de dominio solo puede contener letras latinas, dígitos y guiones, y no puede empezar ni terminar con un guion.",
     "checkFailed": "Error al comprobar el dominio. Inténtelo de nuevo.",
     "cannotAdd": "Este dominio no se puede añadir al carrito ahora mismo. Inténtelo de nuevo.",
     "tldNotSupported": "Esta extensión no está disponible para registro",

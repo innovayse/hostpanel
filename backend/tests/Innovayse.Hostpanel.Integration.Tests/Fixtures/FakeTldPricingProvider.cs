@@ -131,4 +131,8 @@ public sealed class FakeTldPricingProvider : IRegistrarProvider
             ? Result<IReadOnlyList<TldPricing>>.Success(PricingToReturn)
             : Result<IReadOnlyList<TldPricing>>.FailureCode(PricingFailure));
     }
+
+    /// <inheritdoc/>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct) =>
+        Task.FromResult(Result<RegistrarHeldDomainPage>.Success(new RegistrarHeldDomainPage([], null)));
 }

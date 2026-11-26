@@ -6,6 +6,21 @@
     "renewalPrice": "Verlängerungspreis",
     "regPeriod": "Registrierungszeitraum",
     "noDomainsMatchYourFilters": "Keine Domains entsprechen Ihren Filtern",
-    "noDomainsFound": "Keine Domains gefunden"
+    "noDomainsFound": "Keine Domains gefunden",
+    "importFromRegistrar": "Von der Registrierungsstelle importieren"
+  },
+  "registrarImport": {
+    "title": "Von der Registrierungsstelle importieren",
+    "intro": "Übernehmen Sie eine Domain, die die Registrierungsstelle bereits hält, mit ihrem echten Ablaufdatum für einen Kunden. Es entstehen keine Bestellung, Rechnung oder Abbuchung.",
+    "chooseRegistrar": "Registrierungsstelle wählen",
+    "noRegistrars": "Keine installierte Registrierungsstelle listet ihre Domains auf",
+    "chooseClientFirst": "Wählen Sie zuerst den Kunden, dem die Domain gehören soll",
+    "empty": "Dieses Konto bei der Registrierungsstelle enthält keine Domains",
+    "inPanel": "Im Panel",
+    "notInPanel": "Nicht im Panel",
+    "noExpiry": "Kein Ablaufdatum gemeldet",
+    "import": "Importieren",
+    "previousPage": "Zurück",
+    "page": "Seite {page}"
   }
 }

@@ -393,6 +393,18 @@ export interface AddExistingServicePayload {
   username: string
   /** When the current billing period began (ISO date), or null for today. */
   startedAt: string | null
+  /** The admin confirms an account the server's panel cannot be asked about; never overrides a panel that says the account is missing. */
+  confirmUnverified: boolean
+  /** The admin confirms a domain another live service already holds. */
+  confirmSharedDomain: boolean
+}
+
+/** The refusals of `POST /api/services/existing` that the admin can confirm past with a checkbox. */
+export enum AddExistingRefusal {
+  /** The server's panel cannot read accounts, so the account cannot be checked. */
+  AccountUnverified = 'SERVICE_HOSTING_ACCOUNT_UNVERIFIED',
+  /** Another service that is not terminated already holds the domain. */
+  DomainShared = 'SERVICE_DOMAIN_ALREADY_SERVED',
 }
 
 /** How a person signs in to a panel by hand, for a panel that cannot issue a single sign on link; it never carries a password. */

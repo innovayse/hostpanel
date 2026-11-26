@@ -67,6 +67,7 @@
     "/servers/cpanel": "cPanel սերվերներ",
     "/servers/ssh-key-agent": "SSH բանալիների գործակալ",
     "/servers/provisioning": "Պրովիժնինգ",
+    "/servers/existing-account": "Գոյություն ունեցող հաշիվ",
     "/migration/": "Ակնարկ",
     "/migration/fifteen-minutes": "Միգրացիայի ստուգացանկ",
     "/migration/from-another-system": "Անցում WHMCS-ից",

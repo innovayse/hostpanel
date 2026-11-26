@@ -11,9 +11,10 @@ import { flushPromises } from '@vue/test-utils'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { BillingEndpoint } from '~/tests/helpers/billingPaths'
 import { awaitCheckoutLoaded, cartLine, checkoutReplies, PLACED_ORDER } from '~/tests/helpers/checkoutFlow'
-import { makeClientUser } from '~/tests/helpers/clientUser'
+import { makeClientUser, makeUserWithoutClientRecord } from '~/tests/helpers/clientUser'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { until } from '~/tests/helpers/settle'
+import { bodyOf } from '~/tests/helpers/requestBody'
 import { readOf, refusal, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
@@ -174,6 +175,29 @@ describe('AuroraCheckout', () => {
     await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(`/en${clientInvoicePayPath(PLACED_ORDER.invoiceId)}`))
 
     expect(placedOrders()).toBe(1)
+  })
+
+  it('lets a signed-in person who has no client record yet order, sending no guest details so the order creates the record', async () => {
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false }] }
+    const wrapper = await mountCheckout([{ ...ITEM, amount: PLACED_ORDER.total }])
+    const identity = makeUserWithoutClientRecord({ firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' })
+    useAuthStore().user = identity
+    useClientStore().user = identity
+    useClientStore().clientProfileMissing = true
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="checkout-logged-in"]').text()).toContain('ann@acme.test')
+    expect(wrapper.find('[data-testid="checkout-email"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeUndefined()
+
+    await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(`/en${clientInvoicePayPath(PLACED_ORDER.invoiceId)}`))
+
+    const order = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as Record<string, unknown>
+    expect(order).toMatchObject({ paymentmethod: PaymentModule.BankTransfer })
+    expect(order).not.toHaveProperty('email')
+    expect(order).not.toHaveProperty('password')
   })
 
   it('keeps the button label, marks it busy and puts the sentence in a polite line under it', async () => {

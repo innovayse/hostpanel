@@ -1807,4 +1807,7 @@
   <data name="GatewayOrderIdInvalid" xml:space="preserve">
     <value>El identificador de pedido de la pasarela tiene de 1 a 255 caracteres, sin espacios en los extremos ni caracteres de control.</value>
   </data>
+  <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
+    <value>El cursor de página del registrador es demasiado largo.</value>
+  </data>
 </root>

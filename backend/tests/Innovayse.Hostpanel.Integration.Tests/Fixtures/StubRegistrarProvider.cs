@@ -141,4 +141,8 @@ public sealed class StubRegistrarProvider : IRegistrarProvider
     /// <inheritdoc/>
     public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct)
         => Task.FromResult(Result<IReadOnlyList<TldPricing>>.Success([]));
+
+    /// <inheritdoc/>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct)
+        => Task.FromResult(Result<RegistrarHeldDomainPage>.Success(new RegistrarHeldDomainPage([], null)));
 }

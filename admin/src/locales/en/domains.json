@@ -6,6 +6,21 @@
     "renewalPrice": "Renewal Price",
     "regPeriod": "Reg Period",
     "noDomainsMatchYourFilters": "No domains match your filters",
-    "noDomainsFound": "No domains found"
+    "noDomainsFound": "No domains found",
+    "importFromRegistrar": "Import from registrar"
+  },
+  "registrarImport": {
+    "title": "Import from registrar",
+    "intro": "Bring a domain the registrar already holds into a client, with its real expiry. No order, invoice or charge is made.",
+    "chooseRegistrar": "Choose a registrar",
+    "noRegistrars": "No installed registrar lists its domains",
+    "chooseClientFirst": "Choose the client who will own the domain first",
+    "empty": "This registrar account holds no domains",
+    "inPanel": "In the panel",
+    "notInPanel": "Not in the panel",
+    "noExpiry": "No expiry reported",
+    "import": "Import",
+    "previousPage": "Previous",
+    "page": "Page {page}"
   }
 }

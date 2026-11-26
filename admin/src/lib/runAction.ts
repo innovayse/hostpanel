@@ -7,7 +7,7 @@
  */
 
 import type { Ref } from 'vue'
-import { errorSentence, fieldErrors as fieldErrorsOf } from '@/lib/errorHandler'
+import { errorCode, errorSentence, fieldErrors as fieldErrorsOf } from '@/lib/errorHandler'
 
 /** Outcome of {@link runAction}: the resolved value, or a failure whose sentence is already in the store's error ref. */
 export type ActionResult<T> = { ok: true; value: T } | { ok: false }
@@ -18,16 +18,22 @@ export type ActionResult<T> = { ok: true; value: T } | { ok: false }
  * @param error - The store's error ref; cleared before the call, set to the sentence on failure.
  * @param task - The request to run.
  * @param fieldErrors - Optional ref that receives the API's per-field messages (empty on success).
+ * @param code - Optional ref that receives the API's machine-readable code of the refusal (null on success), for a screen that
+ *   offers a confirmation for one particular refusal.
  * @returns `{ ok: true, value }` on success, `{ ok: false }` on failure.
  */
 export const runAction = async <T>(
   error: Ref<string | null>,
   task: () => Promise<T>,
   fieldErrors?: Ref<Record<string, string>>,
+  code?: Ref<string | null>,
 ): Promise<ActionResult<T>> => {
   error.value = null
   if (fieldErrors) {
     fieldErrors.value = {}
+  }
+  if (code) {
+    code.value = null
   }
   try {
     return { ok: true, value: await task() }
@@ -35,6 +41,9 @@ export const runAction = async <T>(
     error.value = errorSentence(cause)
     if (fieldErrors) {
       fieldErrors.value = fieldErrorsOf(cause)
+    }
+    if (code) {
+      code.value = errorCode(cause)
     }
     return { ok: false }
   }

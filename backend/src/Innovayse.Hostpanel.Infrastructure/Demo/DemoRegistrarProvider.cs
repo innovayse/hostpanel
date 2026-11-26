@@ -169,4 +169,11 @@ public sealed class DemoRegistrarProvider : IRegistrarProvider
 
         return Task.FromResult(Result<IReadOnlyList<TldPricing>>.Success(pricing));
     }
+
+    /// <inheritdoc/>
+    /// <remarks>The fake registry holds only the domains the demo itself registered, so there is nothing to import from it.</remarks>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct)
+    {
+        return Task.FromResult(Result<RegistrarHeldDomainPage>.Success(new RegistrarHeldDomainPage([], null)));
+    }
 }

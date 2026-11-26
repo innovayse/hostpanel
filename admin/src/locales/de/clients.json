@@ -536,11 +536,13 @@
   "addExistingService": {
     "open": "Account hinzufügen",
     "title": "Bestehenden Hosting-Account hinzufügen",
-    "intro": "Für einen Account, der bereits auf dem Server existiert: wiederhergestellt, von einem anderen Server verschoben oder manuell eingerichtet. Der Service startet als Aktiv; im Panel wird nichts erstellt und es wird keine E-Mail gesendet.",
+    "intro": "Für einen Account, der bereits auf dem Server existiert: wiederhergestellt, von einem anderen Server verschoben oder manuell eingerichtet. Der Service startet als Aktiv; im Panel wird nichts erstellt und es wird keine E-Mail gesendet. Das Bedienfeld des Servers wird zuerst gefragt und muss das Konto führen.",
     "username": "Panel-Benutzername",
     "recurringAmount": "Wiederkehrender Betrag",
     "startedAt": "Aktueller Zeitraum begonnen",
-    "today": "Heute"
+    "today": "Heute",
+    "confirmUnverified": "Das Bedienfeld des Servers kann dieses Konto nicht bestätigen. Ich bestätige, dass es existiert.",
+    "confirmSharedDomain": "Diese Domain wird bereits von einem anderen Dienst verwendet. Ich bestätige, auch diesen hinzuzufügen."
   },
   "vat": {
     "title": "USt-IdNr.",

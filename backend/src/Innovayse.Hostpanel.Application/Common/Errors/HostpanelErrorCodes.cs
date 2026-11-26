@@ -347,6 +347,9 @@ public static class HostpanelErrorCodes
     /// <summary>The name is already registered through this system (409).</summary>
     public const string DOMAIN_ALREADY_REGISTERED = "DOMAIN_ALREADY_REGISTERED";
 
+    /// <summary>The registrar's domain list does not say when the domain expires, so it cannot be imported with a due date (409).</summary>
+    public const string DOMAIN_IMPORT_EXPIRY_UNKNOWN = "DOMAIN_IMPORT_EXPIRY_UNKNOWN";
+
     /// <summary>The registrar rejected the registration request (502).</summary>
     public const string DOMAIN_REGISTRATION_UPSTREAM_FAILED = "DOMAIN_REGISTRATION_UPSTREAM_FAILED";
 
@@ -613,6 +616,15 @@ public static class HostpanelErrorCodes
 
     /// <summary>A service that is not terminated already holds that username on that server (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
     public const string SERVICE_HOSTING_ACCOUNT_EXISTS = "SERVICE_HOSTING_ACCOUNT_EXISTS";
+
+    /// <summary>The server's panel holds no account with that username, so there is nothing to add a service for (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER = "SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER";
+
+    /// <summary>The server's panel cannot read accounts, so the account cannot be checked and the admin has to confirm it by hand (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_HOSTING_ACCOUNT_UNVERIFIED = "SERVICE_HOSTING_ACCOUNT_UNVERIFIED";
+
+    /// <summary>Another service that is not terminated already holds that domain, so the admin has to confirm a shared domain (409): <see cref="Services.Commands.AddExistingService.AddExistingServiceHandler"/>.</summary>
+    public const string SERVICE_DOMAIN_ALREADY_SERVED = "SERVICE_DOMAIN_ALREADY_SERVED";
 
     // Services: SSH key management
 

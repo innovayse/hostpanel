@@ -9,6 +9,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { knownCustomerPinia } from '~/tests/helpers/knownCustomer'
 import { mountClient } from '~/tests/helpers/mountClient'
 import CreditCard from '~/components/client/dashboard/CreditCard.vue'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
@@ -34,7 +35,7 @@ let table: StubRouteTable
  * @returns The wrapper.
  */
 const mountCard = async (requests = 1) => {
-  const wrapper = mountClient(CreditCard)
+  const wrapper = mountClient(CreditCard, { pinia: knownCustomerPinia() })
   await waitUntil(() => expect(requestsTo(stub.requests, BillingEndpoint.Credit)).toHaveLength(requests))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()

@@ -15,6 +15,8 @@ import type { StubRouteTable } from '../helpers/stubRoutes'
 import { BillingEndpoint, invoiceCreditPath } from '../helpers/billingPaths'
 import type { StubReply, StubServer } from '../helpers/stubServer'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
+import { markCustomerKnown } from '~/tests/helpers/knownCustomer'
+import { useClientStore } from '~/stores/client'
 import type { ClientCredit } from '~/types/clientcredit'
 
 /** The stub playing the BFF. */
@@ -49,6 +51,7 @@ const creditReads = (): Record<string, string>[] => requestsTo(stub.requests, Bi
 
 beforeEach(async () => {
   setActivePinia(createPinia())
+  markCustomerKnown()
   table = {}
   stub = await startTransport(routeTable(table))
 })
@@ -182,5 +185,18 @@ describe('useCreditStore.applyToInvoice', () => {
     expect(store.applyError).toBe('Refused.')
     expect(store.applyBusy).toBe(false)
     expect(creditReads()).toHaveLength(0)
+  })
+})
+
+describe('useCreditStore.load for an identity with no client record', () => {
+  it('sends no credit read and holds no sentence', async () => {
+    useClientStore().clientProfileMissing = true
+    const store = useCreditStore()
+
+    expect(await store.load()).toBeNull()
+
+    expect(creditReads()).toEqual([])
+    expect(store.error).toBe('')
+    expect(store.loading).toBe(false)
   })
 })

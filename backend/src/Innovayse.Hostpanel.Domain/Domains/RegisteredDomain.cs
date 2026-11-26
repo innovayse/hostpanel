@@ -260,6 +260,43 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Brings a domain the registrar account already holds into the panel for a client, with no order, invoice or charge: the
+    /// registrar's reference and expiry are stored as reported, the next due date follows the expiry and the recurring
+    /// amount is the one given. Like <see cref="Import"/> it raises no domain event, so the client is not notified and nothing
+    /// is invoiced because of it. The registrar reports only the expiry, so the real status is read from it: a domain whose
+    /// expiry has already passed is <see cref="DomainStatus.Expired"/>, any other is <see cref="DomainStatus.Active"/>. The
+    /// panel's own renewal stays off until staff switch it on, and the registration date is the moment of the import because
+    /// the registrar does not report when the domain was first registered.
+    /// </summary>
+    /// <param name="clientId">FK to the client that owns the domain.</param>
+    /// <param name="name">Fully-qualified domain name.</param>
+    /// <param name="registrarModule">The id of the registrar plugin that holds the domain.</param>
+    /// <param name="registrarRef">The registrar's reference for the domain, as the registrar's list reported it.</param>
+    /// <param name="expiresAt">When the registration expires at the registry, UTC, as the registrar reported it.</param>
+    /// <param name="importedAt">The moment of the import, UTC; stored as the registration date and the status is judged against it.</param>
+    /// <param name="priceCurrency">ISO 4217 code of the currency the domain is billed in.</param>
+    /// <param name="recurringAmount">The renewal price in <paramref name="priceCurrency"/>.</param>
+    /// <returns>A new <see cref="RegisteredDomain"/> with no pending domain events.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/>, <paramref name="registrarModule"/>, <paramref name="registrarRef"/> or
+    /// <paramref name="priceCurrency"/> is null or whitespace.
+    /// </exception>
+    public static RegisteredDomain ImportFromRegistrar(
+        int clientId, string name, string registrarModule, string registrarRef, DateTimeOffset expiresAt,
+        DateTimeOffset importedAt, string priceCurrency, decimal recurringAmount)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrarModule);
+        ArgumentException.ThrowIfNullOrWhiteSpace(registrarRef);
+
+        var domain = Import(
+            clientId, name, expiresAt <= importedAt ? DomainStatus.Expired : DomainStatus.Active, importedAt, expiresAt,
+            autoRenew: false, priceCurrency, registrar: null, registrarModule);
+        domain.RegistrarRef = registrarRef;
+        domain.RecurringAmount = recurringAmount;
+        return domain;
+    }
+
+    /// <summary>
     /// Creates a new domain in <see cref="DomainStatus.PendingTransfer"/> status.
     /// Call <see cref="ActivateTransfer"/> once the registrar confirms the transfer.
     /// </summary>

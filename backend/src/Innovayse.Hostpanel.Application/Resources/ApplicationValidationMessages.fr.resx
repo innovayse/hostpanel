@@ -1807,4 +1807,7 @@
 <data name="GatewayOrderIdInvalid" xml:space="preserve">
     <value>Un identifiant de commande de passerelle compte de 1 à 255 caractères, sans espace ni caractère de contrôle au début ou à la fin.</value>
   </data>
+  <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
+    <value>Le curseur de page du registraire est trop long.</value>
+  </data>
 </root>

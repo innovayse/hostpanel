@@ -9,6 +9,7 @@
     "taken": "Déjà enregistré",
     "registerNow": "Enregistrer maintenant",
     "invalidDomain": "Veuillez saisir un domaine valide avec son extension (par ex. monsite.com)",
+    "invalidName": "Un nom de domaine ne peut contenir que des lettres latines, des chiffres et des tirets, et ne peut ni commencer ni finir par un tiret.",
     "checkFailed": "La vérification du domaine a échoué. Veuillez réessayer.",
     "cannotAdd": "Ce domaine ne peut pas être ajouté au panier pour le moment. Veuillez réessayer.",
     "tldNotSupported": "Cette extension n'est pas disponible à l'enregistrement",

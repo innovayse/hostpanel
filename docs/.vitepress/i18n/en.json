@@ -67,6 +67,7 @@
     "/servers/cpanel": "cPanel servers",
     "/servers/ssh-key-agent": "SSH key agent",
     "/servers/provisioning": "Provisioning",
+    "/servers/existing-account": "Existing account",
     "/migration/": "Overview",
     "/migration/fifteen-minutes": "Migration checklist",
     "/migration/from-another-system": "Moving from WHMCS",

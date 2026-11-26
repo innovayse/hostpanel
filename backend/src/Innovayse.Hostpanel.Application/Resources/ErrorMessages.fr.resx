@@ -360,6 +360,15 @@
 <data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
     <value>Un service détient déjà ce compte sur ce serveur.</value>
   </data>
+<data name="SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" xml:space="preserve">
+    <value>Le panneau de contrôle du serveur n'a aucun compte avec ce nom d'utilisateur.</value>
+  </data>
+<data name="SERVICE_HOSTING_ACCOUNT_UNVERIFIED" xml:space="preserve">
+    <value>Le panneau de contrôle du serveur ne peut pas confirmer que ce compte existe. Confirmez pour ajouter quand même le service.</value>
+  </data>
+<data name="SERVICE_DOMAIN_ALREADY_SERVED" xml:space="preserve">
+    <value>Un autre service utilise déjà ce domaine. Confirmez pour ajouter aussi celui-ci.</value>
+  </data>
 <data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
     <value>Une demande d'annulation est déjà en attente pour ce service.</value>
   </data>
@@ -1686,5 +1695,8 @@
   </data>
   <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>Aucun plugin installé ne fournit ce profil de l'agent de clés SSH.</value>
+  </data>
+  <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
+    <value>Le registraire n'indique pas la date d'expiration de ce domaine, il ne peut donc pas être importé.</value>
   </data>
 </root>

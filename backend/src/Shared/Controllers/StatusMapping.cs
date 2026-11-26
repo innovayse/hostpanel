@@ -63,6 +63,9 @@ public static class StatusMapping
             // Exact row: the order number sequence outgrew the configured number length, a state of
             // the deployment rather than of the request, and the name carries no token for it.
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),
+            // Exact rows: the account a service is added for is not on the server, or the panel cannot say, so the admin has to
+            // confirm it: a state conflict, and neither name carries a CONFLICT / ALREADY token.
+            "SERVICE_HOSTING_ACCOUNT_NOT_ON_SERVER" or "SERVICE_HOSTING_ACCOUNT_UNVERIFIED" => new(409, "Conflict"),
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
             "SERVICE_HOSTING_DETAILS_MISSING" or "CPANEL_USERNAME_INVALID" or "CPANEL_DOMAIN_INVALID" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
@@ -169,9 +172,10 @@ public static class StatusMapping
             "REFUND_BLOCKED_BY_PLUGIN" => new(409, "Conflict"),
             // Exact rows: the registrar's own state stands in the way (no such operation there, the
             // domain not active yet, no privacy subscription), and none of the names carries a
-            // CONFLICT / ALREADY token for the generic arms.
+            // CONFLICT / ALREADY token for the generic arms. An import the registrar's list gives no expiry for is the
+            // same kind of state: the registrar does not say what the import needs.
             "REGISTRAR_OPERATION_UNSUPPORTED" or "REGISTRAR_DOMAIN_NOT_ACTIVE" or "REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE"
-                => new(409, "Conflict"),
+                or "DOMAIN_IMPORT_EXPIRY_UNKNOWN" => new(409, "Conflict"),
             // Exact rows: the name is not free to buy (a state conflict, and the name carries no
             // CONFLICT / ALREADY token); the operator's registrar balance is short, which is the
             // deployment's state rather than the caller's (503).

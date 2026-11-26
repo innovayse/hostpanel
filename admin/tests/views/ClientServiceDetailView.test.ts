@@ -14,7 +14,7 @@ import { useToastStore } from '@/stores/toast'
 import { UiTone } from '@/utils/ui/tone'
 import ClientServiceDetailView from '@/views/ClientServiceDetailView.vue'
 import schema, { BILLING_COLUMNS, NOTES_COLUMNS } from '@/views/ClientServiceDetailView.schema'
-import { BillingCycle, PanelSyncField, PanelSyncOutcome, ServiceStatus, type ServiceDetail, type ServiceSyncResult } from '@/types/service'
+import { BillingCycle, PanelSyncField, PanelSyncOutcome, ServiceStatus, type ServiceDetail, type ServiceListItem, type ServiceSyncResult } from '@/types/service'
 import { mountClientView } from '../helpers/clientViews'
 import { callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
@@ -49,6 +49,20 @@ const detail: ServiceDetail = {
     autoRenew: true,
   },
   automation: { overrideAutoSuspend: false, suspendUntil: null, autoTerminateEndOfCycle: false, autoTerminateReason: null },
+}
+
+/** One row of the client's service lookup, a service other than the open one. */
+const listed: ServiceListItem = {
+  id: 2,
+  clientId: 5,
+  clientName: 'Ada Lovelace',
+  productName: 'Starter',
+  domain: null,
+  price: 5,
+  priceCurrency: 'USD',
+  billingCycle: BillingCycle.Monthly,
+  status: ServiceStatus.Active,
+  nextDueDate: null,
 }
 
 /**
@@ -647,6 +661,26 @@ describe('ClientServiceDetailView', () => {
 
     expect(wrapper.text()).toContain('Assigned IP')
     expect(wrapper.text()).not.toContain('Dedicated IP')
+  })
+
+  it('hints the address field with an example from the documentation range, never a private address', async () => {
+    const { wrapper } = await mountLoaded({ ...detail, status: ServiceStatus.Active })
+
+    expect(wrapper.get('[data-testid="client-service-dedicated-ip"]').attributes('placeholder')).toBe('203.0.113.10')
+  })
+
+  it('names the open service in the switcher although the client's lookup page does not list it', async () => {
+    const others = [
+      { ...listed, id: 3, productName: 'Basic' },
+      { ...listed, id: 4, productName: 'Plus' },
+    ]
+    const { wrapper } = await mountLoaded(detail, undefined, {
+      'GET /api/services?': () => json({ items: others, totalCount: 2 }),
+    })
+
+    const switcher = wrapper.get('[data-testid="client-service-switcher"]')
+    expect(switcher.text()).toContain('#9 Starter')
+    expect(switcher.text()).not.toContain('Product/Service')
   })
 
   it('returns to the services of its client with the back pill', async () => {

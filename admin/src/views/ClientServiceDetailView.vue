@@ -292,12 +292,29 @@ const productOptions = computed(() =>
   productList.value.map(p => ({ value: p.id, label: p.name })),
 )
 
+/**
+ * The label the service switcher gives a service: its number and product.
+ *
+ * @param id - The service id.
+ * @param productName - The name of the ordered product.
+ * @returns The label, for example `#34 Starter`.
+ */
+const switcherLabel = (id: number, productName: string): string => `#${id} ${productName}`
+
 /** Service switcher options for UiSelect dropdown. */
 const serviceSwitcherOptions = computed(() =>
   clientServices.value.map(s => ({
     value: s.id,
-    label: `#${s.id} ${s.productName}`,
+    label: switcherLabel(s.id, s.productName),
   })),
+)
+
+/**
+ * The label of the open service. The options are one lookup page of the client's services, so the open one
+ * is not always among them (a long list, a lookup that failed); the select then shows this label instead of its placeholder.
+ */
+const currentServiceLabel = computed<string | undefined>(() =>
+  service.value ? switcherLabel(service.value.id, service.value.productName) : undefined,
 )
 
 /** Title of the danger confirmation. */
@@ -819,6 +836,7 @@ onMounted(() => {
               v-if="clientServices.length > 1"
               :model-value="Number(serviceId)"
               :options="serviceSwitcherOptions"
+              :value-label="currentServiceLabel"
               :placeholder="t('shared.productService')"
               searchable
               @update:model-value="switchService"

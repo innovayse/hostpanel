@@ -37,7 +37,9 @@ if (loaded === null) {
 </script>
 
 <template>
+  <!-- A refused view throws in setup; Vue may still draw once without it, so nothing is drawn then -->
   <PluginView
+    v-if="loaded"
     :plugin-id="loaded.pluginId"
     :view="loaded.view"
     :values="contextValues(context)"

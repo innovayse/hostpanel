@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using Innovayse.Hostpanel.Integration.Tests.Clients;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Logging;
 

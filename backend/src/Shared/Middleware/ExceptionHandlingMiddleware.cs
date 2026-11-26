@@ -186,10 +186,12 @@ public class ExceptionHandlingMiddleware
 
         // Guard: if the response has already started (headers flushed), we cannot modify
         // status code or content type; just log and bail to avoid InvalidOperationException.
+        // The exception goes with the line: the debug line above is off in production, and without
+        // it nobody can tell what was thrown after the answer had begun.
         if (context.Response.HasStarted)
         {
             _logger.LogWarning(
-                "Response already started, cannot write ProblemDetails for {ErrorType}", response.Type);
+                exception, "Response already started, cannot write ProblemDetails for {ErrorType}", response.Type);
             return;
         }
 

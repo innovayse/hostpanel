@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.Shared.Constants;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -18,6 +19,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RefusedRequestTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>A route any signed-in caller may read.</summary>
+    private const string MeRoute = "/api/auth/me";
+
     /// <summary>A signed-in user who owns no client record and holds no client role is refused with one 403 body.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -46,6 +50,64 @@ public sealed class RefusedRequestTests(IntegrationTestFactory factory) : IClass
         var response = await http.GetAsync("/api/clients/me");
 
         await AssertAnsweredOnceAsync(response, HttpStatusCode.Unauthorized, SharedErrorCodes.Unauthorized, logs);
+    }
+
+    /// <summary>
+    /// A bearer token that is no readable token (bad base64, empty parts, plain text, an empty value) is refused as an
+    /// ordinary invalid credential: one 401 body, never a server error.
+    /// </summary>
+    /// <param name="authorization">The <c>Authorization</c> header value the caller sends.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("Bearer !!!not-base64!!!")]
+    [InlineData("Bearer e30.%%%.signature")]
+    [InlineData("Bearer a.b.c")]
+    [InlineData("Bearer ..")]
+    [InlineData("Bearer a..c")]
+    [InlineData("Bearer eyJhbGciOiJIUzI1NiJ9.bm90IGpzb24.signature")]
+    [InlineData("Bearer garbage")]
+    [InlineData("Bearer ")]
+    public async Task MalformedBearerTokenIsRefusedOnceAsync(string authorization)
+    {
+        var logs = new RecordingLoggerProvider();
+        using var host = HostWith(logs);
+        using var http = host.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, MeRoute);
+        request.Headers.TryAddWithoutValidation("Authorization", authorization);
+
+        var response = await http.SendAsync(request);
+
+        await AssertAnsweredOnceAsync(response, HttpStatusCode.Unauthorized, SharedErrorCodes.Unauthorized, logs);
+    }
+
+    /// <summary>A valid bearer token is still accepted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ValidBearerTokenIsAcceptedAsync()
+    {
+        var token = await factory.GetAdminTokenAsync();
+        using var http = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, MeRoute);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await http.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    /// <summary>A valid session cookie is still accepted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ValidSessionCookieIsAcceptedAsync()
+    {
+        var token = await factory.GetAdminTokenAsync();
+        using var http = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, MeRoute);
+        request.Headers.Add("Cookie", $"{LocalSessionCookie.Name}={token}");
+
+        var response = await http.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     /// <summary>

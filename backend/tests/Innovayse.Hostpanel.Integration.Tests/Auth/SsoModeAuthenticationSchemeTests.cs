@@ -1,10 +1,13 @@
 #if INNOVAYSE_SSO
 // Only compiled when the optional sign-on package is referenced (the InnovayseSso property in
 // backend/Directory.Build.props): these tests exercise that package's scheme wiring.
+using System.Buffers.Text;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
+using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -118,6 +121,38 @@ public sealed class SsoModeAuthenticationSchemeTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The bearer scheme's own selector answers for every header a caller can send: a token that is not readable stays on
+    /// the default handler, which refuses it as an invalid token, instead of the selector throwing a server error.
+    /// </summary>
+    /// <param name="token">The text a caller put after <c>Bearer </c>.</param>
+    [Theory]
+    [InlineData("!!!not-base64!!!")]
+    [InlineData("e30.%%%.signature")]
+    [InlineData("a.b.c")]
+    [InlineData("..")]
+    [InlineData("garbage")]
+    public void TheBearerSelectorKeepsAnUnreadableTokenOnTheDefaultHandler(string token)
+    {
+        var selector = BearerSelector();
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Authorization = $"Bearer {token}";
+
+        selector(context).Should().BeNull();
+    }
+
+    /// <summary>A token this product minted itself is sent to the local scheme.</summary>
+    [Fact]
+    public void TheBearerSelectorSendsATokenOfTheLocalIssuerToTheLocalScheme()
+    {
+        var issuer = _factory!.Services.GetRequiredService<IOptions<JwtOptions>>().Value.Issuer;
+        var payload = Base64Url.EncodeToString(Encoding.UTF8.GetBytes($$"""{"iss":"{{issuer}}"}"""));
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Authorization = $"Bearer eyJhbGciOiJIUzI1NiJ9.{payload}.signature";
+
+        BearerSelector()(context).Should().Be(LocalJwtScheme.Name);
+    }
+
+    /// <summary>
     /// Where the sign-on provider owns the people the local sign-in route is absent, and says so in the standard
     /// error body (problem+json, the not-found code in <c>type</c>) rather than an empty 404.
     /// </summary>
@@ -135,6 +170,14 @@ public sealed class SsoModeAuthenticationSchemeTests : IAsyncLifetime
         body.RootElement.GetProperty("type").GetString().Should().Be(SharedErrorCodes.NotFound);
         body.RootElement.GetProperty("detail").GetString().Should().NotBeNullOrWhiteSpace();
     }
+
+    /// <summary>Reads the selector the sign-on bearer scheme uses to hand a locally issued token to the local scheme.</summary>
+    /// <returns>The selector.</returns>
+    private Func<HttpContext, string?> BearerSelector() =>
+        _factory!.Services
+            .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme)
+            .ForwardDefaultSelector!;
 }
 
 #endif

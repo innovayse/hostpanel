@@ -93,7 +93,7 @@ export const contextValues = (context: PluginSlotContext): Record<string, string
 
 /**
  * Names the query a widget's route calls carry so the host can bind the call to the record: the service a
- * widget sits on. A client page carries nothing, since the host reads that client from the slot itself.
+ * widget sits on. A client page carries nothing: the host binds a client to an admin call only through a service.
  *
  * @param context - The slot's context.
  * @returns `{ serviceId }` for a service page; empty for a client page.

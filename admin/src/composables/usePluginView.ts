@@ -142,7 +142,8 @@ const readPluginRoute = (
   route: PluginViewRoute,
   query: Record<string, string> = {},
 ): Promise<PluginCallResult> => {
-  const sent = { ...context.query, ...query }
+  // The page context is applied last: a view never redirects a call to another record than the page shows.
+  const sent = { ...query, ...context.query }
   const request = pluginRouteRequest(route, context.values, sent)
   if (request === null || request.method !== HttpMethod.Get) {
     return store.callRoute(context.pluginId, route, context.values, undefined, sent)

@@ -18,7 +18,7 @@
   },
   "byAuthor": "por {author}",
   "installedVersion": "Instalado {version}",
-  "staged": "Versión {version} preparada; se aplica tras reiniciar",
+  "staged": "Versión {version} aún no aplicada",
   "updateAvailable": "Actualización disponible: {version}",
   "updateTo": "Actualizar a {version}",
   "links": {
@@ -37,7 +37,6 @@
     "label": "Clave de licencia",
     "placeholder": "Pega la clave de licencia",
     "save": "Guardar clave",
-    "remove": "Quitar clave",
     "needed": "Guarda una clave de licencia antes de instalar este complemento."
   },
   "versions": {

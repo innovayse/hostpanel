@@ -1,9 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Users;
@@ -99,6 +102,32 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
         var response = await client.DeleteAsync($"/api/admin/users/{other}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>Deleting an administrator deletes their notification read marks and leaves everyone else's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DeletingAnAdmin_DeletesTheirNotificationReadMarksOnlyAsync()
+    {
+        var client = await UsersTestSeeds.AdminClientAsync(factory);
+        var other = await CreateAdminAsync(factory, $"reader-admin-{Guid.NewGuid():N}@example.com");
+        var bystander = $"bystander-{Guid.NewGuid():N}";
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            context.ActivityReads.Add(ActivityRead.Create(other, "InvoiceOverdue:1:1", TestMoments.Seeded));
+            context.ActivityReads.Add(ActivityRead.Create(other, "InvoiceOverdue:2:1", TestMoments.Seeded));
+            context.ActivityReads.Add(ActivityRead.Create(bystander, "InvoiceOverdue:1:1", TestMoments.Seeded));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var response = await client.DeleteAsync($"/api/admin/users/{other}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using var check = factory.Services.CreateScope();
+        var reads = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>().ActivityReads;
+        (await reads.CountAsync(r => r.UserId == other, CancellationToken.None)).Should().Be(0);
+        (await reads.CountAsync(r => r.UserId == bystander, CancellationToken.None)).Should().Be(1);
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

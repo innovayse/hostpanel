@@ -168,6 +168,20 @@ describe('UiSkeletonOf', () => {
       expect(wrapper.findAll('.h-10.w-28')).toHaveLength(1)
     })
 
+    it('draws the toolbar action bars in the toolbar row, as the real toolbar does with its actions slot', () => {
+      const wrapper = mountSkeleton({ ...list, toolbar: { search: true, filters: ['shared.status'], actions: 1 } })
+      const actions = wrapper.get('[data-testid="list-toolbar-actions"]')
+
+      expect(actions.element.parentElement?.contains(wrapper.get('input[type="search"]').element)).toBe(true)
+      expect(actions.findAll('.h-10.w-28')).toHaveLength(1)
+    })
+
+    it('draws no actions wrapper for a toolbar with no actions', () => {
+      const wrapper = mountSkeleton({ ...list, toolbar: { search: true } })
+
+      expect(wrapper.find('[data-testid="list-toolbar-actions"]').exists()).toBe(false)
+    })
+
     it('folds the toolbar actions on a phone like the header ones', () => {
       const wrapper = mountSkeleton({ ...list, toolbar: { search: true, actions: 2 } })
 
@@ -284,7 +298,7 @@ describe('UiSkeletonOf', () => {
     it('draws its parts in the order the schema lists them', () => {
       const schema: CompositeSkeletonSchema = {
         kind: SkeletonKind.Composite,
-        header: { title: 'shared.clients', backLabel: 'shared.name' },
+        header: { title: 'shared.clients', crumbs: true },
         parts: [
           { kind: SkeletonPartKind.Toolbar, toolbar: { search: true } },
           { kind: SkeletonPartKind.Form, columns: [[{ key: 'first', fields: [{ key: 'a', label: 'shared.name' }] }]] },
@@ -307,11 +321,13 @@ describe('UiSkeletonOf', () => {
       expect(wrapper.get('[data-testid="ui-skeleton-tiles"]').element.children[0]?.querySelectorAll('[data-testid="ui-skeleton-bar"]').length).toBeGreaterThan(4 * 2)
     })
 
-    it('draws a back pill with the real caption and no target when the header names one', () => {
-      const wrapper = mountSkeleton({ kind: SkeletonKind.Composite, header: { title: 'shared.clients', backLabel: 'shared.name' }, parts: [] })
+    it('draws a bar where the breadcrumb trail will be when the header says the screen has one, and nothing otherwise', () => {
+      const withTrail = mountSkeleton({ kind: SkeletonKind.Composite, header: { title: 'shared.clients', crumbs: true }, parts: [] })
+      const without = mountSkeleton({ kind: SkeletonKind.Composite, header: { title: 'shared.clients' }, parts: [] })
 
-      expect(wrapper.get('[data-testid="ui-page-header-back"]').text()).toBe('Name')
-      expect(wrapper.get('[data-testid="ui-page-header-back"]').attributes('href')).toBeUndefined()
+      expect(withTrail.find('[data-testid="ui-page-header-crumbs-skeleton"]').exists()).toBe(true)
+      expect(without.find('[data-testid="ui-page-header-crumbs-skeleton"]').exists()).toBe(false)
+      expect(withTrail.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
     })
   })
 

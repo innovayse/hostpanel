@@ -57,7 +57,8 @@ describe('ServiceChangeRequestsView', () => {
     const wrapper = await mountRoutedSettled(ServiceChangeRequestsView, '/clients/plan-changes')
 
     const row = wrapper.get('[data-testid="plan-changes-row-5"]').text()
-    expect(row).toContain('Basic → Pro')
+    expect(row).toContain('Basic')
+    expect(row).toContain('Pro')
     expect(row).toContain('Upgrade')
     expect(row).toContain('Pending')
     expect(row).toContain('$4.50 USD')

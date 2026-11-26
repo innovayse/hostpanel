@@ -7,6 +7,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useClientTicketsStore } from '@/stores/clientTickets'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
 import { TicketPriority } from '@/types/ticket'
@@ -19,13 +20,16 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { ClientSection, clientItemPath, clientSectionPath } from '@/lib/routes'
+import { ClientSection, clientItemPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema from '@/views/ClientOpenTicketView.schema'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiDirection } from '@/utils/ui/layout'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Clients, the client, Tickets, the new ticket. */
+const { clientCrumbs } = usePageCrumbs()
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -96,9 +100,7 @@ onMounted(() => {
   <UiStack>
     <UiPageHeader
       v-bind="schemaHeader(schema, t)"
-      :back-to="clientSectionPath(clientId, ClientSection.Tickets)"
-      :back-label="t('shared.tickets')"
-      back-testid="client-open-ticket-back"
+      :crumbs="clientCrumbs(clientId, ClientSection.Tickets, schemaHeader(schema, t).title)"
     />
 
     <UiErrorState

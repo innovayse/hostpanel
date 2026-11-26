@@ -35,7 +35,7 @@ export const SERVER_GROUPS_TABLE: SkeletonTable = {
     { key: 'name', label: 'servers.servers.groupName', size: UiColumnSize.Grow },
     { key: 'fillType', label: 'servers.servers.fillType' },
     { key: 'servers', label: 'servers.servers.servers' },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

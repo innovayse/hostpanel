@@ -24,7 +24,7 @@
             <UiTableTh>{{ $t('client.contacts.colCompany') }}</UiTableTh>
             <UiTableTh>{{ $t('client.contacts.colEmail') }}</UiTableTh>
             <UiTableTh>{{ $t('client.contacts.colPhone') }}</UiTableTh>
-            <UiTableTh />
+            <UiTableTh actions />
           </UiTableRow>
         </UiTableHead>
       </template>

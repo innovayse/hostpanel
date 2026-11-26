@@ -10,10 +10,12 @@ import { useI18n } from 'vue-i18n'
 import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useStorefrontList } from '@/composables/useStorefrontList'
-import { storefrontColumnCaptions } from '@/lib/storefrontList'
+import { storefrontListColumns } from '@/lib/storefrontList'
+import type { StorefrontListColumn } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useFaqsStore } from '@/stores/faqs'
 import type { Faq } from '@/types/faq'
@@ -41,8 +43,8 @@ const CATEGORY_LABEL_KEYS: Record<FaqCategory, string> = {
   [FaqCategory.Products]: 'storefront.faqs.categories.products',
 }
 
-/** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
+/** Columns between the drag handle and the actions, with their translated captions. */
+const columns = computed<StorefrontListColumn[]>(() => storefrontListColumns(schema.table.columns, t))
 
 /**
  * Label of a category; a category this build does not know is shown as received.
@@ -121,9 +123,7 @@ const editRoute = (item: Faq): string => editPath(AppRoute.StorefrontFaqs, item.
         <UiBadge :tone="UiTone.Primary" small>{{ categoryLabel(item.category) }}</UiBadge>
       </UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
-          {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
-        </UiBadge>
+        <UiStatusBadge :state="item.isActive" :on-label="t('shared.active')" :off-label="t('shared.inactive')" />
       </UiTableCell>
     </template>
   </StorefrontListTable>

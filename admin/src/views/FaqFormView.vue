@@ -16,7 +16,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
 import { useStorefrontForm } from '@/composables/useStorefrontForm'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations } from '@/lib/storefrontTranslations'
 import { ContentLanguage } from '@/locales/contentLanguage'
 import { useFaqsStore } from '@/stores/faqs'
 import type { Faq, FaqPayload, FaqTranslation } from '@/types/faq'
@@ -128,7 +128,7 @@ const flow = useStorefrontForm<Faq, FaqPayload>({ store, form, listPath: AppRout
       </template>
 
       <template #field-locale>
-        <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="faq-form-tab" />
+        <UiLocalizedField v-model="activeLocale" :filled="filled" testid="faq-form-tab" />
       </template>
 
       <template #field-translations="{ id }">

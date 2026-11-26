@@ -3,7 +3,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import { UiCardRole, UiColumnKind, UiColumnSize, UiColumnWidth } from '@/utils/ui/table'
 
 describe('UiTableHeader', () => {
@@ -67,11 +70,22 @@ describe('UiTableHeader', () => {
     expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-px', 'text-end']))
   })
 
-  it('keeps the caption of an actions column for assistive technology only', () => {
-    const wrapper = mount(UiTableHeader, { props: { actions: true }, slots: { default: 'Actions' } })
+  it('names an actions column "Actions" by default, with no caption from the screen', () => {
+    const wrapper = mount(UiTableHeader, {
+      props: { actions: true },
+      global: { provide: { [UI_TABLE_CONTEXT as symbol]: { density: UiTableDensity.Comfortable, actionsLabel: 'Actions' } } },
+    })
 
-    expect(wrapper.get('span').classes()).toContain('sr-only')
-    expect(wrapper.get('span').classes()).not.toContain('contents')
+    expect(wrapper.text()).toBe('Actions')
+    expect(wrapper.get('span').classes()).toContain('contents')
+  })
+
+  it('draws no default caption for a column that is not the actions column', () => {
+    const wrapper = mount(UiTableHeader, {
+      global: { provide: { [UI_TABLE_CONTEXT as symbol]: { density: UiTableDensity.Comfortable, actionsLabel: 'Actions' } } },
+    })
+
+    expect(wrapper.text()).toBe('')
   })
 
   it('is a column header for assistive technology whatever the layout', () => {
@@ -109,7 +123,7 @@ describe('UiTableHeader', () => {
 
     expect(wrapper.attributes('aria-sort')).toBe('ascending')
     expect(wrapper.get('button').text()).toContain('Name')
-    expect(wrapper.get('button').text()).toContain('▲')
+    expect(wrapper.getComponent(UiIcon).props('markup')).toBe(Icon.ArrowUp)
 
     await wrapper.get('[data-testid="sort-name"]').trigger('click')
 
@@ -117,12 +131,12 @@ describe('UiTableHeader', () => {
   })
 
   it.each([
-    ['none', '↕'],
-    ['descending', '▼'],
+    ['none', Icon.Sort],
+    ['descending', Icon.ArrowDown],
   ] as const)('shows the arrow for %s', (direction, arrow) => {
     const wrapper = mount(UiTableHeader, { props: { sortable: true, direction } })
 
-    expect(wrapper.get('button').text()).toContain(arrow)
+    expect(wrapper.getComponent(UiIcon).props('markup')).toBe(arrow)
   })
 
   it('gives the sort button a visible keyboard focus outline', () => {

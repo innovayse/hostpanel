@@ -31,10 +31,10 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ProductsView.schema'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useCurrenciesStore } from '@/stores/currencies'
-import { formatAffixed } from '@/lib/money'
+import { formatAffixed, groupedAmount } from '@/lib/money'
 import { Icon } from '@/lib/icons'
 import { useSettingsStore } from '@/stores/settings'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
@@ -250,7 +250,7 @@ const formatPrice = (amount: number | null): string => {
   }
   const currency = baseCurrency.value
   if (!currency) {
-    return amount.toFixed(2)
+    return groupedAmount(amount)
   }
   return formatAffixed(amount, currency)
 }
@@ -474,10 +474,8 @@ const productActions = (product: Product): UiMenuAction[] => {
             </UiText>
           </UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="product.status === ProductStatus.Active"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('shared.active')"
               :off-label="t('shared.inactive')"
             />

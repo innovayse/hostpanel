@@ -40,7 +40,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { enumValueOf } from '@/lib/enumValue'
 import { ContentLanguage } from '@/locales/contentLanguage'
-import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, collectTranslations, filledLocales, formsFromTranslations } from '@/lib/storefrontTranslations'
 import { useKnowledgebaseStore } from '@/stores/knowledgebase'
 import type { KbArticle, KbArticleTranslation, KbCategory } from '@/types/kbarticle'
 import { KnowledgebaseTab } from '@/types/supporttab'
@@ -497,7 +497,7 @@ onMounted(() => {
               data-testid="knowledgebase-article-category"
             />
           </UiField>
-          <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="knowledgebase-article-locale" />
+          <UiLocalizedField v-model="activeLocale" :filled="filled" testid="knowledgebase-article-locale" />
           <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('support.knowledgebase.englishRequired') }}</UiText>
           <UiField :label="t('shared.title')" :error="store.fieldErrors.translations">
             <UiInput

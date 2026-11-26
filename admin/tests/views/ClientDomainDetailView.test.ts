@@ -273,12 +273,21 @@ describe('ClientDomainDetailView', () => {
     expect(wrapper.get('[data-testid="client-domain-saved"]').text()).toBe('Done. The registrar accepted the change.')
   })
 
-  it('returns to the domains of its client with the back pill', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
+  it('draws the trail of its client above the title: clients, the client, domains, the domain', async () => {
+    stubRoutes({ 'GET /api/domains/3': () => domain() })
     const wrapper = await mountDomain()
-    const back = wrapper.get('[data-testid="client-domain-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/clients/7/domains')
-    expect(back.text()).toBe('Domains')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/clients', '/clients/7', '/clients/7/domains'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe('example.com')
+    expect(wrapper.find('[data-testid="client-domain-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('draws the status badge inline beside the title, in its title row', async () => {
+    stubRoutes({ 'GET /api/domains/3': () => domain('Active') })
+    const wrapper = await mountDomain()
+
+    expect(wrapper.get('[data-testid="ui-page-header-title-row"]').find('[data-testid="client-domain-status-badge"]').exists()).toBe(true)
   })
 })

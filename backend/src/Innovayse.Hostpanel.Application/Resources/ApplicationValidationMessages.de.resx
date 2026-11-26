@@ -1810,4 +1810,7 @@
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
     <value>Der Seitencursor der Registrierungsstelle ist zu lang.</value>
   </data>
+  <data name="ActivityEventKeyInvalid" xml:space="preserve">
+    <value>Das ist keine gültige Benachrichtigungs-ID.</value>
+  </data>
 </root>

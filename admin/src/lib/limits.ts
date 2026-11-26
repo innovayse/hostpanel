@@ -4,6 +4,8 @@
  * the name instead of repeating the number, so one value changes in one place.
  */
 
+import { PollKind } from '@/types/poller'
+
 /** Milliseconds in a second. */
 export const MS_PER_SECOND = 1000
 
@@ -67,9 +69,6 @@ export const TWO_FACTOR_CODE_LENGTH = 6
 /** The top of a percentage. */
 export const MAX_PERCENT = 100
 
-/** How often a running migration job is polled for its status, in milliseconds. */
-export const POLL_INTERVAL_MS = 2 * MS_PER_SECOND
-
 /** How long a "copied" confirmation stays on screen, in milliseconds. */
 export const COPIED_VISIBLE_MS = 2 * MS_PER_SECOND
 
@@ -87,3 +86,14 @@ export const CLIENT_TAX_ID_MAX_LENGTH = 50
 
 /** Longest reason a client's tax exemption may be given. */
 export const CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH = 500
+
+/** How often each kind of poller reads, in milliseconds: the one table `usePoller` takes its interval from. */
+export const POLL_INTERVALS_MS: Record<PollKind, number> = {
+  [PollKind.MigrationStatus]: 2 * MS_PER_SECOND,
+  [PollKind.ServerRestart]: 2 * MS_PER_SECOND,
+  [PollKind.PluginFollowUp]: 3 * MS_PER_SECOND,
+  [PollKind.DemoCountdown]: MS_PER_MINUTE,
+}
+
+/** How long the panel waits for the server to come back after a restart before it offers a retry, in milliseconds. */
+export const RESTART_TIMEOUT_MS = 2 * MS_PER_MINUTE

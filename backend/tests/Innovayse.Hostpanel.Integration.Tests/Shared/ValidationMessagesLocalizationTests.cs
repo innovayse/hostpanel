@@ -1,6 +1,6 @@
 using System.Globalization;
-using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -194,7 +194,7 @@ public sealed class ValidationMessagesLocalizationTests
     [Fact]
     public void PlaceholdersSurviveTranslation()
     {
-        foreach (var locale in LocaleOptions.SupportedLocales)
+        foreach (var locale in SupportedLanguages.All)
         {
             var message = Resolve<ApplicationValidationMessages>(locale, "ProductNameTooLong", 64);
 

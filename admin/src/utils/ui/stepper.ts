@@ -18,16 +18,22 @@ export type StepDirection = (typeof StepDirection)[keyof typeof StepDirection]
 const MIN_DECIMALS = 2
 
 /**
+ * Counts the decimals a step is written with (0.01 has two, 1 has none).
+ *
+ * @param step - The step the value moves by.
+ * @returns The number of decimal places of the step.
+ */
+export const stepDecimals = (step: number): number => (step.toString().split('.')[1] || '').length
+
+/**
  * Rounds a value to the step's precision (at least two decimals).
  *
  * @param value - Value to round.
  * @param step - The step the value moves by.
  * @returns The rounded value.
  */
-const roundToStep = (value: number, step: number): number => {
-  const decimals = (step.toString().split('.')[1] || '').length
-  return parseFloat(value.toFixed(Math.max(decimals, MIN_DECIMALS)))
-}
+const roundToStep = (value: number, step: number): number =>
+  parseFloat(value.toFixed(Math.max(stepDecimals(step), MIN_DECIMALS)))
 
 /**
  * Computes the value one step away from the current one.

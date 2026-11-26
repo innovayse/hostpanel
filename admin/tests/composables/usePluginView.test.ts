@@ -14,11 +14,15 @@ import {
   usePluginView,
 } from '@/composables/usePluginView'
 import type { PluginActionMessage, PluginViewContext } from '@/composables/usePluginView'
-import { PLUGIN_FOLLOW_UP_INTERVAL_MS } from '@/lib/pluginView'
+import { POLL_INTERVALS_MS } from '@/lib/limits'
+import { PollKind } from '@/types/poller'
 import { json } from '../helpers/fetch'
 import { mountWithApp } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { ext, SAMPLE_PLUGIN } from '../helpers/pluginView'
+
+/** How often a follow-up reads its condition, in milliseconds. */
+const FOLLOW_UP_MS = POLL_INTERVALS_MS[PollKind.PluginFollowUp]
 
 afterEach(() => {
   vi.useRealTimers()
@@ -55,6 +59,7 @@ const mountProbe = async (): Promise<{ probe: Probe; watches: Map<string, () => 
   })
   const Host = defineComponent({
     setup: () => {
+      /** How often each view was refreshed. */
       const refreshes = ref<Record<string, number>>({})
       providePluginView({
         pluginId: SAMPLE_PLUGIN,
@@ -110,7 +115,7 @@ describe('usePluginFollowUp', () => {
     probe.follow({ refresh: [], until: { route: { method: 'get', path: '/state' }, field: 'n', equals: 1 } })
     expect(watches.has('probe')).toBe(true)
     watches.get('probe')?.()
-    await vi.advanceTimersByTimeAsync(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+    await vi.advanceTimersByTimeAsync(FOLLOW_UP_MS * 3)
 
     expect(requestsOf(mock)).toHaveLength(before)
   })

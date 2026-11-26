@@ -22,6 +22,6 @@ defineProps<{
     :srcdoc="html"
     :title="title"
     sandbox=""
-    class="h-[28rem] w-full rounded-control border border-border bg-white"
+    class="h-[28rem] w-full rounded-control border border-border bg-surface-paper"
   />
 </template>

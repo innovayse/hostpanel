@@ -22,6 +22,9 @@
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { UiSize } from '@/utils/ui/size'
 import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import { useDropdown } from '@/composables/useDropdown'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
@@ -437,17 +440,12 @@ onUnmounted(cancelSearchTimer)
       <span class="truncate" :class="showingPlaceholder ? 'text-text-muted' : 'text-text-primary'">
         {{ selectedLabel }}
       </span>
-      <svg
-        class="text-text-secondary shrink-0 transition-transform duration-200"
-        :class="[compact ? 'w-3.5 h-3.5' : 'w-4 h-4', open ? 'rotate-180' : '']"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        aria-hidden="true"
-      >
-        <polyline points="6 9 12 15 18 9" />
-      </svg>
+      <UiIcon
+        :markup="Icon.ChevronDown"
+        :size="compact ? UiSize.Sm : UiSize.Md"
+        class="text-text-secondary transition-transform duration-200"
+        :class="open ? 'rotate-180' : ''"
+      />
     </button>
 
     <!-- The list: a popover in the page body (no card around the trigger can paint over it) or a bottom sheet on a phone -->
@@ -514,18 +512,13 @@ onUnmounted(cancelSearchTimer)
               <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
               <span v-if="opt.description" class="truncate text-[0.75rem] opacity-70">{{ opt.description }}</span>
             </span>
-            <svg
+            <UiIcon
               v-if="opt.value === props.modelValue"
-              class="w-3.5 h-3.5 shrink-0 ml-2"
+              :markup="Icon.Check"
+              :size="UiSize.Sm"
+              class="ml-2"
               :class="compact ? 'text-primary-400 light:text-primary-700' : 'text-surface-base'"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              aria-hidden="true"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            />
           </div>
         </template>
       </div>

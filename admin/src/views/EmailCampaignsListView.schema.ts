@@ -22,7 +22,7 @@ const schema: ListSkeletonSchema = {
       { key: 'scheduledAt', label: 'emailCampaigns.list.scheduledAt', kind: UiColumnKind.Date },
       { key: 'sentAt', label: 'emailCampaigns.list.sentAt', kind: UiColumnKind.Date },
       { key: 'delivery', label: 'emailCampaigns.list.delivery' },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

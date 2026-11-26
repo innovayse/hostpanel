@@ -3,7 +3,6 @@
   "notifications": "Ծանուցումներ",
   "notificationsWithCount": "Ծանուցումներ, {count} նոր",
   "viewAllNotifications": "Դիտել բոլոր ծանուցումները",
-  "newCount": "{count} նոր | {count} նոր",
   "noNotifications": "Ծանուցումներ չկան",
   "help": "Օժանդակություն",
   "roles": {

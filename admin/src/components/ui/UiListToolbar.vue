@@ -1,7 +1,9 @@
 <script setup lang="ts" generic="K extends string">
 /**
  * The toolbar every list shares: a search box, the "Filters" button that opens the filter fields (the default
- * slot) and, under them, the chips of the filters that are applied.
+ * slot), the screen's own actions at the trailing end (the `actions` slot, a create button) and, under them, the
+ * chips of the filters that are applied. Search and Filters sit on the left and the actions on the right of one row,
+ * which wraps only when the width runs out (a phone).
  *
  * Each part appears only when the screen uses it: the search box when `v-model:search` is bound, the Filters
  * button when the default slot holds fields. A list with only a status filter, or only a search, shows just that.
@@ -92,6 +94,9 @@ const emit = defineEmits<{
       >
         <slot />
       </UiFilterTrigger>
+      <div v-if="$slots.actions" class="ml-auto flex shrink-0 items-center gap-2" data-testid="list-toolbar-actions">
+        <slot name="actions" />
+      </div>
     </UiStack>
     <UiFilterChips :chips="props.chips" @remove="emit('remove', $event)" @clear="emit('clear')" />
   </UiStack>

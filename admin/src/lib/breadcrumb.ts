@@ -87,10 +87,37 @@ const labelOf = (entry: NavItem | NavChild, translate: BreadcrumbTranslate): str
 }
 
 /**
+ * Tells whether a route segment is one the breadcrumb names.
+ *
+ * @param segment - A literal segment of a route pattern.
+ * @returns True for a {@link BreadcrumbSegment}, which narrows the type.
+ */
+const isBreadcrumbSegment = (segment: string): segment is BreadcrumbSegment => Object.values(BreadcrumbSegment).some((known) => known === segment)
+
+/**
+ * Tells whether a navigation path is the form of another page of the menu (`/support/tickets/new` is the form of
+ * `/support/tickets`): the trail then runs through that page and names the form as its own last step.
+ *
+ * @param to - The path of a navigation entry.
+ * @param sections - The navigation sections the page may be in.
+ * @returns True when the path ends in a named segment and the path without it is an entry of the menu.
+ */
+const isFormOfEntry = (to: string, sections: readonly NavSection[]): boolean => {
+  const segments = segmentsOf(to)
+  const last = segments.at(-1)
+  if (last === undefined || !isBreadcrumbSegment(last)) {
+    return false
+  }
+  const owner = `/${segments.slice(0, -1).join('/')}`
+  return sections.some((section) => section.items.some((item) => item.to === owner || (item.children ?? []).some((child) => child.to === owner)))
+}
+
+/**
  * Lists every navigation entry and page whose path the address lies under, from the sections.
  *
  * A page counts for its section only when its path lies under the section's own (a page the menu files under a
- * section but that lives at another address is not a step of that section's trail).
+ * section but that lives at another address is not a step of that section's trail), and a menu shortcut to the form of
+ * another page is no step of its own: the page it belongs to is.
  *
  * @param path - The address of the page.
  * @param sections - The navigation sections to look in.
@@ -100,7 +127,7 @@ const candidatesFor = (path: string, sections: readonly NavSection[]): NavMatch[
   sections.flatMap((section) => section.items.flatMap((item): NavMatch[] => [
     { item, to: item.to },
     ...(item.children ?? []).filter((child) => isUnder(child.to, item.to)).map((child): NavMatch => ({ item, child, to: child.to })),
-  ])).filter((candidate) => isUnder(path, candidate.to))
+  ])).filter((candidate) => isUnder(path, candidate.to) && !isFormOfEntry(candidate.to, sections))
 
 /**
  * Finds the navigation entry an address belongs to: the most specific one, a page of a section before the section.
@@ -116,14 +143,6 @@ const matchNav = (path: string, sections: readonly NavSection[]): NavMatch | und
     }
     return candidate.to.length === best.to.length && candidate.child !== undefined && best.child === undefined ? candidate : best
   }, undefined)
-
-/**
- * Tells whether a route segment is one the breadcrumb names.
- *
- * @param segment - A literal segment of a route pattern.
- * @returns True for a {@link BreadcrumbSegment}, which narrows the type.
- */
-const isBreadcrumbSegment = (segment: string): segment is BreadcrumbSegment => Object.values(BreadcrumbSegment).some((known) => known === segment)
 
 /**
  * Names the steps below the navigation entry from the route's own pattern.
@@ -174,11 +193,14 @@ export const breadcrumbOf = (
   if (match === undefined) {
     return [{ label: translate(crumbKey ?? FALLBACK_LABEL_KEY) }]
   }
+  const below = stepsBelow(pattern, segmentsOf(match.to).length, translate)
   const trail: UiBreadcrumbItem[] = [{ label: labelOf(match.item, translate), to: match.item.to }]
-  if (match.child !== undefined) {
+  // A page that shares the section's own address (the list of Clients) is the section again: it is a step of its own
+  // only as the current page, never as a second link to the same place above a page below it.
+  if (match.child !== undefined && (match.child.to !== match.item.to || below.length === 0)) {
     trail.push({ label: labelOf(match.child, translate), to: match.child.to })
   }
-  for (const label of stepsBelow(pattern, segmentsOf(match.to).length, translate)) {
+  for (const label of below) {
     trail.push({ label })
   }
   const current = trail.pop()

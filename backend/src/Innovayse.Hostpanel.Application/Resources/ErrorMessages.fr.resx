@@ -711,6 +711,12 @@
 <data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
     <value>La signature de ce paquet de plugin ne correspond pas à ses fichiers : il a été modifié après sa signature.</value>
   </data>
+<data name="HOST_DRAINING" xml:space="preserve">
+    <value>Le serveur redémarre et n'accepte plus de nouvelles requêtes. Il sera de retour dans un instant.</value>
+  </data>
+<data name="PLUGIN_APPLY_FAILED" xml:space="preserve">
+    <value>La nouvelle version de ce plugin n'a pas pu être chargée, la version précédente a donc été restaurée. Le motif est indiqué dans la liste des plugins.</value>
+  </data>
 <data name="PLUGIN_BUILT_IN" xml:space="preserve">
     <value>Ce plugin est fourni avec le serveur et ne peut être ni retiré ni remplacé.</value>
   </data>
@@ -802,7 +808,13 @@
     <value>Ce fichier n'a pas pu être lu comme une image. Téléversez un PNG, JPEG, WebP, GIF ou BMP.</value>
   </data>
 <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
-    <value>Cette image est trop volumineuse. Téléversez un fichier de moins de 5 Mo et d'au plus 8000 pixels de côté.</value>
+    <value>Ce fichier dépasse la limite de 5 Mo. Téléversez un fichier plus petit.</value>
+  </data>
+<data name="BRANDING_IMAGE_DIMENSIONS_TOO_LARGE" xml:space="preserve">
+    <value>Cette image dépasse 8000 pixels de côté ou 40 millions de pixels au total. Réduisez-la et téléversez-la de nouveau.</value>
+  </data>
+<data name="STORAGE_NOT_WRITABLE" xml:space="preserve">
+    <value>Le serveur ne peut pas enregistrer les fichiers téléversés pour le moment, car son dossier de téléversement n'est pas accessible en écriture. Demandez à l'administrateur de vérifier les droits du dossier.</value>
   </data>
 <data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
     <value>Les comptes de cette installation appartiennent au service de connexion, un compte ne peut donc pas être créé ici. Ajoutez d'abord la personne dans le service de connexion.</value>

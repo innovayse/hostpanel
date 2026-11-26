@@ -195,6 +195,22 @@ docker compose -f docker-compose.hub.yml up -d
 например `innovayse/hostpanel:api-0.4.0`. Плавающие теги `latest`
 (`api-latest`, `client-latest`, `admin-latest`) всегда указывают на текущий релиз.
 
+## Проверка установки {#check-the-installation}
+
+Запустите установщик с `--check`, чтобы проверить существующую установку, ничего не меняя:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh | bash -s -- --check
+```
+
+Добавьте `--dir <путь>`, если Hostpanel установлен не в `/opt/hostpanel`. Проверка читает сервис API в compose-файле
+установки и завершается ошибкой (код выхода 1), если его политика перезапуска не поднимает API после штатного завершения,
+то есть когда `restart` не задан или равен `on-failure` либо `no`. Автоматический перезапуск после изменения плагина намеренно
+завершает API и рассчитывает на этот перезапуск, поэтому без политики проверка завершается ошибкой. См. [Применение изменений плагина без консоли](../payments/plugins.md#applying-a-plugin-change).
+Исправление: `restart: unless-stopped` (или `always`) у сервиса API и `stop_grace_period`, больший
+`Plugins__DrainSeconds` (по умолчанию 45s), затем `docker compose up -d`. Повторный запуск установщика скачивает
+актуальный compose-файл, где есть и то и другое.
+
 ## Что проверить после обновления {#what-to-check-after-an-upgrade}
 
 - В журнале API нет ошибок запуска:

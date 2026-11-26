@@ -18,7 +18,7 @@ export const STOREFRONT_LOCALES: readonly [ContentLanguage, ...ContentLanguage[]
  * @param make - Makes the value of one locale; called once per locale so the values never share an object.
  * @returns A value for each locale.
  */
-const perLocale = <T>(make: (locale: ContentLanguage) => T): Record<ContentLanguage, T> => {
+export const perLocale = <T>(make: (locale: ContentLanguage) => T): Record<ContentLanguage, T> => {
   // Every locale is assigned in the loop below, which the empty literal cannot show to the compiler.
   const values = {} as Record<ContentLanguage, T>
   for (const locale of STOREFRONT_LOCALES) {

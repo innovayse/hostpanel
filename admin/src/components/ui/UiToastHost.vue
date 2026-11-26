@@ -32,19 +32,20 @@ onBeforeUnmount(store.clear)
     aria-live="polite"
     data-testid="ui-toast-host"
   >
-    <div
-      v-for="toast in store.toasts"
-      :key="toast.id"
-      class="pointer-events-auto flex items-center gap-3 rounded-card border py-2 pl-4 pr-2 text-sm shadow-lg"
-      :class="toneAlertClasses[toast.tone]"
-      :role="toast.tone === UiTone.Danger ? 'alert' : undefined"
-      :data-tone="toast.tone"
-      data-testid="ui-toast"
-    >
-      <span class="min-w-0 flex-1 text-text-primary">{{ toast.message }}</span>
-      <UiIconButton :label="t('shared.close')" :size="UiSize.Sm" data-testid="ui-toast-close" @click="store.dismiss(toast.id)">
-        <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
-      </UiIconButton>
+    <!-- The tone tints are translucent, so each toast sits on an opaque elevated surface: the page behind never shows through the text. -->
+    <div v-for="toast in store.toasts" :key="toast.id" class="pointer-events-auto rounded-card bg-surface-elevated shadow-popover">
+      <div
+        class="flex items-center gap-3 rounded-card border py-2 pl-4 pr-2 text-sm"
+        :class="toneAlertClasses[toast.tone]"
+        :role="toast.tone === UiTone.Danger ? 'alert' : undefined"
+        :data-tone="toast.tone"
+        data-testid="ui-toast"
+      >
+        <span class="min-w-0 flex-1 text-text-primary">{{ toast.message }}</span>
+        <UiIconButton :label="t('shared.close')" :size="UiSize.Sm" data-testid="ui-toast-close" @click="store.dismiss(toast.id)">
+          <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
+        </UiIconButton>
+      </div>
     </div>
   </div>
 </template>

@@ -20,7 +20,6 @@ import { Icon } from '@/lib/icons'
 import { migrationStatusLabelKey } from '@/lib/migrationStatus'
 import { migrationStatusTone } from '@/lib/tones'
 import type { MigrationJob } from '@/types/migration'
-import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
@@ -77,13 +76,12 @@ const createdAgo = computed<string>(() => formatRelativeFromNow(props.job.create
       <UiTooltip :text="t('migration.migration.deleteMigration')">
         <UiIconButton
           :label="t('migration.migration.deleteMigration')"
-          :variant="UiButtonVariant.Danger"
           :size="UiSize.Sm"
           :disabled="deleting"
           :data-testid="`migration-delete-${job.id}`"
           @click="emit('delete', job)"
         >
-          <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
+          <UiIcon :markup="Icon.Trash" :size="UiSize.Md" />
         </UiIconButton>
       </UiTooltip>
     </template>

@@ -193,6 +193,22 @@ Image tags on Docker Hub follow the pattern `<namespace>/hostpanel:<component>-<
 for example `innovayse/hostpanel:api-0.4.0`. The moving `latest` tags
 (`api-latest`, `client-latest`, `admin-latest`) always point at the current release.
 
+## Check the installation
+
+Run the installer with `--check` to check an existing installation without changing anything:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh | bash -s -- --check
+```
+
+Add `--dir <path>` when Hostpanel is not in `/opt/hostpanel`. The check reads the API service of the installation's
+compose file and fails (exit code 1) when its restart policy does not start the API again after a clean exit, that is,
+when it has no `restart` or has `on-failure` or `no`. The automatic restart after a plugin change exits the API on purpose
+and relies on that restart, so a missing policy makes the check fail. See [Applying a plugin change without a shell](../payments/plugins.md#applying-a-plugin-change).
+The fix is `restart: unless-stopped` (or `always`) on the API service, with a `stop_grace_period` longer than
+`Plugins__DrainSeconds` (45s by default), followed by `docker compose up -d`. Running the installer again downloads the
+current compose file, which already has both.
+
 ## What to check after an upgrade
 
 - The API log shows no startup errors:

@@ -36,8 +36,9 @@ public interface IBrandingImageProcessor
     /// every logo kind (<see cref="BrandingKind.Logo"/>, <see cref="BrandingKind.LogoDark"/>,
     /// <see cref="BrandingKind.LogoMark"/>) it is the re-encoded image alone. A failed
     /// <see cref="Result{T}"/> carries <c>BRANDING_IMAGE_INVALID</c> when the bytes are not an
-    /// image this deployment will store, or <c>BRANDING_IMAGE_TOO_LARGE</c> when the upload or the
-    /// pixels it decodes to are over a ceiling this deployment enforces. The precise cause behind
+    /// image this deployment will store, <c>BRANDING_IMAGE_TOO_LARGE</c> when the upload is over the byte
+    /// ceiling, or <c>BRANDING_IMAGE_DIMENSIONS_TOO_LARGE</c> (carrying the declared size under
+    /// <c>errors.dimensions</c>) when the pixels it decodes to are over a ceiling this deployment enforces. The precise cause behind
     /// either code is logged by the implementation, never carried on the <see cref="Result{T}"/>.
     /// </returns>
     public Task<Result<IReadOnlyList<BrandingRendition>>> RenderAsync(

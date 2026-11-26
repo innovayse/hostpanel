@@ -7,6 +7,10 @@
  * so a phone hides them and the reader types the value on the number keyboard.
  */
 import { computed, onUnmounted } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { fixedAmount } from '@/lib/money'
+import { UiSize } from '@/utils/ui/size'
 import { fieldBaseClasses, fieldWidthClasses } from '@/utils/ui/input'
 import { fieldSizeClasses } from '@/utils/ui/size'
 import { StepDirection, stepValue } from '@/utils/ui/stepper'
@@ -49,7 +53,7 @@ const displayValue = computed<string>(() => {
   if (props.modelValue === 0 || props.modelValue === undefined) {
     return ''
   }
-  return props.modelValue.toFixed(2)
+  return fixedAmount(props.modelValue)
 })
 
 /**
@@ -152,9 +156,7 @@ onUnmounted(stopHold)
         @mouseup="stopHold"
         @mouseleave="stopHold"
       >
-        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-          <polyline points="6 15 12 9 18 15" />
-        </svg>
+        <UiIcon :markup="Icon.ChevronUp" :size="UiSize.Xs" />
       </button>
       <button
         type="button"
@@ -167,9 +169,7 @@ onUnmounted(stopHold)
         @mouseup="stopHold"
         @mouseleave="stopHold"
       >
-        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-          <polyline points="18 9 12 15 6 9" />
-        </svg>
+        <UiIcon :markup="Icon.ChevronDown" :size="UiSize.Xs" />
       </button>
     </div>
   </div>

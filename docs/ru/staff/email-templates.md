@@ -106,6 +106,12 @@ keywords: "шаблоны писем, плейсхолдеры, транзакц
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда не удалось завершить услугу. Плейсхолдеры: service.id, reason' },
 ]" />
 
+### Плагины {#plugins}
+
+<SettingTable :settings="[
+  { name: 'plugin-change-ended-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда завершилось изменение плагина, применённое панелью в фоне: новая версия загружена и работает, либо её не удалось загрузить, и предыдущая версия восстановлена или плагин остался не установлен. Плейсхолдеры: plugin_id, from_version, to_version, applied, error, restored_version' },
+]" />
+
 ### Тикеты поддержки {#support-tickets}
 
 <SettingTable :settings="[

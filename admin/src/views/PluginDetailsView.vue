@@ -25,7 +25,7 @@ import PluginVersionList from '@/components/plugins/details/PluginVersionList.vu
 import { relationTo } from '@/components/plugins/details/versionOrder'
 import PluginProcessingDialog from '@/components/plugins/PluginProcessingDialog.vue'
 import PluginRemoveDialog from '@/components/plugins/PluginRemoveDialog.vue'
-import RestartBanner from '@/components/plugins/RestartBanner.vue'
+import PluginRestart from '@/components/plugins/PluginRestart.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDetailCards from '@/components/ui/UiDetailCards.vue'
@@ -37,8 +37,9 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { AppRoute } from '@/lib/routes'
-import { PluginErrorCode, PluginProcessingStep, VersionRelation } from '@/types/plugin'
+import { PluginErrorCode, PluginProcessingStep, PluginRestartState, VersionRelation } from '@/types/plugin'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto, RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
 import type { ServerOptionDto } from '@/types/server'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
@@ -50,6 +51,9 @@ import { UiCardPadding } from '@/utils/ui/card'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Plugins, the plugin. */
+const { crumbs } = usePageCrumbs()
 
 /** The current route: its `id` parameter names the plugin. */
 const route = useRoute()
@@ -145,9 +149,6 @@ const serversError = computed<string | null>(() => store.pluginServersError[plug
 
 /** True while an install, update, uninstall or licence change of this plugin is in flight. */
 const busy = computed<boolean>(() => store.isBusy(pluginId.value))
-
-/** True while the server restart request is in flight. */
-const restarting = ref(false)
 
 /** Bumped after a licence key is saved or removed; keys the licence card so its field starts empty again. */
 const licenceFieldEpoch = ref(0)
@@ -403,13 +404,6 @@ const handleRemoveKey = async (): Promise<void> => {
   showOutcome(outcome.ok, t('pluginDetails.feedback.licenceRemoved'), outcome.error)
 }
 
-/** Restarts the server so installed or removed plugins take effect. */
-const handleRestart = async (): Promise<void> => {
-  restarting.value = true
-  await store.restart()
-  restarting.value = false
-}
-
 // The same screen serves every plugin: a new id in the address loads that plugin.
 watch(pluginId, () => {
   void loadRegistry()
@@ -417,9 +411,11 @@ watch(pluginId, () => {
   void loadServers()
 })
 
-// The removal's outcome (the restart note) stays on screen until the operator closes it, then the page is left.
-watch(processing.open, (open) => {
-  if (!open && leavingAfterClose.value) {
+// The removal's outcome (the restart note) stays on screen until the operator closes it, then the page is left; a removal the
+// host restarts for runs behind the restart dialog, so the page is left once that is closed too.
+const settled = computed<boolean>(() => !processing.open.value && store.restartState === PluginRestartState.Idle)
+watch(settled, (done) => {
+  if (done && leavingAfterClose.value) {
     void router.push(AppRoute.Plugins)
   }
 })
@@ -432,13 +428,10 @@ onMounted(load)
   <UiStack :gap="UiGap.Lg" data-testid="plugin-details">
     <UiPageHeader
       :title="plugin?.name ?? t('pluginDetails.title')"
-      :back-to="AppRoute.Plugins"
-      :back-label="t('shared.plugins')"
-      back-mobile-only
-      back-testid="plugin-details-back"
+      :crumbs="crumbs(plugin?.name ?? t('pluginDetails.title'))"
     />
 
-    <RestartBanner v-if="store.requiresRestart" :restarting="restarting" @restart="handleRestart" />
+    <PluginRestart />
 
 
     <UiDetailCards v-if="showLoading" :columns="schema.columns" loading />

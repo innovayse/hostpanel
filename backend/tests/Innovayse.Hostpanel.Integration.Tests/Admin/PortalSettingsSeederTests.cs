@@ -53,6 +53,27 @@ public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
             keys.OrderBy(k => k));
     }
 
+    /// <summary>
+    /// Every setting kept per language is seeded with a row for each supported language, so an install upgraded
+    /// from before a language existed gains the new rows on its next start.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task EnsureSeededAsync_SeedsARowPerSupportedLanguageOfEveryLocalizedSettingAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        await ClearSettingsAsync(context);
+
+        await PortalSettingsSeeder.EnsureSeededAsync(context);
+
+        var keys = await context.Settings.AsNoTracking().Select(s => s.Key).ToListAsync();
+        foreach (var baseKey in PortalSettingKeys.LocalizedBases)
+        {
+            Assert.All(PortalSettingKeys.RowsOf(baseKey), row => Assert.Contains(row, keys));
+        }
+    }
+
     /// <summary>An operator's existing choice is left alone; only the missing keys are added.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

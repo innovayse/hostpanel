@@ -9,6 +9,7 @@
  * the pending-navigation state read.
  */
 import type { RouteLocationNormalized } from 'vue-router'
+import { pause } from '@/lib/pause'
 
 /** A dynamic `import()` function as vue-router keeps it in a route record. */
 export type RouteLoader = () => Promise<unknown>
@@ -30,14 +31,6 @@ export const RETRY_STEP_MS = 400
 
 /** The plain import behind each retrying wrapper made by {@link withRetry}. */
 const originals = new WeakMap<object, RouteLoader>()
-
-/**
- * Waits for a number of milliseconds.
- *
- * @param ms - How long to wait.
- * @returns A promise that resolves after that time.
- */
-const pause = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
  * Runs a loader once and rejects when it has not settled within {@link LOAD_TIMEOUT_MS}.

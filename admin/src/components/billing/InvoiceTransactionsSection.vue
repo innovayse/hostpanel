@@ -16,7 +16,8 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
-import { transactionTypeTone } from '@/lib/tones'
+import { TRANSACTION_TYPE_OPTIONS } from '@/lib/constants'
+import { transactionTypeTone, statusLabel } from '@/lib/tones'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
@@ -98,7 +99,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
           <UiTableCell>{{ transaction.gateway }}</UiTableCell>
           <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
-            <UiBadge :tone="transactionTypeTone(transaction.type)">{{ transaction.type }}</UiBadge>
+            <UiBadge :tone="transactionTypeTone(transaction.type)">{{ statusLabel(TRANSACTION_TYPE_OPTIONS, transaction.type) }}</UiBadge>
           </UiTableCell>
           <UiTableCell muted>{{ transaction.notes || EMPTY_VALUE }}</UiTableCell>
         </UiTableRow>

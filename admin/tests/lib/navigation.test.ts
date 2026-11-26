@@ -3,9 +3,9 @@
  * section and entry has a label in every language, and no screen is listed twice at the top level.
  */
 import { describe, expect, it } from 'vitest'
-import { Icon } from '@/lib/icons'
-import { NAV_SECTIONS, NavSectionId, navTitleKey, withAddons } from '@/lib/navigation'
-import { DEFAULT_PLUGIN_ICON } from '@/lib/pluginView'
+import { DEFAULT_PLUGIN_ICON, Icon } from '@/lib/icons'
+import type { NavSection } from '@/lib/navigation'
+import { activeNavPath, isNavItemActive, NAV_SECTIONS, NavSectionId, navTitleKey, withAddons } from '@/lib/navigation'
 import { AppRoute } from '@/lib/routes'
 import { MessageLanguage, messages } from '@/locales/messages'
 import { valueAtPath } from '@/lib/valueAtPath'
@@ -118,8 +118,8 @@ describe('withAddons', () => {
     const addons = sections[6]
     expect(addons?.labelKey).toBe('nav.sections.addons')
     expect(addons?.items).toEqual([
-      { to: '/apps/sites', label: 'Sites', icon: `<path d="${DEFAULT_PLUGIN_ICON}"/>` },
-      { to: '/apps/sites/usage', label: 'Usage', icon: `<path d="${DEFAULT_PLUGIN_ICON}"/>` },
+      { to: '/apps/sites', label: 'Sites', icon: DEFAULT_PLUGIN_ICON },
+      { to: '/apps/sites/usage', label: 'Usage', icon: DEFAULT_PLUGIN_ICON },
     ])
   })
 
@@ -127,5 +127,58 @@ describe('withAddons', () => {
     for (const language of Object.values(MessageLanguage)) {
       expect(typeof valueAtPath(messages[language], 'nav.sections.addons'), language).toBe('string')
     }
+  })
+})
+
+describe('activeNavPath', () => {
+  it('picks the create child over its parent entry', () => {
+    expect(activeNavPath(NAV_SECTIONS, AppRoute.SupportTicketsNew)).toBe(AppRoute.SupportTicketsNew)
+    expect(activeNavPath(NAV_SECTIONS, AppRoute.SupportTickets)).toBe(AppRoute.SupportTickets)
+  })
+
+  it('does not match a sibling whose name only starts with the path', () => {
+    expect(activeNavPath(NAV_SECTIONS, `${AppRoute.SupportTickets}-archive`)).toBe(AppRoute.Support)
+    expect(activeNavPath(NAV_SECTIONS, `${AppRoute.Clients}X`)).toBeNull()
+  })
+
+  it('keeps a page below an entry on that entry, ids and deeper pages included', () => {
+    expect(activeNavPath(NAV_SECTIONS, `${AppRoute.SupportTickets}/42`)).toBe(AppRoute.SupportTickets)
+    expect(activeNavPath(NAV_SECTIONS, `${AppRoute.Clients}/7/services/3`)).toBe(AppRoute.Clients)
+  })
+
+  it('ignores a query string and a hash', () => {
+    expect(activeNavPath(NAV_SECTIONS, `${AppRoute.SupportTicketsNew}?clientId=5`)).toBe(AppRoute.SupportTicketsNew)
+    expect(activeNavPath(NAV_SECTIONS, `${AppRoute.SupportTickets}#top`)).toBe(AppRoute.SupportTickets)
+  })
+
+  it('lets a sub-menu page win over a top-level entry it sits under in the path', () => {
+    expect(activeNavPath(NAV_SECTIONS, AppRoute.IntegrationsPayments)).toBe(AppRoute.IntegrationsPayments)
+    expect(activeNavPath(NAV_SECTIONS, AppRoute.Integrations)).toBe(AppRoute.Integrations)
+  })
+
+  it('returns null for an address no entry owns', () => {
+    expect(activeNavPath(NAV_SECTIONS, '/nowhere')).toBeNull()
+  })
+
+  it('marks exactly one top-level entry and one page for the address of every entry and sub-menu page, create pages included', () => {
+    const addresses = NAV_SECTIONS.flatMap((section) => section.items.flatMap((item) => [item.to, ...(item.children ?? []).map((child) => child.to)]))
+    for (const address of addresses) {
+      for (const path of [address, `${address}/12`, `${address}?page=2`]) {
+        const active = activeNavPath(NAV_SECTIONS, path)
+        const items = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => isNavItemActive(item, active))
+        const pages = NAV_SECTIONS.flatMap((section) => section.items.flatMap((item) => item.children ?? [])).filter((child) => child.to === active)
+        expect(items, path).toHaveLength(1)
+        expect(pages.length, path).toBeLessThanOrEqual(1)
+      }
+    }
+  })
+
+  it('treats a plugin entry nested in another as the page on screen', () => {
+    const sections: NavSection[] = withAddons([], [
+      { key: 'sites', to: '/apps/sites', label: 'Sites', icon: null },
+      { key: 'usage', to: '/apps/sites/usage', label: 'Usage', icon: null },
+    ])
+    expect(activeNavPath(sections, '/apps/sites/usage')).toBe('/apps/sites/usage')
+    expect(activeNavPath(sections, '/apps/sites')).toBe('/apps/sites')
   })
 })

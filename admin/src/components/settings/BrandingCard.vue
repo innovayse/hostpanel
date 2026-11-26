@@ -76,7 +76,7 @@ const FIELDS: BrandingField[] = [
     hintKey: 'settings.branding.logo.hint',
     accept: LOGO_ACCEPT,
     previewClass: 'w-32 h-14',
-    previewBg: 'bg-white',
+    previewBg: 'bg-surface-paper',
   },
   {
     key: SettingKey.LogoDark,
@@ -85,7 +85,7 @@ const FIELDS: BrandingField[] = [
     hintKey: 'settings.branding.logoDark.hint',
     accept: LOGO_ACCEPT,
     previewClass: 'w-32 h-14',
-    previewBg: 'bg-neutral-900',
+    previewBg: 'bg-surface-ink',
   },
   {
     key: SettingKey.LogoMark,
@@ -94,7 +94,7 @@ const FIELDS: BrandingField[] = [
     hintKey: 'settings.branding.logoMark.hint',
     accept: LOGO_ACCEPT,
     previewClass: 'w-14 h-14',
-    previewBg: 'bg-neutral-900',
+    previewBg: 'bg-surface-ink',
   },
   {
     key: SettingKey.Favicon,
@@ -103,7 +103,7 @@ const FIELDS: BrandingField[] = [
     hintKey: 'settings.branding.favicon.hint',
     accept: FAVICON_ACCEPT,
     previewClass: 'w-10 h-10',
-    previewBg: 'bg-neutral-900',
+    previewBg: 'bg-surface-ink',
   },
 ]
 
@@ -179,7 +179,8 @@ const saveField = async (field: BrandingField): Promise<void> => {
 /**
  * Uploads a file for one field and stages the returned URL as its draft.
  *
- * The store sends it as multipart data; a refusal arrives as the API's own sentence.
+ * The store sends it as multipart data; a refusal arrives as the API's own sentence, on the outcome of
+ * this very request, so it is shown under this field only.
  *
  * @param field - The branding field being uploaded for.
  * @param file - The image file to upload.
@@ -187,11 +188,11 @@ const saveField = async (field: BrandingField): Promise<void> => {
 const uploadFile = async (field: BrandingField, file: File): Promise<void> => {
   uploadError.value[field.key] = null
   uploading.value[field.key] = true
-  const url = await settingsStore.uploadBrandingFile(field.kind, file)
+  const { url, error } = await settingsStore.uploadBrandingFile(field.kind, file)
   if (url !== null) {
     edit(field, url)
   } else {
-    uploadError.value[field.key] = settingsStore.uploadError
+    uploadError.value[field.key] = error
   }
   uploading.value[field.key] = false
 }

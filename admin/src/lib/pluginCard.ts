@@ -6,7 +6,8 @@ import { enumValueOf } from '@/lib/enumValue'
 import { InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
 import { translate } from '@/lib/translate'
 import { PluginCardBadge, PluginCategory } from '@/types/plugin'
-import type { PluginCardModel, PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
+import type { PluginCardFailure, PluginCardModel, PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
+import { failedChangeOf } from '@/lib/pluginChange'
 
 /**
  * The words an operator reads for a plugin's category, the same for an installed plugin and a registry listing.
@@ -34,6 +35,7 @@ export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string |
   const state = installedPluginState(plugin)
   const refused = state === InstalledPluginState.LoadFailed || state === InstalledPluginState.Refused
   const badges: PluginCardBadge[] = []
+  const failure: PluginCardFailure | null = failedChangeOf(plugin)
   if (state === InstalledPluginState.LoadFailed) {
     badges.push(PluginCardBadge.LoadFailed)
   } else if (state === InstalledPluginState.Refused) {
@@ -42,6 +44,9 @@ export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string |
     badges.push(state === InstalledPluginState.Active ? PluginCardBadge.Active : PluginCardBadge.PendingRestart)
     if (plugin.stagedVersion !== null) {
       badges.push(PluginCardBadge.Staged)
+    }
+    if (failure !== null) {
+      badges.push(PluginCardBadge.ChangeFailed)
     }
     if (updateVersion) {
       badges.push(PluginCardBadge.Update)
@@ -67,6 +72,7 @@ export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string |
     updateVersion: refused ? null : updateVersion,
     stagedVersion: plugin.stagedVersion,
     refusal: refused && plugin.refusedRule ? { rule: plugin.refusedRule, detail: plugin.refusedDetail } : null,
+    failedChange: failure,
   }
 }
 
@@ -105,5 +111,6 @@ export const fromRegistry = (item: PluginRegistryItemDto, stagedVersion: string 
     updateVersion: item.updateAvailable ? item.latestVersion : null,
     stagedVersion,
     refusal: null,
+    failedChange: null,
   }
 }

@@ -35,6 +35,7 @@ describe('PluginSlotWidgetRow', () => {
     const wrapper = await mountRow({ widget: { ...widget, productIds: [] } })
 
     expect(wrapper.get('[data-testid="plugin-widget-chosen"]').text()).toContain('No products chosen')
+    expect(wrapper.find('[data-testid="plugin-widget-no-products"] [data-testid="ui-empty-state-icon"]').exists()).toBe(true)
   })
 
   it('warns that the widget shows nowhere when it is bound but every product is gone', async () => {

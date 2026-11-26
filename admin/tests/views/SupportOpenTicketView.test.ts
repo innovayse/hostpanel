@@ -89,14 +89,17 @@ describe('SupportOpenTicketView', () => {
     expect(toastMessages()).toEqual(['The client is closed.'])
   })
 
-  it('returns to the tickets list with the back pill in the header', async () => {
+  it('draws the trail above the title, the tickets list as a link and the page itself last', async () => {
     stubPathRoutes([{ path: '/tickets/departments', body: [] }])
 
-    const wrapper = await mountView(SupportOpenTicketView)
-    const back = wrapper.get('[data-testid="support-open-ticket-back"]')
+    const wrapper = await mountView(SupportOpenTicketView, { path: '/support/tickets/new', pattern: '/support/tickets/new' })
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/support/tickets')
-    expect(back.text()).toBe('Tickets')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/support', '/support/tickets'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="support-open-ticket-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('draws every section and field of its schema', async () => {

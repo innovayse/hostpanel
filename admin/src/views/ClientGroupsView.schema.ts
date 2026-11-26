@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
       { key: 'discount', label: 'clients.clientGroups.discount', size: UiColumnSize.Compact },
       { key: 'clients', label: 'clients.clientGroups.clients', size: UiColumnSize.Compact },
       { key: 'default', label: 'shared.default', kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

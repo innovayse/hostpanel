@@ -111,7 +111,8 @@ describe('selectable UiTable', () => {
   it('gives the checkbox column its narrow shape', () => {
     const { wrapper } = harness()
 
-    expect(wrapper.get('th').classes()).toEqual(expect.arrayContaining(['w-12', 'select-none']))
-    expect(wrapper.get('tbody td').classes()).toEqual(expect.arrayContaining(['w-12', 'select-none']))
+    expect(wrapper.get('th').classes()).toEqual(expect.arrayContaining(['w-px', 'select-none']))
+    expect(wrapper.get('th').classes()).not.toContain('w-[28%]')
+    expect(wrapper.get('tbody td').classes()).toEqual(expect.arrayContaining(['w-px', 'select-none']))
   })
 })

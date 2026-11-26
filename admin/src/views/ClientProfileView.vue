@@ -9,8 +9,8 @@ import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientsStore } from '@/stores/clients'
-import { CLIENT_STATUS_OPTIONS } from '@/lib/constants'
-import { contactTypeTone } from '@/lib/tones'
+import { CLIENT_STATUS_OPTIONS, CONTACT_TYPE_OPTIONS } from '@/lib/constants'
+import { contactTypeTone, statusLabel } from '@/lib/tones'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { useGeoOptions } from '@/composables/useGeoOptions'
 import { restrictsAccount, type RestrictiveClientStatus } from '@/lib/clientStatus'
@@ -607,7 +607,7 @@ onBeforeUnmount(() => {
           <UiTableCell muted>{{ contact.email }}</UiTableCell>
           <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
-            <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
+            <UiBadge :tone="contactTypeTone(contact.type)" small>{{ statusLabel(CONTACT_TYPE_OPTIONS, contact.type) }}</UiBadge>
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>

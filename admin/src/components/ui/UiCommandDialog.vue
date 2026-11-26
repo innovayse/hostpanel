@@ -47,7 +47,7 @@ const { onKeydown, focusIn } = useModalSurface(panel, () => props.open, close)
       <div
         v-if="open"
         data-testid="command-dialog-backdrop"
-        class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm sm:px-4 sm:pt-[12vh]"
+        class="fixed inset-0 z-50 flex items-start justify-center bg-(--overlay-backdrop) backdrop-blur-sm sm:px-4 sm:pt-[12vh]"
         @click.self="close"
       >
         <div

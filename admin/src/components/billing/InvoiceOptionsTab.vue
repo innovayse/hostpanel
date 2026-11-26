@@ -1,14 +1,10 @@
 <script setup lang="ts">
 /**
  * Options tab of the invoice screen: invoice date, due date, payment method and the tax rate,
- * saved together; below them the editable line items (previewed with that tax) and the
- * transaction ledgers. The outcome of a save (success, or the API's sentence) shows under
- * the form.
+ * saved together. The outcome of a save (success, or the API's sentence) shows under the form.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
-import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -138,8 +134,5 @@ onMounted(populate)
         </UiFormActions>
       </UiForm>
     </UiCard>
-
-    <InvoiceItemsSection :invoice="invoice" :tax-percent="taxRate" />
-    <InvoiceTransactionsSection :invoice="invoice" />
   </UiStack>
 </template>

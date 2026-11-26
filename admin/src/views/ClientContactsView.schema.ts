@@ -17,7 +17,7 @@ const schema: ListSkeletonSchema = {
       { key: 'email', label: 'shared.email' },
       { key: 'phone', label: 'shared.phone' },
       { key: 'type', label: 'shared.type', kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

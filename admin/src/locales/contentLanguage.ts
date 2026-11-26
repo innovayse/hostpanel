@@ -3,7 +3,9 @@
  * is written in, a client prefers and storefront content (slides, FAQs, articles) is translated into.
  *
  * The one list of languages. `MessageLanguage`, the languages the admin panel itself is translated
- * into, is a subset of it, so a new language is one member here and the interface joins it later.
+ * into, is a separate, explicit subset of it: a content language is a language the platform serves,
+ * the interface joins it only when its catalogue is written (French is a content language, not yet an
+ * interface language).
  */
 
 /** A language of the platform's content. */
@@ -18,4 +20,6 @@ export enum ContentLanguage {
   De = 'de',
   /** Spanish. */
   Es = 'es',
+  /** French. */
+  Fr = 'fr',
 }

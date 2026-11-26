@@ -119,7 +119,7 @@ watch(filters, (val) => {
     <div
       v-for="(f, i) in filters"
       :key="f.key"
-      class="bg-surface-field border border-border rounded-control p-3"
+      class="bg-surface-inset border border-border rounded-control p-3"
     >
       <!-- Header: label + remove -->
       <div class="flex items-center justify-between mb-2">
@@ -150,7 +150,7 @@ watch(filters, (val) => {
     <!-- Add filter -->
     <UiButton
       v-if="filters.length < maxFilters"
-      :action="UiActionKind.Add"
+      :action="UiActionKind.AddRow"
       variant="link"
       size="sm"
       data-testid="advanced-filters-add"

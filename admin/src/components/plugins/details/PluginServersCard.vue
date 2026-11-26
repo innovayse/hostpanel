@@ -10,16 +10,20 @@ import { useI18n } from 'vue-i18n'
 import type { RouteLocationRaw } from 'vue-router'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
+import { Icon } from '@/lib/icons'
 import { formatDateTime, formatRelativeFromNow } from '@/lib/format'
 import { AppRoute } from '@/lib/routes'
 import { SERVER_STATE_KEYS, SERVER_STATE_TONES, serverState } from '@/lib/servers'
 import type { ServerOptionDto } from '@/types/server'
 import { UiCardPadding } from '@/utils/ui/card'
+import { UiSize } from '@/utils/ui/size'
 import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
 import { UiHeadingVariant, UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import type { UiTone } from '@/utils/ui/tone'
@@ -94,10 +98,14 @@ const stateOf = (server: ServerOptionDto): { tone: UiTone; key: string } => {
           </UiStack>
         </UiStack>
       </UiStack>
-      <UiStack v-else :gap="UiGap.Xs" data-testid="plugin-servers-empty">
-        <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm">{{ t('pluginDetails.servers.empty') }}</UiText>
-        <UiLink :to="AppRoute.Servers" data-testid="plugin-servers-open">{{ t('pluginDetails.servers.openServers') }}</UiLink>
-      </UiStack>
+      <UiEmptyState v-else compact :title="t('pluginDetails.servers.empty')" data-testid="plugin-servers-empty">
+        <template #icon>
+          <UiIcon :markup="Icon.Server" :size="UiSize.Md" />
+        </template>
+        <template #actions>
+          <UiLink :to="AppRoute.Servers" data-testid="plugin-servers-open">{{ t('pluginDetails.servers.openServers') }}</UiLink>
+        </template>
+      </UiEmptyState>
     </UiStack>
   </UiCard>
 </template>

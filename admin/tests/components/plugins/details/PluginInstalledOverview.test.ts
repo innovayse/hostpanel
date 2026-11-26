@@ -124,7 +124,7 @@ describe('PluginInstalledOverview', () => {
 
     expect(fact(plain, 'version')).toContain('2.0.0')
     expect(plain.find('[data-testid="plugin-details-overview-staged"]').exists()).toBe(false)
-    expect(fact(staged, 'staged')).toContain('Version 3.0.0 staged')
+    expect(fact(staged, 'staged')).toContain('Version 3.0.0 not applied yet')
   })
 
   it.each([

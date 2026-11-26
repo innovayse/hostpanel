@@ -16,8 +16,9 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { failedChangeOf, failureSentence } from '@/lib/pluginChange'
 import { PluginPricing } from '@/types/plugin'
-import type { PluginListItemDto, RegistryPluginDetailsDto } from '@/types/plugin'
+import type { PluginCardFailure, PluginListItemDto, RegistryPluginDetailsDto } from '@/types/plugin'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
@@ -55,6 +56,9 @@ const pricingTone: Record<PluginPricing, UiTone> = {
   [PluginPricing.Private]: UiTone.Info,
 }
 
+/** The failed last change of the plugin, null when its last change did not fail. */
+const failure = computed<PluginCardFailure | null>(() => failedChangeOf(props.plugin))
+
 /** Whether the registry offers a newer version than the installed one. */
 const canUpdate = computed<boolean>(() => props.registry !== null && props.registry.installed && props.registry.updateAvailable)
 
@@ -88,10 +92,16 @@ const canUninstall = computed<boolean>(() => !props.plugin.isBuiltIn)
           <UiBadge v-if="plugin.stagedVersion !== null" :tone="UiTone.Warning" small data-testid="plugin-details-staged">
             {{ t('pluginDetails.staged', { version: plugin.stagedVersion }) }}
           </UiBadge>
+          <UiBadge v-if="failure !== null" :tone="UiTone.Danger" small data-testid="plugin-details-change-failed">
+            {{ t('plugins.pluginCard.changeFailed') }}
+          </UiBadge>
           <UiBadge v-if="registry !== null && canUpdate" :tone="UiTone.Success" small data-testid="plugin-details-update-available">
             {{ t('pluginDetails.updateAvailable', { version: registry.latestVersion }) }}
           </UiBadge>
         </UiStack>
+        <UiText v-if="failure !== null" :tone="UiTextTone.Danger" :size="UiTextSize.Sm" data-testid="plugin-details-failure">
+          {{ failureSentence(failure) }}
+        </UiText>
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Sm" data-testid="plugin-details-description">{{ plugin.description }}</UiText>
         <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
           <UiButton :icon="Icon.Download"

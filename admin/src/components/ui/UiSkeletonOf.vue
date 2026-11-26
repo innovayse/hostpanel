@@ -9,7 +9,7 @@
  * skeleton and the screen are the same shape by construction.
  *
  * What it draws, in order: the header (the real title when the schema has one, a bar when the title is made of data, and
- * a back pill when the schema names one), then the blocks of the screen as `partsOf` lists them (tiles, form, cards,
+ * a bar for the breadcrumb trail when the schema says the screen has one), then the blocks of the screen as `partsOf` lists them (tiles, form, cards,
  * toolbar, chart, table, tab strip), the same walk for every kind. A tab strip layout draws its header card (identity
  * bars, buttons and key figures) over its real captions, not clickable, with the `outlet` slot under the strip holding the
  * skeleton of the routed child; a vertical one is a rail of icon placeholders beside the outlet, as `UiSidebarLayout`
@@ -66,8 +66,7 @@ const header = computed(() => {
     subtitle: source.subtitle === undefined ? undefined : t(source.subtitle),
     titleLoading: source.title === undefined,
     subtitleLoading: source.subtitleFromData === true,
-    backLabel: source.backLabel === undefined ? undefined : t(source.backLabel),
-    backMobileOnly: source.backMobileOnly === true,
+    crumbsPending: source.crumbs === true,
     primaryAction: source.primaryAction ?? 0,
     actions: (source.actions ?? 0) + (props.schema.kind === SkeletonKind.Report ? (props.schema.actions?.length ?? 0) : 0),
   }
@@ -123,9 +122,7 @@ const railEntries = computed(() => (tabs.value?.tabs ?? []).map((tab) => ({ key:
       :subtitle="header.subtitle"
       :loading="header.titleLoading"
       :subtitle-loading="header.subtitleLoading"
-      :back-label="header.backLabel"
-      :back-mobile-only="header.backMobileOnly"
-      back-pending
+      :crumbs-pending="header.crumbsPending"
     >
       <template v-if="header.actions > 0" #actions>
         <UiSkeletonActions :count="header.actions" :primary="header.primaryAction" />
@@ -152,14 +149,14 @@ const railEntries = computed(() => (tabs.value?.tabs ?? []).map((tab) => ({ key:
     <template v-for="(part, index) in parts" :key="index">
       <UiSchemaForm v-if="part.kind === SkeletonPartKind.Form" :columns="part.columns" loading />
       <UiDetailCards v-else-if="part.kind === SkeletonPartKind.Cards" :columns="part.columns" :ratio="part.ratio" loading />
-      <UiStack v-else-if="part.kind === SkeletonPartKind.Toolbar" direction="row" align="start" justify="between" gap="sm">
-        <UiListToolbar class="min-w-0 flex-1" :search="part.toolbar.search ? '' : undefined" loading>
-          <template v-if="part.toolbar.filters?.length" #default>
-            <UiField v-for="filter in part.toolbar.filters" :key="filter" :label="t(filter)" loading />
-          </template>
-        </UiListToolbar>
-        <UiSkeletonActions :count="part.toolbar.actions ?? 0" />
-      </UiStack>
+      <UiListToolbar v-else-if="part.kind === SkeletonPartKind.Toolbar" :search="part.toolbar.search ? '' : undefined" loading>
+        <template v-if="part.toolbar.filters?.length" #default>
+          <UiField v-for="filter in part.toolbar.filters" :key="filter" :label="t(filter)" loading />
+        </template>
+        <template v-if="part.toolbar.actions" #actions>
+          <UiSkeletonActions :count="part.toolbar.actions" />
+        </template>
+      </UiListToolbar>
       <UiStatRow v-else-if="part.kind === SkeletonPartKind.Stats" :stats="part.stats" :columns="part.columns" loading />
       <UiCard v-else-if="part.kind === SkeletonPartKind.Chart" padding="md" data-testid="ui-skeleton-chart">
         <UiChartSkeleton :kind="part.chart.kind" :height="part.chart.height ?? UiChartHeight.Md" />

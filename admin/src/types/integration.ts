@@ -220,27 +220,24 @@ export interface IntegrationField {
 }
 
 /** Closed set of input kinds an integration configuration field can use; the strings are the API's enum names. */
-export const IntegrationFieldType = {
+export enum IntegrationFieldType {
   /** Plain text. */
-  Text: 'Text',
+  Text = 'Text',
   /** A secret from the built-in catalogue, write-only in the form. */
-  Password: 'Password',
+  Password = 'Password',
   /** A secret declared by a plugin manifest, write-only in the form. */
-  Secret: 'Secret',
+  Secret = 'Secret',
   /** One of a fixed list of options. */
-  Select: 'Select',
+  Select = 'Select',
   /** Multi-line text. */
-  Textarea: 'TextArea',
+  Textarea = 'TextArea',
   /** A yes/no switch. */
-  Toggle: 'Toggle',
+  Toggle = 'Toggle',
   /** A web address. */
-  Url: 'Url',
+  Url = 'Url',
   /** A whole or decimal number, optionally bounded by the definition's min and max. */
-  Number: 'Number',
-} as const
-
-/** One of the {@link IntegrationFieldType} values. */
-export type IntegrationFieldType = (typeof IntegrationFieldType)[keyof typeof IntegrationFieldType]
+  Number = 'Number',
+}
 
 /** Closed set of environments a payment integration runs against; the strings are what the API stores. */
 export const IntegrationMode = {

@@ -8,6 +8,7 @@ import type { VNodeChild } from 'vue'
 import { createI18n, useI18n } from 'vue-i18n'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -221,7 +222,7 @@ describe('UiTable as a card list', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="row"]').text()).toContain('Date')
-    expect(wrapper.get('[data-testid="row"]').text()).not.toContain('↕')
+    expect(wrapper.get('[data-testid="row"]').findComponent(UiIcon).exists()).toBe(false)
   })
 
   it('takes the card role of an editable column: the caption over a full width control', async () => {

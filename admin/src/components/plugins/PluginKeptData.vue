@@ -73,7 +73,7 @@ const keptActions = (id: string): UiMenuAction[] => {
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.id') }}</UiTableHeader>
-          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader actions />
         </UiTableRow>
       </UiTableHead>
       <UiTableBody>

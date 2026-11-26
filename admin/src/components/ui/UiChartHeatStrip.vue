@@ -30,7 +30,7 @@ const peak = computed<number>(() => Math.max(1, ...props.values))
  */
 const shadeOf = (value: number): string => {
   if (value <= 0) {
-    return 'bg-surface-hover'
+    return 'bg-surface-track'
   }
   const level = Math.min(SHADES.length - 1, Math.floor((value / peak.value) * SHADES.length))
   return `bg-text-accent ${SHADES[level]}`

@@ -254,6 +254,8 @@ export interface PluginListItemDto {
   refusedDetail: string | null
   /** Version of a newer upload staged to replace the running one at the next restart, null when none. */
   stagedVersion: string | null
+  /** The last change the host applied or failed to apply to this plugin, null when none was recorded. */
+  lastChange?: PluginLastChangeDto | null
   /** The capabilities the manifest declares, in manifest order; empty when it declares none. */
   capabilities: PluginCapability[]
   /** The kinds of access to a client's hosting the manifest asks for; empty when none or for a refused or removed row. */
@@ -284,12 +286,42 @@ export interface PluginListItemDto {
   packageSha256?: string | null
 }
 
+/** Closed set of results a plugin change ends in; the strings are the API's enum names. */
+export enum PluginChangeResult {
+  /** The new version loaded and runs. */
+  Applied = 'Applied',
+  /** The new version failed to load; the host kept or restored the previous one. */
+  Failed = 'Failed',
+}
+
+/** The last change the host made to one plugin (the `lastChange` of a list item). */
+export interface PluginLastChangeDto {
+  /** Id of the plugin the change belongs to. */
+  pluginId: string
+  /** Version the plugin ran before the change, null for a first install. */
+  fromVersion: string | null
+  /** Version the change tried to run. */
+  toVersion: string
+  /** How the change ended. */
+  result: PluginChangeResult
+  /** The reason a failed change gave, null when it applied. */
+  error: string | null
+  /** Version the host restored after a failed change, null when none was restored. */
+  restoredVersion: string | null
+  /** ISO 8601 moment the change ended. */
+  at: string
+}
+
 /** Result returned by install and remove plugin operations. */
 export interface PluginActionResultDto {
   /** True when files changed and a server restart is required for the change to take effect. */
   requiresRestart: boolean
   /** Version of an upgrade (or forced downgrade) staged for the next restart, null for every other result. */
   stagedVersion?: string | null
+  /** True when the host loaded the change into the running server, so no restart is needed for it. */
+  reloaded: boolean
+  /** True when the host already started its own restart to apply the change; the panel only waits for it (requiresRestart is true as well). */
+  restarting: boolean
 }
 
 /** One slot widget a plugin declares, with the products the operator bound it to (GET /api/admin/plugins/{pluginId}/slot-widgets). */
@@ -572,6 +604,10 @@ export interface PluginActionOutcome {
   ok: boolean
   /** Version the action staged for the next restart, null when it staged nothing. */
   stagedVersion: string | null
+  /** Whether the change was applied to the running server without a restart. */
+  reloaded: boolean
+  /** Whether the host started its own restart to apply the change, so the panel must wait for it. */
+  restarting: boolean
   /** The API's own sentence for a refusal, null on success. */
   error: string | null
 }
@@ -682,6 +718,20 @@ export interface RegistryDetailsState {
   notFound: boolean
 }
 
+/** Closed set of the actions the footer of a plugin's card can hold, in the installed list and in the registry. */
+export enum PluginCardAction {
+  /** Placeholder for the update button while the registry is asked for a newer version. */
+  Checking = 'checking',
+  /** Installs the plugin from the registry. */
+  Install = 'install',
+  /** Updates the plugin to the version the registry offers. */
+  Update = 'update',
+  /** Opens the details page of a plugin that cannot be installed from the card (it needs a licence key). */
+  Details = 'details',
+  /** Opens the plugin's page. */
+  Settings = 'settings',
+}
+
 /** Closed set of badges a plugin card can wear; the strings are the parts of the test ids. */
 export enum PluginCardBadge {
   /** The plugin is loaded and running. */
@@ -694,6 +744,8 @@ export enum PluginCardBadge {
   LoadFailed = 'loadFailed',
   /** A newer upload is staged to apply at the next restart. */
   Staged = 'staged',
+  /** The last change to the plugin failed to load; the host kept or restored the previous version. */
+  ChangeFailed = 'changeFailed',
   /** The registry offers a newer version. */
   Update = 'update',
   /** The plugin ships with the server build. */
@@ -706,6 +758,14 @@ export interface PluginCardRefusal {
   rule: PluginManifestRule
   /** The server's detail of the rule (the offending value), null when it sent none. */
   detail: string | null
+}
+
+/** The failed change a plugin card explains. */
+export interface PluginCardFailure {
+  /** The reason the change gave, null when it gave none. */
+  error: string | null
+  /** The version the host restored, null when none. */
+  restoredVersion: string | null
 }
 
 /** Everything a plugin card shows, whether the plugin is installed or only listed by the registry; the card knows no DTO. */
@@ -742,6 +802,8 @@ export interface PluginCardModel {
   stagedVersion: string | null
   /** The broken rule of a refused plugin, null otherwise. */
   refusal: PluginCardRefusal | null
+  /** The failed last change of the plugin, null when its last change did not fail. */
+  failedChange: PluginCardFailure | null
 }
 
 /** Closed set of the jobs the processing dialog shows; the strings are the parts of the locale keys. */
@@ -754,4 +816,16 @@ export enum PluginProcessingStep {
   Removing = 'removing',
   /** A plugin archive is being uploaded and read. */
   Uploading = 'uploading',
+}
+
+/** Closed set of the stages of a server restart the panel waits through; the strings are the parts of the locale keys. */
+export enum PluginRestartState {
+  /** No restart is under way. */
+  Idle = 'idle',
+  /** The restart was asked for and the panel waits for the server to come back. */
+  Restarting = 'restarting',
+  /** The server answered again as a new process and the plugin list is read. */
+  Running = 'running',
+  /** The server did not come back within the allowed time. */
+  TimedOut = 'timedOut',
 }

@@ -91,3 +91,11 @@ export const iconButtonIconSize: Record<UiSize, UiSize> = {
   md: 'md',
   lg: 'lg',
 }
+
+/** Classes that pin the icon inside an icon button to {@link iconButtonIconSize}, whatever size the caller drew it at, so every icon-only button reads alike (literal strings, so Tailwind emits them). */
+export const iconButtonIconClasses: Record<UiSize, string> = {
+  xs: '[&>svg]:h-3 [&>svg]:w-3',
+  sm: '[&>svg]:h-3.5 [&>svg]:w-3.5',
+  md: '[&>svg]:h-4 [&>svg]:w-4',
+  lg: '[&>svg]:h-5 [&>svg]:w-5',
+}

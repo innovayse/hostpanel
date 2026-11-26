@@ -49,7 +49,7 @@ const props = withDefaults(defineProps<{
 /** Placement and colour classes of the side; both are glass, the reader's own tinted with the brand colour. */
 const sideClasses = computed<string>(() =>
   props.side === UiChatBubbleSide.Own
-    ? 'self-end rounded-br-sm glass bg-primary-500/15 text-text-primary'
+    ? 'self-end rounded-br-sm glass bg-tint-blue text-text-primary'
     : 'self-start rounded-bl-sm glass text-text-primary')
 </script>
 

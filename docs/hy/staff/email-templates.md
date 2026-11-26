@@ -106,6 +106,12 @@ keywords: "նամակների ձևանմուշներ, փոփոխականներ, 
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ ծառայության դադարեցումը ձախողվում է։ Փոփոխականներ՝ service.id, reason' },
 ]" />
 
+### Պլագիններ {#plugins}
+
+<SettingTable :settings="[
+  { name: 'plugin-change-ended-admin', type: 'string', default: '', description: 'Ուղարկվում է աշխատակիցներին, երբ վահանակի՝ ֆոնում կիրառած պլագինի փոփոխությունն ավարտվում է. նոր տարբերակը բեռնված է և աշխատում է, կամ այն չհաջողվեց բեռնել, և նախորդ տարբերակը վերականգնվեց կամ պլագինը մնաց չտեղադրված։ Փոփոխականներ՝ plugin_id, from_version, to_version, applied, error, restored_version' },
+]" />
+
 ### Աջակցության հայտեր {#support-tickets}
 
 <SettingTable :settings="[

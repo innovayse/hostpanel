@@ -4,7 +4,7 @@ using Innovayse.Hostpanel.Domain.Notifications;
 namespace Innovayse.Hostpanel.Application.Notifications.Seeding;
 
 /// <summary>
-/// Seeds the staff alerts of the billing and provisioning jobs, in every supported language, the first
+/// Seeds the staff alerts of the billing and provisioning jobs and of plugin changes, in every supported language, the first
 /// time each is needed (the pattern of <see cref="RenewalTemplatesSeeder"/>): a runtime seed lets an
 /// operator edit the copy and never overwrites the edit.
 /// </summary>
@@ -25,6 +25,9 @@ public static class StaffAlertTemplatesSeeder
     /// <summary>Slug of the staff alert about a gateway payment reported as no longer paid after the invoice was settled through it.</summary>
     public const string GatewayPaymentReversedSlug = "gateway-payment-reversed-admin";
 
+    /// <summary>Slug of the staff alert about a plugin change the host applied in the background and that has ended.</summary>
+    public const string PluginChangeEndedSlug = "plugin-change-ended-admin";
+
     /// <summary>Adds whichever language version of the staff alerts is missing.</summary>
     /// <param name="context">Data context.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -33,7 +36,7 @@ public static class StaffAlertTemplatesSeeder
     {
         return EmailTemplateSeeding.AddMissingAsync(
             context,
-            [.. ServiceTerminationFailed(), .. GatewayPaymentStalled(), .. GatewayPaymentCredited(), .. GatewayPaymentWithoutReference(), .. GatewayPaymentReversed()],
+            [.. ServiceTerminationFailed(), .. GatewayPaymentStalled(), .. GatewayPaymentCredited(), .. GatewayPaymentWithoutReference(), .. GatewayPaymentReversed(), .. PluginChangeEnded()],
             ct);
     }
 
@@ -280,6 +283,58 @@ public static class StaffAlertTemplatesSeeder
                 "es",
                 "Pago de pasarela notificado como revertido",
                 ["La pasarela {{ module }} ya no informa del pago de la factura n.º {{ invoice.id }} (cliente n.º {{ client.id }}) como abonado. Puede haberse reembolsado, revertido o devuelto en la pasarela. La factura y el libro de movimientos no se modificaron. Un operador debe comprobar el pago en la pasarela y, si el dinero se devolvió, registrar el reembolso."],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+        ]);
+
+    /// <summary>
+    /// The staff alert about a plugin change the host applied in the background and that has ended, one version per language.
+    /// One template covers both outcomes: the new version is loaded and running, or it could not be loaded and the previous
+    /// version was restored (or, for a new install, the plugin was left uninstalled).
+    /// </summary>
+    /// <returns>The versions.</returns>
+    private static IReadOnlyList<EmailTemplate> PluginChangeEnded() => EmailTemplateSeeding.Branded(
+        PluginChangeEndedSlug,
+        "Sent to staff when a plugin change the host applied in the background has ended: the new version is loaded and running, or it could not be loaded and the previous version was restored or the plugin was left uninstalled.",
+        [
+            new SeededEmailVersion("Plugin {{ plugin_id }}: {% if applied %}loaded and running{% else %}change failed{% endif %}", new SeededEmailCopy(
+                "en",
+                "Plugin change finished",
+                ["The change of plugin {{ plugin_id }} to version {{ to_version }}{% if from_version %} (it ran version {{ from_version }}){% endif %} has ended. {% if applied %}The new version is loaded and running.{% else %}The new version could not be loaded: {{ error }}. {% if restored_version %}Version {{ restored_version }} was restored and is running.{% else %}The plugin is not installed.{% endif %}{% endif %}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Плагин {{ plugin_id }}: {% if applied %}загружен и работает{% else %}изменение не удалось{% endif %}", new SeededEmailCopy(
+                "ru",
+                "Изменение плагина завершено",
+                ["Изменение плагина {{ plugin_id }} до версии {{ to_version }}{% if from_version %} (работала версия {{ from_version }}){% endif %} завершено. {% if applied %}Новая версия загружена и работает.{% else %}Новую версию не удалось загрузить: {{ error }}. {% if restored_version %}Версия {{ restored_version }} восстановлена и работает.{% else %}Плагин не установлен.{% endif %}{% endif %}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Պլագին {{ plugin_id }}՝ {% if applied %}բեռնված է և աշխատում է{% else %}փոփոխությունը ձախողվեց{% endif %}", new SeededEmailCopy(
+                "hy",
+                "Պլագինի փոփոխությունն ավարտվեց",
+                ["{{ plugin_id }} պլագինի փոփոխությունը մինչև {{ to_version }} տարբերակն ավարտվեց{% if from_version %} (աշխատում էր {{ from_version }} տարբերակը){% endif %}։ {% if applied %}Նոր տարբերակը բեռնված է և աշխատում է։{% else %}Նոր տարբերակը չհաջողվեց բեռնել՝ {{ error }}։ {% if restored_version %}{{ restored_version }} տարբերակը վերականգնվել է և աշխատում է։{% else %}Պլագինը տեղադրված չէ։{% endif %}{% endif %}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Plugin {{ plugin_id }}: {% if applied %}geladen und aktiv{% else %}Änderung fehlgeschlagen{% endif %}", new SeededEmailCopy(
+                "de",
+                "Plugin-Änderung abgeschlossen",
+                ["Die Änderung des Plugins {{ plugin_id }} auf Version {{ to_version }}{% if from_version %} (es lief Version {{ from_version }}){% endif %} ist abgeschlossen. {% if applied %}Die neue Version ist geladen und aktiv.{% else %}Die neue Version konnte nicht geladen werden: {{ error }}. {% if restored_version %}Version {{ restored_version }} wurde wiederhergestellt und läuft.{% else %}Das Plugin ist nicht installiert.{% endif %}{% endif %}"],
+                ButtonUrl: null,
+                ButtonText: null,
+                Note: null,
+                EchoButtonUrl: false)),
+            new SeededEmailVersion("Plugin {{ plugin_id }}: {% if applied %}cargado y en funcionamiento{% else %}cambio fallido{% endif %}", new SeededEmailCopy(
+                "es",
+                "Cambio de plugin finalizado",
+                ["El cambio del plugin {{ plugin_id }} a la versión {{ to_version }}{% if from_version %} (funcionaba la versión {{ from_version }}){% endif %} ha finalizado. {% if applied %}La nueva versión está cargada y en funcionamiento.{% else %}La nueva versión no se pudo cargar: {{ error }}. {% if restored_version %}Se restauró la versión {{ restored_version }} y está en funcionamiento.{% else %}El plugin no está instalado.{% endif %}{% endif %}"],
                 ButtonUrl: null,
                 ButtonText: null,
                 Note: null,

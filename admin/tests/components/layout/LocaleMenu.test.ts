@@ -1,5 +1,5 @@
 /**
- * Mount tests for LocaleMenu: the globe trigger with the short code and its accessible name, the three languages
+ * Mount tests for LocaleMenu: the globe trigger with the short code and its accessible name, the shipped languages in the switcher's order
  * with the active one checked, and a pick switching the locale.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -22,7 +22,7 @@ describe('LocaleMenu', () => {
     expect(trigger.text()).toBe('en')
     await trigger.trigger('click')
 
-    expect(wrapper.findAll('[role="menuitemradio"]').map(item => item.text())).toEqual(['English', 'Հայերեն', 'Русский', 'Deutsch', 'Español'])
+    expect(wrapper.findAll('[role="menuitemradio"]').map(item => item.text())).toEqual(['English', 'Русский', 'Հայերեն', 'Deutsch', 'Español'])
     expect(wrapper.get('[data-testid="locale-option-en"]').attributes('aria-checked')).toBe('true')
     expect(wrapper.get('[data-testid="locale-option-ru"]').attributes('aria-checked')).toBe('false')
   })

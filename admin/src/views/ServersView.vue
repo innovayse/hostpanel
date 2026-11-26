@@ -66,7 +66,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('servers.servers.createGroup'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Secondary, testid: 'servers-add-group', onSelect: openAddGroup },
+  { label: t('servers.servers.createGroup'), icon: actionIcons[UiActionKind.AddRow], variant: UiButtonVariant.Secondary, testid: 'servers-add-group', onSelect: openAddGroup },
   { label: t('servers.servers.createServer'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'servers-add', onSelect: openAddServer },
 ])
 

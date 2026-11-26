@@ -29,9 +29,7 @@
       ]"
       @click="toggle"
     >
-      <svg v-if="modelValue" viewBox="0 0 12 10" fill="none" class="w-3 h-3 text-on-primary">
-        <path d="M1 5l3.5 3.5L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
+      <Check v-if="modelValue" class="w-3 h-3 text-on-primary" :stroke-width="3" aria-hidden="true" />
     </button>
     <div v-if="label || $slots.default" class="flex-1 text-sm leading-relaxed">
       <label
@@ -56,6 +54,7 @@
  * A visually hidden native checkbox keeps form semantics; the visible box is a `role="checkbox"`
  * button so the look is fully ours. Both the box and the label toggle the value.
  */
+import { Check } from 'lucide-vue-next'
 import { computed, useId } from 'vue'
 import { FOCUS_RING } from '~/utils/ui/tones'
 

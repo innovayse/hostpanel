@@ -12,6 +12,7 @@ import { useServicesStore } from '@/stores/services'
 import { useServersStore } from '@/stores/servers'
 import { useSettingsStore } from '@/stores/settings'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { serverAccountsLabel } from '@/lib/servers'
 import { pluginIconPath } from '@/lib/apiPaths'
@@ -50,13 +51,16 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import { ClientSection, clientItemPath, clientSectionPath, servicePlanChangesPath } from '@/lib/routes'
+import { ClientSection, clientItemPath, servicePlanChangesPath } from '@/lib/routes'
 import schema, { BILLING_COLUMNS, NOTES_COLUMNS } from '@/views/ClientServiceDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiBarPluginIcon, UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiInputType } from '@/utils/ui/input'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Clients, the client, the services, the service. */
+const { clientCrumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
@@ -292,12 +296,29 @@ const productOptions = computed(() =>
   productList.value.map(p => ({ value: p.id, label: p.name })),
 )
 
+/**
+ * The label the service switcher gives a service: its number and product.
+ *
+ * @param id - The service id.
+ * @param productName - The name of the ordered product.
+ * @returns The label, for example `#34 Starter`.
+ */
+const switcherLabel = (id: number, productName: string): string => `#${id} ${productName}`
+
 /** Service switcher options for UiSelect dropdown. */
 const serviceSwitcherOptions = computed(() =>
   clientServices.value.map(s => ({
     value: s.id,
-    label: `#${s.id} ${s.productName}`,
+    label: switcherLabel(s.id, s.productName),
   })),
+)
+
+/**
+ * The label of the open service. The options are one lookup page of the client's services, so the open one
+ * is not always among them (a long list, a lookup that failed); the select then shows this label instead of its placeholder.
+ */
+const currentServiceLabel = computed<string | undefined>(() =>
+  service.value ? switcherLabel(service.value.id, service.value.productName) : undefined,
 )
 
 /** Title of the danger confirmation. */
@@ -808,24 +829,24 @@ onMounted(() => {
         <UiPageHeader :actions="headerActions"
           :title="service ? t('clients.clientServiceDetail.serviceIdProductname', { id: service.id, productName: service.productName }) : undefined"
           :loading="!service"
-          :back-to="clientSectionPath(clientId, ClientSection.Services)"
-          :back-label="t('shared.services')"
-          back-testid="client-service-back"
+          :crumbs="clientCrumbs(clientId, ClientSection.Services, service ? t('clients.clientServiceDetail.serviceIdProductname', { id: service.id, productName: service.productName }) : undefined)"
           :data-testid="service ? 'client-service-header' : 'client-service-loading'"
         >
-          <UiStack v-if="service || clientServices.length > 1" :direction="UiDirection.Row" wrap :align="UiAlignItems.Center">
+          <template #badge>
+            <UiBadge v-if="service" :tone="serviceStatusTone(service.status)" data-testid="client-service-status-badge">
+              {{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}
+            </UiBadge>
+          </template>
+          <UiStack v-if="clientServices.length > 1" :direction="UiDirection.Row" wrap :align="UiAlignItems.Center">
             <UiSelect
               data-testid="client-service-switcher"
-              v-if="clientServices.length > 1"
               :model-value="Number(serviceId)"
               :options="serviceSwitcherOptions"
+              :value-label="currentServiceLabel"
               :placeholder="t('shared.productService')"
               searchable
               @update:model-value="switchService"
             />
-            <UiBadge v-if="service" :tone="serviceStatusTone(service.status)" data-testid="client-service-status-badge">
-              {{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}
-            </UiBadge>
           </UiStack>
         </UiPageHeader>
 
@@ -972,7 +993,7 @@ onMounted(() => {
 
             <UiStack v-else :direction="UiDirection.Row" wrap :gap="UiGap.Sm">
               <template v-if="service?.status === ServiceStatus.Pending">
-                <UiButton :action="UiActionKind.Add"
+                <UiButton :action="UiActionKind.AddRow"
                   :type="UiButtonType.Button"
                   :variant="UiButtonVariant.Secondary"
                   :loading="commandLoading"

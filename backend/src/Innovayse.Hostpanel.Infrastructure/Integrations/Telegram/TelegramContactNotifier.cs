@@ -15,7 +15,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.Telegram;
 /// <remarks>
 /// <para>
 /// Lives in the backend so the public site's container holds no credential at all. The message
-/// layout, down to the emoji and the separator rule, is what the operator reads every day.
+/// layout is what the operator reads every day: plain labelled text, no emoji.
 /// </para>
 /// <para>
 /// <b>Legacy <c>Markdown</c> parse mode, not <c>MarkdownV2</c>.</b>
@@ -111,22 +111,22 @@ public sealed class TelegramContactNotifier : IContactNotifier
     private static string BuildMessage(ContactEnquiry enquiry)
     {
         var sb = new StringBuilder();
-        sb.Append("🔔 *New website enquiry*\n\n");
-        sb.Append("👤 *Name:* ").Append(EscapeMarkdown(enquiry.Name)).Append('\n');
-        sb.Append("📧 *Email:* ").Append(EscapeMarkdown(enquiry.Email));
+        sb.Append("*New website enquiry*\n\n");
+        sb.Append("*Name:* ").Append(EscapeMarkdown(enquiry.Name)).Append('\n');
+        sb.Append("*Email:* ").Append(EscapeMarkdown(enquiry.Email));
 
         if (enquiry.Phone is not null)
         {
-            sb.Append("\n📱 *Phone:* ").Append(EscapeMarkdown(enquiry.Phone));
+            sb.Append("\n*Phone:* ").Append(EscapeMarkdown(enquiry.Phone));
         }
 
         if (enquiry.Service is not null)
         {
-            sb.Append("\n🛠 *Service:* ").Append(EscapeMarkdown(enquiry.Service));
+            sb.Append("\n*Service:* ").Append(EscapeMarkdown(enquiry.Service));
         }
 
-        sb.Append("\n\n💬 *Message:*\n").Append(EscapeMarkdown(enquiry.Message));
-        sb.Append("\n\n───────────────\n📅 ").Append(EscapeMarkdown(enquiry.SubmittedAt));
+        sb.Append("\n\n*Message:*\n").Append(EscapeMarkdown(enquiry.Message));
+        sb.Append("\n\n*Submitted:* ").Append(EscapeMarkdown(enquiry.SubmittedAt));
         return sb.ToString();
     }
 

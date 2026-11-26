@@ -31,6 +31,15 @@
   --surface-active:   rgb(255 255 255 / 0.12);
   --surface-card-solid: #0f1527;
   --surface-glass-strong: rgb(17 24 46 / 0.82);
+  /* A recessed well inside a card (a segmented track, a code block, a filter panel, an image placeholder): quieter than a
+     field, so it is never mistaken for an input. The empty part of a meter, a gauge or a skeleton is the track, and the
+     highlight that sweeps over a skeleton is the sheen. The paper is the white a page of operator HTML or a light logo is
+     judged on, and the ink the dark a light logo is judged on: both are the same in every theme on purpose. */
+  --surface-inset:    rgb(255 255 255 / 0.05);
+  --surface-track:    rgb(255 255 255 / 0.08);
+  --surface-sheen:    rgb(255 255 255 / 0.16);
+  --surface-paper:    #ffffff;
+  --surface-ink:      #18181b;
   --border:           rgb(255 255 255 / 0.09);
   --border-subtle:    rgb(255 255 255 / 0.06);
   --border-strong:    rgb(255 255 255 / 0.16);
@@ -143,6 +152,9 @@
   --surface-active:   rgb(47 95 224 / 0.12);
   --surface-card-solid: #ffffff;
   --surface-glass-strong: rgb(255 255 255 / 0.92);
+  --surface-inset:    #f1f4fb;
+  --surface-track:    #e2e8f5;
+  --surface-sheen:    #f8faff;
   --border:           #e4e8f2;
   --border-subtle:    #eef1f6;
   --border-strong:    #d9dfeb;
@@ -249,6 +261,11 @@
   --color-surface-card:     var(--surface-card);
   --color-surface-elevated: var(--surface-elevated);
   --color-surface-field:    var(--surface-field);
+  --color-surface-inset:    var(--surface-inset);
+  --color-surface-track:    var(--surface-track);
+  --color-surface-sheen:    var(--surface-sheen);
+  --color-surface-paper:    var(--surface-paper);
+  --color-surface-ink:      var(--surface-ink);
   --color-surface-hover:    var(--surface-hover);
   --color-surface-active:   var(--surface-active);
   --color-surface-sidebar:  var(--surface-sidebar);

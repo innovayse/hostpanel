@@ -9,7 +9,7 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -17,10 +17,10 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiTextTone, UiTextSize } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
 import { useStorefrontList } from '@/composables/useStorefrontList'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
-import { storefrontColumnCaptions } from '@/lib/storefrontList'
+import { storefrontListColumns } from '@/lib/storefrontList'
+import type { StorefrontListColumn } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { useTestimonialsStore } from '@/stores/testimonials'
 import type { Testimonial } from '@/types/testimonial'
@@ -40,8 +40,8 @@ const store = useTestimonialsStore()
 /** Delete confirmation and reorder state of the page. */
 const list = useStorefrontList<Testimonial>(store)
 
-/** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
+/** Columns between the drag handle and the actions, with their translated captions. */
+const columns = computed<StorefrontListColumn[]>(() => storefrontListColumns(schema.table.columns, t))
 
 /** The question shown for the staged testimonial. */
 const deleteMessage = computed<string>(() =>
@@ -129,9 +129,7 @@ const editRoute = (item: Testimonial): string => editPath(AppRoute.StorefrontTes
       <UiTableCell muted>{{ quoteOf(item) }}</UiTableCell>
       <UiTableCell>{{ item.rating }} / 5</UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
-          {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
-        </UiBadge>
+        <UiStatusBadge :state="item.isActive" :on-label="t('shared.active')" :off-label="t('shared.inactive')" />
       </UiTableCell>
     </template>
   </StorefrontListTable>

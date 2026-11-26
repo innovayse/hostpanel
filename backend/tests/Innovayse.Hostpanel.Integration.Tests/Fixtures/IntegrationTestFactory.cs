@@ -132,6 +132,10 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
             // the production adapters start Wolverine as well and are released the same way.
             services.AddSingleton<IHostedService, WolverineListenerRelease>();
 
+            // A real restart would stop this host, which every other test of the class shares: the restarts are only counted.
+            services.RemoveAll<IHostRestarter>();
+            services.AddSingleton<IHostRestarter, RecordingHostRestarter>();
+
             if (_keepsProductionAdapters)
             {
                 return;

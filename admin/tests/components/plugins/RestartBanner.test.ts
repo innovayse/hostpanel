@@ -7,10 +7,12 @@ import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import { createTestI18n } from '../../helpers/i18n'
 
 describe('RestartBanner', () => {
-  it('asks for a restart and emits restart on click', async () => {
+  it('says a restart applies the staged change, and emits restart on click', async () => {
     const wrapper = mount(RestartBanner, { props: { restarting: false }, global: { plugins: [createTestI18n()] } })
 
     expect(wrapper.text()).toContain('Restart required')
+    expect(wrapper.text()).toContain('Restarting applies the staged plugin changes and takes a moment.')
+    expect(wrapper.get('[data-testid="plugins-restart"]').text()).toBe('Restart now')
     await wrapper.get('[data-testid="plugins-restart"]').trigger('click')
 
     expect(wrapper.emitted('restart')).toHaveLength(1)

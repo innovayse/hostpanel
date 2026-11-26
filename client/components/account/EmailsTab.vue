@@ -26,7 +26,7 @@
           <UiTableRow :hoverable="false">
             <UiTableTh>{{ $t('client.emails.colDate') }}</UiTableTh>
             <UiTableTh>{{ $t('client.emails.colSubject') }}</UiTableTh>
-            <UiTableTh />
+            <UiTableTh actions />
           </UiTableRow>
         </UiTableHead>
       </template>

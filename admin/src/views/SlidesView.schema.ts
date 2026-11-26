@@ -16,12 +16,12 @@ const schema: ListSkeletonSchema = {
   table: {
     columns: [
       { key: 'handle', size: UiColumnSize.Compact, cardRole: UiCardRole.Hidden },
-      { key: 'image', label: 'settings.slides.image', size: UiColumnSize.Compact },
+      { key: 'image', label: 'settings.slides.image', kind: UiColumnKind.Image },
       { key: 'title', label: 'shared.title', size: UiColumnSize.Grow },
       { key: 'audience', label: 'settings.slides.audience', size: UiColumnSize.Compact },
       { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
       { key: 'visibility', label: 'settings.slides.visibility', size: UiColumnSize.Compact },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

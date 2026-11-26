@@ -33,18 +33,27 @@ public sealed class InstallPluginHandler
     /// <summary>Stages the install record of the accepted package.</summary>
     private readonly InstalledPluginRecorder _recorder;
 
+    /// <summary>Applies the accepted package in the running process when it can, and words the answer.</summary>
+    private readonly PluginChangeApplier _applier;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Checks and unpacks the uploaded archive.</param>
     /// <param name="activityLogger">Stages the audit line for the install.</param>
     /// <param name="db">Saves the audit line and the install record.</param>
     /// <param name="recorder">Stages the install record of the accepted package.</param>
+    /// <param name="applier">Applies the accepted package in the running process when it can, and words the answer.</param>
     public InstallPluginHandler(
-        IPluginPackageStore store, IActivityLogger activityLogger, IHostpanelDbContext db, InstalledPluginRecorder recorder)
+        IPluginPackageStore store,
+        IActivityLogger activityLogger,
+        IHostpanelDbContext db,
+        InstalledPluginRecorder recorder,
+        PluginChangeApplier applier)
     {
         _store = store;
         _activityLogger = activityLogger;
         _db = db;
         _recorder = recorder;
+        _applier = applier;
     }
 
     /// <summary>
@@ -110,8 +119,7 @@ public sealed class InstallPluginHandler
         await _recorder.RecordAsync(outcome, PluginSource.Uploaded, ct);
         await _db.SaveChangesAsync(ct);
 
-        return Result<PluginActionResultDto>.Success(
-            new PluginActionResultDto(RequiresRestart: true, StagedVersion: staged ? outcome.Version : null));
+        return await _applier.AcceptedAsync(outcome, staged, ct);
     }
 
     /// <summary>Writes the activity log line of an install or a staged package.</summary>

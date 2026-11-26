@@ -48,24 +48,30 @@ public sealed class RemovePluginHandler
     /// <summary>The clock the moment of the removal is read from, for the removal event.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Unloads the removed plugin from the running process when it can be, and words the answer.</summary>
+    private readonly PluginChangeApplier _applier;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Deletes the uploaded plugin's folder, and refuses an invalid id or a built-in plugin.</param>
     /// <param name="activityLogger">Stages the audit line for the removal on the same context as the switch.</param>
     /// <param name="context">The Admin module's data context: loads and saves the plugin's switch row with the audit line.</param>
     /// <param name="availability">Drops the panels' remembered plugin availability once the switch-off has committed.</param>
     /// <param name="clock">The clock the moment of the removal is read from, for the removal event.</param>
+    /// <param name="applier">Unloads the removed plugin from the running process when it can be, and words the answer.</param>
     public RemovePluginHandler(
         IPluginPackageStore store,
         IActivityLogger activityLogger,
         IHostpanelDbContext context,
         IPluginAvailabilityInvalidator availability,
-        IClock clock)
+        IClock clock,
+        PluginChangeApplier applier)
     {
         _store = store;
         _activityLogger = activityLogger;
         _context = context;
         _availability = availability;
         _clock = clock;
+        _applier = applier;
     }
 
     /// <summary>
@@ -132,6 +138,8 @@ public sealed class RemovePluginHandler
         // still switched on, and the panels would keep showing its pages for the cache lifetime.
         _availability.Invalidate();
 
-        return Result<PluginActionResultDto>.Success(new PluginActionResultDto(RequiresRestart: packageRemoved));
+        return packageRemoved
+            ? await _applier.RemovedAsync(command.Id, ct)
+            : Result<PluginActionResultDto>.Success(new PluginActionResultDto(RequiresRestart: false));
     }
 }

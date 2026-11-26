@@ -57,4 +57,10 @@ describe('UiEmptyState', () => {
 
     expect(wrapper.get('[data-testid="ui-empty-state-actions"]').classes()).toEqual(expect.arrayContaining(['flex-wrap', 'justify-center']))
   })
+
+  it('keeps its own side padding, so the text never touches the edge of the card', () => {
+    const wrapper = mount(UiEmptyState, { props: { title: 'Nothing' } })
+
+    expect(wrapper.classes()).toContain('px-4')
+  })
 })

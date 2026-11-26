@@ -81,8 +81,24 @@ export const Icon = {
   Sparkles: '<path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>',
   /** A downward arrow, for "move down". */
   ArrowDown: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+  /** Two opposed chevrons, for a column that can be sorted but is not. */
+  Sort: '<polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/>',
   /** A right chevron, for "next" and breadcrumbs. */
   Chevron: '<polyline points="9 18 15 12 9 6"/>',
+  /** A downward chevron, for an open list and a step down. */
+  ChevronDown: '<polyline points="6 9 12 15 18 9"/>',
+  /** An upward chevron, for a step up. */
+  ChevronUp: '<polyline points="6 15 12 9 18 15"/>',
+  /** A horizontal dash, for a part-selected box. */
+  Minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
+  /** Three horizontal lines, for the menu button. */
+  Menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+  /** A bell, for notifications. */
+  Bell: '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>',
+  /** Four squares in a grid, for a choice of columns. */
+  Grid: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
+  /** A triangle with an exclamation mark, for a warning. */
+  AlertTriangle: '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   Cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
   Dedicated: '<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>',
   /** An envelope, for mail. */
@@ -139,6 +155,8 @@ export const Icon = {
   Send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
   /** A right arrow, for "go" and "next". */
   ArrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  /** A left arrow, for "previous": the mirror of {@link Icon.ArrowRight}, never a page's way up. */
+  ArrowLeft: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
 } as const
 
 /**
@@ -195,3 +213,35 @@ export const REPORT_ICONS: Record<string, string> = {
  * @returns The icon markup; the fallback icon for an unknown name.
  */
 export const reportIcon = (name: string): string => REPORT_ICONS[name] ?? FALLBACK_REPORT_ICON
+
+/** The icon of a plugin menu item that names none, or one the host does not know: a puzzle piece. */
+export const DEFAULT_PLUGIN_ICON = '<path d="M19.4 13a2 2 0 100-4H18V6a2 2 0 00-2-2h-3V2.6a2 2 0 10-4 0V4H6a2 2 0 00-2 2v3h1.4a2 2 0 110 4H4v5a2 2 0 002 2h5v-1.4a2 2 0 114 0V20h1a2 2 0 002-2v-5z"/>'
+
+/**
+ * The icons a plugin menu item may name, drawn by the sidebar like its own entries. Any other name draws
+ * {@link DEFAULT_PLUGIN_ICON}; a name is never loaded as an address.
+ */
+const PLUGIN_ICONS: Readonly<Record<string, string>> = {
+  apps: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',
+  bot: '<path d="M12 8V4H8M4 8h16v12H4zM2 14h2M20 14h2M15 13v2M9 13v2"/>',
+  boxes: '<path d="M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7L12 12l8.7-5M12 22V12"/>',
+  chart: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
+  chat: '<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+  cloud: '<path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>',
+  globe: '<path d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>',
+  grid: '<path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  mail: '<path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zM22 6l-10 7L2 6"/>',
+  rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/>',
+  settings: '<path d="M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-2.82 1.17V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-2.82-1.17l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003 15.4H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6V3a2 2 0 014 0v.09a1.65 1.65 0 002.82 1.17l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 2z"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  sparkles: '<path d="M12 3l1.9 5.8L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.2zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+}
+
+/**
+ * The icon markup of a plugin menu item.
+ *
+ * @param name - The icon name the plugin chose, or null.
+ * @returns The icon from the host's set, or {@link DEFAULT_PLUGIN_ICON} for an unknown or missing name.
+ */
+export const pluginIcon = (name: string | null | undefined): string =>
+  (name && Object.hasOwn(PLUGIN_ICONS, name) ? PLUGIN_ICONS[name] : undefined) ?? DEFAULT_PLUGIN_ICON

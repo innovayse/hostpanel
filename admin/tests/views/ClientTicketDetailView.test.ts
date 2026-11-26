@@ -164,12 +164,13 @@ describe('ClientTicketDetailView', () => {
     expect(wrapper.find('[data-testid="client-ticket-close"]').exists()).toBe(true)
   })
 
-  it('returns to the tickets of its client with the back pill', async () => {
+  it('draws the trail of its client above the title with a bar for the ticket still being read', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountTicket()
-    const back = wrapper.get('[data-testid="client-ticket-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/clients/7/tickets')
-    expect(back.text()).toBe('Tickets')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/clients', '/clients/7', '/clients/7/tickets'])
+    expect(trail.find('[data-testid="ui-page-header-crumb-current-pending"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="client-ticket-back"]').exists()).toBe(false)
   })
 })

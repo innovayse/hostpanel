@@ -114,6 +114,10 @@ services:
       # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
       PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED}
       PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL}
+      # Seconds the host lets running requests finish before it exits for a plugin restart (PLUGIN_DRAIN_SECONDS in .env.example).
+      Plugins__DrainSeconds: ${PLUGIN_DRAIN_SECONDS:-30}
+      # Seconds the host waits after a staged plugin change, so changes made one after another share one restart (PLUGIN_RESTART_DELAY_SECONDS in .env.example).
+      Plugins__RestartDelaySeconds: ${PLUGIN_RESTART_DELAY_SECONDS:-3}
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
       Telegram__ChatId: ${TELEGRAM_CHAT_ID}
       Vat__Hmrc__ClientId: ${HMRC_VAT_CLIENT_ID:-}
@@ -179,6 +183,10 @@ services:
         limits:
           cpus: '${API_CPUS:?API_CPUS must be set}'
           memory: ${API_MEMORY:?API_MEMORY must be set}
+    # Restarts after a clean exit too (never on-failure): the host exits on purpose to apply a plugin change.
+    restart: unless-stopped
+    # Longer than the plugin drain time (Plugins__DrainSeconds), so Docker does not kill a draining host.
+    stop_grace_period: ${API_STOP_GRACE_PERIOD:-45s}
 
   hostpanel-client:
     container_name: hostpanel-client
@@ -246,6 +254,9 @@ services:
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY}
+      NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE}
+      NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES}
+      NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR}
       BILLING_PORTAL_URL: ${BILLING_PORTAL_URL}
       NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
       # Where the signed-in sessions are kept (the tokens never reach the browser): the API's Redis.

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginDetailsHeader from '@/components/plugins/details/PluginDetailsHeader.vue'
-import { PluginPricing } from '@/types/plugin'
+import { PluginChangeResult, PluginPricing } from '@/types/plugin'
 import { createTestI18n } from '../../../helpers/i18n'
 import { makeDetails, makeInstalled } from '../../../helpers/pluginDetails'
 
@@ -37,6 +37,22 @@ const mountHeader = (options: HeaderOptions = {}) =>
   })
 
 describe('PluginDetailsHeader', () => {
+  it('shows a Failed badge with the reason and the restored version when the last change failed', () => {
+    const wrapper = mountHeader({
+      plugin: { lastChange: { pluginId: 'example-pay', fromVersion: '1.0.0', toVersion: '2.0.0', result: PluginChangeResult.Failed, error: 'Missing dependency.', restoredVersion: '1.0.0', at: '2026-11-24T10:00:00Z' } },
+    })
+
+    expect(wrapper.get('[data-testid="plugin-details-change-failed"]').text()).toBe('Update failed')
+    expect(wrapper.get('[data-testid="plugin-details-failure"]').text()).toBe('Update failed: Missing dependency. Version 1.0.0 is still running.')
+  })
+
+  it('shows no Failed badge when there is no failed change', () => {
+    const wrapper = mountHeader()
+
+    expect(wrapper.find('[data-testid="plugin-details-change-failed"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-details-failure"]').exists()).toBe(false)
+  })
+
   it('shows the author, description, verified and price badges, and no heading of its own (the page header owns the h1)', () => {
     const wrapper = mountHeader()
 

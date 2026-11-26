@@ -72,9 +72,24 @@ describe('QuoteItemsEditor', () => {
       props: { modelValue: [line({ unitPrice: 24000, quantity: 1, discountPercent: 0 })], currency: 'AMD' },
     })
 
-    expect(wrapper.text()).toContain('24000.00 AMD')
-    expect(wrapper.get('[data-testid="billing-quote-subtotal"]').text()).toBe('24000.00 AMD')
-    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('24000.00 AMD')
+    expect(wrapper.text()).toContain('24,000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-quote-subtotal"]').text()).toBe('24,000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-quote-total"]').text()).toBe('24,000.00 AMD')
     expect(wrapper.text()).not.toContain('USD')
+  })
+
+  it('draws the totals as the foot of the line table, under the total column', () => {
+    const wrapper = mountWithApp(QuoteItemsEditor, { props: { modelValue: [line({ unitPrice: 10, quantity: 3, discountPercent: 0 })] } })
+
+    const cells = wrapper.get('tfoot').findAll('tr')[0]?.findAll('td') ?? []
+    expect(cells[0]?.attributes('colspan')).toBe('5')
+    expect(cells[1]?.attributes('data-testid')).toBe('billing-quote-subtotal')
+  })
+
+  it('keeps the number columns on one line, sized to their content', () => {
+    const wrapper = mountWithApp(QuoteItemsEditor, { props: { modelValue: [line({})] } })
+
+    const unitPrice = wrapper.findAll('th').find((th) => th.text() === 'Unit price')
+    expect(unitPrice?.classes()).toContain('whitespace-nowrap')
   })
 })

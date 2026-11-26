@@ -35,7 +35,8 @@ describe('MigrationProgressCard', () => {
     const wrapper = mountCard(null)
 
     expect(wrapper.get('[data-testid="migration-loading"]').attributes('aria-busy')).toBe('true')
-    expect(wrapper.findAll('[data-testid="ui-stat-tile-skeleton"]')).toHaveLength(4)
+    expect(wrapper.find('[data-testid="migration-stat-migrated"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="migration-stat-total"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Skipped')
     expect(wrapper.find('[data-testid="migration-check"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="migration-job-status"]').exists()).toBe(false)
@@ -64,8 +65,8 @@ describe('MigrationProgressCard', () => {
     const wrapper = mountCard(job)
 
     // The failed tile shows the server's own failed count.
-    expect(wrapper.text()).toContain('Failed')
-    expect(wrapper.text()).toContain('2')
+    expect(wrapper.get('[data-testid="migration-stat-failed"]').text()).toContain('2')
+    expect(wrapper.get('[data-testid="migration-stat-migrated"]').text()).toContain('7')
   })
 
   it('shows the translated reason of a failed job', () => {

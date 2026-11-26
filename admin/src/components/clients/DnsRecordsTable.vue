@@ -66,13 +66,6 @@ const DEFAULT_TYPE = 'A'
 /** Default TTL, in seconds. */
 const DEFAULT_TTL = '3600'
 
-/** Icon markup (shape tags) of the add, save and cancel buttons. */
-const ICONS = {
-  add: '<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />',
-  confirm: '<polyline points="20 6 9 17 4 12" />',
-  cancel: '<line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />',
-} as const
-
 /** Domains store, the only caller of the DNS endpoints. */
 const store = useDomainsStore()
 
@@ -323,7 +316,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
             data-testid="clients-dns-add"
             @click="startAdd"
           >
-            <UiIcon :markup="ICONS.add" :size="UiSize.Md" />
+            <UiIcon :markup="Icon.Add" :size="UiSize.Md" />
           </UiIconButton>
         </template>
       </UiSectionHeader>
@@ -337,7 +330,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
             <UiTableHeader :size="UiColumnSize.Grow" :card-role="UiCardRole.Control">{{ t('shared.value') }}</UiTableHeader>
             <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Control">{{ t('clients.dnsRecordsTable.ttl') }}</UiTableHeader>
             <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Control">{{ t('shared.priority') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions />
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -383,7 +376,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
                     data-testid="clients-dns-draft-save"
                     @click="saveDraft"
                   >
-                    <UiIcon :markup="ICONS.confirm" :size="UiSize.Md" />
+                    <UiIcon :markup="Icon.Check" :size="UiSize.Md" />
                   </UiIconButton>
                   <UiIconButton
                     :label="t('shared.cancel')"
@@ -391,7 +384,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiMenuAction[] => [
                     data-testid="clients-dns-draft-cancel"
                     @click="cancelDraft"
                   >
-                    <UiIcon :markup="ICONS.cancel" :size="UiSize.Md" />
+                    <UiIcon :markup="Icon.Close" :size="UiSize.Md" />
                   </UiIconButton>
                 </UiStack>
               </UiTableCell>

@@ -300,15 +300,16 @@ describe('PluginDetailsView', () => {
     expect(mock.mock.calls.some(([url]) => String(url).includes('/servers'))).toBe(false)
   })
 
-  it('links back to the list from the page header, as the kit back pill with an icon', async () => {
+  it('draws the trail above the title, the plugin list as a link and the plugin itself last', async () => {
     stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
     const wrapper = await mountPage()
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    const back = wrapper.get('[data-testid="plugin-details-back"]')
-    expect(back.classes()).toContain('rounded-pill')
-    expect(back.attributes('href')).toBe('/plugins')
-    expect(back.text()).toBe('Plugins')
-    expect(back.find('svg').exists()).toBe(true)
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/plugins'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="plugin-details-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it.each([PluginErrorCode.RegistryLicenceRequired, PluginErrorCode.RegistryLicenceInvalid])(
@@ -592,7 +593,7 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage('licence')
 
-    await wrapper.get('[data-testid="plugin-licence-remove"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-licence-clear"]').trigger('click')
     await flushPromises()
 
     expect(callsWith(mock, 'DELETE')).toHaveLength(1)
@@ -620,10 +621,15 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage('licence')
 
+    await wrapper.get('[data-testid="plugin-licence-replace"]').trigger('click')
     await wrapper.get('[data-testid="plugin-licence-input"]').setValue('KEY-NEW')
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
     await flushPromises()
 
+    // The re-created card shows the saved key masked; opening Replace again finds the field empty.
+    expect(wrapper.find('[data-testid="plugin-licence-input"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-licence-masked"]').exists()).toBe(true)
+    await wrapper.get('[data-testid="plugin-licence-replace"]').trigger('click')
     expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('')
   })
 
@@ -634,6 +640,7 @@ describe('PluginDetailsView', () => {
     })
     const wrapper = await mountPage('licence')
 
+    await wrapper.get('[data-testid="plugin-licence-replace"]').trigger('click')
     await wrapper.get('[data-testid="plugin-licence-input"]').setValue('BAD')
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
     await flushPromises()
@@ -641,17 +648,17 @@ describe('PluginDetailsView', () => {
     expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('BAD')
   })
 
-  it('empties the key field after the saved key is removed', async () => {
-    stubRoutes({
+  it('removes the saved key through Clear and re-creates the card', async () => {
+    const mock = stubRoutes({
       [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
       'DELETE /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
     })
     const wrapper = await mountPage('licence')
 
-    await wrapper.get('[data-testid="plugin-licence-input"]').setValue('TYPED')
-    await wrapper.get('[data-testid="plugin-licence-remove"]').trigger('click')
+    await wrapper.get('[data-testid="plugin-licence-clear"]').trigger('click')
     await flushPromises()
 
-    expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('')
+    expect(callsWith(mock, 'DELETE')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="plugin-licence-masked"]').exists()).toBe(true)
   })
 })

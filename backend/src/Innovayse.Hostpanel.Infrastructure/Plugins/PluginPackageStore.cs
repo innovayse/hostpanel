@@ -155,6 +155,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
             // An upgrade staged for a removed plugin must not come back at the next startup.
             DiscardStaged(installRoot, id);
             PluginUpgradeApplier.DeleteMarker(installRoot, id);
+            PluginFreshInstalls.Clear(installRoot, id);
             if (!Directory.Exists(pluginDir))
             {
                 return new PluginPackageResult(PluginPackageOutcome.NotFound, id, null);
@@ -618,6 +619,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
                 Directory.Move(previous, targetDir);
                 throw;
             }
+
+            // Nothing runs from this folder yet: its first load is at the next start, which settles the install.
+            PluginFreshInstalls.Mark(installRoot, id);
         }
         finally
         {

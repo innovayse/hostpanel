@@ -9,8 +9,7 @@
     "country": "Country",
     "kind": "Kind",
     "rate": "Rate",
-    "validFrom": "Valid from",
-    "actions": "Actions"
+    "validFrom": "Valid from"
   },
   "kind": {
     "Standard": "Standard",

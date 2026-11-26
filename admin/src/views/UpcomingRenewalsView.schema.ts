@@ -42,7 +42,7 @@ export const RENEWALS_SERVICES_TABLE: SkeletonTable = {
     { key: 'billingCycle', label: 'shared.billingCycle' },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
     { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 
@@ -55,7 +55,7 @@ export const RENEWALS_DOMAINS_TABLE: SkeletonTable = {
     { key: 'expires', label: 'billing.renewals.expires', kind: UiColumnKind.Date },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
     { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 
@@ -66,7 +66,7 @@ export const RENEWALS_CLAIMS_TABLE: SkeletonTable = {
     { key: 'client', label: 'shared.client' },
     { key: 'line', label: 'billing.renewals.line', size: UiColumnSize.Grow },
     { key: 'claimedAt', label: 'billing.renewals.claimedAt', kind: UiColumnKind.Date },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

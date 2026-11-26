@@ -13,6 +13,7 @@ import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /**
  * Builds the page of the article list the API answers.
@@ -355,8 +356,8 @@ describe('KnowledgebaseView article list and editing', () => {
     expect(row.text()).toContain('How to pay')
     expect(row.text()).toContain('how-to-pay')
     expect(row.text()).toContain('Billing')
-    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Published')
-    expect(wrapper.get('[data-testid="knowledgebase-article-12"] [role="img"]').attributes('aria-label')).toBe('Draft')
+    expect(row.getComponent(UiStatusBadge).text()).toBe('Published')
+    expect(wrapper.get('[data-testid="knowledgebase-article-12"]').getComponent(UiStatusBadge).text()).toBe('Draft')
   })
 
   it('shows the first language an article has when it has no English text', async () => {

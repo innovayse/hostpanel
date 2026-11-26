@@ -16,6 +16,7 @@ import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /**
  * Builds a billable item as the list endpoint returns it.
@@ -105,10 +106,10 @@ describe('BillableItemsView', () => {
     const rows = wrapper.findAll('[data-testid="billing-billable-items-table"] tbody tr')
     expect(rows).toHaveLength(2)
     expect(rows[0]?.text()).toContain('12.00 USD')
-    expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('No')
+    expect(rows[0]?.getComponent(UiStatusBadge).text()).toBe('No')
   })
 
-  it('makes the description column the one that grows and the invoiced state an icon column', async () => {
+  it('makes the description column the one that grows and the invoiced state a badge column', async () => {
     stubRoutes({ 'GET /api/billing/billable-items': itemsPage, 'GET /api/clients': noClients })
     const wrapper = await mountList()
 

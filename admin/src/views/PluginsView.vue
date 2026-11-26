@@ -12,7 +12,7 @@
  * every plugin: the "Allow unsigned plugins" switch and the data removed plugins kept, which can be purged
  * behind a danger prompt. An update, from the installed list or from a registry card, opens a prompt that lists
  * the release notes of every version it passes through and installs only after the admin confirms. A restart
- * banner shows while pending changes need a restart; a purge's outcome shows above the tabs, and every install, update and upload runs behind the processing dialog.
+ * banner shows while pending changes need a restart, and its button confirms and then waits for the server behind a blocking dialog; a purge's outcome shows above the tabs, and every install, update and upload runs behind the processing dialog.
  * Removing a plugin is done on its own page.
  */
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -35,7 +35,7 @@ import PluginRegistryInstanceCard from '@/components/plugins/PluginRegistryInsta
 import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCard.vue'
 import PluginUploader from '@/components/plugins/PluginUploader.vue'
 import PluginUpdateChanges from '@/components/plugins/details/PluginUpdateChanges.vue'
-import RestartBanner from '@/components/plugins/RestartBanner.vue'
+import PluginRestart from '@/components/plugins/PluginRestart.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
@@ -74,9 +74,6 @@ const settingsStore = useSettingsStore()
 /** Id of the plugin whose data purge is in flight. */
 const purgingId = ref<string | null>(null)
 
-/** True while the server restart request is in flight. */
-const restarting = ref(false)
-
 /** Whether the upload dialog is open. */
 const uploadOpen = ref(false)
 
@@ -111,6 +108,8 @@ const handlePurge = async (id: string): Promise<void> => {
 const archiveOutcome = (ok: boolean): PluginActionOutcome => ({
   ok,
   stagedVersion: ok ? store.stagedVersion : null,
+  reloaded: ok && store.reloaded,
+  restarting: ok && store.restarting,
   error: ok ? null : store.actionError,
 })
 
@@ -126,13 +125,6 @@ const handleForceDowngrade = async (): Promise<void> => {
      */
     work: async () => archiveOutcome(await store.forceDowngrade()),
   })
-}
-
-/** Restarts the server so installed or removed plugins take effect. */
-const handleRestart = async (): Promise<void> => {
-  restarting.value = true
-  await store.restart()
-  restarting.value = false
 }
 
 /** Opens the upload dialog. */
@@ -391,8 +383,8 @@ onMounted(() => Promise.all([
     >
     </UiPageHeader>
 
-    <!-- Restart banner -->
-    <RestartBanner v-if="store.requiresRestart" :restarting="restarting" @restart="handleRestart" />
+    <!-- Restart banner, its confirmation and the dialog that waits for the server -->
+    <PluginRestart />
 
     <UiTabs
       :model-value="tab"
@@ -471,6 +463,7 @@ onMounted(() => Promise.all([
       v-else
       :plugins="store.installed"
       :update-versions="store.updateVersions"
+      :checking-updates="store.registryUpdatesChecking"
       :loading="store.loading"
       :error="store.error"
       :updating-ids="installingIds"

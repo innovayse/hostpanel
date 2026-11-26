@@ -53,6 +53,16 @@ describe('IntegrationDetailView', () => {
     expect(wrapper.find('[data-testid="integration-status"]').exists()).toBe(true)
   })
 
+  it('draws the trail above the title: the integrations list as a link, the integration itself last, no back link', async () => {
+    stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()) })
+    const wrapper = await mountDetail('bank-transfer')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
+
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/integrations'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe('Bank Transfer')
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+  })
+
   it('names the page by the integration once it has loaded', async () => {
     stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()) })
     const wrapper = await mountDetail('bank-transfer')

@@ -17,7 +17,7 @@ import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -217,7 +217,7 @@ defineExpose({
           <UiTableHeader :size="UiColumnSize.Grow">{{ t('shared.title') }}</UiTableHeader>
           <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
           <UiTableHeader :size="UiColumnSize.Compact" :card-role="UiCardRole.Badge">{{ t('shared.status') }}</UiTableHeader>
-          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader actions />
         </UiTableRow>
       </UiTableHead>
       <UiTableBody>
@@ -235,12 +235,10 @@ defineExpose({
           </UiTableCell>
           <UiTableCell muted>{{ article.categoryName }}</UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="article.isPublished"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('shared.published')"
-              :off-label="t('support.knowledgebase.draft')"
+              :off-label="t('shared.draft')"
             />
           </UiTableCell>
           <UiTableCell actions>

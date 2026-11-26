@@ -35,7 +35,7 @@ describe('UiSegmented', () => {
   it('sizes the frame and the buttons as the concept toggle', () => {
     const wrapper = mount(UiSegmented, { props: { items, modelValue: '30' } })
 
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['p-1', 'gap-1.5', 'rounded-control', 'bg-surface-field']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['p-1', 'gap-1.5', 'rounded-control', 'bg-surface-inset']))
     expect(wrapper.get('[role="radio"]').classes()).toEqual(expect.arrayContaining(['h-8', 'px-3.5', 'rounded-[9px]']))
   })
 

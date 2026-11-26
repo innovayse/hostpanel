@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<{
 const fieldIndexes = computed<number[]>(() => Array.from({ length: props.skeleton.fields }, (_, index) => index))
 
 /** Ring that marks a chosen card. */
-const selectedClasses = 'bg-primary-500/10 ring-1 ring-(--text-accent)'
+const selectedClasses = 'bg-tint-blue ring-1 ring-text-accent'
 </script>
 
 <template>

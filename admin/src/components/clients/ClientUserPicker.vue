@@ -12,6 +12,7 @@ import type { UserSearchHit } from '@/types/clientuser'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
@@ -58,9 +59,6 @@ const MAX_RESULTS = 5
 
 /** Placeholder rows drawn where the hits will appear while a search is in flight. */
 const LOADING_ROWS = 3
-
-/** Icon markup (shape tags) of the clear button. */
-const CLOSE_ICON = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
 
 /** Text in the search box. */
 const term = ref('')
@@ -147,7 +145,7 @@ onBeforeUnmount(() => {
       :data-testid="`${testid}-clear`"
       @click="clear"
     >
-      <UiIcon :markup="CLOSE_ICON" :size="UiSize.Sm" />
+      <UiIcon :markup="Icon.Close" :size="UiSize.Sm" />
     </UiIconButton>
   </UiStack>
 

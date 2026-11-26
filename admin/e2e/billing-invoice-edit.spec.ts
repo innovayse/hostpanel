@@ -1,5 +1,5 @@
 /**
- * Invoice edit flow: in manage mode an operator removes a line and edits another on the Options
+ * Invoice edit flow: in manage mode an operator removes a line and edits another on the Summary
  * tab, saves, and the stub "database" holds the edits, the screen confirms the save and shows the
  * reloaded lines.
  */
@@ -44,7 +44,6 @@ test('saving the edited lines sends the edits and the screen shows the stored re
   })
 
   await page.goto(`/billing/invoices/${stored.id}/edit`)
-  await page.getByTestId('billing-invoice-tab-options').click()
   await page.getByTestId('billing-invoice-item-remove-1').click()
   await page.getByTestId('billing-invoice-item-description-0').fill('Managed hosting')
   await page.getByTestId('billing-invoice-items-save').click()

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { categoryLabel, fromInstalled, fromRegistry } from '@/lib/pluginCard'
-import { PluginCardBadge, PluginCategory, PluginManifestRule, PluginPricing, PluginStatus } from '@/types/plugin'
+import { PluginCardBadge, PluginCategory, PluginChangeResult, PluginManifestRule, PluginPricing, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 
 /** An installed plugin that is running. */
@@ -58,6 +58,20 @@ describe('categoryLabel', () => {
 })
 
 describe('fromInstalled', () => {
+  it('adds a ChangeFailed badge and the reason and restored version when the last change failed', () => {
+    const card = fromInstalled({ ...installed, lastChange: { pluginId: 'example-pay', fromVersion: '1.0.0', toVersion: '2.0.0', result: PluginChangeResult.Failed, error: 'Missing dependency.', restoredVersion: '1.0.0', at: '2026-11-24T10:00:00Z' } }, null)
+
+    expect(card.badges).toEqual([PluginCardBadge.Active, PluginCardBadge.ChangeFailed])
+    expect(card.failedChange).toEqual({ error: 'Missing dependency.', restoredVersion: '1.0.0' })
+  })
+
+  it('shows no failure for an applied change', () => {
+    const card = fromInstalled({ ...installed, lastChange: { pluginId: 'example-pay', fromVersion: '1.0.0', toVersion: '2.0.0', result: PluginChangeResult.Applied, error: null, restoredVersion: null, at: '2026-11-24T10:00:00Z' } }, null)
+
+    expect(card.badges).toEqual([PluginCardBadge.Active])
+    expect(card.failedChange).toBeNull()
+  })
+
   it('maps a running plugin to an Active card', () => {
     const card = fromInstalled(installed, null)
 
@@ -70,6 +84,7 @@ describe('fromInstalled', () => {
       version: '1.2.0',
       badges: [PluginCardBadge.Active],
       refusal: null,
+      failedChange: null,
     })
   })
 

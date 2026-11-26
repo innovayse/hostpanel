@@ -24,6 +24,7 @@ import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
@@ -33,6 +34,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { useModalSurface } from '@/utils/ui/modalSurface'
 import { modalPanelClasses, playGhostLeave, UiTransitionKind } from '@/utils/ui/transition'
+import { Icon } from '@/lib/icons'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { ACTION_ROW_PHONE_CLASSES, UiActionKind } from '@/utils/ui/actions'
 
@@ -252,10 +254,7 @@ const onBackdrop = (): void => {
               data-testid="dialog-close"
               @click="close"
             >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <UiIcon :markup="Icon.Close" />
             </UiIconButton>
           </div>
           <div class="@container flex-1 min-h-0 overflow-y-auto px-6 py-2 flex flex-col gap-4" data-testid="dialog-body">

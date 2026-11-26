@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
       { key: 'domain', label: 'settings.productBundles.domain' },
       { key: 'discount', label: 'settings.productBundles.discount' },
       { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

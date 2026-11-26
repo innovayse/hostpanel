@@ -16,6 +16,7 @@ import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { toastMessages } from '../helpers/toasts'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** The base currency. */
 const usd: CurrencyDto = {
@@ -117,8 +118,8 @@ describe('ProductsView', () => {
     expect(row).toContain('Shared Hosting')
     expect(row).toContain('$4.50')
     expect(row).toContain('+EUR')
-    expect(wrapper.get('[data-testid="product-row-1"] [role="img"]').attributes('aria-label')).toBe('Active')
-    expect(wrapper.get('[data-testid="product-row-2"] [role="img"]').attributes('aria-label')).toBe('Inactive')
+    expect(wrapper.get('[data-testid="product-row-1"]').getComponent(UiStatusBadge).text()).toBe('Active')
+    expect(wrapper.get('[data-testid="product-row-2"]').getComponent(UiStatusBadge).text()).toBe('Inactive')
   })
 
   it('shows a column per billing cycle and the price of a product on a newer cycle', async () => {

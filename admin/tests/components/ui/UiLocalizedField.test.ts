@@ -7,14 +7,13 @@ import { defineComponent, h, ref } from 'vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import { STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { ContentLanguage } from '@/locales/contentLanguage'
-import { MessageLanguage } from '@/locales/messages'
 import { mountWithApp } from '../../helpers/mount'
 
 /** Every language filled. */
-const allFilled = { [ContentLanguage.En]: true, [ContentLanguage.Ru]: true, [ContentLanguage.Hy]: true, [ContentLanguage.De]: true, [ContentLanguage.Es]: true }
+const allFilled = { [ContentLanguage.En]: true, [ContentLanguage.Ru]: true, [ContentLanguage.Hy]: true, [ContentLanguage.De]: true, [ContentLanguage.Es]: true, [ContentLanguage.Fr]: true }
 
 /** Props every mount starts from. */
-const base = { locales: STOREFRONT_LOCALES, filled: allFilled, testid: 'demo-tab' }
+const base = { filled: allFilled, testid: 'demo-tab' }
 
 /**
  * Mounts the field with a slot that prints the language on screen.
@@ -38,14 +37,18 @@ describe('UiLocalizedField', () => {
       ['demo-tab-hy', 'Armenian'],
       ['demo-tab-de', 'German'],
       ['demo-tab-es', 'Spanish'],
+      ['demo-tab-fr', 'French'],
     ])
   })
 
-  it('draws only the languages it is given, as a setting kept per admin language needs', () => {
-    const locales = [MessageLanguage.En, MessageLanguage.Ru, MessageLanguage.Hy]
-    const wrapper = mountField({ locales })
+  it('draws exactly the languages of the shared list, so no screen can show a shorter or a longer strip', () => {
+    const wrapper = mountField()
 
-    expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).toEqual(['English', 'Russian', 'Armenian'])
+    expect(wrapper.findAll('[role="tab"]').map((tab) => tab.attributes('data-testid'))).toEqual(
+      STOREFRONT_LOCALES.map((locale) => `demo-tab-${locale}`),
+    )
+    expect(new Set(STOREFRONT_LOCALES)).toEqual(new Set(Object.values(ContentLanguage)))
+    expect(STOREFRONT_LOCALES[0]).toBe(ContentLanguage.En)
   })
 
   it('hands the slot the language on screen and switches it from a tab', async () => {

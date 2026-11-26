@@ -54,6 +54,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// The <c>Hostpanel.Sdk</c> package version the installed package was built on; <see langword="null"/> when its
 /// manifest names none and for a refused or removed row.
 /// </param>
+/// <param name="LastChange">The last change made to the plugin and how it ended (applied, or failed with the reason and the restored version); <see langword="null"/> when none was recorded.</param>
 public sealed record PluginListItemDto(
     string Id,
     string Name,
@@ -83,4 +84,5 @@ public sealed record PluginListItemDto(
     string? SignerKeyId = null,
     long? PackageSizeBytes = null,
     string? PackageSha256 = null,
-    string? SdkPackageVersion = null);
+    string? SdkPackageVersion = null,
+    PluginChangeDto? LastChange = null);

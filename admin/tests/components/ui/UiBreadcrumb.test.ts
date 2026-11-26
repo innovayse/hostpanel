@@ -1,10 +1,11 @@
 /**
  * Unit tests for UiBreadcrumb: linked parents, a current page that is not a link, the fold of a long trail into a
- * keyboard-reachable "..." menu, and the phone layout that keeps only the current page.
+ * keyboard-reachable "..." menu, the phone layout of the bar that keeps only the current page, and the page layout that keeps every step.
  */
 import { describe, expect, it } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 import UiBreadcrumb from '@/components/ui/UiBreadcrumb.vue'
+import { UiBreadcrumbVariant } from '@/utils/ui/breadcrumb'
 import type { UiBreadcrumbItem } from '@/utils/ui/breadcrumb'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -105,5 +106,49 @@ describe('UiBreadcrumb', () => {
 
   it('draws nothing for an empty trail', () => {
     expect(mountTrail([]).find('nav').exists()).toBe(false)
+  })
+
+  describe('page variant', () => {
+    it('keeps every step at every width, where the bar variant hides the parents below md', () => {
+      const wrapper = mountTrail(trail('Clients', 'Ada', 'Domains', 'example.com'), { variant: UiBreadcrumbVariant.Page })
+
+      expect(wrapper.findAll('li').flatMap((item) => item.classes())).not.toContain('max-md:hidden')
+      expect(wrapper.findAllComponents(RouterLinkStub).map((link) => link.text())).toEqual(['Clients', 'Ada', 'Domains'])
+    })
+
+    it('separates the steps with the chevron of the icon library and lets a long trail wrap', () => {
+      const wrapper = mountTrail(trail('Clients', 'Ada', 'Domains', 'example.com'), { variant: UiBreadcrumbVariant.Page })
+
+      expect(wrapper.findAll('li svg')).toHaveLength(3)
+      expect(wrapper.get('ol').classes()).toEqual(expect.arrayContaining(['flex-wrap', 'text-sm']))
+    })
+
+    it('cuts a long name with an ellipsis and keeps its full text in the title', () => {
+      const name = 'A very long client name that cannot fit the line'
+      const wrapper = mountTrail(trail('Clients', name, 'Domains', 'example.com'), { variant: UiBreadcrumbVariant.Page })
+      const link = wrapper.findAllComponents(RouterLinkStub)[1]!
+
+      expect(link.classes()).toContain('truncate')
+      expect(link.attributes('title')).toBe(name)
+      expect(link.element.parentElement?.classList.contains('min-w-0')).toBe(true)
+      expect(wrapper.get('[data-testid="ui-breadcrumb-current"]').classes()).toContain('truncate')
+    })
+
+    it('mutes the steps: parents in the muted tone, the page itself in the secondary one, and no link on the page itself', () => {
+      const wrapper = mountTrail(trail('Clients', 'Ada'), { variant: UiBreadcrumbVariant.Page })
+      const current = wrapper.get('[data-testid="ui-breadcrumb-current"]')
+
+      expect(wrapper.findComponent(RouterLinkStub).classes()).toContain('text-text-muted')
+      expect(current.classes()).toContain('text-text-secondary')
+      expect(current.element.tagName).not.toBe('A')
+      expect(current.attributes('aria-current')).toBe('page')
+    })
+
+    it('draws a bar in place of the page whose name is still being read', () => {
+      const wrapper = mountTrail([{ label: 'Clients', to: '/clients' }, { label: '', pending: true }], { variant: UiBreadcrumbVariant.Page })
+
+      expect(wrapper.find('[data-testid="ui-breadcrumb-current-pending"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="ui-breadcrumb-current"]').exists()).toBe(false)
+    })
   })
 })

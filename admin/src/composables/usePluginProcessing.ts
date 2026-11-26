@@ -5,6 +5,7 @@
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePluginsStore } from '@/stores/plugins'
 import { PluginProcessingStep } from '@/types/plugin'
 import type { PluginActionOutcome } from '@/types/plugin'
 
@@ -47,7 +48,7 @@ export const usePluginProcessing = () => {
   /** Whether the work was refused. */
   const failed = ref(false)
 
-  /** The sentence the work ended with: the API's refusal, or the staged-version note; null for a plain success. */
+  /** The sentence the work ended with: the API's refusal, the staged-version note, or the note that the change runs without a restart; null for a plain success. */
   const message = ref<string | null>(null)
 
   /**
@@ -68,11 +69,17 @@ export const usePluginProcessing = () => {
     failed.value = !outcome.ok
     if (!outcome.ok) {
       message.value = outcome.error ?? t('errors.noAnswer')
+    } else if (outcome.reloaded) {
+      message.value = t('plugins.processing.reloaded', { name: options.name })
     } else if (outcome.stagedVersion !== null) {
       message.value = t('plugins.plugins.pluginStaged', { version: outcome.stagedVersion })
     }
     if (options.handsOff?.(outcome) === true) {
       open.value = false
+    } else if (outcome.ok && outcome.restarting) {
+      // The host restarts itself to apply the change: this dialog closes into the restart dialog, which waits for it.
+      open.value = false
+      void usePluginsStore().followRestart()
     }
     return outcome
   }

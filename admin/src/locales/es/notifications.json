@@ -1,0 +1,26 @@
+{
+  "type": {
+    "ClientRegistered": "Nuevo cliente registrado",
+    "InvoiceOverdue": "Factura n.º {number} vencida",
+    "DomainExpiring": "{domain} vence pronto",
+    "PaymentReceived": "Pago recibido de la factura n.º {number}",
+    "TicketOpened": "Nuevo ticket: {subject}"
+  },
+  "upcoming": "El {date}",
+  "unread": "No leída",
+  "unreadCount": "{count} sin leer | {count} sin leer",
+  "markRead": "Marcar como leída",
+  "markAllRead": "Marcar todas como leídas",
+  "filter": {
+    "label": "Mostrar notificaciones",
+    "all": "Todas",
+    "unread": "Sin leer"
+  },
+  "group": {
+    "upcoming": "Próximamente",
+    "today": "Hoy",
+    "earlier": "Anteriores"
+  },
+  "emptyUnread": "No hay notificaciones sin leer",
+  "emptyHint": "Aquí aparecen los clientes nuevos, las facturas vencidas, los pagos, los tickets y los dominios a punto de vencer."
+}

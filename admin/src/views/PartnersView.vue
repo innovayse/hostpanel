@@ -9,16 +9,16 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { navTitleKey } from '@/lib/navigation'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
-import UiBadge from '@/components/ui/UiBadge.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
-import { UiTone } from '@/utils/ui/tone'
 import { useStorefrontList } from '@/composables/useStorefrontList'
 import { storefrontAssetUrl } from '@/lib/runtimeConfig'
-import { storefrontColumnCaptions } from '@/lib/storefrontList'
+import { storefrontListColumns } from '@/lib/storefrontList'
+import type { StorefrontListColumn } from '@/lib/storefrontList'
 import { displayTranslation } from '@/lib/storefrontTranslations'
 import { usePartnersStore } from '@/stores/partners'
 import type { Partner } from '@/types/partner'
@@ -38,8 +38,8 @@ const store = usePartnersStore()
 /** Delete confirmation and reorder state of the page. */
 const list = useStorefrontList<Partner>(store)
 
-/** Column captions between the drag handle and the actions. */
-const columns = computed<string[]>(() => storefrontColumnCaptions(schema.table.columns, t))
+/** Columns between the drag handle and the actions, with their translated captions. */
+const columns = computed<StorefrontListColumn[]>(() => storefrontListColumns(schema.table.columns, t))
 
 /**
  * The name to show for a partner: the first written locale, an empty string when none.
@@ -114,9 +114,7 @@ const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartner
       </UiTableCell>
       <UiTableCell muted>{{ item.url || EMPTY_VALUE }}</UiTableCell>
       <UiTableCell>
-        <UiBadge :tone="item.isActive ? UiTone.Success : UiTone.Neutral" small>
-          {{ item.isActive ? t('shared.active') : t('shared.inactive') }}
-        </UiBadge>
+        <UiStatusBadge :state="item.isActive" :on-label="t('shared.active')" :off-label="t('shared.inactive')" />
       </UiTableCell>
     </template>
   </StorefrontListTable>

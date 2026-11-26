@@ -28,6 +28,20 @@ public sealed class PluginOptionsValidator : IValidateOptions<PluginOptions>
                 $"must be between 1 and {PluginOptions.MaxMigrationTimeoutSeconds} seconds");
         }
 
+        if (options.DrainSeconds is <= 0 or > PluginOptions.MaxDrainSeconds)
+        {
+            return Fail(
+                nameof(PluginOptions.DrainSeconds),
+                $"must be between 1 and {PluginOptions.MaxDrainSeconds} seconds");
+        }
+
+        if (options.RestartDelaySeconds is < 0 or > PluginOptions.MaxRestartDelaySeconds)
+        {
+            return Fail(
+                nameof(PluginOptions.RestartDelaySeconds),
+                $"must be between 0 and {PluginOptions.MaxRestartDelaySeconds} seconds");
+        }
+
         if (options.MaxViewBytes < 1 || options.MaxViewBytes > PluginOptions.MaxViewBytesCeiling)
         {
             return Fail(

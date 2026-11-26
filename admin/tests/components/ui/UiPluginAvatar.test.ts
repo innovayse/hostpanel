@@ -36,6 +36,17 @@ describe('UiPluginAvatar', () => {
     expect(image.attributes('aria-hidden')).toBe('true')
   })
 
+  it('frames the icon in a padded bordered tile and leaves the colour block unframed', async () => {
+    const wrapper = mountAvatar({ iconUrl: '/api/admin/plugins/acme/icon' })
+
+    expect(wrapper.get('[data-testid="plugin-avatar"]').classes()).toEqual(expect.arrayContaining(['border', 'border-border', 'bg-surface-inset', 'p-1']))
+
+    await wrapper.get('[data-testid="plugin-avatar-image"]').trigger('error')
+
+    expect(wrapper.get('[data-testid="plugin-avatar"]').classes()).not.toContain('p-1')
+    expect(wrapper.get('[data-testid="plugin-avatar"]').classes()).not.toContain('border')
+  })
+
   it('shows the colour block with the initial when there is no icon', () => {
     const wrapper = mountAvatar({ iconUrl: null, color: '#123456' })
 

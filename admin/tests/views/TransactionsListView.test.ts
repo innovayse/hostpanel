@@ -152,7 +152,7 @@ describe('TransactionsListView', () => {
     const wrapper = await mountLedger()
 
     const row = wrapper.get('[data-testid="billing-transactions-table"] tbody tr').text()
-    expect(row).toContain('5000.00 AMD')
+    expect(row).toContain('5,000.00 AMD')
     expect(row).toContain('100.00 AMD')
     expect(wrapper.get('[data-testid="billing-transactions-total-in"]').text()).toContain('12.00 EUR')
     expect(wrapper.get('[data-testid="billing-transactions-total-fees"]').text()).toContain('0.25 EUR')

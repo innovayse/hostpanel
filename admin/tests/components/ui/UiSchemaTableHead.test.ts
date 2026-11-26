@@ -1,12 +1,13 @@
 /**
- * Unit tests for UiSchemaTableHead: one header per schema column, with the caption, the breakpoint and the actions caption
- * the column names.
+ * Unit tests for UiSchemaTableHead: one header per schema column, with the caption and the breakpoint the column names, and
+ * the table's own "Actions" caption for the actions column.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import { createTestI18n } from '../../helpers/i18n'
 import type { SkeletonColumn } from '@/utils/ui/skeletonSchema'
+import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import { UiColumnSize, UiHideBelow } from '@/utils/ui/table'
 
 /** The columns the tests draw: a plain one, a hidden one, a number one and the actions one. */
@@ -33,20 +34,12 @@ describe('UiSchemaTableHead', () => {
     expect(wrapper.findAll('th')[1]?.classes()).toEqual(expect.arrayContaining(['hidden', 'lg:table-cell']))
   })
 
-  it('draws the caption an actions column names, for assistive technology only', () => {
+  it('names the actions column "Actions" without the schema naming it, as part of the table', () => {
     const wrapper = mount(UiSchemaTableHead, {
-      props: { columns: [{ key: 'actions', label: 'shared.actions', actions: true }] },
-      global: { plugins: [createTestI18n()] },
+      props: { columns: COLUMNS },
+      global: { plugins: [createTestI18n()], provide: { [UI_TABLE_CONTEXT as symbol]: { density: UiTableDensity.Comfortable, actionsLabel: 'Actions' } } },
     })
 
-    expect(wrapper.find('th').text()).toBe('Actions')
-    expect(wrapper.find('th .sr-only').text()).toBe('Actions')
-  })
-
-  it('gives an actions column with no caption the screen reader caption', () => {
-    const wrapper = mount(UiSchemaTableHead, { props: { columns: COLUMNS }, global: { plugins: [createTestI18n()] } })
-    const caption = wrapper.findAll('th')[3]?.find('.sr-only')
-
-    expect(caption?.text()).toBe('Actions')
+    expect(wrapper.findAll('th')[3]?.text()).toBe('Actions')
   })
 })

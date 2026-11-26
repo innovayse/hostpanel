@@ -20,6 +20,8 @@ import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiTableTotals from '@/components/ui/UiTableTotals.vue'
+import type { UiTotalRow } from '@/components/ui/UiTableTotals.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { formatPlainAmount } from '@/lib/money'
@@ -29,7 +31,7 @@ import type { QuoteLineDraft } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiAlign } from '@/utils/ui/table'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
@@ -61,6 +63,12 @@ const lineTotal = (line: QuoteLineDraft): number => {
 
 /** Sum of every line total (this is also the total due: quotes carry no separate tax line here). */
 const subTotal = computed<number>(() => lines.value.reduce((sum, line) => sum + lineTotal(line), 0))
+
+/** The totals under the lines: the sub-total and the total due (a quote carries no separate tax line here). */
+const totalRows = computed<UiTotalRow[]>(() => [
+  { key: 'subtotal', label: t('shared.subTotal2'), value: formatPlainAmount(subTotal.value, props.currency), testid: 'billing-quote-subtotal' },
+  { key: 'total', label: t('shared.totalDue2'), value: formatPlainAmount(subTotal.value, props.currency), strong: true, testid: 'billing-quote-total' },
+])
 
 /**
  * Replaces one line's fields, leaving the others as they are.
@@ -175,22 +183,13 @@ const lineActions = (index: number): UiMenuAction[] => {
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>
+      <UiTableTotals :rows="totalRows" />
     </UiTable>
 
-    <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" wrap>
-      <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-quote-item-add" @click="addLine">
+    <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+      <UiButton :action="UiActionKind.AddRow" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-quote-item-add" @click="addLine">
         {{ t('billing.actions.addItem') }}
       </UiButton>
-      <UiStack :align="UiAlignItems.End" :gap="UiGap.Xs">
-        <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg" :align="UiAlignItems.Center">
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Md">{{ t('shared.subTotal2') }}</UiText>
-          <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md" data-testid="billing-quote-subtotal">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
-        </UiStack>
-        <UiStack :direction="UiDirection.Row" :gap="UiGap.Lg" :align="UiAlignItems.Center">
-          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ t('shared.totalDue2') }}</UiText>
-          <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md" data-testid="billing-quote-total">{{ formatPlainAmount(subTotal, props.currency) }}</UiText>
-        </UiStack>
-      </UiStack>
     </UiStack>
   </UiStack>
 </template>

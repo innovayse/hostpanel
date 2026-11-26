@@ -131,6 +131,8 @@ export const UiColumnKind = {
   Date: 'date',
   /** An id or a short code: takes a single share of the width. */
   Id: 'id',
+  /** A thumbnail (a logo, a cover, a picture): the one fixed width every image column shares, so it never takes a share of the row. */
+  Image: 'image',
 } as const
 
 /** One of the column kinds. */
@@ -142,6 +144,7 @@ export const kindSizes: Record<UiColumnKind, UiColumnSize> = {
   status: UiColumnSize.Narrow,
   date: UiColumnSize.Narrow,
   id: UiColumnSize.Narrow,
+  image: UiColumnSize.Fixed,
 }
 
 /** Closed set of widths a `Fixed` column takes. */
@@ -156,6 +159,11 @@ export const UiColumnWidth = {
 
 /** One of the fixed column widths. */
 export type UiColumnWidth = (typeof UiColumnWidth)[keyof typeof UiColumnWidth]
+
+/** The width a `Fixed` column of each kind takes when the screen names none; a kind not listed takes `Medium`. */
+export const kindWidths: Partial<Record<UiColumnKind, UiColumnWidth>> = {
+  image: UiColumnWidth.Small,
+}
 
 /** Classes per fixed width, literal so Tailwind emits them. */
 export const columnWidthClasses: Record<UiColumnWidth, string> = {
@@ -190,7 +198,8 @@ export const columnSizeClasses: Record<UiColumnSize, string> = {
 export const growControlClasses = 'w-full'
 
 /**
- * The size a column takes: an actions column is always `Compact` (one icon button or one "…" trigger), a size the screen
+ * The size a column takes: an actions column and the checkbox column of a selectable table are always `Compact` (one icon
+ * button, one "…" trigger or one checkbox, never a share of the row), a size the screen
  * names wins, and any other column takes the size of its kind, a number that of a status (free text a double share, the
  * rest a single one).
  *
@@ -198,7 +207,7 @@ export const growControlClasses = 'w-full'
  * @returns Its size.
  */
 export const sizeOfColumn = (column: UiTableColumn): UiColumnSize => {
-  if (column.actions) {
+  if (column.actions || column.select) {
     return UiColumnSize.Compact
   }
   if (column.size !== undefined) {
@@ -219,7 +228,8 @@ export const columnSizeOf = (column: UiTableColumn): string => {
     return growControlClasses
   }
   if (size === UiColumnSize.Fixed) {
-    return `${columnSizeClasses.fixed} ${columnWidthClasses[column.width ?? UiColumnWidth.Medium]}`
+    const width = column.width ?? (column.kind ? kindWidths[column.kind] : undefined) ?? UiColumnWidth.Medium
+    return `${columnSizeClasses.fixed} ${columnWidthClasses[width]}`
   }
   return columnSizeClasses[size]
 }
@@ -236,8 +246,12 @@ export const truncatesColumn = (column: UiTableColumn | undefined): boolean =>
 /** Classes of a numeric or money cell: right aligned, figures of one width, kept on one line. */
 export const numericCellClasses = 'text-end tabular-nums whitespace-nowrap'
 
-/** Classes of the checkbox column of a selectable table, header and cells alike: narrow, and the box is never selected as text by a Shift range. */
-export const selectColumnClasses = 'w-12 select-none'
+/**
+ * Classes of the checkbox column of a selectable table, header and cells alike: the box is never selected as text by a
+ * Shift range. Its width is the `Compact` size every select column takes (see {@link sizeOfColumn}), just the checkbox
+ * and the cell padding, so the first data column starts next to it.
+ */
+export const selectColumnClasses = 'select-none'
 
 /**
  * Classes of a selected row: a soft accent background and a thin accent bar on the left edge (an inset shadow of

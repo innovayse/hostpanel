@@ -25,6 +25,7 @@ internal static class DetachedPanelPlugins
             new ServiceCollection().BuildServiceProvider(),
             new ConfigurationBuilder().Build(),
             registry,
+            new PluginUsageLeases(),
             NullLogger<PluginActivator>.Instance);
 
         return (

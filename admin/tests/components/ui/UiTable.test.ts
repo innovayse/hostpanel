@@ -32,6 +32,18 @@ const headerHarness = (columns: Array<Record<string, unknown>>) => defineCompone
 })
 
 describe('UiTable', () => {
+  it('names the header of an actions column "Actions" in the active language, with no caption from the screen', () => {
+    const wrapper = mount(defineComponent({
+      render: () => h(UiTable, null, {
+        default: () => h(UiTableHead, null, { default: () => h(UiTableRow, null, {
+          default: () => [h(UiTableHeader, null, { default: () => 'Name' }), h(UiTableHeader, { actions: true })],
+        }) }),
+      }),
+    }), { global: global() })
+
+    expect(wrapper.findAll('th').map((th) => th.text())).toEqual(['Name', 'Actions'])
+  })
+
   it('renders the native table with its slot', () => {
     const wrapper = mount(UiTable, { slots: { default: '<tbody><tr><td>content</td></tr></tbody>' }, global: global() })
 

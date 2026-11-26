@@ -141,6 +141,9 @@ const phone = useMediaQuery(UI_BELOW_MD_QUERY)
 /** The shape of the placeholder cards the phone layout draws while loading. */
 const cardSkeleton = computed(() => cardSkeletonOf(columns.value.map(({ column }) => column)))
 
+/** Position of the last column that is not the row actions column: the amount column of a line item table (`UiTableTotals`). */
+const amountColumn = computed<number>(() => [...columns.value].reverse().find(({ column }) => !column.actions)?.index ?? 0)
+
 /** Width of the status row: every header column (at least one). */
 const columnCount = computed<number>(() => Math.max(columns.value.length, 1))
 
@@ -231,6 +234,9 @@ provide(UI_TABLE_CONTEXT, {
   },
   registerColumn,
   columnAt,
+  get amountColumn() {
+    return amountColumn.value
+  },
   get selection() {
     return props.selection
   },
@@ -242,6 +248,9 @@ provide(UI_TABLE_CONTEXT, {
   },
   get selectRowLabel() {
     return t('shared.selectRow')
+  },
+  get actionsLabel() {
+    return t('shared.actions')
   },
 })
 </script>

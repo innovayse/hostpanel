@@ -70,7 +70,7 @@ const isLine = computed<boolean>(() => props.kind === ChartKind.Line || props.ki
       <path
         v-if="kind === ChartKind.Area"
         d="M0 40 L0 28 C12 22 20 30 32 20 S52 12 64 18 S86 6 100 10 L100 40 Z"
-        class="fill-surface-hover"
+        class="fill-surface-track"
         data-testid="chart-skeleton-area"
       />
       <path
@@ -91,7 +91,7 @@ const isLine = computed<boolean>(() => props.kind === ChartKind.Line || props.ki
     :data-kind="kind"
   >
     <svg viewBox="0 0 100 100" class="min-h-0 w-auto flex-1 motion-safe:animate-pulse">
-      <circle cx="50" cy="50" r="38" fill="none" stroke-width="14" class="stroke-surface-hover" />
+      <circle cx="50" cy="50" r="38" fill="none" stroke-width="14" class="stroke-surface-track" />
     </svg>
     <!-- On a phone the real legend sits under the ring -->
     <div class="flex items-center gap-4 sm:hidden" data-testid="chart-skeleton-legend">
@@ -130,7 +130,7 @@ const isLine = computed<boolean>(() => props.kind === ChartKind.Line || props.ki
     :data-kind="kind"
   >
     <svg viewBox="0 0 100 56" class="h-3/4 max-h-full w-auto motion-safe:animate-pulse">
-      <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="9" stroke-linecap="round" class="stroke-surface-hover" />
+      <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke-width="9" stroke-linecap="round" class="stroke-surface-track" />
     </svg>
   </div>
 </template>

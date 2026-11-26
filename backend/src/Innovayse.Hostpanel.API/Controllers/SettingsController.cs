@@ -116,7 +116,8 @@ public sealed class SettingsController : BaseApiController
     /// 200 with the primary URL and every file generated from the upload;
     /// 400 when the kind or the image is not acceptable; 413 when the file is over the size limit;
     /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
-    /// 429 when the rate limit is hit.
+    /// 429 when the rate limit is hit;
+    /// 503 with <c>STORAGE_NOT_WRITABLE</c> when the server's upload folder is not writable.
     /// </returns>
     [HttpPost("branding/{kind}")]
     [RequestSizeLimit(BrandingUploadLimits.RequestSizeLimitBytes)]
@@ -125,6 +126,7 @@ public sealed class SettingsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> UploadBrandingImageAsync(BrandingKind kind, IFormFile file, CancellationToken ct)
     {
         await using var content = file?.OpenReadStream() ?? Stream.Null;

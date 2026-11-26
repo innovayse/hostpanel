@@ -9,11 +9,11 @@
 import { createI18n } from 'vue-i18n'
 import { MessageLanguage, messages } from '@/locales/messages'
 
-/** Locale codes the admin panel ships. */
-export const SUPPORTED_LOCALES = [MessageLanguage.En, MessageLanguage.Hy, MessageLanguage.Ru, MessageLanguage.De, MessageLanguage.Es] as const
+/** Locale codes the admin panel ships: every `MessageLanguage`, the interface languages, in the switcher's order. */
+export const SUPPORTED_LOCALES: readonly MessageLanguage[] = Object.values(MessageLanguage)
 
 /** One of the shipped locale codes. */
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
+export type SupportedLocale = MessageLanguage
 
 /** Locale an unseen visitor gets, and the one a missing message falls back to. */
 const DEFAULT_LOCALE = MessageLanguage.En

@@ -8,7 +8,9 @@
  * between enabled tabs and move focus with the selection (roving tabindex: only the selected tab is in the tab order).
  * A strip wider than its box fades the side that still hides tabs, so a cut label reads as more to scroll to, and it
  * scrolls the selected tab into view (on mount, when the selection changes and when the strip or a tab changes size),
- * so the selected tab is never the one cut off.
+ * so the selected tab is never the one cut off. The keyboard focus ring is drawn inset and only on `:focus-visible`: an
+ * outer ring is cut off at the bottom by the strip's own overflow clip, which showed a focused tab as a box open at the
+ * bottom (left, top and right edges) instead of the underline.
  */
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useScrollEdges } from '@/composables/useScrollEdges'
@@ -113,9 +115,9 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
         :tabindex="item.value === modelValue ? 0 : -1"
         :disabled="item.disabled"
         :data-testid="item.testid"
-        class="px-4 py-2.5 text-[0.8125rem] font-medium whitespace-nowrap border-b-2 -mb-px transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        class="px-4 py-2.5 text-[0.8125rem] font-medium whitespace-nowrap border-b-2 -mb-px transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/60 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         :class="item.value === modelValue
-          ? 'border-primary-500 text-primary-500 light:text-primary-600'
+          ? 'border-primary-500 text-text-accent'
           : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border-strong'"
         @click="emit('update:modelValue', item.value)"
         @keydown="onKeydown($event, index)"

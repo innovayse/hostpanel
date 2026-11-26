@@ -15,6 +15,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import { expectOnlyActivePanel } from '../helpers/tabPanels'
 
 /** Route pattern of the screen, with the optional mode segment. */
 const PATTERN = '/billing/:id/:action?'
@@ -57,6 +58,34 @@ describe('InvoiceDetailView', () => {
 
     expect(wrapper.find('[data-testid="billing-invoice-tab-options"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="billing-invoice-mark-paid"]').exists()).toBe(true)
+  })
+
+  it('draws only the open tab: the items and transactions sections belong to the summary alone', async () => {
+    stubRoutes({
+      'GET /api/billing/1/fulfilment': () => json([]),
+      'GET /api/billing/1': () => json(invoiceFixture()),
+    })
+    const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1/edit')
+    await flushPromises()
+    const summary = 'billing-invoice-tab-summary'
+
+    await expectOnlyActivePanel(
+      wrapper,
+      [
+        { tab: summary, panel: 'billing-invoice-summary' },
+        { tab: 'billing-invoice-tab-payment', panel: 'billing-invoice-payment' },
+        { tab: 'billing-invoice-tab-options', panel: 'billing-invoice-options' },
+        { tab: 'billing-invoice-tab-credit', panel: 'billing-invoice-credit' },
+        { tab: 'billing-invoice-tab-refund', panel: 'billing-invoice-refund' },
+        { tab: 'billing-invoice-tab-credit-notes', panel: 'billing-invoice-credit-notes' },
+        { tab: 'billing-invoice-tab-fulfilment', panel: 'billing-invoice-fulfilment' },
+        { tab: 'billing-invoice-tab-notes', panel: 'billing-invoice-notes' },
+      ],
+      [
+        { owner: summary, testid: 'billing-invoice-items' },
+        { owner: summary, testid: 'billing-invoice-transactions' },
+      ],
+    )
   })
 
   it('opens in manage mode on the edit route and switches tabs', async () => {
@@ -252,15 +281,16 @@ describe('InvoiceDetailView', () => {
     expect(wrapper.find('[data-testid="billing-invoice-summary"]').exists()).toBe(true)
   })
 
-  it('returns to the invoices list with the back pill in the header', async () => {
+  it('draws the trail above the title, the invoice itself last and no back link', async () => {
     stubRoutes({ 'GET /api/billing/1': () => json(invoiceFixture()) })
     const { wrapper } = await mountRouted(InvoiceDetailView, PATTERN, '/billing/1')
     await flushPromises()
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    const back = wrapper.get('[data-testid="billing-invoice-back"]')
-
-    expect(back.attributes('href')).toBe('/billing/invoices')
-    expect(back.text()).toBe('Invoices')
-    expect(back.classes()).toContain('rounded-pill')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toContain('/billing')
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="billing-invoice-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

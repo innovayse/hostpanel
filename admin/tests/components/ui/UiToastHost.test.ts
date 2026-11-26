@@ -67,4 +67,14 @@ describe('UiToastHost', () => {
     expect(wrapper.findAll('[data-testid="ui-toast"]')).toHaveLength(0)
     expect(useToastStore().toasts).toEqual([])
   })
+
+  it('stands each toast on an opaque elevated surface, because the tone tints are translucent', async () => {
+    const wrapper = mountHost()
+    useToastStore().push('Saved')
+    await wrapper.vm.$nextTick()
+
+    const toast = wrapper.get('[data-testid="ui-toast"]')
+    expect(toast.element.parentElement?.className).toContain('bg-surface-elevated')
+    expect(toast.element.parentElement?.className).toContain('shadow-popover')
+  })
 })

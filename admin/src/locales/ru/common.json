@@ -3,7 +3,6 @@
   "notifications": "Уведомления",
   "notificationsWithCount": "Уведомления, новых: {count}",
   "viewAllNotifications": "Смотреть все уведомления",
-  "newCount": "{count} новый | {count} новых | {count} новых",
   "noNotifications": "Нет уведомлений",
   "help": "Справка",
   "roles": {

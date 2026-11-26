@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { blankTranslations, collectTranslations, displayTranslation, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
+import { STOREFRONT_LOCALES, blankTranslations, collectTranslations, displayTranslation, filledLocales, formsFromTranslations, translationErrors } from '@/lib/storefrontTranslations'
 
 /** A one-field translation as the tests use it. */
 interface Text {
@@ -25,7 +25,7 @@ describe('storefrontTranslations', () => {
 
     forms.en.text = 'x'
 
-    expect(Object.keys(forms)).toEqual(['en', 'ru', 'hy', 'de', 'es'])
+    expect(Object.keys(forms)).toEqual([...STOREFRONT_LOCALES])
     expect(forms.ru.text).toBe('')
   })
 
@@ -59,7 +59,7 @@ describe('storefrontTranslations', () => {
     const forms = blankTranslations(blank)
     forms.hy.text = 'Բարև'
 
-    expect(filledLocales(forms, (form) => form.text !== '')).toEqual({ en: false, ru: false, hy: true, de: false, es: false })
+    expect(filledLocales(forms, (form) => form.text !== '')).toEqual(Object.fromEntries(STOREFRONT_LOCALES.map((locale) => [locale, locale === 'hy'])))
   })
 
   it('translationErrors repeats the translations sentence under every given key', () => {

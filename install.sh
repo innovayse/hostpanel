@@ -19,6 +19,8 @@
 #   --version <x.y.z>  release to install, e.g. 0.4.0     [HOSTPANEL_VERSION, default: main / latest]
 #   --no-tls           serve plain HTTP on 8080 behind your own TLS proxy [HOSTPANEL_TLS=off]
 #   --rollback         restore the database and the version recorded with the newest backup of another version
+#   --check            check an existing install without changing it: the API must restart after a clean exit
+#                      (restart: unless-stopped or always), which the automatic restart after a plugin change relies on
 #   --yes              do not ask for confirmation (rollback)
 #   --keep <n>         newest backups to keep, older ones are removed, except the oldest backup of
 #                      each version [HOSTPANEL_BACKUP_KEEP, default 5]
@@ -57,6 +59,8 @@ SMTP_RELAY_PORT=587
 SMTP_RELAY_ENCRYPTION="tls"
 # Compose service (and container) name of the API.
 API_SERVICE="hostpanel-api"
+# The restart policies that start the API again after it exits cleanly, as a plugin restart makes it do.
+RESTART_POLICIES_AFTER_CLEAN_EXIT="always unless-stopped"
 # Compose service of the database. Every other service of the compose file is stopped for a restore.
 DB_SERVICE="hostpanel-db"
 # The named volume that holds the database files (the "name:" of pgdata in docker-compose.hub.yml).
@@ -90,11 +94,13 @@ usage() {
   cat <<'USAGE'
 Usage: install.sh [--dir <path>] [--version <x.y.z>] [--no-tls] [--keep <n>] [--keep-versions <n>] [--skip-backup]
        install.sh --rollback [--yes] [--dir <path>]
+       install.sh --check [--dir <path>]
   --dir      install directory   (HOSTPANEL_DIR, default /opt/hostpanel)
   --version  release to install  (HOSTPANEL_VERSION, default main / latest)
   --no-tls   plain HTTP on 8080 for an install behind your own TLS proxy (HOSTPANEL_TLS=off)
   --rollback restore the database and the version recorded with the newest backup of another version (asks first)
-  --yes      confirm a rollback in advance, for scripts
+  --check    check an existing install: the API must restart after a clean exit (needed for a plugin restart)
+  --yes     confirm a rollback in advance, for scripts
   --keep     newest backups to keep, plus the oldest of each version (HOSTPANEL_BACKUP_KEEP, default 5)
   --keep-versions  versions whose oldest backup is kept, the newest ones (HOSTPANEL_BACKUP_KEEP_VERSIONS, default 10)
   --skip-backup  upgrade without a database backup; the data is not protected, only when there is nothing to keep
@@ -332,15 +338,6 @@ compose() {
   ( cd "$INSTALL_DIR" && docker compose -f "$COMPOSE_FILE" "$@" < /dev/null )
 }
 
-# The API runs as an unprivileged user. A data volume created by an earlier release belongs to root,
-# so it is handed over once before the stack starts (a no-op on a volume that already belongs to it).
-fix_volume_ownership() {
-  info "Making sure the API can write to its data volumes"
-  compose run -T --rm --no-deps --user 0 --cap-add CHOWN --entrypoint sh "$API_SERVICE" \
-    -c 'chown -R "$APP_UID" /app/wwwroot/uploads /app/plugins-installed' \
-    || warn "Could not set the owner of the API data volumes; uploads may fail until you do."
-}
-
 # Waits until the API answers /health from inside its own container (its port is not published).
 wait_for_api() {
   local port
@@ -356,6 +353,31 @@ wait_for_api() {
   warn "The API did not become healthy in $((HEALTH_ATTEMPTS * HEALTH_INTERVAL))s."
   warn "Look at it with:  cd ${INSTALL_DIR} && docker compose -f ${COMPOSE_FILE} logs ${API_SERVICE}"
   return 1
+}
+
+# ── Checks of an existing install ─────────────────────────────────────────────
+
+# Reads a resolved compose file ('docker compose config') on stdin and prints the restart policy of the API
+# service, nothing when it has none. The resolved form indents a service key by four spaces.
+api_restart_policy() {
+  awk -v svc="  ${API_SERVICE}:" '
+    $0 == svc { inside = 1; next }
+    inside && /^ ? ?[^ ]/ { inside = 0 }
+    inside && /^    restart:/ { sub(/^    restart:[ ]*/, ""); gsub(/["'\'']/, ""); print; exit }
+  '
+}
+
+# Fails unless the API restarts after a clean exit. The host exits on purpose to apply a plugin change and
+# relies on its container being started again; a policy that restarts only after a failure (on-failure) or
+# never leaves the panel down until someone starts it by hand.
+check_restart_policy() {
+  local config policy
+  config="$(compose config)" || fail "Could not read ${INSTALL_DIR}/${COMPOSE_FILE} ('docker compose config' failed)."
+  policy="$(printf '%s\n' "$config" | api_restart_policy)"
+  case " ${RESTART_POLICIES_AFTER_CLEAN_EXIT} " in
+    *" ${policy:-none} "*) success "The API (${API_SERVICE}) restarts after a clean exit (restart: ${policy})." ;;
+    *) fail "The API (${API_SERVICE}) in ${INSTALL_DIR}/${COMPOSE_FILE} has restart policy '${policy:-none}', which does not start it again after a clean exit, so the automatic restart after a plugin change would leave the panel down. Set 'restart: unless-stopped' on it (and a stop_grace_period longer than Plugins__DrainSeconds, 45s by default), then run:  cd ${INSTALL_DIR} && docker compose -f ${COMPOSE_FILE} up -d  Running this installer again downloads the current compose file." ;;
+  esac
 }
 
 # ── Backup and rollback ───────────────────────────────────────────────────────
@@ -1034,7 +1056,6 @@ rollback() {
     || fail_with_state "Could not pull the images of version ${tag}." \
       "the database is restored, the files and IMAGE_TAG are those of ${tag}, the application services are STOPPED." \
       "$(printf '      cd %q && docker compose -f %s pull && docker compose -f %s up -d\n' "$INSTALL_DIR" "$COMPOSE_FILE" "$COMPOSE_FILE")"
-  fix_volume_ownership
   info "Starting the stack"
   compose up -d \
     || fail_with_state "Could not start the stack of version ${tag}." \
@@ -1118,6 +1139,7 @@ main() {
   KEEP="${HOSTPANEL_BACKUP_KEEP:-$BACKUP_KEEP_DEFAULT}"
   KEEP_VERSIONS="${HOSTPANEL_BACKUP_KEEP_VERSIONS:-$BACKUP_KEEP_VERSIONS_DEFAULT}"
   ROLLBACK=0
+  CHECK=0
   ASSUME_YES=0
   SKIP_BACKUP=0
   BACKUP_FILE=''
@@ -1129,6 +1151,7 @@ main() {
       --version)  [ "$#" -ge 2 ] || fail "--version needs a value"; HOSTPANEL_VERSION="$2"; shift 2 ;;
       --no-tls)   TLS_ASKED="off"; shift ;;
       --rollback) ROLLBACK=1; shift ;;
+      --check)    CHECK=1; shift ;;
       --yes|-y)   ASSUME_YES=1; shift ;;
       --keep)     [ "$#" -ge 2 ] || fail "--keep needs a number"; KEEP="$2"; shift 2 ;;
       --keep-versions) [ "$#" -ge 2 ] || fail "--keep-versions needs a number"; KEEP_VERSIONS="$2"; shift 2 ;;
@@ -1150,6 +1173,18 @@ main() {
   case "$KEEP_VERSIONS" in
     ''|*[!0-9]*|0) fail "--keep-versions / HOSTPANEL_BACKUP_KEEP_VERSIONS must be a whole number of at least 1 (got '$KEEP_VERSIONS')." ;;
   esac
+
+  if [ "$CHECK" = "1" ]; then
+    [ "$ROLLBACK" = "0" ] || fail "--check only reads the install; do not combine it with --rollback."
+    [ -z "$HOSTPANEL_VERSION" ] || fail "--check looks at the install as it is; do not combine it with --version."
+    printf '%sHostpanel check%s\n' "$BOLD" "$NC"
+    check_prerequisites
+    INSTALL_DIR="$(cd "$INSTALL_DIR" 2>/dev/null && pwd)" || fail "${INSTALL_DIR} does not exist: there is no install here to check."
+    [ -f "${INSTALL_DIR}/.env" ] || fail "No ${INSTALL_DIR}/.env: there is no install here to check."
+    [ -f "${INSTALL_DIR}/${COMPOSE_FILE}" ] || fail "${INSTALL_DIR}/${COMPOSE_FILE} is missing; cannot check the install."
+    check_restart_policy
+    return 0
+  fi
 
   if [ "$ROLLBACK" = "1" ]; then
     # The version to return to is the one recorded with the backup, never one typed here.
@@ -1198,7 +1233,6 @@ main() {
 
   info "Pulling the images"
   compose pull
-  fix_volume_ownership
   info "Starting the stack"
   compose up -d
 

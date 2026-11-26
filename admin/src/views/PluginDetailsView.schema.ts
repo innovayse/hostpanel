@@ -63,7 +63,7 @@ export const PLUGIN_OVERVIEW_PART: CardsSkeletonPart = {
 /** What the plugin details screen is made of. */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { title: 'pluginDetails.title', backLabel: 'shared.plugins', backMobileOnly: true },
+  header: { title: 'pluginDetails.title', crumbs: true },
   columns: [
     [
       { key: 'head', identity: true, lines: 2, actions: 2 },

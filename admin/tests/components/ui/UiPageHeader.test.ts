@@ -1,5 +1,6 @@
 /**
- * Unit tests for UiPageHeader: title as the page heading, subtitle and slots.
+ * Unit tests for UiPageHeader: title as the page heading, subtitle and slots, the breadcrumb trail above the title, the
+ * badge beside it and the actions on its line.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { config, mount, RouterLinkStub } from '@vue/test-utils'
@@ -59,15 +60,15 @@ describe('UiPageHeader', () => {
       slots: { actions: '<button data-testid="act" />' },
     })
 
-    const row = wrapper.get('h1').element.parentElement?.parentElement
-    expect(row?.classList.contains('flex-wrap')).toBe(true)
-    expect(wrapper.get('h1').element.parentElement?.className).toEqual(expect.stringContaining('min-w-0'))
+    const text = wrapper.get('h1').element.parentElement?.parentElement
+    expect(text?.parentElement?.classList.contains('flex-wrap')).toBe(true)
+    expect(text?.className).toEqual(expect.stringContaining('min-w-0'))
     expect(wrapper.get('p').classes()).toContain('max-w-[70ch]')
   })
 
   it('stacks the header in a column and wraps its title row, so the actions drop under a long title instead of squeezing it', () => {
     const wrapper = mount(UiPageHeader, { props: { title: 'Service #1 - A long product name' }, slots: { actions: '<button data-testid="act" />' } })
-    const text = wrapper.get('h1').element.parentElement
+    const text = wrapper.get('h1').element.parentElement?.parentElement
     const actions = wrapper.get('[data-testid="act"]').element.parentElement
 
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['flex', 'flex-col']))
@@ -88,7 +89,33 @@ describe('UiPageHeader', () => {
   it('keeps default-slot content (a switcher, a badge) inside the text column under the title', () => {
     const wrapper = mount(UiPageHeader, { props: { title: 'Service' }, slots: { default: '<span data-testid="extra" />' } })
 
-    expect(wrapper.get('[data-testid="extra"]').element.parentElement).toBe(wrapper.get('h1').element.parentElement)
+    expect(wrapper.get('[data-testid="extra"]').element.parentElement).toBe(wrapper.get('h1').element.parentElement?.parentElement)
+  })
+
+  it('draws the badge slot inline beside the title, in the title row and not under it', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'Domain' }, slots: { badge: '<span data-testid="status" />', default: '<span data-testid="extra" />' } })
+    const row = wrapper.get('[data-testid="ui-page-header-title-row"]')
+
+    expect(wrapper.get('[data-testid="status"]').element.parentElement).toBe(row.element)
+    expect(wrapper.get('h1').element.parentElement).toBe(row.element)
+    expect(row.classes()).toEqual(expect.arrayContaining(['flex', 'items-center']))
+    expect(wrapper.get('[data-testid="extra"]').element.parentElement).not.toBe(row.element)
+  })
+
+  it('draws no badge while the title loads', () => {
+    const wrapper = mount(UiPageHeader, { props: { loading: true }, slots: { badge: '<span data-testid="status" />' } })
+
+    expect(wrapper.find('[data-testid="status"]').exists()).toBe(false)
+  })
+
+  it('gives the title row and the actions one minimum height and centres both, so the buttons sit on the title line', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'Clients' }, slots: { actions: '<button data-testid="act" />' } })
+    const row = wrapper.get('[data-testid="ui-page-header-title-row"]')
+    const actions = wrapper.get('[data-testid="act"]').element.parentElement
+
+    expect(row.classes()).toEqual(expect.arrayContaining(['min-h-10.5', 'items-center']))
+    expect(actions?.classList.contains('min-h-10.5')).toBe(true)
+    expect(actions?.classList.contains('items-center')).toBe(true)
   })
 
   it('draws a title bar instead of the text while loading, and a subtitle bar only when one is passed', () => {
@@ -145,55 +172,88 @@ describe('UiPageHeader', () => {
     expect(wrapper.classes()).toContain('mb-[calc(1.375rem-var(--stack-gap,0rem))]')
   })
 
-  it('draws the back pill on its own row above the title when it has a target and a label', () => {
-    const wrapper = mount(UiPageHeader, {
-      props: { title: 'Plugin', backTo: '/plugins', backLabel: 'Plugins', backTestid: 'probe-back' },
-      global: { stubs: { RouterLink: RouterLinkStub } },
-    })
-    const back = wrapper.get('[data-testid="probe-back"]')
+  describe('breadcrumb trail', () => {
+    /** The whole trail of a domain of a client, the last step being the page. */
+    const CRUMBS = [
+      { label: 'Clients', to: '/clients' },
+      { label: 'Ada Lovelace', to: '/clients/7' },
+      { label: 'Domains', to: '/clients/7/domains' },
+      { label: 'example.com' },
+    ]
 
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toBe('/plugins')
-    expect(back.text()).toBe('Plugins')
-    expect(back.classes()).toContain('rounded-pill')
-    // The back pill comes before the heading and is a direct child of the header, not part of the title row.
-    expect(back.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(back.element.parentElement).toBe(wrapper.element)
-    expect(back.classes()).toContain('self-start')
-  })
+    it('draws the trail above the title, every step a link but the page itself', () => {
+      const wrapper = mount(UiPageHeader, { props: { title: 'Domain example.com', crumbs: CRUMBS }, global: { stubs: { RouterLink: RouterLinkStub } } })
+      const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-  it('draws no back link without a target, or without a label', () => {
-    expect(mount(UiPageHeader, { props: { title: 'Plugin' } }).find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
-    const noLabel = mount(UiPageHeader, { props: { title: 'Plugin', backTo: '/plugins' }, global: { stubs: { RouterLink: RouterLinkStub } } })
-    const noTarget = mount(UiPageHeader, { props: { title: 'Plugin', backLabel: 'Plugins' }, global: { stubs: { RouterLink: RouterLinkStub } } })
-
-    expect(noLabel.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
-    expect(noTarget.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
-  })
-
-  it('names the back link ui-page-header-back unless the screen gives its own test id', () => {
-    const wrapper = mount(UiPageHeader, {
-      props: { title: 'Plugin', backTo: '/plugins', backLabel: 'Plugins' },
-      global: { stubs: { RouterLink: RouterLinkStub } },
+      expect(wrapper.findAllComponents(RouterLinkStub).map((link) => link.props('to'))).toEqual(['/clients', '/clients/7', '/clients/7/domains'])
+      expect(wrapper.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe('example.com')
+      expect(wrapper.get('[data-testid="ui-page-header-crumb-current"]').element.tagName).not.toBe('A')
+      expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(trail.element.parentElement).toBe(wrapper.element)
     })
 
-    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(true)
-  })
+    it('draws the whole trail at every width, with a separator icon between the steps', () => {
+      const wrapper = mount(UiPageHeader, { props: { title: 'Domain', crumbs: CRUMBS }, global: { stubs: { RouterLink: RouterLinkStub } } })
 
-  it('hides the back pill from md up when the top bar breadcrumb covers its target', () => {
-    const wrapper = mount(UiPageHeader, {
-      props: { title: 'Plugin', backTo: '/plugins', backLabel: 'Plugins', backMobileOnly: true },
-      global: { stubs: { RouterLink: RouterLinkStub } },
+      expect(wrapper.findAll('[data-testid="ui-breadcrumb"] li').flatMap((item) => item.classes())).not.toContain('max-md:hidden')
+      expect(wrapper.findAll('[data-testid="ui-breadcrumb"] li svg')).toHaveLength(3)
     })
 
-    expect(wrapper.get('[data-testid="ui-page-header-back"]').classes()).toContain('md:hidden')
-  })
+    it('cuts a long name of the trail with an ellipsis', () => {
+      const name = 'A client with a name too long for the line it sits on'
+      const wrapper = mount(UiPageHeader, {
+        props: { title: 'Domain', crumbs: [{ label: 'Clients', to: '/clients' }, { label: name, to: '/clients/7' }, { label: 'example.com' }] },
+        global: { stubs: { RouterLink: RouterLinkStub } },
+      })
 
-  it('draws the back pill with its label and no link target while the screen is a skeleton', () => {
-    const wrapper = mount(UiPageHeader, { props: { title: 'Plugin', backLabel: 'Plugins', backPending: true } })
-    const back = wrapper.get('[data-testid="ui-page-header-back"]')
+      expect(wrapper.findAllComponents(RouterLinkStub)[1]!.classes()).toContain('truncate')
+      expect(wrapper.findAllComponents(RouterLinkStub)[1]!.attributes('title')).toBe(name)
+    })
 
-    expect(back.text()).toBe('Plugins')
-    expect(back.attributes('href')).toBeUndefined()
+    it('draws no trail without crumbs, and no back link at all', () => {
+      const wrapper = mount(UiPageHeader, { props: { title: 'Plugin' } })
+
+      expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="ui-page-header-crumbs-skeleton"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    })
+
+    it('draws a bar where the trail will be while the screen is a skeleton', () => {
+      const wrapper = mount(UiPageHeader, { props: { title: 'Plugin', crumbsPending: true } })
+
+      expect(wrapper.find('[data-testid="ui-page-header-crumbs-skeleton"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    })
+
+    it('draws a bar in place of the last step while the page is being read', () => {
+      const wrapper = mount(UiPageHeader, {
+        props: { loading: true, crumbs: [{ label: 'Clients', to: '/clients' }, { label: '', pending: true }] },
+        global: { stubs: { RouterLink: RouterLinkStub } },
+      })
+
+      expect(wrapper.find('[data-testid="ui-page-header-crumb-current-pending"]').exists()).toBe(true)
+    })
+
+    it('owns the trail: the page title store tells the top bar to leave its own out, and takes it back when the header goes', async () => {
+      const store = usePageTitleStore()
+      const wrapper = mount(UiPageHeader, { props: { title: 'Domain', crumbs: CRUMBS }, global: { stubs: { RouterLink: RouterLinkStub } } })
+      expect(store.ownsTrail).toBe(true)
+
+      await wrapper.setProps({ crumbs: undefined })
+      expect(store.ownsTrail).toBe(false)
+
+      await wrapper.setProps({ crumbsPending: true })
+      expect(store.ownsTrail).toBe(true)
+
+      wrapper.unmount()
+      expect(store.ownsTrail).toBe(false)
+    })
+
+    it('does not own the trail without crumbs', () => {
+      mount(UiPageHeader, { props: { title: 'Clients' } })
+
+      expect(usePageTitleStore().ownsTrail).toBe(false)
+    })
   })
 
   describe('page title', () => {

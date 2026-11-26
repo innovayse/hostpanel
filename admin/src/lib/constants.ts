@@ -8,8 +8,9 @@
  */
 
 import { translate } from '@/lib/translate'
-import { ContentLanguage } from '@/locales/contentLanguage'
+import { STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
 import { ClientStatus } from '@/types/client'
+import { ContactType } from '@/types/contact'
 import { CurrencyCode } from '@/types/currency'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
@@ -19,7 +20,7 @@ import { EnabledFilter } from '@/types/enabledfilter'
 import { PaymentGateway } from '@/types/gateway'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
-import { InvoiceStatus } from '@/types/invoice'
+import { InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { PublishedFilter } from '@/types/publishedfilter'
@@ -48,6 +49,20 @@ export const CLIENT_STATUS_OPTIONS: SelectOption<ClientStatus>[] = [
   { value: ClientStatus.Closed, get label() { return translate('clients.clientForm.closed') } },
 ]
 
+/** Every contact type, for naming a contact's type in a list and in the contact form. */
+export const CONTACT_TYPE_OPTIONS: SelectOption<ContactType>[] = [
+  { value: ContactType.Billing, get label() { return translate('nav.billing') } },
+  { value: ContactType.Technical, get label() { return translate('clients.contactForm.technical') } },
+  { value: ContactType.General, get label() { return translate('nav.settingsChildren.general') } },
+]
+
+/** Every kind of invoice transaction, for naming it in the transaction list of an invoice. */
+export const TRANSACTION_TYPE_OPTIONS: SelectOption<InvoiceTransactionType>[] = [
+  { value: InvoiceTransactionType.Payment, get label() { return translate('billing.gatewayLog.payment') } },
+  { value: InvoiceTransactionType.Refund, get label() { return translate('billing.gatewayLog.refund') } },
+  { value: InvoiceTransactionType.Credit, get label() { return translate('billing.gatewayLog.credit') } },
+]
+
 /** Service status options for dropdowns. */
 export const SERVICE_STATUS_OPTIONS: SelectOption<ServiceStatus>[] = [
   { value: ServiceStatus.Pending, get label() { return translate('constants.serviceStatusOptions.pending') } },
@@ -56,14 +71,10 @@ export const SERVICE_STATUS_OPTIONS: SelectOption<ServiceStatus>[] = [
   { value: ServiceStatus.Terminated, get label() { return translate('constants.serviceStatusOptions.terminated') } },
 ]
 
-/** Language options for dropdowns. */
+/** Language options for dropdowns: the default, then every content language (the one shared list) by its own name. */
 export const LANGUAGE_OPTIONS: SelectOption[] = [
   { value: '', get label() { return translate('shared.default') } },
-  { value: ContentLanguage.En, get label() { return translate('clients.clientForm.english') } },
-  { value: ContentLanguage.Ru, get label() { return translate('clients.clientForm.russian') } },
-  { value: ContentLanguage.Hy, get label() { return translate('clients.clientForm.armenian') } },
-  { value: ContentLanguage.De, get label() { return translate('clients.clientForm.german') } },
-  { value: ContentLanguage.Es, get label() { return translate('clients.clientForm.spanish') } },
+  ...STOREFRONT_LOCALES.map((locale): SelectOption => ({ value: locale, get label() { return translate(`storefront.locales.${locale}`) } })),
 ]
 
 /** Domain status options for dropdowns. */

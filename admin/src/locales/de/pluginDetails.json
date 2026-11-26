@@ -17,7 +17,7 @@
   },
   "byAuthor": "von {author}",
   "installedVersion": "Installiert: {version}",
-  "staged": "Version {version} vorbereitet, wird nach dem Neustart angewendet",
+  "staged": "Version {version} noch nicht angewendet",
   "updateAvailable": "Update verfügbar: {version}",
   "updateTo": "Auf {version} aktualisieren",
   "links": {
@@ -36,7 +36,6 @@
     "label": "Lizenzschlüssel",
     "placeholder": "Lizenzschlüssel einfügen",
     "save": "Schlüssel speichern",
-    "remove": "Schlüssel entfernen",
     "needed": "Speichern Sie einen Lizenzschlüssel, bevor Sie dieses Plugin installieren."
   },
   "versions": {

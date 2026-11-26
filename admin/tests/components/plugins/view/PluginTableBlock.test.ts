@@ -56,6 +56,7 @@ describe('PluginTableBlock', () => {
   it('says so when there are no rows, and shows the API sentence when the read fails', async () => {
     const empty = await mountPluginView([table()], { routes: { [`GET ${ext('sites')}`]: () => json({ items: [] }) } })
     expect(empty.wrapper.get('[data-testid="plugin-table-empty"]').text()).toBe('Nothing to show yet.')
+    expect(empty.wrapper.find('[data-testid="plugin-table-empty"] [data-testid="ui-empty-state-icon"]').exists()).toBe(true)
 
     const failed = await mountPluginView([table()], { routes: { [`GET ${ext('sites')}`]: () => problem('Sites are unavailable.', 502) } })
     expect(failed.wrapper.get('[data-testid="plugin-table-error"]').text()).toBe('Sites are unavailable.')

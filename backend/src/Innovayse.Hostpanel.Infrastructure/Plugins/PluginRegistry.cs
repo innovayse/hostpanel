@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
@@ -10,11 +11,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </summary>
 public sealed class PluginRegistry : IPluginRegistry
 {
-    /// <summary>Loaded plugin entries, keyed by plugin id.</summary>
-    private readonly Dictionary<string, LoadedPlugin> _plugins = [];
+    /// <summary>Loaded plugin entries, keyed by plugin id. Concurrent because a reload swaps an entry while requests read it.</summary>
+    private readonly ConcurrentDictionary<string, LoadedPlugin> _plugins = new();
 
     /// <summary>Plugins the loader skipped for a broken manifest rule, keyed by plugin id.</summary>
-    private readonly Dictionary<string, RefusedPlugin> _refused = [];
+    private readonly ConcurrentDictionary<string, RefusedPlugin> _refused = new();
 
     /// <summary>Plugin ids whose upgrade was swapped in and whose data migration has not succeeded yet (case-insensitive).</summary>
     private readonly HashSet<string> _migrationPending = new(StringComparer.OrdinalIgnoreCase);
@@ -25,7 +26,7 @@ public sealed class PluginRegistry : IPluginRegistry
     /// <summary>
     /// Gets all successfully loaded plugins.
     /// </summary>
-    public IReadOnlyCollection<LoadedPlugin> LoadedPlugins => _plugins.Values;
+    public IReadOnlyCollection<LoadedPlugin> LoadedPlugins => [.. _plugins.Values];
 
     /// <summary>
     /// Registers a loaded plugin.
@@ -41,6 +42,25 @@ public sealed class PluginRegistry : IPluginRegistry
     /// <param name="plugin">The refused plugin.</param>
     internal void RegisterRefused(RefusedPlugin plugin)
         => _refused[plugin.PluginId] = plugin;
+
+    /// <summary>
+    /// Takes a plugin out of the registry, so nothing resolves it any more and its load context can be unloaded once
+    /// its running calls have finished.
+    /// </summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <returns>The plugin that was registered; <see langword="null"/> when none was.</returns>
+    internal LoadedPlugin? Remove(string pluginId)
+    {
+        _plugins.TryRemove(pluginId, out var removed);
+        return removed;
+    }
+
+    /// <summary>Forgets the refusal kept for a plugin, before a reload of it is tried.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    internal void ClearRefused(string pluginId)
+    {
+        _refused.TryRemove(pluginId, out _);
+    }
 
     /// <summary>
     /// Flags a plugin as waiting for its data migration: set from the pending upgrade record at startup and again when a

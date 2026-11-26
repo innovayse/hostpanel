@@ -23,6 +23,8 @@ const rows: Setting[] = [
   { id: 4, key: 'portal.chat.website_token', value: '' },
   { id: 5, key: 'portal.chat.website_token.ru', value: '' },
   { id: 6, key: 'portal.chat.website_token.hy', value: '' },
+  { id: 7, key: 'portal.chat.website_token.de', value: '' },
+  { id: 8, key: 'portal.chat.website_token.es', value: '' },
 ]
 
 describe('TrackingChatCard', () => {
@@ -56,6 +58,16 @@ describe('TrackingChatCard', () => {
     expect(save.mock.calls).toEqual([[6, 'tok-hy']])
   })
 
+  it('saves a token for German, a language beyond the first three', async () => {
+    const { wrapper, registry } = await mountSettingsCard(TrackingChatCard, rows)
+
+    await wrapper.get('[data-testid="tracking-chat-token-tab-de"]').trigger('click')
+    await wrapper.get('[data-testid="tracking-chat-token-de"]').setValue('tok-de')
+    await registry.saveAll(save)
+
+    expect(save.mock.calls).toEqual([[7, 'tok-de']])
+  })
+
   it('shows one token field with a tab per language and marks the tabs that are empty', async () => {
     const { wrapper } = await mountSettingsCard(TrackingChatCard, [...rows.slice(0, 5), { id: 6, key: 'portal.chat.website_token.hy', value: 'tok-hy' }])
 
@@ -63,6 +75,9 @@ describe('TrackingChatCard', () => {
       'tracking-chat-token-tab-en',
       'tracking-chat-token-tab-ru',
       'tracking-chat-token-tab-hy',
+      'tracking-chat-token-tab-de',
+      'tracking-chat-token-tab-es',
+      'tracking-chat-token-tab-fr',
     ])
     expect(wrapper.find('[data-testid="tracking-chat-token-tab-en-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="tracking-chat-token-tab-hy-empty"]').exists()).toBe(false)

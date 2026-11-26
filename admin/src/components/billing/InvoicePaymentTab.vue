@@ -1,14 +1,11 @@
 <script setup lang="ts">
 /**
- * "Add payment" tab of the invoice screen: records a payment received outside the gateway, with
- * the line items and the transaction ledgers below. A draft or cancelled invoice takes no
- * payment, so the form is replaced by the reason. The outcome of recording a payment (success, or
+ * "Add payment" tab of the invoice screen: records a payment received outside the gateway. A draft
+ * or cancelled invoice takes no payment, so the form is replaced by the reason. The outcome of recording a payment (success, or
  * the API's sentence) shows under the form.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
-import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -39,13 +36,11 @@ const { t } = useI18n()
 const props = defineProps<{
   /** The invoice to add payments to. */
   invoice: InvoiceDetail
-  /** True to show the line items without editing controls (the form stays usable). */
-  readonly?: boolean
 }>()
 
 const store = useBillingStore()
 
-/** The shared payment form; recording reloads the invoice so the ledgers below show the payment. */
+/** The shared payment form; recording reloads the invoice so the summary tab's ledgers show the payment. */
 const form = useInvoicePaymentForm({
   record: store.addPayment,
   /**
@@ -162,9 +157,6 @@ const submit = async (): Promise<void> => {
           </UiFormActions>
         </UiForm>
       </UiCard>
-
-      <InvoiceItemsSection :invoice="invoice" :readonly="readonly" />
-      <InvoiceTransactionsSection :invoice="invoice" />
     </template>
   </UiStack>
 </template>

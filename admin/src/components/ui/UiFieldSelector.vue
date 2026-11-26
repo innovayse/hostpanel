@@ -8,12 +8,14 @@
  * `sm`) it is a bottom sheet ({@link UiFloatingSurface}).
  */
 import { computed, useId } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
 import { useI18n } from 'vue-i18n'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import { useDropdown } from '@/composables/useDropdown'
-import { fieldSizeClasses } from '@/utils/ui/size'
+import { fieldSizeClasses, UiSize } from '@/utils/ui/size'
 import { fieldBaseClasses } from '@/utils/ui/input'
 
 const { t } = useI18n()
@@ -88,11 +90,9 @@ const summary = computed<string>(() =>
       :class="triggerClasses"
       @click="togglePanel"
     >
-      <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-      </svg>
+      <UiIcon :markup="Icon.Grid" />
       <span class="flex-1 min-w-0 truncate whitespace-nowrap text-left" data-testid="field-selector-summary">{{ summary }}</span>
-      <svg class="w-3.5 h-3.5 text-text-secondary shrink-0 transition-transform duration-150 ml-auto" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+      <UiIcon :markup="Icon.ChevronDown" :size="UiSize.Sm" class="text-text-secondary transition-transform duration-150 ml-auto" :class="open ? 'rotate-180' : ''" />
     </button>
 
     <!-- The panel: a popover in the page body (no card around the trigger can paint over it) or a bottom sheet on a phone -->
@@ -112,10 +112,10 @@ const summary = computed<string>(() =>
       @keydown="onEscape"
     >
       <!-- Select all / clear all -->
-      <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-field">
+      <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-inset">
         <UiLabel variant="field" as="span">{{ t('ui.uiFieldSelector.fields') }}</UiLabel>
         <div class="flex gap-2">
-          <button type="button" data-testid="field-selector-select-all" class="text-[0.72rem] text-primary-600 light:text-primary-700 hover:text-primary-500 rounded outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-colors" @click="emit('selectAll')">
+          <button type="button" data-testid="field-selector-select-all" class="text-[0.72rem] text-text-accent hover:underline rounded outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 transition-colors" @click="emit('selectAll')">
             {{ t('shared.selectAll') }}
           </button>
           <span class="text-border-strong">|</span>

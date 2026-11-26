@@ -358,6 +358,9 @@ All these settings control the public-facing storefront and have NUXT_PUBLIC_POR
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN', type: 'string', default: '', description: 'Chat widget token (default language). Tiers: all.' },
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU', type: 'string', default: '', description: 'Chat widget token (Russian). Tiers: all.' },
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY', type: 'string', default: '', description: 'Chat widget token (Armenian). Tiers: all.' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE', type: 'string', default: '', description: 'Chat widget token (German). Tiers: all.' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES', type: 'string', default: '', description: 'Chat widget token (Spanish). Tiers: all.' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR', type: 'string', default: '', description: 'Chat widget token (French). Tiers: all.' },
 ]" />
 
 ## Payments and external links
@@ -376,6 +379,8 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | Setting | Default | Description |
 |---|---|---|
 | `Plugins__InstallPath` | *(empty, falls back to `plugins-installed` beside the app)* | Directory where the API installs plugin packages. |
+| `Plugins__DrainSeconds` | `30` | Seconds a plugin reload or a restart after a plugin change waits for running requests, background jobs and plugin calls to finish (1 to 300). During a restart `GET /health` answers 503 `HOST_DRAINING`, and the process then exits with code 75. It is also the shutdown timeout of the host. In the compose files it is `PLUGIN_DRAIN_SECONDS` in `.env`. Keep the API service's `stop_grace_period` (`API_STOP_GRACE_PERIOD`, `45s` by default) longer than it, or Docker kills a draining host. The API service also needs a restart policy that survives a clean exit (`restart: unless-stopped`); `install.sh --check` fails without it, see [Plugin manager](../payments/plugins.md#applying-a-plugin-change). |
+| `Plugins__RestartDelaySeconds` | `3` | Seconds the host waits after a staged plugin change before it restarts itself (0 to 60), so changes made one after another are applied by one restart. In the compose files it is `PLUGIN_RESTART_DELAY_SECONDS` in `.env`. |
 | `Plugins__MaxEntryCount` | `1000` | Maximum number of files in a plugin zip archive. |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Maximum total uncompressed size of a plugin archive in bytes (200 MiB). |
 | `Plugins__MigrationTimeoutSeconds` | `120` | Longest one plugin migration hook may run after an upgrade, in seconds (1 to 3600). Past it the host stops waiting and keeps the plugin switched off until a later attempt succeeds. |

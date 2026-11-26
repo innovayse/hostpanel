@@ -35,6 +35,7 @@
     "noCountries": "Aucun pays trouvé"
   },
   "common": {
+    "actions": "Actions",
     "cancel": "Annuler",
     "confirm": "Confirmer",
     "next": "Suivant",

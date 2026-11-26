@@ -302,7 +302,7 @@ watch(settings, (loaded) => {
         external
         :variant="UiButtonVariant.Link"
         data-testid="ssh-guide-link"
-      >{{ t('common.help') }} →</UiLink>
+      >{{ t('common.help') }}</UiLink>
       <UiAlert v-if="error" :variant="UiTone.Danger" data-testid="server-ssh-error">{{ error }}</UiAlert>
 
       <template v-if="settings || firstLoad">

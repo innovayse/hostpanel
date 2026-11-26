@@ -22,7 +22,7 @@ const widthClass = computed<string>(() => (props.width === undefined ? '' : widt
 </script>
 
 <template>
-  <div :class="['relative overflow-hidden bg-surface-hover', widthClass]" data-testid="ui-skeleton-bar">
-    <div class="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-border-strong to-transparent animate-[shimmer_1.6s_ease-in-out_infinite] motion-reduce:animate-none" />
+  <div :class="['relative overflow-hidden bg-surface-track', widthClass]" data-testid="ui-skeleton-bar">
+    <div class="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-surface-sheen to-transparent animate-[shimmer_1.6s_ease-in-out_infinite] motion-reduce:animate-none" />
   </div>
 </template>

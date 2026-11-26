@@ -49,16 +49,7 @@ const result: Record<MessageLanguage, LanguageMessages> = {
 </li>
 <li>
 
-Добавьте код языка в `SUPPORTED_LOCALES` в `admin/src/i18n.ts`:
-
-```ts
-export const SUPPORTED_LOCALES = [
-  MessageLanguage.En,
-  MessageLanguage.Hy,
-  MessageLanguage.Ru,
-  MessageLanguage.Fr, // add here
-] as const
-```
+Список переключателя языка `SUPPORTED_LOCALES` в `admin/src/i18n.ts` строится из `MessageLanguage`, поэтому достаточно добавить язык в `MessageLanguage` (шаг выше).
 
 </li>
 <li>
@@ -103,16 +94,7 @@ export enum AppLocale {
 </li>
 <li>
 
-Добавьте запись в список `i18n.locales` в `client/nuxt.config.ts`:
-
-```ts
-locales: [
-  { code: 'en', name: 'English',   language: 'en-US' },
-  { code: 'ru', name: 'Русский',   language: 'ru-RU' },
-  { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
-  { code: 'fr', name: 'Français',  language: 'fr-FR' }, // add here
-],
-```
+Добавьте язык в `LOCALE_META` в `client/nuxt.config.ts`: его собственное название и языковой тег. Список `i18n.locales` и записи конфигурации времени выполнения для настроек по языкам строятся из `AppLocale`.
 
 </li>
 </Steps>
@@ -131,19 +113,10 @@ locales: [
 </li>
 <li>
 
-Добавьте код в `SupportedLanguages.All` в `backend/src/Shared/Constants/SupportedLanguages.cs`:
+Добавьте код в `LanguageCodes.All` в `backend/src/SharedKernel/Localization/LanguageCodes.cs`: это единственный список, из которого строятся `SupportedLanguages` и все языковые строки настроек:
 
 ```csharp
-public static readonly HashSet<string> All = ["en", "ru", "hy", "fr"];
-```
-
-</li>
-<li>
-
-Добавьте код в `LocaleOptions.SupportedLocales` в `backend/src/Innovayse.Hostpanel.Application/Common/Settings/LocaleOptions.cs`:
-
-```csharp
-public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy", "fr"];
+public static readonly IReadOnlyList<string> All = [Default, "ru", "hy", "fr"];
 ```
 
 </li>
@@ -153,7 +126,7 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 **Обязательно (без этого язык не заработает):**
 
-- `SupportedLanguages.All` и `LocaleOptions.SupportedLocales`, как показано выше.
+- `LanguageCodes.All`, как показано выше.
 
 **Дополнения клиентского портала (обязательны для полностью переведённой витрины):**
 
@@ -163,10 +136,8 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 **Дополнения панели администратора для языка содержимого (обязательны):**
 
 - `admin/src/locales/contentLanguage.ts`: добавьте язык в перечисление `ContentLanguage`.
-- `admin/src/lib/constants.ts`: добавьте запись в список `LANGUAGE_OPTIONS`, чтобы язык появился в селекторах языка в формах клиента и пользователя.
 - `admin/src/lib/storefrontTranslations.ts`: добавлять ничего не нужно, `STOREFRONT_LOCALES` и пустые формы строятся из перечисления `ContentLanguage`, поэтому в формах содержимого витрины вкладка нового языка появляется, как только язык попал в перечисление.
-- `admin/src/components/ui/UiLocalizedField.vue`: добавьте подпись новой локали в вычисляемый объект `captions`, который читает каждая полоса языковых вкладок админки. Любой другой `Record<ContentLanguage, ...>`, где нового языка ещё нет, компилятор перечислит.
-- Подписи во всех языковых файлах панели администратора: `storefront.locales.fr`, `clients.clientForm.french` (используйте название вашего языка), в файлах `storefront.json`, `settings.json` и `clients.json` в `admin/src/locales/<lang>/`.
+- Подписи во всех языковых файлах панели администратора: `storefront.locales.fr`, (используйте название вашего языка), в файлах `storefront.json`, `settings.json` и `clients.json` в `admin/src/locales/<lang>/`.
 
 **Дополнения бэкенда:**
 
@@ -175,19 +146,14 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 - Переводы демо-данных в `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` и `DemoStorefrontSeeder.cs`.
 - Языковые theory-тесты `ResourceCoverageTests` (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) и другие тесты, перечисляющие языки: для нового кода нужна строка.
 
-**Настройки с языковым суффиксом (необязательно):**
+**Настройки с языковым суффиксом:**
 
-Контактный адрес, часы работы, токен онлайн-чата и рассказ о компании на странице «О нас» (`portal.about.text`) имеют по одному значению на язык, например `portal.contact.address.ru` и `portal.chat.website_token.hy`. Язык без собственного значения использует значение по умолчанию, поэтому новый язык работает и без всего этого. Добавляйте их, только если оператору нужен другой адрес, часы работы, токен чата или рассказ о компании для нового языка. Тогда в каждом из этих мест нужен новый ключ с тем же суффиксом:
+Контактный адрес, часы работы, токен онлайн-чата, рассказ о компании на странице «О нас» (`portal.about.text`) и пять юридических текстов имеют по одному значению на язык, например `portal.contact.address.ru` и `portal.chat.website_token.de`. Язык без собственного значения использует значение по умолчанию. Строки каждого языка именуются по ключу по умолчанию и коду языка (`PortalSettingKeys.ForLanguage`, `localizedSettingKey` в админке и в портале), поэтому для нового языка нигде не нужно выписывать ключи:
 
-- `backend/src/Innovayse.Hostpanel.Domain/Settings/PortalSettingKeys.cs`: константы, например `ContactAddressFr = "portal.contact.address.fr"`, и их записи в списке значений по умолчанию, с пустым значением по умолчанию и описанием вроде «Office address for French visitors. Empty uses the default address.»
-- `admin/src/types/setting.ts`: записи `SettingKey` (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) и их записи `SettingEnv`, например `CONTACT_ADDRESS_FR`. У рассказа о компании нет поля в панели администратора, поэтому здесь ему ничего не нужно.
-- `client/constants/portalSettingKey.ts`: те же ключи в перечислении `PortalSettingKey`.
-- `client/constants/publicPortalSettingKeys.ts`: ключи в списках разрешённых, чтобы конечная точка витрины их отдавала: контактные ключи, ключ токена чата и ключ рассказа о компании.
-- `client/nuxt.config.ts`: записи конфигурации времени выполнения `portalContactAddressFr`, `portalContactHoursFr`, `portalChatWebsiteTokenFr` и `portalAboutTextFr`, каждая читается из `NUXT_PUBLIC_PORTAL_..._FR`. Это значения, которые развёртывание задаёт в окружении.
-- `client/composables/useContactDetails.ts` (адрес), `client/composables/useContactHours.ts` (часы работы), `client/composables/useAboutText.ts` (рассказ о компании) и `client/composables/useLocalizedSetting.ts`: ветка для новой локали, чтобы читалось правильное значение.
-- `client/plugins/live-chat.ts`: ветка токена и `languageOf` для названия языка, которое показывает виджет чата.
-- `admin/src/components/settings/StorefrontContentCard.vue` (поля адреса и часов работы) и `admin/src/components/settings/TrackingChatCard.vue` (поле токена): по одному полю на каждый новый ключ.
-- Языковые файлы панели администратора: подписи этих полей: `settings.storefrontContent.contactAddressFr`, `settings.storefrontContent.contactHoursFr` (каждый с `label` и `hint`) и `settings.trackingChat.chat.tokenFr`, во всех языках `admin/src/locales/<lang>/settings.json`.
+- Бэкенд при следующем запуске создаёт пустую строку нового языка для каждой из этих настроек из `LanguageCodes.All`. В `PortalSettingKeys.cs` ничего добавлять не нужно, миграция не нужна.
+- Панель администратора рисует вкладку нового языка в каждом из этих полей, как только язык есть в `ContentLanguage`, потому что `UiLocalizedField` читает `STOREFRONT_LOCALES`.
+- Портал отдаёт строку через список разрешённых и читает её для посетителей этого языка (`client/utils/localizedSetting.ts`), расширять список не нужно.
+- `client/plugins/live-chat.ts`: в `languageOf` нужно название языка, которое показывает виджет чата.
 
 У публичного демо есть собственные примеры значений в `DemoPortalSettingsSeeder.cs`. Добавляйте туда новый язык, только если демо должно его показывать.
 

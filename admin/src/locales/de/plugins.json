@@ -4,7 +4,11 @@
     "pendingRestart": "Neustart ausstehend",
     "refused": "Abgelehnt",
     "loadFailed": "Laden fehlgeschlagen",
-    "staged": "Version {version} bereitgestellt, wird nach dem Neustart angewendet",
+    "staged": "Version {version} noch nicht angewendet",
+    "changeFailed": "Aktualisierung fehlgeschlagen",
+    "changeFailedReason": "Aktualisierung fehlgeschlagen: {error}",
+    "changeFailedRestored": "Aktualisierung fehlgeschlagen: {error} Version {version} läuft weiter.",
+    "changeFailedUnknown": "Die neue Version wurde nicht geladen.",
     "brokenRule": "{id} · verletzte Regel: {rule}",
     "updateAvailable": "Update verfügbar: {version}"
   },
@@ -58,9 +62,20 @@
   },
   "restartBanner": {
     "restartRequired": "Neustart erforderlich",
-    "pluginChangesWillTakeEffect": "Plugin-Änderungen werden nach einem Neustart des Servers wirksam.",
-    "restart": "Neu starten",
+    "pluginChangesWillTakeEffect": "Ein Neustart wendet die vorbereiteten Plugin-Änderungen an und dauert einen Moment.",
+    "restart": "Jetzt neu starten",
     "restartServer": "Server neu starten"
+  },
+  "restart": {
+    "title": "Server wird neu gestartet",
+    "restarting": "Neustart läuft",
+    "hint": "Das Panel ist gleich wieder da. Lassen Sie dieses Fenster bitte geöffnet.",
+    "running": "Geladen und aktiv",
+    "timedOut": "Der Server ist nicht rechtzeitig zurückgekehrt. Prüfen Sie, ob er startet, und versuchen Sie es erneut.",
+    "pluginVersion": "{name}, Version {version}",
+    "pluginFailed": "{name} konnte nicht geladen werden.",
+    "confirmTitle": "Server neu starten?",
+    "confirmMessage": "Der Server hält kurz an und wendet die vorbereiteten Plugin-Änderungen an. Alle, die das Panel nutzen, werden kurz getrennt."
   },
   "pluginSigning": {
     "title": "Plugin-Signaturen",
@@ -102,6 +117,7 @@
     "removing": "{name} wird entfernt",
     "uploading": "{name} wird hochgeladen",
     "done": "Fertig.",
+    "reloaded": "{name} wurde aktualisiert und läuft ohne Neustart.",
     "restartNeeded": "Starten Sie den Server neu, um die Änderung anzuwenden.",
     "close": "Schließen"
   },

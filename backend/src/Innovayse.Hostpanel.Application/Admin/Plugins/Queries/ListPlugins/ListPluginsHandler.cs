@@ -24,15 +24,21 @@ public sealed class ListPluginsHandler
     /// <summary>Reads which plugin ids still own stored data.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>Reads the last change made to each plugin and how it ended.</summary>
+    private readonly IPluginChanges _changes;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Reads the plugins on disk.</param>
     /// <param name="registry">Reports which of the plugins on disk were loaded at startup and which were refused.</param>
     /// <param name="context">Reads which plugin ids still own stored data.</param>
-    public ListPluginsHandler(IPluginPackageStore store, IPluginRegistry registry, IHostpanelDbContext context)
+    /// <param name="changes">Reads the last change made to each plugin and how it ended.</param>
+    public ListPluginsHandler(
+        IPluginPackageStore store, IPluginRegistry registry, IHostpanelDbContext context, IPluginChanges changes)
     {
         _store = store;
         _registry = registry;
         _context = context;
+        _changes = changes;
     }
 
     /// <summary>
@@ -93,7 +99,8 @@ public sealed class ListPluginsHandler
                 install?.SignerKeyId,
                 install?.PackageSizeBytes,
                 install?.PackageSha256,
-                refusal is null ? manifest.SdkPackageVersion.NullIfBlank() : null));
+                refusal is null ? manifest.SdkPackageVersion.NullIfBlank() : null,
+                _changes.Find(package.FolderName)));
         }
 
         var scopeOwners = _context.PluginDataScopes.AsNoTracking().Select(s => s.PluginId);

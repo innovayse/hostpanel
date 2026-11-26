@@ -6,7 +6,7 @@
  * can still override a single property. `sortable` turns the caption into a button that emits
  * `sort`; the parent owns the order and passes the current `direction`, which is mirrored into
  * `aria-sort` and an arrow. `numeric` and `actions` match the cells below them (right aligned, the
- * actions column always `Compact`, its caption read by assistive technology only); `size` is the width the column takes (`Compact` shrinks to the content, `Auto` keeps one whole line, `Fixed` takes a `width`, `Grow` shares the
+ * actions column always `Compact`, captioned "Actions" by default so no screen names it); `size` is the width the column takes (`Compact` shrinks to the content, `Auto` keeps one whole line, `Fixed` takes a `width`, `Grow` shares the
  * remaining width and truncates), which by default follows its `kind` (free text shares, a status, a date or an id shrinks), set once here and followed by every cell of the column; `hideBelow` hides the column under a breakpoint. The cell paints the one hairline under the header (an inset
  * shadow, because a border does not travel with a sticky header in a collapsed-border table); the fill of a
  * sticky header comes from the scrolling box (`UiTable` with `maxHeight`). `select` marks the checkbox column of a selectable table
@@ -20,6 +20,9 @@
  * column with the table at that position.
  */
 import { computed, inject, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { UiSize } from '@/utils/ui/size'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 import type { UiTableColumn } from '@/utils/ui/injection'
 import { columnClasses, columnSizeOf, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
@@ -144,17 +147,20 @@ const classes = computed<string[]>(() => [
   ...columnClasses(column.value),
 ])
 
-/** Arrow glyph of the current order. */
+/** The caption a header draws when its screen gives none: the actions column is always named "Actions", so no table has a nameless one; the table hands the translated caption down. */
+const defaultCaption = computed<string>(() => (props.actions ? (context.actionsLabel ?? '') : ''))
+
+/** Icon of the current order: an arrow up or down, or the unsorted pair. */
 const arrow = computed<string>(() => {
   if (props.direction === UiSortDirection.Ascending) {
-    return '▲'
+    return Icon.ArrowUp
   }
-  return props.direction === UiSortDirection.Descending ? '▼' : '↕'
+  return props.direction === UiSortDirection.Descending ? Icon.ArrowDown : Icon.Sort
 })
 </script>
 
 <template>
-  <span v-if="context.phone" ref="captionElement" hidden><slot /></span>
+  <span v-if="context.phone" ref="captionElement" hidden><slot>{{ defaultCaption }}</slot></span>
   <th
     v-else
     role="columnheader"
@@ -169,9 +175,9 @@ const arrow = computed<string>(() => {
       :data-testid="sortTestid"
       @click="requestSort"
     >
-      <span ref="captionElement" class="contents"><slot /></span>
-      <span aria-hidden="true">{{ arrow }}</span>
+      <span ref="captionElement" class="contents"><slot>{{ defaultCaption }}</slot></span>
+      <UiIcon :markup="arrow" :size="UiSize.Xs" />
     </button>
-    <span v-else ref="captionElement" :class="actions ? 'sr-only' : 'contents'"><slot /></span>
+    <span v-else ref="captionElement" class="contents"><slot>{{ defaultCaption }}</slot></span>
   </th>
 </template>

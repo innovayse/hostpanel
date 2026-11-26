@@ -22,7 +22,7 @@ const schema: ListSkeletonSchema = {
       { key: 'lastName', label: 'shared.lastName' },
       { key: 'email', label: 'shared.email' },
       { key: 'lastLogin', label: 'clients.manageUsers.lastLogin', kind: UiColumnKind.Date },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

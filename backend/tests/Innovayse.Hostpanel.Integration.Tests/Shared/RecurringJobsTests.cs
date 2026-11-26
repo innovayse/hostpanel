@@ -351,14 +351,15 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
     /// <summary>
     /// Checks that the single run scheduled during a tracked session reached the bus as the given delay: what the bus counts
     /// against the real clock, read from the envelope, not the moment the runner reports on the host's clock. The envelope the
-    /// session records carries the delay; the delivery moment is only worked out when the bus sends it on.
+    /// session records carries the delay; the delivery moment is only worked out when the bus sends it on. The run the call
+    /// scheduled is the first one sent: a run due at once is delivered within the session, and its pass schedules the next run.
     /// </summary>
     /// <param name="session">The tracked session.</param>
     /// <param name="delay">How far from now the run must be due.</param>
     private static void ShouldBeDueAfter(ITrackedSession session, TimeSpan delay)
     {
         var scheduled = session.Sent.Envelopes()
-            .Single(e => e.Message is CheckOverdueInvoicesCronCommand && e.Status == EnvelopeStatus.Scheduled)
+            .First(e => e.Message is CheckOverdueInvoicesCronCommand && e.Status == EnvelopeStatus.Scheduled)
             .ScheduleDelay;
 
         scheduled.Should().NotBeNull();

@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Shared.Constants;
+
 namespace Innovayse.Hostpanel.Application.Common.Settings;
 
 /// <summary>
@@ -13,21 +15,8 @@ public sealed class LocaleOptions
     public const string ConfigurationKey = "DefaultLocale";
 
     /// <summary>
-    /// The languages this product answers in, most specific first. Used by the API to build the
-    /// request-localisation culture list, and it is the same set the portal ships under
-    /// <c>client/locales/</c>: adding a language means a new folder there, a new
-    /// <c>ApplicationValidationMessages.&lt;code&gt;.resx</c> beside the neutral one, and this list.
-    /// </summary>
-    /// <remarks>
-    /// Kept here rather than in the API's composition root because the resource files it lines up
-    /// with live in this layer, and a supported-language list that drifts from the resources it
-    /// describes fails silently: an unlisted language is simply served English.
-    /// </remarks>
-    public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy", "de", "es", "fr"];
-
-    /// <summary>
-    /// Two-letter locale code (<c>en</c>, <c>ru</c>, <c>hy</c>, <c>de</c>, <c>es</c>, <c>fr</c>) used when a requested locale has no
+    /// Two-letter locale code used when a requested locale has no
     /// translation. English is the default because every seeded translation carries it.
     /// </summary>
-    public string DefaultLocale { get; set; } = "en";
+    public string DefaultLocale { get; set; } = SupportedLanguages.Default;
 }

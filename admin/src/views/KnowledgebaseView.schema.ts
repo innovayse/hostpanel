@@ -49,7 +49,7 @@ export const KB_CATEGORIES_TABLE: SkeletonTable = {
     { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
     { key: 'description', label: 'shared.description' },
     { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

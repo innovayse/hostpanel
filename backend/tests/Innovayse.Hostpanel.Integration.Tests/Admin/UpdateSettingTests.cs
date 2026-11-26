@@ -207,7 +207,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     public async Task LegalText_LongerThanAnOrdinarySetting_IsStoredWithItsLineBreaksAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.LegalTermsRu);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.ForLanguage(PortalSettingKeys.LegalTerms, "ru"));
         var text = string.Join("\n\n", Enumerable.Repeat("## Section\n\nA paragraph of the seller's own terms.", 100));
         text.Length.Should().BeGreaterThan(ProtectedValueLimits.SettingValue);
 
@@ -223,13 +223,37 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
         await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = string.Empty });
     }
 
+    /// <summary>
+    /// Every supported language has an editable row of a setting kept per language, German and Spanish
+    /// included: the value is stored and read back, and put back to empty (the default row is used again).
+    /// </summary>
+    /// <param name="language">A supported language that is not the default one.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("de")]
+    [InlineData("es")]
+    [InlineData("fr")]
+    public async Task LocalizedSetting_HasAnEditableRowForEverySupportedLanguageAsync(string language)
+    {
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.ForLanguage(PortalSettingKeys.ContactAddress, language));
+
+        var update = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = "Marktstrasse 1" });
+
+        update.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+        read.GetProperty("value").GetString().Should().Be("Marktstrasse 1");
+
+        await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = string.Empty });
+    }
+
     /// <summary>A legal text one character past its limit is refused and keeps the stored text.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LegalText_PastItsLimit_IsRefusedAsync()
     {
         var client = await AdminTestSeeds.AdminClientAsync(factory);
-        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.LegalPrivacyHy);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, PortalSettingKeys.ForLanguage(PortalSettingKeys.LegalPrivacy, "hy"));
 
         var tooLong = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = new string('a', ProtectedValueLimits.LegalTextValue + 1) });
 

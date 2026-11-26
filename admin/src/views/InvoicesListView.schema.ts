@@ -29,7 +29,7 @@ const schema: ListSkeletonSchema = {
       { key: 'total', label: 'shared.total', numeric: true, hideBelow: UiHideBelow.Sm },
       { key: 'paymentMethod', label: 'shared.paymentMethod', hideBelow: UiHideBelow.TwoXl },
       { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

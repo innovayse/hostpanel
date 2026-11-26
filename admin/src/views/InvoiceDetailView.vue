@@ -25,7 +25,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
-import { AppRoute } from '@/lib/routes'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
@@ -39,6 +39,9 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Billing, Invoices, the invoice. */
+const { crumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
@@ -129,10 +132,7 @@ watch(invoiceId, load)
   <UiStack data-testid="billing-invoice-detail-view">
     <UiPageHeader :actions="headerActions"
       v-bind="schemaHeader(schema, t, { title: t('billing.invoiceDetail.invoiceId', { id: invoiceId }) })"
-      :back-to="AppRoute.BillingInvoices"
-      :back-label="t('shared.invoices')"
-      back-mobile-only
-      back-testid="billing-invoice-back"
+      :crumbs="crumbs(t('billing.invoiceDetail.invoiceId', { id: invoiceId }))"
       data-testid="invoice-detail-title"
     />
 
@@ -155,9 +155,9 @@ watch(invoiceId, load)
 
         <UiTabs v-model="activeTab" :items="tabs">
           <InvoiceSummaryTab v-if="activeTab === InvoiceTab.Summary" :invoice="invoice" :readonly="!manageMode" />
-          <InvoicePaymentTab v-else-if="activeTab === InvoiceTab.Payment" :invoice="invoice" :readonly="!manageMode" />
+          <InvoicePaymentTab v-else-if="activeTab === InvoiceTab.Payment" :invoice="invoice" />
           <InvoiceOptionsTab v-else-if="activeTab === InvoiceTab.Options" :invoice="invoice" />
-          <InvoiceCreditTab v-else-if="activeTab === InvoiceTab.Credit" :invoice="invoice" :readonly="!manageMode" />
+          <InvoiceCreditTab v-else-if="activeTab === InvoiceTab.Credit" :invoice="invoice" />
           <InvoiceRefundTab v-else-if="activeTab === InvoiceTab.Refund" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceCreditNotesTab v-else-if="activeTab === InvoiceTab.CreditNotes" :invoice="invoice" :readonly="!manageMode" />
           <InvoiceFulfilmentTab v-else-if="activeTab === InvoiceTab.Fulfilment" :invoice="invoice" :readonly="!manageMode" />

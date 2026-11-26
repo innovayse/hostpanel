@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
+using Innovayse.Hostpanel.SharedKernel.Localization;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Settings;
 
@@ -141,9 +142,7 @@ public class PortalSettingKeysTests
             PortalSettingKeys.SocialTwitter,
             PortalSettingKeys.ContactHours,
             PortalSettingKeys.ContactTimezone,
-            PortalSettingKeys.AboutText,
-            PortalSettingKeys.AboutTextRu,
-            PortalSettingKeys.AboutTextHy,
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.AboutText),
             .. switches,
         ];
 
@@ -159,17 +158,17 @@ public class PortalSettingKeysTests
         }
     }
 
-    /// <summary>Every operator legal text (five documents, three languages) is seeded empty, editable, free text, under the legal prefix, and kept out of the public set every page carries.</summary>
+    /// <summary>Every operator legal text (five documents, every supported language) is seeded empty, editable, free text, under the legal prefix, and kept out of the public set every page carries.</summary>
     [Fact]
     public void LegalTexts_AreSeededEmptyEditableFreeTextAndOutOfThePublicSet()
     {
         string[] keys =
         [
-            PortalSettingKeys.LegalTerms, PortalSettingKeys.LegalTermsRu, PortalSettingKeys.LegalTermsHy,
-            PortalSettingKeys.LegalPrivacy, PortalSettingKeys.LegalPrivacyRu, PortalSettingKeys.LegalPrivacyHy,
-            PortalSettingKeys.LegalRefund, PortalSettingKeys.LegalRefundRu, PortalSettingKeys.LegalRefundHy,
-            PortalSettingKeys.LegalAcceptableUse, PortalSettingKeys.LegalAcceptableUseRu, PortalSettingKeys.LegalAcceptableUseHy,
-            PortalSettingKeys.LegalCookies, PortalSettingKeys.LegalCookiesRu, PortalSettingKeys.LegalCookiesHy,
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.LegalTerms),
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.LegalPrivacy),
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.LegalRefund),
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.LegalAcceptableUse),
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.LegalCookies),
         ];
 
         Assert.Equal(keys.Length, keys.Distinct().Count());
@@ -185,17 +184,16 @@ public class PortalSettingKeysTests
         }
     }
 
-    /// <summary>The page slugs list the same fifteen keys, three per page, default language first, and nothing else is a legal text.</summary>
+    /// <summary>The page slugs list one row per supported language, default language first, and nothing else is a legal text.</summary>
     [Fact]
-    public void LegalTexts_ListThreeRowsPerPage_AndNothingElseIsALegalText()
+    public void LegalTexts_ListARowPerSupportedLanguage_AndNothingElseIsALegalText()
     {
         Assert.Equal(new[] { "terms", "privacy", "refund", "acceptable_use", "cookies" }, PortalSettingKeys.LegalTexts.Keys.ToArray());
         foreach (var (page, keys) in PortalSettingKeys.LegalTexts)
         {
-            Assert.Equal(3, keys.Count);
+            Assert.Equal(LanguageCodes.All.Count, keys.Count);
             Assert.Equal($"portal.legal.{page}", keys[0]);
-            Assert.Equal($"portal.legal.{page}.ru", keys[1]);
-            Assert.Equal($"portal.legal.{page}.hy", keys[2]);
+            Assert.Equal(LanguageCodes.NonDefault.Select(language => $"portal.legal.{page}.{language}"), keys.Skip(1));
         }
 
         Assert.False(PortalSettingKeys.IsLegalText("portal.legal.tax_id"), "the tax id is a short ordinary setting");
@@ -290,25 +288,53 @@ public class PortalSettingKeysTests
         Assert.Equal(valid, pattern.Regex.IsMatch(value));
     }
 
-    /// <summary>The per-language address and hours are seeded empty and public, beside the default ones.</summary>
+    /// <summary>The address and hours have a row for every supported language, German and Spanish included, seeded empty and public.</summary>
     [Fact]
-    public void ContactLocaleKeys_AreSeededEmptyAndPublic()
+    public void ContactLocaleKeys_AreSeededEmptyAndPublicForEverySupportedLanguage()
     {
         string[] keys =
         [
-            PortalSettingKeys.ContactAddressRu,
-            PortalSettingKeys.ContactAddressHy,
-            PortalSettingKeys.ContactHoursRu,
-            PortalSettingKeys.ContactHoursHy,
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.ContactAddress),
+            .. PortalSettingKeys.RowsOf(PortalSettingKeys.ContactHours),
         ];
 
-        Assert.Equal(
-            ["portal.contact.address.ru", "portal.contact.address.hy", "portal.contact.hours.ru", "portal.contact.hours.hy"],
-            keys);
+        Assert.Contains("portal.contact.address.de", keys);
+        Assert.Contains("portal.contact.hours.es", keys);
         foreach (var key in keys)
         {
             Assert.Contains(key, PortalSettingKeys.Public);
             Assert.True(PortalSettingKeys.AllowsEmpty(key), $"{key} must seed empty so the default text is used");
+        }
+    }
+
+    /// <summary>The row of the default language is the key itself and every other language adds its code, so a new language needs no new constant.</summary>
+    /// <param name="language">The language code.</param>
+    /// <param name="expected">The key of that language's row of the contact address.</param>
+    [Theory]
+    [InlineData("en", "portal.contact.address")]
+    [InlineData("ru", "portal.contact.address.ru")]
+    [InlineData("hy", "portal.contact.address.hy")]
+    [InlineData("de", "portal.contact.address.de")]
+    [InlineData("es", "portal.contact.address.es")]
+    [InlineData("fr", "portal.contact.address.fr")]
+    public void ForLanguage_NamesTheRowOfALanguage(string language, string expected)
+    {
+        Assert.Equal(expected, PortalSettingKeys.ForLanguage(PortalSettingKeys.ContactAddress, language));
+    }
+
+    /// <summary>Every setting written once per language is seeded with a row for each supported language, exactly once, and no row for any other language.</summary>
+    [Fact]
+    public void Defaults_HoldARowPerSupportedLanguageOfEveryLocalizedSetting()
+    {
+        var seeded = PortalSettingKeys.Defaults.Select(d => d.Key).ToHashSet();
+
+        foreach (var key in PortalSettingKeys.LocalizedBases)
+        {
+            Assert.Equal(LanguageCodes.All.Count, PortalSettingKeys.RowsOf(key).Count);
+            Assert.All(PortalSettingKeys.RowsOf(key), row => Assert.Contains(row, seeded));
+            Assert.Equal(
+                LanguageCodes.All.Count,
+                seeded.Count(row => row == key || row.StartsWith(key + ".", StringComparison.Ordinal)));
         }
     }
 

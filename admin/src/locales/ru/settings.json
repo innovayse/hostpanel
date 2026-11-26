@@ -1,7 +1,7 @@
 {
   "systemSettings": "Системные настройки",
   "secret": {
-    "set": "••••••, задано",
+    "set": "Задано",
     "notSet": "Не задано",
     "replace": "Заменить",
     "placeholder": "Введите новое значение",
@@ -273,6 +273,7 @@
   "branding": {
     "title": "Брендинг",
     "description": "Логотипы витрины и иконка вкладки браузера. Изменения вступают в силу при следующей загрузке страницы.",
+    "imageSize": "Размер вашего изображения: {width} × {height} пикселей.",
     "pasteUrl": "Или вставьте URL изображения",
     "logo": {
       "label": "Логотип (светлый фон)",
@@ -498,6 +499,7 @@
       "gateway-payment-without-reference-admin": "Платёж без референса (персонал)",
       "invoice-renewal-reminder": "Напоминание о продлении счёта",
       "order-rejected": "Заказ отклонён",
+      "plugin-change-ended-admin": "Изменение плагина завершено (персонал)",
       "service-termination-failed-admin": "Не удалось завершить услугу (персонал)",
       "user-email-change": "Подтверждение смены email",
       "user-email-changed-notice": "Уведомление о смене email",

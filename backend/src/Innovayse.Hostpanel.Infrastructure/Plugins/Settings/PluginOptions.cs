@@ -66,6 +66,33 @@ public sealed class PluginOptions
     /// </summary>
     public int MigrationTimeoutSeconds { get; set; } = DefaultMigrationTimeoutSeconds;
 
+    /// <summary>The default <see cref="DrainSeconds"/>: long enough for an ordinary request, short enough for a restart to stay a pause.</summary>
+    public const int DefaultDrainSeconds = 30;
+
+    /// <summary>The upper bound <see cref="DrainSeconds"/> accepts: a drain longer than this is a stuck request, not a pause.</summary>
+    public const int MaxDrainSeconds = 300;
+
+    /// <summary>
+    /// The longest, in seconds, the host lets running requests finish when it stops for a plugin restart, and the longest a
+    /// plugin reload waits for the calls still running in the old version before it gives up and leaves the change to a
+    /// restart. It is also the host's shutdown timeout, so the container's stop grace period must be larger. Must be
+    /// between 1 and <see cref="MaxDrainSeconds"/>.
+    /// </summary>
+    public int DrainSeconds { get; set; } = DefaultDrainSeconds;
+
+    /// <summary>The default <see cref="RestartDelaySeconds"/>.</summary>
+    public const int DefaultRestartDelaySeconds = 3;
+
+    /// <summary>The upper bound <see cref="RestartDelaySeconds"/> accepts.</summary>
+    public const int MaxRestartDelaySeconds = 60;
+
+    /// <summary>
+    /// The pause, in seconds, between a request for a restart and the start of the host's stop. It lets the request that asked
+    /// for the restart finish, and lets plugin changes made one after another in that time be applied by the same restart.
+    /// Must be between 0 and <see cref="MaxRestartDelaySeconds"/>.
+    /// </summary>
+    public int RestartDelaySeconds { get; set; } = DefaultRestartDelaySeconds;
+
     /// <summary>The build output's plugin folder, holding the plugins shipped with the build.</summary>
     public static string BuiltInRoot => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "plugins"));
 

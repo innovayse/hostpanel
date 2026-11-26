@@ -49,7 +49,7 @@ const emit = defineEmits<{
 }>()
 
 /** Classes for the library's input, so it matches the kit's fields (the library's own CSS is overridden). */
-const INPUT_CLASSES = 'bg-surface-field! rounded-control! h-10.5! px-3.5! text-sm! placeholder:text-text-muted! focus-visible:ring-2! focus-visible:ring-text-accent/40!'
+const INPUT_CLASSES = 'bg-surface-field! border-border-control! rounded-control! h-10.5! px-3.5! text-sm! placeholder:text-text-muted! focus-visible:ring-2! focus-visible:ring-text-accent/40!'
 
 /** Free room below the field, in pixels, under which a popover would open above it (the sheet ignores it). */
 const SHEET_MIN_ROOM_PX = 420

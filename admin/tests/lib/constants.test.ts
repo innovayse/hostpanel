@@ -9,6 +9,7 @@ import {
   BILLING_CYCLE_OPTIONS,
   CAMPAIGN_STATUS_OPTIONS,
   CLIENT_STATUS_OPTIONS,
+  CONTACT_TYPE_OPTIONS,
   CURRENCY_OPTIONS,
   DNS_RECORD_TYPE_OPTIONS,
   DOMAIN_STATUS_OPTIONS,
@@ -34,11 +35,16 @@ import {
   TICKET_PRIORITY_OPTIONS,
   TRANSACTION_DIRECTION_OPTIONS,
   TRANSACTION_METHOD_OPTIONS,
+  TRANSACTION_TYPE_OPTIONS,
 } from '@/lib/constants'
 import type { SelectOption } from '@/lib/constants'
+import { i18n } from '@/i18n'
+import { statusLabel } from '@/lib/tones'
 import { translate } from '@/lib/translate'
+import { MessageLanguage } from '@/locales/messages'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus } from '@/types/client'
+import { ContactType } from '@/types/contact'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { CampaignStatus } from '@/types/emailcampaign'
 import { EmailLogOutcome } from '@/types/emaillog'
@@ -46,7 +52,7 @@ import { EnabledFilter } from '@/types/enabledfilter'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { PaymentGateway } from '@/types/gateway'
 import { GatewayLogResult } from '@/types/gatewaylog'
-import { InvoiceStatus } from '@/types/invoice'
+import { InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { PublishedFilter } from '@/types/publishedfilter'
@@ -96,6 +102,8 @@ describe('option lists', () => {
     expect(valuesOf(NETWORK_ISSUE_STATUS_OPTIONS)).toEqual(membersOf(NetworkIssueStatus))
     expect(valuesOf(NETWORK_ISSUE_TYPE_OPTIONS)).toEqual(membersOf(NetworkIssueType))
     expect(valuesOf(NETWORK_ISSUE_PRIORITY_OPTIONS)).toEqual(membersOf(NetworkIssuePriority))
+    expect(valuesOf(CONTACT_TYPE_OPTIONS)).toEqual(membersOf(ContactType))
+    expect(valuesOf(TRANSACTION_TYPE_OPTIONS)).toEqual(membersOf(InvoiceTransactionType))
   })
 
   it('name every billing cycle with its own label, the newer cycles included', () => {
@@ -115,6 +123,19 @@ describe('option lists', () => {
 
     expect(option?.label).toBe(translate('clients.clientSummary.partiallyRefunded'))
     expect(option?.label).toBe('Partially Refunded')
+  })
+
+  it('word an invoice status, a client status and a contact type in the language on screen, never the raw identifier', () => {
+    const before = i18n.global.locale.value
+    i18n.global.locale.value = MessageLanguage.Hy
+    try {
+      expect(statusLabel(INVOICE_STATUS_OPTIONS, InvoiceStatus.Overdue)).toBe('Ժամկետանց')
+      expect(statusLabel(CLIENT_STATUS_OPTIONS, ClientStatus.Active)).not.toBe('Active')
+      expect(statusLabel(CONTACT_TYPE_OPTIONS, ContactType.Technical)).not.toBe('Technical')
+      expect(statusLabel(TRANSACTION_TYPE_OPTIONS, InvoiceTransactionType.Refund)).not.toBe('Refund')
+    } finally {
+      i18n.global.locale.value = before
+    }
   })
 
   it('name every invoice status once, with no "all" entry, so a filter puts its own any choice in front', () => {

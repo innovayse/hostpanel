@@ -1200,6 +1200,12 @@ public static class HostpanelErrorCodes
     /// <summary>The plugin ships with this build and cannot be removed or replaced by an upload (409).</summary>
     public const string PLUGIN_BUILT_IN = "PLUGIN_BUILT_IN";
 
+    /// <summary>The host is draining for a restart and takes no new traffic; the health probe answers it (503).</summary>
+    public const string HOST_DRAINING = "HOST_DRAINING";
+
+    /// <summary>The new version of a plugin could not be loaded, so the previous version was restored (409).</summary>
+    public const string PLUGIN_APPLY_FAILED = "PLUGIN_APPLY_FAILED";
+
     /// <summary>The upload is an older version than the installed plugin and the operator did not force the downgrade (409).</summary>
     public const string PLUGIN_DOWNGRADE_REFUSED = "PLUGIN_DOWNGRADE_REFUSED";
 
@@ -1433,11 +1439,23 @@ public static class HostpanelErrorCodes
     public const string BRANDING_IMAGE_INVALID = "BRANDING_IMAGE_INVALID";
 
     /// <summary>
-    /// The upload is over the byte ceiling, or decodes to more pixels than this deployment will
-    /// rasterise (413, via the <c>_TOO_LARGE</c> suffix). Which ceiling was hit is logged, never
-    /// returned.
+    /// The upload is over the byte ceiling (413, via the <c>_TOO_LARGE</c> suffix).
     /// </summary>
     public const string BRANDING_IMAGE_TOO_LARGE = "BRANDING_IMAGE_TOO_LARGE";
+
+    /// <summary>
+    /// The image declares more pixels than this deployment will rasterise, on one edge or in total
+    /// (413, via the <c>_TOO_LARGE</c> suffix). The response carries the declared size under
+    /// <c>errors.dimensions</c> (<c>WIDTHxHEIGHT</c>), the one fact the operator needs to resize it.
+    /// </summary>
+    public const string BRANDING_IMAGE_DIMENSIONS_TOO_LARGE = "BRANDING_IMAGE_DIMENSIONS_TOO_LARGE";
+
+    /// <summary>
+    /// The folder an upload is stored in refuses the write: the host process may not create or write
+    /// there (503, an exact row in <c>StatusMapping</c>). The operator fixes the folder's ownership;
+    /// it is not an authentication failure and must never answer as one.
+    /// </summary>
+    public const string STORAGE_NOT_WRITABLE = "STORAGE_NOT_WRITABLE";
 
     // Auth: account provisioning refused by an admin action
 

@@ -17,6 +17,7 @@ import { pickOption } from '../helpers/select'
 import { stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** The installed registrar plugins every list screen reads on mount, as the plugins endpoint answers them. */
 const REGISTRAR_ROUTES = {
@@ -123,7 +124,7 @@ describe('TldConfigsView', () => {
     expect(com).toContain('popular')
     expect(com).toContain('Never')
     expect(wrapper.get('[data-testid="tld-row-net"]').text()).toContain('-5.0%')
-    expect(wrapper.get('[data-testid="tld-row-net"] [role="img"]').attributes('aria-label')).toBe('Disabled')
+    expect(wrapper.get('[data-testid="tld-row-net"]').getComponent(UiStatusBadge).text()).toBe('Disabled')
     expect(wrapper.findAll('th').find((header) => header.text() === 'TLD')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 

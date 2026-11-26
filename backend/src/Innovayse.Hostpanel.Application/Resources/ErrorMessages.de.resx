@@ -279,7 +279,13 @@
   <data name="PLUGIN_SIGNATURE_MALFORMED" xml:space="preserve"><value>Die Signaturdatei dieses Plugin-Pakets kann nicht gelesen werden.</value></data>
   <data name="PLUGIN_SIGNATURE_KEY_UNKNOWN" xml:space="preserve"><value>Dieses Plugin-Paket ist mit einem Schlüssel signiert, dem dieser Server nicht vertraut.</value></data>
   <data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve"><value>Die Signatur dieses Plugin-Pakets stimmt nicht mit seinen Dateien überein: Es wurde nach dem Signieren geändert.</value></data>
-  <data name="PLUGIN_BUILT_IN" xml:space="preserve"><value>Dieses Plugin wird mit dem Server ausgeliefert und kann nicht entfernt oder ersetzt werden.</value></data>
+  <data name="HOST_DRAINING" xml:space="preserve">
+    <value>Der Server startet neu und nimmt keine neuen Anfragen an. Er ist gleich wieder da.</value>
+  </data>
+<data name="PLUGIN_APPLY_FAILED" xml:space="preserve">
+    <value>Die neue Version dieses Plugins konnte nicht geladen werden, daher wurde die vorherige Version wiederhergestellt. Der Grund steht in der Plugin-Liste.</value>
+  </data>
+<data name="PLUGIN_BUILT_IN" xml:space="preserve"><value>Dieses Plugin wird mit dem Server ausgeliefert und kann nicht entfernt oder ersetzt werden.</value></data>
   <data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve"><value>Dies ist eine ältere Version als das installierte Plugin. Laden Sie es erneut mit bestätigtem Downgrade hoch, um es trotzdem zu installieren.</value></data>
   <data name="PLUGIN_STILL_INSTALLED" xml:space="preserve"><value>Dieses Plugin ist noch installiert. Entfernen Sie es, bevor Sie die gespeicherten Daten endgültig löschen.</value></data>
   <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve"><value>Unter dieser Adresse wird nichts bereitgestellt.</value></data>
@@ -309,7 +315,9 @@
   <data name="INVALID_SETTING_VALUE" xml:space="preserve"><value>Dieser Wert wird für diese Einstellung nicht akzeptiert.</value></data>
   <data name="SETTING_NOT_EDITABLE" xml:space="preserve"><value>Diese Einstellung kann hier nicht geändert werden.</value></data>
   <data name="BRANDING_IMAGE_INVALID" xml:space="preserve"><value>Diese Datei konnte nicht als Bild gelesen werden. Laden Sie eine PNG-, JPEG-, WebP-, GIF- oder BMP-Datei hoch.</value></data>
-  <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve"><value>Dieses Bild ist zu groß. Laden Sie eine Datei unter 5 MB und mit höchstens 8000 Pixeln je Seite hoch.</value></data>
+  <data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve"><value>Diese Datei ist größer als 5 MB. Laden Sie eine kleinere Datei hoch.</value></data>
+  <data name="BRANDING_IMAGE_DIMENSIONS_TOO_LARGE" xml:space="preserve"><value>Dieses Bild hat auf einer Seite mehr als 8000 Pixel oder insgesamt mehr als 40 Millionen Pixel. Verkleinern Sie es und laden Sie es erneut hoch.</value></data>
+  <data name="STORAGE_NOT_WRITABLE" xml:space="preserve"><value>Der Server kann hochgeladene Dateien derzeit nicht speichern, weil sein Upload-Ordner nicht beschreibbar ist. Bitten Sie den Administrator, die Ordnerberechtigungen zu prüfen.</value></data>
   <data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve"><value>Die Konten dieser Installation gehören zum Single-Sign-on-Dienst, daher kann hier kein Konto erstellt werden. Legen Sie die Person zuerst im Single-Sign-on-Dienst an.</value></data>
   <data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_NAME" xml:space="preserve"><value>Die Konten dieser Installation gehören zum Single-Sign-on-Dienst, daher kann hier kein Name geändert werden. Ändern Sie ihn im Single-Sign-on-Dienst.</value></data>
   <data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL" xml:space="preserve"><value>Die Konten dieser Installation gehören zum Single-Sign-on-Dienst, daher kann hier keine Anmelde-Adresse geändert werden. Ändern Sie sie im Single-Sign-on-Dienst.</value></data>

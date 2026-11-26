@@ -28,6 +28,27 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
             modelBuilder.HasSequence("OrderNumberSequence");
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Admin.ActivityRead", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("EventKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId", "EventKey")
+                        .HasName("PK_ActivityReads");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityReads");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Admin.LatestRelease", b =>
                 {
                     b.Property<int>("Id")

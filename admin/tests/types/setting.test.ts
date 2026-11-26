@@ -41,7 +41,7 @@ describe('SettingEnv', () => {
 
   it('names the tagline by its own variable, not the site name', () => {
     expect(SettingEnv[SettingKey.SiteTagline]).toBe('NUXT_PUBLIC_PORTAL_SITE_TAGLINE')
-    expect(SettingEnv[SettingKey.ChatWebsiteTokenHy]).toBe('NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY')
+    expect(SettingEnv[SettingKey.ChatWebsiteToken]).toBe('NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN')
   })
 })
 

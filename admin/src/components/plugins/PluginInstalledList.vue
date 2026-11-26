@@ -2,8 +2,8 @@
 /**
  * The Installed tab's list: a search box and status and category filters (kept in the address under their own
  * keys), then a three-column grid of shared plugin cards. A card opens the plugin's page by its name; its
- * footer holds a gear that opens the same page, or an Update button while the registry offers a newer
- * version. A plugin the host refused explains the broken rule in the card's notice. A failed load offers a
+ * footer always holds a gear that opens the same page, and beside it an Update button while the registry
+ * offers a newer version, or a placeholder while the registry is still asked. A plugin the host refused explains the broken rule in the card's notice. A failed load offers a
  * retry, an empty server an empty state, and while the first load runs the same toolbar and grid are drawn with card
  * placeholders.
  * The component owns no data: the screen hands it the list and reacts to the update request.
@@ -12,26 +12,22 @@ import { computed, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import PluginCardActions from '@/components/plugins/PluginCardActions.vue'
 import PluginCardSkeleton from '@/components/plugins/PluginCardSkeleton.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useFilterQuery } from '@/composables/useFilterQuery'
 import { enumValueOf } from '@/lib/enumValue'
-import { Icon } from '@/lib/icons'
 import { filterInstalledPlugins, InstalledPluginState } from '@/lib/installedPlugins'
 import { categoryLabel, fromInstalled } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
-import { UiButtonVariant } from '@/utils/ui/button'
-import { UiSize } from '@/utils/ui/size'
+import { PluginCardAction } from '@/types/plugin'
 import type { PluginCardModel, PluginListItemDto } from '@/types/plugin'
 import type { UiFilterChip } from '@/utils/ui/filter'
 import { UiGap } from '@/utils/ui/layout'
@@ -52,6 +48,8 @@ const props = defineProps<{
   plugins: PluginListItemDto[]
   /** Newer registry version per plugin id, for the plugins that have one on offer. */
   updateVersions: Record<string, string>
+  /** True while the registry is asked which plugins have a newer version; the cards hold placeholders for the update state. */
+  checkingUpdates: boolean
   /** True while the list loads. */
   loading: boolean
   /** Sentence for a failed load, null when none. */
@@ -133,23 +131,51 @@ const cards = computed(() =>
 )
 
 /**
- * Asks the screen to update a plugin to the version its card offers.
+ * Whether a card waits for the registry's answer: a refused plugin is never offered an update, so it has nothing to wait for.
  *
- * @param card - The card whose Update button was pressed.
+ * @param card - The card.
+ * @returns True while the update state of the card is still unknown.
  */
-const requestUpdate = (card: PluginCardModel): void => {
-  if (card.updateVersion !== null) {
-    emit('update', card.id, card.updateVersion)
+const isChecking = (card: PluginCardModel): boolean => props.checkingUpdates && card.refusal === null
+
+/**
+ * The one list the footer of a card is drawn from, in order: the update button (or its placeholder) while there is
+ * one, and always the gear.
+ *
+ * @param card - The card.
+ * @returns The actions of the card's footer.
+ */
+const actionsOf = (card: PluginCardModel): PluginCardAction[] => {
+  const actions: PluginCardAction[] = []
+  if (isChecking(card)) {
+    actions.push(PluginCardAction.Checking)
+  } else if (card.updateVersion) {
+    actions.push(PluginCardAction.Update)
   }
+  actions.push(PluginCardAction.Settings)
+  return actions
+}
+
+/** Test id prefix of each footer control of the installed list. */
+const actionTestids: Partial<Record<PluginCardAction, string>> = {
+  [PluginCardAction.Checking]: 'plugin-update-checking',
+  [PluginCardAction.Update]: 'plugin-update-button',
+  [PluginCardAction.Settings]: 'plugin-settings',
 }
 
 /**
- * Opens a plugin's page.
+ * Reacts to a footer action of a card: Update asks the screen to update the plugin to the version the card offers,
+ * the gear opens the plugin's page.
  *
- * @param id - Plugin id.
+ * @param card - The card whose action was pressed.
+ * @param action - The pressed action.
  */
-const openPlugin = (id: string): void => {
-  void router.push(pluginPath(id))
+const onAction = (card: PluginCardModel, action: PluginCardAction): void => {
+  if (action === PluginCardAction.Update && card.updateVersion !== null) {
+    emit('update', card.id, card.updateVersion)
+  } else if (action === PluginCardAction.Settings) {
+    void router.push(pluginPath(card.id))
+  }
 }
 </script>
 
@@ -208,7 +234,7 @@ const openPlugin = (id: string): void => {
         <!-- The placeholders are identical and carry no data: the key is the 1-based position in a fixed count, never reordered or removed one by one, so it is stable. -->
         <PluginCardSkeleton v-for="placeholder in PLUGIN_CARD_PLACEHOLDERS" :key="placeholder" />
       </template>
-      <PluginCard v-for="card in cards" :key="card.id" :plugin="card" :to="pluginPath(card.id)">
+      <PluginCard v-for="card in cards" :key="card.id" :plugin="card" :to="pluginPath(card.id)" :checking-update="isChecking(card)">
         <template v-if="card.refusal" #notice>
           <UiStack :gap="UiGap.Xs" :data-testid="`plugin-refusal-${card.id}`">
             <UiText :tone="UiTextTone.Danger" :size="UiTextSize.Sm">{{ t(`plugins.rules.${card.refusal.rule}`) }}</UiText>
@@ -221,27 +247,14 @@ const openPlugin = (id: string): void => {
           </UiStack>
         </template>
         <template #action>
-          <UiButton :icon="Icon.Download"
-            v-if="card.updateVersion"
-            type="button"
-            :variant="UiButtonVariant.Primary"
-            :size="UiSize.Sm"
-            :loading="updatingIds.includes(card.id)"
-            :data-testid="`plugin-update-button-${card.id}`"
-            @click="requestUpdate(card)"
-          >
-            {{ t('plugins.pluginRegistry.update', { version: card.updateVersion }) }}
-          </UiButton>
-          <UiIconButton
-            v-else
-            :label="t('plugins.pluginRegistry.settings')"
-            :variant="UiButtonVariant.Ghost"
-            :size="UiSize.Sm"
-            :data-testid="`plugin-settings-${card.id}`"
-            @click="openPlugin(card.id)"
-          >
-            <UiIcon :markup="Icon.Settings" :size="UiSize.Sm" />
-          </UiIconButton>
+          <PluginCardActions
+            :plugin-id="card.id"
+            :actions="actionsOf(card)"
+            :version="card.updateVersion"
+            :busy="updatingIds.includes(card.id)"
+            :testid-prefixes="actionTestids"
+            @select="onAction(card, $event)"
+          />
         </template>
       </PluginCard>
     </UiGrid>

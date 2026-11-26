@@ -6,7 +6,7 @@ import { buttonBaseClasses, buttonRadiusClasses, buttonVariantClasses, iconTrigg
 
 describe('button variants', () => {
   it('keeps the named looks', () => {
-    expect(Object.values(UiButtonVariant)).toEqual(['primary', 'secondary', 'ghost', 'field', 'danger', 'link'])
+    expect(Object.values(UiButtonVariant)).toEqual(['primary', 'secondary', 'ghost', 'danger', 'link'])
   })
 
   it('maps every look to classes', () => {
@@ -15,22 +15,13 @@ describe('button variants', () => {
     }
   })
 
-  it('draws the field look as a pill on the input-field surface, from tokens only', () => {
-    expect(buttonVariantClasses.field).not.toContain('rounded')
-    expect(buttonVariantClasses.field).toContain('bg-surface-field')
-    expect(buttonVariantClasses.field).not.toMatch(/#[0-9a-f]{3,6}/i)
+  it('takes the radius from the size, (a look never changes it)', () => {
+    expect(buttonRadiusClasses('sm')).toBe('rounded-[9px]')
+    expect(buttonRadiusClasses('md')).toBe('rounded-control')
   })
 
-  it('takes the radius from the size, except the field look which is always a pill', () => {
-    expect(buttonRadiusClasses(UiButtonVariant.Primary, 'sm')).toBe('rounded-[9px]')
-    expect(buttonRadiusClasses(UiButtonVariant.Primary, 'md')).toBe('rounded-control')
-    expect(buttonRadiusClasses(UiButtonVariant.Field, 'sm')).toBe('rounded-pill')
-  })
-
-  it('draws a pill of any look when asked, and a round control at the smallest size', () => {
-    expect(buttonRadiusClasses(UiButtonVariant.Ghost, 'sm', true)).toBe('rounded-pill')
-    expect(buttonRadiusClasses(UiButtonVariant.Ghost, 'sm')).toBe('rounded-[9px]')
-    expect(buttonRadiusClasses(UiButtonVariant.Ghost, 'xs')).toBe('rounded-full')
+  it('draws a round control at the smallest size', () => {
+    expect(buttonRadiusClasses('xs')).toBe('rounded-full')
   })
 
   it('shares a base set with a focus ring and a not-allowed cursor', () => {
@@ -53,7 +44,7 @@ describe('button variants', () => {
     expect(buttonVariantClasses.primary).toContain('text-text-on-primary')
     expect(buttonVariantClasses.primary).toContain('not-disabled:hover:bg-(image:--gradient-primary-hover)')
     expect(buttonVariantClasses.primary).toContain('not-disabled:active:bg-(image:--gradient-primary-active)')
-    for (const variant of [UiButtonVariant.Secondary, UiButtonVariant.Ghost, UiButtonVariant.Field, UiButtonVariant.Danger, UiButtonVariant.Link]) {
+    for (const variant of [UiButtonVariant.Secondary, UiButtonVariant.Ghost, UiButtonVariant.Danger, UiButtonVariant.Link]) {
       expect(buttonVariantClasses[variant]).not.toMatch(/(^|s)hover:/)
     }
   })

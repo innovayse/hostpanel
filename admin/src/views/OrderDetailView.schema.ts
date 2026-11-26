@@ -11,7 +11,7 @@ import type { DetailSkeletonSchema } from '@/utils/ui/skeletonSchema'
 /** What the order screen is made of. */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { actions: 3 },
+  header: { crumbs: true, actions: 3 },
   columns: [
     [
       {

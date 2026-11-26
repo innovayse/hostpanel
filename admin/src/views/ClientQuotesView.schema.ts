@@ -24,7 +24,7 @@ const schema: ListSkeletonSchema = {
       { key: 'validUntil', label: 'shared.validUntil', kind: UiColumnKind.Date },
       { key: 'total', label: 'shared.total', numeric: true },
       { key: 'stage', label: 'shared.stage', kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

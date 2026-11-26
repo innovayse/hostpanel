@@ -51,8 +51,9 @@ describe('UiBadge', () => {
     const plain = mount(UiBadge)
     const dotted = mount(UiBadge, { props: { dot: true, tone: 'danger' } })
 
-    expect(plain.element.children).toHaveLength(0)
-    expect(dotted.element.children).toHaveLength(1)
+    // The one child of a plain badge is its label; a dotted badge draws the dot before it.
+    expect(plain.element.children).toHaveLength(1)
+    expect(dotted.element.children).toHaveLength(2)
     expect(dotted.element.children[0]?.className).toContain('bg-status-red')
   })
 

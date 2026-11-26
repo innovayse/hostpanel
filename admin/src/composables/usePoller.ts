@@ -68,14 +68,13 @@ const register = (poller: Pausable): void => {
 }
 
 /**
- * Removes a poller from the running set, detaching the shared listener with the last one.
+ * Removes a poller from the running set, detaching the shared listener with the last one; a poller that was not running leaves the listener alone.
  *
  * @param poller - The poller that stopped.
  * @returns Nothing.
  */
 const unregister = (poller: Pausable): void => {
-  running.delete(poller)
-  if (running.size === 0) {
+  if (running.delete(poller) && running.size === 0) {
     document.removeEventListener('visibilitychange', onVisibilityChange)
   }
 }

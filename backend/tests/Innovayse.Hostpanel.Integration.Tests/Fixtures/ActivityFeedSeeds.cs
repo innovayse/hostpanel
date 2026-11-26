@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// </summary>
 internal static class ActivityFeedSeeds
 {
+    /// <summary>The gap between the messages of a backdated ticket; a seeded ticket has no reply before it is moved on.</summary>
+    private static readonly TimeSpan ReplyGap = TimeSpan.FromMinutes(1);
+
     /// <summary>Creates a client named Ada with the given last name, created at a moment.</summary>
     /// <param name="host">The host to seed against.</param>
     /// <param name="lastName">The last name, unique to the test so its events can be told apart.</param>
@@ -64,6 +67,9 @@ internal static class ActivityFeedSeeds
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
         var ticket = Ticket.Create(clientId, subject, "Please help", departmentId, TicketPriority.Medium, openedAt);
+
+        // The save stamps an unset CreatedAt with the host clock, so the opening moment is set on the ticket itself.
+        ticket.Backdate(openedAt, ReplyGap);
         advance?.Invoke(ticket);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);

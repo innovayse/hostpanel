@@ -59,7 +59,7 @@ public sealed class PluginChangeApplier
     {
         var reload = staged ? await _reloader.ReloadAsync(outcome.PluginId!, ct) : PluginReloadOutcome.NeedsRestart;
         var line = $"Plugin ID: {Clean(outcome.PluginId)} - Version: {Clean(outcome.PreviousVersion)} to {Clean(outcome.Version)}";
-        return await ConcludeAsync(reload, line, outcome.Version, ct);
+        return await ConcludeAsync(reload, line, staged ? outcome.Version : null, ct);
     }
 
     /// <summary>Applies a removal: the plugin is unloaded at once when it can be, otherwise it is gone after a restart.</summary>
@@ -75,7 +75,7 @@ public sealed class PluginChangeApplier
     /// <summary>Writes the result of the apply to the activity log, starts the restart the change needs and words the answer.</summary>
     /// <param name="reload">How the attempt to apply the change in place ended.</param>
     /// <param name="line">The plugin and the versions, for the audit line.</param>
-    /// <param name="stagedVersion">The version that waits for the restart; <see langword="null"/> for a removal.</param>
+    /// <param name="stagedVersion">The staged version that replaces the installed one at the restart; <see langword="null"/> for a fresh install and a removal.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The answer for the panel.</returns>
     private async Task<Result<PluginActionResultDto>> ConcludeAsync(PluginReloadOutcome reload, string line, string? stagedVersion, CancellationToken ct)

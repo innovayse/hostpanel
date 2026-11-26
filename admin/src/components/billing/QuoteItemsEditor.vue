@@ -187,7 +187,7 @@ const lineActions = (index: number): UiMenuAction[] => {
     </UiTable>
 
     <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
-      <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-quote-item-add" @click="addLine">
+      <UiButton :action="UiActionKind.AddRow" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-quote-item-add" @click="addLine">
         {{ t('billing.actions.addItem') }}
       </UiButton>
     </UiStack>

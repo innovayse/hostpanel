@@ -406,7 +406,7 @@ onMounted(async () => {
           in as and this form is a dead end. The way out is the first-run screen, and
           this is the only thing that routes to it.
         -->
-        <UiButton :action="UiActionKind.Add"
+        <UiButton :action="UiActionKind.AddRow"
           v-if="authStore.setupRequired"
           :variant="UiButtonVariant.Secondary"
           block

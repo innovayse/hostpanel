@@ -626,6 +626,10 @@ describe('PluginDetailsView', () => {
     await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
     await flushPromises()
 
+    // The re-created card shows the saved key masked; opening Replace again finds the field empty.
+    expect(wrapper.find('[data-testid="plugin-licence-input"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-licence-masked"]').exists()).toBe(true)
+    await wrapper.get('[data-testid="plugin-licence-replace"]').trigger('click')
     expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('')
   })
 

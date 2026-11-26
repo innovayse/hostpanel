@@ -224,7 +224,7 @@ const setImage = (index: number, url: string): void => {
               <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
             </UiIconButton>
           </UiStack>
-          <UiButton type="button" :variant="UiButtonVariant.Link" :action="UiActionKind.Add" :size="UiSize.Sm" class="self-start" data-testid="project-form-image-add" @click="addImage">
+          <UiButton type="button" :variant="UiButtonVariant.Link" :action="UiActionKind.AddRow" :size="UiSize.Sm" class="self-start" data-testid="project-form-image-add" @click="addImage">
             {{ t('storefront.projects.addImage') }}
           </UiButton>
         </UiStack>

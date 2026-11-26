@@ -31,7 +31,6 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ClientServicesListView.schema'
-import { UiJustify, UiDirection } from '@/utils/ui/layout'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
 import { useListQuery } from '@/composables/useListQuery'
@@ -135,11 +134,6 @@ onMounted(() => settingsStore.fetchProducts())
 
 <template>
   <UiStack>
-    <UiStack :direction="UiDirection.Row" :justify="UiJustify.End">
-      <UiButton :variant="UiButtonVariant.Secondary" :action="UiActionKind.Add" :size="UiSize.Sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
-        {{ t('clients.addExistingService.open') }}
-      </UiButton>
-    </UiStack>
     <AddExistingServiceModal
       v-if="showAddExisting"
       :client-id="Number(clientId)"
@@ -168,6 +162,11 @@ onMounted(() => settingsStore.fetchProducts())
         :products="settingsStore.products"
         testid-prefix="client-services-filter"
       />
+      <template #actions>
+        <UiButton :action="UiActionKind.Add" :size="UiSize.Sm" data-testid="client-services-add-existing" @click="showAddExisting = true">
+          {{ t('clients.addExistingService.open') }}
+        </UiButton>
+      </template>
     </UiListToolbar>
 
     <UiErrorState

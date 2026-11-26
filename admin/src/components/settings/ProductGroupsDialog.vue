@@ -84,7 +84,7 @@ const allowedLabel = (group: ProductGroup): string => {
           <UiIcon :markup="Icon.Edit" :size="UiSize.Sm" />
         </UiIconButton>
       </UiStack>
-      <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" data-testid="product-groups-add" @click="emit('add')">
+      <UiButton :action="UiActionKind.AddRow" :variant="UiButtonVariant.Secondary" data-testid="product-groups-add" @click="emit('add')">
         {{ t('settings.productGroups.create') }}
       </UiButton>
     </UiStack>

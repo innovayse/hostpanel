@@ -150,7 +150,7 @@ watch(filters, (val) => {
     <!-- Add filter -->
     <UiButton
       v-if="filters.length < maxFilters"
-      :action="UiActionKind.Add"
+      :action="UiActionKind.AddRow"
       variant="link"
       size="sm"
       data-testid="advanced-filters-add"

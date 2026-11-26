@@ -71,6 +71,9 @@ describe('PluginLicenceCard', () => {
 
     await wrapper.setProps({ hasKey: true })
 
+    // The field gives way to the masked saved key; opening Replace finds it empty.
+    expect(wrapper.find('[data-testid="plugin-licence-input"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="plugin-licence-replace"]').trigger('click')
     expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('')
   })
 

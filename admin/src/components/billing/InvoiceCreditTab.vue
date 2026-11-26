@@ -139,7 +139,7 @@ const removeCredit = async (): Promise<void> => {
             </UiHeading>
             <UiStack :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center">
               <UiNumberInput v-model="addAmount" :step="0.01" :min="0" placeholder="0.00" data-testid="billing-invoice-credit-add-amount" />
-              <UiButton :action="UiActionKind.Add"
+              <UiButton :action="UiActionKind.AddRow"
                 :variant="UiButtonVariant.Secondary"
                 :disabled="!canAdd"
                 data-testid="billing-invoice-credit-add"

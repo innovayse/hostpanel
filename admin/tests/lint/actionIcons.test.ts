@@ -47,7 +47,6 @@ interface AllowedException {
 /** The named exceptions: rows that pick a record, labelled by the record's own data. */
 const ALLOWED: readonly AllowedException[] = [
   { file: 'components/clients/ClientUserPicker.vue', rule: ActionIconRule.MissingIcon, reason: 'search results: each button is a user picked by name' },
-  { file: 'components/layout/MainTopbar.vue', rule: ActionIconRule.MissingIcon, reason: 'activity feed: each button is an event opened by its message' },
   { file: 'components/plugins/view/PluginChatEmpty.vue', rule: ActionIconRule.MissingIcon, reason: 'suggestions: each button sends the suggestion text it shows' },
   { file: 'components/servers/GroupFormModal.vue', rule: ActionIconRule.MissingIcon, reason: 'member lists: each button moves a server named by its own label' },
   { file: 'views/SupportOpenTicketView.vue', rule: ActionIconRule.MissingIcon, reason: 'search results: each button is a client picked by name' },

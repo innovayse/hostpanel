@@ -591,7 +591,7 @@ onBeforeUnmount(() => {
 
           <template #card-commands>
             <UiStack v-if="domain" :direction="UiDirection.Row" wrap :gap="UiGap.Sm">
-              <UiButton :action="UiActionKind.Add"
+              <UiButton :action="UiActionKind.AddRow"
                 type="button"
                 :variant="UiButtonVariant.Secondary"
                 :loading="commandLoading"

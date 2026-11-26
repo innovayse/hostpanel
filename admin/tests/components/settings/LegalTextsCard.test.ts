@@ -4,6 +4,8 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LegalTextsCard from '@/components/settings/LegalTextsCard.vue'
+import { STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { ContentLanguage } from '@/locales/contentLanguage'
 import type { Setting, SettingSave } from '@/types/setting'
 import { mountSettingsCard } from '../../helpers/settingsPage'
 
@@ -18,14 +20,22 @@ beforeEach(() => {
 const PAGES = ['terms', 'privacy', 'refund', 'acceptable_use', 'cookies']
 
 /** The suffix of each language's row. */
-const SUFFIXES = ['', '.ru', '.hy', '.de', '.es']
+const SUFFIXES = STOREFRONT_LOCALES.map((locale) => (locale === ContentLanguage.En ? '' : `.${locale}`))
 
-/** Every row the card edits, as the API seeds them: empty, except the English terms and the Russian refund policy. */
+/** Every row the card edits (one per content language), as the API seeds them: empty, except the English terms and the Russian refund policy. */
 const rows: Setting[] = PAGES.flatMap((page, pageIndex) => SUFFIXES.map((suffix, suffixIndex): Setting => {
   const key = `portal.legal.${page}${suffix}`
   const value = key === 'portal.legal.terms' ? '## Seller\n\nAcme Ltd.' : key === 'portal.legal.refund.ru' ? 'Возврат в течение 14 дней.' : ''
   return { id: pageIndex * SUFFIXES.length + suffixIndex + 1, key, value }
 }))
+
+/**
+ * Finds the id of a settings row by its key.
+ *
+ * @param key - The row's settings key.
+ * @returns The row's id, or -1 when the fixture has no such row.
+ */
+const idOf = (key: string): number => rows.find((row) => row.key === key)?.id ?? -1
 
 /**
  * Reads the value of one text field.
@@ -96,7 +106,7 @@ describe('LegalTextsCard', () => {
     await registry.saveAll(save)
 
     expect(save.mock.calls).toHaveLength(2)
-    expect(save.mock.calls).toEqual(expect.arrayContaining([[4, '## Controller\n\nAcme Ltd.'], [15, 'Մենք օգտագործում ենք cookie։']]))
+    expect(save.mock.calls).toEqual(expect.arrayContaining([[idOf('portal.legal.privacy'), '## Controller\n\nAcme Ltd.'], [idOf('portal.legal.cookies.hy'), 'Մենք օգտագործում ենք cookie։']]))
   })
 
   it('says which rows are missing instead of drawing dead fields', async () => {

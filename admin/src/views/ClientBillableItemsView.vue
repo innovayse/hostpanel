@@ -335,7 +335,7 @@ loadOnChange(fetchBillableItems)
     <UiSectionHeader :level="1" :variant="UiHeadingVariant.Card">
       {{ t('clients.clientBillableItems.billableItems') }}
       <template #actions>
-        <UiButton :action="UiActionKind.Add"
+        <UiButton :action="UiActionKind.AddRow"
           type="button"
           :variant="UiButtonVariant.Secondary"
           data-testid="client-billable-time-billing"

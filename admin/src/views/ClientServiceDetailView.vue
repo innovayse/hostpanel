@@ -975,7 +975,7 @@ onMounted(() => {
 
             <UiStack v-else :direction="UiDirection.Row" wrap :gap="UiGap.Sm">
               <template v-if="service?.status === ServiceStatus.Pending">
-                <UiButton :action="UiActionKind.Add"
+                <UiButton :action="UiActionKind.AddRow"
                   :type="UiButtonType.Button"
                   :variant="UiButtonVariant.Secondary"
                   :loading="commandLoading"

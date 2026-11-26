@@ -338,7 +338,7 @@ watch(
             </UiButton>
           </UiStack>
           <UiStack :direction="UiDirection.Row">
-            <UiButton :action="UiActionKind.Add"
+            <UiButton :action="UiActionKind.AddRow"
               :variant="UiButtonVariant.Secondary"
               :size="UiSize.Sm"
               data-testid="product-bundle-form-add-component"

@@ -48,7 +48,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var line = await db.ActivityLogs.AsNoTracking().SingleAsync(l => l.Description.Contains(pluginId));
+            var line = await db.ActivityLogs.AsNoTracking().SingleAsync(l => l.Description.StartsWith("Installed Plugin From Registry") && l.Description.Contains(pluginId));
             line.ClientId.Should().BeNull();
             line.Description.Should().StartWith("Installed Plugin From Registry")
                 .And.Contain($"Plugin ID: {pluginId} - Version: 1.0.0")

@@ -4,7 +4,7 @@
  *
  * The API never sends a secret back, only whether one is stored, so there is nothing to pre-fill. Every secret in
  * the admin is edited through this one control, so it looks the same everywhere. A stored secret is a read-only box
- * of the same height and look as `UiInput`, holding a masked value and the "Set" badge, with small Replace and Clear
+ * of the same height and look as `UiInput`, holding a key icon (the value is never known to the screen) and the "Set" badge, with small Replace and Clear
  * buttons to its right on the same row. Replace swaps the box for an empty password input (or a text area with
  * `multiline`) whose text becomes the new value, with Cancel to keep the stored one. Clear asks the parent to remove
  * the stored value on save; while the parent reports `cleared` the box says so and offers Cancel to take it back.
@@ -15,10 +15,12 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
+import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { fieldBaseClasses, fieldWidthClasses, UiInputType } from '@/utils/ui/input'
@@ -78,9 +80,6 @@ const emit = defineEmits<{
 /** True while the operator is typing a replacement for a stored value. */
 const replacing = ref(false)
 
-/** The dots that stand for the stored value; the real length is never known to the screen. */
-const mask = '••••••••'
-
 /** Classes of the read-only box: the same surface, radius and height as a text input. */
 const boxClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fieldSizeClasses[props.size]} flex min-w-0 flex-1 items-center gap-2`
 
@@ -135,7 +134,7 @@ const onInput = (value: string | number | null): void => {
     </template>
     <template v-else-if="hasValue && !replacing">
       <div :class="boxClasses" :data-testid="`${testid}-masked`">
-        <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="font-mono tracking-widest" aria-hidden="true">{{ mask }}</UiText>
+        <UiIcon :markup="Icon.Key" :size="UiSize.Sm" class="text-text-muted" aria-hidden="true" />
         <UiBadge :tone="UiTone.Success" small>{{ t('settings.secret.set') }}</UiBadge>
       </div>
       <UiButton

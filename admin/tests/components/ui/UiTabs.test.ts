@@ -58,7 +58,7 @@ describe('UiTabs focus ring', () => {
 
     expect(classes).toContain('border-b-2')
     expect(classes).toContain('border-primary-500')
-    expect(classes.filter(name => /^border-[trlxy]-/.test(name) || name === 'border')).toEqual(['border-b-2'])
+    expect(classes.filter(name => /^border-[trblxy]-/.test(name) || name === 'border')).toEqual(['border-b-2'])
   })
 })
 

@@ -71,7 +71,7 @@ describe('OfflineCCView', () => {
     await wrapper.get('[data-testid="offline-cc-fees"] input').setValue('-1')
     await wrapper.get('[data-testid="offline-cc-fees"] input').trigger('blur')
 
-    expect((wrapper.get('[data-testid="offline-cc-fees"] input').element as HTMLInputElement).value).toBe('0')
+    expect((wrapper.get('[data-testid="offline-cc-fees"] input').element as HTMLInputElement).value).toBe('0.00')
     expect(submitDisabled(wrapper)).toBe(false)
   })
 
@@ -94,7 +94,7 @@ describe('OfflineCCView', () => {
     })
     expect(useToastStore().toasts.map((toast) => toast.message)).toEqual(['Payment recorded.'])
     expect((wrapper.get('[data-testid="offline-cc-invoice"] input').element as HTMLInputElement).value).toBe('0')
-    expect((wrapper.get('[data-testid="offline-cc-amount"] input').element as HTMLInputElement).value).toBe('0')
+    expect((wrapper.get('[data-testid="offline-cc-amount"] input').element as HTMLInputElement).value).toBe('0.00')
     expect((wrapper.get('[data-testid="offline-cc-reference"]').element as HTMLInputElement).value).toBe('')
     expect(submitDisabled(wrapper)).toBe(true)
 

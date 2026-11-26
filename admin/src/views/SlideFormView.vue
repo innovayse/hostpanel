@@ -581,7 +581,7 @@ const handleCancel = (): void => {
             <UiButton
               :type="UiButtonType.Button"
               :variant="UiButtonVariant.Link"
-              :action="UiActionKind.Add"
+              :action="UiActionKind.AddRow"
               :size="UiSize.Sm"
               class="self-start"
               data-testid="slide-form-feature-add"

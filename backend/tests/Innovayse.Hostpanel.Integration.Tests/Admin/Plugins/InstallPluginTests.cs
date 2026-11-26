@@ -39,7 +39,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var line = await db.ActivityLogs.AsNoTracking().SingleAsync(l => l.Description.Contains(pluginId));
+            var line = await db.ActivityLogs.AsNoTracking().SingleAsync(l => l.Description.StartsWith("Installed Plugin") && l.Description.Contains(pluginId));
             line.ClientId.Should().BeNull("a plugin install concerns no client");
             line.Description.Should().Contain(Convert.ToHexStringLower(SHA256.HashData(zip)));
         }

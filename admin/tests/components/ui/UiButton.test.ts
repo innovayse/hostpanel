@@ -115,7 +115,7 @@ describe('UiButton', () => {
   })
 
   it('lays the icon and the label side by side in the default look', () => {
-    const wrapper = mount(UiButton, { props: { action: UiActionKind.Add, size: UiSize.Sm }, slots: { default: 'Add existing' } })
+    const wrapper = mount(UiButton, { props: { action: UiActionKind.AddRow, size: UiSize.Sm }, slots: { default: 'Add existing' } })
 
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['inline-flex', 'items-center', 'gap-1.5', 'bg-surface-field']))
     expect(wrapper.element.firstElementChild?.tagName.toLowerCase()).toBe('svg')

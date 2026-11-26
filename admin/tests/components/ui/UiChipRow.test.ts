@@ -52,8 +52,9 @@ describe('UiChipRow', () => {
     expect(wrapper.find('[data-testid="ui-chip-row-more"]').exists()).toBe(false)
   })
 
-  it('draws the chips that fit and a "+N" chip whose hint lists the rest', () => {
+  it('draws the chips that fit and a "+N" chip whose hint lists the rest', async () => {
     const wrapper = mount(UiChipRow, { props: { chips: ['#aaaa', '#bbbb', '#cccc'] } })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.findAll('[data-testid="ui-chip-row-chip"]').map(chip => chip.text())).toEqual(['#aaaa'])
     expect(wrapper.get('[data-testid="ui-chip-row-more"]').text()).toBe('+2')
@@ -78,8 +79,9 @@ describe('UiChipRow', () => {
     expect(wrapper.find('[data-testid="ui-chip-row-more"]').exists()).toBe(false)
   })
 
-  it('draws only the "+N" chip when not even one chip fits beside it', () => {
+  it('draws only the "+N" chip when not even one chip fits beside it', async () => {
     const wrapper = mount(UiChipRow, { props: { chips: ['#a-very-long-tag-name'] } })
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="ui-chip-row-chip"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="ui-chip-row-more"]').text()).toBe('+1')

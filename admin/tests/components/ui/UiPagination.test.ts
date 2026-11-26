@@ -26,7 +26,7 @@ describe('UiPagination', () => {
     const range = wrapper.get('[data-testid="pagination-range"]')
     expect(range.text()).toBe('')
     expect(range.attributes('aria-hidden')).toBe('true')
-    expect(range.classes()).toContain('bg-surface-hover')
+    expect(range.classes()).toContain('bg-surface-track')
     expect(wrapper.get('[data-testid="pagination-prev"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="pagination-next"]').attributes('disabled')).toBeDefined()
     expect(wrapper.get('[data-testid="pagination-page-1"]').attributes('disabled')).toBeDefined()

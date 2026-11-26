@@ -367,7 +367,7 @@ watch(
             {{ t('shared.delete') }}
           </UiButton>
         </UiStack>
-        <UiButton :action="UiActionKind.Add" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-invoice-items-add" @click="addLine">
+        <UiButton :action="UiActionKind.AddRow" :variant="UiButtonVariant.Secondary" :size="UiSize.Sm" data-testid="billing-invoice-items-add" @click="addLine">
           {{ t('billing.actions.addItem') }}
         </UiButton>
       </UiStack>

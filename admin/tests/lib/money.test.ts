@@ -55,7 +55,7 @@ describe('plain amounts with a currency code', () => {
 describe('affixed amounts', () => {
   it('wraps the number in the prefix and suffix of a configured currency', () => {
     expect(formatAffixed(2.99, { prefix: '$', suffix: '', decimals: 2 })).toBe('$2.99')
-    expect(formatAffixed(1200, { prefix: '', suffix: ' ֏', decimals: 0 })).toBe('1200 ֏')
+    expect(formatAffixed(1200, { prefix: '', suffix: ' ֏', decimals: 0 })).toBe('1,200 ֏')
   })
 })
 

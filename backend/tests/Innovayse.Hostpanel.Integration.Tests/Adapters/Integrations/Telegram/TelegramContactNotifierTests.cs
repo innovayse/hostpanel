@@ -55,7 +55,7 @@ public sealed class TelegramContactNotifierTests
 
         handler.Requests.Single().AbsolutePath.Should().EndWith("bottoken/sendMessage");
         TextOf(handler).Should().Be(
-            "*New website enquiry*\n\n*Name:* Ada Lovelace\n*Email:* ada@example.com\n*Phone:* +37455000000\n*Service:* Hosting"
+            "*New website enquiry*\n\n*Name:* Ada Lovelace\n*Email:* ada@example.com\n*Phone:* \\+37455000000\n*Service:* Hosting"
             + "\n\n*Message:*\nHello there\n\n*Submitted:* 25 Nov 2026, 10:00");
     }
 

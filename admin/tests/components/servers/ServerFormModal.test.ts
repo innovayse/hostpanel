@@ -200,7 +200,7 @@ describe('ServerFormModal', () => {
 
     const payload = wrapper.emitted('saved')?.[0]?.[0] as Record<string, unknown>
     expect(payload).toMatchObject({ clears: { accessHash: false } })
-    expect(wrapper.find('[data-testid="server-form-access-hash-stored"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="server-form-access-hash-masked"]').exists()).toBe(true)
   })
 
   it('shows the refusal and jumps to the tab with the refused field', async () => {

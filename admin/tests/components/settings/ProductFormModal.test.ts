@@ -200,8 +200,8 @@ describe('ProductFormModal', () => {
      */
     const valueOf = (cycle: string): string =>
       (wrapper.get(`[data-testid="product-form-price-USD-${cycle}"] input`).element as HTMLInputElement).value
-    expect(valueOf('quarterly')).toBe('27')
-    expect(valueOf('semiAnnual')).toBe('50')
+    expect(valueOf('quarterly')).toBe('27.00')
+    expect(valueOf('semiAnnual')).toBe('50.00')
   })
 
   it('opens an existing product with its trial settings', async () => {

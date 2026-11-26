@@ -164,6 +164,8 @@ describe('UiNumberInput', () => {
     const whole = mount(UiNumberInput, { props: { modelValue: 5, step: 1 } })
 
     await money.get('input').setValue('7.5')
+    // The parent's v-model hands the typed number back before the field is left.
+    await money.setProps({ modelValue: 7.5 })
     await money.get('input').trigger('blur')
 
     expect((money.get('input').element as HTMLInputElement).value).toBe('7.50')

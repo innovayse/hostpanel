@@ -22,7 +22,7 @@ describe('UiSecretField', () => {
 
     const box = wrapper.get('[data-testid="secret-masked"]')
     expect(box.text()).toContain('Set')
-    expect(box.text()).toContain('••••')
+    expect(box.find('svg').exists()).toBe(true)
     expect(box.classes()).toContain('h-10.5')
     expect(wrapper.find('[data-testid="secret-input"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="secret-replace"]').classes()).toContain('h-8')

@@ -10,6 +10,7 @@ import type { ComputedRef } from 'vue'
 import type { SelectOption } from '@/lib/constants'
 import { usePluginsStore } from '@/stores/plugins'
 import { PluginType } from '@/types/plugin'
+import type { PluginCapability } from '@/types/plugin'
 
 /** What {@link useRegistrarModuleOptions} hands back. */
 export interface RegistrarModuleOptions {
@@ -36,15 +37,17 @@ export interface RegistrarModuleOptions {
 /**
  * Creates the registrar choices and the call that fills them.
  *
+ * @param capability - Offers only the registrars whose manifest declares it (the domain list, for the import screen); every loaded registrar when omitted.
  * @returns The reactive choices, their loader and the name lookup.
  */
-export const useRegistrarModuleOptions = (): RegistrarModuleOptions => {
+export const useRegistrarModuleOptions = (capability?: PluginCapability): RegistrarModuleOptions => {
   const store = usePluginsStore()
 
-  /** The loaded plugins whose type is registrar; the API sends the type in lower case on the list. */
+  /** The loaded plugins whose type is registrar and that declare the capability asked for; the API sends the type in lower case on the list. */
   const options = computed<SelectOption[]>(() =>
     store.plugins
       .filter(plugin => plugin.isLoaded && plugin.type.toLowerCase() === PluginType.Registrar.toLowerCase())
+      .filter(plugin => capability === undefined || plugin.capabilities.includes(capability))
       .map(plugin => ({ value: plugin.id, label: plugin.name })),
   )
 

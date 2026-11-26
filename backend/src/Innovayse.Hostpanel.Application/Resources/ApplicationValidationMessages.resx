@@ -1807,4 +1807,7 @@
   <data name="GatewayOrderIdInvalid" xml:space="preserve">
     <value>A gateway order id is 1 to 255 characters with no leading or trailing white space or control characters.</value>
   </data>
+  <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
+    <value>The registrar's page cursor is too long.</value>
+  </data>
 </root>

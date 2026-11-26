@@ -1,9 +1,9 @@
 {
   "client": {
     "noProfile": {
-      "title": "This account is not a customer account",
-      "body": "You are signed in, but this account has no client profile, so there is nothing to show in the client area. Staff accounts manage the platform from the admin panel.",
-      "browseAction": "Browse hosting"
+      "title": "No client profile yet",
+      "body": "You are signed in, but this account has no client profile yet. It is created with your first order, so there is nothing to show here until then. Staff accounts manage the platform from the admin panel.",
+      "browseAction": "Place your first order"
     },
     "nav": {
       "dashboard": "Dashboard",

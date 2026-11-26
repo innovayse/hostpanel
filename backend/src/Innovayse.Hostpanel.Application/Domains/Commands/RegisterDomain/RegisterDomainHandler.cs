@@ -85,7 +85,7 @@ public sealed class RegisterDomainHandler
             cmd.DomainName,
             cmd.Years,
             cmd.WhoisPrivacy,
-            cmd.AutoRenew,
+            cmd.RegistrarAutoRenew,
             cmd.Nameserver1,
             cmd.Nameserver2,
             contact.Value!);

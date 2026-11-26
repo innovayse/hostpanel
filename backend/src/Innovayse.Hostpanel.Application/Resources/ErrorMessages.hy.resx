@@ -1696,4 +1696,7 @@
   <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>Տեղադրված ոչ մի պլագին չի տրամադրում SSH բանալիների գործակալի այս պրոֆիլը։</value>
   </data>
+  <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
+    <value>Գրանցողը չի հայտնում այս դոմենի ավարտի ժամկետը, ուստի այն հնարավոր չէ ներմուծել։</value>
+  </data>
 </root>

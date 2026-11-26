@@ -6,6 +6,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import RegistrarDomainImportDialog from '@/components/domains/RegistrarDomainImportDialog.vue'
 import DomainsListView from '@/views/DomainsListView.vue'
 import schema from '@/views/DomainsListView.schema'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
@@ -19,8 +20,8 @@ import { DomainStatus } from '@/types/domain'
 const REGISTRAR_ROUTES = {
   'GET /api/admin/plugins': () =>
     json([
-      { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded' },
-      { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded' },
+      { id: 'registrar-one', name: 'Registrar One', type: 'registrar', isLoaded: true, status: 'Loaded', capabilities: [] },
+      { id: 'registrar-two', name: 'Registrar Two', type: 'registrar', isLoaded: true, status: 'Loaded', capabilities: [] },
     ]),
 }
 
@@ -221,5 +222,26 @@ describe('DomainsListView', () => {
     await flushPromises()
 
     expect(fetchMock.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('opens the registrar import from the header and reloads the list after an import', async () => {
+    const mock = stubRoutes({
+      ...REGISTRAR_ROUTES,
+      'GET /api/domains?': () => json({ items: [domain], totalCount: 1 }),
+      'GET /api/clients': () => json({ items: [], totalCount: 0 }),
+    })
+    const { wrapper } = await mountListAt('/domains')
+    expect(wrapper.find('[data-testid="registrar-import-dialog"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="domains-import-registrar"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="registrar-import-dialog"]').exists()).toBe(true)
+    const before = listUrls(mock).length
+
+    wrapper.getComponent(RegistrarDomainImportDialog).vm.$emit('imported')
+    await flushPromises()
+
+    expect(listUrls(mock).length).toBe(before + 1)
   })
 })

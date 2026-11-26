@@ -423,6 +423,10 @@ export default defineNuxtConfig({
     }
   },
 
+  // The shell shown inside #__nuxt on the browser-only routes (/client/**, /cart/**, /checkout/**) until the
+  // app mounts, so they are never an empty page; the file is plain HTML because nothing of the app has loaded yet.
+  spaLoadingTemplate: 'spa-loading-template.html',
+
   app: {
     // Set NUXT_APP_CDN_URL env var in production to serve assets from CDN
     cdnURL: process.env.NUXT_APP_CDN_URL || '',

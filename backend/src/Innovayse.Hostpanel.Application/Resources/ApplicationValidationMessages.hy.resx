@@ -1807,4 +1807,7 @@
   <data name="GatewayOrderIdInvalid" xml:space="preserve">
     <value>Դարպասի պատվերի նույնացուցիչը 1-ից 255 նիշ է՝ առանց եզրային բացատների և կառավարող նիշերի։</value>
   </data>
+  <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
+    <value>Գրանցողի էջի կուրսորը չափազանց երկար է։</value>
+  </data>
 </root>

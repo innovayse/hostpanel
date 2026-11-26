@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Staff can import the domains a registrar already holds (#1476): the domains list lists what a registrar plugin reports for its account, shows which are not in the panel yet, and imports one into a client with its real expiry and status, its next due date following the expiry and its recurring amount following the extension's renew price, without an order, an invoice or a charge.
 - The admin can create the domain product (#1478). The product form offers the **Domain** type, hides the hosting fields and leaves the price to the extension table, so an installation can sell domains without editing the database. A domain product with a package, a server group or a trial is refused with `400 PRODUCT_DOMAIN_SHAPE_INVALID`.
 - The **Change package** dialog of a service offers the packages of the server's panel in a select (#1450) when the panel plugin that serves the server declares `provisioningPanelPackages`: `GET /api/provisioning/{id}/packages` answers `{ "names": [...] }`. A panel that cannot list answers `409 PANEL_OPERATION_NOT_SUPPORTED` and the dialog keeps the field to type the name in; a failing panel answers `502 SERVICE_PACKAGES_UPSTREAM_FAILED`.
 - A failed server connection test says why (#1450). `POST /api/admin/servers/{id}/test-connection` carries the error code beside the sentence (`errorCode`), and a panel plugin that times out or fails the secure handshake answers `SERVER_CONNECTION_TIMED_OUT` or `SERVER_CONNECTION_TLS_FAILED` instead of the generic unreachable answer.
@@ -25,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Registering a domain no longer switches on auto renew at the registrar together with the panel renewal (#1481). The registrar receives auto renew off unless staff ask for it with the new `registrarAutoRenew` field of `POST /api/domains/register`, so a domain the panel renews is not renewed twice. The Russian and Armenian staff docs describe both settings.
+- The domain search refuses a malformed name at once in the browser, with the same rule the API holds, and sends no request for it (#1489).
+- The pages that render in the browser only (client area, cart, checkout) show a loading state instead of an empty page while the app starts, and a signed in person with no client record no longer triggers plugin and credit requests the API refuses (#1488).
+- The SSH key agent CI job installs a pinned shellcheck itself, so it passes on every runner.
 - A request the browser cancels (a page reload or a navigation) is no longer logged as a server failure. The `ACTION FAILED` line of the action timing filter and Wolverine's `Invocation of {Message} failed!` line both showed the cancelled database call as an error with a stack trace although the response was fine; they now read as an Information line (`ACTION CANCELLED`) and a Debug entry. A cancellation that is not a client abort, such as a timeout or a host that is stopping, and every real handler exception are still logged as errors. The demotion of expected Wolverine errors, which was written but never switched on, is now registered at start.
 - The permissions list of a plugin (Overview tab and install dialog) shows a label for every capability the plugin SDK defines (#1450), in every admin language, instead of the raw message key. A test fails when the SDK gets a capability the admin has no label for.
 - The connection status of a panel plugin on its Settings tab reflects its servers (#1450), how many are online, offline or not tested, instead of "Not tested yet".

@@ -240,4 +240,16 @@ public interface IRegistrarProvider
     /// prices keyed by period in years, or a failure carrying the <c>REGISTRAR_*</c> code when the registrar refused.
     /// </returns>
     public Task<Result<IReadOnlyList<TldPricing>>> GetTldPricingAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Lists the domains the registrar account holds, one page per call. Read only; safe to repeat. Following
+    /// <see cref="RegistrarHeldDomainPage.NextCursor"/> to the end returns every domain exactly once.
+    /// </summary>
+    /// <param name="cursor">The cursor of the page wanted, as the previous page returned it, or <see langword="null"/> for the first page.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The page, or a failure carrying the <c>REGISTRAR_*</c> code that words why the registrar did not answer, among them
+    /// <c>REGISTRAR_OPERATION_UNSUPPORTED</c> when the registrar offers no domain list.
+    /// </returns>
+    public Task<Result<RegistrarHeldDomainPage>> ListDomainsAsync(string? cursor, CancellationToken ct);
 }

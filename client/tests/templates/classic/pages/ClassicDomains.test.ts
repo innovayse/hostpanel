@@ -129,6 +129,16 @@ describe('ClassicDomains', () => {
     expect(wrapper.find('[data-testid="classic-domains-error"]').text()).toBe('domains.invalidDomain')
   })
 
+  it.each(['bad name!.com', '-bad-.com', 'example.123'])('refuses the malformed name %j at once, before asking the server', async (name) => {
+    const wrapper = await mountDomains()
+
+    await search(wrapper, name)
+    await settle()
+
+    expect(checkedDomains()).toEqual([])
+    expect(wrapper.find('[data-testid="classic-domains-error"]').text()).toBe('domains.invalidDomain')
+  })
+
   it('shows an available domain with a register button', async () => {
     answerCheck({ domain: 'example.com', available: true, status: DomainAvailabilityStatus.Available })
     const wrapper = await mountDomains()

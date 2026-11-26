@@ -1695,4 +1695,7 @@
   <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>Ningún complemento instalado aporta este perfil del agente de claves SSH.</value>
   </data>
+  <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
+    <value>El registrador no informa de cuándo caduca este dominio, por lo que no se puede importar.</value>
+  </data>
 </root>

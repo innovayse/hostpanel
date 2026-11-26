@@ -10,6 +10,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { knownCustomerPinia } from '~/tests/helpers/knownCustomer'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ApplyCreditCard from '~/components/client/invoices/ApplyCreditCard.vue'
 import { useCreditStore } from '~/stores/credit'
@@ -80,7 +81,7 @@ const invoice = (overrides: Record<string, unknown> = {}): ClientInvoice => ({
  * @returns The wrapper.
  */
 const mountCard = async (target: ClientInvoice) => {
-  const wrapper = mountClient(ApplyCreditCard, { props: { invoice: target } })
+  const wrapper = mountClient(ApplyCreditCard, { props: { invoice: target }, pinia: knownCustomerPinia() })
   await waitUntil(() => expect(requestsTo(stub.requests, BillingEndpoint.Credit)).toHaveLength(1))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()

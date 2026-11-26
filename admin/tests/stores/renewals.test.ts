@@ -102,10 +102,10 @@ describe('renewalsStore', () => {
     expect(JSON.parse(String(((put as unknown[])[1] as RequestInit).body))).toEqual({ value: false })
   })
 
-  it('a refused switch keeps the row and puts the sentence in actionError', async () => {
+  it('a switch on a domain that no longer exists keeps the row and puts the sentence in actionError', async () => {
     stubRoutes({
       'GET /api/domains/renewals/upcoming': () => json({ ...emptyPage, items: [{ ...domain }], totalCount: 1 }),
-      'PUT /api/domains/7/auto-renew': () => problem('The registrar refused.', 502),
+      'PUT /api/domains/7/auto-renew': () => problem('The domain was not found.', 404),
     })
     const store = useRenewalsStore()
     await store.fetchDomains(1)
@@ -113,7 +113,7 @@ describe('renewalsStore', () => {
     expect(await store.setDomainAutoRenew(7, false)).toBe(false)
 
     expect(store.domains[0]?.autoRenew).toBe(true)
-    expect(store.actionError).toBe('The registrar refused.')
+    expect(store.actionError).toBe('The domain was not found.')
   })
 
   it('generateInvoices words the count and the empty run', async () => {

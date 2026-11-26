@@ -324,6 +324,7 @@ import { useDomainsStore } from '~/stores/domains'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
 import type { TldPriceEntry } from '~/types/tldpriceentry'
 import { formatMoney } from '~/utils/formatMoney'
+import { isValidDomainName } from '~/utils/domainName'
 import { tldOf } from '~/utils/domainTld'
 import { tldPriceEntry } from '~/utils/tldPriceEntry'
 import { ONE_YEAR, priceForYears } from '~/utils/tldPeriodPrice'
@@ -382,7 +383,10 @@ const addError = ref('')
 /** The sentence to show: local validation first, else the store's API refusal, else the refusal to add to the cart. */
 const searchError = computed(() => validationError.value || domainsStore.searchError || addError.value)
 
-/** Checks domain availability through the store. */
+/**
+ * Checks domain availability through the store. A name that is not a well-formed domain name is
+ * refused at once, with the same rule the API holds, and no request is sent for it.
+ */
 const searchDomain = async (): Promise<void> => {
   const domain = searchQuery.value.trim()
   if (!domain) {
@@ -390,7 +394,7 @@ const searchDomain = async (): Promise<void> => {
   }
   validationError.value = ''
   addError.value = ''
-  if (!domain.includes('.')) {
+  if (!isValidDomainName(domain)) {
     validationError.value = t('domains.invalidDomain')
     return
   }

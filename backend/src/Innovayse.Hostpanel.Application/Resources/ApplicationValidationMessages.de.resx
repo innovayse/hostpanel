@@ -1807,4 +1807,7 @@
   <data name="GatewayOrderIdInvalid" xml:space="preserve">
     <value>Eine Gateway-Bestellkennung hat 1 bis 255 Zeichen, ohne Leerzeichen am Rand und ohne Steuerzeichen.</value>
   </data>
+  <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
+    <value>Der Seitencursor der Registrierungsstelle ist zu lang.</value>
+  </data>
 </root>

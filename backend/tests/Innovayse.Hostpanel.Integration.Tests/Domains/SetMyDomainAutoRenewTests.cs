@@ -1,6 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 
@@ -71,5 +75,29 @@ public sealed class SetMyDomainAutoRenewTests(IntegrationTestFactory factory) : 
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
+    }
+
+    /// <summary>
+    /// The client route changes the panel's renewal flag only: the registrar is never asked, because the registrar's own
+    /// auto renew is a separate setting that only staff change.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SetAutoRenew_ChangesThePanelFlagAndNeverCallsTheRegistrarAsync()
+    {
+        var registrar = new RecordingRegistrar(new ManualTimeProvider(TestMoments.Seeded));
+        var (_, owner, domainId, _) = await DomainsTestSeeds.SeedOwnerWithDomainAsync(factory, "set-my-domain-no-registrar");
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IRegistrarProvider>(registrar)));
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await client.PutAsJsonAsync($"/api/me/domains/{domainId}/auto-renew", new { value = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        registrar.Calls.Should().BeEmpty();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Domains.AsNoTracking().SingleAsync(d => d.Id == domainId)).AutoRenew.Should().BeTrue();
     }
 }

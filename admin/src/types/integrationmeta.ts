@@ -8,7 +8,6 @@ import type { IntegrationMeta, IntegrationSlug } from '@/types/integration'
 import { PluginCategory } from '@/types/plugin'
 import { Icon } from '@/lib/icons'
 import { translate } from '@/lib/translate'
-import { publicAssetUrl } from '@/lib/runtimeConfig'
 
 /**
  * Metadata for a single integration category section.
@@ -31,14 +30,11 @@ export interface IntegrationCategoryMeta {
 /**
  * Builds the public URL of an integration logo.
  *
- * Built from the runtime base path (`config.js`) rather than written root-absolute, because the
- * app can be served under a sub-path such as `/admin` and the image is not rebuilt per deployment.
- *
  * @param file - File name inside `public/integrations/`.
  * @returns The URL to use as an `<img>` source.
  */
 const logoUrl = (file: string): string =>
-  publicAssetUrl(`integrations/${file}`)
+  `/integrations/${file}`
 
 /**
  * Static metadata for all supported integrations.

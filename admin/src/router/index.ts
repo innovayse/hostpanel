@@ -2,7 +2,6 @@
 import type { Component } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { authMiddleware } from '@/middleware/auth'
-import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { REPORTS } from '@/lib/reports'
 import { AppRoute } from '@/lib/routes'
@@ -53,7 +52,7 @@ const scrollToTop = (): { top: number } => ({ top: 0 })
 
 /** The application router; every screen is a lazily loaded view under the authenticated layout. */
 const router = createRouter({
-  history: createWebHistory(getRuntimeConfig().basePath),
+  history: createWebHistory(),
   scrollBehavior: scrollToTop,
   routes: withSkeletons([
     {

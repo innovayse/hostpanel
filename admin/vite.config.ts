@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { themeBootPlugin } from './src/lib/themeBootPlugin.ts'
 
 export default defineConfig({
-  // Relative: the deployed base path is set at container start (<base href> + config.js).
+  // Relative, resolved against the <base href="/"> of index.html: the admin is served at the root of its own host.
   base: './',
   plugins: [
     vue(),

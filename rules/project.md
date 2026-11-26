@@ -3028,10 +3028,11 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `src/composables/use*.ts`, `src/types/<concept>.ts`, `src/lib/` (pure helpers: `errorHandler`,
   `runAction`, `translate`, `format`, `money`, `tones`, `icons`, `reports*`), `src/utils/ui/` (TypeScript
   the kit shares), `src/middleware/auth.ts` (the router guard), `src/locales/`. The API is
-  same-origin (`/api/...`), so the only per-deployment value is the base path, and it is runtime:
-  Vite builds with a relative `base`, `public/config.js` sets `window.__APP_CONFIG__.basePath`
-  (read through `lib/runtimeConfig.ts`), and the prod image's `docker/nginx/admin-entrypoint.sh`
-  rewrites `config.js` and `<base href>` from `ADMIN_BASE_URL_PATH` at start. No `VITE_BASE_URL`.
+  same-origin (`/api/...`) and the SPA is always served at the root of its own host (`ADMIN_DOMAIN`),
+  never under a path such as `/admin`. The per-deployment values are runtime: `public/config.js` sets
+  `window.__APP_CONFIG__` (`clientBaseUrl`, `docsUrl`, read through `lib/runtimeConfig.ts`), and the prod
+  image's `docker/nginx/admin-entrypoint.sh` rewrites it from `CLIENT_BASE_URL` and `DOCS_URL` at start.
+  No `VITE_BASE_URL`, no base path.
 - **Data flow, as everywhere:** view → `stores/<area>.ts` → `composables/apis/use<Area>Api.ts` →
   `composables/useApi.ts` → HTTP. A view never calls `useApi`, an api composable or `lib/errorHandler`
   and holds no `catch`; a store is the only caller of `apis/`, runs every request through

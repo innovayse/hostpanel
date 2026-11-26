@@ -121,4 +121,23 @@ describe('PluginCard', () => {
     expect(withSlots.get('[data-testid="note"]').text()).toBe('Broken')
     expect(mountCard().find('[data-testid="act"]').exists()).toBe(false)
   })
+
+  it('keeps the tag chips on a wrapping row that cannot overflow the card', () => {
+    const wrapper = mountCard({ tags: ['control-panel', 'authorize-net', 'hosted-payment-page', 'openlitespeed'] })
+    const tags = wrapper.get('[data-testid="plugin-card-tags-example-pay"]')
+
+    expect(tags.classes()).toEqual(expect.arrayContaining(['flex-wrap', 'min-w-0', 'overflow-hidden']))
+    expect(tags.text()).toContain('#openlitespeed')
+  })
+
+  it('keeps the footer figures on one line each and lets the footer wrap instead of overlapping the action', () => {
+    const wrapper = mountCard({ downloads: 51, version: '1.0.1' }, { action: '<button data-testid="act">Update to 1.0.4</button>' })
+    const footer = wrapper.get('[data-testid="plugin-card-version-example-pay"]').element.parentElement?.parentElement
+
+    expect(footer?.classList.contains('flex-wrap')).toBe(true)
+    expect(wrapper.get('[data-testid="plugin-card-downloads-example-pay"]').classes()).toContain('shrink-0')
+    expect(wrapper.get('[data-testid="plugin-card-downloads-example-pay"]').find('.whitespace-nowrap').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="plugin-card-version-example-pay"]').classes()).toEqual(expect.arrayContaining(['shrink-0', 'whitespace-nowrap']))
+    expect(wrapper.get('[data-testid="act"]').element.parentElement?.classList.contains('shrink-0')).toBe(true)
+  })
 })

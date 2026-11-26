@@ -11,6 +11,9 @@
  */
 
 import { computed } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { UiSize } from '@/utils/ui/size'
 import { focusRingClasses } from '@/utils/ui/input'
 
 /** Props for UiCheckbox. */
@@ -64,29 +67,7 @@ const toggle = (event: MouseEvent): void => {
       : 'bg-surface-field border-border-control not-disabled:hover:border-text-secondary']"
     @click="toggle"
   >
-    <svg
-      v-if="indeterminate"
-      class="w-2.5 h-2.5 text-text-on-primary group-disabled:text-text-muted"
-      viewBox="0 0 12 10"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      aria-hidden="true"
-    >
-      <line x1="2" y1="5" x2="10" y2="5" />
-    </svg>
-    <svg
-      v-else-if="modelValue"
-      class="w-2.5 h-2.5 text-text-on-primary group-disabled:text-text-muted"
-      viewBox="0 0 12 10"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <polyline points="1 5.5 4 8.5 11 1.5" />
-    </svg>
+    <UiIcon v-if="indeterminate" :markup="Icon.Minus" :size="UiSize.Xs" class="text-text-on-primary group-disabled:text-text-muted" />
+    <UiIcon v-else-if="modelValue" :markup="Icon.Check" :size="UiSize.Xs" class="text-text-on-primary group-disabled:text-text-muted" />
   </button>
 </template>

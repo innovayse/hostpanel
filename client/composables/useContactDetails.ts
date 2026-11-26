@@ -44,11 +44,7 @@ export const useContactDetails = () => {
   })
 
   /** Office address as the operator wrote it, in the visitor's language when one is set; empty when unset. */
-  const address = computed(() => getLocalized({
-    default: { key: PortalSettingKey.ContactAddress, envKey: 'portalContactAddress' },
-    ru: { key: PortalSettingKey.ContactAddressRu, envKey: 'portalContactAddressRu' },
-    hy: { key: PortalSettingKey.ContactAddressHy, envKey: 'portalContactAddressHy' }
-  }))
+  const address = computed(() => getLocalized({ key: PortalSettingKey.ContactAddress, envKey: 'portalContactAddress' }))
 
   /** Address of the embedded map; only an `https` address is accepted, otherwise empty. */
   const mapUrl = computed(() => {

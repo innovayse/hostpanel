@@ -43,6 +43,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the activity log entries table.</summary>
     public DbSet<ActivityLog> ActivityLogs { get; }
 
+    /// <summary>Gets the notification feed events each admin has read.</summary>
+    public DbSet<ActivityRead> ActivityReads { get; }
+
     /// <summary>
     /// Gets the roles held by each subject. Separate from Identity's own role tables
     /// because it is keyed by whatever the configured identity provider calls a person,

@@ -170,4 +170,34 @@ describe('UiListToolbar', () => {
     expect(clear.element.parentElement?.classList.contains('absolute')).toBe(true)
     expect(clear.classes()).not.toContain('relative')
   })
+
+  it('puts the actions slot at the trailing end of the same row as the search box and the Filters button', () => {
+    const wrapper = mountWithApp(UiListToolbar, {
+      props: { searchTestid: 'list-search', search: '' },
+      slots: { default: FIELDS, actions: '<button data-testid="create">Create</button>' },
+      stubs: { teleport: true },
+    })
+    const actions = wrapper.get('[data-testid="list-toolbar-actions"]')
+    const row = wrapper.get('[data-testid="filter-trigger"]').element.parentElement
+
+    expect(row?.contains(actions.element)).toBe(true)
+    expect(row?.lastElementChild).toBe(actions.element)
+    expect(actions.classes()).toEqual(expect.arrayContaining(['ml-auto', 'shrink-0']))
+    expect(row?.classList.contains('flex-wrap')).toBe(true)
+    expect(actions.find('[data-testid="create"]').exists()).toBe(true)
+  })
+
+  it('draws no actions wrapper while the screen fills no actions slot', () => {
+    expect(mountToolbar().find('[data-testid="list-toolbar-actions"]').exists()).toBe(false)
+  })
+
+  it('keeps the actions enabled while the list loads', () => {
+    const wrapper = mountWithApp(UiListToolbar, {
+      props: { searchTestid: 'list-search', search: '', loading: true },
+      slots: { actions: '<button data-testid="create">Create</button>' },
+      stubs: { teleport: true },
+    })
+
+    expect(wrapper.get('[data-testid="create"]').attributes('disabled')).toBeUndefined()
+  })
 })

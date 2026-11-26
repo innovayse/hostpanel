@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Common.Enums;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
@@ -29,9 +30,12 @@ public interface IBrandingStorage
     /// <param name="renditions">The files to write, as produced by the processor.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// One entry per rendition, in the order given, each carrying its root-relative URL.
+    /// One entry per rendition, in the order given, each carrying its root-relative URL; or
+    /// <c>STORAGE_NOT_WRITABLE</c> when the storage refuses the write because the host process may not
+    /// create or write in its folder, so a deployment's volume ownership never surfaces as an
+    /// authentication failure.
     /// </returns>
-    public Task<IReadOnlyList<BrandingAssetDto>> SaveAsync(
+    public Task<Result<IReadOnlyList<BrandingAssetDto>>> SaveAsync(
         BrandingKind kind,
         IReadOnlyList<BrandingRendition> renditions,
         CancellationToken ct);
@@ -45,6 +49,9 @@ public interface IBrandingStorage
     /// <c>https://</c> address, a path outside the uploads root) is left alone.
     /// </param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the upload is gone.</returns>
+    /// <returns>
+    /// A task that completes once the upload is gone, or once the storage has given up removing it: the file is
+    /// only superseded, never live, so a refused delete is logged and the saved setting stands.
+    /// </returns>
     public Task RemoveAsync(string url, CancellationToken ct);
 }

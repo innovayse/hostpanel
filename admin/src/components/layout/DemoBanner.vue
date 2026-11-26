@@ -6,9 +6,11 @@
  * Renders nothing when demo mode is off. The countdown ticks once a minute. The strip has a fixed one-line height, so
  * the shell below it does not shift when the countdown or the guide link appears.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { usePoller } from '@/composables/usePoller'
 import { useDemoStore } from '@/stores/demo'
+import { PollKind } from '@/types/poller'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -33,22 +35,18 @@ const demo = useDemoStore()
 /** Current time in epoch milliseconds, refreshed every minute so the countdown moves. */
 const now = ref(Date.now())
 
-/** Handle of the countdown timer, cleared on unmount. */
-let timer: ReturnType<typeof setInterval> | undefined
+/** The shared poller that moves the clock once a minute, pauses with the tab and stops with the banner. */
+const clock = usePoller({
+  kind: PollKind.DemoCountdown,
+  immediate: false,
+  /** Refreshes the clock the countdown reads. */
+  tick: () => {
+    now.value = Date.now()
+  },
+})
 
 /** Starts the minute tick. */
-onMounted(() => {
-  timer = setInterval(() => {
-    now.value = Date.now()
-  }, MS_PER_MINUTE)
-})
-
-/** Stops the minute tick. */
-onBeforeUnmount(() => {
-  if (timer !== undefined) {
-    clearInterval(timer)
-  }
-})
+onMounted(clock.start)
 
 /** Whole minutes left until the reset, or null when no reset is scheduled. */
 const minutesLeft = computed<number | null>(() => {

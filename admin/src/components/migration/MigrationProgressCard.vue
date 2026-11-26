@@ -21,12 +21,11 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiMetric from '@/components/ui/UiMetric.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatTile from '@/components/ui/UiStatTile.vue'
+import UiStatRow from '@/components/ui/UiStatRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { EMPTY_VALUE } from '@/lib/format'
@@ -34,9 +33,32 @@ import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiStatRowVariant } from '@/utils/ui/statRow'
+import type { UiStatFigure } from '@/utils/ui/statRow'
+import type { SkeletonStat } from '@/utils/ui/skeletonSchema'
 import { UiSize } from '@/utils/ui/size'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+
+/** Closed set of the counters shown under the checklist. */
+enum Counter {
+  /** Records imported. */
+  Migrated = 'migrated',
+  /** Records skipped. */
+  Skipped = 'skipped',
+  /** Records whose import failed. */
+  Failed = 'failed',
+  /** Source records. */
+  Total = 'total',
+}
+
+/** The four counters under the checklist, as the shared stat row draws them. */
+const COUNTER_STATS: readonly SkeletonStat[] = [
+  { key: Counter.Migrated, label: 'migration.migrationProgressCard.migrated' },
+  { key: Counter.Skipped, label: 'migration.migrationProgressCard.skipped' },
+  { key: Counter.Failed, label: 'migration.migrationProgressCard.failed' },
+  { key: Counter.Total, label: 'shared.total' },
+]
 
 /** How many checklist rows the loading card draws. */
 const PLACEHOLDER_ROWS = 3
@@ -183,6 +205,14 @@ const totalRecords = computed<number>(() => sumOf('total'))
 /** Sum of records whose import failed, as the server counted them. */
 const totalFailed = computed<number>(() => sumOf('failed'))
 
+/** What the stat row shows for each counter. */
+const counterFigures = computed<Record<string, UiStatFigure>>(() => ({
+  [Counter.Migrated]: { value: totalMigrated.value },
+  [Counter.Skipped]: { value: totalSkipped.value },
+  [Counter.Failed]: { value: totalFailed.value },
+  [Counter.Total]: { value: totalRecords.value },
+}))
+
 /** Stops the pending connection-check timer. */
 onUnmounted(() => {
   if (checkResultTimer.value !== null) {
@@ -246,17 +276,13 @@ onUnmounted(() => {
       </UiStack>
 
       <!-- KPI tiles -->
-      <UiGrid :columns="2" :gap="UiGap.Sm" container>
-        <UiStatTile :label="t('migration.migrationProgressCard.migrated')" :value="totalMigrated" :tone="UiTone.Success" :loading="job === null" />
-        <UiStatTile :label="t('migration.migrationProgressCard.skipped')" :value="totalSkipped" :tone="UiTone.Warning" :loading="job === null" />
-        <UiStatTile
-          :label="t('migration.migrationProgressCard.failed')"
-          :value="totalFailed"
-          :tone="totalFailed > 0 ? UiTone.Danger : UiTone.Neutral"
-          :loading="job === null"
-        />
-        <UiStatTile :label="t('shared.total')" :value="totalRecords" :loading="job === null" />
-      </UiGrid>
+      <UiStatRow
+        :stats="COUNTER_STATS"
+        :figures="counterFigures"
+        :variant="UiStatRowVariant.Inline"
+        :loading="job === null"
+        testid-prefix="migration-stat"
+      />
 
       <!-- Failure message the server recorded for the job -->
       <UiAlert v-if="job?.status === MigrationStatus.Failed && job.failure" :variant="UiTone.Danger" data-testid="migration-job-error">

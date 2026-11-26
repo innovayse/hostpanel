@@ -9,8 +9,7 @@
     "country": "País",
     "kind": "Tipo",
     "rate": "Tipo",
-    "validFrom": "Válido desde",
-    "actions": "Acciones"
+    "validFrom": "Válido desde"
   },
   "kind": {
     "Standard": "Estándar",

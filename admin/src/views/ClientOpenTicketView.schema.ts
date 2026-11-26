@@ -9,6 +9,7 @@ const schema: FormSkeletonSchema = {
   kind: SkeletonKind.Form,
   header: {
     title: 'shared.openNewTicket',
+    crumbs: true,
   },
   columns: [
     [

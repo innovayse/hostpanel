@@ -22,8 +22,7 @@
     "decimals": "Dezimalstellen",
     "rateToBase": "Kurs zur Basiswährung",
     "base": "Basis",
-    "enabled": "Aktiviert",
-    "actions": "Aktionen"
+    "enabled": "Aktiviert"
   },
   "makeBase": "Als Basis festlegen",
   "baseBadge": "Basis",

@@ -1,6 +1,6 @@
 /**
  * Plugin manager flow: installed plugins are listed, uploading an archive from the dialog first shows what it asks for and its
- * changelog, then installs it as multipart data after the confirmation and shows the restart banner, restarting posts the command, the gear of a card
+ * changelog, then installs it as multipart data after the confirmation and shows the restart banner, restarting asks for a confirmation, posts the command and waits behind a dialog, the gear of a card
  * opens the plugin's page, and the allow unsigned switch on the Settings tab warns and saves its setting.
  */
 import { HttpMethod } from '../src/types/http'
@@ -46,7 +46,7 @@ test('uploading an archive installs the plugin and offers the restart', async ({
           return { body: { requiresRestart: true } }
         },
       },
-      { method: HttpMethod.Post, path: '/api/admin/plugins/restart', respond: () => ({ status: 204 }) },
+      { method: HttpMethod.Post, path: '/api/admin/plugins/restart', respond: () => ({ status: 202 }) },
     ],
   })
 
@@ -73,7 +73,10 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   expect(install?.postData).toContain('filename="panel.zip"')
 
   await page.getByTestId('plugins-restart').click()
+  await page.getByTestId('dialog-confirm').click()
   await expect.poll(() => api.callsTo(HttpMethod.Post, '/api/admin/plugins/restart').length).toBe(1)
+  // The panel now waits for the server behind a blocking dialog.
+  await expect(page.getByTestId('plugin-restart-waiting')).toBeVisible()
 })
 
 test('the gear of an installed plugin opens its own page', async ({ page }) => {

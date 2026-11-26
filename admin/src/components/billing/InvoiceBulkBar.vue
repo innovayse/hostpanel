@@ -12,6 +12,7 @@ import UiBulkBar from '@/components/ui/UiBulkBar.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import { Icon } from '@/lib/icons'
 import { InvoiceBulkAction } from '@/types/invoice'
+import { actionIcons, UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import type { UiBulkAction } from '@/utils/ui/bulkBar'
@@ -50,7 +51,7 @@ const CONFIRMED_ACTIONS: readonly InvoiceBulkAction[] = [InvoiceBulkAction.MarkC
 const actions = computed<UiBulkAction[]>(() => [
   { key: InvoiceBulkAction.MarkPaid, label: t('billing.actions.markPaid'), title: t('billing.actions.markPaid'), icon: Icon.Check, variant: UiButtonVariant.Primary, testid: `${props.testid}-paid` },
   { key: InvoiceBulkAction.MarkUnpaid, label: t('billing.actions.markUnpaid'), title: t('billing.actions.markUnpaid'), icon: Icon.Close, variant: UiButtonVariant.Secondary, testid: `${props.testid}-unpaid` },
-  { key: InvoiceBulkAction.MarkCancelled, label: t('billing.actions.markCancelled'), title: t('billing.actions.markCancelled'), icon: Icon.Remove, variant: UiButtonVariant.Secondary, testid: `${props.testid}-cancelled` },
+  { key: InvoiceBulkAction.MarkCancelled, label: t('billing.actions.markCancelled'), title: t('billing.actions.markCancelled'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: `${props.testid}-cancelled` },
   { key: InvoiceBulkAction.Duplicate, label: t('billing.actions.duplicate'), title: t('billing.invoicesList.duplicateInvoice'), icon: Icon.Copy, variant: UiButtonVariant.Secondary, testid: `${props.testid}-duplicate` },
   { key: InvoiceBulkAction.Delete, label: t('shared.delete'), title: t('shared.delete'), icon: Icon.Trash, variant: UiButtonVariant.Danger, testid: `${props.testid}-delete` },
 ])

@@ -1,11 +1,11 @@
-name: 💡 Feature request
+name: Feature request
 description: Suggest something HostPanel should do
 labels: ["enhancement", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Check the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) first. If yours is there, a 👍 on it helps us prioritise.
+        Check the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) first. If yours is there, a thumbs up on it helps us prioritise.
         Not sure yet? Start a thread in [Ideas](https://github.com/innovayse/hostpanel/discussions/categories/ideas) instead.
   - type: textarea
     id: problem

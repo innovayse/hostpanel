@@ -62,6 +62,28 @@ export const REPORT_CURRENCY_OPTIONS: { value: ReportCurrency; label: string }[]
 ]
 
 /**
+ * Writes a number with thousands grouping and a fixed number of decimals, so every price and amount of the panel reads the
+ * same ("9,300.00", never "9300.00").
+ *
+ * @param amount - Numeric value.
+ * @param decimals - Decimal places, always shown.
+ * @returns For example "9,300.00".
+ */
+export const groupedAmount = (amount: number, decimals = 2): string =>
+  amount.toLocaleString(MONEY_FORMAT_LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+
+/**
+ * Writes a number with a fixed number of decimals and no thousands grouping, the text an editable amount field holds
+ * ("23.70", never "23.7"): grouping would make the typed text unreadable to the parser.
+ *
+ * @param amount - Numeric value.
+ * @param decimals - Decimal places, always shown.
+ * @returns For example "9300.00".
+ */
+export const fixedAmount = (amount: number, decimals = 2): string =>
+  amount.toLocaleString(MONEY_FORMAT_LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: false })
+
+/**
  * The symbol for a currency code.
  *
  * @param code - ISO 4217 alpha code as the API sends it.
@@ -89,7 +111,7 @@ export const formatCurrencyWhole = (amount: number, code: string): string => {
     return new Intl.NumberFormat(MONEY_FORMAT_LOCALE, { style: 'currency', currency: code, maximumFractionDigits: 0 }).format(amount)
   } catch {
     // An unknown or malformed code makes Intl throw; show the plain number with the code.
-    return `${Math.round(amount).toLocaleString(MONEY_FORMAT_LOCALE)} ${code}`
+    return `${groupedAmount(Math.round(amount), 0)} ${code}`
   }
 }
 
@@ -101,7 +123,7 @@ export const formatCurrencyWhole = (amount: number, code: string): string => {
  * @returns For example "12.50 USD" or "53160.00 AMD".
  */
 export const formatPlainAmount = (amount: number | null | undefined = 0, currency: string | null | undefined = CurrencyCode.Usd): string =>
-  `${(amount ?? 0).toFixed(2)} ${currency || CurrencyCode.Usd}`
+  `${groupedAmount(amount ?? 0)} ${currency || CurrencyCode.Usd}`
 
 /**
  * Formats a price with its currency symbol and code.
@@ -110,7 +132,7 @@ export const formatPlainAmount = (amount: number | null | undefined = 0, currenc
  * @param currency - ISO 4217 currency code.
  * @returns For example "$4.99 USD".
  */
-export const formatPrice = (price: number, currency: string): string => `${currencySymbol(currency)}${price.toFixed(2)} ${currency}`
+export const formatPrice = (price: number, currency: string): string => `${currencySymbol(currency)}${groupedAmount(price)} ${currency}`
 
 /**
  * Formats a price with its currency symbol only (a price-book cell).
@@ -119,7 +141,7 @@ export const formatPrice = (price: number, currency: string): string => `${curre
  * @param currency - ISO 4217 currency code.
  * @returns For example "$4.99"; no symbol for a code this panel does not know.
  */
-export const formatSymbolPrice = (price: number, currency: string): string => `${currencySymbol(currency)}${price.toFixed(2)}`
+export const formatSymbolPrice = (price: number, currency: string): string => `${currencySymbol(currency)}${groupedAmount(price)}`
 
 /**
  * Formats an amount with the prefix, suffix and decimals a configured currency declares.
@@ -132,7 +154,7 @@ export const formatSymbolPrice = (price: number, currency: string): string => `$
  * @returns For example "$2.99" or "2.99 ֏".
  */
 export const formatAffixed = (amount: number, currency: { prefix: string; suffix: string; decimals: number }): string =>
-  `${currency.prefix}${amount.toFixed(currency.decimals)}${currency.suffix}`
+  `${currency.prefix}${groupedAmount(amount, currency.decimals)}${currency.suffix}`
 
 /**
  * Restates a USD figure in a report currency and formats it with two decimals.
@@ -148,7 +170,7 @@ export const formatReportAmount = (
   withCode = false,
 ): string => {
   const converted = amount * REPORT_CURRENCY_RATES[currency]
-  const text = `${CURRENCY_SYMBOLS[currency]}${converted.toFixed(2)}`
+  const text = `${CURRENCY_SYMBOLS[currency]}${groupedAmount(converted)}`
   return withCode ? `${text} ${currency}` : text
 }
 
@@ -167,7 +189,7 @@ export const formatCurrencyCode = (amount: number, code: string): string => {
     return new Intl.NumberFormat(MONEY_FORMAT_LOCALE, { style: 'currency', currency: code }).format(amount)
   } catch {
     // An unknown or malformed code makes Intl throw; show the plain number with the code.
-    return `${amount.toFixed(2)} ${code}`
+    return `${groupedAmount(amount)} ${code}`
   }
 }
 

@@ -443,7 +443,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>
-    /// A language outside <c>LocaleOptions.SupportedLocales</c> should fail. Stored, it would
+    /// A language outside <c>SupportedLanguages.All</c> should fail. Stored, it would
     /// be read back and then served English, which looks exactly like the save not working.
     /// </summary>
     [Fact]

@@ -63,3 +63,12 @@ export const migrationJobFailureLabelKey: Record<MigrationJobFailure, string> = 
  */
 export const isJobActive = (status: MigrationJob['status']): boolean =>
   status === MigrationStatus.Pending || status === MigrationStatus.Queued || status === MigrationStatus.InProgress
+
+/**
+ * Tells whether two copies of a job read the same, so a poll that found nothing new can leave the held one alone.
+ *
+ * @param held - The copy the screen holds.
+ * @param fresh - The copy the API just returned.
+ * @returns True when every field, nested counters included, is equal.
+ */
+export const isSameJob = (held: MigrationJob, fresh: MigrationJob): boolean => JSON.stringify(held) === JSON.stringify(fresh)

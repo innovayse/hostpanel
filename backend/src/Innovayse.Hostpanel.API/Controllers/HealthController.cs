@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -26,14 +28,27 @@ namespace Innovayse.Hostpanel.API.Controllers;
 [Route("health")]
 public sealed class HealthController : BaseApiController
 {
-    /// <summary>Answers 200 while the API process is alive.</summary>
+    /// <summary>When this process started, read once: it is what tells a restarted host from the one that was stopped.</summary>
+    private static readonly DateTimeOffset ProcessStartedAt = Process.GetCurrentProcess().StartTime.ToUniversalTime();
+
+    /// <summary>Answers 200 while the API process is alive and 503 while it drains for a restart.</summary>
     /// <param name="clock">The source of the moment the process answered at.</param>
-    /// <returns>200 with the status and the time the process answered.</returns>
+    /// <param name="restarter">Tells whether the host is draining for a restart.</param>
+    /// <returns>
+    /// 200 with the status, the time the process answered and the time it started; 503 with <c>HOST_DRAINING</c> once the host
+    /// has started to stop for a restart, so an edge proxy stops sending traffic while running requests finish.
+    /// </returns>
     [HttpGet]
     [DisableRateLimiting]
     [ProducesResponseType(typeof(HealthDto), StatusCodes.Status200OK)]
-    public IActionResult Get([FromServices] IClock clock)
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public IActionResult Get([FromServices] IClock clock, [FromServices] IHostRestarter restarter)
     {
-        return HandleData(new HealthDto(HealthStatus.Ok, clock.UtcNow));
+        if (restarter.IsRestarting)
+        {
+            return HandleResult(Result.FailureCode(HostpanelErrorCodes.HOST_DRAINING));
+        }
+
+        return HandleData(new HealthDto(HealthStatus.Ok, clock.UtcNow, ProcessStartedAt));
     }
 }

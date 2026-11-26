@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * A coloured note box of the documentation: a note, a tip, a warning or a danger, each with its icon from the icon library.
+ */
+import { CircleCheck, CircleX, Info, TriangleAlert } from 'lucide-vue-next'
+import type { Component } from 'vue'
+
 /** The visual style of the callout box. */
 type CalloutType = 'note' | 'warning' | 'danger' | 'tip'
 
@@ -10,18 +16,18 @@ const props = withDefaults(defineProps<{
   type: 'note',
 })
 
-/** Icon character rendered inside the coloured badge for each callout type. */
-const icons: Record<CalloutType, string> = {
-  note: 'ℹ',
-  warning: '⚠',
-  danger: '✕',
-  tip: '✓',
+/** Icon drawn inside the coloured badge for each callout type, from the icon library. */
+const icons: Record<CalloutType, Component> = {
+  note: Info,
+  warning: TriangleAlert,
+  danger: CircleX,
+  tip: CircleCheck,
 }
 </script>
 
 <template>
   <div :class="['callout', `callout--${props.type}`]">
-    <span class="callout__icon" aria-hidden="true">{{ icons[props.type] }}</span>
+    <component :is="icons[props.type]" class="callout__icon" :size="18" aria-hidden="true" />
     <div class="callout__body">
       <slot />
     </div>
@@ -42,10 +48,8 @@ const icons: Record<CalloutType, string> = {
 }
 
 .callout__icon {
-  font-size: 1rem;
   flex-shrink: 0;
   margin-top: 1px;
-  font-style: normal;
 }
 
 .callout__body :deep(> *:first-child) {

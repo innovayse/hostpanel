@@ -36,17 +36,11 @@
     "consentHistory": "История согласий"
   },
   "clientForm": {
-    "english": "Английский",
-    "russian": "Русский",
-    "armenian": "Армянский",
-    "german": "Немецкий",
-    "spanish": "Испанский",
     "suspended": "Приостановлено",
     "closed": "Закрыто",
     "emailIsRequired": "Требуется адрес электронной почты",
     "firstNameIsRequired": "Требуется имя",
-    "lastNameIsRequired": "Требуется фамилия",
-    "spanish": "Испанский"
+    "lastNameIsRequired": "Требуется фамилия"
   },
   "contactForm": {
     "editContact": "Редактировать контакт",
@@ -388,9 +382,7 @@
     "2fa": "2FA",
     "joined": "Дата регистрации",
     "userDeleted": "Пользователь удалён",
-    "twoFactorAuthenticationEnabled": "Двухфакторная аутентификация включена",
     "on": "Вкл.",
-    "twoFactorAuthenticationDisabled": "Двухфакторная аутентификация отключена",
     "off": "Выкл.",
     "noClientsMatchYourFilters": "Нет клиентов, соответствующих фильтрам",
     "noClientsFound": "Клиенты не найдены",

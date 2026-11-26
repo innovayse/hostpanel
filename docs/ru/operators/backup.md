@@ -108,11 +108,8 @@ docker run --rm \
   -v /path/to/your/backups:/backup \
   alpine sh -c 'cd /data && tar xzf /backup/plugins-2024-01-15.tar.gz'
 
-# Fix ownership so the API can read the restored files:
-cd /opt/hostpanel
-docker compose -f docker-compose.hub.yml run --rm --no-deps \
-  --user 0 --cap-add CHOWN --entrypoint sh hostpanel-api \
-  -c 'chown -R "$APP_UID" /app/wwwroot/uploads /app/plugins-installed'
+# Менять владельца вручную не нужно: одноразовый сервис hostpanel-volume-init передаёт
+# восстановленные тома пользователю API при каждом запуске (шаг 6).
 ```
 
 **6. Запустите весь стек:**

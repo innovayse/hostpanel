@@ -12,7 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { ServerModule, moduleLabel, moduleOptionLabel } from '@/types/server'
 import type { ServerDto, ServerModuleOptionDto, ServerPayload } from '@/types/server'
 import type { UiTabItem } from '@/utils/ui/tabs'
-import StoredSecretState from '@/components/servers/StoredSecretState.vue'
+import UiSecretField from '@/components/ui/UiSecretField.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -509,24 +509,17 @@ const handleSubmit = (): void => {
               :error="props.fieldErrors['credentials.password']"
             >
               <template #default="{ id, invalid }">
-                <UiStack :gap="UiGap.Xs">
-                  <UiInput
-                    :id="id"
-                    v-model="form.password"
-                    :type="UiInputType.Password"
-                    :invalid="invalid"
-                    :placeholder="t('servers.serverForm.secretPlaceholder')"
-                    data-testid="server-form-password"
-                  />
-                  <StoredSecretState
-                    v-if="props.server"
-                    :has-value="props.server.credentials.hasPassword"
-                    :cleared="form.clearPassword"
-                    testid="server-form-password"
-                    @clear="form.clearPassword = true"
-                    @cancel="form.clearPassword = false"
-                  />
-                </UiStack>
+                <UiSecretField
+                  :id="id"
+                  v-model="form.password"
+                  :has-value="props.server?.credentials.hasPassword === true"
+                  :cleared="form.clearPassword"
+                  :invalid="invalid"
+                  :placeholder="t('servers.serverForm.secretPlaceholder')"
+                  testid="server-form-password"
+                  @clear="form.clearPassword = true"
+                  @cancel-clear="form.clearPassword = false"
+                />
               </template>
             </UiField>
             <UiField
@@ -534,24 +527,17 @@ const handleSubmit = (): void => {
               :error="props.fieldErrors['credentials.apiToken']"
             >
               <template #default="{ id, invalid }">
-                <UiStack :gap="UiGap.Xs">
-                  <UiInput
-                    :id="id"
-                    v-model="form.apiToken"
-                    :type="UiInputType.Password"
-                    :invalid="invalid"
-                    :placeholder="t('servers.serverForm.secretPlaceholder')"
-                    data-testid="server-form-api-token"
-                  />
-                  <StoredSecretState
-                    v-if="props.server"
-                    :has-value="props.server.credentials.hasApiToken"
-                    :cleared="form.clearApiToken"
-                    testid="server-form-api-token"
-                    @clear="form.clearApiToken = true"
-                    @cancel="form.clearApiToken = false"
-                  />
-                </UiStack>
+                <UiSecretField
+                  :id="id"
+                  v-model="form.apiToken"
+                  :has-value="props.server?.credentials.hasApiToken === true"
+                  :cleared="form.clearApiToken"
+                  :invalid="invalid"
+                  :placeholder="t('servers.serverForm.secretPlaceholder')"
+                  testid="server-form-api-token"
+                  @clear="form.clearApiToken = true"
+                  @cancel-clear="form.clearApiToken = false"
+                />
               </template>
             </UiField>
           </UiGrid>
@@ -562,26 +548,19 @@ const handleSubmit = (): void => {
             :error="props.fieldErrors['credentials.accessHash']"
           >
             <template #default="{ id, invalid, describedby }">
-              <UiStack :gap="UiGap.Xs">
-                <UiTextarea
-                  :id="id"
-                  v-model="form.accessHash"
-                  rows="4"
-                  :invalid="invalid"
-                  :aria-describedby="describedby"
-                  :placeholder="t('servers.serverForm.accessHashPlaceholder')"
-                  class="font-mono"
-                  data-testid="server-form-access-hash"
-                />
-                <StoredSecretState
-                  v-if="props.server"
-                  :has-value="props.server.credentials.hasAccessHash"
-                  :cleared="form.clearAccessHash"
-                  testid="server-form-access-hash"
-                  @clear="form.clearAccessHash = true"
-                  @cancel="form.clearAccessHash = false"
-                />
-              </UiStack>
+              <UiSecretField
+                :id="id"
+                v-model="form.accessHash"
+                multiline
+                :has-value="props.server?.credentials.hasAccessHash === true"
+                :cleared="form.clearAccessHash"
+                :invalid="invalid"
+                :describedby="describedby"
+                :placeholder="t('servers.serverForm.accessHashPlaceholder')"
+                testid="server-form-access-hash"
+                @clear="form.clearAccessHash = true"
+                @cancel-clear="form.clearAccessHash = false"
+              />
             </template>
           </UiField>
 

@@ -8,22 +8,31 @@ import NotificationsView from '@/views/NotificationsView.vue'
 import { mountRoutedSettled } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
+import { overdueInvoice, paymentReceived, serveActivityFeed } from '../helpers/activityEvents'
 
 afterEach(() => {
   vi.unstubAllGlobals()
 })
 
 describe('NotificationsView', () => {
-  it('links each event to the record it is about', async () => {
-    stubRoutes({
-      'GET /api/admin/dashboard/activity': () => json([
-        { type: 'ClientRegistered', message: 'Ada signed up', occurredAt: '2026-05-01T09:00:00Z', entityId: 7 },
-      ]),
-    })
+  it('links each event to the record it is about and words it from its type and facts', async () => {
+    stubRoutes({ 'GET /api/admin/dashboard/activity': () => json([overdueInvoice]) })
     const wrapper = await mountRoutedSettled(NotificationsView, '/notifications')
 
-    expect(wrapper.get('[data-testid="notification-0"]').attributes('href')).toBe('/clients/7')
-    expect(wrapper.get('[data-testid="notification-0"]').text()).toContain('Ada signed up')
+    expect(wrapper.get('[data-testid="notification-0"]').attributes('href')).toBe('/billing/33')
+    expect(wrapper.get('[data-testid="notification-0"]').text()).toContain('Invoice #33 overdue')
+    expect(wrapper.get('[data-testid="notification-0"]').text()).toContain('Ada Lovelace')
+    expect(wrapper.get('[data-testid="notification-0"]').text()).toContain('$40.00 USD')
+  })
+
+  it('reads an event on the server once its row is opened', async () => {
+    const server = serveActivityFeed([paymentReceived])
+    const wrapper = await mountRoutedSettled(NotificationsView, '/notifications')
+
+    await wrapper.get('[data-testid="notification-0"]').trigger('click')
+    await flushPromises()
+
+    expect(server.read).toEqual(new Set([paymentReceived.key]))
   })
 
   it('shows the empty state when the feed is empty', async () => {

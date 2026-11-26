@@ -27,7 +27,7 @@ const emit = defineEmits<{
 const input = ref<HTMLInputElement | null>(null)
 
 /** Classes of the picker: the kit's focus ring, a muted label and button while it is disabled. */
-const classes = `text-sm text-text-secondary rounded-control file:mr-3 file:rounded-[9px] file:border file:border-border file:bg-surface-field file:px-3.5 file:py-1.5 file:text-[0.8125rem] file:font-medium file:text-text-secondary file:cursor-pointer hover:file:bg-surface-hover hover:file:text-text-primary disabled:text-text-muted disabled:cursor-not-allowed file:disabled:text-text-muted file:disabled:cursor-not-allowed ${focusRingClasses}`
+const classes = `text-sm text-text-secondary rounded-control file:mr-3 file:rounded-[9px] file:border file:border-border-control file:bg-surface-field file:px-3.5 file:py-1.5 file:text-[0.8125rem] file:font-medium file:text-text-secondary file:cursor-pointer hover:file:bg-surface-hover hover:file:text-text-primary disabled:text-text-muted disabled:cursor-not-allowed file:disabled:text-text-muted file:disabled:cursor-not-allowed ${focusRingClasses}`
 
 /**
  * Re-emits the native selection as a file array.

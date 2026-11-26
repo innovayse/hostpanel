@@ -1,7 +1,7 @@
 {
   "systemSettings": "Configuración del sistema",
   "secret": {
-    "set": "••••••, configurado",
+    "set": "Configurado",
     "notSet": "No configurado",
     "replace": "Reemplazar",
     "placeholder": "Escribe el nuevo valor",
@@ -273,6 +273,7 @@
   "branding": {
     "title": "Marca",
     "description": "Los logotipos y el icono de la pestaña del navegador de la tienda. Los cambios surten efecto en la próxima carga de página.",
+    "imageSize": "Su imagen mide {width} × {height} píxeles.",
     "pasteUrl": "O pega la URL de la imagen...",
     "logo": {
       "label": "Logotipo (fondos claros)",
@@ -498,6 +499,7 @@
       "gateway-payment-without-reference-admin": "Pago de pasarela sin referencia (personal)",
       "invoice-renewal-reminder": "Recordatorio de renovación de factura",
       "order-rejected": "Pedido rechazado",
+      "plugin-change-ended-admin": "Cambio de plugin finalizado (personal)",
       "service-termination-failed-admin": "Error al dar de baja el servicio (personal)",
       "user-email-change": "Confirmación de cambio de correo",
       "user-email-changed-notice": "Aviso de cambio de correo",

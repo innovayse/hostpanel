@@ -7,7 +7,8 @@
  * and the picture is then empty of alt and hidden from assistive technology. The letter's colour
  * is picked by contrast against the block.
  *
- * The icon is shown with `object-fit: contain` so it is never cropped. When the address is
+ * The icon is shown with `object-fit: contain` inside a bordered tile with a little padding, so it is never cropped, a wide
+ * logo never shrinks to a thin strip against the edge and logos of different shapes sit in identical frames. When the address is
  * missing, or the browser cannot load the picture, the colour block takes its place. The block is
  * an SVG whose `fill` takes the plugin's hex colour, because a colour known only at run time
  * cannot be a Tailwind class and an inline `style` is not allowed.
@@ -68,6 +69,12 @@ const sizeClasses: Record<UiSize, string> = {
   lg: 'h-12 w-12',
 }
 
+/** Frame of the tile around a picture: a hairline border, the inset surface and padding that keeps the logo off the edge. */
+const pictureFrameClasses = 'border border-border bg-surface-inset p-1'
+
+/** Frame classes of the square: the picture's tile while the icon shows, none for the colour block, which fills the square itself. */
+const frameClasses = computed<string>(() => (showIcon.value ? pictureFrameClasses : ''))
+
 /** Marks the icon as broken so the colour block replaces it. */
 const onError = (): void => {
   failed.value = true
@@ -75,7 +82,7 @@ const onError = (): void => {
 </script>
 
 <template>
-  <span class="inline-flex shrink-0 overflow-hidden rounded-control" :class="sizeClasses[size]" data-testid="plugin-avatar">
+  <span class="inline-flex shrink-0 overflow-hidden rounded-control" :class="[sizeClasses[size], frameClasses]" data-testid="plugin-avatar">
     <UiImage
       v-if="showIcon"
       :src="iconUrl ?? undefined"

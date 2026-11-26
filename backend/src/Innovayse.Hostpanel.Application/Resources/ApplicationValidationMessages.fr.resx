@@ -1810,4 +1810,7 @@
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
     <value>Le curseur de page du registraire est trop long.</value>
   </data>
+  <data name="ActivityEventKeyInvalid" xml:space="preserve">
+    <value>Ceci n'est pas un identifiant de notification valide.</value>
+  </data>
 </root>

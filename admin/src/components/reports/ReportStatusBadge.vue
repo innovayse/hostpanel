@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import { reportStatusTone } from '@/lib/tones'
+import { reportStatusLabel, reportStatusTone } from '@/lib/tones'
 import type { UiTone } from '@/utils/ui/tone'
 
 /** Props for ReportStatusBadge. */
@@ -19,6 +19,6 @@ const tone = computed<UiTone>(() => reportStatusTone(props.status))
 
 <template>
   <UiBadge :tone="tone" small data-testid="report-status">
-    {{ status }}
+    {{ reportStatusLabel(status) }}
   </UiBadge>
 </template>

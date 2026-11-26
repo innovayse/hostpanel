@@ -6,7 +6,8 @@ import { ref, computed, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useClientsStore } from '@/stores/clients'
-import { contactTypeTone } from '@/lib/tones'
+import { CONTACT_TYPE_OPTIONS } from '@/lib/constants'
+import { contactTypeTone, statusLabel } from '@/lib/tones'
 import ContactFormModal from '@/components/clients/ContactFormModal.vue'
 import type { Contact } from '@/types/contact'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -253,7 +254,7 @@ const contactActions = (contact: Contact): UiMenuAction[] => {
           <UiTableCell muted>{{ contact.email }}</UiTableCell>
           <UiTableCell muted>{{ contact.phone || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
-            <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
+            <UiBadge :tone="contactTypeTone(contact.type)" small>{{ statusLabel(CONTACT_TYPE_OPTIONS, contact.type) }}</UiBadge>
           </UiTableCell>
           <UiTableCell actions>
             <UiRowActions :actions="contactActions(contact)" :testid="`client-contacts-actions-${contact.id}`" />

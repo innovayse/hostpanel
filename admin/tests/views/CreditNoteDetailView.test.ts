@@ -39,7 +39,7 @@ describe('CreditNoteDetailView', () => {
     expect(wrapper.find('[data-testid="ui-page-header-skeleton"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Qty')
     expect(wrapper.find('[data-testid="billing-credit-note-items"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="billing-credit-note-totals"]').exists()).toBe(false)
+    expect(wrapper.find('tfoot').exists()).toBe(false)
   })
 
   it('draws the columns of the lines table from its schema', async () => {
@@ -59,6 +59,24 @@ describe('CreditNoteDetailView', () => {
     expect(wrapper.get('[data-testid="billing-credit-note-invoice"]').text()).toBe('#5')
     expect(wrapper.get('[data-testid="billing-credit-note-items"]').text()).toContain('Credit for hosting')
     expect(wrapper.get('[data-testid="billing-credit-note-total"]').text()).toContain('60.00')
+  })
+
+  it('draws the trail above the title: billing, the credit notes list, then the note itself', async () => {
+    stubRoutes({ 'GET /api/billing/credit-notes/3': () => json(creditNoteDetailFixture()) })
+    const wrapper = await mountNote()
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
+
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/billing', '/billing/credit-notes'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe('Credit note CN-0003')
+  })
+
+  it('draws the totals as the foot of the lines table, the figures under the amount column', async () => {
+    stubRoutes({ 'GET /api/billing/credit-notes/3': () => json(creditNoteDetailFixture()) })
+    const wrapper = await mountNote()
+
+    const foot = wrapper.get('[data-testid="billing-credit-note-items"] tfoot')
+    expect(foot.findAll('tr')).toHaveLength(3)
+    expect(foot.findAll('tr')[0]?.find('td')?.attributes('colspan')).toBe('3')
   })
 
   it('voids with a reason after the prompt and shows the voided state', async () => {

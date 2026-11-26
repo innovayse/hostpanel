@@ -284,6 +284,17 @@ export const formatShare = (share: number, locale: string): string =>
 export const formatDecimal = (value: number, locale: string, fractionDigits = 1): string =>
   new Intl.NumberFormat(locale, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(value)
 
+/**
+ * Writes a count in the short form of the locale ("27" stays "27", "1234" becomes "1.2K"), for a place too narrow for the
+ * full digits such as a card footer. Built on `Intl.NumberFormat`, so the abbreviation and separators come from the locale.
+ *
+ * @param value - The count.
+ * @param locale - Locale code the number is written in.
+ * @returns The short count text.
+ */
+export const formatCompactNumber = (value: number, locale: string): string =>
+  new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(value)
+
 /** Units in the next unit up (a gigabyte is 1024 megabytes), for {@link formatSize}. */
 const SIZE_STEP = 1024
 

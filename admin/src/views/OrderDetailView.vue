@@ -18,7 +18,6 @@ import { useRoute, useRouter } from 'vue-router'
 import OrderFact from '@/components/orders/OrderFact.vue'
 import OrderFraudPanel from '@/components/orders/OrderFraudPanel.vue'
 import OrderRejectReviewDialog from '@/components/orders/OrderRejectReviewDialog.vue'
-import UiBackLink from '@/components/ui/UiBackLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -49,6 +48,7 @@ import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { useOrdersStore } from '@/stores/orders'
 import { AppRoute, clientPath, invoicePath } from '@/lib/routes'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
@@ -81,6 +81,9 @@ enum OrderTab {
 }
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Orders, the order. */
+const { crumbs } = usePageCrumbs()
 
 const route = useRoute()
 const router = useRouter()
@@ -311,7 +314,6 @@ onMounted(async () => {
 <template>
   <UiStack>
     <template v-if="store.error">
-      <UiBackLink :to="AppRoute.Orders" :label="t('shared.orders')" mobile-only class="self-start" data-testid="order-back" />
       <UiErrorState
         :message="store.error"
         :loading="store.loading"
@@ -326,19 +328,17 @@ onMounted(async () => {
         :actions="headerActions"
         :title="order?.orderNumber"
         :loading="order === null"
-        :back-to="AppRoute.Orders"
-        :back-label="t('shared.orders')"
-        back-testid="order-back"
+        :crumbs="crumbs(order?.orderNumber)"
         data-testid="order-header"
       >
-        <UiStack v-if="order !== null" :direction="UiDirection.Row" :gap="UiGap.Sm" :align="UiAlignItems.Center" wrap class="mt-1.5">
-          <UiBadge :tone="orderStatusTone(order.status)" data-testid="order-status">
+        <template #badge>
+          <UiBadge v-if="order !== null" :tone="orderStatusTone(order.status)" data-testid="order-status">
             {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
           </UiBadge>
-          <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-            {{ formatDateTime(order.createdAt) }}
-          </UiText>
-        </UiStack>
+        </template>
+        <UiText v-if="order !== null" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="mt-1.5">
+          {{ formatDateTime(order.createdAt) }}
+        </UiText>
       </UiPageHeader>
 
 

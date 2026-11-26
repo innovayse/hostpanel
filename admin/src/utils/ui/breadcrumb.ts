@@ -1,5 +1,5 @@
 /**
- * Vocabulary of the breadcrumb (`UiBreadcrumb`): the shape of one step and the rule that folds a long trail.
+ * Vocabulary of the breadcrumb (`UiBreadcrumb`): the shape of one step, the two layouts of a trail and the rule that folds a long trail.
  */
 import type { RouteLocationRaw } from 'vue-router'
 
@@ -13,7 +13,20 @@ export interface UiBreadcrumbItem {
   onSelect?: () => void
   /** `data-testid` of the step when it is a button; the current page takes the trail's `currentTestid`. */
   testid?: string
+  /** Draws a bar in place of the label, for the current page whose name is still being read. */
+  pending?: boolean
 }
+
+/** How a trail is laid out. */
+export const UiBreadcrumbVariant = {
+  /** One line in the top bar: the parents hide below `md`, where only the current page is drawn. */
+  Bar: 'bar',
+  /** Above a page title: every step stays at every width, a long trail wraps and a long name is cut with an ellipsis. */
+  Page: 'page',
+} as const
+
+/** One of the layouts of a trail. */
+export type UiBreadcrumbVariant = (typeof UiBreadcrumbVariant)[keyof typeof UiBreadcrumbVariant]
 
 /** A trail split for drawing: the steps shown before the fold, the ones the fold hides and the steps shown after it. */
 export interface UiBreadcrumbFold {

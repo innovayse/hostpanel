@@ -3,7 +3,6 @@ using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Resilience.Settings;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
@@ -54,7 +53,7 @@ public sealed class PluginHttpClientRedirectTests(IntegrationTestFactory factory
         services.AddLogging();
         services.AddOptions<HttpResilienceOptions>();
         var plugin = PluginActivationTestSeeds.Plugin(PluginActivationTestSeeds.NewId("redirect"), PluginType.Payment, typeof(ConfigurationCapturingPaymentPlugin));
-        PluginLoader.RegisterPluginType(services, plugin.Manifest, typeof(ConfigurationCapturingPaymentPlugin), NullLogger.Instance);
+        PluginLoader.RegisterHttpClient(services, plugin.Manifest.Id);
         await using var provider = services.BuildServiceProvider();
 
         await AssertRedirectIsNotFollowedAsync(provider.GetRequiredService<IHttpClientFactory>().CreateClient(plugin.Manifest.Id));

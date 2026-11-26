@@ -54,13 +54,6 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
-/** Icon markup (shape tags) of the add, save and cancel buttons. */
-const ICONS = {
-  add: '<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />',
-  confirm: '<polyline points="20 6 9 17 4 12" />',
-  cancel: '<line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />',
-} as const
-
 /** Domains store, the only caller of the forwarding endpoints. */
 const store = useDomainsStore()
 
@@ -293,7 +286,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
             data-testid="clients-forwarding-add"
             @click="startAdd"
           >
-            <UiIcon :markup="ICONS.add" :size="UiSize.Md" />
+            <UiIcon :markup="Icon.Add" :size="UiSize.Md" />
           </UiIconButton>
         </template>
       </UiSectionHeader>
@@ -305,7 +298,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
             <UiTableHeader :size="UiColumnSize.Grow" :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
             <UiTableHeader :card-role="UiCardRole.Control">{{ t('clients.emailForwardingTable.destination') }}</UiTableHeader>
             <UiTableHeader :size="UiColumnSize.Compact">{{ t('shared.active') }}</UiTableHeader>
-            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions />
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -339,7 +332,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
                     data-testid="clients-forwarding-draft-save"
                     @click="saveDraft"
                   >
-                    <UiIcon :markup="ICONS.confirm" :size="UiSize.Md" />
+                    <UiIcon :markup="Icon.Check" :size="UiSize.Md" />
                   </UiIconButton>
                   <UiIconButton
                     :label="t('shared.cancel')"
@@ -347,7 +340,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiMenuAction[] =>
                     data-testid="clients-forwarding-draft-cancel"
                     @click="cancelDraft"
                   >
-                    <UiIcon :markup="ICONS.cancel" :size="UiSize.Md" />
+                    <UiIcon :markup="Icon.Close" :size="UiSize.Md" />
                   </UiIconButton>
                 </UiStack>
               </UiTableCell>

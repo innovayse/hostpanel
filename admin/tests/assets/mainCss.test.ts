@@ -109,6 +109,7 @@ const surfaces = (theme: Tokens): Record<string, string> => {
     card,
     field: over(theme['surface-field'] ?? '', card),
     hover: over(theme['surface-hover'] ?? '', card),
+    inset: over(theme['surface-inset'] ?? '', card),
     panel: over(theme['surface-panel'] ?? '', base),
     elevated: over(theme['surface-elevated'] ?? '', base),
   }
@@ -218,7 +219,7 @@ describe('copies of a token', () => {
 describe('tokens the later steps rely on', () => {
   it.each([
     'ground-glow', 'glass-blur', 'gradient-primary', 'glow-primary', 'nav-active-bg', 'nav-active-border', 'nav-guide-start', 'nav-guide-end', 'nav-guide-idle',
-    'surface-active', 'gradient-bar', 'gradient-bar-warn', 'chart-bar-top', 'chart-bar-bottom', 'chart-bar-dim', 'chart-target', 'chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5', 'chart-6',
+    'surface-active', 'surface-inset', 'surface-track', 'surface-sheen', 'surface-paper', 'surface-ink', 'gradient-bar', 'gradient-bar-warn', 'chart-bar-top', 'chart-bar-bottom', 'chart-bar-dim', 'chart-target', 'chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5', 'chart-6',
   ])('declares %s in both themes', (token) => {
     expect(DARK[token]).toBeDefined()
     expect(LIGHT[token]).toBeDefined()
@@ -255,6 +256,18 @@ describe('tokens the later steps rely on', () => {
       expect(tokensOf(':root.light')[token], token).toBeDefined()
       expect(tokensOf(':root.light')[token], token).not.toBe(tokensOf(':root')[token])
     }
+  })
+
+  it('keeps the paper and the ink out of the light override, so they are the same in both themes', () => {
+    expect(tokensOf(':root.light')['surface-paper']).toBeUndefined()
+    expect(tokensOf(':root.light')['surface-ink']).toBeUndefined()
+    expect(DARK['surface-paper']).toBe('#ffffff')
+  })
+
+  it('draws a light skeleton track that stays visible on the card, with a sheen lighter than the track', () => {
+    const card = surfaces(LIGHT).card ?? ''
+    expect(contrastRatio(LIGHT['surface-track'] ?? '', card)).toBeGreaterThan(1.1)
+    expect(contrastRatio(LIGHT['surface-sheen'] ?? '', card)).toBeLessThan(contrastRatio(LIGHT['surface-track'] ?? '', card))
   })
 
   it('draws the light theme as Daylight Glass: white cards with a slate border and a layered shadow', () => {

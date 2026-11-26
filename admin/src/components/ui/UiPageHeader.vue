@@ -1,23 +1,27 @@
 <script setup lang="ts">
 /**
- * Header of a screen: title, optional subtitle, and an actions area on the right.
+ * Header of a screen: an optional breadcrumb trail, the title with its status badge, an optional subtitle, and an actions area on the right.
  *
- * A screen that returns to a parent (a detail, a form) passes `backTo` and a short `backLabel` naming the destination; the
- * header then draws the kit's back pill (`UiBackLink`) on its own row above the title at every width, so it never takes
- * width from the title. Both are needed: without either, no back link is drawn; the skeleton of such a screen passes
- * `backPending` instead of `backTo`, which draws the pill with its label and no target.
+ * A screen that sits below a parent (a record's detail, a form) passes `crumbs`, the whole trail from its section down to
+ * itself (`usePageCrumbs` builds it), and the header draws it above the title as the kit's `UiBreadcrumb` in its `Page`
+ * layout: every step a link but the last, which is the page itself, the steps kept at every width and a long name cut with an
+ * ellipsis. It is the one way up from a page: no screen draws a back link of its own. The header that draws a trail owns it:
+ * it tells the page title store, and the top bar leaves its own trail out, so the same steps are never shown twice. The
+ * skeleton of such a screen passes `crumbsPending`, which draws a bar where the trail will be.
  *
- * Under the back row the title row wraps: the text column (title, subtitle and the default slot) takes the flexible space
+ * Under the trail the title row wraps: the text column (title row, subtitle and the default slot) takes the flexible space
  * with a 20rem basis and may shrink to nothing, so the title wraps at word boundaries and never letter by letter, and the
  * actions sit to its right while they fit. When they do not (a long actions row, a phone) they wrap onto their own row under the
- * text, and inside that row they wrap again, so nothing overflows at 375px. The subtitle is at most 70 characters wide.
+ * text, and inside that row they wrap again, so nothing overflows at 375px. The title row is the title and, beside it, the `badge`
+ * slot (a status badge); the title row and the actions share one minimum height and centre their content, so the buttons sit on the
+ * title's line. The subtitle is at most 70 characters wide.
  *
  * The `actions` prop takes the screen's buttons as data (`UiHeaderAction`: label, icon, look and what it does), so every header
  * action carries an icon with its label; from `md` up they are buttons, and below `md` (a phone) they all collapse into one
  * compact 44px icon trigger (a plus when there is a primary action, the overflow icon otherwise) that opens a menu with every
  * action, the primary one first, under its full label (`useCollapsedActions`). The `actions` slot takes what is not a plain action (a help
- * link, a filter, a period switch, an error pill) and is drawn before them and stays on a phone. The default slot renders under the title
- * (breadcrumbs, a switcher and a status badge); a screen puts a wrapping row of its own there, which wraps inside the text
+ * link, a filter, a period switch, an error pill) and is drawn before them and stays on a phone. The `badge` slot renders inline after the title (a status badge, a priority badge). The default slot renders under the title
+ * (a switcher, a line of facts); a screen puts a wrapping row of its own there, which wraps inside the text
  * column. `loading` draws a title bar (and a subtitle bar when a subtitle is passed or `subtitleLoading` is set) of the heading
  * sizes instead of the text, for a title that comes from data still loading; the actions stay where they will be.
  * `subtitleLoading` is the smaller state of the two: the title is known and drawn, and only a bar stands in for a subtitle that
@@ -31,10 +35,9 @@
  * The header also announces its title to the page title store, which the top bar of a phone shows in place of the
  * breadcrumb; a header whose title is still `loading` announces nothing, and withdraws what it announced when it goes.
  */
-import { onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { RouteLocationRaw } from 'vue-router'
-import UiBackLink from '@/components/ui/UiBackLink.vue'
+import UiBreadcrumb from '@/components/ui/UiBreadcrumb.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
@@ -49,6 +52,8 @@ import { Icon } from '@/lib/icons'
 import { barActionToMenu } from '@/utils/ui/actionBar'
 import { UiSize } from '@/utils/ui/size'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { UiBreadcrumbVariant } from '@/utils/ui/breadcrumb'
+import type { UiBreadcrumbItem } from '@/utils/ui/breadcrumb'
 
 const { t } = useI18n()
 
@@ -62,16 +67,10 @@ const props = withDefaults(defineProps<{
   loading?: boolean
   /** Shows a placeholder bar in place of the subtitle only, the title being drawn as it is. */
   subtitleLoading?: boolean
-  /** The route the back link returns to; the link shows only together with `backLabel`. */
-  backTo?: RouteLocationRaw
-  /** Short name of the place the back link returns to (already translated), such as "Plugins". */
-  backLabel?: string
-  /** Draws the back pill with its label and no target, for the skeleton of a screen that has one. */
-  backPending?: boolean
-  /** Test id of the back link. */
-  backTestid?: string
-  /** Shows the back link only below `md`, when the top bar's breadcrumb already offers its target from `md` up. */
-  backMobileOnly?: boolean
+  /** The whole trail from the screen's section down to the screen itself, outermost first; its last step is the page and is not a link. None draws no trail. */
+  crumbs?: UiBreadcrumbItem[]
+  /** Draws a bar where the trail will be, for the skeleton of a screen that has one. */
+  crumbsPending?: boolean
   /** The screen's actions, each with its icon; the primary one stays a button on a phone and the rest fold into a "…" menu. */
   actions?: UiHeaderAction[]
 }>(), {
@@ -79,11 +78,8 @@ const props = withDefaults(defineProps<{
   subtitle: undefined,
   loading: false,
   subtitleLoading: false,
-  backTo: undefined,
-  backLabel: undefined,
-  backPending: false,
-  backTestid: 'ui-page-header-back',
-  backMobileOnly: false,
+  crumbs: undefined,
+  crumbsPending: false,
   /**
    * Default for the header actions.
    *
@@ -98,7 +94,10 @@ const pageTitle = usePageTitleStore()
 /** Identifies this header to the page title store. */
 const owner = Symbol('page-header')
 
-watch(() => (props.loading ? undefined : props.title), (title) => pageTitle.announce(owner, title), { immediate: true })
+/** Whether this header draws the page's trail (or the bar that stands for it), which the top bar then leaves out. */
+const ownsTrail = computed<boolean>(() => props.crumbsPending || (props.crumbs?.length ?? 0) > 0)
+
+watch(() => [props.loading ? undefined : props.title, ownsTrail.value] as const, ([title, trail]) => pageTitle.announce(owner, title, trail), { immediate: true })
 
 onBeforeUnmount(() => pageTitle.release(owner))
 
@@ -111,17 +110,23 @@ const { buttons, rows, hasPrimary } = useCollapsedActions(
 
 <template>
   <header class="flex flex-col gap-3 mb-[calc(1.375rem-var(--stack-gap,0rem))]" :aria-busy="loading || subtitleLoading ? 'true' : undefined">
-    <UiBackLink v-if="backLabel !== undefined && (backTo !== undefined || backPending)" :to="backTo" :label="backLabel" :mobile-only="backMobileOnly" class="self-start" :data-testid="backTestid" />
+    <UiBreadcrumb v-if="crumbs !== undefined && crumbs.length > 0" :items="crumbs" :variant="UiBreadcrumbVariant.Page" current-testid="ui-page-header-crumb-current" />
+    <UiSkeletonBar v-else-if="crumbsPending" class="h-4 w-56 max-w-full rounded-md" aria-hidden="true" data-testid="ui-page-header-crumbs-skeleton" />
     <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
       <div class="min-w-0 max-w-full flex-[1_1_20rem]">
         <div v-if="loading" aria-hidden="true" data-testid="ui-page-header-skeleton">
-          <UiSkeletonBar class="h-9 w-64 max-w-full rounded-md" />
+          <div class="flex min-h-10.5 items-center max-sm:min-h-11">
+            <UiSkeletonBar class="h-9 w-64 max-w-full rounded-md" />
+          </div>
           <UiSkeletonBar v-if="subtitle || subtitleLoading" class="mt-1.5 h-3.5 w-72 max-w-full rounded-md" />
         </div>
         <template v-else>
-          <UiHeading :level="1" variant="page" class="break-words">
-            {{ title }}
-          </UiHeading>
+          <div class="flex min-h-10.5 flex-wrap items-center gap-x-3 gap-y-1 max-sm:min-h-11" data-testid="ui-page-header-title-row">
+            <UiHeading :level="1" variant="page" class="break-words">
+              {{ title }}
+            </UiHeading>
+            <slot name="badge" />
+          </div>
           <UiSkeletonBar v-if="subtitleLoading" class="mt-1.5 h-3.5 w-72 max-w-full rounded-md" aria-hidden="true" data-testid="ui-page-header-subtitle-skeleton" />
           <UiText v-else-if="subtitle" tone="muted" size="md" class="mt-1.5 max-w-[70ch]">
             {{ subtitle }}
@@ -129,7 +134,7 @@ const { buttons, rows, hasPrimary } = useCollapsedActions(
         </template>
         <slot />
       </div>
-      <div class="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+      <div class="flex min-h-10.5 min-w-0 max-w-full flex-wrap items-center gap-2 max-sm:min-h-11">
         <slot name="actions" />
         <template v-for="action in buttons" :key="action.testid">
           <UiLink v-if="action.to !== undefined" :to="action.to" :variant="action.variant" :icon="action.icon" :title="action.title" :data-testid="action.testid">

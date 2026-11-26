@@ -134,9 +134,53 @@ const fileNameOf = (response: Response): string | null => {
 }
 
 /**
+ * Sends one JSON request to a URL and reads its answer. The one implementation behind {@link useApi}'s `request`
+ * (under the API base) and `requestRoot` (outside it).
+ *
+ * @param url - The full URL to call.
+ * @param options - Native fetch options to merge.
+ * @returns Parsed JSON response data.
+ * @throws {ApiError} When the server answers with a non-2xx status. The response body
+ * travels on the error so the caller can read the server's own wording.
+ */
+const send = async <T>(url: string, options: RequestInit): Promise<T> => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': MimeType.Json,
+      ...CSRF_HEADER,
+      ...languageHeader(),
+      ...(options.headers as Record<string, string> | undefined),
+    },
+  })
+
+  // A 401 is thrown like any other error and nothing is redirected from here.
+  //
+  // fetchMe always asks the server, because the browser cannot answer "am I signed in",
+  // so a redirect here would fire *inside* the router guard that called it. vue-router
+  // aborts the navigation in progress and nothing renders at all: a blank page, no
+  // error. The guard already sends unauthenticated visitors to /login; this layer
+  // only has to report what happened.
+  if (!response.ok) {
+    throw await failureOf(response)
+  }
+
+  if (response.status === 204) {
+    return undefined as T
+  }
+
+  const text = await response.text()
+  if (!text) {
+    return undefined as T
+  }
+
+  return JSON.parse(text) as T
+}
+
+/**
  * Composable for making authenticated API calls via the same-origin proxy.
  *
- * @returns `request` for JSON calls, `upload` for one multipart file, `probe` for 401-tolerant reads
+ * @returns `request` for JSON calls, `requestRoot` for a document outside the API base, `upload` for one multipart file, `probe` for 401-tolerant reads
  * and `download` for a file read as a blob.
  */
 export const useApi = () => {
@@ -149,39 +193,18 @@ export const useApi = () => {
    * @throws {ApiError} When the API answers with a non-2xx status. The response body
    * travels on the error so the caller can read the server's own wording.
    */
-  const request = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': MimeType.Json,
-        ...CSRF_HEADER,
-        ...languageHeader(),
-        ...(options.headers as Record<string, string> | undefined),
-      },
-    })
+  const request = <T>(endpoint: string, options: RequestInit = {}): Promise<T> =>
+    send<T>(`${API_BASE}${endpoint}`, options)
 
-    // A 401 is thrown like any other error and nothing is redirected from here.
-    //
-    // fetchMe always asks the server, because the browser cannot answer "am I signed in",
-    // so a redirect here would fire *inside* the router guard that called it. vue-router
-    // aborts the navigation in progress and nothing renders at all: a blank page, no
-    // error. The guard already sends unauthenticated visitors to /login; this layer
-    // only has to report what happened.
-    if (!response.ok) {
-      throw await failureOf(response)
-    }
-
-    if (response.status === 204) {
-      return undefined as T
-    }
-
-    const text = await response.text()
-    if (!text) {
-      return undefined as T
-    }
-
-    return JSON.parse(text) as T
-  }
+  /**
+   * Reads a JSON document the server serves outside the API base (the liveness probe), never from a cache.
+   *
+   * @param path - Root path (e.g. '/health').
+   * @returns Parsed JSON response data.
+   * @throws {ApiError} When the server answers with a non-2xx status; a fetch that cannot connect rejects with its own error.
+   */
+  const requestRoot = <T>(path: string): Promise<T> =>
+    send<T>(path, { cache: 'no-store' })
 
   /**
    * Uploads one file as multipart form data.
@@ -297,7 +320,7 @@ export const useApi = () => {
     await readEventStream(response.body, onEvent, signal)
   }
 
-  return { request, upload, probe, download, stream }
+  return { request, requestRoot, upload, probe, download, stream }
 }
 
 /** The status a stream that cannot be read is refused with, the one a broken upstream answer gets everywhere else. */

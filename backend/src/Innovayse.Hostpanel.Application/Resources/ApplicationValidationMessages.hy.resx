@@ -1810,4 +1810,7 @@
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
     <value>Գրանցողի էջի կուրսորը չափազանց երկար է։</value>
   </data>
+  <data name="ActivityEventKeyInvalid" xml:space="preserve">
+    <value>Սա ծանուցման վավեր նույնացուցիչ չէ։</value>
+  </data>
 </root>

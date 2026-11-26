@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * The licence key of a paid plugin. The key is write only: the field is never filled from the
- * server, the card only says whether a key is saved. The operator types a key and saves it, or
- * removes the saved one. The field empties when the saved state changes; a key that replaces an
+ * server, the card only says whether a key is saved. The operator types a key and saves it (a stored one is replaced through the shared secret field), or
+ * clears the saved one. The field empties when the saved state changes; a key that replaces an
  * already saved one leaves that state as it was, so the screen re-creates the card (a new `key`)
  * after every successful save or removal. The component owns no data: it reports the key and the removal.
  */
@@ -12,16 +12,15 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiInput from '@/components/ui/UiInput.vue'
+import UiField from '@/components/ui/UiField.vue'
+import UiSecretField from '@/components/ui/UiSecretField.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiText from '@/components/ui/UiText.vue'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
-import { UiInputType } from '@/utils/ui/input'
 import { UiTone } from '@/utils/ui/tone'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
-import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant } from '@/utils/ui/text'
 import { UiSize } from '@/utils/ui/size'
 
 /** Translation function. */
@@ -80,44 +79,35 @@ const submit = (): void => {
           {{ keyStateText }}
         </UiBadge>
       </UiStack>
-      <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t('pluginDetails.licence.description') }}</UiText>
-      <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
-        <UiInput
-          v-model="key"
-          :type="UiInputType.Password"
-          :placeholder="t('pluginDetails.licence.placeholder')"
-          :aria-label="t('pluginDetails.licence.label')"
-          autocomplete="off"
-          class="min-w-56 flex-1"
-          data-testid="plugin-licence-input"
-          @keyup.enter="submit"
-        />
-        <UiButton :action="UiActionKind.Save"
-          :title="t('pluginDetails.licence.save')"
-          :aria-label="t('pluginDetails.licence.save')"
-          :type="UiButtonType.Button"
-          :variant="UiButtonVariant.Primary"
-          :size="UiSize.Sm"
-          :disabled="!canSave"
-          data-testid="plugin-licence-save"
-          @click="submit"
-        >
-          {{ t('shared.save') }}
-        </UiButton>
-        <UiButton :action="UiActionKind.Remove"
-          v-if="hasKey"
-          :title="t('pluginDetails.licence.remove')"
-          :aria-label="t('pluginDetails.licence.remove')"
-          :type="UiButtonType.Button"
-          :variant="UiButtonVariant.Danger"
-          :size="UiSize.Sm"
-          :disabled="busy"
-          data-testid="plugin-licence-remove"
-          @click="emit('remove')"
-        >
-          {{ t('shared.remove') }}
-        </UiButton>
-      </UiStack>
+      <UiField :label="t('pluginDetails.licence.label')" :hint="t('pluginDetails.licence.description')">
+        <template #default="{ id }">
+          <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" wrap>
+            <UiSecretField
+              :id="id"
+              v-model="key"
+              :has-value="hasKey"
+              :placeholder="t('pluginDetails.licence.placeholder')"
+              :disabled="busy"
+              class="min-w-56 flex-1"
+              testid="plugin-licence"
+              @clear="emit('remove')"
+              @keyup.enter="submit"
+            />
+            <UiButton :action="UiActionKind.Save"
+              :title="t('pluginDetails.licence.save')"
+              :aria-label="t('pluginDetails.licence.save')"
+              :type="UiButtonType.Button"
+              :variant="UiButtonVariant.Primary"
+              :size="UiSize.Sm"
+              :disabled="!canSave"
+              data-testid="plugin-licence-save"
+              @click="submit"
+            >
+              {{ t('shared.save') }}
+            </UiButton>
+          </UiStack>
+        </template>
+      </UiField>
     </UiStack>
   </UiCard>
 </template>

@@ -18,7 +18,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, filledLocales } from '@/lib/storefrontTranslations'
 import { ContentLanguage } from '@/locales/contentLanguage'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -93,7 +93,7 @@ const handleSubmit = (): void => {
 <template>
   <UiDialog :title="slug" :size="UiDialogSize.Xl" @close="emit('close')">
     <UiForm stacked data-testid="email-template-form" @submit="handleSubmit">
-      <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="email-template-tab" />
+      <UiLocalizedField v-model="activeLocale" :filled="filled" testid="email-template-tab" />
 
       <UiText v-if="!activeVersion" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="email-template-missing">
         {{ t('settings.emailTemplates.missingVersion') }}

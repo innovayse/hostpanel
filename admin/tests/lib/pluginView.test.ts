@@ -4,7 +4,6 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  DEFAULT_PLUGIN_ICON,
   fillPluginPath,
   formatPluginValue,
   groupPluginBlocks,
@@ -13,7 +12,6 @@ import {
   pluginAlertTone,
   pluginButtonVariant,
   pluginConditionHolds,
-  pluginIconPath,
   pluginLinkParams,
   pluginLinkTarget,
   pluginOpenUrlTarget,
@@ -172,13 +170,6 @@ describe('the Add-ons menu', () => {
       { key: 'sites:a', label: 'First', icon: null, to: '/apps/sites/usage' },
       { key: 'sites:b', label: 'Second', icon: 'chart', to: '/apps/sites' },
     ])
-  })
-
-  it('maps an icon name to a built-in icon and anything else to the default', () => {
-    expect(pluginIconPath('chart')).not.toBe(DEFAULT_PLUGIN_ICON)
-    expect(pluginIconPath('https://evil.test/x.svg')).toBe(DEFAULT_PLUGIN_ICON)
-    expect(pluginIconPath('__proto__')).toBe(DEFAULT_PLUGIN_ICON)
-    expect(pluginIconPath(null)).toBe(DEFAULT_PLUGIN_ICON)
   })
 })
 

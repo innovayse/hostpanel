@@ -12,6 +12,7 @@ import { applyListFilter } from '../../helpers/listFilter'
 import { mountScreen } from '../../helpers/mount'
 import { optionValues } from '../../helpers/select'
 import { stubRoutes } from '../../helpers/routes'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** The categories the category filter offers. */
 const categories: KbCategory[] = [
@@ -72,7 +73,7 @@ describe('KnowledgebaseArticleList', () => {
     expect(row.text()).toContain('How to pay')
     expect(row.text()).toContain('how-to-pay')
     expect(row.text()).toContain('Billing')
-    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Published')
+    expect(row.getComponent(UiStatusBadge).text()).toBe('Published')
     expect(wrapper.findAll('th').some((header) => header.classes().includes('max-w-0'))).toBe(true)
   })
 

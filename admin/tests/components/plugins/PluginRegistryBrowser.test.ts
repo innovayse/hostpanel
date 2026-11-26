@@ -121,6 +121,15 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.emitted('install')).toEqual([['example-registrar', '2.0.0']])
   })
 
+  it('draws Install and Update as the same primary button, with the gear beside Update', async () => {
+    const wrapper = await mountBrowser()
+    const install = wrapper.get('[data-testid="registry-install-example-pay"]')
+    const update = wrapper.get('[data-testid="registry-install-example-registrar"]')
+
+    expect(update.classes()).toEqual(install.classes())
+    expect(update.element.nextElementSibling?.getAttribute('data-testid')).toBe('registry-settings-example-registrar')
+  })
+
   it('shows a plain active card, with no install button, for a current plugin', async () => {
     const wrapper = await mountBrowser()
 

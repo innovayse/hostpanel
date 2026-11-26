@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
       { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
       { key: 'title', label: 'shared.title', size: UiColumnSize.Grow },
       { key: 'published', label: 'shared.published', kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

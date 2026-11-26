@@ -28,11 +28,7 @@ export const useContactHours = () => {
    * Empty when the hours are empty, even if a time zone is set: a zone alone says nothing.
    */
   const workingHours = computed(() => {
-    const hours = getLocalized({
-      default: { key: PortalSettingKey.ContactHours, envKey: 'portalContactHours' },
-      ru: { key: PortalSettingKey.ContactHoursRu, envKey: 'portalContactHoursRu' },
-      hy: { key: PortalSettingKey.ContactHoursHy, envKey: 'portalContactHoursHy' }
-    })
+    const hours = getLocalized({ key: PortalSettingKey.ContactHours, envKey: 'portalContactHours' })
     if (!hours) {
       return ''
     }

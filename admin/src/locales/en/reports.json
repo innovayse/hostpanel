@@ -415,5 +415,24 @@
   "sidebar": {
     "search": "Search reports",
     "empty": "No reports found"
+  },
+  "statusWord": {
+    "Active": "Active",
+    "Paid": "Paid",
+    "Completed": "Completed",
+    "Pending": "Pending",
+    "Invoice": "Invoice",
+    "Payment": "Payment",
+    "Unpaid": "Unpaid",
+    "Suspended": "Suspended",
+    "Overdue": "Overdue",
+    "Expired": "Expired",
+    "Refunded": "Refunded",
+    "PartiallyRefunded": "Partially refunded",
+    "Transferred": "Transferred",
+    "Draft": "Draft",
+    "Inactive": "Inactive",
+    "Cancelled": "Cancelled",
+    "Terminated": "Terminated"
   }
 }

@@ -3,8 +3,8 @@
  *
  * One table for all five, so the pages, the composable that reads them and the tests name a page
  * and its settings in the same place. The settings are the `portal.legal.*` rows the admin edits (a
- * default row plus a Russian and an Armenian one); the storefront reads a page's three rows from
- * `GET /api/portal/public/legal/:page`, never from the settings every page carries.
+ * default row plus one per other language, named by `utils/localizedSetting.ts`); the storefront reads a
+ * page's rows from `GET /api/portal/public/legal/:page`, never from the settings every page carries.
  *
  * @module constants/legalPage
  */
@@ -29,30 +29,30 @@ export enum LegalPage {
 export interface LegalPageSource {
   /** Locale key of the page title, used as the heading of text written before the first section. */
   titleKey: string
-  /** The default-language row and the Russian and Armenian rows holding the operator's text. */
-  keys: { default: PortalSettingKey, ru: PortalSettingKey, hy: PortalSettingKey }
+  /** The default-language row of the operator's text; the other languages' rows are named from it. */
+  key: PortalSettingKey
 }
 
 /** The source of each legal page's operator text. */
 export const LEGAL_PAGE_SOURCES: Record<LegalPage, LegalPageSource> = {
   [LegalPage.Terms]: {
     titleKey: 'terms.title',
-    keys: { default: PortalSettingKey.LegalTerms, ru: PortalSettingKey.LegalTermsRu, hy: PortalSettingKey.LegalTermsHy }
+    key: PortalSettingKey.LegalTerms
   },
   [LegalPage.Privacy]: {
     titleKey: 'privacy.title',
-    keys: { default: PortalSettingKey.LegalPrivacy, ru: PortalSettingKey.LegalPrivacyRu, hy: PortalSettingKey.LegalPrivacyHy }
+    key: PortalSettingKey.LegalPrivacy
   },
   [LegalPage.Refund]: {
     titleKey: 'refundPolicy.title',
-    keys: { default: PortalSettingKey.LegalRefund, ru: PortalSettingKey.LegalRefundRu, hy: PortalSettingKey.LegalRefundHy }
+    key: PortalSettingKey.LegalRefund
   },
   [LegalPage.AcceptableUse]: {
     titleKey: 'aup.title',
-    keys: { default: PortalSettingKey.LegalAcceptableUse, ru: PortalSettingKey.LegalAcceptableUseRu, hy: PortalSettingKey.LegalAcceptableUseHy }
+    key: PortalSettingKey.LegalAcceptableUse
   },
   [LegalPage.Cookies]: {
     titleKey: 'cookiePolicy.title',
-    keys: { default: PortalSettingKey.LegalCookies, ru: PortalSettingKey.LegalCookiesRu, hy: PortalSettingKey.LegalCookiesHy }
+    key: PortalSettingKey.LegalCookies
   }
 }

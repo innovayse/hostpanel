@@ -13,12 +13,31 @@ describe('UiBadge', () => {
     expect(wrapper.classes()).toContain('rounded-2xl')
   })
 
-  it('wraps a long label inside its box instead of running out of it', () => {
+  it('ends a label longer than its row in an ellipsis, never wider than the row', () => {
+    const wrapper = mount(UiBadge, { slots: { default: 'A very long sentence' } })
+
+    expect(wrapper.classes()).toContain('max-w-full')
+    expect(wrapper.get('.truncate').classes()).toContain('min-w-0')
+    expect(wrapper.get('.truncate').text()).toBe('A very long sentence')
+  })
+
+  it('keeps a long label on one line instead of wrapping it', () => {
     const classes = mount(UiBadge, { slots: { default: 'A very long sentence' } }).classes()
 
-    expect(classes).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full', 'whitespace-normal', 'break-words']))
-    expect(classes).not.toContain('whitespace-nowrap')
+    expect(classes).toEqual(expect.arrayContaining(['whitespace-nowrap', 'shrink-0']))
+    expect(classes).not.toContain('whitespace-normal')
+    expect(classes).not.toContain('break-words')
     expect(classes).not.toContain('rounded-pill')
+  })
+
+  it('has one fixed height per size and no vertical padding', () => {
+    const full = mount(UiBadge).classes()
+    const small = mount(UiBadge, { props: { small: true } }).classes()
+
+    expect(full).toContain('h-6')
+    expect(small).toContain('h-4')
+    expect(full.some((name) => name.startsWith('py-'))).toBe(false)
+    expect(small.some((name) => name.startsWith('py-'))).toBe(false)
   })
 
   it('takes its colours from the tone', () => {
@@ -32,8 +51,9 @@ describe('UiBadge', () => {
     const plain = mount(UiBadge)
     const dotted = mount(UiBadge, { props: { dot: true, tone: 'danger' } })
 
-    expect(plain.element.children).toHaveLength(0)
-    expect(dotted.element.children).toHaveLength(1)
+    // The one child of a plain badge is its label; a dotted badge draws the dot before it.
+    expect(plain.element.children).toHaveLength(1)
+    expect(dotted.element.children).toHaveLength(2)
     expect(dotted.element.children[0]?.className).toContain('bg-status-red')
   })
 
@@ -49,7 +69,7 @@ describe('UiBadge', () => {
     expect(mount(UiBadge, { props: { small: true } }).classes()).toContain('text-[0.65rem]')
   })
 
-  it('sets the full size as the concept pill: 12px, semibold, 4px by 10px', () => {
-    expect(mount(UiBadge).classes()).toEqual(expect.arrayContaining(['text-xs', 'font-semibold', 'px-2.5', 'py-1']))
+  it('sets the full size as the concept pill: 12px, semibold, 24px high, 10px padding', () => {
+    expect(mount(UiBadge).classes()).toEqual(expect.arrayContaining(['text-xs', 'font-semibold', 'px-2.5', 'h-6']))
   })
 })

@@ -23,7 +23,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ProductBundlesView.schema'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import { Icon } from '@/lib/icons'
 import UiText from '@/components/ui/UiText.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
@@ -271,10 +271,8 @@ onMounted(async () => {
           <UiTableCell muted>{{ domainLabel(bundle) }}</UiTableCell>
           <UiTableCell>{{ discountLabel(bundle) }}</UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="bundle.isActive"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('shared.active')"
               :off-label="t('shared.inactive')"
             />

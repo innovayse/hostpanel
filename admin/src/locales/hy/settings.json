@@ -1,7 +1,7 @@
 {
   "systemSettings": "Համակարգային կարգավորումներ",
   "secret": {
-    "set": "••••••, սահմանված է",
+    "set": "Սահմանված է",
     "notSet": "Սահմանված չէ",
     "replace": "Փոխարինել",
     "placeholder": "Մուտքագրեք նոր արժեքը",
@@ -273,6 +273,7 @@
   "branding": {
     "title": "Բրենդինգ",
     "description": "Հանրային կայքի logo-ները և browser tab-ի icon-ը։ Փոփոխությունները կիրառվում են հաջորդ էջի բեռնումից։",
+    "imageSize": "Ձեր պատկերի չափը՝ {width} × {height} պիքսել։",
     "pasteUrl": "Կամ տեղադրեք նկարի URL",
     "logo": {
       "label": "Logo (բաց ֆոն)",
@@ -498,6 +499,7 @@
       "gateway-payment-without-reference-admin": "Վճարում առանց հղման (անձնակազմ)",
       "invoice-renewal-reminder": "Հաշիվ-ապրանքագրի երկարացման հիշեցում",
       "order-rejected": "Պատվերը մերժվել է",
+      "plugin-change-ended-admin": "Պլագինի փոփոխությունն ավարտվեց (անձնակազմ)",
       "service-termination-failed-admin": "Ծառայության դադարեցումը ձախողվել է (անձնակազմ)",
       "user-email-change": "Էլ. փոստի փոփոխության հաստատում",
       "user-email-changed-notice": "Էլ. փոստի փոփոխության ծանուցում",

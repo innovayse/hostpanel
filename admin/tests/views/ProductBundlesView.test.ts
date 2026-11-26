@@ -15,6 +15,7 @@ import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** A bundle with a domain for two years and a percentage discount. */
 const PERCENT_BUNDLE: ProductBundle = {
@@ -105,9 +106,9 @@ describe('ProductBundlesView', () => {
     expect(rows[0]?.text()).toContain('Starter, Mailbox')
     expect(rows[0]?.text()).toContain('2 years')
     expect(rows[0]?.text()).toContain('15%')
-    expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('Active')
+    expect(rows[0]?.getComponent(UiStatusBadge).text()).toBe('Active')
     expect(rows[1]?.text()).toContain('5 EUR')
-    expect(rows[1]?.get('[role="img"]').attributes('aria-label')).toBe('Inactive')
+    expect(rows[1]?.getComponent(UiStatusBadge).text()).toBe('Inactive')
     expect(wrapper.get('[data-testid="product-bundles-table"] th').classes()).toContain('max-w-0')
   })
 

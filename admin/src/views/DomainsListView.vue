@@ -29,7 +29,7 @@ import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
@@ -272,10 +272,8 @@ const domainActions = (domain: DomainRegistration): UiMenuAction[] => [
           <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
           <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
           <UiTableCell>
-            <UiStatusIcon
+            <UiStatusBadge
               :state="domain.autoRenew"
-              :on-icon="Icon.CheckCircle"
-              :off-icon="Icon.Close"
               :on-label="t('shared.yes')"
               :off-label="t('shared.no')"
             />

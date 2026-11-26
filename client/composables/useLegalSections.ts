@@ -3,7 +3,7 @@
  * built-in text.
  *
  * The operator writes the text in the admin (Settings), one row per language. The page reads its own
- * three rows once, from the legal text read (never from the settings every page carries); a language
+ * rows once, from the legal text read (never from the settings every page carries); a language
  * without its own row shows the default row, and a page with no text at all keeps the built-in copy, so
  * an install that sets nothing renders exactly what it always did. The merge lives here once, so the
  * five pages cannot decide it five ways.
@@ -14,10 +14,10 @@
 import type { ComputedRef } from 'vue'
 import { LEGAL_PAGE_SOURCES } from '~/constants/legalPage'
 import type { LegalPage } from '~/constants/legalPage'
-import { ownRowFor } from '~/composables/useLocalizedSetting'
 import { useContentStore } from '~/stores/content'
 import type { LegalSection } from '~/types/legalsection'
 import { parseLegalText } from '~/utils/legalText'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 
 /** What {@link useLegalSections} hands the page. */
 export interface LegalSections {
@@ -39,14 +39,13 @@ export const useLegalSections = async (page: LegalPage, builtIn: ComputedRef<Leg
   const { t, locale } = useI18n()
   const source = LEGAL_PAGE_SOURCES[page]
 
-  // The three languages arrive together, so a language change reads nothing again.
+  // Every language arrives together, so a language change reads nothing again.
   await useAsyncData(`legal:${page}`, () => content.loadLegalText(page))
 
   /** The operator's text in the active language, as sections; empty when it set none. */
   const custom = computed<LegalSection[]>(() => {
     const texts = content.legalTextFor(page)
-    const own = ownRowFor(locale.value, source.keys)
-    const text = (own ? texts[own] : undefined) || texts[source.keys.default] || ''
+    const text = texts[localizedSettingKey(source.key, locale.value)] || texts[source.key] || ''
     return parseLegalText(text, t(source.titleKey))
   })
 

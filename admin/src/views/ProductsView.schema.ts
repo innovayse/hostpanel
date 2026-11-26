@@ -33,7 +33,7 @@ const schema: ListSkeletonSchema = {
       { key: 'type', label: 'shared.type' },
       ...priceColumns,
       { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

@@ -11,6 +11,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useDomainsStore } from '@/stores/domains'
 import { DOMAIN_STATUS_OPTIONS, PAYMENT_METHOD_OPTIONS } from '@/lib/constants'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
@@ -49,7 +50,7 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
-import { ClientSection, clientSectionPath } from '@/lib/routes'
+import { ClientSection } from '@/lib/routes'
 import schema, { MANAGEMENT_COLUMNS, NAMESERVER_LABELS, REGISTRAR_COLUMNS } from '@/views/ClientDomainDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
@@ -65,6 +66,9 @@ enum DomainTab {
 }
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Clients, the client, Domains, the domain. */
+const { clientCrumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
@@ -475,14 +479,14 @@ onBeforeUnmount(() => {
         <UiPageHeader :actions="headerActions"
           :title="domain ? t('clients.clientDomainDetail.domainName', { name: domain.name }) : undefined"
           :loading="!domain"
-          :back-to="clientSectionPath(clientId, ClientSection.Domains)"
-          :back-label="t('shared.domains')"
-          back-testid="client-domain-back"
+          :crumbs="clientCrumbs(clientId, ClientSection.Domains, domain?.name)"
           :data-testid="domain ? 'client-domain-header' : 'client-domain-loading'"
         >
-          <UiBadge v-if="domain" :tone="domainStatusTone(domain.status)" data-testid="client-domain-status-badge">
-            {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
-          </UiBadge>
+          <template #badge>
+            <UiBadge v-if="domain" :tone="domainStatusTone(domain.status)" data-testid="client-domain-status-badge">
+              {{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}
+            </UiBadge>
+          </template>
           <template #actions>
             <UiAlert v-if="saveSuccess" :variant="UiTone.Success" data-testid="client-domain-saved">
               {{ saveSuccess }}
@@ -587,7 +591,7 @@ onBeforeUnmount(() => {
 
           <template #card-commands>
             <UiStack v-if="domain" :direction="UiDirection.Row" wrap :gap="UiGap.Sm">
-              <UiButton :action="UiActionKind.Add"
+              <UiButton :action="UiActionKind.AddRow"
                 type="button"
                 :variant="UiButtonVariant.Secondary"
                 :loading="commandLoading"

@@ -31,6 +31,7 @@ import {
   orderStatusTone,
   panelSyncOutcomeTone,
   quoteStageTone,
+  reportStatusLabel,
   reportStatusTone,
   serviceStatusTone,
   statusLabel,
@@ -276,6 +277,17 @@ describe('statusLabel', () => {
 
   it('returns the raw status when the list does not know it', () => {
     expect(statusLabel(options, 'Archived')).toBe('Archived')
+  })
+})
+
+describe('reportStatusLabel', () => {
+  it('words a known status word from the catalogue', () => {
+    expect(reportStatusLabel('PartiallyRefunded')).toBe('Partially refunded')
+    expect(reportStatusLabel('Overdue')).toBe('Overdue')
+  })
+
+  it('shows a word the catalogue does not know as received', () => {
+    expect(reportStatusLabel('Mystery')).toBe('Mystery')
   })
 })
 

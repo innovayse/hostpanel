@@ -56,7 +56,7 @@ const fillClasses = computed<string>(() => (warning.value
       <span class="tabular-nums text-text-muted" data-testid="ui-progress-value">{{ valueText ?? `${Math.round(percent)}%` }}</span>
     </div>
     <progress
-      class="h-2 w-full overflow-hidden rounded-md bg-surface-hover [&::-webkit-progress-bar]:rounded-md [&::-webkit-progress-bar]:bg-surface-hover [&::-webkit-progress-value]:rounded-md"
+      class="h-2 w-full overflow-hidden rounded-md bg-surface-track [&::-webkit-progress-bar]:rounded-md [&::-webkit-progress-bar]:bg-surface-track [&::-webkit-progress-value]:rounded-md"
       :class="fillClasses"
       :data-state="warning ? 'warning' : 'normal'"
       :value="percent"

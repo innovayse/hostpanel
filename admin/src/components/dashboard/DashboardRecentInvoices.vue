@@ -13,17 +13,19 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatCurrencyCode } from '@/lib/money'
 import { placeholderRows } from '@/lib/placeholderRows'
 import { AppRoute, invoiceViewPath } from '@/lib/routes'
-import { invoiceStatusTone } from '@/lib/tones'
+import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
+import { invoiceStatusTone, statusLabel } from '@/lib/tones'
 import type { Invoice } from '@/types/invoice'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiCardPadding, UiCardRadius } from '@/utils/ui/card'
 import { UiAlignItems, UiDirection, UiGap, UiJustify, UiStackTag } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
-import { UiHeadingVariant, UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
+import { UiHeadingVariant, UiTextTag, UiTextTone } from '@/utils/ui/text'
 
 /** Props for DashboardRecentInvoices. */
 const props = defineProps<{
@@ -70,7 +72,7 @@ const rows = computed(() => placeholderRows(props.invoices, initialLoading.value
         </UiLink>
       </UiStack>
     </template>
-    <UiText v-if="!initialLoading && invoices.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Md" class="py-3">{{ t('dashboard.noInvoices') }}</UiText>
+    <UiEmptyState v-if="!initialLoading && invoices.length === 0" compact :title="t('dashboard.noInvoices')" data-testid="dashboard-recent-invoices-empty" />
     <UiStack v-else :as="UiStackTag.Ul" :gap="UiGap.None">
       <UiStack
         v-for="(invoice, index) in rows"
@@ -95,7 +97,7 @@ const rows = computed(() => placeholderRows(props.invoices, initialLoading.value
         </UiStack>
         <UiStack :align="UiAlignItems.Start" :gap="UiGap.None" :class="STATUS_CLASSES">
           <UiSkeletonBar v-if="invoice === null" class="h-5 w-16 rounded-full" aria-hidden="true" />
-          <UiBadge v-else :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
+          <UiBadge v-else :tone="invoiceStatusTone(invoice.status)">{{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}</UiBadge>
         </UiStack>
       </UiStack>
     </UiStack>

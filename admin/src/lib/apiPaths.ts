@@ -157,3 +157,6 @@ export const reportApiPath = (slug: string, suffix?: string): string =>
  */
 export const pluginIconPath = (pluginId: string, version: string): string =>
   `${API_BASE}${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/icon?v=${encodeURIComponent(version)}`
+
+/** Address of the liveness probe. The API serves it at the root, outside {@link API_BASE}. */
+export const HEALTH_PATH = '/health'

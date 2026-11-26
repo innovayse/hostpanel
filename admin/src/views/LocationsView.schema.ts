@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
       { key: 'name', label: 'storefront.locations.name' },
       { key: 'city', label: 'storefront.locations.city' },
       { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

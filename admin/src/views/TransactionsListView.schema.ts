@@ -33,7 +33,7 @@ const schema: ListSkeletonSchema = {
       { key: 'amountIn', label: 'shared.amountIn', numeric: true, size: UiColumnSize.Compact },
       { key: 'fees', label: 'shared.fees', numeric: true, size: UiColumnSize.Compact },
       { key: 'amountOut', label: 'shared.amountOut', numeric: true, size: UiColumnSize.Compact },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

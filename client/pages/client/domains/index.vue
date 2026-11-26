@@ -37,7 +37,7 @@
               <UiTableTh class="hidden lg:table-cell">{{ $t('client.domains.colRegistrationDate') }}</UiTableTh>
               <UiTableTh class="hidden md:table-cell">{{ $t('client.domains.colNextDueDate') }}</UiTableTh>
               <UiTableTh align="center">{{ $t('client.domains.colStatus') }}</UiTableTh>
-              <UiTableTh align="right">{{ $t('client.domains.colActions') }}</UiTableTh>
+              <UiTableTh actions />
             </UiTableRow>
           </UiTableHead>
         </template>

@@ -13,6 +13,10 @@ describe('ReportStatusBadge', () => {
     expect(wrapper.classes().join(' ')).toContain('text-status-green')
   })
 
+  it('words a compound status word, not the raw identifier', () => {
+    expect(mount(ReportStatusBadge, { props: { status: 'PartiallyRefunded' } }).text()).toBe('Partially refunded')
+  })
+
   it('shows a bad status in the danger tone', () => {
     expect(mount(ReportStatusBadge, { props: { status: 'Overdue' } }).classes().join(' ')).toContain('text-status-red')
   })

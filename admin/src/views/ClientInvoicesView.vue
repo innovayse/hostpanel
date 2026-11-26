@@ -16,7 +16,8 @@ import { useFilterDateRange } from '@/composables/useFilterDateRange'
 import { InvoiceFilterKey, useInvoiceFilters } from '@/composables/useInvoiceFilters'
 import { useListQuery } from '@/composables/useListQuery'
 import { useRowSelection } from '@/composables/useRowSelection'
-import { invoiceStatusTone } from '@/lib/tones'
+import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
+import { invoiceStatusTone, statusLabel } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceOpenAction } from '@/types/invoice'
@@ -67,9 +68,6 @@ import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
-
-/** Icon markup (shape tags) of the remove-line button. */
-const TRASH_ICON = '<polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -411,7 +409,7 @@ list.loadOnChange(fetchInvoices)
                   :data-testid="`invoice-item-remove-${idx}`"
                   @click="removeNewItem(idx)"
                 >
-                  <UiIcon :markup="TRASH_ICON" />
+                  <UiIcon :markup="Icon.Trash" />
                 </UiIconButton>
               </UiStack>
               <UiStack :direction="UiDirection.Row">
@@ -509,7 +507,7 @@ list.loadOnChange(fetchInvoices)
             <UiTableCell numeric>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
             <UiTableCell muted>{{ invoice.paymentMethod || '-' }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ invoice.status }}</UiBadge>
+              <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}</UiBadge>
             </UiTableCell>
             <UiTableCell actions>
               <UiRowActions :actions="invoiceActions(invoice)" :testid="`client-invoices-actions-${invoice.id}`" />

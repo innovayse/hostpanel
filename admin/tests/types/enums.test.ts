@@ -75,7 +75,7 @@ describe('billing value sets', () => {
 
 describe('screen value sets', () => {
   it('keep the strings the API and the routes use', () => {
-    expect(Object.values(ActivityEventType)).toEqual(['ClientRegistered', 'InvoiceOverdue', 'DomainExpiring'])
+    expect(Object.values(ActivityEventType)).toEqual(['ClientRegistered', 'InvoiceOverdue', 'DomainExpiring', 'PaymentReceived', 'TicketOpened'])
     expect(Object.values(LogoutScope)).toEqual(['this', 'all'])
     expect(Object.values(IntegrationFieldType)).toEqual(['Text', 'Password', 'Secret', 'Select', 'TextArea', 'Toggle', 'Url', 'Number'])
     expect(Object.values(BrandingImageKind)).toEqual(['logo', 'logodark', 'logomark', 'favicon'])

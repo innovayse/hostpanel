@@ -111,7 +111,7 @@ describe('OrdersListView', () => {
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="orders-row-1"]').text()).toContain('12.50 EUR')
-    expect(wrapper.get('[data-testid="orders-row-2"]').text()).toContain('4800.00 AMD')
+    expect(wrapper.get('[data-testid="orders-row-2"]').text()).toContain('4,800.00 AMD')
   })
 
   it('offers accept and cancel only on a pending order', async () => {

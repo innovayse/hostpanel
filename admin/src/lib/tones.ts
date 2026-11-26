@@ -341,6 +341,15 @@ export const gatewayLogResultTone = (result: string): UiTone => toneOf(GATEWAY_L
  */
 export const reportStatusTone = (status: string): UiTone => toneOf(REPORT_STATUS_TONES, status)
 
+/**
+ * Display label of a status word a report endpoint sent: the translation when the catalogue has one, the word
+ * as received otherwise, so a word the endpoint adds later is still shown.
+ *
+ * @param status - The status word as the endpoint sent it.
+ * @returns The label to show in the operator's language.
+ */
+export const reportStatusLabel = (status: string): string => translateOrRaw(`reports.statusWord.${status}`, status)
+
 /** Badge tone of each ticket status. */
 export const ticketStatusTone: Record<TicketStatus, UiTone> = {
   [TicketStatus.Open]: UiTone.Primary,

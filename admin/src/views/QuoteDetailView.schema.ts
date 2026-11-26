@@ -41,7 +41,7 @@ export const QUOTE_NOTES_PART: CardsSkeletonPart = {
 /** What the quote screen is made of. */
 const schema: CompositeSkeletonSchema = {
   kind: SkeletonKind.Composite,
-  header: { backLabel: 'shared.quotes', backMobileOnly: true, actions: 4 },
+  header: { crumbs: true, actions: 4 },
   parts: [QUOTE_GENERAL_PART, QUOTE_ITEMS_PART, QUOTE_NOTES_PART],
 }
 

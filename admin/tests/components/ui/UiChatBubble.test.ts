@@ -29,7 +29,7 @@ describe('UiChatBubble', () => {
     const wrapper = mount(UiChatBubble, { props: { side: UiChatBubbleSide.Own }, slots: { default: 'Hello' } })
 
     expect(wrapper.text()).toBe('Hello')
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['self-end', 'glass', 'bg-primary-500/15']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['self-end', 'glass', 'bg-tint-blue']))
     expect(wrapper.attributes('data-side')).toBe('own')
   })
 

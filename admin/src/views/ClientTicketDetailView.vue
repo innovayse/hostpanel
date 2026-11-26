@@ -12,6 +12,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useFallbackLabels } from '@/composables/useFallbackLabels'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useClientTicketsStore } from '@/stores/clientTickets'
 import { formatDate, formatDateTimeCompact } from '@/lib/format'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
@@ -29,6 +30,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { UiButtonVariant, UiButtonType } from '@/utils/ui/button'
@@ -44,6 +46,9 @@ import { UiCardPadding } from '@/utils/ui/card'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Clients, the client, Tickets, the ticket. */
+const { clientCrumbs } = usePageCrumbs()
 
 /** Opens the delete confirmation. */
 const openDeleteModal = (): void => {
@@ -263,13 +268,13 @@ onMounted(() => {
       <UiPageHeader :actions="headerActions"
         :title="store.currentTicket ? t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) : undefined"
         :loading="!store.currentTicket"
-        :back-to="clientSectionPath(clientId, ClientSection.Tickets)"
-        :back-label="t('shared.tickets')"
-        back-testid="client-ticket-back"
+        :crumbs="clientCrumbs(clientId, ClientSection.Tickets, store.currentTicket ? t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) : undefined)"
       >
-        <UiBadge v-if="store.currentTicket" :tone="ticketStatusTone[store.currentTicket.status]" small>
-          {{ ticketStatusLabel(store.currentTicket.status) }}
-        </UiBadge>
+        <template #badge>
+          <UiBadge v-if="store.currentTicket" :tone="ticketStatusTone[store.currentTicket.status]" small>
+            {{ ticketStatusLabel(store.currentTicket.status) }}
+          </UiBadge>
+        </template>
       </UiPageHeader>
 
 
@@ -378,9 +383,12 @@ onMounted(() => {
             </UiStack>
           </UiCard>
 
-          <UiText v-if="store.currentTicket?.replies.length === 0" :tone="UiTextTone.Muted">
-            {{ t('clients.clientTicketDetail.noRepliesYet') }}
-          </UiText>
+          <UiEmptyState
+            v-if="store.currentTicket?.replies.length === 0"
+            compact
+            :title="t('clients.clientTicketDetail.noRepliesYet')"
+            data-testid="client-ticket-no-replies"
+          />
         </UiStack>
       </UiCard>
     </template>

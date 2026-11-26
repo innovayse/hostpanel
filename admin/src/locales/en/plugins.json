@@ -4,7 +4,11 @@
     "pendingRestart": "Pending restart",
     "refused": "Refused",
     "loadFailed": "Failed to load",
-    "staged": "Version {version} staged, applies after restart",
+    "staged": "Version {version} not applied yet",
+    "changeFailed": "Update failed",
+    "changeFailedReason": "Update failed: {error}",
+    "changeFailedRestored": "Update failed: {error} Version {version} is still running.",
+    "changeFailedUnknown": "The new version did not load.",
     "brokenRule": "{id} · broken rule: {rule}",
     "updateAvailable": "Update available: {version}"
   },
@@ -58,9 +62,20 @@
   },
   "restartBanner": {
     "restartRequired": "Restart required",
-    "pluginChangesWillTakeEffect": "Plugin changes will take effect after a server restart.",
-    "restart": "Restart",
+    "pluginChangesWillTakeEffect": "Restarting applies the staged plugin changes and takes a moment.",
+    "restart": "Restart now",
     "restartServer": "Restart server"
+  },
+  "restart": {
+    "title": "Restarting the server",
+    "restarting": "Restarting",
+    "hint": "The panel will be back in a moment. Please keep this window open.",
+    "running": "Loaded and running",
+    "timedOut": "The server did not come back in time. Check that it is starting, then try again.",
+    "pluginVersion": "{name}, version {version}",
+    "pluginFailed": "{name} failed to load.",
+    "confirmTitle": "Restart the server?",
+    "confirmMessage": "The server stops for a moment and applies the staged plugin changes. Everyone using the panel is disconnected briefly."
   },
   "pluginSigning": {
     "title": "Plugin signatures",
@@ -102,6 +117,7 @@
     "removing": "Removing {name}",
     "uploading": "Uploading {name}",
     "done": "Done.",
+    "reloaded": "{name} was updated and runs without a restart.",
     "restartNeeded": "Restart the server to apply the change.",
     "close": "Close"
   },

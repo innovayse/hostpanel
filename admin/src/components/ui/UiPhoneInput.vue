@@ -12,6 +12,8 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { useGeoOptions } from '@/composables/useGeoOptions'
+import { fieldSurfaceClasses } from '@/utils/ui/input'
+import { fieldSizeClasses } from '@/utils/ui/size'
 
 /** Props for UiPhoneInput. */
 const props = defineProps<{
@@ -91,6 +93,9 @@ const phoneNumberModel = computed<string>({
 
 /** Sample number of the selected country, shown as the field hint. */
 const currentPlaceholder = computed<string>(() => SAMPLE_NUMBERS[selectedCountryCode.value] ?? t('shared.phoneNumber2'))
+
+/** Classes of the number field: the kit's field surface and height, joined to the country picker on its left (square left corners, no left border). */
+const numberClasses = `min-w-0 flex-1 ${fieldSurfaceClasses} ${fieldSizeClasses.md} rounded-r-control border-l-0`
 </script>
 
 <template>
@@ -114,7 +119,7 @@ const currentPlaceholder = computed<string>(() => SAMPLE_NUMBERS[selectedCountry
       type="text"
       :placeholder="currentPlaceholder"
       data-testid="phone-number-input"
-      class="flex-1 min-w-0 h-10.5 px-3.5 text-sm text-text-primary bg-surface-field border border-border border-l-0 rounded-r-control placeholder:text-text-muted outline-none focus-visible:border-text-accent focus-visible:ring-2 focus-visible:ring-text-accent/40 transition-colors"
+      :class="numberClasses"
     >
   </div>
 </template>

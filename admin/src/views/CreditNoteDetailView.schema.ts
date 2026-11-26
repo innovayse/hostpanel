@@ -13,7 +13,7 @@ import { UiAlign, UiColumnSize } from '@/utils/ui/table'
 /** What the credit note screen is made of. */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { subtitleFromData: true, actions: 1 },
+  header: { subtitleFromData: true, crumbs: true, actions: 1 },
   columns: [
     [
       {

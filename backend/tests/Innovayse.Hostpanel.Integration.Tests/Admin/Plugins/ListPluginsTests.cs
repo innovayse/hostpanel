@@ -309,7 +309,8 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         return new ListPluginsHandler(
             scope.ServiceProvider.GetRequiredService<IPluginPackageStore>(),
             registry,
-            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>());
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(),
+            scope.ServiceProvider.GetRequiredService<IPluginChanges>());
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

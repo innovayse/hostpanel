@@ -10,8 +10,7 @@
     "country": "Страна",
     "region": "Регион",
     "rate": "Ставка",
-    "enabled": "Статус",
-    "actions": "Действия"
+    "enabled": "Статус"
   },
   "wholeCountry": "Вся страна",
   "enabledBadge": "Включено",

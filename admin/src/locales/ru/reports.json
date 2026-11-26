@@ -415,5 +415,24 @@
   "sidebar": {
     "search": "Поиск отчётов",
     "empty": "Отчёты не найдены"
+  },
+  "statusWord": {
+    "Active": "Активен",
+    "Paid": "Оплачен",
+    "Completed": "Завершено",
+    "Pending": "Ожидает",
+    "Invoice": "Счёт",
+    "Payment": "Платёж",
+    "Unpaid": "Не оплачен",
+    "Suspended": "Приостановлен",
+    "Overdue": "Просрочен",
+    "Expired": "Истёк",
+    "Refunded": "Возвращён",
+    "PartiallyRefunded": "Частично возвращён",
+    "Transferred": "Передан",
+    "Draft": "Черновик",
+    "Inactive": "Неактивен",
+    "Cancelled": "Отменён",
+    "Terminated": "Прекращён"
   }
 }

@@ -13,6 +13,7 @@ import { mountScreen } from '../helpers/mount'
 import type { MountedScreen } from '../helpers/mount'
 import { requestsOf, stubRouteTable } from '../helpers/routes'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 vi.mock('vuedraggable', async () => {
   const { defineComponent, h } = await import('vue')
@@ -87,9 +88,9 @@ describe('SlidesView', () => {
 
     expect(rows.map((row) => row.attributes('data-testid'))).toEqual(['slide-row-1', 'slide-row-2'])
     expect(rows[0]?.text()).toContain('Welcome')
-    expect(rows[0]?.get('[role="img"]').attributes('aria-label')).toBe('Active')
+    expect(rows[0]?.getComponent(UiStatusBadge).text()).toBe('Active')
     expect(rows[0]?.text()).toContain('Always')
-    expect(rows[1]?.get('[role="img"]').attributes('aria-label')).toBe('Inactive')
+    expect(rows[1]?.getComponent(UiStatusBadge).text()).toBe('Inactive')
     expect(wrapper.findAll('th').find((header) => header.text() === 'Title')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
     expect(rows[1]?.text()).toContain('Authenticated')
   })

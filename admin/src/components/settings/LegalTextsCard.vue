@@ -10,7 +10,7 @@
  */
 import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useLocalizedSettingDrafts, SETTING_LOCALES, SettingLanguage } from '@/composables/useLocalizedSettingDrafts'
+import { useLocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import type { LocalizedSettingDrafts } from '@/composables/useLocalizedSettingDrafts'
 import SettingNotSeeded from '@/components/settings/SettingNotSeeded.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
@@ -19,7 +19,8 @@ import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { LEGAL_TEXT_MAX_LENGTH } from '@/lib/limits'
-import { SettingEnv, SettingKey } from '@/types/setting'
+import { ContentLanguage } from '@/locales/contentLanguage'
+import { SettingKey } from '@/types/setting'
 import type { Setting } from '@/types/setting'
 import { UiGap } from '@/utils/ui/layout'
 
@@ -39,12 +40,10 @@ const TEXT_ROWS = 10
 
 /** One legal page's text, written once per language. */
 interface LegalDocumentField {
-  /** Suffix of the test ids: `legal-<testid>` is the English field, `legal-<testid>-ru` and `-hy` the others. */
+  /** Suffix of the test ids: `legal-<testid>` is the English field, `legal-<testid>-<language code>` the others. */
   testid: string
   /** Locale key of the page's caption. */
   labelKey: string
-  /** The settings row of each language. */
-  keys: Record<SettingLanguage, SettingKey>
   /** The drafts of the rows and what the tabs mark. */
   localized: LocalizedSettingDrafts
 }
@@ -54,43 +53,22 @@ interface LegalDocumentField {
  *
  * @param testid - Suffix of the test ids.
  * @param labelKey - Locale key of the page's caption.
- * @param keys - The settings row of each language.
+ * @param key - The settings key of the page's default-language row; the other languages' rows are named from it.
  * @returns The field with its drafts.
  */
-const documentField = (testid: string, labelKey: string, keys: Record<SettingLanguage, SettingKey>): LegalDocumentField => ({
+const documentField = (testid: string, labelKey: string, key: SettingKey): LegalDocumentField => ({
   testid,
   labelKey,
-  keys,
-  localized: useLocalizedSettingDrafts(settings, keys),
+  localized: useLocalizedSettingDrafts(settings, key),
 })
 
 /** The five legal pages, in the order the card draws them. */
 const DOCUMENTS: LegalDocumentField[] = [
-  documentField('terms', 'settings.legalTexts.terms', {
-    [SettingLanguage.En]: SettingKey.LegalTerms,
-    [SettingLanguage.Ru]: SettingKey.LegalTermsRu,
-    [SettingLanguage.Hy]: SettingKey.LegalTermsHy,
-  }),
-  documentField('privacy', 'settings.legalTexts.privacy', {
-    [SettingLanguage.En]: SettingKey.LegalPrivacy,
-    [SettingLanguage.Ru]: SettingKey.LegalPrivacyRu,
-    [SettingLanguage.Hy]: SettingKey.LegalPrivacyHy,
-  }),
-  documentField('refund', 'settings.legalTexts.refund', {
-    [SettingLanguage.En]: SettingKey.LegalRefund,
-    [SettingLanguage.Ru]: SettingKey.LegalRefundRu,
-    [SettingLanguage.Hy]: SettingKey.LegalRefundHy,
-  }),
-  documentField('acceptable-use', 'settings.legalTexts.acceptableUse', {
-    [SettingLanguage.En]: SettingKey.LegalAcceptableUse,
-    [SettingLanguage.Ru]: SettingKey.LegalAcceptableUseRu,
-    [SettingLanguage.Hy]: SettingKey.LegalAcceptableUseHy,
-  }),
-  documentField('cookies', 'settings.legalTexts.cookies', {
-    [SettingLanguage.En]: SettingKey.LegalCookies,
-    [SettingLanguage.Ru]: SettingKey.LegalCookiesRu,
-    [SettingLanguage.Hy]: SettingKey.LegalCookiesHy,
-  }),
+  documentField('terms', 'settings.legalTexts.terms', SettingKey.LegalTerms),
+  documentField('privacy', 'settings.legalTexts.privacy', SettingKey.LegalPrivacy),
+  documentField('refund', 'settings.legalTexts.refund', SettingKey.LegalRefund),
+  documentField('acceptable-use', 'settings.legalTexts.acceptableUse', SettingKey.LegalAcceptableUse),
+  documentField('cookies', 'settings.legalTexts.cookies', SettingKey.LegalCookies),
 ]
 
 /**
@@ -100,8 +78,8 @@ const DOCUMENTS: LegalDocumentField[] = [
  * @param locale - The language of the field.
  * @returns The `data-testid` of the text field.
  */
-const inputTestid = (field: LegalDocumentField, locale: SettingLanguage): string =>
-  locale === SettingLanguage.En ? `legal-${field.testid}` : `legal-${field.testid}-${locale}`
+const inputTestid = (field: LegalDocumentField, locale: ContentLanguage): string =>
+  locale === ContentLanguage.En ? `legal-${field.testid}` : `legal-${field.testid}-${locale}`
 </script>
 
 <template>
@@ -115,7 +93,6 @@ const inputTestid = (field: LegalDocumentField, locale: SettingLanguage): string
       :key="field.testid"
       :label="t(field.labelKey)"
       :hint="t('settings.legalTexts.hint')"
-      :locales="SETTING_LOCALES"
       :filled="field.localized.filled.value"
       :errors="field.localized.errors.value"
       :testid="`legal-${field.testid}-tab`"
@@ -123,8 +100,8 @@ const inputTestid = (field: LegalDocumentField, locale: SettingLanguage): string
       <template #default="{ locale }">
         <SettingNotSeeded
           v-if="!field.localized.drafts[locale].setting.value"
-          :setting-key="field.keys[locale]"
-          :env-name="SettingEnv[field.keys[locale]]"
+          :setting-key="field.localized.keys[locale]"
+          :env-name="field.localized.envs[locale]"
         />
         <UiStack v-else :gap="UiGap.Xs">
           <UiTextarea

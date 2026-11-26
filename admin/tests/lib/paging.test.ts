@@ -2,7 +2,7 @@
  * Tests for the page arithmetic: page count, in-memory slice, the page window and the first and last row numbers.
  */
 import { describe, expect, it } from 'vitest'
-import { pageCount, pageEntryKey, pageFirstRow, pageLastRow, pageSlice, pageWindow } from '@/lib/paging'
+import { pageCount, pageEntryKey, pageFirstRow, pageLastRow, pageSlice, pageWindow, pagerVisible } from '@/lib/paging'
 
 describe('pageCount', () => {
   it('rounds up to whole pages', () => {
@@ -74,5 +74,24 @@ describe('pageEntryKey', () => {
     const entries = pageWindow(1, 100)
 
     expect(entries.map((_, index) => pageEntryKey(entries, index, 1))).toEqual(['1', '2', 'gap-end', '100'])
+  })
+})
+
+describe('pagerVisible', () => {
+  it('shows over more than one page', () => {
+    expect(pagerVisible(60, 20, false)).toBe(true)
+  })
+
+  it('is empty for a single page with no size choice', () => {
+    expect(pagerVisible(5, 20, false)).toBe(false)
+    expect(pagerVisible(0, 20, false, [10, 20, 50])).toBe(false)
+  })
+
+  it('shows while loading, to keep the layout', () => {
+    expect(pagerVisible(0, 20, true)).toBe(true)
+  })
+
+  it('shows a single page that a smaller page size could still split', () => {
+    expect(pagerVisible(15, 20, false, [10, 20, 50])).toBe(true)
   })
 })

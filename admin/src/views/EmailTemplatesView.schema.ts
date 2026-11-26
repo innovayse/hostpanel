@@ -19,7 +19,7 @@ const schema: ListSkeletonSchema = {
       { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
       { key: 'subject', label: 'shared.subject' },
       { key: 'languages', label: 'settings.emailTemplates.languages' },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

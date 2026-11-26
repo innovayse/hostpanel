@@ -42,7 +42,8 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { bucketAmountText, summarizeInvoices } from '@/lib/invoices'
-import { invoiceStatusTone } from '@/lib/tones'
+import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
+import { invoiceStatusTone, statusLabel } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceBulkAction } from '@/types/invoice'
@@ -319,7 +320,7 @@ onMounted(loadClients)
           <UiTableCell numeric hide-below="sm">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
           <UiTableCell muted hide-below="2xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
-            <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
+            <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}</UiBadge>
           </UiTableCell>
           <UiTableCell actions>
             <UiRowActions :actions="invoiceActions(invoice.id)" :testid="`billing-invoice-actions-${invoice.id}`" />

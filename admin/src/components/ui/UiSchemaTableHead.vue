@@ -39,7 +39,6 @@ defineProps<{
         :actions="column.actions"
       >
         <template v-if="column.label">{{ t(column.label) }}</template>
-        <template v-else-if="column.actions">{{ t('shared.actions') }}</template>
       </UiTableHeader>
     </UiTableRow>
   </UiTableHead>

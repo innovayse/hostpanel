@@ -25,7 +25,7 @@ const schema: ListSkeletonSchema = {
       { key: 'total', label: 'shared.total', numeric: true, size: UiColumnSize.Compact },
       { key: 'items', label: 'orders.ordersList.items', numeric: true, size: UiColumnSize.Compact },
       { key: 'date', label: 'shared.date', kind: UiColumnKind.Date },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

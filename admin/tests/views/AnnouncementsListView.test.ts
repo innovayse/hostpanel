@@ -14,6 +14,7 @@ import { json, problem, stubFetch, callOf } from '../helpers/fetch'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** One announcement as the list endpoint returns it. */
 const announcement = { id: 3, title: 'Maintenance window', content: 'Tonight', isPublished: true, createdAt: '2026-10-01T10:30:00Z' }
@@ -62,7 +63,7 @@ describe('AnnouncementsListView', () => {
     const row = wrapper.get('[data-testid="announcements-row-3"]')
 
     expect(row.text()).toContain('Maintenance window')
-    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
+    expect(row.getComponent(UiStatusBadge).text()).toBe('Published')
     expect(wrapper.findAll('th').some((header) => header.classes().includes('max-w-0'))).toBe(true)
   })
 

@@ -85,7 +85,7 @@ export const NOTES_COLUMNS: readonly (readonly SkeletonDetailCard[])[] = [[{ key
 /** What the client service screen is made of, as it opens (on the account tab). */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { actions: 3 },
+  header: { crumbs: true, actions: 3 },
   columns: ACCOUNT_COLUMNS,
 }
 

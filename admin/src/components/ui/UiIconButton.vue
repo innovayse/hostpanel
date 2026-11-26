@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import { buttonBaseClasses, buttonRadiusClasses, buttonVariantClasses } from '@/utils/ui/button'
 import type { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
-import { iconButtonSizeClasses } from '@/utils/ui/size'
+import { iconButtonIconClasses, iconButtonSizeClasses } from '@/utils/ui/size'
 import type { UiSize } from '@/utils/ui/size'
 
 /** Props for UiIconButton. */
@@ -45,7 +45,8 @@ const classes = computed<string[]>(() => [
   buttonBaseClasses,
   buttonVariantClasses[props.variant],
   iconButtonSizeClasses[props.size],
-  buttonRadiusClasses(props.variant, props.size),
+  iconButtonIconClasses[props.size],
+  buttonRadiusClasses(props.size),
   'shrink-0',
   // Only a badge needs the button as its positioning context. A plain button stays free for a caller to place
   // (`absolute`, `fixed`), which a built-in `relative` would silently override.

@@ -334,7 +334,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
             .Should().OnlyContain(key => settings[key] == "true", "every security and guarantee card is on");
         settings.Where(s => s.Key.StartsWith("portal.sections.", StringComparison.Ordinal))
             .Should().HaveCount(20).And.OnlyContain(s => s.Value == "true", "every home-page section is on in the demo");
-        new[] { PortalSettingKeys.AboutText, PortalSettingKeys.AboutTextRu, PortalSettingKeys.AboutTextHy }
+        new[] { PortalSettingKeys.AboutText, PortalSettingKeys.ForLanguage(PortalSettingKeys.AboutText, "ru"), PortalSettingKeys.ForLanguage(PortalSettingKeys.AboutText, "hy") }
             .Should().OnlyContain(k => settings[k].Length > 0, "the About page has a story in every language");
         settings[PortalSettingKeys.BrandPrimary].Should().BeEmpty("the demo shows the template's own palette");
         settings[PortalSettingKeys.BrandAccent].Should().BeEmpty("the demo shows the template's own palette");

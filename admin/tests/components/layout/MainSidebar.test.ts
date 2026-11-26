@@ -250,6 +250,21 @@ describe('MainSidebar', () => {
     expect(wrapper.get('[data-testid="nav-section-infrastructure"]').classes()).toContain('gap-0.5')
   })
 
+  it('marks only the create ticket page, not the Tickets link beside it, on the create ticket screen', async () => {
+    const wrapper = await mountSidebar('/support/tickets/new')
+
+    expect(wrapper.get('[data-testid="nav-support-tickets-new"]').attributes('aria-current')).toBe('page')
+    expect(wrapper.get('[data-testid="nav-support-tickets"]').attributes('aria-current')).toBeUndefined()
+    expect(wrapper.findAll('[aria-current="page"]')).toHaveLength(1)
+  })
+
+  it('keeps the Tickets link marked on a ticket page', async () => {
+    const wrapper = await mountSidebar('/support/tickets/42')
+
+    expect(wrapper.get('[data-testid="nav-support-tickets"]').attributes('aria-current')).toBe('page')
+    expect(wrapper.get('[data-testid="nav-support-tickets-new"]').attributes('aria-current')).toBeUndefined()
+  })
+
   it('lights the guide segments up to the active sub-menu link, the active one down to its curve, and leaves the rest muted', async () => {
     const wrapper = await mountSidebar('/billing/invoices')
 

@@ -42,3 +42,12 @@ describe('UiFileInput', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([[]])
   })
 })
+
+describe('UiFileInput button look', () => {
+  it('draws the picker button with the control border token', () => {
+    const classes = mount(UiFileInput).classes()
+
+    expect(classes).toContain('file:border-border-control')
+    expect(classes).not.toContain('file:border-border')
+  })
+})

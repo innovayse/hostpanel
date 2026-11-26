@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { useContactDetails } from '~/composables/useContactDetails'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
@@ -57,11 +58,15 @@ describe('useContactDetails', () => {
   it('reads the address in the visitor language and falls back to the default one', async () => {
     await loadPortalSettings(replies, {
       [PortalSettingKey.ContactAddress]: '1 Example Street',
-      [PortalSettingKey.ContactAddressRu]: 'ул. Примерная, 1',
+      [localizedSettingKey(PortalSettingKey.ContactAddress, 'ru')]: 'ул. Примерная, 1',
+      [localizedSettingKey(PortalSettingKey.ContactAddress, 'es')]: 'Calle Ejemplo 1',
     })
 
     stubLocale('ru')
     expect(useContactDetails().address.value).toBe('ул. Примерная, 1')
+
+    stubLocale('es')
+    expect(useContactDetails().address.value).toBe('Calle Ejemplo 1')
 
     stubLocale('hy')
     expect(useContactDetails().address.value).toBe('1 Example Street')

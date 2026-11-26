@@ -65,6 +65,24 @@ describe('pluginsStore.install', () => {
     expect(mock).toHaveBeenCalledTimes(2)
   })
 
+  it('keeps the banner hidden and records the hot reload when the host applied the change', async () => {
+    stubFetch(json({ requiresRestart: false, stagedVersion: null, reloaded: true }), json([{ id: 'a' }]))
+    const store = usePluginsStore()
+
+    await store.install(zip)
+    expect(store.requiresRestart).toBe(false)
+    expect(store.reloaded).toBe(true)
+  })
+
+  it('does not hide a pending restart when a later install needs none', async () => {
+    stubFetch(json({ requiresRestart: false, stagedVersion: null, reloaded: true }), json([]))
+    const store = usePluginsStore()
+    store.requiresRestart = true
+
+    await store.install(zip)
+    expect(store.requiresRestart).toBe(true)
+  })
+
   it('keeps the API sentence and does not reload on refusal', async () => {
     const mock = stubFetch(problem('Not a plugin archive.', 400))
     const store = usePluginsStore()
@@ -244,28 +262,6 @@ describe('pluginsStore.remove', () => {
     expect((await store.remove('a')).ok).toBe(false)
     expect(store.plugins).toHaveLength(1)
     expect(store.actionError).toBe('Plugin is in use.')
-  })
-})
-
-describe('pluginsStore.restart', () => {
-  it('clears the pending restart', async () => {
-    stubFetch(new Response(null, { status: 204 }))
-    const store = usePluginsStore()
-    store.requiresRestart = true
-
-    await store.restart()
-    expect(store.requiresRestart).toBe(false)
-  })
-
-  it('treats a dropped connection as expected, not as an error', async () => {
-    stubOffline()
-    const store = usePluginsStore()
-    store.requiresRestart = true
-
-    await store.restart()
-    expect(store.requiresRestart).toBe(false)
-    expect(store.error).toBeNull()
-    expect(store.loading).toBe(false)
   })
 })
 
@@ -503,7 +499,7 @@ describe('pluginsStore.remove outcome', () => {
 
     const outcome = await store.remove('a')
 
-    expect(outcome).toEqual({ ok: false, stagedVersion: null, error: 'Plugin is in use.' })
+    expect(outcome).toEqual({ ok: false, stagedVersion: null, reloaded: false, restarting: false, error: 'Plugin is in use.' })
     expect(loadingDuringCall).toBe(false)
   })
 })

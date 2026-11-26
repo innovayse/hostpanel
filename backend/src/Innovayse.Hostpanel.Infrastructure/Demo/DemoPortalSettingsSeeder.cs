@@ -71,10 +71,10 @@ internal sealed class DemoPortalSettingsSeeder
         new(PortalSettingKeys.ContactAddress, "1 Market Street, Fairhaven"),
         new(PortalSettingKeys.ContactHours, "Mon-Fri 09:00-18:00"),
         new(PortalSettingKeys.ContactTimezone, "UTC"),
-        new(PortalSettingKeys.ContactAddressRu, "Рыночная улица, 1, Фэрхейвен"),
-        new(PortalSettingKeys.ContactAddressHy, "Շուկայի փողոց 1, Ֆերհեյվեն"),
-        new(PortalSettingKeys.ContactHoursRu, "Пн-Пт 09:00-18:00"),
-        new(PortalSettingKeys.ContactHoursHy, "Երկ-Ուրբ 09:00-18:00"),
+        new(PortalSettingKeys.ForLanguage(PortalSettingKeys.ContactAddress, "ru"), "Рыночная улица, 1, Фэрхейвен"),
+        new(PortalSettingKeys.ForLanguage(PortalSettingKeys.ContactAddress, "hy"), "Շուկայի փողոց 1, Ֆերհեյվեն"),
+        new(PortalSettingKeys.ForLanguage(PortalSettingKeys.ContactHours, "ru"), "Пн-Пт 09:00-18:00"),
+        new(PortalSettingKeys.ForLanguage(PortalSettingKeys.ContactHours, "hy"), "Երկ-Ուրբ 09:00-18:00"),
         new(PortalSettingKeys.LegalTaxId, "DEMO-000-0000"),
         // The hero figures (clients, uptime, regions) and the contact map are owned by DemoStorefrontSeeder, which runs after this one.
         new(PortalSettingKeys.FeaturesBackups, "true"),
@@ -120,8 +120,8 @@ internal sealed class DemoPortalSettingsSeeder
         new(PortalSettingKeys.SectionSupport, "true"),
         new(PortalSettingKeys.SectionTrusted, "true"),
         new(PortalSettingKeys.AboutText, AboutEn),
-        new(PortalSettingKeys.AboutTextRu, AboutRu),
-        new(PortalSettingKeys.AboutTextHy, AboutHy),
+        new(PortalSettingKeys.ForLanguage(PortalSettingKeys.AboutText, "ru"), AboutRu),
+        new(PortalSettingKeys.ForLanguage(PortalSettingKeys.AboutText, "hy"), AboutHy),
     ];
 
     /// <summary>The data context the settings are read and saved through.</summary>

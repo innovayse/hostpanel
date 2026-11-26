@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
   table: {
     pagination: true,
     columns: [
-      { key: 'flag', label: 'support.supportTickets.flag', actions: true, size: UiColumnSize.Compact },
+      { key: 'flag', label: 'support.supportTickets.flag', align: 'right', size: UiColumnSize.Compact },
       { key: 'subject', label: 'shared.subject', size: UiColumnSize.Grow },
       { key: 'department', label: 'shared.department' },
       { key: 'requestor', label: 'support.supportTickets.requestor', cardRole: UiCardRole.Subtitle },

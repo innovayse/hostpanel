@@ -35,6 +35,7 @@
     "noCountries": "No country found"
   },
   "common": {
+    "actions": "Actions",
     "cancel": "Cancel",
     "confirm": "Confirm",
     "next": "Next",

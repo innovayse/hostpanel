@@ -65,7 +65,7 @@ const radiusClasses: Record<UiCardRadius, string> = {
 
 /** Surface, radius and padding classes. */
 const classes = computed<string[]>(() => [
-  props.elevated ? 'glass-strong shadow-lg' : 'glass',
+  props.elevated ? 'glass-strong shadow-popover' : 'glass',
   radiusClasses[props.radius],
   paddingClasses[props.padding],
   props.clip ? 'overflow-clip' : '',

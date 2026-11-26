@@ -20,7 +20,7 @@ describe('UiImage', () => {
 
     expect(wrapper.element.tagName).toBe('DIV')
     expect(wrapper.attributes('data-testid')).toBe('ui-image-fallback')
-    expect(wrapper.classes()).toEqual(expect.arrayContaining(['h-10', 'w-16', 'rounded-control', 'bg-surface-field']))
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['h-10', 'w-16', 'rounded-control', 'bg-surface-inset']))
     expect(wrapper.find('svg').exists()).toBe(true)
   })
 

@@ -358,6 +358,9 @@ MaxFailedAttempts-ը ընդունում է 1-100, LockoutMinutes-ը՝ 1-1440։ �
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN', type: 'string', default: '', description: 'Չատի վիջեթի թոքենը (լռելյայն լեզու)։ Մակարդակներ՝ բոլորը։' },
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU', type: 'string', default: '', description: 'Չատի վիջեթի թոքենը (ռուսերեն)։ Մակարդակներ՝ բոլորը։' },
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY', type: 'string', default: '', description: 'Չատի վիջեթի թոքենը (հայերեն)։ Մակարդակներ՝ բոլորը։' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE', type: 'string', default: '', description: 'Չատի վիջեթի թոքենը (գերմաներեն)։ Մակարդակներ՝ բոլորը։' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES', type: 'string', default: '', description: 'Չատի վիջեթի թոքենը (իսպաներեն)։ Մակարդակներ՝ բոլորը։' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR', type: 'string', default: '', description: 'Չատի վիջեթի թոքենը (ֆրանսերեն)։ Մակարդակներ՝ բոլորը։' },
 ]" />
 
 ## Վճարումներ և արտաքին հղումներ {#payments-and-external-links}
@@ -376,6 +379,8 @@ MaxFailedAttempts-ը ընդունում է 1-100, LockoutMinutes-ը՝ 1-1440։ �
 | Կարգավորում | Լռելյայն | Նկարագրություն |
 |---|---|---|
 | `Plugins__InstallPath` | *(դատարկ, պահեստային տարբերակը՝ `plugins-installed` հավելվածի կողքին)* | Թղթապանակ, որտեղ API-ն տեղադրում է պլագինների փաթեթները։ |
+| `Plugins__DrainSeconds` | `30` | Քանի վայրկյան է պլագինի վերաբեռնումը կամ պլագինի փոփոխությունից հետո վերագործարկումը սպասում աշխատող հարցումների, ֆոնային առաջադրանքների և պլագինի կանչերի ավարտին (1-ից 300)։ Վերագործարկման ժամանակ `GET /health`-ը պատասխանում է 503 `HOST_DRAINING`, ապա պրոցեսը դուրս է գալիս 75 կոդով։ Սա նաև host-ի կանգնեցման timeout-ն է։ Compose ֆայլերում այն `.env`-ի `PLUGIN_DRAIN_SECONDS`-ն է։ API ծառայության `stop_grace_period`-ը (`API_STOP_GRACE_PERIOD`, լռելյայն՝ `45s`) պահեք դրանից մեծ, հակառակ դեպքում Docker-ը կսպանի սպասող host-ը։ API ծառայությանը նաև պետք է վերագործարկման քաղաքականություն, որը գործում է սովորական ավարտից հետո (`restart: unless-stopped`). առանց դրա `install.sh --check`-ն ավարտվում է սխալով, տես [Պլագինների կառավարիչ](../payments/plugins.md#applying-a-plugin-change)։ |
+| `Plugins__RestartDelaySeconds` | `3` | Քանի վայրկյան է host-ը սպասում պատրաստված պլագինի փոփոխությունից հետո՝ նախքան ինքն իրեն վերագործարկելը (0-ից 60), ուստի իրար հետևից արված փոփոխությունները կիրառվում են մեկ վերագործարկմամբ։ Compose ֆայլերում այն `.env`-ի `PLUGIN_RESTART_DELAY_SECONDS`-ն է։ |
 | `Plugins__MaxEntryCount` | `1000` | Պլագինի zip արխիվում ֆայլերի առավելագույն քանակը։ |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Պլագինի արխիվի ընդհանուր չսեղմված չափի առավելագույնը բայթերով (200 MiB)։ |
 | `Plugins__MigrationTimeoutSeconds` | `120` | Ամենաերկար ժամանակը վայրկյաններով, որ կարող է աշխատել պլագինի մեկ միգրացիայի hook-ը թարմացումից հետո (1-ից 3600)։ Դրանից հետո հոսթը դադարում է սպասել և պլագինը թողնում է անջատված, մինչև հաջորդ փորձը հաջողվի։ |

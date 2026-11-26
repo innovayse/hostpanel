@@ -49,16 +49,7 @@ const result: Record<MessageLanguage, LanguageMessages> = {
 </li>
 <li>
 
-Ավելացրեք լեզվի կոդը `admin/src/i18n.ts` ֆայլի `SUPPORTED_LOCALES`-ում․
-
-```ts
-export const SUPPORTED_LOCALES = [
-  MessageLanguage.En,
-  MessageLanguage.Hy,
-  MessageLanguage.Ru,
-  MessageLanguage.Fr, // add here
-] as const
-```
+`admin/src/i18n.ts`-ի `SUPPORTED_LOCALES` լեզվի փոխարկիչի ցանկը կառուցվում է `MessageLanguage`-ից, ուստի բավական է լեզուն ավելացնել `MessageLanguage`-ում (վերևի քայլը)։
 
 </li>
 <li>
@@ -103,16 +94,7 @@ export enum AppLocale {
 </li>
 <li>
 
-Ավելացրեք գրառում `client/nuxt.config.ts` ֆայլի `i18n.locales` ցանկում․
-
-```ts
-locales: [
-  { code: 'en', name: 'English',   language: 'en-US' },
-  { code: 'ru', name: 'Русский',   language: 'ru-RU' },
-  { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
-  { code: 'fr', name: 'Français',  language: 'fr-FR' }, // add here
-],
-```
+Ավելացրեք լեզուն `client/nuxt.config.ts`-ի `LOCALE_META`-ում՝ նրա սեփական անունը և լեզվի թեգը։ `i18n.locales` ցանկը և լեզվով կարգավորումների runtime կարգավորման գրառումները կառուցվում են `AppLocale`-ից։
 
 </li>
 </Steps>
@@ -131,19 +113,10 @@ locales: [
 </li>
 <li>
 
-Ավելացրեք կոդը `backend/src/Shared/Constants/SupportedLanguages.cs` ֆայլի `SupportedLanguages.All`-ում․
+Ավելացրեք կոդը `backend/src/SharedKernel/Localization/LanguageCodes.cs` ֆայլի `LanguageCodes.All`-ում․ սա այն միակ ցանկն է, որից կառուցվում են `SupportedLanguages`-ը և կարգավորումների բոլոր լեզվական տողերը․
 
 ```csharp
-public static readonly HashSet<string> All = ["en", "ru", "hy", "fr"];
-```
-
-</li>
-<li>
-
-Ավելացրեք կոդը `backend/src/Innovayse.Hostpanel.Application/Common/Settings/LocaleOptions.cs` ֆայլի `LocaleOptions.SupportedLocales`-ում․
-
-```csharp
-public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy", "fr"];
+public static readonly IReadOnlyList<string> All = [Default, "ru", "hy", "fr"];
 ```
 
 </li>
@@ -153,7 +126,7 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 
 **Պարտադիր․ առանց սրանց լեզուն չի աշխատի։**
 
-- `SupportedLanguages.All` և `LocaleOptions.SupportedLocales`, ինչպես ցույց է տրված վերևում։
+- `LanguageCodes.All`, ինչպես ցույց է տրված վերևում։
 
 **Հաճախորդի պորտալի լրացումներ (պարտադիր է լրիվ թարգմանված հանրային կայքի համար)․**
 
@@ -163,10 +136,8 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 **Ադմինի վահանակի լրացումներ բովանդակության լեզվի համար (պարտադիր է)․**
 
 - `admin/src/locales/contentLanguage.ts`՝ ավելացրեք լեզուն `ContentLanguage` թվարկման մեջ։
-- `admin/src/lib/constants.ts`՝ ավելացրեք գրառում `LANGUAGE_OPTIONS` ցանկում, որպեսզի լեզուն երևա հաճախորդի և օգտատիրոջ ձևերի լեզվի ընտրիչներում։
 - `admin/src/lib/storefrontTranslations.ts`՝ ոչինչ ավելացնել պետք չէ. `STOREFRONT_LOCALES`-ը և դատարկ ձևերը կառուցվում են `ContentLanguage` թվարկումից, ուստի հանրային կայքի բովանդակության ձևերում նոր լեզվի ներդիրը հայտնվում է հենց լեզուն թվարկման մեջ ավելացվելուն պես։
-- `admin/src/components/ui/UiLocalizedField.vue`՝ ավելացրեք նոր լեզվի անվանումը `captions` computed օբյեկտում, որը կարդում է ադմինի լեզվի ներդիրների յուրաքանչյուր շարք։ Մյուս `Record<ContentLanguage, ...>` տիպերը, որտեղ նոր լեզուն դեռ չկա, կոմպիլյատորը կթվարկի։
-- Պիտակները ադմինի վահանակի յուրաքանչյուր լեզվի ֆայլում՝ `storefront.locales.fr`, `clients.clientForm.french` (օգտագործեք ձեր լեզվի անունը), `admin/src/locales/<lang>/` պանակի `storefront.json`, `settings.json` և `clients.json` ֆայլերում։
+- Պիտակները ադմինի վահանակի յուրաքանչյուր լեզվի ֆայլում՝ `storefront.locales.fr`, (օգտագործեք ձեր լեզվի անունը), `admin/src/locales/<lang>/` պանակի `storefront.json`, `settings.json` և `clients.json` ֆայլերում։
 
 **Backend-ի լրացումներ․**
 
@@ -175,19 +146,14 @@ public static readonly IReadOnlyList<string> SupportedLocales = ["en", "ru", "hy
 - Դեմո տվյալների թարգմանությունները `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` և `DemoStorefrontSeeder.cs` ֆայլերում։
 - `ResourceCoverageTests`-ի (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) լեզուների theory թեստերը և լեզուները թվարկող մյուս թեստերը՝ նոր կոդի համար պետք է տող ավելացնել։
 
-**Լեզվի վերջածանցով կարգավորումներ (ըստ ցանկության)․**
+**Լեզվի վերջածանցով կարգավորումներ․**
 
-Կոնտակտային հասցեն, աշխատանքային ժամերը, կենդանի չաթի թոկենը և «Մեր մասին» էջի ընկերության պատմությունը (`portal.about.text`) ունեն մեկական արժեք յուրաքանչյուր լեզվի համար, օրինակ՝ `portal.contact.address.ru` և `portal.chat.website_token.hy`։ Առանց իր արժեքի լեզուն օգտագործում է լռելյայնը, ուստի նոր լեզուն աշխատում է առանց սրանցից որևէ մեկի։ Ավելացրեք դրանք միայն եթե օպերատորին նոր լեզվի համար պետք է այլ հասցե, այլ աշխատանքային ժամեր, այլ չաթի թոկեն կամ այլ պատմություն։ Այդ դեպքում այս բոլոր տեղերում պետք է նոր բանալին՝ նույն վերջածանցով․
+Կոնտակտային հասցեն, աշխատանքային ժամերը, կենդանի չաթի թոկենը, «Մեր մասին» էջի ընկերության պատմությունը (`portal.about.text`) և հինգ իրավական տեքստերը ունեն մեկական արժեք յուրաքանչյուր լեզվի համար, օրինակ՝ `portal.contact.address.ru` և `portal.chat.website_token.de`։ Առանց իր արժեքի լեզուն օգտագործում է լռելյայնը։ Յուրաքանչյուր լեզվի տողը անվանվում է լռելյայն բանալուց և լեզվի կոդից (`PortalSettingKeys.ForLanguage`, `localizedSettingKey` ադմինում և պորտալում), ուստի նոր լեզվի համար ոչ մի տեղ բանալի գրել պետք չէ․
 
-- `backend/src/Innovayse.Hostpanel.Domain/Settings/PortalSettingKeys.cs`՝ հաստատունները, օրինակ՝ `ContactAddressFr = "portal.contact.address.fr"`, և դրանց գրառումները լռելյայն արժեքների ցանկում՝ դատարկ լռելյայն արժեքով և նկարագրությամբ, օրինակ՝ «Office address for French visitors. Empty uses the default address.»։
-- `admin/src/types/setting.ts`՝ `SettingKey` գրառումները (`ContactAddressFr`, `ContactHoursFr`, `ChatWebsiteTokenFr`) և դրանց `SettingEnv` գրառումները, օրինակ՝ `CONTACT_ADDRESS_FR`։ Ընկերության պատմությունը ադմինի վահանակում դաշտ չունի, ուստի այստեղ ոչինչ պետք չէ։
-- `client/constants/portalSettingKey.ts`՝ նույն բանալիները `PortalSettingKey` enum-ում։
-- `client/constants/publicPortalSettingKeys.ts`՝ բանալիները թույլատրված ցանկերում, որպեսզի հանրային կայքի endpoint-ը դրանք բացահայտի՝ կոնտակտային բանալիները, չաթի թոկենի բանալին և ընկերության պատմության բանալին։
-- `client/nuxt.config.ts`՝ runtime կարգավորման գրառումները `portalContactAddressFr`, `portalContactHoursFr`, `portalChatWebsiteTokenFr` և `portalAboutTextFr`, որոնցից յուրաքանչյուրը կարդացվում է `NUXT_PUBLIC_PORTAL_..._FR` փոփոխականից։ Սրանք այն արժեքներն են, որ տեղակայումը սահմանում է միջավայրում։
-- `client/composables/useContactDetails.ts` (հասցե), `client/composables/useContactHours.ts` (աշխատանքային ժամեր), `client/composables/useAboutText.ts` (ընկերության պատմություն) և `client/composables/useLocalizedSetting.ts`՝ ճյուղ նոր լեզվի համար, որպեսզի կարդացվի ճիշտ արժեքը։
-- `client/plugins/live-chat.ts`՝ թոկենի ճյուղը և `languageOf`՝ լեզվի այն անվան համար, որը ցույց է տալիս չաթի վիջեթը։
-- `admin/src/components/settings/StorefrontContentCard.vue` (հասցեի և աշխատանքային ժամերի դաշտեր) և `admin/src/components/settings/TrackingChatCard.vue` (թոկենի դաշտ)՝ մեկ դաշտ յուրաքանչյուր նոր բանալու համար։
-- Ադմինի լեզվական ֆայլերը՝ այդ դաշտերի պիտակները՝ `settings.storefrontContent.contactAddressFr`, `settings.storefrontContent.contactHoursFr` (յուրաքանչյուրը `label` և `hint` դաշտերով) և `settings.trackingChat.chat.tokenFr`, `admin/src/locales/<lang>/settings.json` ֆայլի յուրաքանչյուր լեզվում։
+- Backend-ը հաջորդ գործարկման ժամանակ `LanguageCodes.All`-ից ստեղծում է նոր լեզվի դատարկ տողը այս կարգավորումներից յուրաքանչյուրի համար։ `PortalSettingKeys.cs`-ում ոչինչ ավելացնել պետք չէ, միգրացիա նույնպես պետք չէ։
+- Ադմինի վահանակը նոր լեզվի ներդիրը ցույց է տալիս այս դաշտերից յուրաքանչյուրում, հենց լեզուն հայտնվում է `ContentLanguage`-ում, քանի որ `UiLocalizedField`-ը կարդում է `STOREFRONT_LOCALES`-ը։
+- Պորտալը տողը բացահայտում է թույլատրված ցանկով և կարդում է այդ լեզվի այցելուների համար (`client/utils/localizedSetting.ts`), ցանկը ընդլայնել պետք չէ։
+- `client/plugins/live-chat.ts`՝ `languageOf`-ին պետք է լեզվի այն անունը, որը ցույց է տալիս չաթի վիջեթը։
 
 Հանրային դեմոն իր նմուշային արժեքները պահում է `DemoPortalSettingsSeeder.cs` ֆայլում։ Նոր լեզուն այնտեղ ավելացրեք միայն եթե դեմոն պետք է այն ցույց տա։
 

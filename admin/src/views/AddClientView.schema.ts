@@ -45,6 +45,7 @@ const schema: FormSkeletonSchema = {
   header: {
     title: 'clients.addClient.addNewClient',
     subtitle: 'clients.addClient.createANewClientAccount',
+    crumbs: true,
     actions: 2,
     primaryAction: 1,
   },

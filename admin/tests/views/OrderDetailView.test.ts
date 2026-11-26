@@ -395,12 +395,13 @@ describe('OrderDetailView', () => {
     expect(wrapper.get('[data-testid="order-header"]').text()).toContain('ORD-0008')
   })
 
-  it('returns to the orders list with the back pill', async () => {
+  it('draws the trail above the title with a bar for the order still being read, and no back link', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
     const { wrapper } = await mountDetail()
-    const back = wrapper.get('[data-testid="order-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/orders')
-    expect(back.text()).toBe('Orders')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/orders'])
+    expect(trail.find('[data-testid="ui-page-header-crumb-current-pending"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="order-back"]').exists()).toBe(false)
   })
 })

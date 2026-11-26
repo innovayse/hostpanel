@@ -192,9 +192,9 @@ A key added to `.env.example` needs its GitLab variable before the next deploy, 
 - **Volumes.** Uploaded branding (`/app/wwwroot/uploads/branding`) and uploaded plugins
   (`/app/plugins-installed`, `Plugins:InstallPath`) are named volumes in every stack
   (`hostpanel_hostpanel_branding`, `hostpanel_hostpanel_plugins`; `hostpanel-demo_*` for the demo). A volume
-  created by an earlier root image keeps its owner: hand it over once with
-  `docker compose -f <file> run --rm --no-deps --user 0 --cap-add CHOWN --entrypoint sh hostpanel-api -c 'chown -R "$APP_UID" /app/wwwroot/uploads /app/plugins-installed'`
-  (`install.sh` does this on every run).
+  created by an earlier root image keeps its owner, so the one-shot `hostpanel-volume-init` service (the API's
+  own image, root with only `CHOWN`) hands both volumes to `APP_UID` and exits before the API starts, on every
+  `up`. Nothing is chowned by hand; a new writable volume of the API is added to that service.
 - **Secrets.** `.env.example` ships `CHANGE_ME` placeholders, never working secrets. Outside Development the
   API refuses to start while `JWT_SECRET`, `ENCRYPTION_KEY`, the database password or a configured
   `HOSTPANEL_BACKCHANNEL_LOGOUT_KEY` is a placeholder, a published example value or too short. `install.sh`

@@ -10,8 +10,7 @@
     "country": "Country",
     "region": "Region",
     "rate": "Rate",
-    "enabled": "Status",
-    "actions": "Actions"
+    "enabled": "Status"
   },
   "wholeCountry": "Whole country",
   "enabledBadge": "Enabled",

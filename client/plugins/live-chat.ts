@@ -8,6 +8,7 @@ import { PortalSettingKey } from '~/constants/portalSettingKey'
 import type { Ref } from 'vue'
 import { ChatProvider } from '~/types/chatprovider'
 import { AppLocale } from '~/types/applocale'
+import { readLocalized } from '~/composables/useLocalizedSetting'
 import {
   LIVE_CHAT_HOLDER_SELECTOR,
   buildLiveChatLoader,
@@ -44,7 +45,7 @@ const languageOf = (code: string): string => LANGUAGE_NAMES[code as AppLocale] ?
  *
  * Nothing is hard-coded, so a self-hosted install opens a chat only with its own server.
  * `portal.chat.provider` is the switch, `portal.chat.base_url` names the server and
- * `portal.chat.website_token` (with `.ru` / `.hy` overrides) identifies the storefront;
+ * `portal.chat.website_token` (with a `.<language>` row per other language) identifies the storefront;
  * with any of the three empty, no script is emitted.
  *
  * The loader is injected through `useHead` at `bodyClose` so the SDK fetch starts
@@ -71,14 +72,8 @@ export default defineNuxtPlugin({
     const baseUrl = computed(() => get(PortalSettingKey.ChatBaseUrl, 'portalChatBaseUrl'))
 
     /** The token for the current locale, falling back to the default one. */
-    const token = computed(() => {
-      const perLocale = locale.value === AppLocale.Ru
-        ? get(PortalSettingKey.ChatWebsiteTokenRu, 'portalChatWebsiteTokenRu')
-        : locale.value === AppLocale.Hy
-          ? get(PortalSettingKey.ChatWebsiteTokenHy, 'portalChatWebsiteTokenHy')
-          : ''
-      return perLocale || get(PortalSettingKey.ChatWebsiteToken, 'portalChatWebsiteToken')
-    })
+    const token = computed(() =>
+      readLocalized(get, locale.value, { key: PortalSettingKey.ChatWebsiteToken, envKey: 'portalChatWebsiteToken' }))
 
     /** True when provider, server and token are all set. */
     const configured = computed(() => enabled.value && Boolean(baseUrl.value) && Boolean(token.value))

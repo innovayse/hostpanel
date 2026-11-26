@@ -3,7 +3,6 @@
   "notifications": "Notifications",
   "notificationsWithCount": "Notifications, {count} new",
   "viewAllNotifications": "View all notifications",
-  "newCount": "{count} new | {count} new",
   "noNotifications": "No notifications",
   "help": "Help",
   "roles": {

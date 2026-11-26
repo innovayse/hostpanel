@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { useAboutText } from '~/composables/useAboutText'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { localizedSettingKey } from '~/utils/localizedSetting'
 import { loadPortalSettings, usePortalSettingsServer } from '~/tests/helpers/portalSettings'
 import { stubLocale } from '~/tests/helpers/runtimeStubs'
 
@@ -21,17 +22,24 @@ describe('useAboutText', () => {
   })
 
   it('reads the Russian story for a Russian visitor', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [PortalSettingKey.AboutTextRu]: 'Русский.' })
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [localizedSettingKey(PortalSettingKey.AboutText, 'ru')]: 'Русский.' })
     stubLocale('ru')
 
     expect(useAboutText().paragraphs.value).toEqual(['Русский.'])
   })
 
   it('reads the Armenian story for an Armenian visitor', async () => {
-    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [PortalSettingKey.AboutTextHy]: 'Հայերեն։' })
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [localizedSettingKey(PortalSettingKey.AboutText, 'hy')]: 'Հայերեն։' })
     stubLocale('hy')
 
     expect(useAboutText().paragraphs.value).toEqual(['Հայերեն։'])
+  })
+
+  it('reads the story written for a German visitor, a language the portal gained after the first three', async () => {
+    await loadPortalSettings(replies, { [PortalSettingKey.AboutText]: 'English.', [localizedSettingKey(PortalSettingKey.AboutText, 'de')]: 'Deutsch.' })
+    stubLocale('de')
+
+    expect(useAboutText().paragraphs.value).toEqual(['Deutsch.'])
   })
 
   it('falls back to the default story when the language has none', async () => {

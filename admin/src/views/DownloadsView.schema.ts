@@ -75,7 +75,7 @@ export const DOWNLOAD_CATEGORIES_TABLE: SkeletonTable = {
     { key: 'name', label: 'shared.name', size: UiColumnSize.Grow },
     { key: 'description', label: 'shared.description' },
     { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 
@@ -86,7 +86,7 @@ export const DOWNLOAD_FILES_TABLE: SkeletonTable = {
     { key: 'description', label: 'shared.description' },
     { key: 'downloads', label: 'support.downloads.downloads', numeric: true, size: UiColumnSize.Compact },
     { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

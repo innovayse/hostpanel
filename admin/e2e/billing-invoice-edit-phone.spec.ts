@@ -41,7 +41,6 @@ test('the invoice lines are editable cards on a phone', async ({ page }) => {
   })
 
   await page.goto(`/billing/invoices/${stored.id}/edit`)
-  await page.getByTestId('billing-invoice-tab-options').click()
 
   // Select-all is still reachable, and it ticks the checkbox of every card.
   const selectAll = page.getByTestId('billing-invoice-items-select-all')

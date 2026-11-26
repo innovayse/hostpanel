@@ -3,7 +3,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Icon } from '@/lib/icons'
-import { actionIcons, resolveActionIcon, UiActionKind } from '@/utils/ui/actions'
+import { actionIcons, resolveActionIcon, resolveActionVariant, UiActionKind } from '@/utils/ui/actions'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 describe('actionIcons', () => {
   it('gives every kind an icon', () => {
@@ -12,8 +13,10 @@ describe('actionIcons', () => {
 
   it('draws the common actions the same way everywhere', () => {
     expect(actionIcons[UiActionKind.Save]).toBe(Icon.Check)
+    expect(actionIcons[UiActionKind.Previous]).toBe(Icon.ArrowLeft)
     expect(actionIcons[UiActionKind.Delete]).toBe(Icon.Trash)
     expect(actionIcons[UiActionKind.Add]).toBe(Icon.Add)
+    expect(actionIcons[UiActionKind.AddRow]).toBe(Icon.Add)
     expect(actionIcons[UiActionKind.Edit]).toBe(Icon.Edit)
     expect(actionIcons[UiActionKind.Print]).toBe(Icon.Printer)
     expect(actionIcons[UiActionKind.Generate]).toBe(Icon.Play)
@@ -31,5 +34,19 @@ describe('resolveActionIcon', () => {
 
   it('answers nothing when the control names neither', () => {
     expect(resolveActionIcon(undefined, undefined)).toBeUndefined()
+  })
+})
+
+describe('resolveActionVariant', () => {
+  it('always draws a create action primary, whatever look was asked for', () => {
+    expect(resolveActionVariant(UiButtonVariant.Secondary, UiActionKind.Add)).toBe(UiButtonVariant.Primary)
+    expect(resolveActionVariant(UiButtonVariant.Link, UiActionKind.Add)).toBe(UiButtonVariant.Primary)
+    expect(resolveActionVariant(UiButtonVariant.Primary, UiActionKind.Add)).toBe(UiButtonVariant.Primary)
+  })
+
+  it('keeps the asked look for every other action, an added row included', () => {
+    expect(resolveActionVariant(UiButtonVariant.Secondary, UiActionKind.AddRow)).toBe(UiButtonVariant.Secondary)
+    expect(resolveActionVariant(UiButtonVariant.Danger, UiActionKind.Delete)).toBe(UiButtonVariant.Danger)
+    expect(resolveActionVariant(UiButtonVariant.Ghost, undefined)).toBe(UiButtonVariant.Ghost)
   })
 })

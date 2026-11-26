@@ -9,10 +9,22 @@
  * @module constants/publicPortalSettingKeys
  */
 
+import { localizedSettingKeys } from '~/utils/localizedSetting'
 import { PortalSettingKey } from './portalSettingKey'
 
+/**
+ * The public settings that are written once per language. Each is public in every portal language, so the
+ * list below carries the key of each language's row, named by `localizedSettingKeys`, not a literal per language.
+ */
+const LOCALIZED_PUBLIC_SETTINGS: readonly PortalSettingKey[] = [
+  PortalSettingKey.ChatWebsiteToken,
+  PortalSettingKey.AboutText,
+  PortalSettingKey.ContactAddress,
+  PortalSettingKey.ContactHours
+]
+
 /** The only setting keys `GET /api/portal/public/settings` will ever return. */
-export const PUBLIC_PORTAL_SETTING_KEYS: readonly PortalSettingKey[] = [
+export const PUBLIC_PORTAL_SETTING_KEYS: readonly string[] = [
   PortalSettingKey.Template,
   PortalSettingKey.SiteName,
   PortalSettingKey.SiteTagline,
@@ -28,20 +40,11 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly PortalSettingKey[] = [
   PortalSettingKey.BrandFontBody,
   PortalSettingKey.AnalyticsGtmId,
   PortalSettingKey.ChatBaseUrl,
-  PortalSettingKey.ChatWebsiteToken,
-  PortalSettingKey.ChatWebsiteTokenRu,
-  PortalSettingKey.ChatWebsiteTokenHy,
   PortalSettingKey.ChatProvider,
   PortalSettingKey.ContactWhatsapp,
   PortalSettingKey.ContactTelegram,
   PortalSettingKey.ContactEmail,
   PortalSettingKey.ContactPhone,
-  PortalSettingKey.ContactAddress,
-  PortalSettingKey.ContactHours,
-  PortalSettingKey.ContactAddressRu,
-  PortalSettingKey.ContactAddressHy,
-  PortalSettingKey.ContactHoursRu,
-  PortalSettingKey.ContactHoursHy,
   PortalSettingKey.ContactTimezone,
   PortalSettingKey.ContactMapUrl,
   PortalSettingKey.NewsletterActionUrl,
@@ -71,9 +74,6 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly PortalSettingKey[] = [
   PortalSettingKey.FeaturesFirewall,
   PortalSettingKey.FeaturesMalware,
   PortalSettingKey.MigrationFree,
-  PortalSettingKey.AboutText,
-  PortalSettingKey.AboutTextRu,
-  PortalSettingKey.AboutTextHy,
   PortalSettingKey.SectionStats,
   PortalSettingKey.SectionPartners,
   PortalSettingKey.SectionServices,
@@ -105,5 +105,6 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly PortalSettingKey[] = [
   PortalSettingKey.SupportResponseChat,
   PortalSettingKey.SupportResponseTicket,
   PortalSettingKey.SupportResponseEmail,
-  PortalSettingKey.SupportResponsePhone
+  PortalSettingKey.SupportResponsePhone,
+  ...LOCALIZED_PUBLIC_SETTINGS.flatMap(localizedSettingKeys)
 ]

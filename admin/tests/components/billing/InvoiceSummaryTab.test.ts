@@ -38,8 +38,8 @@ describe('InvoiceSummaryTab', () => {
       },
     })
 
-    expect(wrapper.get('[data-testid="billing-invoice-fact-amount"]').text()).toContain('24000.00 AMD')
-    expect(wrapper.get('[data-testid="billing-invoice-fact-balance"]').text()).toContain('24000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-fact-amount"]').text()).toContain('24,000.00 AMD')
+    expect(wrapper.get('[data-testid="billing-invoice-fact-balance"]').text()).toContain('24,000.00 AMD')
   })
 
   it('shows no balance for a paid invoice settled without a payment row of its own', () => {
@@ -143,7 +143,7 @@ describe('InvoiceSummaryTab', () => {
     await flushPromises()
 
     const body = wrapper.get('[data-testid="dialog-body"]').text()
-    expect(body).toContain('24000.00 AMD')
+    expect(body).toContain('24,000.00 AMD')
     expect(body).not.toContain('$')
   })
 })

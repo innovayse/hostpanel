@@ -4,7 +4,8 @@
  *
  * The optional `icon` slot sits in a round frosted tile above the title; the optional `actions`
  * slot below the description holds the call to action. Both are left out of the layout when not
- * given, so a bare title and description do not carry empty gaps. `compact` trims the vertical padding and the
+ * given, so a bare title and description do not carry empty gaps. The block carries its own side padding, so a long sentence
+ * never touches the edge of the card it stands in. `compact` trims the vertical padding and the
  * icon tile, for a block that stands inside a screen beside other content instead of filling it.
  */
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -25,7 +26,7 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center gap-3 text-center" :class="compact ? 'py-6' : 'py-12'">
+  <div class="flex flex-col items-center justify-center gap-3 px-4 text-center" :class="compact ? 'py-6' : 'py-12'">
     <div
       v-if="$slots.icon"
       class="flex items-center justify-center rounded-full border border-border bg-surface-hover text-text-accent"

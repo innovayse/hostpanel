@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import type { Contact } from '@/types/contact'
 import type { ContactNotifications } from '@/types/contactnotifications'
 import { useGeoOptions } from '@/composables/useGeoOptions'
+import { CONTACT_TYPE_OPTIONS } from '@/lib/constants'
 import { ContactType } from '@/types/contact'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -120,13 +121,6 @@ const { countryOptions, resolvePhoneCode, parsePhone } = useGeoOptions()
 
 /** Resolves the selected country's phone code for the payload. */
 const selectedPhoneCode = computed(() => resolvePhoneCode(phoneCountry.value))
-
-/** Contact type options. */
-const contactTypeOptions = [
-  { value: ContactType.Billing, label: t('nav.billing') },
-  { value: ContactType.Technical, label: t('clients.contactForm.technical') },
-  { value: ContactType.General, label: t('nav.settingsChildren.general') },
-]
 
 /**
  * Validates required fields.
@@ -311,7 +305,7 @@ onMounted(() => {
             />
           </UiField>
           <UiField :label="t('clients.contactForm.contactType')">
-            <UiSelect v-model="contactType" :options="contactTypeOptions" :placeholder="t('clients.contactForm.contactType')" data-testid="clients-contact-type" />
+            <UiSelect v-model="contactType" :options="CONTACT_TYPE_OPTIONS" :placeholder="t('clients.contactForm.contactType')" data-testid="clients-contact-type" />
           </UiField>
         </UiStack>
 

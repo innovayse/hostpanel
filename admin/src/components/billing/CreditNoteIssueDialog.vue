@@ -257,7 +257,7 @@ const submit = (): void => {
             {{ t('shared.remove') }}
           </UiButton>
         </UiGrid>
-        <UiButton :action="UiActionKind.Add" :size="UiSize.Sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-add-line" @click="addLine">
+        <UiButton :action="UiActionKind.AddRow" :size="UiSize.Sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-add-line" @click="addLine">
           {{ t('billing.creditNotes.addLine') }}
         </UiButton>
       </UiStack>

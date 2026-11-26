@@ -47,13 +47,15 @@ public sealed class UploadBrandingImageHandler
     /// <returns>
     /// The primary URL to save into the setting and every file written, or
     /// <c>BRANDING_IMAGE_INVALID</c> when the bytes are not an acceptable image, or
-    /// <c>BRANDING_IMAGE_TOO_LARGE</c> when the image is over a ceiling this deployment enforces.
+    /// <c>BRANDING_IMAGE_TOO_LARGE</c> when the file is over the byte ceiling, or
+    /// <c>BRANDING_IMAGE_DIMENSIONS_TOO_LARGE</c> (with its declared size) when the image is over a pixel ceiling, or
+    /// <c>STORAGE_NOT_WRITABLE</c> when the upload folder refuses the write.
     /// </returns>
     public async Task<Result<BrandingUploadResultDto>> HandleAsync(
         UploadBrandingImageCommand command,
         CancellationToken ct)
     {
-        // 400 (BRANDING_IMAGE_INVALID) or 413 (BRANDING_IMAGE_TOO_LARGE): the processor logs the
+        // 400 (BRANDING_IMAGE_INVALID) or 413 (BRANDING_IMAGE_TOO_LARGE, BRANDING_IMAGE_DIMENSIONS_TOO_LARGE): the processor logs the
         // precise cause, which signature failed, which ceiling was hit, and keeps it out of
         // the body, so probing the endpoint teaches nothing about the checks it runs. The stream
         // is handed over unread: the processor owns the byte ceiling and reads no further than it.
@@ -61,13 +63,18 @@ public sealed class UploadBrandingImageHandler
         var rendered = await _processor.RenderAsync(source, command.Kind, ct);
         if (rendered.IsFailure)
         {
-            return Result<BrandingUploadResultDto>.FailureCode(rendered.ErrorCode!);
+            return Result<BrandingUploadResultDto>.FailureFrom(rendered);
         }
 
-        var assets = await _storage.SaveAsync(command.Kind, rendered.Value!, ct);
+        var stored = await _storage.SaveAsync(command.Kind, rendered.Value!, ct);
+        if (stored.IsFailure)
+        {
+            return Result<BrandingUploadResultDto>.FailureFrom(stored);
+        }
 
         // The processor's contract guarantees exactly one Primary, and the storage contract
         // guarantees the order is preserved, so this is a lookup, not a search that might fail.
+        var assets = stored.Value!;
         var primary = assets.First(a => a.Role == BrandingRole.Primary);
 
         return Result<BrandingUploadResultDto>.Success(new BrandingUploadResultDto(primary.Url, assets));

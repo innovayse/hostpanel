@@ -186,3 +186,12 @@ describe('UiPhoneInput', () => {
     expect(html).not.toContain('http')
   })
 })
+
+describe('UiPhoneInput field look', () => {
+  it('draws the number field from the kit field tokens, joined to the picker', () => {
+    const classes = mountPhone().get('[data-testid="phone-number-input"]').classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['bg-surface-field', 'border-border-control', 'rounded-r-control', 'border-l-0', 'h-10.5']))
+    expect(classes).not.toContain('border-border')
+  })
+})

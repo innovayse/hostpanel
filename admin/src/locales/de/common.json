@@ -3,7 +3,6 @@
   "notifications": "Benachrichtigungen",
   "notificationsWithCount": "Benachrichtigungen, {count} neu",
   "viewAllNotifications": "Alle Benachrichtigungen anzeigen",
-  "newCount": "{count} neu | {count} neu",
   "noNotifications": "Keine Benachrichtigungen",
   "help": "Hilfe",
   "roles": {

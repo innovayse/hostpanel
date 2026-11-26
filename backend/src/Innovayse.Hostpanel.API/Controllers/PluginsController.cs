@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.PurgePluginData;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RestartPluginHost;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RetryRegistryInstance;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.SaveRegistryPluginLicence;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
@@ -23,9 +24,8 @@ using Wolverine;
 namespace Innovayse.Hostpanel.API.Controllers;
 
 /// <summary>
-/// Staff administration of installable provider plugins. Every write answers
-/// <c>requiresRestart: true</c>; the client must call <see cref="Restart"/> before changes take
-/// effect.
+/// Staff administration of installable provider plugins. A write answers <c>requiresRestart: true</c> when the running
+/// process could not apply the change itself; the client then calls <see cref="RestartAsync"/> before it takes effect.
 /// </summary>
 [Route("api/admin/plugins")]
 [Authorize(Policy = Policies.Admin)]
@@ -35,16 +35,11 @@ public sealed class PluginsController : BaseApiController
     /// <summary>Wolverine bus every action dispatches through.</summary>
     private readonly IMessageBus _bus;
 
-    /// <summary>Host lifetime used to trigger a graceful restart after a plugin change.</summary>
-    private readonly IHostApplicationLifetime _lifetime;
-
     /// <summary>Creates the controller.</summary>
     /// <param name="bus">Wolverine bus every action dispatches through.</param>
-    /// <param name="lifetime">Host lifetime used to trigger a graceful restart after a plugin change.</param>
-    public PluginsController(IMessageBus bus, IHostApplicationLifetime lifetime)
+    public PluginsController(IMessageBus bus)
     {
         _bus = bus;
-        _lifetime = lifetime;
     }
 
     /// <summary>
@@ -136,7 +131,7 @@ public sealed class PluginsController : BaseApiController
     /// <param name="force">Query flag: <see langword="true"/> accepts a version older than the installed one.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>requiresRestart: true</c> on success (and <c>stagedVersion</c> when the upload is an upgrade or a forced
+    /// 200 with <c>requiresRestart: true</c> on success, or <c>reloaded: true</c> when the running process applied an upgrade itself (and <c>stagedVersion</c> when the upload is an upgrade or a forced
     /// downgrade waiting for the restart); 400 with <c>VALIDATION_ERROR</c> (no file),
     /// <c>PLUGIN_MANIFEST_INVALID</c>, <c>PLUGIN_SDK_VERSION_UNSUPPORTED</c>,
     /// <c>PLUGIN_ID_INVALID</c>, <c>PLUGIN_ARCHIVE_UNSAFE</c>, <c>PLUGIN_ARCHIVE_UNWRITABLE</c>, <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c> or
@@ -340,7 +335,7 @@ public sealed class PluginsController : BaseApiController
     /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>requiresRestart: true</c> (and <c>stagedVersion</c> for an upgrade or a downgrade); 400 with
+    /// 200 with <c>requiresRestart: true</c> (or <c>reloaded: true</c> when the running process applied an upgrade itself) (and <c>stagedVersion</c> for an upgrade or a downgrade); 400 with
     /// <c>VALIDATION_ERROR</c> for an id or version of the wrong shape, or with a package rule (<c>PLUGIN_MANIFEST_INVALID</c>,
     /// <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_INVALID</c> and the other install refusals); 401 without a session; 403
     /// for a caller who is not an administrator or with <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines
@@ -378,7 +373,7 @@ public sealed class PluginsController : BaseApiController
     /// <param name="id">Plugin identifier as declared in <c>plugin.json</c>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>requiresRestart: true</c> when the files were removed, or <c>requiresRestart: false</c> when they were
+    /// 200 with <c>requiresRestart: true</c> when the files were removed (<c>reloaded: true</c> when the plugin was also unloaded from the running process), or <c>requiresRestart: false</c> when they were
     /// already gone; 400 with <c>VALIDATION_ERROR</c> or <c>PLUGIN_ID_INVALID</c>; 401 without a session; 403 for a caller
     /// who is not an administrator; 404 with <c>PLUGIN_NOT_FOUND</c> when no files are left and the plugin was never
     /// switched on here; 409 with <c>PLUGIN_BUILT_IN</c> for a plugin shipped with the build; 429 when the rate limit is
@@ -423,21 +418,22 @@ public sealed class PluginsController : BaseApiController
     }
 
     /// <summary>
-    /// Triggers a graceful application restart so newly installed or removed plugins take effect.
-    /// The process manager (systemd, Docker restart policy) brings the process back up. Not a use
-    /// case of its own: there is no state to load or save, only the host's own shutdown.
+    /// Restarts the host so the plugin changes that could not be applied in the running process take effect: it stops taking
+    /// new requests, lets the running ones finish within the drain time (<c>Plugins:DrainSeconds</c>) and exits, and the
+    /// container's restart policy starts it again. The restart is written to the activity log before the host starts to stop.
     /// </summary>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 202 with no body; 401 without a session; 403 for a caller who is not an administrator;
-    /// 429 when the rate limit is hit.
+    /// 202 with no body once the stop has started; 401 without a session; 403 for a caller who is not an administrator or on
+    /// the public demo; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("restart")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public IActionResult Restart()
+    public async Task<IActionResult> RestartAsync(CancellationToken ct)
     {
-        _lifetime.StopApplication();
-        return AcceptedResult(Result.Success());
+        var outcome = await _bus.InvokeAsync<Result>(new RestartPluginHostCommand(), ct);
+        return AcceptedResult(outcome);
     }
 }

@@ -67,6 +67,29 @@ describe('InvoiceCreditNotesTab', () => {
     expect(wrapper.get('[data-testid="billing-invoice-credit-note-blocked"]').text()).toContain(sentence)
   })
 
+  it('gives the creditable card its own padding and a row-height issue button', async () => {
+    stubRoutes({ 'GET /api/billing/credit-notes': () => json(creditNotePage([])) })
+    const wrapper = await mountTab()
+
+    expect(wrapper.get('[data-testid="billing-invoice-creditable"]').element.closest('.glass')?.classList.contains('p-5')).toBe(true)
+    expect(wrapper.get('[data-testid="billing-invoice-credit-note-issue"]').classes()).toContain('h-8')
+  })
+
+  it('keeps the issue button on and shows no reason when a note can be issued', async () => {
+    stubRoutes({ 'GET /api/billing/credit-notes': () => json(creditNotePage([])) })
+    const wrapper = await mountTab()
+
+    expect(wrapper.get('[data-testid="billing-invoice-credit-note-issue"]').attributes('disabled')).toBeUndefined()
+    expect(wrapper.find('[data-testid="billing-invoice-credit-note-blocked"]').exists()).toBe(false)
+  })
+
+  it('shows the shared empty state when the invoice has no notes', async () => {
+    stubRoutes({ 'GET /api/billing/credit-notes': () => json(creditNotePage([])) })
+    const wrapper = await mountTab()
+
+    expect(wrapper.get('[data-testid="ui-table-empty"]').text()).toContain('No credit notes were issued against this invoice.')
+  })
+
   it('issues a note, closes the form, confirms in the tab and reloads the notes and the invoice', async () => {
     const mock = stubRoutes({
       'POST /api/billing/1/credit-notes': () => json(3, 201),

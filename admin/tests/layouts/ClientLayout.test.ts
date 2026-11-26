@@ -7,6 +7,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import ClientLayout from '@/layouts/ClientLayout.vue'
+import { usePageTitleStore } from '@/stores/pageTitle'
 import { mountClientView } from '../helpers/clientViews'
 import { createTestI18n } from '../helpers/i18n'
 import { stubPathRoutes } from '../helpers/routes'
@@ -117,14 +118,39 @@ describe('ClientLayout', () => {
     expect(wrapper.get('[data-testid="client-tab-summary"]').attributes('aria-selected')).toBe('true')
   })
 
-  it('returns to the clients list with the back pill on a row of its own above the identity row', async () => {
+  it('draws no back link of its own: the way up is the trail of the page below and the top bar', async () => {
     const wrapper = await mountLoaded()
-    const back = wrapper.get('[data-testid="client-layout-back"]')
 
-    expect(back.attributes('href')).toBe('/clients')
-    expect(back.text()).toBe('Clients')
-    const identityRow = back.element.nextElementSibling
-    expect(identityRow?.contains(wrapper.get('[data-testid="client-layout-avatar"]').element)).toBe(true)
-    expect(identityRow?.contains(back.element)).toBe(false)
+    expect(wrapper.find('[data-testid="client-layout-back"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="client-layout-header"]').find('a').exists()).toBe(false)
+  })
+
+  it('draws the trail of a section page above the card: clients, the client, then the section itself', async () => {
+    const wrapper = await mountLoaded()
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
+
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/clients', '/clients/5'])
+    expect(trail.text()).toContain('Ada Lovelace')
+    expect(trail.get('[data-testid="client-layout-crumb-current"]').text()).toBe(wrapper.get('[data-testid="client-tab-summary"]').text())
+    expect(trail.element.compareDocumentPosition(wrapper.get('[data-testid="client-layout-header"]').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('tells the top bar it draws the trail, and leaves its own out once a page header draws a longer one', async () => {
+    const wrapper = await mountLoaded()
+    const store = usePageTitleStore()
+    expect(store.ownsTrail).toBe(true)
+
+    store.announce(Symbol('header'), 'Domain', true)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(store.ownsTrail).toBe(true)
+  })
+
+  it('draws no trail when the client could not be read', async () => {
+    const wrapper = await mountClientView(ClientLayout)
+
+    expect(wrapper.find('[data-testid="ui-breadcrumb"]').exists()).toBe(false)
+    expect(usePageTitleStore().ownsTrail).toBe(false)
   })
 })

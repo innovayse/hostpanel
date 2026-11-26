@@ -17,6 +17,7 @@ import { stubRoutes } from '../helpers/routes'
 import { renderedCaptions, schemaCaptions } from '../helpers/schemaTable'
 import { useToastStore } from '@/stores/toast'
 import { toastMessages } from '../helpers/toasts'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** The address the screen is registered under. */
 const PATH = '/settings/tax-rules'
@@ -94,11 +95,11 @@ describe('TaxRulesView', () => {
     expect(first).toContain('Germany')
     expect(first).toContain('Whole country')
     expect(first).toContain('19%')
-    expect(wrapper.get('[data-testid="tax-rule-row-1"] [role="img"]').attributes('aria-label')).toBe('Enabled')
+    expect(wrapper.get('[data-testid="tax-rule-row-1"]').getComponent(UiStatusBadge).text()).toBe('Enabled')
     const second = wrapper.get('[data-testid="tax-rule-row-2"]').text()
     expect(second).toContain('Bavaria')
     expect(second).toContain('7.5%')
-    expect(wrapper.get('[data-testid="tax-rule-row-2"] [role="img"]').attributes('aria-label')).toBe('Disabled')
+    expect(wrapper.get('[data-testid="tax-rule-row-2"]').getComponent(UiStatusBadge).text()).toBe('Disabled')
     expect(wrapper.findAll('th').find((header) => header.text() === 'Name')?.classes()).toEqual(expect.arrayContaining(['w-[28%]', 'max-w-0', 'truncate']))
   })
 

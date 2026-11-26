@@ -9,6 +9,9 @@
  * without a drag.
  */
 import { ref } from 'vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import { Icon } from '@/lib/icons'
+import { UiSize } from '@/utils/ui/size'
 import { useI18n } from 'vue-i18n'
 import UiFileInput from '@/components/ui/UiFileInput.vue'
 import UiLoader from '@/components/ui/UiLoader.vue'
@@ -77,7 +80,7 @@ const onDrop = (event: DragEvent): void => {
     class="flex w-full cursor-pointer flex-col has-focus-visible:border-text-accent has-focus-visible:ring-2 has-focus-visible:ring-text-accent/40 items-center justify-center rounded-control border-2 border-dashed transition-colors"
     :class="[
       compact ? 'h-20' : 'h-24',
-      dragging ? 'border-text-accent bg-tint-blue' : 'border-border bg-surface-field hover:border-text-accent/50 hover:bg-surface-hover',
+      dragging ? 'border-text-accent bg-tint-blue' : 'border-border-control bg-surface-field hover:border-text-accent/50 hover:bg-surface-hover',
     ]"
     @dragover.prevent="dragging = true"
     @dragleave.prevent="dragging = false"
@@ -85,9 +88,7 @@ const onDrop = (event: DragEvent): void => {
   >
     <UiLoader v-if="uploading" />
     <span v-else class="flex flex-col items-center gap-1">
-      <svg class="h-5 w-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-      </svg>
+      <UiIcon :markup="Icon.Upload" :size="UiSize.Lg" class="text-text-secondary" />
       <span class="text-[0.8125rem] text-text-secondary">
         {{ t('ui.uploadZone.dropOr') }} <span class="text-text-accent font-medium">{{ t('ui.uploadZone.browse') }}</span>
       </span>

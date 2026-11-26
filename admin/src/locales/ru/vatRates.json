@@ -9,8 +9,7 @@
     "country": "Страна",
     "kind": "Вид",
     "rate": "Ставка",
-    "validFrom": "Действует с",
-    "actions": "Действия"
+    "validFrom": "Действует с"
   },
   "kind": {
     "Standard": "Стандартная",

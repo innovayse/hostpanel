@@ -97,7 +97,7 @@ export const MANAGEMENT_COLUMNS: readonly (readonly SkeletonDetailCard[])[] = [
 /** What the client domain screen is made of, as it opens (on the details tab). */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { actions: 2, primaryAction: 1 },
+  header: { crumbs: true, actions: 2, primaryAction: 1 },
   columns: DETAILS_COLUMNS,
 }
 

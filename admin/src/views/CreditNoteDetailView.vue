@@ -13,7 +13,6 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import CreditNoteStatusBadge from '@/components/billing/CreditNoteStatusBadge.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiDetailCards from '@/components/ui/UiDetailCards.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -26,9 +25,12 @@ import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import UiTableTotals from '@/components/ui/UiTableTotals.vue'
+import type { UiTotalRow } from '@/components/ui/UiTableTotals.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { formatDateTime } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
@@ -36,16 +38,17 @@ import { useCreditNotesStore } from '@/stores/creditNotes'
 import { CreditNoteMethod, CreditNoteStatus } from '@/types/creditnote'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { saveBlob } from '@/utils/saveBlob'
-import { UiCardPadding } from '@/utils/ui/card'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiGap } from '@/utils/ui/layout'
-import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import schema from '@/views/CreditNoteDetailView.schema'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Billing, Credit notes, the credit note. */
+const { crumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
@@ -68,6 +71,9 @@ const noteId = computed<string>(() => route.params.id as string)
 /** The note on screen; null until loaded. */
 const note = computed(() => store.detail?.note ?? null)
 
+/** The credit note's heading and the last step of its trail; absent while the note is being read. */
+const noteTitle = computed<string | undefined>(() => (note.value === null ? undefined : t('billing.creditNotes.detailTitle', { number: note.value.number ?? `#${note.value.id}` })))
+
 /** The lines on screen. */
 const items = computed(() => store.detail?.items ?? [])
 
@@ -76,6 +82,19 @@ const detailColumns = schema.columns.map((column) => column.filter((card) => car
 
 /** The columns of the lines table, taken from the schema's lines card: the one source of their captions, widths and alignment. */
 const itemColumns = schema.columns.flat().find((card) => card.key === 'items')?.table?.columns ?? []
+
+/** The totals under the lines: sub-total, tax at the note's rate and the total credited. */
+const totalRows = computed<UiTotalRow[]>(() => {
+  if (note.value === null) {
+    return []
+  }
+  const { currency } = note.value
+  return [
+    { key: 'subtotal', label: t('billing.creditNotes.subTotal'), value: formatPlainAmount(note.value.subTotal, currency) },
+    { key: 'tax', label: t('billing.creditNotes.taxAt', { rate: note.value.taxRate }), value: formatPlainAmount(note.value.tax, currency) },
+    { key: 'total', label: t('billing.creditNotes.total'), value: formatPlainAmount(note.value.total, currency), strong: true, testid: 'billing-credit-note-total' },
+  ]
+})
 
 /** The sentence of the last refused load, shown with Retry; null when the note loaded. */
 const loadError = ref<string | null>(null)
@@ -153,7 +172,8 @@ onMounted(load)
 
     <template v-else>
       <UiPageHeader :actions="headerActions"
-        :title="note === null ? undefined : t('billing.creditNotes.detailTitle', { number: note.number ?? `#${note.id}` })"
+        :title="noteTitle"
+        :crumbs="crumbs(noteTitle)"
         :subtitle="note?.reason"
         :loading="note === null"
         :subtitle-loading="note === null"
@@ -205,17 +225,8 @@ onMounted(load)
             </UiTableRow>
           </template>
         </UiTableBody>
+        <UiTableTotals v-if="note !== null" :rows="totalRows" />
       </UiDataTable>
-
-      <UiCard v-if="note !== null" :padding="UiCardPadding.Md">
-        <UiStack :gap="UiGap.Xs" data-testid="billing-credit-note-totals">
-          <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(note.subTotal, note.currency) }}</UiText>
-          <UiText>{{ t('billing.creditNotes.taxAt', { rate: note.taxRate }) }}: {{ formatPlainAmount(note.tax, note.currency) }}</UiText>
-          <UiText :tone="UiTextTone.Primary" data-testid="billing-credit-note-total">
-            {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(note.total, note.currency) }}
-          </UiText>
-        </UiStack>
-      </UiCard>
     </template>
 
     <UiDialog

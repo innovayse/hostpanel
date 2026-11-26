@@ -1,10 +1,3 @@
-using Hostpanel.Sdk.Plugins.Endpoints;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Fulfilment;
-using Hostpanel.Sdk.Plugins.Hosting;
-using Hostpanel.Sdk.Plugins.Identity;
-using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -22,75 +15,42 @@ using PluginSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
 /// <summary>
-/// <see cref="PluginLoader"/> registers each plugin under the SDK contract of the type its manifest declares,
-/// the fulfilment, identity, hosted and app types included. No container or database: the registration is checked
-/// on a bare service collection.
+/// <see cref="PluginLoader"/> loads each plugin into a load context of its own and keeps its type only in the registry, so the
+/// service collection holds nothing that would keep a plugin version from being unloaded. No container or database: the
+/// registration is checked on a bare service collection.
 /// </summary>
 public sealed class PluginLoaderTests
 {
-    /// <summary>A plugin is registered as a keyed scoped service of its type's contract, keyed by its id.</summary>
-    /// <param name="type">The plugin type the manifest declares.</param>
-    /// <param name="contract">The SDK contract that type is registered under.</param>
-    /// <param name="implementation">The plugin's entry point type.</param>
-    [Theory]
-    [InlineData(PluginType.Payment, typeof(IPaymentPlugin), typeof(ConfigurationCapturingPaymentPlugin))]
-    [InlineData(PluginType.Fulfilment, typeof(IFulfilmentPlugin), typeof(ConfigurationCapturingFulfilmentPlugin))]
-    [InlineData(PluginType.Identity, typeof(IClientResolver), typeof(ConfigurationCapturingClientResolver))]
-    [InlineData(PluginType.Hosted, typeof(IHostedPlugin), typeof(RecordingHostedPlugin))]
-    [InlineData(PluginType.App, typeof(IPluginEndpoints), typeof(EchoAppPlugin))]
-    public void RegisterPluginType_RegistersTheContractOfTheDeclaredType(PluginType type, Type contract, Type implementation)
-    {
-        var services = new ServiceCollection();
-        var plugin = PluginActivationTestSeeds.Plugin(PluginActivationTestSeeds.NewId("loaded"), type, implementation);
-
-        PluginLoader.RegisterPluginType(services, plugin.Manifest, implementation, NullLogger.Instance);
-
-        // The loader also registers the plugin's named HTTP client; only the keyed plugin registrations are under test.
-        var descriptor = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, plugin.Manifest.Id)).Should().ContainSingle().Subject;
-        descriptor.IsKeyedService.Should().BeTrue();
-        descriptor.ServiceKey.Should().Be(plugin.Manifest.Id);
-        descriptor.ServiceType.Should().Be(contract);
-        descriptor.KeyedImplementationType.Should().Be(implementation);
-        descriptor.Lifetime.Should().Be(ServiceLifetime.Scoped);
-    }
-
     /// <summary>
-    /// A plugin of a non-app type that lists the <c>endpoints</c> capability is registered under its own contract and also
-    /// under the endpoints contract; without the capability only under its own.
+    /// A loaded plugin leaves its named HTTP client in the service collection and no service that refers to one of its types,
+    /// which is what lets its load context be unloaded.
     /// </summary>
-    /// <param name="declaresEndpoints">Whether the manifest lists the capability.</param>
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void RegisterPluginType_RegistersEndpointsForANonAppPluginOnlyWhenItDeclaresTheCapability(bool declaresEndpoints)
+    [Fact]
+    public void DiscoverAndRegister_KeepsNoPluginTypeInTheServiceCollection()
     {
-        var services = new ServiceCollection();
-        var id = PluginActivationTestSeeds.NewId("pay");
-        var manifest = new PluginManifest
+        var root = Path.Combine(Path.GetTempPath(), $"loader-no-types-{Guid.NewGuid():N}");
+        try
         {
-            Id = id,
-            Name = "Test plugin",
-            Version = "1.0.0",
-            Author = "Tests",
-            Description = "Plugin used by the plugin runtime tests.",
-            Type = PluginType.Payment,
-            Category = "Payment",
-            EntryPoint = typeof(ConfigurationCapturingPaymentPlugin).FullName!,
-            SdkVersion = "1.0.0",
-            Capabilities = declaresEndpoints ? [PluginCapabilities.Endpoints] : [],
-        };
+            WriteAppPlugin(root, "typed-plugin");
+            var services = new ServiceCollection();
 
-        PluginLoader.RegisterPluginType(services, manifest, typeof(ConfigurationCapturingPaymentPlugin), NullLogger.Instance);
+            PluginLoader.DiscoverAndRegister(
+                services,
+                [new PluginRoot(root, PluginOrigin.Uploaded)],
+                PluginSigningTestSeeds.Verifier(enforced: false),
+                allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
+                NullLoggerFactory.Instance);
 
-        var keyed = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, id)).Select(d => d.ServiceType).ToList();
-        keyed.Should().Contain(typeof(IPaymentPlugin));
-        if (declaresEndpoints)
-        {
-            keyed.Should().Contain(typeof(IPluginEndpoints));
+            var plugin = services.BuildServiceProvider().GetRequiredService<PluginRegistry>().Find("typed-plugin")!;
+            services.Should().NotContain(d => d.IsKeyedService && Equals(d.ServiceKey, "typed-plugin"));
+            services.Where(d => !d.IsKeyedService).Should().NotContain(d => d.ImplementationType == plugin.ImplementationType
+                || (d.ImplementationInstance != null && d.ImplementationInstance.GetType().Assembly == plugin.ImplementationType.Assembly));
+            plugin.LoadContext!.IsCollectible.Should().BeTrue();
         }
-        else
+        finally
         {
-            keyed.Should().NotContain(typeof(IPluginEndpoints));
+            Directory.Delete(root, recursive: true);
         }
     }
 
@@ -285,27 +245,6 @@ public sealed class PluginLoaderTests
     {
         PluginPackageErrors.CodeFor(PluginManifestRule.EndpointsNotImplemented)
             .Should().Be(HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_IMPLEMENTED);
-    }
-
-    /// <summary>
-    /// A non-app plugin declaring the endpoints capability is registered under its type's contract and under
-    /// <see cref="IPluginEndpoints"/>, keyed by its id, so the route door and its fulfilment calls reach one class (#818).
-    /// </summary>
-    [Fact]
-    public void RegisterPluginType_FulfilmentWithEndpointsCapability_AlsoRegistersEndpoints()
-    {
-        var services = new ServiceCollection();
-        var plugin = PluginCapabilitySeeds.Plugin(
-            PluginActivationTestSeeds.NewId("sell"), PluginType.Fulfilment, typeof(FulfilmentEndpointsPlugin), PluginCapabilities.Endpoints);
-
-        PluginLoader.RegisterPluginType(services, plugin.Manifest, typeof(FulfilmentEndpointsPlugin), NullLogger.Instance);
-
-        // The plugin's named HTTP client adds keyed resilience pipelines; only the plugin id keys are under test.
-        var keyed = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, plugin.Manifest.Id)).ToList();
-        keyed.Select(d => d.ServiceType).Should().BeEquivalentTo([typeof(IFulfilmentPlugin), typeof(IPluginEndpoints)]);
-        keyed.Should().OnlyContain(d => Equals(d.ServiceKey, plugin.Manifest.Id)
-            && d.KeyedImplementationType == typeof(FulfilmentEndpointsPlugin)
-            && d.Lifetime == ServiceLifetime.Scoped);
     }
 
     /// <summary>

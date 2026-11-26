@@ -42,17 +42,25 @@ describe('breadcrumbOf', () => {
   it('adds a step for a form below a page, from the route pattern', () => {
     expect(trail('/settings/slides/create')).toEqual(['Settings', 'Slides', 'New!'])
     expect(trail('/settings/slides/4/edit', '/settings/slides/:id/edit')).toEqual(['Settings', 'Slides', 'Edit!'])
-    expect(trail('/clients/add')).toEqual(['Clients', 'List', 'New!'])
+    expect(trail('/clients/add')).toEqual(['Clients', 'New!'])
   })
 
   it('names a record page Details, and a tab of the record adds nothing', () => {
     expect(trail('/orders/8', '/orders/:id')).toEqual(['Orders', 'Details!'])
-    expect(trail('/clients/7/invoices', '/clients/:id/invoices')).toEqual(['Clients', 'List', 'Details!'])
+    expect(trail('/clients/7/invoices', '/clients/:id/invoices')).toEqual(['Clients', 'Details!'])
     expect(trail('/billing/invoices/5/view', '/billing/invoices/:id/:action')).toEqual(['Billing', 'Invoices', 'Details!'])
   })
 
   it('names the form alone when a record page leads to it', () => {
-    expect(trail('/clients/7/tickets/new', '/clients/:id/tickets/new')).toEqual(['Clients', 'List', 'New!'])
+    expect(trail('/clients/7/tickets/new', '/clients/:id/tickets/new')).toEqual(['Clients', 'New!'])
+  })
+
+  it('keeps the list of a section as its own step only when it is the current page', () => {
+    expect(trail(AppRoute.Clients)).toEqual(['Clients', 'List!'])
+  })
+
+  it('runs the trail of a menu shortcut to a form through the page the form belongs to', () => {
+    expect(trail(AppRoute.SupportTicketsNew)).toEqual(['Support', 'Tickets', 'New!'])
   })
 
   it('leaves out a page the menu files under a section but that lives at another address', () => {

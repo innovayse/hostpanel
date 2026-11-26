@@ -19,7 +19,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import { UiImageFit, UiImageRounded, UiImageSize } from '@/utils/ui/image'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiSortableRows from '@/components/ui/UiSortableRows.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -291,10 +291,8 @@ const slideActions = (slide: Slide): UiMenuAction[] => {
 
             <!-- Active -->
             <UiTableCell>
-              <UiStatusIcon
+              <UiStatusBadge
                 :state="slide.isActive"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
                 :on-label="t('shared.active')"
                 :off-label="t('shared.inactive')"
               />

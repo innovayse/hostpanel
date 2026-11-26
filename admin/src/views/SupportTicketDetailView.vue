@@ -29,6 +29,7 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSplit from '@/components/ui/UiSplit.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
@@ -46,6 +47,9 @@ import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Support, Tickets, the ticket. */
+const { crumbs } = usePageCrumbs()
 
 /** Opens the delete confirmation. */
 const openDeleteDialog = (): void => {
@@ -233,16 +237,15 @@ onMounted(() => {
       <UiPageHeader :actions="headerActions"
         :title="store.currentTicket ? t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) : undefined"
         :loading="!store.currentTicket"
-        :back-to="AppRoute.SupportTickets"
-        :back-label="t('shared.tickets')"
-        back-mobile-only
-        back-testid="ticket-back"
+        :crumbs="crumbs(store.currentTicket ? t('shared.tktIdSubject', { id: store.currentTicket.id, subject: store.currentTicket.subject }) : undefined)"
         data-testid="ticket-title"
       >
-        <UiStack v-if="store.currentTicket" :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
-          <SupportTicketStatusBadge :status="store.currentTicket.status" />
-          <SupportTicketPriorityBadge :priority="store.currentTicket.priority" />
-        </UiStack>
+        <template #badge>
+          <UiStack v-if="store.currentTicket" :direction="UiDirection.Row" :align="UiAlignItems.Center" wrap>
+            <SupportTicketStatusBadge :status="store.currentTicket.status" />
+            <SupportTicketPriorityBadge :priority="store.currentTicket.priority" />
+          </UiStack>
+        </template>
         <template #actions>
           <UiButton :icon="Icon.Info"
             :variant="UiButtonVariant.Secondary"

@@ -96,4 +96,11 @@ describe('UiCard', () => {
     expect(wrapper.classes()).toContain('glass-strong')
     expect(wrapper.classes()).not.toContain('glass')
   })
+
+  it('lifts the elevated card with the popover token shadow, not a fixed black one', () => {
+    const wrapper = mount(UiCard, { props: { elevated: true } })
+
+    expect(wrapper.classes()).toContain('shadow-popover')
+    expect(wrapper.classes()).not.toContain('shadow-lg')
+  })
 })

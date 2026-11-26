@@ -24,7 +24,7 @@ const schema: ListSkeletonSchema = {
       { key: 'expiresAt', label: 'domains.domainsList.expiresAt', kind: UiColumnKind.Date },
       { key: 'renewalPrice', label: 'domains.domainsList.renewalPrice', numeric: true },
       { key: 'autoRenew', label: 'shared.autoRenew', kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

@@ -2,16 +2,18 @@
  * Pinia store for admin settings, email templates, products and product groups.
  *
  * The only caller of `useSettingsApi` and `useUploadApi` for these screens. A refusal is kept as
- * the API's own sentence in `error`, `actionError` or `uploadError`; no action throws.
+ * the API's own sentence in `error` or `actionError`, or on the outcome of the call that was refused; no action throws.
  */
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { Ref } from 'vue'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { useUploadApi } from '@/composables/apis/useUploadApi'
 import { errorCode } from '@/lib/errorHandler'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { dropFieldError, runAction } from '@/lib/runAction'
+import { translate } from '@/lib/translate'
 import type { ActionResult } from '@/lib/runAction'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import type { ContentLanguage } from '@/locales/contentLanguage'
@@ -20,7 +22,7 @@ import type {
 } from '@/types/product'
 import { ProductErrorCode } from '@/types/productenums'
 import type { Setting, SettingSave } from '@/types/setting'
-import type { BrandingImageKind } from '@/types/upload'
+import type { BrandingImageKind, BrandingUploadOutcome } from '@/types/upload'
 
 /** Holds the settings, email templates, products and groups the settings screens show. */
 export const useSettingsStore = defineStore('settings', () => {
@@ -64,9 +66,6 @@ export const useSettingsStore = defineStore('settings', () => {
   /** The API's per-field messages for the last failed product create or update (`sku`, `metadata`, `gracePeriodDays` and so on), empty when none. */
   const fieldErrors = ref<Record<string, string>>({})
 
-  /** Sentence for the last failed branding upload, null when none. */
-  const uploadError = ref<string | null>(null)
-
   /**
    * Runs one list request under the loading flag and hands its result to the caller on success.
    *
@@ -94,6 +93,22 @@ export const useSettingsStore = defineStore('settings', () => {
     })
 
   /**
+   * Writes one setting, refreshes the list when it was stored, and keeps a refusal in the given ref.
+   *
+   * @param id - Setting ID.
+   * @param value - New value to store.
+   * @param refusal - The ref that receives the API's sentence when the value is refused.
+   * @returns True when persisted; false when refused.
+   */
+  const writeSetting = async (id: number, value: string, refusal: Ref<string | null>): Promise<boolean> => {
+    const result = await runAction(refusal, () => api.updateSetting(id, value))
+    if (result.ok) {
+      await fetchSettings()
+    }
+    return result.ok
+  }
+
+  /**
    * Updates a single setting's value and refreshes the list.
    *
    * The backend exposes update-by-id only and no create, so a key that
@@ -104,28 +119,25 @@ export const useSettingsStore = defineStore('settings', () => {
    * @param value - New value to store.
    * @returns True when persisted; false when refused (see `actionError`).
    */
-  const updateSetting = async (id: number, value: string): Promise<boolean> => {
-    const result = await runAction(actionError, () => api.updateSetting(id, value))
-    if (result.ok) {
-      await fetchSettings()
-    }
-    return result.ok
-  }
+  const updateSetting = (id: number, value: string): Promise<boolean> => writeSetting(id, value, actionError)
 
   /**
    * Persists one setting on behalf of a settings card and reports how it went.
    *
    * It is the one save callback every card is given: it answers rather than swallows, because the
    * caller has to know whether it may drop the operator's text and shows the API's own sentence
-   * next to the control.
+   * next to the control. The sentence is that request's own, not the store's shared `actionError`: two
+   * fields saved at once each get the answer to their own request, never one another's.
    *
    * @param id - Setting ID.
    * @param value - New value to store.
    * @returns Whether the value was stored, and the API's sentence when it was refused.
    */
   const saveSetting: SettingSave = async (id, value) => {
-    const saved = await updateSetting(id, value)
-    return { saved, error: saved ? null : actionError.value }
+    /** The API sentence when this save is refused. */
+    const refusal = ref<string | null>(null)
+    const saved = await writeSetting(id, value, refusal)
+    return { saved, error: saved ? null : refusal.value }
   }
 
   /**
@@ -133,11 +145,25 @@ export const useSettingsStore = defineStore('settings', () => {
    *
    * @param kind - Which branding slot the image is for.
    * @param file - The image file.
-   * @returns The stored image's URL, or null when refused (see `uploadError`).
+   * @returns The stored image's URL, or the API's sentence when refused. The sentence belongs to this request
+   * alone (no shared store state), so uploads running side by side for different slots never show one
+   * another's refusal.
    */
-  const uploadBrandingFile = async (kind: BrandingImageKind, file: File): Promise<string | null> => {
-    const result = await runAction(uploadError, async () => (await uploadBrandingImage(kind, file)).url)
-    return result.ok ? result.value : null
+  const uploadBrandingFile = async (kind: BrandingImageKind, file: File): Promise<BrandingUploadOutcome> => {
+    /** The API sentence when this upload is refused. */
+    const refusal = ref<string | null>(null)
+    /** The refusal details of this upload. */
+    const details = ref<Record<string, string>>({})
+    const result = await runAction(refusal, async () => (await uploadBrandingImage(kind, file)).url, details)
+    if (result.ok) {
+      return { url: result.value, error: null }
+    }
+
+    // A refusal for too many pixels names the size the image declares (`errors.dimensions`, "WIDTHxHEIGHT"), so the
+    // sentence says which image broke the limit and by how much, not only that a limit exists.
+    const [width, height] = (details.value.dimensions ?? '').split('x')
+    const size = width && height ? ` ${translate('settings.branding.imageSize', { width, height })}` : ''
+    return { url: null, error: `${refusal.value ?? ''}${size}` }
   }
 
   /**
@@ -310,7 +336,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   return {
     settings, emailTemplates, products, productPage, productPageSize, productTotalCount, productGroups, paymentMethods, fieldErrors, clearFieldError,
-    loading, error, actionError, uploadError,
+    loading, error, actionError,
     fetchSettings, updateSetting, saveSetting, fetchEmailTemplates, saveEmailTemplateVersion, fetchProducts, fetchProductsPage, fetchProductGroups, fetchPaymentMethods,
     createProduct, updateProduct, createProductGroup, updateProductGroup, uploadBrandingFile,
   }

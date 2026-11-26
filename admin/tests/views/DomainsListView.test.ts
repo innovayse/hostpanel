@@ -15,6 +15,7 @@ import { stubRoutes } from '../helpers/routes'
 import { json, problem, stubFetch } from '../helpers/fetch'
 import { applyListFilter } from '../helpers/listFilter'
 import { DomainStatus } from '@/types/domain'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 
 /** The installed registrar plugins every list screen reads on mount, as the plugins endpoint answers them. */
 const REGISTRAR_ROUTES = {
@@ -82,7 +83,7 @@ describe('DomainsListView', () => {
     expect(row.text()).toContain('example.com')
     expect(row.text()).toContain('Grace Hopper')
     expect(row.text()).toContain('$12.99 USD')
-    expect(row.get('[role="img"]').attributes('aria-label')).toBe('Yes')
+    expect(row.getComponent(UiStatusBadge).text()).toBe('Yes')
     expect(wrapper.findAll('th').find((header) => header.text() === 'Domain Name')?.classes()).toContain('w-[28%]')
     expect(row.text()).toContain('Example Registrar')
     expect(wrapper.get('[data-testid="domains-name-4"]').attributes('href')).toBe('/clients/9/domains/4')

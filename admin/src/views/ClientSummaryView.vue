@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n'
 import { useClientSummaryStore } from '@/stores/clientSummary'
 import { useClientsStore } from '@/stores/clients'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
-import { BILLING_CYCLE_OPTIONS, QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
+import { BILLING_CYCLE_OPTIONS, CLIENT_STATUS_OPTIONS, CONTACT_TYPE_OPTIONS, DOMAIN_STATUS_OPTIONS, QUOTE_STAGE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount, formatPrice } from '@/lib/money'
 import { domainStatusTone, serviceStatusTone, statusLabel, clientStatusTone, contactTypeTone, quoteStageTone } from '@/lib/tones'
@@ -30,7 +30,7 @@ import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
@@ -605,7 +605,7 @@ onMounted(() => {
           <UiStack :gap="UiGap.Sm">
             <UiStack v-for="label in OTHER_LABELS" :key="label" :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" :gap="UiGap.Sm">
               <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ t(label) }}</UiText>
-              <UiBadge v-if="label === OtherRow.Status && client" :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
+              <UiBadge v-if="label === OtherRow.Status && client" :tone="clientStatusTone(client.status)" small>{{ statusLabel(CLIENT_STATUS_OPTIONS, client.status) }}</UiBadge>
               <UiText v-else :tone="otherValues[label]?.tone" :size="UiTextSize.Md">{{ otherValues[label]?.text }}</UiText>
             </UiStack>
           </UiStack>
@@ -625,7 +625,7 @@ onMounted(() => {
                 <UiText :tone="UiTextTone.Primary" :size="UiTextSize.Md">{{ contact.firstName }} {{ contact.lastName }}</UiText>
                 <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">{{ contact.email }}</UiText>
               </UiStack>
-              <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
+              <UiBadge :tone="contactTypeTone(contact.type)" small>{{ statusLabel(CONTACT_TYPE_OPTIONS, contact.type) }}</UiBadge>
             </UiStack>
           </UiStack>
           <UiText v-else :tone="UiTextTone.Muted">{{ t('clients.clientSummary.noAdditionalContacts') }}</UiText>
@@ -822,14 +822,12 @@ onMounted(() => {
             <UiTableCell>{{ domain.name }}</UiTableCell>
             <UiTableCell muted>{{ domain.registrar ?? EMPTY_VALUE }}</UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="domainStatusTone(domain.status)" small>{{ domain.status }}</UiBadge>
+              <UiBadge :tone="domainStatusTone(domain.status)" small>{{ statusLabel(DOMAIN_STATUS_OPTIONS, domain.status) }}</UiBadge>
             </UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
             <UiTableCell>
-              <UiStatusIcon
+              <UiStatusBadge
                 :state="domain.autoRenew"
-                :on-icon="Icon.CheckCircle"
-                :off-icon="Icon.Close"
                 :on-label="t('shared.yes')"
                 :off-label="t('shared.no')"
               />

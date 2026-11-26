@@ -498,7 +498,7 @@ onBeforeUnmount(cancelCount)
               @remove="removeSegment(index)"
             />
             <UiStack :direction="UiDirection.Row">
-              <UiButton :action="UiActionKind.Add" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-add-segment" @click="addSegment">
+              <UiButton :action="UiActionKind.AddRow" :type="UiButtonType.Button" :variant="UiButtonVariant.Secondary" data-testid="email-campaign-add-segment" @click="addSegment">
                 {{ t('emailCampaigns.form.addSegment') }}
               </UiButton>
             </UiStack>

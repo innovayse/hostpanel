@@ -20,7 +20,7 @@ const schema: ListSkeletonSchema = {
       { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
       { key: 'reference', label: 'billing.bankTransfers.reference' },
       { key: 'requested', label: 'billing.bankTransfers.requested', kind: UiColumnKind.Date },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

@@ -143,7 +143,7 @@ export const renderedCounts = (wrapper: VueWrapper): SchemaCounts => {
  * @returns The keys, with repeats removed.
  */
 export const localeKeysOf = (schema: SkeletonSchema): string[] => {
-  const keys: (string | undefined)[] = [schema.header?.title, schema.header?.subtitle, schema.header?.backLabel]
+  const keys: (string | undefined)[] = [schema.header?.title, schema.header?.subtitle]
   for (const section of sectionsOf(schema)) {
     keys.push(section.title)
   }

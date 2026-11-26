@@ -29,11 +29,12 @@ import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
 import { QUOTE_ITEMS_PART } from '@/lib/quoteSchemaParts'
 import { formatDate } from '@/lib/format'
 import { useClientCurrency } from '@/composables/useClientCurrency'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useQuotesStore } from '@/stores/quotes'
 import { QuoteStage } from '@/types/quote'
 import { blankQuoteLine, quoteLineFrom, quoteLinesPayload } from '@/lib/quoteLines'
 import type { QuoteLineDraft } from '@/types/quote'
-import { AppRoute, invoicePath, quotePath } from '@/lib/routes'
+import { invoicePath, quotePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTone } from '@/utils/ui/tone'
 import schema, { QUOTE_GENERAL_PART, QUOTE_NOTES_PART } from '@/views/QuoteDetailView.schema'
@@ -44,6 +45,9 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Billing, Quotes, the quote. */
+const { crumbs } = usePageCrumbs()
 
 /** Opens the convert to invoice confirmation. */
 const openConvert = (): void => {
@@ -250,10 +254,11 @@ onMounted(() => {
     <template v-else>
       <UiPageHeader :actions="headerActions"
         v-bind="schemaHeader(schema, t, { title: isNew ? t('billing.quoteDetail.newQuote') : t('billing.quoteDetail.quoteNumber', { id: quoteId }) })"
-        :back-to="AppRoute.BillingQuotes"
-        back-testid="billing-quote-back"
+        :crumbs="crumbs(isNew ? t('billing.quoteDetail.newQuote') : t('billing.quoteDetail.quoteNumber', { id: quoteId }))"
       >
-        <UiBadge v-if="!isNew && !initialLoading" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
+        <template #badge>
+          <UiBadge v-if="!isNew && !initialLoading" :tone="quoteStageTone(stage)" data-testid="billing-quote-stage">{{ statusLabel(QUOTE_STAGE_OPTIONS, stage) }}</UiBadge>
+        </template>
       </UiPageHeader>
 
       <UiAlert v-if="store.successMessage" :variant="UiTone.Success" data-testid="billing-quote-success">

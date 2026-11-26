@@ -358,6 +358,9 @@ MaxFailedAttempts принимает значения от 1 до 100, LockoutMi
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN', type: 'string', default: '', description: 'Токен виджета чата (язык по умолчанию). Уровни: все.' },
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU', type: 'string', default: '', description: 'Токен виджета чата (русский). Уровни: все.' },
   { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY', type: 'string', default: '', description: 'Токен виджета чата (армянский). Уровни: все.' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_DE', type: 'string', default: '', description: 'Токен виджета чата (немецкий). Уровни: все.' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_ES', type: 'string', default: '', description: 'Токен виджета чата (испанский). Уровни: все.' },
+  { name: 'NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_FR', type: 'string', default: '', description: 'Токен виджета чата (французский). Уровни: все.' },
 ]" />
 
 ## Платежи и внешние ссылки {#payments-and-external-links}
@@ -376,6 +379,8 @@ MaxFailedAttempts принимает значения от 1 до 100, LockoutMi
 | Настройка | По умолчанию | Описание |
 |---|---|---|
 | `Plugins__InstallPath` | *(пусто, используется `plugins-installed` рядом с приложением)* | Каталог, в который API устанавливает пакеты плагинов. |
+| `Plugins__DrainSeconds` | `30` | Сколько секунд перезагрузка плагина или перезапуск после изменения плагина ждут завершения выполняющихся запросов, фоновых заданий и вызовов плагина (от 1 до 300). Во время перезапуска `GET /health` отвечает 503 `HOST_DRAINING`, после чего процесс выходит с кодом 75. Это же тайм-аут остановки хоста. В compose-файлах задаётся переменной `PLUGIN_DRAIN_SECONDS` в `.env`. Держите `stop_grace_period` сервиса API (`API_STOP_GRACE_PERIOD`, по умолчанию `45s`) больше этого значения, иначе Docker убьёт хост во время ожидания. Сервису API также нужна политика перезапуска, переживающая штатное завершение (`restart: unless-stopped`); без неё `install.sh --check` завершается ошибкой, см. [Менеджер плагинов](../payments/plugins.md#applying-a-plugin-change). |
+| `Plugins__RestartDelaySeconds` | `3` | Сколько секунд хост ждёт после подготовленного изменения плагина, прежде чем перезапуститься сам (от 0 до 60), поэтому изменения, сделанные одно за другим, применяются одним перезапуском. В compose-файлах задаётся переменной `PLUGIN_RESTART_DELAY_SECONDS` в `.env`. |
 | `Plugins__MaxEntryCount` | `1000` | Наибольшее число файлов в zip-архиве плагина. |
 | `Plugins__MaxUncompressedBytes` | `209715200` | Наибольший суммарный размер архива плагина в распакованном виде в байтах (200 МиБ). |
 | `Plugins__MigrationTimeoutSeconds` | `120` | Наибольшее время в секундах, которое может работать один обработчик миграции плагина после обновления (от 1 до 3600). По его истечении хост перестаёт ждать и оставляет плагин выключенным, пока одна из последующих попыток не удастся. |

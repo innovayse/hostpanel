@@ -55,6 +55,11 @@ export default defineConfig({
         target: process.env.API_PROXY_TARGET || 'http://localhost:5148',
         changeOrigin: true,
       },
+      // The liveness probe sits at the root: the panel polls it to learn when a restarted server is back.
+      '/health': {
+        target: process.env.API_PROXY_TARGET || 'http://localhost:5148',
+        changeOrigin: true,
+      },
       '/uploads': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:5148',
         changeOrigin: true,

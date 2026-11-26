@@ -16,7 +16,7 @@ export const UNINVOICED_ITEMS_TABLE: SkeletonTable = {
     { key: 'id', label: 'shared.id', kind: UiColumnKind.Id },
     { key: 'description', label: 'shared.description', size: UiColumnSize.Grow },
     { key: 'amount', label: 'shared.amount', numeric: true, size: UiColumnSize.Compact },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

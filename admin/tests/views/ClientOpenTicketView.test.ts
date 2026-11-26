@@ -95,14 +95,17 @@ describe('ClientOpenTicketView', () => {
     expect(router.currentRoute.value.path).toBe(clientItemPath('5', ClientSection.Tickets, 15))
   })
 
-  it('returns to the tickets of its client with the back pill', async () => {
+  it('draws the trail of its client above the title: clients, the client, tickets, the page itself', async () => {
     stubRoutes({ 'GET /api/tickets/departments': () => json(DEPARTMENTS) })
 
     const { wrapper } = await mountScreen(ClientOpenTicketView, {}, URL, PATTERN)
-    const back = wrapper.get('[data-testid="client-open-ticket-back"]')
+    const trail = wrapper.get('[data-testid="ui-breadcrumb"]')
 
-    expect(back.attributes('href')).toBe('/clients/5/tickets')
-    expect(back.text()).toBe('Tickets')
+    expect(trail.findAll('a').map((link) => link.attributes('href'))).toEqual(['/clients', '/clients/5', '/clients/5/tickets'])
+    expect(trail.get('[data-testid="ui-page-header-crumb-current"]').text()).toBe(wrapper.get('h1').text())
+    expect(wrapper.find('[data-testid="client-open-ticket-back"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="ui-page-header-back"]').exists()).toBe(false)
+    expect(trail.element.compareDocumentPosition(wrapper.get('h1').element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('draws every section and field of its schema once the departments are loaded', async () => {

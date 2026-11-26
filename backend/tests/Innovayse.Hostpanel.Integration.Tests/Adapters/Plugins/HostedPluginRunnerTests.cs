@@ -118,9 +118,9 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>
-    /// The container the runner activates plugins from: the real activator over the test's own data context,
-    /// the journal the test plugins take in their constructor, and the registry the activator checks for a pending
-    /// migration.
+    /// The container the runner activates plugins from: the real activator over the test's own data context and the
+    /// scope's leases it holds each instance under, the journal the test plugins take in their constructor, and the
+    /// registry the activator checks for a pending migration.
     /// </summary>
     /// <param name="db">The data context the activator reads settings from; the test keeps it alive.</param>
     /// <param name="journal">The journal the test plugins record into.</param>
@@ -137,6 +137,7 @@ public sealed class HostedPluginRunnerTests(IntegrationTestFactory factory) : IC
         var registry = PluginActivationTestSeeds.Registry(plugins);
         services.AddSingleton(registry);
         services.AddSingleton<IPluginRegistry>(registry);
+        services.AddScoped<PluginUsageLeases>();
         services.AddScoped<PluginActivator>();
         return services.BuildServiceProvider();
     }

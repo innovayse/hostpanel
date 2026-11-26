@@ -35,6 +35,7 @@
     "noCountries": "Kein Land gefunden"
   },
   "common": {
+    "actions": "Aktionen",
     "cancel": "Abbrechen",
     "confirm": "Bestätigen",
     "next": "Weiter",

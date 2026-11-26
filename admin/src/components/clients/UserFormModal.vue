@@ -25,9 +25,8 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiColumnSize } from '@/utils/ui/table'
-import UiStatusIcon from '@/components/ui/UiStatusIcon.vue'
+import UiStatusBadge from '@/components/ui/UiStatusBadge.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { Icon } from '@/lib/icons'
 import type { UserDetail } from '@/types/useraccount'
 import { ClientPermission, PERMISSION_LABELS } from '@/types/clientuser'
 import { LANGUAGE_OPTIONS } from '@/lib/constants'
@@ -264,10 +263,8 @@ const confirmDelete = (): void => {
               <UiTableCell>{{ acc.firstName }} {{ acc.lastName }}</UiTableCell>
               <UiTableCell muted>{{ acc.companyName || EMPTY_VALUE }}</UiTableCell>
               <UiTableCell>
-                <UiStatusIcon
+                <UiStatusBadge
                   :state="acc.isOwner"
-                  :on-icon="Icon.CheckCircle"
-                  :off-icon="Icon.Close"
                   :on-label="t('clients.userForm.owner')"
                   :off-label="t('shared.no')"
                 />

@@ -16,11 +16,11 @@ const schema: ListSkeletonSchema = {
   table: {
     columns: [
       { key: 'handle', size: UiColumnSize.Compact, cardRole: UiCardRole.Hidden },
-      { key: 'logo', label: 'storefront.partners.logo', size: UiColumnSize.Grow },
+      { key: 'logo', label: 'storefront.partners.logo', kind: UiColumnKind.Image },
       { key: 'name', label: 'storefront.partners.name' },
       { key: 'website', label: 'storefront.partners.website' },
       { key: 'status', label: 'shared.status', cardRole: UiCardRole.Badge, kind: UiColumnKind.Status },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

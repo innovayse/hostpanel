@@ -288,6 +288,40 @@ describe('PluginsView', () => {
     expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(false)
   })
 
+  it('says the plugin runs without a restart when the host reloaded it, and shows no restart banner', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
+      'POST /api/admin/plugins/install': () => json({ requiresRestart: false, stagedVersion: null, reloaded: true }),
+    })
+    const wrapper = await mountPlugins()
+    await upload(wrapper, new File(['z'], 'new.zip'))
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Example Pay was updated and runs without a restart.')
+    expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
+  })
+
+  it('closes the processing dialog into the restart dialog when the host restarts itself, with no banner and no restart request', async () => {
+    const mock = stubRoutes({
+      'GET /health': () => json({ status: 'Healthy', timestamp: 't', processStartedAt: 'A' }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
+      'POST /api/admin/plugins/install': () => json({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: true }),
+    })
+    const wrapper = await mountPlugins()
+    await upload(wrapper, new File(['z'], 'new.zip'))
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-restart-waiting"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/restart')).toBe(false)
+  })
+
   it('shows the running state without a close button until the install ends', async () => {
     vi.stubGlobal('fetch', vi.fn((url: string) => (String(url).endsWith('/inspect') ? Promise.resolve(json(preview)) : new Promise<Response>(() => undefined))))
     const wrapper = await mountPlugins()

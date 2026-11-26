@@ -1,0 +1,26 @@
+{
+  "type": {
+    "ClientRegistered": "New client registered",
+    "InvoiceOverdue": "Invoice #{number} overdue",
+    "DomainExpiring": "{domain} expires soon",
+    "PaymentReceived": "Payment received for invoice #{number}",
+    "TicketOpened": "New ticket: {subject}"
+  },
+  "upcoming": "On {date}",
+  "unread": "Unread",
+  "unreadCount": "{count} unread | {count} unread",
+  "markRead": "Mark as read",
+  "markAllRead": "Mark all as read",
+  "filter": {
+    "label": "Show notifications",
+    "all": "All",
+    "unread": "Unread"
+  },
+  "group": {
+    "upcoming": "Upcoming",
+    "today": "Today",
+    "earlier": "Earlier"
+  },
+  "emptyUnread": "No unread notifications",
+  "emptyHint": "New clients, overdue invoices, payments, tickets and expiring domains show up here."
+}

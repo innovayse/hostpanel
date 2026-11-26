@@ -312,9 +312,12 @@ onUnmounted(() => {
             </UiStack>
           </template>
           <UiStack :gap="UiGap.Xs" class="mt-3 min-h-0 flex-1 overflow-y-auto">
-            <UiText v-if="!historyLoading && store.jobs.length === 0" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="migration-history-empty">
-              {{ t('migration.migration.noMigrationsYet') }}
-            </UiText>
+            <UiEmptyState
+              v-if="!historyLoading && store.jobs.length === 0"
+              compact
+              :title="t('migration.migration.noMigrationsYet')"
+              data-testid="migration-history-empty"
+            />
 
             <!-- The jobs; while the history loads the same rows are drawn with bars where a job goes -->
             <template v-for="(job, index) in historyRows" :key="job?.id ?? `placeholder-${index}`">

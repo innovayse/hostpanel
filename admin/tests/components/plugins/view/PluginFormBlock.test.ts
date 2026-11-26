@@ -37,9 +37,18 @@ describe('PluginFormBlock', () => {
     const { wrapper } = await mountPluginView([form()])
 
     expect(wrapper.get('input[data-testid="plugin-form-name"]').attributes('placeholder')).toBe('Name')
-    expect(wrapper.get('input[data-testid="plugin-form-pages"]').attributes('placeholder')).toBe('How many')
+    expect(wrapper.get('[data-testid="plugin-form-pages"] input').attributes('placeholder')).toBe('How many')
     expect(wrapper.get('textarea[data-testid="plugin-form-notes"]').attributes('placeholder')).toBe('Notes')
-    expect(wrapper.get('input[data-testid="plugin-form-token"]').attributes('type')).toBe('password')
+    expect(wrapper.get('input[data-testid="plugin-form-token-input"]').attributes('type')).toBe('password')
+  })
+
+  it('draws each field type with its one kit control', async () => {
+    const { wrapper } = await mountPluginView([form()])
+
+    expect(wrapper.find('[data-testid="plugin-form-token-input"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-form-pages"] input').exists()).toBe(true)
+    expect(wrapper.find('textarea[data-testid="plugin-form-notes"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-form-public"]').exists()).toBe(true)
   })
 
   it('sends the typed body and shows the plugin sentence, then empties the fields', async () => {
@@ -54,7 +63,7 @@ describe('PluginFormBlock', () => {
     })
 
     await wrapper.get('input[data-testid="plugin-form-name"]').setValue('Shop')
-    await wrapper.get('input[data-testid="plugin-form-pages"]').setValue('3')
+    await wrapper.get('[data-testid="plugin-form-pages"] input').setValue('3')
     await wrapper.get('[data-testid="plugin-form-public"]').trigger('click')
     await wrapper.get('form').trigger('submit')
     await flushPromises()

@@ -4,7 +4,8 @@
     "ru": "Ruso",
     "hy": "Armenio",
     "de": "Alemán",
-    "es": "Español"
+    "es": "Español",
+    "fr": "Francés"
   },
   "notFound": "Entrada #{id} no encontrada.",
   "list": {

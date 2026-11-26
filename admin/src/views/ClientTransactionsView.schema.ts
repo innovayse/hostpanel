@@ -33,7 +33,7 @@ const schema: ListSkeletonSchema = {
       { key: 'amountIn', label: 'shared.amountIn', numeric: true },
       { key: 'amountOut', label: 'shared.amountOut', numeric: true },
       { key: 'fees', label: 'shared.fees', numeric: true },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

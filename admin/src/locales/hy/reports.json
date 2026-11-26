@@ -415,5 +415,24 @@
   "sidebar": {
     "search": "Որոնել հաշվետվություն",
     "empty": "Հաշվետվություն չի գտնվել"
+  },
+  "statusWord": {
+    "Active": "Ակտիվ",
+    "Paid": "Վճարված",
+    "Completed": "Ավարտված",
+    "Pending": "Սպասման մեջ",
+    "Invoice": "Հաշիվ",
+    "Payment": "Վճարում",
+    "Unpaid": "Չվճարված",
+    "Suspended": "Կասեցված",
+    "Overdue": "Ժամկետանց",
+    "Expired": "Սպառված",
+    "Refunded": "Վերադարձված",
+    "PartiallyRefunded": "Մասնակի վերադարձված",
+    "Transferred": "Փոխանցված",
+    "Draft": "Սևագիր",
+    "Inactive": "Ոչ ակտիվ",
+    "Cancelled": "Չեղարկված",
+    "Terminated": "Դադարեցված"
   }
 }

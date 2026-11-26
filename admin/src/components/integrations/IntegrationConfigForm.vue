@@ -17,10 +17,10 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { INTEGRATION_META } from '@/types/integrationmeta'
 import type { FieldDefinitionDto, IntegrationConfigPayload, IntegrationDetailDto, IntegrationSlug } from '@/types/integration'
-import SecretSettingField from '@/components/settings/SecretSettingField.vue'
-import { IntegrationFieldType } from '@/types/integration'
+import UiSecretField from '@/components/ui/UiSecretField.vue'
+import { fieldControlOf, fieldInputType, INTEGRATION_FIELD_RENDERINGS } from '@/lib/fieldControls'
+import { FieldControl } from '@/types/fieldcontrol'
 import { SettingToggle } from '@/types/setting'
-import { UiInputType } from '@/utils/ui/input'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiFormActions from '@/components/ui/UiFormActions.vue'
@@ -115,13 +115,29 @@ watch(
 const isSecretField = (field: FieldDefinitionDto): boolean => props.integration.config[field.key]?.isSecret === true
 
 /**
- * Whether a secret field still has a stored value: set on the server and not cleared here.
+ * The kit control that draws a field: the secret field whenever the API marks it secret, else the control of its type.
  *
  * @param field - The field definition.
- * @returns True when the masked placeholder should show.
+ * @returns The control.
  */
-const secretIsSet = (field: FieldDefinitionDto): boolean =>
-  props.integration.config[field.key]?.hasValue === true && !clearedFields.value.includes(field.key)
+const controlOf = (field: FieldDefinitionDto): FieldControl => fieldControlOf(INTEGRATION_FIELD_RENDERINGS[field.type], isSecretField(field))
+
+/**
+ * Whether a secret field has a value stored on the server, whether or not it is marked for clearing.
+ *
+ * @param field - The field definition.
+ * @returns True when the server holds a value.
+ */
+const secretIsStored = (field: FieldDefinitionDto): boolean => props.integration.config[field.key]?.hasValue === true
+
+/**
+ * Takes a pending clear back, so the stored secret is kept on save.
+ *
+ * @param key - The field key.
+ */
+const keepSecret = (key: string): void => {
+  clearedFields.value = clearedFields.value.filter((k) => k !== key)
+}
 
 /**
  * Marks a secret field for clearing on save and drops any replacement typed for it.
@@ -145,7 +161,7 @@ const clearSecret = (key: string): void => {
 const setSecret = (key: string, value: string): void => {
   secretDrafts.value[key] = value
   if (value.length > 0) {
-    clearedFields.value = clearedFields.value.filter((k) => k !== key)
+    keepSecret(key)
   }
 }
 
@@ -267,31 +283,24 @@ const handleSave = (): void => {
           :label="field.label"
           :hint="field.description ?? undefined"
           :required="field.required"
-          :class="field.type === IntegrationFieldType.Textarea ? 'md:col-span-2' : ''"
+          :class="controlOf(field) === FieldControl.Textarea ? 'md:col-span-2' : ''"
         >
           <template #default="{ id }">
-            <UiStack v-if="isSecretField(field)" :gap="UiGap.Xs">
-              <SecretSettingField
-                :id="id"
-                :has-value="secretIsSet(field)"
-                :model-value="secretDrafts[field.key] ?? ''"
-                :disabled="loading"
-                :testid="`integration-field-${field.key}`"
-                @update:model-value="setSecret(field.key, $event)"
-                @clear="clearSecret(field.key)"
-              />
-              <UiText
-                v-if="clearedFields.includes(field.key)"
-                :tone="UiTextTone.Muted"
-                :size="UiTextSize.Sm"
-                :data-testid="`integration-field-${field.key}-pending-clear`"
-              >
-                {{ t('settings.secret.pendingClear') }}
-              </UiText>
-            </UiStack>
+            <UiSecretField
+              v-if="controlOf(field) === FieldControl.Secret"
+              :id="id"
+              :has-value="secretIsStored(field)"
+              :cleared="clearedFields.includes(field.key)"
+              :model-value="secretDrafts[field.key] ?? ''"
+              :disabled="loading"
+              :testid="`integration-field-${field.key}`"
+              @update:model-value="setSecret(field.key, $event)"
+              @clear="clearSecret(field.key)"
+              @cancel-clear="keepSecret(field.key)"
+            />
 
             <UiTextarea
-              v-else-if="field.type === IntegrationFieldType.Textarea"
+              v-else-if="controlOf(field) === FieldControl.Textarea"
               :id="id"
               v-model="localConfig[field.key]"
               rows="3"
@@ -300,7 +309,7 @@ const handleSave = (): void => {
             />
 
             <UiSelect
-              v-else-if="field.type === IntegrationFieldType.Select"
+              v-else-if="controlOf(field) === FieldControl.Select"
               :model-value="localConfig[field.key] ?? ''"
               :options="optionsOf(field)"
               @update:model-value="setValue(field.key, $event)"
@@ -309,7 +318,7 @@ const handleSave = (): void => {
             />
 
             <!-- Boolean fields are kept as the strings "true" / "false" -->
-            <UiLabel v-else-if="field.type === IntegrationFieldType.Toggle" :variant="UiLabelVariant.Inline">
+            <UiLabel v-else-if="controlOf(field) === FieldControl.Toggle" :variant="UiLabelVariant.Inline">
               <UiToggle
                 :model-value="localConfig[field.key] === SettingToggle.On"
                 :data-testid="`integration-field-${field.key}`"
@@ -321,12 +330,13 @@ const handleSave = (): void => {
             </UiLabel>
 
             <UiNumberInput
-              v-else-if="field.type === IntegrationFieldType.Number"
+              v-else-if="controlOf(field) === FieldControl.Number"
               :id="id"
               :model-value="numberOf(field.key)"
               :min="field.min ?? undefined"
               :max="field.max ?? undefined"
               nullable
+              :required="field.required"
               :placeholder="placeholderOf(field)"
               :data-testid="`integration-field-${field.key}`"
               @update:model-value="setNumber(field.key, $event)"
@@ -336,7 +346,7 @@ const handleSave = (): void => {
               v-else
               :id="id"
               v-model="localConfig[field.key]"
-              :type="field.type === IntegrationFieldType.Url ? UiInputType.Url : UiInputType.Text"
+              :type="fieldInputType(INTEGRATION_FIELD_RENDERINGS[field.type])"
               class="font-mono"
               :placeholder="placeholderOf(field)"
               :data-testid="`integration-field-${field.key}`"

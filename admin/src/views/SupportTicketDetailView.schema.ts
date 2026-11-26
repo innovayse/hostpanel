@@ -38,7 +38,7 @@ export const DETAILS_CARD = {
 /** A support ticket: two actions (close or reopen, delete), the conversation column and the details column, three quarters to one quarter. */
 const schema: DetailSkeletonSchema = {
   kind: SkeletonKind.Detail,
-  header: { actions: 2 },
+  header: { crumbs: true, actions: 2 },
   ratio: UiSplitRatio.ThreeQuarters,
   columns: [[CONVERSATION_CARD, COMPOSER_CARD], [DETAILS_CARD]],
 }

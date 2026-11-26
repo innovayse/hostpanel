@@ -40,7 +40,7 @@ const emit = defineEmits<{
   >
     <li v-for="chip in chips" :key="chip.key" class="max-w-full">
       <span
-        class="inline-flex max-w-full items-center gap-1 rounded-pill border border-border bg-surface-field py-0.5 pl-3 pr-1 text-[0.75rem] text-text-secondary"
+        class="inline-flex max-w-full items-center gap-1 rounded-pill border border-border bg-surface-inset py-0.5 pl-3 pr-1 text-[0.75rem] text-text-secondary"
         :data-testid="`filter-chip-${chip.key}`"
       >
         <span class="truncate">

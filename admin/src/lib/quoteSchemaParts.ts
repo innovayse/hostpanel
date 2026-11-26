@@ -12,13 +12,13 @@ import { UiAlign, UiCardRole, UiColumnSize } from '@/utils/ui/table'
 /** The table of line items: quantity, description, unit price, discount, tax flag, total and the row actions. */
 export const QUOTE_ITEMS_TABLE: SkeletonTable = {
   columns: [
-    { key: 'quantity', label: 'shared.qty', cardRole: UiCardRole.Control },
+    { key: 'quantity', label: 'shared.qty', size: UiColumnSize.Compact, cardRole: UiCardRole.Control },
     { key: 'description', label: 'shared.description', size: UiColumnSize.Grow, cardRole: UiCardRole.Control },
-    { key: 'unitPrice', label: 'billing.quoteDetail.unitPrice', cardRole: UiCardRole.Control },
-    { key: 'discount', label: 'billing.quoteDetail.discount', cardRole: UiCardRole.Control },
+    { key: 'unitPrice', label: 'billing.quoteDetail.unitPrice', size: UiColumnSize.Compact, cardRole: UiCardRole.Control },
+    { key: 'discount', label: 'billing.quoteDetail.discount', size: UiColumnSize.Compact, cardRole: UiCardRole.Control },
     { key: 'taxed', label: 'shared.taxed', align: UiAlign.Center, size: UiColumnSize.Compact },
     { key: 'total', label: 'shared.total', align: UiAlign.Right, numeric: true, size: UiColumnSize.Compact },
-    { key: 'actions', label: 'shared.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
   rows: 3,
 }

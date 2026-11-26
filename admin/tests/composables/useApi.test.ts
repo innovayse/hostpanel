@@ -118,6 +118,18 @@ describe('useApi probe', () => {
   })
 })
 
+describe('useApi requestRoot', () => {
+  it('reads a document at the root, outside the API base, without a cache', async () => {
+    const mock = stubFetch()
+
+    await useApi().requestRoot('/health')
+
+    const [url, init] = mock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/health')
+    expect(init.cache).toBe('no-store')
+  })
+})
+
 describe('useApi download', () => {
   it('returns the file and the name from Content-Disposition', async () => {
     const fetchMock = vi.fn(async () =>

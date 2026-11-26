@@ -11,4 +11,10 @@ public enum ActivityEventType
 
     /// <summary>A domain is approaching its expiry date.</summary>
     DomainExpiring = 2,
+
+    /// <summary>An invoice was paid.</summary>
+    PaymentReceived = 3,
+
+    /// <summary>A client opened a support ticket that is still waiting for staff.</summary>
+    TicketOpened = 4,
 }

@@ -4,7 +4,11 @@
     "pendingRestart": "Reinicio pendiente",
     "refused": "Rechazado",
     "loadFailed": "No se pudo cargar",
-    "staged": "Versión {version} preparada, se aplica tras el reinicio",
+    "staged": "Versión {version} aún no aplicada",
+    "changeFailed": "Actualización fallida",
+    "changeFailedReason": "Actualización fallida: {error}",
+    "changeFailedRestored": "Actualización fallida: {error} La versión {version} sigue en funcionamiento.",
+    "changeFailedUnknown": "La nueva versión no se cargó.",
     "brokenRule": "{id} · regla violada: {rule}",
     "updateAvailable": "Actualización disponible: {version}"
   },
@@ -58,9 +62,20 @@
   },
   "restartBanner": {
     "restartRequired": "Reinicio requerido",
-    "pluginChangesWillTakeEffect": "Los cambios del complemento entrarán en vigor tras un reinicio del servidor.",
-    "restart": "Reiniciar",
+    "pluginChangesWillTakeEffect": "El reinicio aplica los cambios de complementos preparados y tarda un momento.",
+    "restart": "Reiniciar ahora",
     "restartServer": "Reiniciar servidor"
+  },
+  "restart": {
+    "title": "Reiniciando el servidor",
+    "restarting": "Reiniciando",
+    "hint": "El panel volverá en un momento. Mantén esta ventana abierta.",
+    "running": "Cargado y en funcionamiento",
+    "timedOut": "El servidor no volvió a tiempo. Comprueba que se esté iniciando e inténtalo de nuevo.",
+    "pluginVersion": "{name}, versión {version}",
+    "pluginFailed": "{name} no se pudo cargar.",
+    "confirmTitle": "¿Reiniciar el servidor?",
+    "confirmMessage": "El servidor se detiene un momento y aplica los cambios de complementos preparados. Quienes usan el panel se desconectan brevemente."
   },
   "pluginSigning": {
     "title": "Firmas de complementos",
@@ -102,6 +117,7 @@
     "removing": "Quitando {name}",
     "uploading": "Subiendo {name}",
     "done": "Hecho.",
+    "reloaded": "{name} se actualizó y funciona sin reiniciar.",
     "restartNeeded": "Reinicia el servidor para aplicar el cambio.",
     "close": "Cerrar"
   },

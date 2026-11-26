@@ -9,8 +9,7 @@
     "country": "Land",
     "kind": "Art",
     "rate": "Satz",
-    "validFrom": "Gültig ab",
-    "actions": "Aktionen"
+    "validFrom": "Gültig ab"
   },
   "kind": {
     "Standard": "Regelsatz",

@@ -1,21 +1,24 @@
+using Innovayse.Hostpanel.SharedKernel.Localization;
+
 namespace Innovayse.Hostpanel.Shared.Constants;
 
 /// <summary>
 ///     Supported content/UI languages across the whole platform.
 ///     Single source of truth: every service, cache key and culture provider
-///     must resolve languages through this class.
+///     must resolve languages through this class. The codes themselves live in
+///     <see cref="LanguageCodes"/>, the one list the domain can read too.
 /// </summary>
 public static class SupportedLanguages
 {
     /// <summary>
     ///     Default fallback language when no valid X-Language header is present.
     /// </summary>
-    public const string Default = "en";
+    public const string Default = LanguageCodes.Default;
 
     /// <summary>
     ///     All supported language codes: English, Russian, Armenian, German, Spanish, French.
     /// </summary>
-    public static readonly HashSet<string> All = ["en", "ru", "hy", "de", "es", "fr"];
+    public static readonly HashSet<string> All = [.. LanguageCodes.All];
 
     /// <summary>
     ///     Checks whether the given language code is supported.

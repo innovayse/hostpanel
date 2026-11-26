@@ -19,6 +19,7 @@ import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { TICKET_PRIORITY_OPTIONS } from '@/lib/constants'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
+import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { useClientsStore } from '@/stores/clients'
 import { useSupportStore } from '@/stores/support'
 import { TicketPriority } from '@/types/ticket'
@@ -29,11 +30,14 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTag, UiTextTone } from '@/utils/ui/text'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import schema from '@/views/SupportOpenTicketView.schema'
-import { AppRoute, supportTicketPath } from '@/lib/routes'
+import { supportTicketPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiActionKind } from '@/utils/ui/actions'
 
 const { t } = useI18n()
+
+/** Builds the trail the header draws above the title: Support, Tickets, the new ticket. */
+const { crumbs } = usePageCrumbs()
 
 const router = useRouter()
 
@@ -169,9 +173,7 @@ onMounted(() => {
   <UiStack>
     <UiPageHeader
       v-bind="schemaHeader(schema, t)"
-      :back-to="AppRoute.SupportTickets"
-      :back-label="t('shared.tickets')"
-      back-testid="support-open-ticket-back"
+      :crumbs="crumbs(schemaHeader(schema, t).title)"
     />
 
     <UiSchemaForm :columns="schema.columns" :errors="store.fieldErrors">

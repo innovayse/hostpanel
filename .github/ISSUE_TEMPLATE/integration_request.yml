@@ -1,4 +1,4 @@
-name: 🔌 Integration request
+name: Integration request
 description: A payment gateway, domain registrar or control panel HostPanel should support
 labels: ["integration", "enhancement", "needs-triage"]
 body:

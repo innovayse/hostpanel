@@ -106,6 +106,12 @@ Example using a condition and a loop:
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Sent to staff when service termination fails. Placeholders: service.id, reason' },
 ]" />
 
+### Plugins
+
+<SettingTable :settings="[
+  { name: 'plugin-change-ended-admin', type: 'string', default: '', description: 'Sent to staff when a plugin change the panel applied in the background has ended: the new version is loaded and running, or it could not be loaded and the previous version was restored or the plugin was left uninstalled. Placeholders: plugin_id, from_version, to_version, applied, error, restored_version' },
+]" />
+
 ### Support tickets
 
 <SettingTable :settings="[

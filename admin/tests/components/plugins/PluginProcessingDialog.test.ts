@@ -36,7 +36,7 @@ const mountDialog = (overrides: { running?: boolean; failed?: boolean; message?:
      *
      * @returns A finished outcome.
      */
-    run: async () => ({ ok: true, stagedVersion: null, error: null }),
+    run: async () => ({ ok: true, stagedVersion: null, reloaded: false, restarting: false, error: null }),
     /** Counts the close requests. */
     close: () => {
       closes.count += 1

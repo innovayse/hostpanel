@@ -27,16 +27,19 @@ import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { formatDateTime } from '@/lib/format'
+import { creditNoteBlock } from '@/lib/invoices'
 import { formatPlainAmount } from '@/lib/money'
 import { creditNotePath } from '@/lib/routes'
 import { useBillingStore } from '@/stores/billing'
 import { useCreditNotesStore } from '@/stores/creditNotes'
+import { CreditNoteBlock } from '@/types/creditnote'
 import type { IssueCreditNotePayload } from '@/types/creditnote'
-import { InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiAlignItems, UiDirection, UiJustify } from '@/utils/ui/layout'
+import { UiCardPadding } from '@/utils/ui/card'
+import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
+import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -67,28 +70,21 @@ const saving = ref(false)
 /** The outcome line of the last issue, shown in the tab. */
 const feedback = useOutcomeToast()
 
-/** True for a credit top-up, which is credit already. */
-const isTopUp = computed<boolean>(() => props.invoice.isCreditTopUp)
+/** Why no note can be issued on this invoice, or null when one can; the one rule is `creditNoteBlock`. */
+const block = computed<CreditNoteBlock | null>(() => creditNoteBlock(props.invoice))
 
-/** True when the invoice holds paid money a note can reverse. */
-const isPaid = computed<boolean>(() => props.invoice.status === InvoiceStatus.Paid || props.invoice.status === InvoiceStatus.PartiallyRefunded)
+/** Locale key of the sentence for each reason a note cannot be issued. */
+const blockedKeys: Record<CreditNoteBlock, string> = {
+  [CreditNoteBlock.TopUp]: 'billing.creditNotes.blockedTopUp',
+  [CreditNoteBlock.NotPaid]: 'billing.creditNotes.blockedNotPaid',
+  [CreditNoteBlock.NothingLeft]: 'billing.creditNotes.blockedNothingLeft',
+}
 
 /** True when the issue button can be used. */
-const canIssue = computed<boolean>(() => !props.readonly && !isTopUp.value && isPaid.value && props.invoice.creditableAmount > 0)
+const canIssue = computed<boolean>(() => !props.readonly && block.value === null)
 
 /** The sentence that says why no note can be issued, or an empty string when one can. */
-const blockedReason = computed<string>(() => {
-  if (isTopUp.value) {
-    return t('billing.creditNotes.blockedTopUp')
-  }
-  if (!isPaid.value) {
-    return t('billing.creditNotes.blockedNotPaid')
-  }
-  if (props.invoice.creditableAmount <= 0) {
-    return t('billing.creditNotes.blockedNothingLeft')
-  }
-  return ''
-})
+const blockedReason = computed<string>(() => (block.value === null ? '' : t(blockedKeys[block.value])))
 
 /** Loads the notes of this invoice. */
 const load = async (): Promise<void> => {
@@ -121,17 +117,27 @@ onMounted(load)
       {{ t('billing.creditNotes.explain') }}
     </UiAlert>
 
-
-    <UiCard>
-      <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center">
-        <UiText data-testid="billing-invoice-creditable">
-          {{ t('billing.creditNotes.creditable', { amount: formatPlainAmount(invoice.creditableAmount, invoice.currency) }) }}
-        </UiText>
-        <UiButton :action="UiActionKind.Confirm" v-if="!readonly" :variant="UiButtonVariant.Primary" :disabled="!canIssue" data-testid="billing-invoice-credit-note-issue" :hint="t('billing.creditNotes.issueButton')" @click="issuing = true">
-          {{ t('billing.creditNotes.issue') }}
-        </UiButton>
+    <UiCard :padding="UiCardPadding.Md">
+      <UiStack :gap="UiGap.Sm">
+        <UiStack :direction="UiDirection.Row" :justify="UiJustify.Between" :align="UiAlignItems.Center" :gap="UiGap.Md">
+          <UiText data-testid="billing-invoice-creditable">
+            {{ t('billing.creditNotes.creditable', { amount: formatPlainAmount(invoice.creditableAmount, invoice.currency) }) }}
+          </UiText>
+          <UiButton
+            v-if="!readonly"
+            :action="UiActionKind.Confirm"
+            :variant="UiButtonVariant.Primary"
+            :size="UiSize.Sm"
+            :disabled="!canIssue"
+            data-testid="billing-invoice-credit-note-issue"
+            :hint="t('billing.creditNotes.issueButton')"
+            @click="issuing = true"
+          >
+            {{ t('billing.creditNotes.issue') }}
+          </UiButton>
+        </UiStack>
+        <UiText v-if="blockedReason" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="billing-invoice-credit-note-blocked">{{ blockedReason }}</UiText>
       </UiStack>
-      <UiText v-if="blockedReason" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="billing-invoice-credit-note-blocked">{{ blockedReason }}</UiText>
     </UiCard>
 
     <UiDataTable

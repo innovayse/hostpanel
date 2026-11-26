@@ -7,6 +7,7 @@
 
 import { useApi } from '@/composables/useApi'
 import type { ActivityEvent } from '@/types/activityevent'
+import { HttpMethod } from '@/types/http'
 import type { DashboardCharts, DashboardPeriod } from '@/types/dashboardcharts'
 import type { DashboardStats } from '@/types/dashboardstats'
 import { ApiPath } from '@/lib/apiPaths'
@@ -45,5 +46,22 @@ export const useDashboardApi = () => {
   const fetchActivity = (limit: number): Promise<ActivityEvent[]> =>
     request<ActivityEvent[]>(`${ApiPath.AdminDashboard}/activity?limit=${limit}`)
 
-  return { fetchStats, fetchCharts, fetchActivity }
+  /**
+   * Marks one event of the feed as read for the signed-in admin.
+   *
+   * @param eventKey - The key of the event, as the feed returned it.
+   * @returns Resolves once the server has stored the mark.
+   */
+  const markActivityRead = (eventKey: string): Promise<void> =>
+    request<void>(`${ApiPath.AdminDashboard}/activity/read`, { method: HttpMethod.Post, body: JSON.stringify({ eventKey }) })
+
+  /**
+   * Marks every event of the feed as read for the signed-in admin.
+   *
+   * @returns Resolves once the server has stored the marks.
+   */
+  const markAllActivityRead = (): Promise<void> =>
+    request<void>(`${ApiPath.AdminDashboard}/activity/read-all`, { method: HttpMethod.Post })
+
+  return { fetchStats, fetchCharts, fetchActivity, markActivityRead, markAllActivityRead }
 }

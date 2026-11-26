@@ -297,9 +297,9 @@ describe('suggested pages', () => {
 
   it('gives every suggested page a drawable icon', () => {
     for (const page of SUGGESTED_PAGES) {
-      expect(SEARCH_ICONS[page.icon].length).toBeGreaterThan(0)
+      expect(SEARCH_ICONS[page.icon]).toBeDefined()
     }
-    expect(SEARCH_ICONS['file-text'].length).toBeGreaterThan(0)
-    expect(SEARCH_ICONS['chevron-right'].length).toBeGreaterThan(0)
+    expect(SEARCH_ICONS['file-text']).toBeDefined()
+    expect(SEARCH_ICONS['chevron-right']).toBeDefined()
   })
 })

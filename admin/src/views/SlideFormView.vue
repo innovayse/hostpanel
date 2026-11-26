@@ -7,7 +7,6 @@
  * A refused load (or a missing slide) shows with a retry instead of the form; a refused save toasts
  * its sentence, a saved slide returns to the list.
  */
-import { Icon as MdiIcon } from '@iconify/vue'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -21,6 +20,7 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiNamedIcon from '@/components/ui/UiNamedIcon.vue'
 import UiLocalizedField from '@/components/ui/UiLocalizedField.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
@@ -38,7 +38,7 @@ import { useUnsavedChangesGuard } from '@/composables/useUnsavedChangesGuard'
 import { Icon } from '@/lib/icons'
 import { nextRowKey } from '@/lib/rowKey'
 import { enumValueOf } from '@/lib/enumValue'
-import { blankTranslations, filledLocales, STOREFRONT_LOCALES } from '@/lib/storefrontTranslations'
+import { blankTranslations, filledLocales } from '@/lib/storefrontTranslations'
 import { useSettingsStore } from '@/stores/settings'
 import { useSlidesStore } from '@/stores/slides'
 import type { CreateSlidePayload, SlideTranslation, UpdateSlidePayload } from '@/types/slide'
@@ -411,12 +411,12 @@ const handleCancel = (): void => {
                 :data-testid="`slide-form-icon-${preset.name}`"
                 @click="iconName = preset.name"
               >
-                <MdiIcon :icon="`mdi:${preset.name}`" />
+                <UiNamedIcon :name="preset.name" />
                 {{ t(preset.labelKey) }}
               </UiButton>
             </UiStack>
             <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm">
-              <MdiIcon v-if="iconName" :icon="`mdi:${iconName}`" class="text-xl text-text-primary" />
+              <UiNamedIcon v-if="iconName" :name="iconName" class="text-xl text-text-primary" />
               <UiInput
                 v-model="iconName"
                 :type="UiInputType.Text"
@@ -518,7 +518,7 @@ const handleCancel = (): void => {
         </template>
 
         <template #field-locales>
-          <UiLocalizedField v-model="activeLocale" :locales="STOREFRONT_LOCALES" :filled="filled" testid="slide-form-tab" />
+          <UiLocalizedField v-model="activeLocale" :filled="filled" testid="slide-form-tab" />
         </template>
 
         <template #field-title="{ id }">
@@ -581,7 +581,7 @@ const handleCancel = (): void => {
             <UiButton
               :type="UiButtonType.Button"
               :variant="UiButtonVariant.Link"
-              :action="UiActionKind.Add"
+              :action="UiActionKind.AddRow"
               :size="UiSize.Sm"
               class="self-start"
               data-testid="slide-form-feature-add"

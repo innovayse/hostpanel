@@ -28,7 +28,7 @@ export const CURRENCIES_TABLE: SkeletonTable = {
     { key: 'rateToBase', label: 'currencies.table.rateToBase', numeric: true },
     { key: 'base', label: 'currencies.table.base', align: 'left', kind: UiColumnKind.Status },
     { key: 'enabled', label: 'currencies.table.enabled', align: 'left', kind: UiColumnKind.Status },
-    { key: 'actions', label: 'currencies.table.actions', actions: true },
+    { key: 'actions', actions: true },
   ],
 }
 

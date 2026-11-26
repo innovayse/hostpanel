@@ -124,6 +124,8 @@ public static class DependencyInjection
         services.AddScoped<PluginUpdateOffer>();
         // The install record both plugin install use cases (upload and registry) write for an accepted package.
         services.AddScoped<InstalledPluginRecorder>();
+        // The answer of an install or a removal: applied in the running process when the plugin can be reloaded, else a restart.
+        services.AddScoped<PluginChangeApplier>();
 
         return services;
     }

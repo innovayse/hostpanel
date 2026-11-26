@@ -19,7 +19,7 @@ const schema: ListSkeletonSchema = {
       { key: 'question', label: 'storefront.faqs.question', size: UiColumnSize.Grow },
       { key: 'category', label: 'storefront.faqs.category', kind: UiColumnKind.Status },
       { key: 'status', label: 'shared.status', kind: UiColumnKind.Status, cardRole: UiCardRole.Badge },
-      { key: 'actions', label: 'shared.actions', actions: true },
+      { key: 'actions', actions: true },
     ],
   },
 }

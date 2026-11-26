@@ -36,17 +36,11 @@
     "consentHistory": "Համաձայնությունների պատմություն"
   },
   "clientForm": {
-    "english": "Անգլերեն",
-    "russian": "Ռուսերեն",
-    "armenian": "Հայերեն",
-    "german": "Գերմաներեն",
-    "spanish": "Իսպաներեն",
     "suspended": "Կասեցված",
     "closed": "Փակված",
     "emailIsRequired": "Էլ. փոստը պարտադիր է",
     "firstNameIsRequired": "Անունը պարտադիր է",
-    "lastNameIsRequired": "Ազգանունը պարտադիր է",
-    "spanish": "Իսպաներեն"
+    "lastNameIsRequired": "Ազգանունը պարտադիր է"
   },
   "contactForm": {
     "editContact": "Խմբագրել կոնտակտը",
@@ -388,9 +382,7 @@
     "2fa": "2FA",
     "joined": "Գրանցման ամսաթիվ",
     "userDeleted": "Օգտատերը ջնջված է",
-    "twoFactorAuthenticationEnabled": "Երկգործոն նույնականացումը միացված է",
     "on": "Միաց.",
-    "twoFactorAuthenticationDisabled": "Երկգործոն նույնականացումն անջատված է",
     "off": "Անջ.",
     "noClientsMatchYourFilters": "Ֆիլտրերին համապատասխան հաճախորդներ չկան",
     "noClientsFound": "Հաճախորդներ չեն գտնվել",

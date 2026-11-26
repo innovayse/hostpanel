@@ -17,6 +17,14 @@ export const BrandingImageKind = {
 /** One of the {@link BrandingImageKind} values. */
 export type BrandingImageKind = (typeof BrandingImageKind)[keyof typeof BrandingImageKind]
 
+/** How one branding upload ended: the stored image's URL, or the API's sentence for its refusal. */
+export interface BrandingUploadOutcome {
+  /** Public URL the stored image is served from; null when the upload was refused. */
+  url: string | null
+  /** The API's own sentence for the refusal; null when the upload was stored. */
+  error: string | null
+}
+
 /** Content areas that own an image upload endpoint under the scope name. Homepage slides share the storefront content endpoint. */
 export const ImageUploadScope = {
   /** Storefront content: slide covers, testimonial avatars, partner logos, project pictures. */

@@ -22,10 +22,11 @@ services:
     profiles: ["disabled"]
 
   hostpanel-api:
-    # The database is this product's own and stays; the broker and redis are the platform's.
-    depends_on: !override
-      hostpanel-db:
-        condition: service_healthy
+    # The broker and redis are the platform's, so only those two leave the list; the database,
+    # the volume ownership step and the dev mail catcher from the base files stay.
+    depends_on:
+      hostpanel-rabbitmq: !reset null
+      hostpanel-redis: !reset null
     # Host, port and credentials override together or the catcher gets prod.yml's port with no credentials.
     environment:
       Smtp__Host: ${SMTP_HOST}

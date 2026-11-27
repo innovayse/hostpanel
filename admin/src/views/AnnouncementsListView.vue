@@ -41,14 +41,15 @@ import { Icon } from '@/lib/icons'
 import schema from '@/views/AnnouncementsListView.schema'
 import { AppRoute, editPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('support.announcementsList.createAnnouncement'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'announcements-add', to: AppRoute.SupportAnnouncementsNew },
+  headerAction(UiActionKind.Add, { label: t('support.announcementsList.createAnnouncement'), variant: UiButtonVariant.Primary, testid: 'announcements-add', to: AppRoute.SupportAnnouncementsNew }),
 ])
 
 /** The filter field the dialog edits; it is one query key and one `AnnouncementListFilters` member. */

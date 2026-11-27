@@ -25,6 +25,8 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -132,13 +134,12 @@ const openImport = (): void => {
 
 /** The header action that opens the registrar import dialog. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  {
+  headerAction(UiActionKind.Import, {
     label: t('domains.domainsList.importFromRegistrar'),
-    icon: Icon.Download,
     variant: UiButtonVariant.Secondary,
     testid: 'domains-import-registrar',
     onSelect: openImport,
-  },
+  }),
 ])
 
 /**

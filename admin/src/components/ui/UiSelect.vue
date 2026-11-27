@@ -17,7 +17,7 @@
  * frosted cards of a page create stacking contexts and would paint a list rendered in place under the next card; on a
  * phone (below `sm`) it is a bottom sheet titled with the placeholder or the accessible name ({@link UiFloatingSurface}).
  * `data-testid` and classes land on the root element, which never grows past the row it sits in (`max-w-full min-w-0`): a long
- * label is cut with an ellipsis in the trigger instead of pushing the control out of its card.
+ * label wraps to two lines in the trigger (a compact toolbar select keeps one line and an ellipsis) and in full in the list, instead of pushing the control out of its card or being cut.
  */
 import { ref, shallowRef, computed, watch, nextTick, onUnmounted, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -160,8 +160,8 @@ const triggerSizeClasses = computed<string>(() => {
     return 'h-8 px-3 text-[0.8125rem] rounded-[9px]'
   }
   return props.attached
-    ? 'h-10.5 max-sm:h-11 px-3.5 text-sm rounded-l-control border-r-0'
-    : 'h-10.5 max-sm:h-11 px-3.5 text-sm rounded-control'
+    ? 'min-h-10.5 max-sm:min-h-11 px-3.5 py-1.5 text-sm rounded-l-control border-r-0'
+    : 'min-h-10.5 max-sm:min-h-11 px-3.5 py-1.5 text-sm rounded-control'
 })
 
 /**
@@ -437,7 +437,7 @@ onUnmounted(cancelSearchTimer)
       @click="toggleList"
       @keydown="onKeydown"
     >
-      <span class="truncate" :class="showingPlaceholder ? 'text-text-muted' : 'text-text-primary'">
+      <span :class="[compact ? 'truncate' : 'line-clamp-2 text-left', showingPlaceholder ? 'text-text-muted' : 'text-text-primary']">
         {{ selectedLabel }}
       </span>
       <UiIcon
@@ -508,9 +508,9 @@ onUnmounted(cancelSearchTimer)
             @mousemove="activeIndex = index"
           >
             <span class="flex min-w-0 flex-1 flex-col">
-              <span v-if="opt.caption" class="truncate text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
-              <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
-              <span v-if="opt.description" class="truncate text-[0.75rem] opacity-70">{{ opt.description }}</span>
+              <span v-if="opt.caption" class="break-words text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
+              <span class="break-words">{{ opt.displayLabel ?? opt.label }}</span>
+              <span v-if="opt.description" class="break-words text-[0.75rem] opacity-70">{{ opt.description }}</span>
             </span>
             <UiIcon
               v-if="opt.value === props.modelValue"

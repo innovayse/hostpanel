@@ -53,7 +53,6 @@ const emit = defineEmits<{
         v-if="strip"
         :items="strip"
         :model-value="stripValue"
-        hide-scrollbar
         :inert="stripInert || undefined"
         class="mb-4 md:hidden"
         :data-testid="stripTestid"

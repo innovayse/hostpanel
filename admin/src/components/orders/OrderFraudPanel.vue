@@ -15,6 +15,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { FRAUD_REASON_OPTIONS } from '@/lib/constants'
 import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { statusLabel } from '@/lib/tones'
 import { OrderStatus } from '@/types/order'
 import type { OrderDetail } from '@/types/order'
@@ -85,7 +86,7 @@ const underReview = computed<boolean>(() => props.order.status === OrderStatus.U
         </UiText>
       </UiStack>
       <UiStack v-if="underReview" :direction="UiDirection.Row" :gap="UiGap.Sm" wrap>
-        <UiButton :icon="Icon.Check"
+        <UiButton :action="UiActionKind.Confirm"
           :variant="UiButtonVariant.Secondary"
           :size="UiSize.Sm"
           :disabled="busy"

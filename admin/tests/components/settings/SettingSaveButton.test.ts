@@ -40,4 +40,17 @@ describe('SettingSaveButton', () => {
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('click')).toBeUndefined()
   })
+
+  it('is the primary action of the shared form action row, as wide as its card on a phone', () => {
+    const wrapper = mountButton({ dirty: true })
+
+    expect(wrapper.get('[data-testid="ui-form-actions"]').classes()).toEqual(expect.arrayContaining(['max-sm:w-full', 'max-sm:items-stretch']))
+    expect(wrapper.get('button').classes().join(' ')).toContain('bg-primary')
+  })
+
+  it('puts the attributes it is given on the button, not on the row', () => {
+    const wrapper = mount(SettingSaveButton, { props: { dirty: true }, attrs: { 'data-testid': 'save-x' }, global: { plugins: [createTestI18n()] } })
+
+    expect(wrapper.get('button').attributes('data-testid')).toBe('save-x')
+  })
 })

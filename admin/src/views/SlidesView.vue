@@ -43,14 +43,15 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 import { EMPTY_VALUE } from '@/lib/format'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('settings.slideForm.createSlide'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'slides-add', to: createRoute },
+  headerAction(UiActionKind.Add, { label: t('settings.slideForm.createSlide'), variant: UiButtonVariant.Primary, testid: 'slides-add', to: createRoute }),
 ])
 
 /** Slides store: the list, the loading flag and the refusal sentences. */

@@ -34,14 +34,14 @@ describe('PluginRegistryTrustCard', () => {
   it('shows the stored level in the select', async () => {
     const { wrapper } = await mountScreen(PluginRegistryTrustCard, propsFor(PluginRegistryTrust.OwnKeysOnly))
 
-    expect(wrapper.get('[data-testid="plugin-registry-trust-select"]').text()).toContain('Packages signed with my own keys only')
+    expect(wrapper.get('[data-testid="plugin-registry-trust-select"]').text()).toContain('Verified and signed')
     expect(wrapper.find('[data-testid="plugin-registry-trust-warning"]').exists()).toBe(false)
   })
 
   it('reads an empty row as verified publishers only', async () => {
     const { wrapper } = await mountScreen(PluginRegistryTrustCard, propsFor(''))
 
-    expect(wrapper.get('[data-testid="plugin-registry-trust-select"]').text()).toContain('Verified publishers only')
+    expect(wrapper.get('[data-testid="plugin-registry-trust-select"]').text()).toContain('Verified only')
   })
 
   it('warns while any registry publisher is chosen', async () => {
@@ -53,7 +53,7 @@ describe('PluginRegistryTrustCard', () => {
   it('saves the picked level as the literal string', async () => {
     const { wrapper } = await mountScreen(PluginRegistryTrustCard, propsFor(PluginRegistryTrust.VerifiedOnly))
 
-    await pickOption(wrapper, 'plugin-registry-trust-select', 'Any registry publisher')
+    await pickOption(wrapper, 'plugin-registry-trust-select', 'Everyone')
     await wrapper.get('[data-testid="plugin-registry-trust-save"]').trigger('click')
 
     expect(save.mock.calls).toEqual([[11, PluginRegistryTrust.AnyRegistryPublisher]])
@@ -71,7 +71,7 @@ describe('PluginRegistryTrustCard', () => {
     save.mockResolvedValue({ saved: false, error: 'That value is not accepted for this setting.' })
     const { wrapper } = await mountScreen(PluginRegistryTrustCard, propsFor(PluginRegistryTrust.VerifiedOnly))
 
-    await pickOption(wrapper, 'plugin-registry-trust-select', 'Any registry publisher')
+    await pickOption(wrapper, 'plugin-registry-trust-select', 'Everyone')
     await wrapper.get('[data-testid="plugin-registry-trust-save"]').trigger('click')
     await wrapper.vm.$nextTick()
 
@@ -83,5 +83,13 @@ describe('PluginRegistryTrustCard', () => {
 
     expect(wrapper.get('[data-testid="plugin-registry-trust-not-seeded"]').text()).toContain('plugins.registry_trust')
     expect(wrapper.find('[data-testid="plugin-registry-trust-select"]').exists()).toBe(false)
+  })
+
+  it('describes every level in one line under its label in the list', async () => {
+    const { wrapper } = await mountScreen(PluginRegistryTrustCard, propsFor(PluginRegistryTrust.VerifiedOnly))
+    await wrapper.get('[data-testid="plugin-registry-trust-select"] button').trigger('click')
+
+    expect(wrapper.text()).toContain('Only publishers the registry has verified.')
+    expect(wrapper.text()).toContain('Only packages signed with my own keys.')
   })
 })

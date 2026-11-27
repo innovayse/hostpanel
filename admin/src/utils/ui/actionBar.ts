@@ -5,6 +5,7 @@
 import type { RouteLocationRaw } from 'vue-router'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { actionIcons, type UiActionKind } from '@/utils/ui/actions'
 
 /** The picture of the plugin an action runs through, drawn instead of the generic icon on the action's button. */
 export interface UiBarPluginIcon {
@@ -66,3 +67,12 @@ export interface UiHeaderAction extends UiBarAction {
   /** Called when the button is pressed; a link action needs none. */
   onSelect?: () => void
 }
+
+/**
+ * Builds a header action whose icon is the one of its kind, so a header action cannot draw an icon that contradicts its meaning.
+ *
+ * @param action - The kind of the action; its icon comes from the one map in `utils/ui/actions`.
+ * @param spec - Everything else about the action: label, look, test id and what it does.
+ * @returns The header action with its icon.
+ */
+export const headerAction = (action: UiActionKind, spec: Omit<UiHeaderAction, 'icon'>): UiHeaderAction => ({ ...spec, icon: actionIcons[action] })

@@ -200,8 +200,8 @@
   "invoiceDetail": {
     "invoiceId": "Счёт №{id}",
     "manageAndViewInvoiceDetails": "Управление счётом и просмотр его данных",
-    "viewInvoice": "Просмотр счёта",
-    "manageInvoice": "Управление счётом",
+    "viewInvoice": "Просмотр",
+    "manageInvoice": "Управление",
     "theClientIsNotAble": "Клиент не видит этот счёт и не имеет к нему доступа, пока он не опубликован.",
     "thisIsADraftInvoice": "Это черновик счёта.",
     "addPayment": "Добавить платёж",

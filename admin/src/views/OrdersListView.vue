@@ -48,7 +48,8 @@ import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
@@ -58,7 +59,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('orders.ordersList.reviewQueue'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Secondary, testid: 'orders-review-queue', onSelect: showReviewQueue },
+  headerAction(UiActionKind.View, { label: t('orders.ordersList.reviewQueue'), variant: UiButtonVariant.Secondary, testid: 'orders-review-queue', onSelect: showReviewQueue }),
 ])
 
 const store = useOrdersStore()

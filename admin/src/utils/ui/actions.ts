@@ -48,6 +48,10 @@ export const UiActionKind = {
   Confirm: 'confirm',
   /** Opens the settings of a thing. */
   Configure: 'configure',
+  /** Opens the management of a record or a set (its editing screen, a list of groups). */
+  Manage: 'manage',
+  /** Brings records in from an outside source (a registrar, a provider). */
+  Import: 'import',
   /** Opens a thing outside the panel or in its own screen. */
   Open: 'open',
   /** Shows a record or a preview. */
@@ -92,6 +96,8 @@ export const actionIcons: Record<UiActionKind, string> = {
   [UiActionKind.Reset]: Icon.Undo,
   [UiActionKind.Confirm]: Icon.CheckCircle,
   [UiActionKind.Configure]: Icon.Settings,
+  [UiActionKind.Manage]: Icon.Settings,
+  [UiActionKind.Import]: Icon.Download,
   [UiActionKind.Open]: Icon.ExternalLink,
   [UiActionKind.View]: Icon.Eye,
   [UiActionKind.Test]: Icon.Zap,

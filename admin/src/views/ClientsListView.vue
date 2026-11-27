@@ -48,13 +48,15 @@ import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, clientPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTableDensity } from '@/utils/ui/injection'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('clients.clientsList.createClient'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'clients-list-add', to: AppRoute.ClientsAdd },
+  headerAction(UiActionKind.Add, { label: t('clients.clientsList.createClient'), variant: UiButtonVariant.Primary, testid: 'clients-list-add', to: AppRoute.ClientsAdd }),
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `ClientFilters` member. */

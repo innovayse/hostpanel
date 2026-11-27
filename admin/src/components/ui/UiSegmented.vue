@@ -44,7 +44,7 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
 </script>
 
 <template>
-  <div role="radiogroup" :aria-label="ariaLabel" class="inline-flex max-w-full gap-1.5 overflow-x-auto rounded-control border border-border bg-surface-inset p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+  <div role="radiogroup" :aria-label="ariaLabel" class="inline-flex max-w-full gap-1.5 overflow-x-auto rounded-control border border-border bg-surface-inset p-1 no-scrollbar">
     <button
       v-for="(item, index) in items"
       :key="item.value"

@@ -365,7 +365,7 @@
     "confirmRemoveMessage": "The line \"{label}\" will be removed from the specification."
   },
   "productGroups": {
-    "manage": "Product groups",
+    "manage": "Groups",
     "title": "Product groups",
     "addTitle": "Create product group",
     "editTitle": "Edit product group",
@@ -677,7 +677,7 @@
     "tldPricing": "TLD Pricing",
     "configureDomainExtensionPricingAnd": "Configure domain extension pricing and providers",
     "import": "Import",
-    "syncPrices": "Sync Prices",
+    "syncPrices": "Sync prices",
     "searchTlds": "Search TLDs",
     "tld": "TLD",
     "provider": "Provider",

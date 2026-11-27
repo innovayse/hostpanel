@@ -32,14 +32,15 @@ import { UiTone } from '@/utils/ui/tone'
 import { EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('clients.clientGroups.add'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'client-groups-add', onSelect: openCreate },
+  headerAction(UiActionKind.Add, { label: t('clients.clientGroups.add'), variant: UiButtonVariant.Primary, testid: 'client-groups-add', onSelect: openCreate }),
 ])
 
 /** Client groups store, the only caller of the group endpoints. */

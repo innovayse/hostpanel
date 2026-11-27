@@ -42,7 +42,8 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
 import schema from '@/views/CreditNoteDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
@@ -52,8 +53,8 @@ const { crumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-credit-note-download', disabled: note.value === null, onSelect: downloadPdf },
-  ...(canVoid.value ? [{ label: t('billing.creditNotes.voidButton'), icon: actionIcons[UiActionKind.Remove], variant: UiButtonVariant.Danger, testid: 'billing-credit-note-void', onSelect: askVoid }] : []),
+  headerAction(UiActionKind.Download, { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), variant: UiButtonVariant.Secondary, testid: 'billing-credit-note-download', disabled: note.value === null, onSelect: downloadPdf }),
+  ...(canVoid.value ? [headerAction(UiActionKind.Remove, { label: t('billing.creditNotes.voidButton'), variant: UiButtonVariant.Danger, testid: 'billing-credit-note-void', onSelect: askVoid })] : []),
 ])
 
 /** Current route, source of the credit note id. */

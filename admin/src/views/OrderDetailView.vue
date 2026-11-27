@@ -53,8 +53,9 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import schema from '@/views/OrderDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiCardPadding } from '@/utils/ui/card'
@@ -113,9 +114,9 @@ const headerActions = computed<UiHeaderAction[]>(() => {
   }
   const pending = current.status === OrderStatus.Pending
   return [
-    ...(pending ? [{ label: t('orders.accept'), icon: actionIcons[UiActionKind.Confirm], variant: UiButtonVariant.Secondary, testid: 'order-accept', onSelect: handleAccept }] : []),
-    ...(pending ? [{ label: t('shared.cancel'), icon: actionIcons[UiActionKind.Close], variant: UiButtonVariant.Danger, testid: 'order-cancel', onSelect: askCancel }] : []),
-    ...(pending || current.status === OrderStatus.Cancelled ? [{ label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Ghost, testid: 'order-delete', onSelect: askDelete }] : []),
+    ...(pending ? [headerAction(UiActionKind.Confirm, { label: t('orders.accept'), variant: UiButtonVariant.Secondary, testid: 'order-accept', onSelect: handleAccept })] : []),
+    ...(pending ? [headerAction(UiActionKind.Cancel, { label: t('shared.cancel'), variant: UiButtonVariant.Danger, testid: 'order-cancel', onSelect: askCancel })] : []),
+    ...(pending || current.status === OrderStatus.Cancelled ? [headerAction(UiActionKind.Delete, { label: t('shared.delete'), variant: UiButtonVariant.Ghost, testid: 'order-delete', onSelect: askDelete })] : []),
   ]
 })
 

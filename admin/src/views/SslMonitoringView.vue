@@ -20,7 +20,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import UiTooltip from '@/components/ui/UiTooltip.vue'
 import { useReport } from '@/composables/useReport'
 import { EMPTY_VALUE, formatDate, formatDateTime } from '@/lib/format'
-import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { reportPath } from '@/lib/reportsQuery'
 import { useReportsStore } from '@/stores/reports'
 import { SSL_GROUP_TITLE_KEYS, SSL_GROUP_TONES } from '@/types/reportssl'
@@ -83,7 +83,7 @@ const revalidate = async (): Promise<void> => {
           </UiStack>
         </UiTooltip>
         <UiTooltip :text="t('reports.sslMonitoring.recheckHint')" placement="bottom">
-          <UiButton :icon="Icon.Refresh" :variant="UiButtonVariant.Secondary" :loading="store.updating" data-testid="report-revalidate" @click="revalidate">{{ t('shared.refresh') }}
+          <UiButton :action="UiActionKind.Refresh" :variant="UiButtonVariant.Secondary" :loading="store.updating" data-testid="report-revalidate" @click="revalidate">{{ t('shared.refresh') }}
           </UiButton>
         </UiTooltip>
       </UiStack>

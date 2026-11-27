@@ -13,7 +13,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
-import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { ReportAction } from '@/utils/ui/reportParts'
@@ -36,10 +36,10 @@ const emit = defineEmits<{
   print: []
 }>()
 
-/** How a button looks: its icon, its caption (already translated) and the `data-testid` the tests find it by. */
+/** How a button looks: its action kind, its caption (already translated) and the `data-testid` the tests find it by. */
 interface ActionLook {
-  /** Icon markup. */
-  icon: string
+  /** Kind of the action, which names its icon. */
+  action: UiActionKind
   /** Caption. */
   label: string
   /** `data-testid` of the button. */
@@ -48,9 +48,9 @@ interface ActionLook {
 
 /** The look of each action; read again when the language changes. */
 const looks = computed<Readonly<Record<ReportAction, ActionLook>>>(() => ({
-  [ReportAction.Refresh]: { icon: Icon.Refresh, label: t('shared.refresh'), testid: 'report-refresh' },
-  [ReportAction.Export]: { icon: Icon.Download, label: t('shared.export'), testid: 'report-export' },
-  [ReportAction.Print]: { icon: Icon.Printer, label: t('shared.print'), testid: 'report-print' },
+  [ReportAction.Refresh]: { action: UiActionKind.Refresh, label: t('shared.refresh'), testid: 'report-refresh' },
+  [ReportAction.Export]: { action: UiActionKind.Export, label: t('shared.export'), testid: 'report-export' },
+  [ReportAction.Print]: { action: UiActionKind.Print, label: t('shared.print'), testid: 'report-print' },
 }))
 
 /** What pressing each button tells the screen. */
@@ -79,7 +79,7 @@ const press: Readonly<Record<ReportAction, () => void>> = {
 <template>
   <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="shrink-0 whitespace-nowrap">
     <slot />
-    <UiButton v-for="action in actions" :key="action" :icon="looks[action].icon" :variant="UiButtonVariant.Secondary" :data-testid="looks[action].testid" @click="press[action]()">
+    <UiButton v-for="action in actions" :key="action" :action="looks[action].action" :variant="UiButtonVariant.Secondary" :data-testid="looks[action].testid" @click="press[action]()">
       {{ looks[action].label }}
     </UiButton>
   </UiStack>

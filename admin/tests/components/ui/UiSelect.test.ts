@@ -481,7 +481,7 @@ describe('UiSelect', () => {
   it('keeps the field look when it is not compact', async () => {
     const wrapper = track({ modelValue: 'a' })
 
-    expect(wrapper.get('button').classes()).toEqual(expect.arrayContaining(['h-10.5', 'px-3.5', 'rounded-control']))
+    expect(wrapper.get('button').classes()).toEqual(expect.arrayContaining(['min-h-10.5', 'px-3.5', 'rounded-control']))
     await wrapper.get('button').trigger('click')
     expect(wrapper.get('[data-testid="ui-select-panel"]').classes()).not.toContain('rounded-xl')
   })
@@ -490,7 +490,7 @@ describe('UiSelect', () => {
     const wrapper = track({ modelValue: 'a', compact: true })
 
     expect(wrapper.get('button').classes()).toEqual(expect.arrayContaining(['h-8', 'text-[0.8125rem]', 'rounded-[9px]']))
-    expect(wrapper.get('button').classes()).not.toContain('h-10.5')
+    expect(wrapper.get('button').classes()).not.toContain('min-h-10.5')
   })
 
   it('opens a soft list when compact: inset rounded rows and a tinted, not solid, selection', async () => {
@@ -663,5 +663,26 @@ describe('UiSelect on a phone', () => {
 
     expect(wrapper.find('[data-testid="drawer"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="ui-select-panel"]').exists()).toBe(true)
+  })
+
+  it('wraps a long label on the trigger up to two lines, and keeps one line in a compact toolbar', () => {
+    const long: UiSelectOption<string>[] = [{ value: 'a', label: 'A very long label that would not fit on a phone' }]
+    const form = track({ modelValue: 'a', options: long }).get('button > span')
+    const compact = track({ modelValue: 'a', options: long, compact: true }).get('button > span')
+
+    expect(form.classes()).toContain('line-clamp-2')
+    expect(form.classes()).not.toContain('truncate')
+    expect(compact.classes()).toContain('truncate')
+  })
+
+  it('lists full option labels and descriptions, wrapped and never cut', async () => {
+    const described: UiSelectOption<string>[] = [{ value: 'a', label: 'Verified only', description: 'Only publishers the registry has verified.' }]
+    const wrapper = track({ modelValue: 'a', options: described })
+    await wrapper.get('button').trigger('click')
+    const row = wrapper.get('[data-testid="ui-select-option"]')
+
+    expect(row.text()).toContain('Only publishers the registry has verified.')
+    expect(row.findAll('span').filter(span => span.classes().includes('truncate'))).toHaveLength(0)
+    expect(row.findAll('span.break-words')).toHaveLength(2)
   })
 })

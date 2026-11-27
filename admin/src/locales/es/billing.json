@@ -200,8 +200,8 @@
   "invoiceDetail": {
     "invoiceId": "Factura #{id}",
     "manageAndViewInvoiceDetails": "Administrar y ver detalles de la factura",
-    "viewInvoice": "Ver factura",
-    "manageInvoice": "Administrar factura",
+    "viewInvoice": "Ver",
+    "manageInvoice": "Administrar",
     "theClientIsNotAble": "El cliente no puede ver ni acceder a esta factura hasta que se publique.",
     "thisIsADraftInvoice": "Esta es una factura en borrador.",
     "addPayment": "Agregar pago",

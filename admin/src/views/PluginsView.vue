@@ -50,7 +50,8 @@ import { UiTone } from '@/utils/ui/tone'
 import { PluginCategory, PluginCategoryAll, PluginProcessingStep, PluginsTab } from '@/types/plugin'
 import type { PluginActionOutcome } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiGap } from '@/utils/ui/layout'
 
@@ -59,7 +60,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('plugins.plugins.uploadPlugin'), icon: actionIcons[UiActionKind.Upload], variant: UiButtonVariant.Primary, testid: 'plugins-upload-open', onSelect: openUpload },
+  headerAction(UiActionKind.Upload, { label: t('plugins.plugins.uploadPlugin'), variant: UiButtonVariant.Primary, testid: 'plugins-upload-open', onSelect: openUpload }),
 ])
 
 /** Router: opens a plugin's details page. */

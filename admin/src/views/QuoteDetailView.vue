@@ -38,10 +38,11 @@ import { invoicePath, quotePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiTone } from '@/utils/ui/tone'
 import schema, { QUOTE_GENERAL_PART, QUOTE_NOTES_PART } from '@/views/QuoteDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
@@ -61,13 +62,13 @@ const openDelete = (): void => {
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('shared.save'), icon: actionIcons[UiActionKind.Save], variant: UiButtonVariant.Primary, testid: 'billing-quote-save', loading: store.loading, onSelect: save },
+  headerAction(UiActionKind.Save, { label: t('shared.save'), variant: UiButtonVariant.Primary, testid: 'billing-quote-save', loading: store.loading, onSelect: save }),
   ...(isNew.value
     ? []
     : [
-      { label: t('billing.actions.duplicate'), icon: actionIcons[UiActionKind.Copy], variant: UiButtonVariant.Secondary, testid: 'billing-quote-duplicate', disabled: store.loading, onSelect: duplicate },
-      { label: t('billing.quoteDetail.convertToInvoice'), icon: actionIcons[UiActionKind.Next], variant: UiButtonVariant.Secondary, testid: 'billing-quote-convert', disabled: store.loading, onSelect: openConvert },
-      { label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Danger, testid: 'billing-quote-delete', disabled: store.loading, onSelect: openDelete },
+      headerAction(UiActionKind.Copy, { label: t('billing.actions.duplicate'), variant: UiButtonVariant.Secondary, testid: 'billing-quote-duplicate', disabled: store.loading, onSelect: duplicate }),
+      headerAction(UiActionKind.Next, { label: t('billing.quoteDetail.convertToInvoice'), variant: UiButtonVariant.Secondary, testid: 'billing-quote-convert', disabled: store.loading, onSelect: openConvert }),
+      headerAction(UiActionKind.Delete, { label: t('shared.delete'), variant: UiButtonVariant.Danger, testid: 'billing-quote-delete', disabled: store.loading, onSelect: openDelete }),
     ]),
 ])
 

@@ -44,7 +44,8 @@ import type { EmailCampaignListFilters, EmailCampaignListItem } from '@/types/em
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -52,7 +53,7 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('emailCampaigns.list.create'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'email-campaigns-add', to: AppRoute.SupportEmailCampaignsNew },
+  headerAction(UiActionKind.Add, { label: t('emailCampaigns.list.create'), variant: UiButtonVariant.Primary, testid: 'email-campaigns-add', to: AppRoute.SupportEmailCampaignsNew }),
 ])
 
 /** The filter field the dialog edits; it is one query key and one `EmailCampaignListFilters` member. */

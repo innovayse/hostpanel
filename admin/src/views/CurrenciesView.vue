@@ -38,8 +38,9 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import schema, { CURRENCIES_TABLE, CURRENCY_PROVIDER_PART } from '@/views/CurrenciesView.schema'
 import { EMPTY_VALUE } from '@/lib/format'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiGap } from '@/utils/ui/layout'
@@ -50,9 +51,9 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('currencies.updateRates'), icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'currencies-update-rates', loading: updatingRates.value, onSelect: handleUpdateRates },
-  { label: t('currencies.updateProductPrices'), icon: actionIcons[UiActionKind.Refresh], variant: UiButtonVariant.Secondary, testid: 'currencies-update-prices', disabled: updatingPrices.value || nonBaseCurrencies.value.length === 0, onSelect: openPricesPicker },
-  { label: t('currencies.addCurrency'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'currencies-add', onSelect: openCreate },
+  headerAction(UiActionKind.Refresh, { label: t('currencies.updateRates'), variant: UiButtonVariant.Secondary, testid: 'currencies-update-rates', loading: updatingRates.value, onSelect: handleUpdateRates }),
+  headerAction(UiActionKind.Refresh, { label: t('currencies.updateProductPrices'), variant: UiButtonVariant.Secondary, testid: 'currencies-update-prices', disabled: updatingPrices.value || nonBaseCurrencies.value.length === 0, onSelect: openPricesPicker }),
+  headerAction(UiActionKind.Add, { label: t('currencies.addCurrency'), variant: UiButtonVariant.Primary, testid: 'currencies-add', onSelect: openCreate }),
 ])
 
 /** Currencies store: the list, the loading flag and the refusal sentences. */

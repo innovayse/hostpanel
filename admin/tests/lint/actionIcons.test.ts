@@ -9,6 +9,9 @@
  * - not sit in the `actions` slot of a `UiPageHeader`: header actions are data (`UiPageHeader` `actions` prop, `UiHeaderAction`,
  *   whose `icon` is required), so each one has its icon and folds into the "…" menu on a phone with the other actions.
  *
+ * Header actions (`UiHeaderAction`, the `headerActions` of a screen) are built with `headerAction(kind, ...)` only, so each has a
+ * kind and the icon of that kind; one with its own `icon:` or a bare object entry is a violation.
+ *
  * Text-only controls are the `link` look (a link inside prose), a plain `UiLink` (navigation text).
  * A few files hold choice rows that are labelled by data, not actions;
  * each is named below with its rule and the reason, and the list is checked too: an entry whose file is gone or no longer
@@ -32,6 +35,14 @@ enum ActionIconRule {
   InlineIcon = 'inline-icon',
   /** A button or link in the `actions` slot of a page header instead of the `actions` prop. */
   HeaderSlot = 'header-slot',
+}
+
+/** The rules the guard enforces on the script of a screen that builds header actions. */
+enum HeaderActionRule {
+  /** A header action given its own `icon:` instead of the icon of its kind. */
+  OwnIcon = 'own-icon',
+  /** A header action written as a bare object, with no `headerAction(kind, ...)` and so no kind. */
+  NoKind = 'no-kind',
 }
 
 /** One file allowed to break one rule, with the reason. */
@@ -159,6 +170,33 @@ const brokenRules = (template: string): ActionIconRule[] => {
   return Object.values(ActionIconRule).filter((rule) => broken.has(rule))
 }
 
+/** The list of header actions of a screen, from its declaration to the closing line. */
+const HEADER_ACTIONS = /headerActions = computed<UiHeaderAction\[\]>[\s\S]*?\n[\])}]+\n/
+
+/** A header action built through its kind. */
+const KIND_CALL = /\bheaderAction\(/g
+
+/** A header action's own label, the first field of every entry. */
+const ENTRY_LABEL = /\blabel:/g
+
+/**
+ * Finds which header action rules a script breaks.
+ *
+ * @param source - The `.vue` file contents.
+ * @returns The broken rules, each once, in rule order; empty when the file builds no header actions.
+ */
+const brokenHeaderRules = (source: string): HeaderActionRule[] => {
+  const block = HEADER_ACTIONS.exec(source)?.[0] ?? ''
+  const broken = new Set<HeaderActionRule>()
+  if (/\bicon:/.test(block)) {
+    broken.add(HeaderActionRule.OwnIcon)
+  }
+  if ((block.match(ENTRY_LABEL) ?? []).length !== (block.match(KIND_CALL) ?? []).length) {
+    broken.add(HeaderActionRule.NoKind)
+  }
+  return Object.values(HeaderActionRule).filter((rule) => broken.has(rule))
+}
+
 /** Every guarded file as its path under `src` and its template. */
 const FILES: ReadonlyArray<readonly [string, string]> = ROOTS.flatMap(vueFiles).map(
   (path) => [relative(SRC, path).split(sep).join('/'), templateOf(readFileSync(path, 'utf8'))] as const,
@@ -184,6 +222,13 @@ describe('action icons', () => {
   it.each(FILES)('%s gives every action its icon through the kit', (file, template) => {
     expect(brokenRules(template).filter((rule) => !isAllowed(file, rule))).toEqual([])
   })
+
+  it.each(ROOTS.flatMap(vueFiles).map((path) => [relative(SRC, path).split(sep).join('/'), readFileSync(path, 'utf8')] as const))(
+    '%s builds every header action through its kind',
+    (_file, source) => {
+      expect(brokenHeaderRules(source)).toEqual([])
+    },
+  )
 
   it.each(ALLOWED.map((entry) => [entry.file, entry.rule, entry.reason] as const))('%s still needs its %s exception (%s)', (file, rule) => {
     const template = FILES.find(([path]) => path === file)?.[1]
@@ -235,6 +280,22 @@ describe('action icons', () => {
     it('passes a header whose actions are data, with a help link or a filter in the slot', () => {
       expect(brokenRules('<UiPageHeader :actions="headerActions"><template #actions><PageHelpLink :url="u" /></template></UiPageHeader>')).toEqual([])
       expect(brokenRules('<UiPageHeader :title="t" /><UiButton :action="UiActionKind.Add">Add</UiButton>')).toEqual([])
+    })
+
+    it('catches a header action with its own icon or with no kind', () => {
+      const own = "const headerActions = computed<UiHeaderAction[]>(() => [\n  headerAction(UiActionKind.View, { label: 'a', icon: Icon.Eye }),\n])\n"
+      const bare = "const headerActions = computed<UiHeaderAction[]>(() => [\n  { label: 'a', variant: v },\n])\n"
+
+      expect(brokenHeaderRules(own)).toEqual([HeaderActionRule.OwnIcon])
+      expect(brokenHeaderRules(bare)).toEqual([HeaderActionRule.NoKind])
+    })
+
+    it('passes header actions built through their kind, and a file with none', () => {
+      const kinded =
+        "const headerActions = computed<UiHeaderAction[]>(() => [\n  headerAction(UiActionKind.Add, { label: 'a' }),\n  ...(x ? [headerAction(UiActionKind.Delete, { label: 'b' })] : []),\n])\n"
+
+      expect(brokenHeaderRules(kinded)).toEqual([])
+      expect(brokenHeaderRules('const x = 1\n')).toEqual([])
     })
 
     it('ignores markup inside comments', () => {

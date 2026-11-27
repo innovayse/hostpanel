@@ -170,11 +170,16 @@
     "placeholder": "Elige un nivel de confianza",
     "hint": "Un cambio se aplica a la siguiente instalación de inmediato.",
     "notSeeded": "La configuración {key} no se ha sembrado todavía, por lo que no se puede cambiar aquí.",
-    "warning": "Cualquier editor de registro incluye editores que nadie ha verificado. Un complemento se ejecuta dentro del servidor, así que elige esto solo si aceptas ese riesgo.",
+    "warning": "«Todos» incluye editores que nadie ha verificado. Un complemento se ejecuta dentro del servidor, así que elige esto solo si aceptas ese riesgo.",
     "options": {
-      "VerifiedOnly": "Solo editores verificados",
-      "AnyRegistryPublisher": "Cualquier editor de registro",
-      "OwnKeysOnly": "Paquetes firmados con mis propias claves solo"
+      "VerifiedOnly": "Solo verificados",
+      "AnyRegistryPublisher": "Todos",
+      "OwnKeysOnly": "Verificados y firmados"
+    },
+    "optionDescriptions": {
+      "VerifiedOnly": "Solo editores verificados por el registro.",
+      "AnyRegistryPublisher": "Cualquier editor del registro, verificado o no.",
+      "OwnKeysOnly": "Solo paquetes firmados con mis propias claves."
     }
   },
   "registryInstance": {

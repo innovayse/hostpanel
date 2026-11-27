@@ -36,14 +36,15 @@ import { UiSize } from '@/utils/ui/size'
 import { UiCardRole, UiColumnSize } from '@/utils/ui/table'
 import { UiTextTag } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: props.addLabel, icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: props.testids.add, to: props.addTo },
+  headerAction(UiActionKind.Add, { label: props.addLabel, variant: UiButtonVariant.Primary, testid: props.testids.add, to: props.addTo }),
 ])
 
 /** Props for StorefrontListTable. */

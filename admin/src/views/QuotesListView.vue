@@ -27,7 +27,6 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useClientOptions } from '@/composables/useClientOptions'
 import { useListQuery } from '@/composables/useListQuery'
 import { QuoteFilterKey, useQuoteFilters } from '@/composables/useQuoteFilters'
-import { Icon } from '@/lib/icons'
 import { quoteStageTone, statusLabel } from '@/lib/tones'
 import { QUOTE_STAGE_OPTIONS } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
@@ -38,13 +37,15 @@ import { AppRoute, quotePath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiGap } from '@/utils/ui/layout'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('billing.addQuote.createQuote'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-quotes-create', to: AppRoute.BillingQuotesAdd },
+  headerAction(UiActionKind.Add, { label: t('billing.addQuote.createQuote'), variant: UiButtonVariant.Primary, testid: 'billing-quotes-create', to: AppRoute.BillingQuotesAdd }),
 ])
 
 /** The filter fields kept in the address: the quote filters every quote list has, and the client this list adds. */

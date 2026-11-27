@@ -50,14 +50,15 @@ import { UiSize } from '@/utils/ui/size'
 import { toneTextClasses, UiTone } from '@/utils/ui/tone'
 import { AppRoute, supportTicketPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('shared.createTicket'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'support-tickets-open-new', to: AppRoute.SupportTicketsNew },
+  headerAction(UiActionKind.Add, { label: t('shared.createTicket'), variant: UiButtonVariant.Primary, testid: 'support-tickets-open-new', to: AppRoute.SupportTicketsNew }),
 ])
 
 const store = useSupportStore()

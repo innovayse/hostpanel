@@ -170,11 +170,16 @@
     "placeholder": "Vertrauensstufe auswählen",
     "hint": "Eine Änderung gilt sofort für die nächste Installation.",
     "notSeeded": "Die Einstellung {key} wurde noch nicht initialisiert und kann daher hier nicht geändert werden.",
-    "warning": "„Beliebiger Registry-Publisher“ schließt Publisher ein, die niemand verifiziert hat. Ein Plugin läuft innerhalb des Servers, wählen Sie dies daher nur, wenn Sie dieses Risiko akzeptieren.",
+    "warning": "„Alle“ schließt Publisher ein, die niemand verifiziert hat. Ein Plugin läuft innerhalb des Servers, wählen Sie dies daher nur, wenn Sie dieses Risiko akzeptieren.",
     "options": {
-      "VerifiedOnly": "Nur verifizierte Publisher",
-      "AnyRegistryPublisher": "Beliebiger Registry-Publisher",
-      "OwnKeysOnly": "Nur mit meinen eigenen Schlüsseln signierte Pakete"
+      "VerifiedOnly": "Nur verifizierte",
+      "AnyRegistryPublisher": "Alle",
+      "OwnKeysOnly": "Verifiziert und signiert"
+    },
+    "optionDescriptions": {
+      "VerifiedOnly": "Nur Publisher, die die Registry verifiziert hat.",
+      "AnyRegistryPublisher": "Jeder Publisher der Registry, verifiziert oder nicht.",
+      "OwnKeysOnly": "Nur mit meinen eigenen Schlüsseln signierte Pakete."
     }
   },
   "registryInstance": {

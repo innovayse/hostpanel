@@ -190,10 +190,10 @@ const railEntries = computed(() => (tabs.value?.tabs ?? []).map((tab) => ({ key:
         </UiCard>
       </UiGrid>
       <UiSkeletonShape v-else-if="isShape(part)" :kind="part.kind" />
-      <UiTabs v-else :items="tabItemsOfSchema(part.tabs, t)" model-value="" hide-scrollbar inert />
+      <UiTabs v-else :items="tabItemsOfSchema(part.tabs, t)" model-value="" inert />
     </template>
 
-    <UiTabs v-if="tabs" :items="tabItems" model-value="" hide-scrollbar inert>
+    <UiTabs v-if="tabs" :items="tabItems" model-value="" inert>
       <slot name="outlet" />
     </UiTabs>
   </UiStack>

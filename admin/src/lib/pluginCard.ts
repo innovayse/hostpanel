@@ -3,7 +3,8 @@
  * and the registry's shape, so `PluginCard` knows neither.
  */
 import { enumValueOf } from '@/lib/enumValue'
-import { InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
+import { INSTALLED_PLUGIN_STATE_LOOK, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
+import type { InstalledPluginStateLook } from '@/lib/installedPlugins'
 import { translate } from '@/lib/translate'
 import { PluginCardBadge, PluginCategory } from '@/types/plugin'
 import type { PluginCardFailure, PluginCardModel, PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
@@ -30,6 +31,17 @@ const CARD_BADGE_OF_STATE: Readonly<Record<InstalledPluginState, PluginCardBadge
   [InstalledPluginState.PendingRestart]: PluginCardBadge.PendingRestart,
   [InstalledPluginState.Refused]: PluginCardBadge.Refused,
   [InstalledPluginState.LoadFailed]: PluginCardBadge.LoadFailed,
+}
+
+/**
+ * How a card badge looks when it stands for a plugin state.
+ *
+ * @param badge - A badge of a card.
+ * @returns The name and tone of the state the badge shows, null for a badge that is not a state (staged, update, built in, change failed).
+ */
+export const stateLookOfBadge = (badge: PluginCardBadge): InstalledPluginStateLook | null => {
+  const state = Object.values(InstalledPluginState).find(candidate => CARD_BADGE_OF_STATE[candidate] === badge)
+  return state === undefined ? null : INSTALLED_PLUGIN_STATE_LOOK[state]
 }
 
 /**

@@ -108,19 +108,18 @@ export const shortMonthName = (month: number, locale: string): string =>
 
 /**
  * Writes a calendar day as a short day and month in a language, in the order a reader of that language expects
- * (month first or day first), from `Intl` where the engine has the locale's data, else from the app's own month names.
+ * (month first or day first), from `Intl` where the engine has the locale's data, else from the app's own month names and
+ * its `calendar.shortDay` message, which holds the order of that language.
  *
  * @param date - The calendar day, read in UTC.
  * @param locale - Language of the text.
- * @param dayFirst - Which order the app's own wording uses when the engine lacks the locale ("12 Mar" or "Mar 12").
  * @returns For example "Mar 7" or "12 Mar".
  */
-export const formatShortDay = (date: Date, locale: string, dayFirst: boolean): string => {
+export const formatShortDay = (date: Date, locale: string): string => {
   if (hasDateLocaleData(locale)) {
     return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' })
   }
-  const month = shortMonthName(date.getUTCMonth(), locale)
-  return dayFirst ? `${date.getUTCDate()} ${month}` : `${month} ${date.getUTCDate()}`
+  return translateIn('calendar.shortDay', locale, { month: shortMonthName(date.getUTCMonth(), locale), day: date.getUTCDate() })
 }
 
 /**
@@ -152,7 +151,7 @@ export const formatMonthDay = (iso: string, locale: string): string => {
   if (isNaN(year) || isNaN(month) || isNaN(day)) {
     return iso
   }
-  return formatShortDay(new Date(Date.UTC(year, month - 1, day)), locale, false)
+  return formatShortDay(new Date(Date.UTC(year, month - 1, day)), locale)
 }
 
 /**

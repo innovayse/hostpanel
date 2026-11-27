@@ -54,6 +54,10 @@ describe('translateIn and translateCountIn', () => {
     expect(translateIn('duration.relativeNow', 'en')).toBe('now')
   })
 
+  it('fill the named values of the message in the given language', () => {
+    expect(translateIn('calendar.shortDay', 'ru', { month: 'мар', day: 7 })).toBe('7 мар')
+  })
+
   it('choose the plural form of the count in the given language', () => {
     expect(translateCountIn('duration.daysAgo', 1, 'en')).toBe('1 day ago')
     expect(translateCountIn('duration.daysAgo', 4, 'en')).toBe('4 days ago')

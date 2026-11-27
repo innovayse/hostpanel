@@ -34,7 +34,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import schema from '@/views/ManageUsersView.schema'
 import { useListQuery } from '@/composables/useListQuery'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
-import { EMPTY_VALUE } from '@/lib/format'
+import { EMPTY_VALUE, formatMediumDateTime } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiGap } from '@/utils/ui/layout'
@@ -194,10 +194,7 @@ const formatDate = (dateStr: string | null): string => {
   if (!dateStr) {
     return t('clients.manageUsers.never')
   }
-  return new Date(dateStr).toLocaleString(locale.value, {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+  return formatMediumDateTime(new Date(dateStr), locale.value)
 }
 
 /**

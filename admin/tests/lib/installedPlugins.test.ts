@@ -3,9 +3,10 @@
  * category narrowing the Installed tab applies.
  */
 import { describe, expect, it } from 'vitest'
-import { filterInstalledPlugins, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
+import { filterInstalledPlugins, INSTALLED_PLUGIN_STATE_LOOK, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
 import { PluginManifestRule, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
+import { UiTone } from '@/utils/ui/tone'
 
 /**
  * Builds an installed plugin row; the overrides replace the defaults.
@@ -85,5 +86,16 @@ describe('filterInstalledPlugins', () => {
     expect(filterInstalledPlugins(all, { ...ANY, category: 'Email' })).toEqual([mail])
     expect(filterInstalledPlugins(all, { search: 'example', state: InstalledPluginState.PendingRestart, category: 'Email' })).toEqual([mail])
     expect(filterInstalledPlugins(all, { search: 'nothing', state: '', category: '' })).toEqual([])
+  })
+})
+
+describe('INSTALLED_PLUGIN_STATE_LOOK', () => {
+  it('names and colours every state once, with a locale key of its own', () => {
+    const looks = Object.values(InstalledPluginState).map(state => INSTALLED_PLUGIN_STATE_LOOK[state])
+
+    expect(new Set(looks.map(look => look.labelKey)).size).toBe(looks.length)
+    expect(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.Active].tone).toBe(UiTone.Success)
+    expect(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.PendingRestart].tone).toBe(UiTone.Warning)
+    expect(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.Refused].tone).toBe(UiTone.Danger)
   })
 })

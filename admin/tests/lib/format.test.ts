@@ -205,10 +205,14 @@ describe('month names in an engine without the locale data', () => {
     expect(shortMonthName(2, locale)).toBe(march)
   })
 
-  it('puts the month first in the chart axis day', () => {
+  it.each([
+    ['en', 'Mar 7'],
+    ['hy', '7 Մրտ'],
+    ['de', '7. Mär'],
+  ])('takes the order of the chart axis day from the app messages of %s', (locale, expected) => {
     vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
 
-    expect(formatMonthDay('2026-03-07', 'hy')).toBe('Մրտ 7')
+    expect(formatMonthDay('2026-03-07', locale)).toBe(expected)
   })
 
   it('writes a medium date and time with the month from the app messages', () => {

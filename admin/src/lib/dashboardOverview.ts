@@ -55,4 +55,4 @@ export const formatChange = (change: number): string => {
  * @returns For example "12 Mar".
  */
 export const formatDayCaption = (date: string, locale: string): string =>
-  formatShortDay(new Date(`${date}T00:00:00Z`), locale, true)
+  formatShortDay(new Date(`${date}T00:00:00Z`), locale)

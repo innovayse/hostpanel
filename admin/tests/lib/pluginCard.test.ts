@@ -2,7 +2,8 @@
  * Unit tests for the plugin card mappers: an installed plugin and a registry listing become the same card model.
  */
 import { describe, expect, it } from 'vitest'
-import { categoryLabel, fromInstalled, fromRegistry } from '@/lib/pluginCard'
+import { INSTALLED_PLUGIN_STATE_LOOK, InstalledPluginState } from '@/lib/installedPlugins'
+import { categoryLabel, fromInstalled, fromRegistry, stateLookOfBadge } from '@/lib/pluginCard'
 import { PluginCardBadge, PluginCategory, PluginChangeResult, PluginManifestRule, PluginPricing, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 
@@ -171,5 +172,19 @@ describe('fromRegistry', () => {
 
     expect(card.tags).toEqual([])
     expect(card.downloads).toBeNull()
+  })
+})
+
+describe('stateLookOfBadge', () => {
+  it('gives a state badge the look of its state', () => {
+    expect(stateLookOfBadge(PluginCardBadge.Active)).toBe(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.Active])
+    expect(stateLookOfBadge(PluginCardBadge.LoadFailed)).toBe(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.LoadFailed])
+  })
+
+  it('gives no look to a badge that is not a state', () => {
+    expect(stateLookOfBadge(PluginCardBadge.Update)).toBeNull()
+    expect(stateLookOfBadge(PluginCardBadge.Staged)).toBeNull()
+    expect(stateLookOfBadge(PluginCardBadge.ChangeFailed)).toBeNull()
+    expect(stateLookOfBadge(PluginCardBadge.BuiltIn)).toBeNull()
   })
 })

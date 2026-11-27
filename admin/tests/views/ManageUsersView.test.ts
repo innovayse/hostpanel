@@ -12,6 +12,7 @@ import { json, problem } from '../helpers/fetch'
 import { toastsOnScreen } from '../helpers/toasts'
 import { renderedCaptions, schemaCaptions, stubPendingFetch } from '../helpers/schemaTable'
 import schema from '@/views/ManageUsersView.schema'
+import { formatMediumDateTime } from '@/lib/format'
 import { useAuthStore } from '@/stores/auth'
 import { AuthMode } from '@/types/auth'
 import { UiTone } from '@/utils/ui/tone'
@@ -72,6 +73,14 @@ describe('ManageUsersView', () => {
     expect(wrapper.find('[data-testid="users-manage-u1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="users-reset-u1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="users-password-u1"]').exists()).toBe(true)
+  })
+
+  it('writes the last sign-in with the shared medium date and time of the app language', async () => {
+    const lastLoginAt = '2026-03-07T09:30:00Z'
+    stubRoutes({ 'GET /api/admin/users': () => json({ items: [{ ...user, lastLoginAt }], totalCount: 1 }) })
+    const wrapper = await mountUsers()
+
+    expect(wrapper.get('[data-testid="users-row-u1"]').text()).toContain(formatMediumDateTime(new Date(lastLoginAt), 'en'))
   })
 
   it('asks for the first page, with the page size, when the address names neither', async () => {

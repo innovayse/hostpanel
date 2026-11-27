@@ -18,7 +18,7 @@ import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDateTime, formatSizeBytes } from '@/lib/format'
-import { InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
+import { INSTALLED_PLUGIN_STATE_LOOK, installedPluginState } from '@/lib/installedPlugins'
 import { categoryLabel } from '@/lib/pluginCard'
 import { translateOrRaw } from '@/lib/translate'
 import type { PluginListItemDto } from '@/types/plugin'
@@ -44,17 +44,8 @@ const props = defineProps<{
 /** The plugin's type in words; a type the panel has no words for is shown as the server wrote it. */
 const typeLabel = computed<string>(() => translateOrRaw(`pluginDetails.overview.types.${props.plugin.type}`, props.plugin.type))
 
-/** The locale key naming each state a plugin can be in on this server. */
-const STATE_LABEL_KEYS: Readonly<Record<InstalledPluginState, string>> = {
-  [InstalledPluginState.Active]: 'pluginDetails.overview.state.running',
-  [InstalledPluginState.Disabled]: 'pluginDetails.overview.state.disabled',
-  [InstalledPluginState.PendingRestart]: 'pluginDetails.overview.state.afterRestart',
-  [InstalledPluginState.Refused]: 'pluginDetails.overview.state.refused',
-  [InstalledPluginState.LoadFailed]: 'pluginDetails.overview.state.loadFailed',
-}
-
 /** Whether the plugin runs now, waits for a restart to load, failed to load or was refused, in words. */
-const stateLabel = computed<string>(() => t(STATE_LABEL_KEYS[installedPluginState(props.plugin)]))
+const stateLabel = computed<string>(() => t(INSTALLED_PLUGIN_STATE_LOOK[installedPluginState(props.plugin)].labelKey))
 
 /** Where the package came from in words, null when no install was recorded. */
 const sourceLabel = computed<string | null>(() =>

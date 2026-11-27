@@ -48,6 +48,8 @@ export const translateCountIn = (key: string, count: number, locale: string): st
  *
  * @param key - Dotted key present in every locale catalogue.
  * @param locale - Language to write the sentence in.
+ * @param named - Values for `{placeholders}` in the message.
  * @returns The sentence in that language, English when the catalogue lacks it.
  */
-export const translateIn = (key: string, locale: string): string => i18n.global.t(key, {}, { locale })
+export const translateIn = (key: string, locale: string, named: Record<string, unknown> = {}): string =>
+  i18n.global.t(key, named, { locale })

@@ -27,6 +27,7 @@
     "11": "nov",
     "12": "dic"
   },
+  "shortDay": "{day} {month}",
   "weekdays": {
     "0": "Do",
     "1": "Lu",

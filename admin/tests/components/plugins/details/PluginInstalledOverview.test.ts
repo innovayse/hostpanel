@@ -99,13 +99,13 @@ describe('PluginInstalledOverview', () => {
     expect(wrapper.find('[data-testid="plugin-details-overview-signer-key"]').exists()).toBe(false)
   })
 
-  it('names the state of a loaded, a waiting and a refused plugin', () => {
-    expect(fact(mountOverview({ isLoaded: true }), 'state')).toContain('Loaded and running')
-    expect(fact(mountOverview({ isLoaded: true, isEnabled: false }), 'state')).toContain('Loaded, switched off')
-    expect(fact(mountOverview({ isLoaded: false }), 'state')).toContain('Loads after the next restart')
-    expect(fact(mountOverview({ status: PluginStatus.Refused, isLoaded: false }), 'state')).toContain('Refused at startup')
+  it('names the state with the same words as the card badge and the state filter', () => {
+    expect(fact(mountOverview({ isLoaded: true }), 'state')).toContain('Active')
+    expect(fact(mountOverview({ isLoaded: true, isEnabled: false }), 'state')).toContain('Disabled')
+    expect(fact(mountOverview({ isLoaded: false }), 'state')).toContain('Pending restart')
+    expect(fact(mountOverview({ status: PluginStatus.Refused, isLoaded: false }), 'state')).toContain('Refused')
     expect(fact(mountOverview({ isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load file or assembly' }), 'state'))
-      .toContain('Failed to load at startup')
+      .toContain('Failed to load')
   })
 
   it('shows the load error of a plugin whose assembly did not load', () => {

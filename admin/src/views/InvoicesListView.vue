@@ -42,6 +42,7 @@ import UiSchemaTableHead from '@/components/ui/UiSchemaTableHead.vue'
 import schema from '@/views/InvoicesListView.schema'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { anchorOf } from '@/lib/anchor'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { bucketAmountText, summarizeInvoices } from '@/lib/invoices'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
@@ -217,13 +218,18 @@ const invoiceActions = (id: number): UiMenuAction[] => [
 ]
 
 /**
- * Opens an invoice's detail page.
+ * Opens an invoice's detail page when a click lands on the row itself; a click on a link inside the row (the invoice
+ * number) is left to that link, so a modifier or middle click still opens a new tab and nothing navigates twice.
  *
  * @param id - The invoice id.
- * @returns Nothing.
+ * @param event - The click on the row.
+ * @returns Resolves when the navigation has settled.
  */
-const openInvoice = (id: number): void => {
-  router.push(invoiceViewPath(id))
+const openInvoice = async (id: number, event: MouseEvent): Promise<void> => {
+  if (anchorOf(event.target) !== null) {
+    return
+  }
+  await router.push(invoiceViewPath(id))
 }
 
 // The address is the source of truth: the first load and every change of a filter, the search or the page read the list.
@@ -325,7 +331,7 @@ onMounted(loadClients)
           :row-id="invoice.id"
           :select-testid="`billing-invoice-select-${invoice.id}`"
           :data-testid="`billing-invoice-row-${invoice.id}`"
-          @click="openInvoice(invoice.id)"
+          @click="openInvoice(invoice.id, $event)"
         >
           <UiTableCell>
             <UiLink :variant="UiButtonVariant.Link" :to="invoiceViewPath(invoice.id)" :data-testid="`billing-invoice-open-${invoice.id}`">

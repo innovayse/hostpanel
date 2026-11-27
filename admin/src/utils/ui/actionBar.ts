@@ -5,6 +5,7 @@
 import type { RouteLocationRaw } from 'vue-router'
 import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { actionIcons, type UiActionKind } from '@/utils/ui/actions'
 
 /** The picture of the plugin an action runs through, drawn instead of the generic icon on the action's button. */
 export interface UiBarPluginIcon {
@@ -59,10 +60,36 @@ export const barActionToMenu = (action: UiBarAction): Pick<UiMenuAction, 'label'
   testid: action.testid,
 })
 
-/** One action of a page header (`UiPageHeader`): a labelled icon button that runs a handler or opens a route. */
-export interface UiHeaderAction extends UiBarAction {
+/**
+ * One action of a page header (`UiPageHeader`): a labelled icon button that runs a handler or opens a route. It names its
+ * kind and carries no icon of its own: the header draws the icon the kind is given in `utils/ui/actions`, so a header action
+ * cannot have no kind or an icon that contradicts its meaning, which the type checker holds every screen to.
+ */
+export interface UiHeaderAction extends Omit<UiBarAction, 'icon'> {
+  /** What the action does; its icon is the one of this kind. */
+  kind: UiActionKind
   /** Route the action opens; the action is then a link. Without it the action is a button that calls `onSelect`. */
   to?: RouteLocationRaw
   /** Called when the button is pressed; a link action needs none. */
   onSelect?: () => void
 }
+
+/** A header action as the header draws it, with the icon of its kind. */
+export type UiDrawnHeaderAction = UiHeaderAction & Pick<UiBarAction, 'icon'>
+
+/**
+ * Builds a header action of a kind.
+ *
+ * @param kind - What the action does; the header draws the icon of this kind.
+ * @param spec - Everything else about the action: label, look, test id and what it does.
+ * @returns The header action.
+ */
+export const headerAction = (kind: UiActionKind, spec: Omit<UiHeaderAction, 'kind'>): UiHeaderAction => ({ ...spec, kind })
+
+/**
+ * The header action with the icon of its kind, the one place a header action is given its icon.
+ *
+ * @param action - The header action.
+ * @returns The action with its icon.
+ */
+export const drawHeaderAction = (action: UiHeaderAction): UiDrawnHeaderAction => ({ ...action, icon: actionIcons[action.kind] })

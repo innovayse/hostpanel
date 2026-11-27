@@ -7,7 +7,8 @@
  *   `Icon` entry), so no action reads as bare text;
  * - not draw the icon by hand as a `UiIcon` child, which would bypass the one map and the one placement;
  * - not sit in the `actions` slot of a `UiPageHeader`: header actions are data (`UiPageHeader` `actions` prop, `UiHeaderAction`,
- *   whose `icon` is required), so each one has its icon and folds into the "…" menu on a phone with the other actions.
+ *   whose `kind` is required and which has no icon of its own, so the type checker gives each one the icon of its kind), and
+ *   they fold into the "…" menu on a phone with the other actions.
  *
  * Text-only controls are the `link` look (a link inside prose), a plain `UiLink` (navigation text).
  * A few files hold choice rows that are labelled by data, not actions;

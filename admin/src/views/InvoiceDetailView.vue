@@ -34,8 +34,9 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema from '@/views/InvoiceDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
@@ -45,9 +46,9 @@ const { crumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: manageMode.value ? t('billing.invoiceDetail.viewInvoice') : t('billing.invoiceDetail.manageInvoice'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Primary, testid: 'billing-invoice-toggle-mode', onSelect: toggleMode },
-  { label: t('shared.print'), icon: actionIcons[UiActionKind.Print], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-print', onSelect: print },
-  { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), icon: actionIcons[UiActionKind.Download], variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf },
+  headerAction(manageMode.value ? UiActionKind.View : UiActionKind.Manage, { label: manageMode.value ? t('billing.invoiceDetail.viewInvoice') : t('billing.invoiceDetail.manageInvoice'), variant: UiButtonVariant.Primary, testid: 'billing-invoice-toggle-mode', onSelect: toggleMode }),
+  headerAction(UiActionKind.Print, { label: t('shared.print'), variant: UiButtonVariant.Secondary, testid: 'billing-invoice-print', onSelect: print }),
+  headerAction(UiActionKind.Download, { label: t('shared.pdf'), title: t('billing.actions.downloadPdf'), variant: UiButtonVariant.Secondary, testid: 'billing-invoice-download', onSelect: downloadPdf }),
 ])
 
 /** Route action that opens the invoice for editing. */

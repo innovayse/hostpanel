@@ -365,7 +365,7 @@
     "confirmRemoveMessage": "Die Zeile „{label}“ wird aus der Spezifikation entfernt."
   },
   "productGroups": {
-    "manage": "Produktgruppen",
+    "manage": "Gruppen",
     "title": "Produktgruppen",
     "addTitle": "Produktgruppe erstellen",
     "editTitle": "Produktgruppe bearbeiten",

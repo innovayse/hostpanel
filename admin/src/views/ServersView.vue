@@ -54,11 +54,12 @@ import { EMPTY_VALUE } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema, { SERVER_CARDS_PART, SERVER_GROUPS_PART, SERVER_GROUPS_TABLE } from '@/views/ServersView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiAlignItems, UiDirection, UiGap, UiGridMinWidth } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** Translation function. */
@@ -66,8 +67,8 @@ const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('servers.servers.createGroup'), icon: actionIcons[UiActionKind.AddRow], variant: UiButtonVariant.Secondary, testid: 'servers-add-group', onSelect: openAddGroup },
-  { label: t('servers.servers.createServer'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'servers-add', onSelect: openAddServer },
+  headerAction(UiActionKind.AddRow, { label: t('servers.servers.createGroup'), variant: UiButtonVariant.Secondary, testid: 'servers-add-group', onSelect: openAddGroup }),
+  headerAction(UiActionKind.Add, { label: t('servers.servers.createServer'), variant: UiButtonVariant.Primary, testid: 'servers-add', onSelect: openAddServer }),
 ])
 
 /** Servers store: the lists, the refusal sentences and the actions. */

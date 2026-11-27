@@ -20,7 +20,7 @@ import { usePageTitleStore } from '@/stores/pageTitle'
 import { CLIENT_STATUS_OPTIONS } from '@/lib/constants'
 import { clientStatusTone, statusLabel } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
-import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { formatPlainAmount } from '@/lib/money'
 import ClientExportModal from '@/components/clients/ClientExportModal.vue'
 import ClientGroupBadge from '@/components/clients/ClientGroupBadge.vue'
@@ -170,7 +170,7 @@ onMounted(() => {
                 </UiStack>
               </UiStack>
             </UiStack>
-            <UiButton :icon="Icon.Download"
+            <UiButton :action="UiActionKind.Export"
               :variant="UiButtonVariant.Secondary"
               :size="UiSize.Sm"
               class="self-end md:self-auto"

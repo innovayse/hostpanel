@@ -17,7 +17,6 @@ import { SERVICE_STATUS_OPTIONS, BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { serverAccountsLabel } from '@/lib/servers'
 import { pluginIconPath } from '@/lib/apiPaths'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
-import { Icon } from '@/lib/icons'
 import { BillingCycle, PanelEntryKind, ServiceChangeReason, ServiceSection, ServiceStatus } from '@/types/service'
 import { formatDate, toDateInputValue } from '@/lib/format'
 import type { PanelLoginDetails, ServiceListItem } from '@/types/service'
@@ -53,7 +52,8 @@ import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { ClientSection, clientItemPath, servicePlanChangesPath } from '@/lib/routes'
 import schema, { BILLING_COLUMNS, NOTES_COLUMNS } from '@/views/ClientServiceDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiBarPluginIcon, UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiInputType } from '@/utils/ui/input'
 
@@ -64,9 +64,9 @@ const { clientCrumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  ...(service.value?.status !== ServiceStatus.Terminated ? [{ label: t('shared.open'), title: t('clients.clientServiceDetail.loginToControlPanel'), icon: Icon.ExternalLink, pluginIcon: panelPluginIcon.value, variant: UiButtonVariant.Secondary, testid: 'client-service-panel', disabled: !service.value?.account.provisioningRef, loading: ssoLoading.value, onSelect: handleLoginToPanel }] : []),
-  { label: t('shared.view'), title: t('serviceChangeRequests.viewHistory'), icon: actionIcons[UiActionKind.View], variant: UiButtonVariant.Secondary, testid: 'client-service-plan-changes', to: servicePlanChangesPath(serviceId.value) },
-  { label: t('shared.cancel'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: 'client-service-cancel', onSelect: handleCancel },
+  ...(service.value?.status !== ServiceStatus.Terminated ? [headerAction(UiActionKind.Open, { label: t('shared.open'), title: t('clients.clientServiceDetail.loginToControlPanel'), pluginIcon: panelPluginIcon.value, variant: UiButtonVariant.Secondary, testid: 'client-service-panel', disabled: !service.value?.account.provisioningRef, loading: ssoLoading.value, onSelect: handleLoginToPanel })] : []),
+  headerAction(UiActionKind.View, { label: t('shared.view'), title: t('serviceChangeRequests.viewHistory'), variant: UiButtonVariant.Secondary, testid: 'client-service-plan-changes', to: servicePlanChangesPath(serviceId.value) }),
+  headerAction(UiActionKind.Cancel, { label: t('shared.cancel'), variant: UiButtonVariant.Secondary, testid: 'client-service-cancel', onSelect: handleCancel }),
 ])
 
 /** The tabs of the page. */

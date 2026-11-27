@@ -57,14 +57,16 @@ import { UiDirection, UiGap, UiWidth } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import schema from '@/views/TldConfigsView.schema'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('settings.tldConfigs.syncPrices'), icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'tld-configs-sync', loading: syncing.value, onSelect: handleSync },
-  { label: t('settings.tldConfigForm.createTld'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'tld-configs-add', to: createRoute },
+  headerAction(UiActionKind.Refresh, { label: t('settings.tldConfigs.syncPrices'), variant: UiButtonVariant.Secondary, testid: 'tld-configs-sync', loading: syncing.value, onSelect: handleSync }),
+  headerAction(UiActionKind.Add, { label: t('settings.tldConfigForm.createTld'), variant: UiButtonVariant.Primary, testid: 'tld-configs-add', to: createRoute }),
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `TldConfigListFilters` member. */

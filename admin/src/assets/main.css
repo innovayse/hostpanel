@@ -520,3 +520,9 @@
 @keyframes shimmer {
   100% { transform: translateX(200%); }
 }
+
+@layer utilities {
+  /* A strip that scrolls sideways by touch, wheel and keys with no scrollbar drawn (tab strips, segmented controls). */
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}

@@ -9,7 +9,8 @@ import type { DOMWrapper, VueWrapper } from '@vue/test-utils'
 import UiSelect from '@/components/ui/UiSelect.vue'
 
 /**
- * Opens the select behind a test id and picks the option with the given visible label.
+ * Opens the select behind a test id and picks the option with the given visible label. The label is matched on the
+ * option's label line alone, so an option that also draws a caption or a description line is found by its label.
  *
  * @param wrapper - The mounted screen.
  * @param testId - The `data-testid` placed on the select.
@@ -19,7 +20,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 export const pickOption = async (wrapper: VueWrapper, testId: string, label: string): Promise<void> => {
   await wrapper.get(`[data-testid="${testId}"] button`).trigger('click')
   const options: DOMWrapper<Element>[] = wrapper.findAll(`[data-testid="${testId}"] [role="option"]`)
-  const option = options.find((candidate) => candidate.text() === label)
+  const option = options.find((candidate) => candidate.get('[data-testid="ui-select-option-label"]').text() === label)
   if (!option) {
     throw new Error(`No option "${label}" in ${testId}`)
   }

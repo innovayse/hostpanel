@@ -16,10 +16,10 @@
  * slot (a status badge); the title row and the actions share one minimum height and centre their content, so the buttons sit on the
  * title's line. The subtitle is at most 70 characters wide.
  *
- * The `actions` prop takes the screen's buttons as data (`UiHeaderAction`: label, icon, look and what it does), so every header
- * action carries an icon with its label; from `md` up they are buttons, and below `md` (a phone) they all collapse into one
- * compact 44px icon trigger (a plus when there is a primary action, the overflow icon otherwise) that opens a menu with every
- * action, the primary one first, under its full label (`useCollapsedActions`). The `actions` slot takes what is not a plain action (a help
+ * The `actions` prop takes the screen's buttons as data (`UiHeaderAction`: label, kind, look and what it does; the icon is the one of the kind), so every header
+ * action carries an icon with its label. They are all buttons, except on a phone (below `sm`): there the primary action stays a
+ * normal kit button with its icon and label and the others fold into the kit's standard "…" menu trigger beside it
+ * (`useFoldedActions`, shared with the bulk bar); the menu rows carry the full label. The `actions` slot takes what is not a plain action (a help
  * link, a filter, a period switch, an error pill) and is drawn before them and stays on a phone. The `badge` slot renders inline after the title (a status badge, a priority badge). The default slot renders under the title
  * (a switcher, a line of facts); a screen puts a wrapping row of its own there, which wraps inside the text
  * column. `loading` draws a title bar (and a subtitle bar when a subtitle is passed or `subtitleLoading` is set) of the heading
@@ -45,11 +45,9 @@ import UiMenu from '@/components/ui/UiMenu.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { useCollapsedActions } from '@/composables/useCollapsedActions'
+import { useFoldedActions } from '@/composables/useFoldedActions'
 import { usePageTitleStore } from '@/stores/pageTitle'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import { Icon } from '@/lib/icons'
-import { barActionToMenu } from '@/utils/ui/actionBar'
+import { barActionToMenu, drawHeaderAction } from '@/utils/ui/actionBar'
 import { UiSize } from '@/utils/ui/size'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiBreadcrumbVariant } from '@/utils/ui/breadcrumb'
@@ -101,9 +99,9 @@ watch(() => [props.loading ? undefined : props.title, ownsTrail.value] as const,
 
 onBeforeUnmount(() => pageTitle.release(owner))
 
-/** The actions drawn as buttons from `md` up, and the menu rows they all become below it. */
-const { buttons, rows, hasPrimary } = useCollapsedActions(
-  () => props.actions,
+/** The actions drawn as buttons (only the primary one on a phone), and the menu rows of the others. */
+const { buttons, folded } = useFoldedActions(
+  () => props.actions.map(drawHeaderAction),
   (action) => ({ ...barActionToMenu(action), to: action.to, onSelect: action.onSelect }),
 )
 </script>
@@ -145,15 +143,7 @@ const { buttons, rows, hasPrimary } = useCollapsedActions(
             {{ action.label }}
           </UiButton>
         </template>
-        <UiMenu v-if="rows.length > 0" :actions="rows" :aria-label="hasPrimary ? t('shared.actions') : t('ui.actionBar.more')" testid="ui-page-header-more">
-          <span
-            class="inline-flex size-11 items-center justify-center rounded-control transition-colors"
-            :class="hasPrimary ? 'gradient-brand shadow-glow-primary text-text-on-primary' : 'text-text-muted group-hover:bg-surface-hover group-hover:text-text-primary'"
-            data-testid="ui-page-header-trigger"
-          >
-            <UiIcon :markup="hasPrimary ? Icon.Add : Icon.MoreHorizontal" size="sm" />
-          </span>
-        </UiMenu>
+        <UiMenu v-if="folded.length > 0" :actions="folded" :aria-label="t('ui.actionBar.more')" testid="ui-page-header-more" />
       </div>
     </div>
   </header>

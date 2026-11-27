@@ -200,8 +200,8 @@
   "invoiceDetail": {
     "invoiceId": "Rechnung #{id}",
     "manageAndViewInvoiceDetails": "Rechnungsdetails verwalten und anzeigen",
-    "viewInvoice": "Rechnung anzeigen",
-    "manageInvoice": "Rechnung verwalten",
+    "viewInvoice": "Anzeigen",
+    "manageInvoice": "Verwalten",
     "theClientIsNotAble": "Der Kunde kann diese Rechnung erst sehen oder darauf zugreifen, wenn sie veröffentlicht ist.",
     "thisIsADraftInvoice": "Dies ist ein Rechnungsentwurf.",
     "addPayment": "Zahlung hinzufügen",

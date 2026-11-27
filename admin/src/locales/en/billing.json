@@ -200,8 +200,8 @@
   "invoiceDetail": {
     "invoiceId": "Invoice #{id}",
     "manageAndViewInvoiceDetails": "Manage and view invoice details",
-    "viewInvoice": "View invoice",
-    "manageInvoice": "Manage invoice",
+    "viewInvoice": "View",
+    "manageInvoice": "Manage",
     "theClientIsNotAble": "The client is not able to see or access this invoice until it is published.",
     "thisIsADraftInvoice": "This is a Draft Invoice.",
     "addPayment": "Add payment",

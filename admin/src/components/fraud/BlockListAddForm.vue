@@ -15,7 +15,7 @@ import UiCountrySelect from '@/components/ui/UiCountrySelect.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiSchemaForm from '@/components/ui/UiSchemaForm.vue'
 import { FRAUD_NOTE_MAX_LENGTH } from '@/lib/fraud'
-import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { BlockListType } from '@/types/fraud'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { blockListAddPart } from '@/views/FraudBlockListsView.schema'
@@ -94,7 +94,7 @@ const submit = (): void => {
       />
     </template>
     <template #section-add>
-      <UiButton :icon="Icon.Add"
+      <UiButton :action="UiActionKind.Add"
         type="submit"
         :variant="UiButtonVariant.Primary"
         :loading="adding"

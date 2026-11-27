@@ -31,4 +31,10 @@ describe('UiHeading', () => {
     expect(wrapper.element.tagName).toBe('H3')
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['font-display', 'font-semibold']))
   })
+
+  it('sizes the page look smaller below sm and at its full size from sm up', () => {
+    const wrapper = mount(UiHeading, { props: { level: 1, variant: 'page' } })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['text-2xl', 'sm:text-[1.875rem]']))
+  })
 })

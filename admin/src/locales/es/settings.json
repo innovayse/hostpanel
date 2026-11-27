@@ -365,7 +365,7 @@
     "confirmRemoveMessage": "La línea \"{label}\" se eliminará de la especificación."
   },
   "productGroups": {
-    "manage": "Grupos de productos",
+    "manage": "Grupos",
     "title": "Grupos de productos",
     "addTitle": "Agregar grupo de productos",
     "editTitle": "Editar grupo de productos",

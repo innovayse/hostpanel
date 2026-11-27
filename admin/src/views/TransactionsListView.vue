@@ -52,13 +52,15 @@ import type { TransactionFilters } from '@/types/transaction'
 import { AppRoute, transactionEditPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('billing.addTransaction.createTransaction'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'billing-transactions-add', to: AppRoute.BillingAddTransaction },
+  headerAction(UiActionKind.Add, { label: t('billing.addTransaction.createTransaction'), variant: UiButtonVariant.Primary, testid: 'billing-transactions-add', to: AppRoute.BillingAddTransaction }),
 ])
 
 /** The filter fields kept in the address: the transaction filters every transaction list has, and the client this list adds. */

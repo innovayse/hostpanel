@@ -44,13 +44,15 @@ import { UiTone } from '@/utils/ui/tone'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiSize } from '@/utils/ui/size'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('vatRates.addRate'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'vat-rates-add', onSelect: openCreate },
+  headerAction(UiActionKind.Add, { label: t('vatRates.addRate'), variant: UiButtonVariant.Primary, testid: 'vat-rates-add', onSelect: openCreate }),
 ])
 
 /** VAT rates store: the page, the loading flag and the refusal sentences. */

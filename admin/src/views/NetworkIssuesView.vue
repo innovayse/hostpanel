@@ -40,14 +40,15 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { Icon } from '@/lib/icons'
 import { schemaHeader } from '@/lib/schemaHeader'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('support.networkIssueForm.createIssue'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'network-issues-create', to: AppRoute.SupportNetworkIssuesNew },
+  headerAction(UiActionKind.Add, { label: t('support.networkIssueForm.createIssue'), variant: UiButtonVariant.Primary, testid: 'network-issues-create', to: AppRoute.SupportNetworkIssuesNew }),
 ])
 
 /** The filter fields the dialog edits; each is one query key and one `NetworkIssueListFilters` member. */

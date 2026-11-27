@@ -78,7 +78,7 @@ export type UiHeadingVariant = (typeof UiHeadingVariant)[keyof typeof UiHeadingV
 /** Heading classes per look. */
 export const headingVariantClasses: Record<UiHeadingVariant, string> = {
   plain: '',
-  page: 'font-display text-[1.875rem] font-semibold text-text-primary leading-tight break-words',
+  page: 'font-display text-2xl sm:text-[1.875rem] font-semibold text-text-primary leading-tight break-words',
   section: 'font-sans text-[1.0625rem] font-semibold text-text-primary break-words',
   card: 'font-sans text-base font-semibold text-text-primary break-words',
 }

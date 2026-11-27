@@ -170,11 +170,16 @@
     "placeholder": "Choose a trust level",
     "hint": "A change applies to the next install at once.",
     "notSeeded": "The {key} setting has not been seeded yet, so it cannot be changed here.",
-    "warning": "Any registry publisher includes publishers nobody has verified. A plugin runs inside the server, so choose this only if you accept that risk.",
+    "warning": "Everyone includes publishers nobody has verified. A plugin runs inside the server, so choose this only if you accept that risk.",
     "options": {
-      "VerifiedOnly": "Verified publishers only",
-      "AnyRegistryPublisher": "Any registry publisher",
-      "OwnKeysOnly": "Packages signed with my own keys only"
+      "VerifiedOnly": "Verified only",
+      "AnyRegistryPublisher": "Everyone",
+      "OwnKeysOnly": "Own keys only"
+    },
+    "optionDescriptions": {
+      "VerifiedOnly": "Only publishers the registry has verified.",
+      "AnyRegistryPublisher": "Any publisher the registry lists, verified or not.",
+      "OwnKeysOnly": "Only packages signed with my own keys."
     }
   },
   "registryInstance": {

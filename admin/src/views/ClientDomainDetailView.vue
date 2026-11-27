@@ -52,7 +52,8 @@ import { UiTone } from '@/utils/ui/tone'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { ClientSection } from '@/lib/routes'
 import schema, { MANAGEMENT_COLUMNS, NAMESERVER_LABELS, REGISTRAR_COLUMNS } from '@/views/ClientDomainDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 /** The tabs of the page. */
@@ -72,8 +73,8 @@ const { clientCrumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('shared.cancel'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: 'client-domain-cancel', onSelect: handleCancel },
-  { label: t('shared.save'), icon: actionIcons[UiActionKind.Save], variant: UiButtonVariant.Primary, testid: 'client-domain-save', loading: saving.value, disabled: initialLoading.value, onSelect: handleSave },
+  headerAction(UiActionKind.Cancel, { label: t('shared.cancel'), variant: UiButtonVariant.Secondary, testid: 'client-domain-cancel', onSelect: handleCancel }),
+  headerAction(UiActionKind.Save, { label: t('shared.save'), variant: UiButtonVariant.Primary, testid: 'client-domain-save', loading: saving.value, disabled: initialLoading.value, onSelect: handleSave }),
 ])
 
 /** The tab on show. */

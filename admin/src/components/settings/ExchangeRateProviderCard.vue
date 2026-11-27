@@ -88,7 +88,7 @@ const provider = computed<ExchangeRateProvider>({
           v-model="provider"
           :options="options"
           :placeholder="t('currencies.rateProvider.placeholder')"
-          class="w-72"
+          class="w-full sm:w-72"
           data-testid="exchange-rate-provider-select"
         />
         <SettingSaveButton

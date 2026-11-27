@@ -6,14 +6,18 @@
  * (`v-if="tab === 'x'"`) or from the scoped slot's `active` value. The slot is drawn in a panel
  * 22px under the tab line (the standard section gap), so content never touches it. Left/Right arrow keys move
  * between enabled tabs and move focus with the selection (roving tabindex: only the selected tab is in the tab order).
- * A strip wider than its box fades the side that still hides tabs, so a cut label reads as more to scroll to, and it
- * scrolls the selected tab into view (on mount, when the selection changes and when the strip or a tab changes size),
- * so the selected tab is never the one cut off. The keyboard focus ring is drawn inset and only on `:focus-visible`: an
+ * A strip wider than its box scrolls sideways by touch, wheel and keys with its scrollbar hidden (the selected
+ * tab's underline sits at the bottom edge, where a scrollbar would run into it). It fades only the side that still hides
+ * tabs (tracked from the scroll position), so a cut label reads as more to scroll to and an edge with nothing behind it stays
+ * crisp, and it scrolls the selected tab into view, the least it takes (on mount, when the selection changes and when the strip or
+ * a tab changes size; instant under reduced motion, smooth otherwise), so the selected tab is never the one cut off. The keyboard focus ring is drawn inset and only on `:focus-visible`: an
  * outer ring is cut off at the bottom by the strip's own overflow clip, which showed a focused tab as a box open at the
  * bottom (left, top and right edges) instead of the underline.
  */
 import { nextTick, onMounted, ref, watch } from 'vue'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useScrollEdges } from '@/composables/useScrollEdges'
+import { UI_REDUCED_MOTION_QUERY } from '@/utils/ui/breakpoints'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { neighbourValue, UiTabMarker } from '@/utils/ui/tabs'
 
@@ -25,14 +29,8 @@ const props = withDefaults(defineProps<{
   modelValue: string
   /** Accessible name of the tab list, for a screen that has more than one. */
   ariaLabel?: string
-  /**
-   * Hides the scrollbar of a strip that overflows. The selected tab's own underline sits at the bottom edge, and
-   * a scrollbar drawn there runs into it; the strip still scrolls by touch, wheel and the arrow keys.
-   */
-  hideScrollbar?: boolean
 }>(), {
   ariaLabel: undefined,
-  hideScrollbar: false,
 })
 
 const emit = defineEmits<{
@@ -43,12 +41,19 @@ const emit = defineEmits<{
 /** The scrolling tab list, watched for the sides that hide tabs. */
 const tablist = ref<HTMLElement | null>(null)
 
+/** Whether the reader asked for less motion, which turns the glide to the selected tab into a jump. */
+const reducedMotion = useMediaQuery(UI_REDUCED_MOTION_QUERY)
+
 /**
- * Scrolls the selected tab to the middle of the strip. Only the strip scrolls (`inline`), never the page
+ * Scrolls the selected tab just far enough to be fully visible. Only the strip scrolls (`inline`), never the page
  * (`block: 'nearest'`); with no selected tab (a loading strip) nothing moves.
  */
 const revealSelected = (): void => {
-  tablist.value?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
+  tablist.value?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({
+    inline: 'nearest',
+    block: 'nearest',
+    behavior: reducedMotion.value ? 'auto' : 'smooth',
+  })
 }
 
 /** The fade of the sides of the tab list that hide tabs. */
@@ -102,8 +107,8 @@ const onKeydown = (event: KeyboardEvent, index: number): void => {
       ref="tablist"
       role="tablist"
       :aria-label="ariaLabel"
-      class="flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden"
-      :class="[hideScrollbar ? '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : '', fadeClass]"
+      class="no-scrollbar flex gap-1 border-b border-border overflow-x-auto overflow-y-hidden"
+      :class="fadeClass"
     >
       <button
         v-for="(item, index) in items"

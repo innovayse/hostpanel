@@ -2,8 +2,8 @@
  * Splits the actions of a bar into the buttons it draws and the rows of its "…" menu.
  *
  * On a wide screen every action is a button. On a phone (below `sm`) only the primary action stays a button and the
- * others fold into one menu, so the bar never outgrows the screen. The floating bulk bar and the toolbars use this
- * implementation; the page header collapses all of its actions instead ({@link useCollapsedActions}).
+ * others fold into one menu, so the bar never outgrows the screen. The floating bulk bar, the page header and the toolbars use this
+ * one implementation.
  */
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'

@@ -23,6 +23,7 @@ import { PluginRegistryTrust } from '@/types/plugin'
 import { PluginSettingKey } from '@/types/setting'
 import type { Setting, SettingSave } from '@/types/setting'
 import { UiCardPadding } from '@/utils/ui/card'
+import type { UiSelectOption } from '@/utils/ui/select'
 import { UiAlignItems, UiDirection, UiGap } from '@/utils/ui/layout'
 import { UiHeadingVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
@@ -44,9 +45,13 @@ const settings = toRef(props, 'settings')
 /** Draft of the row; an empty row reads as the strictest level, the server's default. */
 const draft = useSettingDraft(settings, PluginSettingKey.RegistryTrust, PluginRegistryTrust.VerifiedOnly)
 
-/** Options of the select: one per trust level. */
-const options = computed<{ value: PluginRegistryTrust; label: string }[]>(() =>
-  Object.values(PluginRegistryTrust).map(value => ({ value, label: t(`plugins.registryTrust.options.${value}`) })),
+/** Options of the select: one per trust level, with a one-line description shown under its label in the list. */
+const options = computed<UiSelectOption<PluginRegistryTrust>[]>(() =>
+  Object.values(PluginRegistryTrust).map(value => ({
+    value,
+    label: t(`plugins.registryTrust.options.${value}`),
+    description: t(`plugins.registryTrust.optionDescriptions.${value}`),
+  })),
 )
 
 /**
@@ -96,7 +101,7 @@ const wide = computed<boolean>(() => trust.value === PluginRegistryTrust.AnyRegi
             v-model="trust"
             :options="options"
             :placeholder="t('plugins.registryTrust.placeholder')"
-            class="w-72"
+            class="w-full sm:w-72"
             data-testid="plugin-registry-trust-select"
           />
           <SettingSaveButton

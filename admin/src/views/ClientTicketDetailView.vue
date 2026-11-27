@@ -40,7 +40,8 @@ import { UiTextSize, UiTextTone, UiHeadingVariant } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
 import { CONVERSATION_CARD, REPLY_CARD, SETTINGS_CARD } from '@/views/ClientTicketDetailView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiCardPadding } from '@/utils/ui/card'
 import { UiDialogVariant } from '@/utils/ui/dialog'
@@ -58,9 +59,9 @@ const openDeleteModal = (): void => {
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
   ...(store.currentTicket?.status !== TicketStatus.Closed
-    ? [{ label: t('shared.close'), icon: actionIcons[UiActionKind.Close], variant: UiButtonVariant.Secondary, testid: 'client-ticket-close', disabled: !store.currentTicket, onSelect: handleClose }]
-    : [{ label: t('clients.clientTicketDetail.reopen'), icon: actionIcons[UiActionKind.Refresh], variant: UiButtonVariant.Secondary, testid: 'client-ticket-reopen', onSelect: handleReopen }]),
-  { label: t('shared.delete'), icon: actionIcons[UiActionKind.Delete], variant: UiButtonVariant.Danger, testid: 'client-ticket-delete', disabled: !store.currentTicket, onSelect: openDeleteModal },
+    ? [headerAction(UiActionKind.Close, { label: t('shared.close'), variant: UiButtonVariant.Secondary, testid: 'client-ticket-close', disabled: !store.currentTicket, onSelect: handleClose })]
+    : [headerAction(UiActionKind.Refresh, { label: t('clients.clientTicketDetail.reopen'), variant: UiButtonVariant.Secondary, testid: 'client-ticket-reopen', onSelect: handleReopen })]),
+  headerAction(UiActionKind.Delete, { label: t('shared.delete'), variant: UiButtonVariant.Danger, testid: 'client-ticket-delete', disabled: !store.currentTicket, onSelect: openDeleteModal }),
 ])
 
 

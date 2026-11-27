@@ -46,13 +46,15 @@ import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import schema from '@/views/TaxRulesView.schema'
 import { UiTone } from '@/utils/ui/tone'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t, locale } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('taxRules.addRule'), icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'tax-rules-add', onSelect: openCreate },
+  headerAction(UiActionKind.Add, { label: t('taxRules.addRule'), variant: UiButtonVariant.Primary, testid: 'tax-rules-add', onSelect: openCreate }),
 ])
 
 /** The filter field the dialog edits; it is one query key and one `TaxRuleListFilters` member. */

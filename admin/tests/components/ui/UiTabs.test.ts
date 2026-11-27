@@ -32,13 +32,51 @@ describe('UiTabs markers', () => {
 })
 
 describe('UiTabs scrollbar', () => {
-  it('keeps its scrollbar unless asked to hide it, so it cannot run into the selected tab\'s underline', () => {
-    const items = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]
-    const shown = mount(UiTabs, { props: { items, modelValue: 'a' } })
-    const hidden = mount(UiTabs, { props: { items, modelValue: 'a', hideScrollbar: true } })
+  it('always hides its scrollbar, so no grey track shows beside the selected tab underline', () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
 
-    expect(shown.get('[role="tablist"]').classes().join(' ')).not.toContain('scrollbar-width')
-    expect(hidden.get('[role="tablist"]').classes().join(' ')).toContain('scrollbar-width:none')
+    expect(wrapper.get('[role="tablist"]').classes()).toEqual(expect.arrayContaining(['no-scrollbar', 'overflow-x-auto']))
+  })
+})
+
+describe('UiTabs edge fade', () => {
+  /**
+   * Gives the tab list a measured width, as a browser would, then lets the strip re-read it.
+   *
+   * @param list - The tab list element.
+   * @param metrics - Its scroll position, visible width and full width.
+   */
+  const measure = async (list: HTMLElement, metrics: { scrollLeft: number; clientWidth: number; scrollWidth: number }): Promise<void> => {
+    Object.defineProperties(list, {
+      scrollLeft: { value: metrics.scrollLeft, configurable: true },
+      clientWidth: { value: metrics.clientWidth, configurable: true },
+      scrollWidth: { value: metrics.scrollWidth, configurable: true },
+    })
+    list.dispatchEvent(new Event('scroll'))
+    await nextTick()
+  }
+
+  it('fades nothing while every tab fits', async () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
+    const list = wrapper.get('[role="tablist"]')
+
+    await measure(list.element as HTMLElement, { scrollLeft: 0, clientWidth: 300, scrollWidth: 300 })
+
+    expect(list.classes().join(' ')).not.toContain('mask-image')
+  })
+
+  it('fades only the end side at the start of an overflowing strip, then both sides, then only the start side at its end', async () => {
+    const wrapper = mount(UiTabs, { props: { items, modelValue: 'a' } })
+    const list = wrapper.get('[role="tablist"]')
+
+    await measure(list.element as HTMLElement, { scrollLeft: 0, clientWidth: 300, scrollWidth: 600 })
+    expect(list.classes().join(' ')).toContain('to_right,black_calc(100%-2rem),transparent')
+
+    await measure(list.element as HTMLElement, { scrollLeft: 100, clientWidth: 300, scrollWidth: 600 })
+    expect(list.classes().join(' ')).toContain('to_right,transparent,black_2rem')
+
+    await measure(list.element as HTMLElement, { scrollLeft: 300, clientWidth: 300, scrollWidth: 600 })
+    expect(list.classes().join(' ')).toContain('to_left,black_calc(100%-2rem),transparent')
   })
 })
 
@@ -159,15 +197,29 @@ describe('UiTabs reveal of the selected tab', () => {
     return { scrolled, options, restore: () => { HTMLElement.prototype.scrollIntoView = original } }
   }
 
-  it('scrolls the selected tab to the middle of the strip on mount, never the page', () => {
+  it('scrolls the selected tab just into view on mount, smoothly, never the page', () => {
     const { scrolled, options, restore } = recordScrolls()
     try {
       mount(UiTabs, { props: { items, modelValue: 'c' } })
 
       expect(scrolled).toEqual(['tab-c'])
-      expect(options[0]).toEqual({ inline: 'center', block: 'nearest' })
+      expect(options[0]).toEqual({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
     } finally {
       restore()
+    }
+  })
+
+  it('jumps instead of gliding to the selected tab under reduced motion', () => {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined })) as unknown as typeof window.matchMedia
+    const { options, restore } = recordScrolls()
+    try {
+      mount(UiTabs, { props: { items, modelValue: 'c' } })
+
+      expect(options[0]).toEqual({ inline: 'nearest', block: 'nearest', behavior: 'auto' })
+    } finally {
+      restore()
+      window.matchMedia = original
     }
   })
 

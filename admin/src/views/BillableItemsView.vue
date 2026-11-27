@@ -48,14 +48,15 @@ import { schemaHeader } from '@/lib/schemaHeader'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('billing.billableItems.create'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'billing-billable-items-add', to: AppRoute.BillingBillableItemsAdd },
+  headerAction(UiActionKind.Add, { label: t('billing.billableItems.create'), variant: UiButtonVariant.Primary, testid: 'billing-billable-items-add', to: AppRoute.BillingBillableItemsAdd }),
 ])
 
 const store = useBillableItemsStore()

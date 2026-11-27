@@ -56,7 +56,7 @@ const lineWidthsOf = (count: number): string[] => Array.from({ length: count }, 
 
 <template>
   <div v-if="card.tabs" :data-testid="`ui-detail-card-${card.key}`">
-    <UiTabs v-if="loading" :items="tabItemsOf(card.tabs)" model-value="" hide-scrollbar inert />
+    <UiTabs v-if="loading" :items="tabItemsOf(card.tabs)" model-value="" inert />
     <slot v-else />
   </div>
   <UiCard v-else padding="md" :aria-busy="loading ? 'true' : undefined" :data-testid="`ui-detail-card-${card.key}`">

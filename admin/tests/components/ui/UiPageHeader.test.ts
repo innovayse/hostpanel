@@ -5,24 +5,32 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { config, mount, RouterLinkStub } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import { Icon } from '@/lib/icons'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { actionIcons, UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { createTestI18n } from '../../helpers/i18n'
 
 config.global.plugins = [createTestI18n()]
 
-/** Two actions: a link in the primary look and a secondary button, each with its icon. */
+/** Two actions: a link in the primary look and a secondary button, each of a kind. */
 const ACTIONS: UiHeaderAction[] = [
-  { label: 'Refresh', icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'h-refresh', onSelect: () => undefined },
-  { label: 'Add', icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'h-add', to: '/add' },
+  { label: 'Refresh', kind: UiActionKind.Refresh, variant: UiButtonVariant.Secondary, testid: 'h-refresh', onSelect: () => undefined },
+  { label: 'Add', kind: UiActionKind.Add, variant: UiButtonVariant.Primary, testid: 'h-add', to: '/add' },
 ]
 
 describe('UiPageHeader', () => {
+
   beforeEach(() => {
     setActivePinia(createPinia())
+  })
+
+  it('draws each action with the icon of its kind', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'T', actions: ACTIONS }, global: { stubs: { RouterLink: RouterLinkStub } } })
+
+    expect(wrapper.findComponent(UiButton).props('icon')).toBe(actionIcons[UiActionKind.Refresh])
   })
 
   it('renders the title as the level-1 heading', () => {
@@ -50,7 +58,7 @@ describe('UiPageHeader', () => {
   it('sets the title in the muted subtitle colour below it as the concept does', () => {
     const wrapper = mount(UiPageHeader, { props: { title: 'Clients', subtitle: 'All accounts' } })
 
-    expect(wrapper.get('h1').classes()).toEqual(expect.arrayContaining(['text-[1.875rem]', 'font-semibold']))
+    expect(wrapper.get('h1').classes()).toEqual(expect.arrayContaining(['sm:text-[1.875rem]', 'font-semibold']))
     expect(wrapper.get('p').classes()).toEqual(expect.arrayContaining(['text-text-muted', 'mt-1.5']))
   })
 
@@ -333,37 +341,40 @@ describe('UiPageHeader', () => {
       expect(order).toEqual(['help', 'h-refresh'])
     })
 
-    it('collapses every action into one compact plus trigger below md, the primary action first with its full label', async () => {
+    it('keeps the primary action a normal button with its label on a phone and folds the others into the standard menu trigger', async () => {
       const original = window.matchMedia
       window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined })) as unknown as typeof window.matchMedia
       try {
         const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: ACTIONS }, slots: { default: '<i data-testid="filters" />' }, global: { stubs: { RouterLink: RouterLinkStub } }, attachTo: document.body })
+        const primary = wrapper.get('[data-testid="h-add"]')
         const trigger = wrapper.get('[data-testid="ui-page-header-more"]')
 
-        expect(wrapper.find('[data-testid="h-add"]').exists()).toBe(false)
+        expect(primary.text()).toContain('Add')
+        expect(primary.classes()).not.toContain('size-11')
         expect(wrapper.find('[data-testid="h-refresh"]').exists()).toBe(false)
-        expect(trigger.attributes('aria-label')).toBe('Actions')
-        expect(wrapper.get('[data-testid="ui-page-header-trigger"]').classes()).toEqual(expect.arrayContaining(['size-11', 'gradient-brand']))
+        expect(trigger.attributes('aria-label')).toBe('More actions')
+        expect(trigger.find('span').classes()).toEqual(expect.arrayContaining(['size-8', 'max-sm:size-11', 'text-text-muted']))
+        expect(trigger.find('span').classes()).not.toContain('gradient-brand')
         expect(wrapper.find('[data-testid="filters"]').exists()).toBe(true)
 
         await trigger.trigger('click')
         const items = Array.from(document.body.querySelectorAll('[role^="menuitem"]')).map((node) => node.getAttribute('data-testid'))
 
-        expect(items).toEqual(['h-add', 'h-refresh'])
+        expect(items).toEqual(['h-refresh'])
         wrapper.unmount()
       } finally {
         window.matchMedia = original
       }
     })
 
-    it('uses the overflow icon trigger below md when no action is primary', () => {
+    it('draws no menu trigger on a phone when the only action is the one that stays a button', () => {
       const original = window.matchMedia
       window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: () => undefined, removeEventListener: () => undefined })) as unknown as typeof window.matchMedia
       try {
         const wrapper = mount(UiPageHeader, { props: { title: 'Clients', actions: [ACTIONS[0]!] } })
 
-        expect(wrapper.get('[data-testid="ui-page-header-more"]').attributes('aria-label')).toBe('More actions')
-        expect(wrapper.get('[data-testid="ui-page-header-trigger"]').classes()).not.toContain('gradient-brand')
+        expect(wrapper.find('[data-testid="ui-page-header-more"]').exists()).toBe(false)
+        expect(wrapper.find('[data-testid="h-refresh"]').exists()).toBe(true)
       } finally {
         window.matchMedia = original
       }

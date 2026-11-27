@@ -40,7 +40,8 @@ import { UiTone } from '@/utils/ui/tone'
 import { AppRoute } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import schema, { EXISTING_OWNER_SECTION, OWNER_SECTION_KEY } from '@/views/AddClientView.schema'
-import { UiActionKind, actionIcons } from '@/utils/ui/actions'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 
 const { t } = useI18n()
@@ -50,8 +51,8 @@ const { crumbs } = usePageCrumbs()
 
 /** The header actions, each with its icon; on a phone only the primary one stays a button. */
 const headerActions = computed<UiHeaderAction[]>(() => [
-  { label: t('shared.cancel'), icon: actionIcons[UiActionKind.Cancel], variant: UiButtonVariant.Secondary, testid: 'add-client-cancel', onSelect: goBack },
-  { label: t('clients.addClient.createClient'), icon: actionIcons[UiActionKind.Add], variant: UiButtonVariant.Primary, testid: 'add-client-submit', loading: saving.value, onSelect: handleSubmit },
+  headerAction(UiActionKind.Cancel, { label: t('shared.cancel'), variant: UiButtonVariant.Secondary, testid: 'add-client-cancel', onSelect: goBack }),
+  headerAction(UiActionKind.Add, { label: t('clients.addClient.createClient'), variant: UiButtonVariant.Primary, testid: 'add-client-submit', loading: saving.value, onSelect: handleSubmit }),
 ])
 
 /** Router, used to leave for the clients list. */

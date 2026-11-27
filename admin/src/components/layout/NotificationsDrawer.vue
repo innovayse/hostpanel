@@ -23,6 +23,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
 import { ActivityFilter, groupActivityEvents } from '@/lib/activityFeed'
 import { Icon } from '@/lib/icons'
+import { UiActionKind } from '@/utils/ui/actions'
 import { AppRoute } from '@/lib/routes'
 import { useActivityStore } from '@/stores/activity'
 import type { ActivityEvent } from '@/types/activityevent'
@@ -93,7 +94,7 @@ const onOpen = (event: ActivityEvent): void => {
           <UiBadge :tone="activity.unreadCount > 0 ? UiTone.Primary : UiTone.Neutral" data-testid="notifications-unread-count">
             {{ t('notifications.unreadCount', { count: activity.unreadCount }, activity.unreadCount) }}
           </UiBadge>
-          <UiButton type="button" :variant="UiButtonVariant.Link" :icon="Icon.CheckCircle" :disabled="activity.unreadCount === 0" data-testid="notifications-mark-all-read" @click="activity.markAllRead()">
+          <UiButton type="button" :variant="UiButtonVariant.Link" :action="UiActionKind.Confirm" :disabled="activity.unreadCount === 0" data-testid="notifications-mark-all-read" @click="activity.markAllRead()">
             {{ t('notifications.markAllRead') }}
           </UiButton>
         </UiStack>

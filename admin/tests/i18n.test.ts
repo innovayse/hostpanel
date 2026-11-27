@@ -1,6 +1,6 @@
 /**
  * Unit tests for the admin i18n setup: the `lang` attribute of `<html>` follows the active locale, from startup and
- * on every change.
+ * on every change, and a locale code resolves to a shipped locale.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
@@ -38,5 +38,15 @@ describe('i18n document language', () => {
     await nextTick()
 
     expect(document.documentElement.lang).toBe('ru')
+  })
+})
+
+describe('toSupportedLocale', () => {
+  it('keeps a shipped locale and falls back to English for any other code', async () => {
+    const { toSupportedLocale } = await loadI18n()
+
+    expect(toSupportedLocale('hy')).toBe(MessageLanguage.Hy)
+    expect(toSupportedLocale('fr')).toBe(MessageLanguage.En)
+    expect(toSupportedLocale(null)).toBe(MessageLanguage.En)
   })
 })

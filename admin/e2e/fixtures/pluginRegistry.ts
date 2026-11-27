@@ -42,6 +42,7 @@ export const installedGateway: PluginListItemDto = {
   category: 'Payments',
   color: '#0f766e',
   isLoaded: false,
+  isEnabled: false,
   iconUrl: null,
   isBuiltIn: false,
   status: PluginStatus.Loaded,

@@ -18,6 +18,7 @@ export const widgetPlugin: PluginListItemDto = {
   category: 'Add-ons',
   color: '#0f766e',
   isLoaded: true,
+  isEnabled: true,
   iconUrl: null,
   isBuiltIn: false,
   status: PluginStatus.Loaded,

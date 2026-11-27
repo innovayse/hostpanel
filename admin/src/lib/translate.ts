@@ -6,7 +6,7 @@
  * The key is resolved at call time, never at module load, so a language switch is honoured.
  */
 
-import { i18n } from '@/i18n'
+import { i18n, toSupportedLocale } from '@/i18n'
 
 /**
  * Resolves a message key in the operator's current language.
@@ -38,10 +38,10 @@ export const translateOrRaw = (key: string, raw: string): string =>
  * @param key - Dotted key whose message holds the plural forms, with `{n}` for the count.
  * @param count - The counted number; selects the form and fills `{n}`.
  * @param locale - Language to write the sentence in.
- * @returns The sentence in that language, English when the catalogue lacks it.
+ * @returns The sentence in that language, English when the panel does not ship the language or the catalogue lacks it.
  */
 export const translateCountIn = (key: string, count: number, locale: string): string =>
-  i18n.global.t(key, count, { locale })
+  i18n.global.t(key, count, { locale: toSupportedLocale(locale) })
 
 /**
  * Resolves a message key in a given language rather than the current one.
@@ -49,7 +49,7 @@ export const translateCountIn = (key: string, count: number, locale: string): st
  * @param key - Dotted key present in every locale catalogue.
  * @param locale - Language to write the sentence in.
  * @param named - Values for `{placeholders}` in the message.
- * @returns The sentence in that language, English when the catalogue lacks it.
+ * @returns The sentence in that language, English when the panel does not ship the language or the catalogue lacks it.
  */
 export const translateIn = (key: string, locale: string, named: Record<string, unknown> = {}): string =>
-  i18n.global.t(key, named, { locale })
+  i18n.global.t(key, named, { locale: toSupportedLocale(locale) })

@@ -29,8 +29,10 @@ export const UiButtonType = {
 export type UiButtonType = (typeof UiButtonType)[keyof typeof UiButtonType]
 
 /**
- * Colour classes per look.
+ * Colour and content alignment classes per look.
  *
+ * The button looks center their label in the control; the text link look starts it, like any inline text, so a text link
+ * that takes the free width of a row (a card title) keeps its text next to what comes before it.
  * Hover and the gradient apply only while the control is not disabled (`not-disabled:`, which also
  * matches a link), and each look has a disabled colour set of its own: a muted label on a flat
  * surface, so a disabled control reads as unavailable by contrast and shape, never by opacity alone.
@@ -39,21 +41,21 @@ export type UiButtonType = (typeof UiButtonType)[keyof typeof UiButtonType]
  */
 export const buttonVariantClasses: Record<UiButtonVariant, string> = {
   primary:
-    'not-disabled:gradient-brand not-disabled:shadow-glow-primary not-disabled:hover:bg-(image:--gradient-primary-hover) not-disabled:hover:shadow-glow-primary-hover not-disabled:active:bg-(image:--gradient-primary-active) not-disabled:active:shadow-glow-primary text-text-on-primary font-semibold disabled:bg-surface-hover disabled:shadow-[inset_0_0_0_1px_var(--text-muted)] disabled:text-text-muted',
+    'justify-center not-disabled:gradient-brand not-disabled:shadow-glow-primary not-disabled:hover:bg-(image:--gradient-primary-hover) not-disabled:hover:shadow-glow-primary-hover not-disabled:active:bg-(image:--gradient-primary-active) not-disabled:active:shadow-glow-primary text-text-on-primary font-semibold disabled:bg-surface-hover disabled:shadow-[inset_0_0_0_1px_var(--text-muted)] disabled:text-text-muted',
   secondary:
-    'bg-surface-field border border-border-control text-text-secondary font-medium not-disabled:hover:bg-surface-active not-disabled:hover:border-border-control-hover not-disabled:hover:text-text-primary not-disabled:active:bg-surface-active not-disabled:active:border-border-control-hover disabled:bg-transparent disabled:border-text-muted disabled:text-text-muted',
+    'justify-center bg-surface-field border border-border-control text-text-secondary font-medium not-disabled:hover:bg-surface-active not-disabled:hover:border-border-control-hover not-disabled:hover:text-text-primary not-disabled:active:bg-surface-active not-disabled:active:border-border-control-hover disabled:bg-transparent disabled:border-text-muted disabled:text-text-muted',
   ghost:
-    'text-text-secondary not-disabled:hover:text-text-primary not-disabled:hover:bg-surface-hover not-disabled:active:bg-surface-active disabled:text-text-muted',
+    'justify-center text-text-secondary not-disabled:hover:text-text-primary not-disabled:hover:bg-surface-hover not-disabled:active:bg-surface-active disabled:text-text-muted',
   danger:
-    'bg-tint-red border border-status-red/30 text-status-red font-medium not-disabled:hover:bg-status-red/20 not-disabled:hover:border-status-red/50 not-disabled:active:bg-status-red/30 disabled:bg-surface-hover disabled:border-border disabled:text-text-muted',
-  link: 'text-text-accent underline-offset-2 not-disabled:hover:underline disabled:text-text-muted',
+    'justify-center bg-tint-red border border-status-red/30 text-status-red font-medium not-disabled:hover:bg-status-red/20 not-disabled:hover:border-status-red/50 not-disabled:active:bg-status-red/30 disabled:bg-surface-hover disabled:border-border disabled:text-text-muted',
+  link: 'justify-start text-text-accent underline-offset-2 not-disabled:hover:underline disabled:text-text-muted',
 }
 
 /** The ring a loading button shows beside its label: it takes the label's colour, and stands still under reduced motion. */
 export const buttonSpinnerClasses = 'inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none'
 
-/** Classes every look shares (focus ring, not-allowed cursor, motion). */
-export const buttonBaseClasses = `inline-flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${focusRingClasses}`
+/** Classes every look shares (focus ring, not-allowed cursor, motion); the content alignment belongs to the look. */
+export const buttonBaseClasses = `inline-flex items-center gap-1.5 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${focusRingClasses}`
 
 /**
  * Look of the content of a menu trigger that is an icon (the top bar's theme and language pickers): the 42px footprint and the

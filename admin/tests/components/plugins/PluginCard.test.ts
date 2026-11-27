@@ -85,6 +85,14 @@ describe('PluginCard', () => {
     expect(wrapper.get('[data-testid="plugin-card-badges-example-pay"]').findAll('[data-testid^="plugin-card-badge-"]')).toHaveLength(2)
   })
 
+  it('starts the name next to the logo instead of centering it in the title row', () => {
+    const link = mountCard().get('[data-testid="plugin-card-link-example-pay"]')
+
+    expect(link.classes()).toContain('flex-1')
+    expect(link.classes()).toContain('justify-start')
+    expect(link.classes()).not.toContain('justify-center')
+  })
+
   it('draws no badge row when there is neither a badge nor a placeholder', () => {
     expect(mountCard({ badges: [] }).find('[data-testid="plugin-card-badges-example-pay"]').exists()).toBe(false)
     expect(mountCard({ badges: [] }, {}, true).find('[data-testid="plugin-card-badges-example-pay"]').exists()).toBe(true)

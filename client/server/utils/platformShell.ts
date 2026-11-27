@@ -30,7 +30,7 @@ export const SHELL_CACHE_MS = 5 * 60 * 1000
 export const SHELL_TIMEOUT_MS = 5000
 
 /** The script files the relay serves; any other name is a 404, so the route cannot be aimed at another path. */
-export const WIDGET_FILES: ReadonlySet<string> = new Set(['header.js', 'header.v2.js'])
+export const WIDGET_FILES: ReadonlySet<string> = new Set(['header.js', 'header.v2.js', 'account-elements.js'])
 
 /** A relayed script and when it was read. */
 interface CachedScript {

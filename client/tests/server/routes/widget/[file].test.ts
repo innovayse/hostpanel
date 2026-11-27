@@ -53,7 +53,7 @@ describe('GET and HEAD /widget/:file', () => {
     expect(shell.requests).toHaveLength(0)
   })
 
-  it.each(['header.js', 'header.v2.js'])('relays %s as a script with the headers a script needs', async (file) => {
+  it.each(['header.js', 'header.v2.js', 'account-elements.js'])('relays %s as a script with the headers a script needs', async (file) => {
     const event = makeEvent({ params: { file } })
 
     const body = await route.default(event)

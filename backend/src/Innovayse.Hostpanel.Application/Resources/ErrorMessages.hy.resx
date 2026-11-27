@@ -1711,4 +1711,13 @@
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>Գրանցողը չի հայտնում այս դոմենի ավարտի ժամկետը, ուստի այն հնարավոր չէ ներմուծել։</value>
   </data>
+  <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
+    <value>Գրանցամատյանի պահանջած պարտադիր դաշտը լրացված չէ։</value>
+  </data>
+  <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
+    <value>Գրանցամատյանի պահանջած դաշտի արժեքը սխալ է։</value>
+  </data>
+  <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Գրանցամատյանը այս դաշտը չի պահանջում։</value>
+  </data>
 </root>

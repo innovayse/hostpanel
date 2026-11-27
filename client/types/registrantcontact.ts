@@ -27,4 +27,6 @@ export interface RegistrantContact {
   postalCode: string
   /** ISO 3166-1 alpha-2 country code. */
   country: string
+  /** The registry's extra values of the domain by field key, as last sent to the registrar; empty when it asked for none. */
+  extendedAttributes: Record<string, string>
 }

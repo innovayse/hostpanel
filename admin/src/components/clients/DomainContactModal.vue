@@ -3,8 +3,9 @@
  * Modal for modifying the WHOIS registrant contact details for a domain.
  * Displays a two-column form with standard contact/address fields.
  */
-import { reactive } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import DomainFieldsForm from '@/components/clients/DomainFieldsForm.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -12,6 +13,9 @@ import UiForm from '@/components/ui/UiForm.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
+import { attributesFor, holderOf } from '@/lib/domainFields'
+import { useDomainsStore } from '@/stores/domains'
+import { type DomainField, DomainFieldOperation } from '@/types/domain'
 import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
 import { UiAlignItems, UiDirection, UiGap, UiJustify } from '@/utils/ui/layout'
@@ -21,14 +25,25 @@ import { UiActionKind } from '@/utils/ui/actions'
 const { t } = useI18n()
 
 /** Props for DomainContactModal. */
-defineProps<{
+const props = withDefaults(defineProps<{
   /** True while the save operation is in flight. */
   saving: boolean
-}>()
+  /** Primary key of the domain, whose registrant contact and extra values prefill the form. */
+  domainId: number | string
+  /** Fully qualified name of the domain, which decides the extra fields the registrar plugin asks for. */
+  domainName: string
+  /** The API's refusal per field key from the last failed save; empty when nothing was refused. */
+  fieldErrors?: Record<string, string>
+}>(), {
+  fieldErrors: () => ({}),
+})
+
+/** The domains store, which reads the contact the registrar holds and the extra fields of the domain. */
+const store = useDomainsStore()
 
 const emit = defineEmits<{
-  /** Emitted with the contact form payload when saved. */
-  save: [payload: Record<string, string>]
+  /** Emitted with the contact form payload and the registry's extra values (by field key) when saved. */
+  save: [payload: Record<string, string>, extendedAttributes: Record<string, string>]
   /** Emitted when the modal is closed without saving. */
   close: []
 }>()
@@ -80,13 +95,53 @@ const form = reactive<Record<string, string>>(
   Object.fromEntries(fields.map(f => [f.key, ''])),
 )
 
+/** The registry's extra values as edited, by field key. */
+const attributes = ref<Record<string, string>>({})
+
+/** The extra fields the registrar plugin asks for a contact change of this domain; empty until read. */
+const extraFields = ref<DomainField[]>([])
+
 /**
- * Emits the save event with all contact field values, trimmed.
+ * Reads the extra fields for the domain and the kind of registrant the form describes, and keeps the values of the fields
+ * that still apply.
+ *
+ * @returns Resolves when the fields are read.
+ */
+const loadFields = async (): Promise<void> => {
+  extraFields.value = await store.fetchDomainFields(
+    props.domainName,
+    DomainFieldOperation.ContactChange,
+    holderOf(form[ContactField.Organization]),
+  )
+  attributes.value = attributesFor(extraFields.value, attributes.value)
+}
+
+// The fields depend on whether the contact names an organisation, so they are read again when that changes.
+watch(() => holderOf(form[ContactField.Organization]), loadFields)
+
+// Prefill from what the registrar holds; a contact that cannot be read leaves the form empty, as it always was.
+onMounted(async () => {
+  const held = await store.fetchContact(props.domainId)
+  if (held) {
+    for (const field of fields) {
+      form[field.key] = held[field.key] ?? ''
+    }
+    attributes.value = { ...held.extendedAttributes }
+  }
+  await loadFields()
+})
+
+/**
+ * Emits the save event with all contact field values, trimmed, and the registry's extra values that apply.
  *
  * @returns Nothing.
  */
 const handleSave = (): void => {
-  emit('save', Object.fromEntries(fields.map(f => [f.key, (form[f.key] ?? '').trim()])))
+  emit(
+    'save',
+    Object.fromEntries(fields.map(f => [f.key, (form[f.key] ?? '').trim()])),
+    attributesFor(extraFields.value, attributes.value),
+  )
 }
 </script>
 
@@ -106,6 +161,7 @@ const handleSave = (): void => {
           </template>
         </UiField>
       </UiGrid>
+      <DomainFieldsForm v-model="attributes" :fields="extraFields" :errors="fieldErrors" />
       <UiStack :direction="UiDirection.Row" :justify="UiJustify.End" :align="UiAlignItems.Center" :gap="UiGap.Sm">
         <UiButton :action="UiActionKind.Cancel"
           :type="UiButtonType.Button"

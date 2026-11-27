@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
@@ -30,24 +31,30 @@ public sealed class TransferDomainHandler
     /// <summary>Builds the registrant contact from the client's details.</summary>
     private readonly RegistrantContactReader _contacts;
 
+    /// <summary>Checks the registry's extra values against the fields the registrar plugin declares.</summary>
+    private readonly DomainFieldsValidation _fieldsValidation;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registrars">Resolves the registrar that holds the domain's TLD.</param>
     /// <param name="context">The data context the new aggregate is persisted through.</param>
     /// <param name="clock">The source of the current moment.</param>
     /// <param name="payerCurrency">Decides the client's billing currency when the command names none.</param>
     /// <param name="contacts">Builds the registrant contact from the client's details.</param>
+    /// <param name="fieldsValidation">Checks the registry's extra values against the fields the registrar plugin declares.</param>
     public TransferDomainHandler(
         RegistrarProviderResolver registrars,
         IHostpanelDbContext context,
         IClock clock,
         IPayerCurrencyResolver payerCurrency,
-        RegistrantContactReader contacts)
+        RegistrantContactReader contacts,
+        DomainFieldsValidation fieldsValidation)
     {
         _registrars = registrars;
         _context = context;
         _clock = clock;
         _payerCurrency = payerCurrency;
         _contacts = contacts;
+        _fieldsValidation = fieldsValidation;
     }
 
     /// <summary>
@@ -68,8 +75,21 @@ public sealed class TransferDomainHandler
             return Result.Failure<int>(contact.Error!, contact.ErrorCode);
         }
 
-        var request = new DomainTransferOrder(cmd.DomainName, cmd.EppCode, cmd.WhoisPrivacy, contact.Value!);
         var registrar = await _registrars.ResolveForTldAsync(cmd.DomainName, ct);
+
+        // Checked here as well as at checkout: this command is also the admin's, and a fulfilment retry can run it long after
+        // the order was placed, against a registrar plugin whose manifest has changed since.
+        var fields = await _fieldsValidation.ValidateAsync(
+            cmd.DomainName, registrar.Module, DomainFieldsValidation.HolderOf(contact.Value!.Organization),
+            PluginDomainOperations.Transfer, cmd.ExtendedAttributes, ct);
+        if (fields.IsFailure)
+        {
+            return Result<int>.FailureFrom(fields);
+        }
+
+        var extendedAttributes = DomainExtendedAttributes.From(cmd.ExtendedAttributes);
+        var request = new DomainTransferOrder(
+            cmd.DomainName, cmd.EppCode, cmd.WhoisPrivacy, contact.Value!, extendedAttributes.Values);
         var result = await registrar.Provider.TransferAsync(request, ct);
 
         if (!result.Success)
@@ -90,7 +110,8 @@ public sealed class TransferDomainHandler
             paymentMethod: cmd.PaymentMethod,
             registrationPeriod: cmd.Years,
             registrarModule: registrar.Module,
-            orderId: cmd.OrderId);
+            orderId: cmd.OrderId,
+            extendedAttributes: extendedAttributes);
 
         // When the registrar requires polling, leave in PendingTransfer.
         if (!result.RequiresPolling)

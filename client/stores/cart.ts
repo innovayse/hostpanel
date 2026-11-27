@@ -73,7 +73,8 @@ const isValidItem = (item: unknown): item is CartItem => {
   const i = item as Record<string, unknown>
   // A line never carries account credentials; a stored entry that does is dropped rather than
   // kept in the browser.
-  return !('username' in i) && !('password' in i) &&
+  // The registry's extra values are never kept in the browser either.
+  return !('username' in i) && !('password' in i) && !('extendedAttributes' in i) &&
     typeof i.pid === 'number' && Number.isFinite(i.pid) &&
     typeof i.name === 'string' &&
     isMember(Object.values(PricingCycle), i.billingcycle) &&
@@ -108,6 +109,17 @@ const isValidBundle = (bundle: unknown): bundle is CartBundle => {
     isMember(Object.values(BundleDiscountType), b.discountType) &&
     typeof b.discountAmount === 'number' && Number.isFinite(b.discountAmount) &&
     (b.discountCurrency === null || typeof b.discountCurrency === 'string')
+}
+
+/**
+ * A cart line as it is stored: without the registry's extra values, which can be personal data and are kept in memory only.
+ *
+ * @param item - The cart line.
+ * @returns The line without its `extendedAttributes`.
+ */
+const withoutExtendedAttributes = (item: CartItem): Omit<CartItem, 'extendedAttributes'> => {
+  const { extendedAttributes: _kept, ...stored } = item
+  return stored
 }
 
 /**
@@ -276,7 +288,7 @@ export const useCartStore = defineStore('cart', {
         return
       }
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items))
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.items.map(withoutExtendedAttributes)))
         if (this.bundle) {
           localStorage.setItem(BUNDLE_STORAGE_KEY, JSON.stringify(this.bundle))
         } else {
@@ -331,6 +343,20 @@ export const useCartStore = defineStore('cart', {
      * @param domain - Domain name (for domain items)
      * @param domainAction - Domain action (for domain items)
      */
+    /**
+     * Sets the registry's extra values of a domain line. Not saved: see {@link CartItem.extendedAttributes}.
+     *
+     * @param domain - The domain name of the line.
+     * @param domainAction - Whether the line registers or transfers it.
+     * @param attributes - The values by field key; empty for none.
+     */
+    setExtendedAttributes(domain: string, domainAction: DomainOrderAction, attributes: Record<string, string>) {
+      const target = this.items.find(i => i.domain === domain && i.domainAction === domainAction)
+      if (target) {
+        target.extendedAttributes = Object.keys(attributes).length > 0 ? attributes : undefined
+      }
+    },
+
     removeItem(pid: number, billingcycle: PricingCycle, domain?: string, domainAction?: DomainOrderAction) {
       // A bundle is bought whole: taking one of its lines out ends the bundle.
       const target = domain && domainAction

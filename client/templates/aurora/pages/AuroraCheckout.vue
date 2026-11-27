@@ -163,6 +163,9 @@
                 </UiStack>
               </UiCard>
 
+              <!-- The registry's extra values for each domain registration or transfer -->
+              <CheckoutDomainFields />
+
               <!-- Payment method -->
               <UiCard tone="bare" padding="lg" data-testid="checkout-payment" class="border-line bg-surf">
                 <UiStack direction="row" align="center" gap="sm">

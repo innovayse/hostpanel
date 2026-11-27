@@ -2,6 +2,7 @@ using System.Buffers.Text;
 using System.Security.Cryptography;
 using System.Text;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Fraud;
 using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -159,6 +160,7 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// <param name="domainAction">The domain action. Null for hosting.</param>
     /// <param name="eppCode">EPP code for domain transfers.</param>
     /// <param name="years">Domain registration period in years.</param>
+    /// <param name="extendedAttributes">The registry's extra values for a domain registration or transfer; <see langword="null"/> for none.</param>
     public void AddItem(
         int productId,
         string productName,
@@ -169,12 +171,13 @@ public sealed class Order : BaseEntity, IAggregateRoot
         string? hostname,
         DomainAction? domainAction = null,
         string? eppCode = null,
-        int? years = null)
+        int? years = null,
+        DomainExtendedAttributes? extendedAttributes = null)
     {
         _items.Add(OrderItem.Create(
             productId, productName, billingCycle,
             firstPaymentAmount, recurringAmount,
-            domain, hostname, domainAction, eppCode, years));
+            domain, hostname, domainAction, eppCode, years, extendedAttributes));
     }
 
     /// <summary>

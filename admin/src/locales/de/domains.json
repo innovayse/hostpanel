@@ -22,5 +22,9 @@
     "import": "Importieren",
     "previousPage": "Zurück",
     "page": "Seite {page}"
+  },
+  "domainFields": {
+    "title": "Angaben für die Registerstelle",
+    "note": "Die Registerstelle dieser Domain verlangt neben dem Kontakt diese Angaben. Sie werden verschlüsselt gespeichert und unverändert an den Registrar übergeben."
   }
 }

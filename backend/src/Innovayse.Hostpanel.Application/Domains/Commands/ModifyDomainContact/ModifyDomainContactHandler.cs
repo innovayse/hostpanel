@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
@@ -21,20 +22,26 @@ public sealed class ModifyDomainContactHandler
     /// <summary>Resolves the registrar that holds the domain's TLD.</summary>
     private readonly RegistrarProviderResolver _registrars;
 
+    /// <summary>Checks the registry's extra values against the fields the registrar plugin declares.</summary>
+    private readonly DomainFieldsValidation _fieldsValidation;
+
     /// <summary>Logger that records the registrar's refusal code for operators.</summary>
     private readonly ILogger<ModifyDomainContactHandler> _logger;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The data context the domain aggregate is read through.</param>
     /// <param name="registrars">Resolves the registrar that holds the domain's TLD.</param>
+    /// <param name="fieldsValidation">Checks the registry's extra values against the fields the registrar plugin declares.</param>
     /// <param name="logger">Logger that records the registrar's refusal code for operators.</param>
     public ModifyDomainContactHandler(
         IHostpanelDbContext context,
         RegistrarProviderResolver registrars,
+        DomainFieldsValidation fieldsValidation,
         ILogger<ModifyDomainContactHandler> logger)
     {
         _context = context;
         _registrars = registrars;
+        _fieldsValidation = fieldsValidation;
         _logger = logger;
     }
 
@@ -44,8 +51,9 @@ public sealed class ModifyDomainContactHandler
     /// <param name="cmd">The modify domain contact command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <c>DOMAIN_NOT_FOUND</c> when the id names no domain, or
-    /// <c>DOMAIN_CONTACT_UPSTREAM_FAILED</c> when the registrar rejects the contact update.
+    /// Success, or <c>DOMAIN_NOT_FOUND</c> when the id names no domain, <c>DOMAIN_FIELD_REQUIRED</c>,
+    /// <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values do not match the fields the
+    /// registrar plugin declares, or <c>DOMAIN_CONTACT_UPSTREAM_FAILED</c> when the registrar rejects the contact update.
     /// </returns>
     public async Task<Result> HandleAsync(ModifyDomainContactCommand cmd, CancellationToken ct)
     {
@@ -67,8 +75,18 @@ public sealed class ModifyDomainContactHandler
         var contact = new DomainContact(
             cmd.FirstName, cmd.LastName, cmd.Organization, cmd.Email, cmd.Phone,
             cmd.Address1, cmd.Address2, cmd.City, cmd.State, cmd.PostalCode, cmd.Country);
+        var fields = await _fieldsValidation.ValidateAsync(
+            domain.Name, domain.RegistrarModule, DomainFieldsValidation.HolderOf(contact.Organization),
+            PluginDomainOperations.ContactChange, cmd.ExtendedAttributes, ct);
+        if (fields.IsFailure)
+        {
+            return fields;
+        }
+
+        var extendedAttributes = DomainExtendedAttributes.From(cmd.ExtendedAttributes);
         var registrar = await _registrars.ResolveAsync(domain, ct);
-        var result = await registrar.ModifyContactDetailsAsync(new DomainContactChange(domain.ToRef(), contact), ct);
+        var result = await registrar.ModifyContactDetailsAsync(
+            new DomainContactChange(domain.ToRef(), contact, extendedAttributes.Values), ct);
         if (!result.Success)
         {
             _logger.LogWarning(
@@ -77,6 +95,9 @@ public sealed class ModifyDomainContactHandler
             return Result.FailureCode(result.ToFailureCode(HostpanelErrorCodes.DOMAIN_CONTACT_UPSTREAM_FAILED));
         }
 
+        // The registrar now holds these values, so the stored ones follow, and the contact form reads them back as they were sent.
+        domain.ReplaceExtendedAttributes(extendedAttributes);
+        await _context.SaveChangesAsync(ct);
         return Result.Success();
     }
 }

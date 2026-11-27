@@ -23,6 +23,8 @@ import { makeClientUser } from '~/tests/helpers/clientUser'
 import { useCatalogStore } from '~/stores/catalog'
 import { useDomainsStore } from '~/stores/domains'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
+import { DomainFieldHolder } from '~/types/domainfieldholder'
+import { DomainFieldOperation } from '~/types/domainfieldoperation'
 import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
 import type { DomainDetail } from '~/types/domaindetail'
 import { HttpMethod } from '~/types/httpmethod'
@@ -192,18 +194,35 @@ describe('useDomainsStore', () => {
     table[on(HttpMethod.Get, DomainAction.Contact)] = {
       body: {
         firstName: 'Ada', lastName: 'Lovelace', organization: null, email: 'ada@example.com', phone: '+44 1',
-        address1: '1 Main St', address2: null, city: 'London', state: 'LDN', postalCode: 'N1', country: 'GB'
+        address1: '1 Main St', address2: null, city: 'London', state: 'LDN', postalCode: 'N1', country: 'GB',
+        extendedAttributes: { 'holder-number': 'N-1' }
       }
     }
     const store = useDomainsStore()
     expect(await store.loadRegistrant(DOMAIN_ID)).toEqual({
-      firstName: 'Ada', lastName: 'Lovelace', organization: '', email: 'ada@example.com',
-      address1: '1 Main St', address2: '', city: 'London', state: 'LDN',
-      postalCode: 'N1', country: 'GB', phone: '+44 1'
+      contact: {
+        firstName: 'Ada', lastName: 'Lovelace', organization: '', email: 'ada@example.com',
+        address1: '1 Main St', address2: '', city: 'London', state: 'LDN',
+        postalCode: 'N1', country: 'GB', phone: '+44 1'
+      },
+      extendedAttributes: { 'holder-number': 'N-1' }
     })
 
     table[on(HttpMethod.Get, DomainAction.Contact)] = REFUSED
     expect(await store.loadRegistrant(DOMAIN_ID)).toBeNull()
+  })
+
+  it('loads the extra domain fields a domain asks for, and none when they cannot be read', async () => {
+    const fields = [{ key: 'holder-number', label: 'Holder number', type: 'Text', required: true, description: null, placeholder: null, pattern: null, minLength: null, maxLength: null, options: [] }]
+    table[readOf(CatalogPath.DomainFields)] = { body: fields }
+    const store = useDomainsStore()
+
+    expect(await store.loadDomainFields('name.alpha', DomainFieldOperation.Register, DomainFieldHolder.Individual)).toEqual(fields)
+    expect(requestsTo(stub.requests, CatalogPath.DomainFields)[0]?.url)
+      .toBe(CatalogPath.DomainFields + '?domain=name.alpha&operation=register&holder=individual')
+
+    table[readOf(CatalogPath.DomainFields)] = REFUSED
+    expect(await store.loadDomainFields('name.alpha', DomainFieldOperation.Register, DomainFieldHolder.Individual)).toEqual([])
   })
 
   it('loads WHOIS and contacts as null on failure, and saves WHOIS', async () => {
@@ -220,8 +239,11 @@ describe('useDomainsStore', () => {
     expect(await store.loadContacts()).toBeNull()
 
     table[on(HttpMethod.Put, DomainAction.Whois)] = REFUSED
-    expect(await store.saveWhois(DOMAIN_ID, emptyContact())).toBe(DomainActionOutcome.Failed)
-    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.Whois)).at(-1))).toEqual({ contact: emptyContact() })
+    expect(await store.saveWhois(DOMAIN_ID, emptyContact(), { 'holder-number': 'N-1' })).toBe(DomainActionOutcome.Failed)
+    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.Whois)).at(-1))).toEqual({
+      contact: emptyContact(),
+      extendedAttributes: { 'holder-number': 'N-1' }
+    })
     expect(store.whoisError).toBe('Refused by the registrar.')
     expect(store.whoisSaving).toBe(false)
   })

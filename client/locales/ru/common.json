@@ -32,7 +32,12 @@
     "phoneExample": "00 000 000",
     "phoneCountry": "Код страны",
     "searchCountry": "Поиск страны или кода",
-    "noCountries": "Страна не найдена"
+    "noCountries": "Страна не найдена",
+    "datePicker": {
+      "day": "День",
+      "month": "Месяц",
+      "year": "Год"
+    }
   },
   "common": {
     "actions": "Действия",

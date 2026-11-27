@@ -11,8 +11,12 @@ import { useDomainsApi } from '@/composables/apis/useDomainsApi'
 import { runAction } from '@/lib/runAction'
 import type {
   DnsRecordPayload,
+  DomainContactDetails,
   DomainContactPayload,
   DomainDetail,
+  DomainField,
+  DomainFieldHolder,
+  DomainFieldOperation,
   DomainListFilters,
   DomainRegistration,
   ForwardingRulePayload,
@@ -209,10 +213,48 @@ export const useDomainsStore = defineStore('domains', () => {
    *
    * @param id - Domain primary key.
    * @param contact - Updated contact details.
-   * @returns True when accepted; false when refused (see `actionError` and `fieldErrors`).
+   * @param extendedAttributes - The registry's extra values by field key; they replace the stored ones.
+   * @returns True when accepted; false when refused (see `actionError` and `fieldErrors`, which holds the refusal of each
+   * extra field by its key).
    */
-  const modifyContact = (id: number | string, contact: DomainContactPayload): Promise<boolean> =>
-    mutate(() => api.modifyContact(id, contact))
+  const modifyContact = (
+    id: number | string,
+    contact: DomainContactPayload,
+    extendedAttributes: Record<string, string>,
+  ): Promise<boolean> =>
+    mutate(() => api.modifyContact(id, contact, extendedAttributes))
+
+  /** Sentence for the last failed read of a contact or of the extra domain fields, null when none. */
+  const contactReadError = ref<string | null>(null)
+
+  /**
+   * Reads the registrant contact the registrar holds and the registry's extra values stored beside it.
+   *
+   * @param id - Domain primary key.
+   * @returns The contact and its values, or null when it could not be read (see `contactReadError`).
+   */
+  const fetchContact = async (id: number | string): Promise<DomainContactDetails | null> => {
+    const result = await runAction(contactReadError, () => api.getContact(id))
+    return result.ok ? result.value : null
+  }
+
+  /**
+   * Reads the extra fields the registrar plugin asks for a domain and an operation.
+   *
+   * @param domain - Fully qualified domain name.
+   * @param operation - What is about to be done with it.
+   * @param holder - The kind of registrant.
+   * @returns The fields in the plugin's order; empty when the registrar asks for none or they could not be read (the change
+   * itself is checked by the API, so an unread form never lets a wrong value through).
+   */
+  const fetchDomainFields = async (
+    domain: string,
+    operation: DomainFieldOperation,
+    holder: DomainFieldHolder,
+  ): Promise<DomainField[]> => {
+    const result = await runAction(contactReadError, () => api.getDomainFields(domain, operation, holder))
+    return result.ok ? result.value : []
+  }
 
   /**
    * Adds a DNS record to a domain.
@@ -301,7 +343,7 @@ export const useDomainsStore = defineStore('domains', () => {
     domains, current, pageSize, totalCount, loading, error, actionError, fieldErrors,
     fetchAll, fetchClientPage, fetchById, update, register, renew,
     setAutoRenew, setRegistrarAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
-    modifyContact, getEppCode, cancelTransfer,
+    modifyContact, fetchContact, fetchDomainFields, contactReadError, getEppCode, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,
     addForwardingRule, updateForwardingRule, deleteForwardingRule,
   }

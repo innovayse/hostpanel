@@ -57,6 +57,7 @@ public sealed class GetDomainContactHandler
         return Result.Success(new DomainContactDto(
             contact.FirstName, contact.LastName, contact.Organization, contact.Email, contact.Phone,
             contact.Address1, contact.Address2, contact.City, contact.State, contact.PostalCode,
-            contact.Country));
+            contact.Country,
+            domain.ExtendedAttributes.Values));
     }
 }

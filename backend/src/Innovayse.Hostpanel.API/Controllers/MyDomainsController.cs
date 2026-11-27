@@ -311,7 +311,7 @@ public sealed class MyDomainsController : BaseApiController
     /// when the registrar rejects the update; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ManageDomainSettings</c>;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
-    /// 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the contact; 503 also with
+    /// 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the contact, or with <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values (<c>extendedAttributes</c>) do not match the fields the registrar plugin declares for the domain; 503 also with
     /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
     /// credentials or the balance is short.
     /// </returns>
@@ -385,7 +385,7 @@ public sealed class MyDomainsController : BaseApiController
     /// <c>PRODUCT_NOT_FOUND</c> when an ordered product does not exist; 503 with
     /// <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c> when this installation sells no domain product; 401 without a session; 403 for a caller who is not a client;
     /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>PlaceNewOrders</c>;
-    /// 429 when the rate limit is hit.
+    /// 422 with <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values (<c>extendedAttributes</c>) do not match the fields the registrar plugin declares for the domain; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("transfer-order")]
     [Authorize(Policy = Policies.Client)]
@@ -395,6 +395,7 @@ public sealed class MyDomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> TransferInAsync([FromBody] TransferMyDomainCommand command, CancellationToken ct)
     {

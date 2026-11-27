@@ -49,4 +49,10 @@ export interface CartItem {
   productType?: ProductType
   /** Id of the bundle the line was added with; set on every line of a bundle, absent on a plain line. */
   bundleId?: number
+  /**
+   * The registry's extra values by field key (see `GET /api/portal/public/domain-fields`) a register or transfer line is
+   * ordered with. They can be personal data, so they live in the page's memory only: the stored cart never holds them
+   * and a stored entry that carries them is dropped.
+   */
+  extendedAttributes?: Record<string, string>
 }

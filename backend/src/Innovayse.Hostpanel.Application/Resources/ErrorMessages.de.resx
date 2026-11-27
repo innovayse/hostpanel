@@ -686,4 +686,13 @@
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>Die Registrierungsstelle meldet nicht, wann diese Domain abläuft, daher kann sie nicht importiert werden.</value>
   </data>
+  <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
+    <value>Eine von der Registrierungsstelle verlangte Pflichtangabe fehlt.</value>
+  </data>
+  <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
+    <value>Eine von der Registrierungsstelle verlangte Angabe ist ungültig.</value>
+  </data>
+  <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Die Registrierungsstelle verlangt diese Angabe nicht.</value>
+  </data>
 </root>

@@ -26,6 +26,12 @@ public static class ProtectedValueLimits
     public const int TwoFactorSecret = 128;
 
     /// <summary>
+    /// The longest stored form of the registry's extra values of a domain or of an order line, the JSON text of the values by
+    /// field key.
+    /// </summary>
+    public const int DomainExtendedAttributes = Domain.Domains.DomainExtendedAttributes.MaxSerializedLength;
+
+    /// <summary>
     /// The longest value an ordinary setting row or integration value stores. A secret setting is
     /// encrypted before it is saved, so the column is sized for the encrypted form of
     /// <see cref="LegalTextValue"/>, the longest of the limits a setting row can carry.

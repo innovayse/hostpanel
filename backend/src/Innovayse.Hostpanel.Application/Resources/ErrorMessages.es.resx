@@ -1710,4 +1710,13 @@
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>El registrador no informa de cuándo caduca este dominio, por lo que no se puede importar.</value>
   </data>
+  <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
+    <value>Falta un dato obligatorio que exige el registro.</value>
+  </data>
+  <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
+    <value>Un dato que exige el registro no es válido.</value>
+  </data>
+  <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
+    <value>El registro no solicita este dato.</value>
+  </data>
 </root>

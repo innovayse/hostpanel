@@ -1813,4 +1813,13 @@
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
     <value>Սա ծանուցման վավեր նույնացուցիչ չէ։</value>
   </data>
+  <data name="DomainFieldsOperationInvalid" xml:space="preserve">
+    <value>Գործողությունը պետք է լինի register, transfer կամ contactChange։</value>
+  </data>
+  <data name="DomainFieldsHolderInvalid" xml:space="preserve">
+    <value>Սեփականատիրոջ տեսակը պետք է լինի any, individual կամ organization։</value>
+  </data>
+  <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
+    <value>Գրանցամատյանի տվյալները ընդունվում են միայն դոմենի գրանցման կամ տեղափոխման տողում։</value>
+  </data>
 </root>

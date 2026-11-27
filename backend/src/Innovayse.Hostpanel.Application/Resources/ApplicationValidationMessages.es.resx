@@ -1813,4 +1813,13 @@
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
     <value>Ese no es un identificador de notificación válido.</value>
   </data>
+  <data name="DomainFieldsOperationInvalid" xml:space="preserve">
+    <value>La operación debe ser register, transfer o contactChange.</value>
+  </data>
+  <data name="DomainFieldsHolderInvalid" xml:space="preserve">
+    <value>El titular debe ser any, individual u organization.</value>
+  </data>
+  <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
+    <value>Solo una línea de registro o de transferencia de dominio admite datos del registro.</value>
+  </data>
 </root>

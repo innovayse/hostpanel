@@ -1813,4 +1813,13 @@
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
     <value>That is not a valid notification id.</value>
   </data>
+  <data name="DomainFieldsOperationInvalid" xml:space="preserve">
+    <value>The operation must be register, transfer or contactChange.</value>
+  </data>
+  <data name="DomainFieldsHolderInvalid" xml:space="preserve">
+    <value>The holder must be any, individual or organization.</value>
+  </data>
+  <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
+    <value>Only a domain registration or transfer line takes registry details.</value>
+  </data>
 </root>

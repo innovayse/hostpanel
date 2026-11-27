@@ -99,9 +99,9 @@ describe('useDomainsApi', () => {
     const mock = stubFetch(json({ eppCode: 'abc123' }))
     const api = useDomainsApi()
 
-    await api.modifyContact(3, { firstName: 'Ann' })
+    await api.modifyContact(3, { firstName: 'Ann' }, { 'holder-number': 'N-1' })
     expect(await api.initiateOutgoingTransfer(3)).toEqual({ eppCode: 'abc123' })
-    expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/modify-contact', method: 'POST', body: { firstName: 'Ann' } })
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/modify-contact', method: 'POST', body: { firstName: 'Ann', extendedAttributes: { 'holder-number': 'N-1' } } })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/domains/3/initiate-outgoing-transfer', method: 'POST' })
   })
 

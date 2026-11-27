@@ -278,6 +278,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
         domainAction: i.domainAction || undefined,
         eppCode: i.eppCode || undefined,
         years: i.years || undefined,
+        extendedAttributes: i.extendedAttributes && Object.keys(i.extendedAttributes).length > 0 ? i.extendedAttributes : undefined,
       })),
       // The bundle the lines were chosen from; the backend checks the lines against it and applies
       // its discount. Absent for a cart of plain lines.

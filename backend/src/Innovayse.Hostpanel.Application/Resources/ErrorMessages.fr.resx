@@ -1711,4 +1711,13 @@
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>Le registraire n'indique pas la date d'expiration de ce domaine, il ne peut donc pas être importé.</value>
   </data>
+  <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
+    <value>Une information obligatoire exigée par le registre est manquante.</value>
+  </data>
+  <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
+    <value>Une information exigée par le registre n'est pas valide.</value>
+  </data>
+  <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Le registre ne demande pas cette information.</value>
+  </data>
 </root>

@@ -69,6 +69,10 @@
     "promoTransferNote": "* Ausgenommen bestimmte TLDs und kürzlich verlängerte Domains",
     "transferEppPlaceholder": "EPP-Code / Auth-Code",
     "transferDomainPlaceholder": "beispiel.de",
-    "years": "{n} Jahr | {n} Jahre"
+    "years": "{n} Jahr | {n} Jahre",
+    "fields": {
+      "title": "Angaben für die Registerstelle",
+      "note": "Die Registerstelle dieser Domain verlangt neben dem Kontakt diese Angaben. Sie werden verschlüsselt gespeichert und unverändert an den Registrar übergeben."
+    }
   }
 }

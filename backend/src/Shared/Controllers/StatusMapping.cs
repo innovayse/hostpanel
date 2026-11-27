@@ -193,6 +193,9 @@ public static class StatusMapping
             "REGISTRAR_EPP_CODE_INVALID" or "REGISTRAR_NAMESERVER_INVALID" or "REGISTRAR_DNS_RECORD_INVALID"
                 => new(422, "Unprocessable Content"),
             "REGISTRAR_ACCESS_DENIED" => new(503, "Service Unavailable"),
+            // Exact rows: the body parsed but a value the registry asks for is missing, unknown or refused by the registrar
+            // plugin's own rules, a meaning that is wrong rather than a malformed request.
+            "DOMAIN_FIELD_REQUIRED" or "DOMAIN_FIELD_INVALID" or "DOMAIN_FIELD_UNKNOWN" => new(422, "Unprocessable Content"),
             // Exact row: the body parsed but moves no money, a meaning that is wrong rather than a
             // malformed request.
             "TRANSACTION_AMOUNT_REQUIRED" => new(422, "Unprocessable Content"),

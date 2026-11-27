@@ -47,6 +47,14 @@ describe('POST /api/portal/client/domains/transfer-order', () => {
     })
   })
 
+  it('forwards the registry values as they came', async () => {
+    backend.respondWith(() => ({ body: { orderId: 9, invoiceId: 11 } }))
+
+    await route.default(makeEvent({ body: { ...form, extendedAttributes: { 'holder-number': 'N-1' } }, cookies: await signedIn('jwt') }))
+
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}').extendedAttributes).toEqual({ 'holder-number': 'N-1' })
+  })
+
   it('passes the backend refusal through with its code and sentence', async () => {
     backend.respondWith(() => ({ status: 422, body: { type: 'DOMAIN_NOT_TRANSFERABLE', detail: 'Locked.' } }))
 

@@ -1711,4 +1711,13 @@
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>Регистратор не сообщает срок окончания регистрации этого домена, поэтому его нельзя импортировать.</value>
   </data>
+  <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
+    <value>Не заполнено обязательное поле, которого требует реестр.</value>
+  </data>
+  <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
+    <value>Значение поля, которого требует реестр, указано неверно.</value>
+  </data>
+  <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Реестр не запрашивает это поле.</value>
+  </data>
 </root>

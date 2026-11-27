@@ -69,6 +69,10 @@
     "promoTransferNote": "* Excludes certain TLDs and recently renewed domains",
     "transferEppPlaceholder": "EPP code / Auth code",
     "transferDomainPlaceholder": "example.com",
-    "years": "{n} Year | {n} Years"
+    "years": "{n} Year | {n} Years",
+    "fields": {
+      "title": "Registry details",
+      "note": "The registry for this domain asks for these details beside the contact. They are kept encrypted and sent to the registrar as they are."
+    }
   }
 }

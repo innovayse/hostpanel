@@ -120,7 +120,8 @@ public sealed class TransferMyDomainHandler
                         Hostname: null,
                         DomainAction: DomainAction.Transfer,
                         EppCode: cmd.EppCode,
-                        Years: cmd.Years),
+                        Years: cmd.Years,
+                        ExtendedAttributes: cmd.ExtendedAttributes),
                 ]),
             ct);
     }

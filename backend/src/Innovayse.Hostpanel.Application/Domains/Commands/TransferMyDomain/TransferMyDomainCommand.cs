@@ -23,11 +23,13 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.TransferMyDomain;
 /// <param name="EppCode">Authorization/EPP code obtained from the losing registrar.</param>
 /// <param name="Years">Registration period to buy with the transfer (1-10).</param>
 /// <param name="PaymentMethod">Payment gateway module the client chose to pay the invoice with.</param>
+/// <param name="ExtendedAttributes">The registry's extra values by field key (see <c>GET /api/domains/fields</c>), checked against the fields the registrar plugin declares; empty or absent for none. Printed masked, they can be personal data.</param>
 public sealed record TransferMyDomainCommand(
     string DomainName,
     string EppCode,
     int Years,
-    string PaymentMethod)
+    string PaymentMethod,
+    [property: SecretMember] IReadOnlyDictionary<string, string>? ExtendedAttributes = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

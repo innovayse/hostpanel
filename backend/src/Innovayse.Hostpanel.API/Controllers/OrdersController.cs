@@ -79,7 +79,8 @@ public sealed class OrdersController : BaseApiController
     /// has an account, or with <c>ORDER_PRODUCT_SOLD_OUT</c> or <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when a product's cap on
     /// live services or its one-per-client rule refuses the order; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
     /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>, or with
-    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>) when the identity plugin cannot say who the caller is.
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> (and <c>Retry-After</c>) when the identity plugin cannot say who the caller is;
+    /// 422 with <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values (<c>extendedAttributes</c>) do not match the fields the registrar plugin declares for the domain (the field's key is in <c>errors</c>; nothing is created).
     /// </returns>
     [HttpPost]
     [AllowAnonymous]
@@ -89,6 +90,7 @@ public sealed class OrdersController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> PlaceAsync([FromBody] PlaceOrderCommand command, CancellationToken ct)

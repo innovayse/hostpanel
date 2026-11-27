@@ -1925,6 +1925,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ExtendedAttributesJson")
+                        .HasMaxLength(42719)
+                        .HasColumnType("character varying(42719)");
+
                     b.Property<decimal>("FirstPaymentAmount")
                         .HasColumnType("numeric(18,4)");
 
@@ -3090,6 +3094,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<string>("EppCode")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ExtendedAttributesJson")
+                        .HasMaxLength(42719)
+                        .HasColumnType("character varying(42719)");
 
                     b.Property<decimal>("FirstPaymentAmount")
                         .HasColumnType("numeric(18,4)");

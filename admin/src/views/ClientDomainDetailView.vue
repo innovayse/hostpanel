@@ -391,12 +391,13 @@ const handleToggleIdProtection = async (): Promise<void> => {
  * Saves contact details from the modal to the registrar API.
  *
  * @param contact - Contact payload from DomainContactModal.
+ * @param extendedAttributes - The registry's extra values (by field key) from DomainContactModal.
  * @returns Promise that resolves when the action completes.
  */
-const handleModifyContact = async (contact: Record<string, string>): Promise<void> => {
+const handleModifyContact = async (contact: Record<string, string>, extendedAttributes: Record<string, string>): Promise<void> => {
   saveSuccess.value = null
   contactSaving.value = true
-  if (await store.modifyContact(domainId.value, contact)) {
+  if (await store.modifyContact(domainId.value, contact, extendedAttributes)) {
     flashSuccess(t('clients.clientDomainDetail.contactSaved'))
     await fetchDomain()
     showContactModal.value = false
@@ -747,6 +748,9 @@ onBeforeUnmount(() => {
       <DomainContactModal
         v-if="showContactModal"
         :saving="contactSaving"
+        :domain-id="domainId"
+        :domain-name="domain?.name ?? ''"
+        :field-errors="store.fieldErrors"
         @save="handleModifyContact"
         @close="showContactModal = false"
       />

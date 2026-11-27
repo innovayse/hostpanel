@@ -51,6 +51,13 @@
 
       <UiForm data-testid="domain-contact-form" :error="whoisError" :success="success" spacing="sm" @submit="save">
         <ClientDomainsDomainContactForm :values="form" :disabled="useExisting" @change="editField" />
+        <DomainFieldsForm
+          v-model="attributes"
+          :fields="fields"
+          :errors="whoisFieldErrors"
+          :disabled="whoisSaving"
+          testid="domain-contact-fields"
+        />
         <template #actions>
           <UiButton type="button" size="sm" variant="ghost" data-testid="domain-contact-cancel" @click="cancel">
             {{ $t('common.cancel') }}
@@ -74,10 +81,14 @@
  * registrar has none or cannot be read. Reading, saving and the API's refusal belong to the
  * domains store.
  */
-import { onMounted, reactive, ref, computed } from 'vue'
+import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { Save, UserCog } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
+import DomainFieldsForm from '~/components/domains/DomainFieldsForm.vue'
 import { useDomainsStore } from '~/stores/domains'
+import type { DomainField } from '~/types/domainfield'
+import { DomainFieldOperation } from '~/types/domainfieldoperation'
+import { attributesFor, holderOf } from '~/utils/domainFields'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
 import type { DomainContactChoice } from '~/types/domaincontactchoice'
 import type { DomainContactFields } from '~/types/domaincontactfields'
@@ -100,7 +111,7 @@ const props = defineProps<Props>()
 /** The domains store: the in-flight flags and the refusal sentence. */
 const store = useDomainsStore()
 /** Reactive state of the store this component renders. */
-const { whoisLoading, whoisSaving, whoisError } = storeToRefs(store)
+const { whoisLoading, whoisSaving, whoisError, whoisFieldErrors, domain } = storeToRefs(store)
 
 /** The registry's WHOIS record; null until read, or when it could not be. */
 const whois = ref<WhoisRecord | null>(null)
@@ -119,6 +130,15 @@ const selectedId = ref(PRIMARY_CONTACT_ID)
 
 /** The account's other contacts, as dropdown choices. */
 const contacts = ref<DomainContactChoice[]>([])
+
+/** The registry's extra values as edited, by field key. */
+const attributes = ref<Record<string, string>>({})
+
+/** The registry's extra values as loaded or last saved, so Cancel can restore them. */
+const initialAttributes = ref<Record<string, string>>({})
+
+/** The extra fields the registrar plugin asks for a contact change of this domain; empty until read. */
+const fields = ref<DomainField[]>([])
 
 /** The confirmation shown after a successful save. */
 const success = ref('')
@@ -141,8 +161,10 @@ onMounted(async () => {
   contacts.value = contactsData ? toContactChoices(contactsData) : []
   // The registrar's own record wins; the profile only stands in when there is none.
   if (registrant) {
-    Object.assign(form, registrant)
+    Object.assign(form, registrant.contact)
     Object.assign(initial, form)
+    attributes.value = { ...registrant.extendedAttributes }
+    initialAttributes.value = { ...registrant.extendedAttributes }
   } else if (profile) {
     Object.assign(form, contactFromProfile(profile))
     Object.assign(initial, form)
@@ -180,9 +202,25 @@ const editField = (key: keyof DomainContactFields, value: string): void => {
   form[key] = value
 }
 
+/**
+ * Reads the extra fields for the domain and the kind of registrant the form describes, and keeps the values of the fields
+ * that still apply.
+ *
+ * @returns Resolves when the fields are read.
+ */
+const loadFields = async (): Promise<void> => {
+  const name = domain.value?.name
+  fields.value = name ? await store.loadDomainFields(name, DomainFieldOperation.ContactChange, holderOf(form.organization)) : []
+  attributes.value = attributesFor(fields.value, attributes.value)
+}
+
+// The fields depend on the domain and on whether the contact names an organisation, so they are read again when either changes.
+watch(() => [domain.value?.name, holderOf(form.organization)], loadFields, { immediate: true })
+
 /** Restores the form to its loaded or last saved values. */
 const cancel = (): void => {
   Object.assign(form, initial)
+  attributes.value = { ...initialAttributes.value }
   success.value = ''
 }
 
@@ -193,9 +231,11 @@ const cancel = (): void => {
  */
 const save = async (): Promise<void> => {
   success.value = ''
-  if (await store.saveWhois(props.domainId, { ...form }) === DomainActionOutcome.Done) {
+  const sent = attributesFor(fields.value, attributes.value)
+  if (await store.saveWhois(props.domainId, { ...form }, sent) === DomainActionOutcome.Done) {
     // The saved state is the new baseline for Cancel.
     Object.assign(initial, form)
+    initialAttributes.value = { ...sent }
     success.value = t('client.domains.contactSaved')
   }
 }

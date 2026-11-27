@@ -13,7 +13,7 @@
  *
  * The field names are translated here rather than in the page. The form carries
  * `domain`/`eppcode`/`paymentmethod`, and the command spells them `domainName`/`eppCode`/`paymentMethod`; adapting the portal's shape to
- * the API's is what this layer is for. Nothing is validated here: the command's validator
+ * the API's is what this layer is for. `extendedAttributes` (the registry's extra values by field key) is forwarded as is. Nothing is validated here: the command's validator
  * refuses an empty domain, a short EPP code and a period outside 1 to 10, and its sentences are
  * the ones the page shows.
  */
@@ -37,7 +37,8 @@ export default defineEventHandler(async (event): Promise<TransferOrderResult> =>
       domainName: body.domain,
       eppCode: body.eppcode,
       years: body.years,
-      paymentMethod: body.paymentmethod
+      paymentMethod: body.paymentmethod,
+      extendedAttributes: body.extendedAttributes
     }
   })
 })

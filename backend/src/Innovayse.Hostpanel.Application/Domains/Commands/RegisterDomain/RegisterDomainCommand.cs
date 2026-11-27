@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json.Serialization;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 
@@ -18,6 +20,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 /// Whether to switch auto renew on at the registrar. It is a separate setting from <paramref name="AutoRenew"/>, off unless asked for,
 /// so a domain the panel renews is not also renewed by the registrar.
 /// </param>
+/// <param name="ExtendedAttributes">The registry's extra values by field key (see <c>GET /api/domains/fields</c>), checked against the fields the registrar plugin declares; empty or absent for none. Printed masked, they can be personal data.</param>
 /// <param name="OrderId">
 /// The order whose line registers the domain, set only by order fulfilment and stored on the domain so a retry of the line
 /// can tell the registration it made from a domain the client holds from elsewhere. Never bound from a request body.
@@ -35,4 +38,14 @@ public sealed record RegisterDomainCommand(
     string? PaymentMethod = null,
     string? PriceCurrency = null,
     bool RegistrarAutoRenew = false,
-    [property: JsonIgnore] int? OrderId = null);
+    [property: SecretMember] IReadOnlyDictionary<string, string>? ExtendedAttributes = null,
+    [property: JsonIgnore] int? OrderId = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

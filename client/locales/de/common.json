@@ -32,7 +32,12 @@
     "phoneExample": "00 000 000",
     "phoneCountry": "Landesvorwahl",
     "searchCountry": "Land oder Vorwahl suchen",
-    "noCountries": "Kein Land gefunden"
+    "noCountries": "Kein Land gefunden",
+    "datePicker": {
+      "day": "Tag",
+      "month": "Monat",
+      "year": "Jahr"
+    }
   },
   "common": {
     "actions": "Aktionen",

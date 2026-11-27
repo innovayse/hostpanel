@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Identity;
 using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Application.Billing.Commands.CancelInvoice;
@@ -17,6 +18,7 @@ using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetTldPricing;
+using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Application.Fraud.Commands.RecordFraudDecision;
 using Innovayse.Hostpanel.Application.Fraud.Extensions;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
@@ -31,6 +33,7 @@ using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -95,6 +98,9 @@ public sealed class PlaceOrderHandler
     /// <summary>Reads the current moment.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Checks the registry's extra values of a domain line against the fields the registrar plugin declares.</summary>
+    private readonly DomainFieldsValidation _fieldsValidation;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="provisioning">Creates the account for guest checkout registration.</param>
@@ -108,6 +114,7 @@ public sealed class PlaceOrderHandler
     /// <param name="orderOptions">How an order number is formatted from the sequence value.</param>
     /// <param name="logger">Logs the precise reason a line item's price could not be resolved.</param>
     /// <param name="clock">Reads the current moment.</param>
+    /// <param name="fieldsValidation">Checks the registry's extra values of a domain line against the fields the registrar plugin declares.</param>
     public PlaceOrderHandler(
         IHostpanelDbContext context,
         IUserProvisioning provisioning,
@@ -120,7 +127,8 @@ public sealed class PlaceOrderHandler
         INumberSequence numbers,
         IOptions<OrderOptions> orderOptions,
         ILogger<PlaceOrderHandler> logger,
-        IClock clock)
+        IClock clock,
+        DomainFieldsValidation fieldsValidation)
     {
         _context = context;
         _provisioning = provisioning;
@@ -134,6 +142,7 @@ public sealed class PlaceOrderHandler
         _orderOptions = orderOptions;
         _logger = logger;
         _clock = clock;
+        _fieldsValidation = fieldsValidation;
     }
 
     /// <summary>
@@ -159,7 +168,10 @@ public sealed class PlaceOrderHandler
     /// <c>ORDER_GUEST_DETAILS_REQUIRED</c> when a guest checkout reached the handler without its
     /// registration fields, <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already has an
     /// account, <c>PRODUCT_NOT_FOUND</c> or <c>PRODUCT_NOT_AVAILABLE</c> when a line item names a
-    /// product that does not exist or is not active, <c>ORDER_PRODUCT_SOLD_OUT</c> when a product's cap on live
+    /// product that does not exist or is not active, <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or
+    /// <c>DOMAIN_FIELD_UNKNOWN</c> when a register or transfer line's extra values do not match the fields the registrar plugin
+    /// declares (checked before anything is priced, so a payer is never charged for a line the registry would refuse),
+    /// <c>ORDER_PRODUCT_SOLD_OUT</c> when a product's cap on live
     /// services is reached, <c>ORDER_PRODUCT_ONE_PER_CLIENT</c> when the client already holds a one-per-client product, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> when a
     /// product has no price for the requested currency and cycle, <c>ORDER_DOMAIN_PRICING_INVALID</c>
     /// when a domain line cannot be priced (see the private pricing helpers below for the causes
@@ -250,6 +262,12 @@ public sealed class PlaceOrderHandler
 
             bundle = found.Value;
             items = bundleItems.Value!;
+        }
+
+        var fieldsChecked = await EnsureDomainFieldsAsync(items, existingClient?.CompanyName, ct);
+        if (fieldsChecked.IsFailure)
+        {
+            return Result<PlaceOrderResultDto>.FailureFrom(fieldsChecked);
         }
 
         var priced = await PriceLinesAsync(items, currency.Value!, ct);
@@ -378,7 +396,8 @@ public sealed class PlaceOrderHandler
         {
             var item = line.Item;
             order.AddItem(item.ProductId, line.ProductName, item.BillingCycle, line.Price, line.Price,
-                item.Domain, item.Hostname, item.DomainAction, item.EppCode, item.Years);
+                item.Domain, item.Hostname, item.DomainAction, item.EppCode, item.Years,
+                DomainExtendedAttributes.From(item.ExtendedAttributes));
         }
 
         // Held before the first save, so the order is never stored as Pending: a payment can arrive any moment after the
@@ -424,6 +443,44 @@ public sealed class PlaceOrderHandler
 
         return Result.Success(new PlaceOrderResultDto(
             order.Id, order.OrderNumber, invoice.Value, order.PaymentToken, total, currency.Value!));
+    }
+
+    /// <summary>
+    /// Checks the registry's extra values of every register and transfer line against the fields the registrar plugin declares
+    /// for the line's domain. A guest names no organisation, so a guest is a person; a signed-in client is an organisation when
+    /// the client record has a company.
+    /// </summary>
+    /// <param name="items">The checkout's lines.</param>
+    /// <param name="organization">The ordering client's company, or <see langword="null"/> for a client with none and for a guest.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Success, or the first refusal of <see cref="DomainFieldsValidation.ValidateAsync"/>.</returns>
+    private async Task<Result> EnsureDomainFieldsAsync(
+        IReadOnlyList<PlaceOrderItemDto> items, string? organization, CancellationToken ct)
+    {
+        foreach (var item in items)
+        {
+            var operation = item.DomainAction switch
+            {
+                DomainAction.Register => PluginDomainOperations.Register,
+                DomainAction.Transfer => PluginDomainOperations.Transfer,
+                _ => PluginDomainOperations.None,
+            };
+
+            // A renewal and a hosting line take no extra values; the validator already refused values sent with one.
+            if (operation is PluginDomainOperations.None)
+            {
+                continue;
+            }
+
+            var checkedLine = await _fieldsValidation.ValidateAsync(
+                item.Domain!, null, DomainFieldsValidation.HolderOf(organization), operation, item.ExtendedAttributes, ct);
+            if (checkedLine.IsFailure)
+            {
+                return checkedLine;
+            }
+        }
+
+        return Result.Success();
     }
 
     /// <summary>

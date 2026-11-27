@@ -1,3 +1,6 @@
+using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Services;
@@ -23,6 +26,9 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
 {
     /// <summary>A plain credential used as the input of the tests.</summary>
     private const string Plain = "plain-credential-value-1";
+
+    /// <summary>A plain value of a registry's extra field, which the stored form must not contain.</summary>
+    private const string PlainAttribute = "plain-credential-attribute-1";
 
     /// <summary>A service's password is stored encrypted and read back plain.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -110,6 +116,61 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
             .Users.AsNoTracking().SingleAsync(u => u.Id == id);
         user.TwoFactorSecret.Should().Be("JBSWY3DPEHPK3PXP");
         user.PendingTwoFactorSecret.Should().Be("KRSXG5CTMVRXEZLU");
+    }
+
+    /// <summary>The registry's extra values of an order line are stored encrypted and read back as the values that were ordered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task OrderLineExtendedAttributes_AreEncryptedAtRestAsync()
+    {
+        int lineId;
+        int orderId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var clientId = await DomainsTestSeeds.SeedClientAsync(context);
+            var productId = await DomainsTestSeeds.SeedHostingProductAsync(context);
+            var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], clientId, "bank_transfer", null, "USD", TestMoments.Seeded);
+            order.AddItem(
+                productId, "Domain", BillingCycle.Annual, 10m, 10m, "name.alpha", null, DomainAction.Register, years: 1,
+                extendedAttributes: DomainExtendedAttributes.From(new Dictionary<string, string> { ["holder-number"] = PlainAttribute }));
+            context.Orders.Add(order);
+            await context.SaveChangesAsync();
+            orderId = order.Id;
+            lineId = order.Items.Single().Id;
+        }
+
+        AssertProtected(await RawAsync("OrderItems", "ExtendedAttributesJson", lineId));
+
+        using var readScope = factory.Services.CreateScope();
+        var stored = await readScope.ServiceProvider.GetRequiredService<AppDbContext>().OrderItems
+            .AsNoTracking().SingleAsync(i => i.OrderId == orderId);
+        stored.ExtendedAttributes.Values["holder-number"].Should().Be(PlainAttribute);
+    }
+
+    /// <summary>The registry's extra values of a domain are stored encrypted and read back as the values that were sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DomainExtendedAttributes_AreEncryptedAtRestAsync()
+    {
+        int id;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var clientId = await DomainsTestSeeds.SeedClientAsync(context);
+            var domain = RegisteredDomain.Register(
+                clientId, $"{Guid.NewGuid():N}"[..12] + ".alpha", TestMoments.Seeded, TestMoments.Seeded.AddYears(1), false, false, "USD",
+                extendedAttributes: DomainExtendedAttributes.From(new Dictionary<string, string> { ["holder-number"] = PlainAttribute }));
+            context.Domains.Add(domain);
+            await context.SaveChangesAsync();
+            id = domain.Id;
+        }
+
+        AssertProtected(await RawAsync("Domains", "ExtendedAttributesJson", id));
+
+        using var readScope = factory.Services.CreateScope();
+        var stored = await readScope.ServiceProvider.GetRequiredService<AppDbContext>().Domains.AsNoTracking().SingleAsync(d => d.Id == id);
+        stored.ExtendedAttributes.Values["holder-number"].Should().Be(PlainAttribute);
     }
 
     /// <summary>

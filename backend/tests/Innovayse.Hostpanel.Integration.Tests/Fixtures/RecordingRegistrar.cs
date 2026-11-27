@@ -37,11 +37,23 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     /// <summary>Every registration order this registrar was asked to place, in call order.</summary>
     private readonly ConcurrentQueue<DomainRegistrationOrder> _registrations = new();
 
+    /// <summary>Every transfer order this registrar was asked to place, in call order.</summary>
+    private readonly ConcurrentQueue<DomainTransferOrder> _transfers = new();
+
+    /// <summary>Every contact change this registrar was asked to make, in call order.</summary>
+    private readonly ConcurrentQueue<DomainContactChange> _contactChanges = new();
+
     /// <summary>Gets a snapshot of the operations this registrar was asked for, as "Operation domain".</summary>
     public IReadOnlyList<string> Calls => [.. _calls];
 
     /// <summary>Gets a snapshot of the registration orders this registrar was asked to place.</summary>
     public IReadOnlyList<DomainRegistrationOrder> Registrations => [.. _registrations];
+
+    /// <summary>Gets a snapshot of the transfer orders this registrar was asked to place.</summary>
+    public IReadOnlyList<DomainTransferOrder> Transfers => [.. _transfers];
+
+    /// <summary>Gets a snapshot of the contact changes this registrar was asked to make.</summary>
+    public IReadOnlyList<DomainContactChange> ContactChanges => [.. _contactChanges];
 
     /// <summary>Notes one operation against a domain.</summary>
     /// <param name="operation">The port member name.</param>
@@ -63,6 +75,7 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     public Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct)
     {
         Note(nameof(TransferAsync), request.DomainName);
+        _transfers.Enqueue(request);
         return _inner.TransferAsync(request, ct);
     }
 
@@ -154,6 +167,7 @@ internal sealed class RecordingRegistrar : IRegistrarProvider
     public Task<RegistrarResult> ModifyContactDetailsAsync(DomainContactChange change, CancellationToken ct)
     {
         Note(nameof(ModifyContactDetailsAsync), change.Domain.Name);
+        _contactChanges.Enqueue(change);
         return _inner.ModifyContactDetailsAsync(change, ct);
     }
 

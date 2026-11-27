@@ -1787,6 +1787,24 @@ public static class HostpanelErrorCodes
     public const string DOMAIN_FORWARDING_RULE_NOT_FOUND = Domain.Domains.DomainsErrors.DomainForwardingRuleNotFound;
 
     /// <summary>
+    /// A value given for a registry's extra domain field is refused (422): it does not match the field's type, options, length or
+    /// pattern as the registrar plugin's manifest declares them. The key of the field is in <c>errors</c>.
+    /// </summary>
+    public const string DOMAIN_FIELD_INVALID = Domain.Domains.DomainsErrors.DomainFieldInvalid;
+
+    /// <summary>
+    /// A required extra domain field has no value (422), as the registrar plugin's manifest declares the field. The key of the
+    /// field is in <c>errors</c>.
+    /// </summary>
+    public const string DOMAIN_FIELD_REQUIRED = "DOMAIN_FIELD_REQUIRED";
+
+    /// <summary>
+    /// A value was given for a key the registrar plugin's manifest declares no domain field under (422). The key is in
+    /// <c>errors</c>.
+    /// </summary>
+    public const string DOMAIN_FIELD_UNKNOWN = "DOMAIN_FIELD_UNKNOWN";
+
+    /// <summary>
     /// The order is not Pending (400): <see cref="Domain.Orders.Order.Accept"/>,
     /// <see cref="Domain.Orders.Order.Cancel"/> and <see cref="Domain.Orders.Order.MarkFraud"/>.
     /// </summary>

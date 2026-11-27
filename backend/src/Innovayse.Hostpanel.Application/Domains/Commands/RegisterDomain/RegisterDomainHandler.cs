@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
@@ -30,24 +31,30 @@ public sealed class RegisterDomainHandler
     /// <summary>Builds the registrant contact from the client's details.</summary>
     private readonly RegistrantContactReader _contacts;
 
+    /// <summary>Checks the registry's extra values against the fields the registrar plugin declares.</summary>
+    private readonly DomainFieldsValidation _fieldsValidation;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registrars">Resolves the registrar that holds the domain's TLD.</param>
     /// <param name="context">The data context the new domain aggregate is checked against and persisted through.</param>
     /// <param name="clock">The source of the current moment.</param>
     /// <param name="payerCurrency">Decides the client's billing currency when the command names none.</param>
     /// <param name="contacts">Builds the registrant contact from the client's details.</param>
+    /// <param name="fieldsValidation">Checks the registry's extra values against the fields the registrar plugin declares.</param>
     public RegisterDomainHandler(
         RegistrarProviderResolver registrars,
         IHostpanelDbContext context,
         IClock clock,
         IPayerCurrencyResolver payerCurrency,
-        RegistrantContactReader contacts)
+        RegistrantContactReader contacts,
+        DomainFieldsValidation fieldsValidation)
     {
         _registrars = registrars;
         _context = context;
         _clock = clock;
         _payerCurrency = payerCurrency;
         _contacts = contacts;
+        _fieldsValidation = fieldsValidation;
     }
 
     /// <summary>
@@ -57,7 +64,9 @@ public sealed class RegisterDomainHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The newly created domain ID, or <c>DOMAIN_ALREADY_REGISTERED</c> when the name is already
-    /// registered through this system, <c>CLIENT_NOT_FOUND</c> when the id names no client, or
+    /// registered through this system, <c>CLIENT_NOT_FOUND</c> when the id names no client, <c>DOMAIN_FIELD_REQUIRED</c>,
+    /// <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values do not match the fields the
+    /// registrar plugin declares (nothing is sent to the registrar), or
     /// <c>DOMAIN_REGISTRATION_UPSTREAM_FAILED</c> (or the registrar's own reason) when the
     /// registrar rejects the request.
     /// </returns>
@@ -81,6 +90,19 @@ public sealed class RegisterDomainHandler
             return Result.Failure<int>(contact.Error!, contact.ErrorCode);
         }
 
+        var registrar = await _registrars.ResolveForTldAsync(cmd.DomainName, ct);
+
+        // Checked here as well as at checkout: this command is also the admin's, and a fulfilment retry can run it long after
+        // the order was placed, against a registrar plugin whose manifest has changed since.
+        var fields = await _fieldsValidation.ValidateAsync(
+            cmd.DomainName, registrar.Module, DomainFieldsValidation.HolderOf(contact.Value!.Organization),
+            PluginDomainOperations.Register, cmd.ExtendedAttributes, ct);
+        if (fields.IsFailure)
+        {
+            return Result<int>.FailureFrom(fields);
+        }
+
+        var extendedAttributes = DomainExtendedAttributes.From(cmd.ExtendedAttributes);
         var request = new DomainRegistrationOrder(
             cmd.DomainName,
             cmd.Years,
@@ -88,9 +110,9 @@ public sealed class RegisterDomainHandler
             cmd.RegistrarAutoRenew,
             cmd.Nameserver1,
             cmd.Nameserver2,
-            contact.Value!);
+            contact.Value!,
+            extendedAttributes.Values);
 
-        var registrar = await _registrars.ResolveForTldAsync(cmd.DomainName, ct);
         var result = await registrar.Provider.RegisterAsync(request, ct);
 
         if (!result.Success)
@@ -114,7 +136,8 @@ public sealed class RegisterDomainHandler
             registrationPeriod: cmd.Years,
             paymentMethod: cmd.PaymentMethod,
             registrarModule: registrar.Module,
-            orderId: cmd.OrderId);
+            orderId: cmd.OrderId,
+            extendedAttributes: extendedAttributes);
 
         // When the registrar requires polling (it processes the order asynchronously),
         // leave the domain in PendingRegistration: the SyncPendingDomainStatuses job will

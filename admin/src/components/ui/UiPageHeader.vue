@@ -16,7 +16,7 @@
  * slot (a status badge); the title row and the actions share one minimum height and centre their content, so the buttons sit on the
  * title's line. The subtitle is at most 70 characters wide.
  *
- * The `actions` prop takes the screen's buttons as data (`UiHeaderAction`: label, icon, look and what it does), so every header
+ * The `actions` prop takes the screen's buttons as data (`UiHeaderAction`: label, kind, look and what it does; the icon is the one of the kind), so every header
  * action carries an icon with its label. They are all buttons, except on a phone (below `sm`): there the primary action stays a
  * normal kit button with its icon and label and the others fold into the kit's standard "…" menu trigger beside it
  * (`useFoldedActions`, shared with the bulk bar); the menu rows carry the full label. The `actions` slot takes what is not a plain action (a help
@@ -47,7 +47,7 @@ import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useFoldedActions } from '@/composables/useFoldedActions'
 import { usePageTitleStore } from '@/stores/pageTitle'
-import { barActionToMenu } from '@/utils/ui/actionBar'
+import { barActionToMenu, drawHeaderAction } from '@/utils/ui/actionBar'
 import { UiSize } from '@/utils/ui/size'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
 import { UiBreadcrumbVariant } from '@/utils/ui/breadcrumb'
@@ -101,7 +101,7 @@ onBeforeUnmount(() => pageTitle.release(owner))
 
 /** The actions drawn as buttons (only the primary one on a phone), and the menu rows of the others. */
 const { buttons, folded } = useFoldedActions(
-  () => props.actions,
+  () => props.actions.map(drawHeaderAction),
   (action) => ({ ...barActionToMenu(action), to: action.to, onSelect: action.onSelect }),
 )
 </script>

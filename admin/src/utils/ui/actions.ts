@@ -46,6 +46,8 @@ export const UiActionKind = {
   Reset: 'reset',
   /** Confirms a step or a choice. */
   Confirm: 'confirm',
+  /** Turns down a request under review (an order held for a fraud check). */
+  Reject: 'reject',
   /** Opens the settings of a thing. */
   Configure: 'configure',
   /** Opens the management of a record or a set (its editing screen, a list of groups). */
@@ -95,8 +97,9 @@ export const actionIcons: Record<UiActionKind, string> = {
   [UiActionKind.Clear]: Icon.Close,
   [UiActionKind.Reset]: Icon.Undo,
   [UiActionKind.Confirm]: Icon.CheckCircle,
+  [UiActionKind.Reject]: Icon.Close,
   [UiActionKind.Configure]: Icon.Settings,
-  [UiActionKind.Manage]: Icon.Settings,
+  [UiActionKind.Manage]: Icon.Edit,
   [UiActionKind.Import]: Icon.Download,
   [UiActionKind.Open]: Icon.ExternalLink,
   [UiActionKind.View]: Icon.Eye,

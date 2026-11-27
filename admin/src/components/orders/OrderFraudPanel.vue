@@ -14,7 +14,6 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { FRAUD_REASON_OPTIONS } from '@/lib/constants'
-import { Icon } from '@/lib/icons'
 import { UiActionKind } from '@/utils/ui/actions'
 import { statusLabel } from '@/lib/tones'
 import { OrderStatus } from '@/types/order'
@@ -94,7 +93,7 @@ const underReview = computed<boolean>(() => props.order.status === OrderStatus.U
           @click="emit('approve')"
         >{{ t('orders.fraud.approve') }}
         </UiButton>
-        <UiButton :icon="Icon.Close"
+        <UiButton :action="UiActionKind.Reject"
           :variant="UiButtonVariant.Danger"
           :size="UiSize.Sm"
           :disabled="busy"

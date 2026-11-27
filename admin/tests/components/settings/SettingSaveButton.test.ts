@@ -45,6 +45,7 @@ describe('SettingSaveButton', () => {
     const wrapper = mountButton({ dirty: true })
 
     expect(wrapper.get('[data-testid="ui-form-actions"]').classes()).toEqual(expect.arrayContaining(['max-sm:w-full', 'max-sm:items-stretch']))
+    expect(wrapper.get('[data-testid="ui-form-actions"]').classes()).not.toContain('max-sm:sticky')
     expect(wrapper.get('button').classes()).toContain('not-disabled:gradient-brand')
   })
 

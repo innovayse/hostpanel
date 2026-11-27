@@ -4,7 +4,8 @@
  *
  * Each plugin settings card saves one row at a time and renders the same button with
  * the same two states; this is that button, once. It is disabled until there is an unsaved edit.
- * It sits in the kit's form action row, so it is the primary action and, on a phone, as wide as its card.
+ * It sits in the kit's form action row, inline rather than as a sticky save bar, so it is the primary action and, on a phone,
+ * as wide as its card.
  */
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -31,7 +32,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UiFormActions class="max-sm:w-full">
+  <UiFormActions :sticky="false" class="max-sm:w-full">
     <UiButton
       v-bind="$attrs"
       :action="UiActionKind.Save"

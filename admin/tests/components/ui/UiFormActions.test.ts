@@ -20,6 +20,13 @@ describe('UiFormActions', () => {
     expect(wrapper.classes().some(name => name.includes('safe-area-inset-bottom'))).toBe(true)
   })
 
+  it('stays inline, stacked the same way, when it is not sticky', () => {
+    const wrapper = mount(UiFormActions, { props: { sticky: false } })
+
+    expect(wrapper.classes()).not.toContain('max-sm:sticky')
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['max-sm:flex-col-reverse', 'max-sm:items-stretch']))
+  })
+
   it('stacks the buttons at full width on phones, primary on top', () => {
     const wrapper = mount(UiFormActions)
 

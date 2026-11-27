@@ -5,24 +5,32 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { config, mount, RouterLinkStub } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
-import { Icon } from '@/lib/icons'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import { actionIcons, UiActionKind } from '@/utils/ui/actions'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { createTestI18n } from '../../helpers/i18n'
 
 config.global.plugins = [createTestI18n()]
 
-/** Two actions: a link in the primary look and a secondary button, each with its icon. */
+/** Two actions: a link in the primary look and a secondary button, each of a kind. */
 const ACTIONS: UiHeaderAction[] = [
-  { label: 'Refresh', icon: Icon.Refresh, variant: UiButtonVariant.Secondary, testid: 'h-refresh', onSelect: () => undefined },
-  { label: 'Add', icon: Icon.Add, variant: UiButtonVariant.Primary, testid: 'h-add', to: '/add' },
+  { label: 'Refresh', kind: UiActionKind.Refresh, variant: UiButtonVariant.Secondary, testid: 'h-refresh', onSelect: () => undefined },
+  { label: 'Add', kind: UiActionKind.Add, variant: UiButtonVariant.Primary, testid: 'h-add', to: '/add' },
 ]
 
 describe('UiPageHeader', () => {
+
   beforeEach(() => {
     setActivePinia(createPinia())
+  })
+
+  it('draws each action with the icon of its kind', () => {
+    const wrapper = mount(UiPageHeader, { props: { title: 'T', actions: ACTIONS }, global: { stubs: { RouterLink: RouterLinkStub } } })
+
+    expect(wrapper.findComponent(UiButton).props('icon')).toBe(actionIcons[UiActionKind.Refresh])
   })
 
   it('renders the title as the level-1 heading', () => {

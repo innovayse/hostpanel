@@ -174,7 +174,7 @@
     "options": {
       "VerifiedOnly": "Solo verificados",
       "AnyRegistryPublisher": "Todos",
-      "OwnKeysOnly": "Verificados y firmados"
+      "OwnKeysOnly": "Solo mis claves"
     },
     "optionDescriptions": {
       "VerifiedOnly": "Solo editores verificados por el registro.",

@@ -174,7 +174,7 @@
     "options": {
       "VerifiedOnly": "Nur verifizierte",
       "AnyRegistryPublisher": "Alle",
-      "OwnKeysOnly": "Verifiziert und signiert"
+      "OwnKeysOnly": "Nur eigene Schlüssel"
     },
     "optionDescriptions": {
       "VerifiedOnly": "Nur Publisher, die die Registry verifiziert hat.",

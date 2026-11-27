@@ -34,7 +34,7 @@ describe('PluginRegistryTrustCard', () => {
   it('shows the stored level in the select', async () => {
     const { wrapper } = await mountScreen(PluginRegistryTrustCard, propsFor(PluginRegistryTrust.OwnKeysOnly))
 
-    expect(wrapper.get('[data-testid="plugin-registry-trust-select"]').text()).toContain('Verified and signed')
+    expect(wrapper.get('[data-testid="plugin-registry-trust-select"]').text()).toContain('Own keys only')
     expect(wrapper.find('[data-testid="plugin-registry-trust-warning"]').exists()).toBe(false)
   })
 

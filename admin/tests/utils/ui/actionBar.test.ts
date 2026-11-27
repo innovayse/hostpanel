@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Icon } from '@/lib/icons'
-import { barActionToMenu, headerAction, primaryIndex } from '@/utils/ui/actionBar'
+import { barActionToMenu, drawHeaderAction, headerAction, primaryIndex } from '@/utils/ui/actionBar'
 import { UiActionKind, actionIcons } from '@/utils/ui/actions'
 import type { UiBarAction } from '@/utils/ui/actionBar'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -47,13 +47,15 @@ describe('barActionToMenu', () => {
 })
 
 describe('headerAction', () => {
-  it.each(Object.values(UiActionKind))('draws the %s kind with the icon the map gives it', (kind) => {
-    expect(headerAction(kind, { label: 'L', variant: UiButtonVariant.Secondary, testid: 't' }).icon).toBe(actionIcons[kind])
-  })
-
-  it('keeps everything else of the action as given', () => {
+  it('keeps the kind and everything else of the action as given', () => {
     const built = headerAction(UiActionKind.Add, { label: 'L', variant: UiButtonVariant.Primary, testid: 't', to: '/add', loading: true })
 
-    expect(built).toEqual({ label: 'L', variant: UiButtonVariant.Primary, testid: 't', to: '/add', loading: true, icon: actionIcons[UiActionKind.Add] })
+    expect(built).toEqual({ label: 'L', variant: UiButtonVariant.Primary, testid: 't', to: '/add', loading: true, kind: UiActionKind.Add })
+  })
+})
+
+describe('drawHeaderAction', () => {
+  it.each(Object.values(UiActionKind))('draws the %s kind with the icon the map gives it', (kind) => {
+    expect(drawHeaderAction(headerAction(kind, { label: 'L', variant: UiButtonVariant.Secondary, testid: 't' })).icon).toBe(actionIcons[kind])
   })
 })

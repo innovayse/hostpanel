@@ -17,6 +17,9 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { useDomainsStore } from '~/stores/domains'
+import type { DomainDetail } from '~/types/domaindetail'
 
 /** The registry record the API returns. */
 const whois = { registrar: 'Reg Ltd', registrant: 'Ada Lovelace', createdAt: '2026-01-01T00:00:00Z', expiresAt: '2027-01-01T00:00:00Z' }
@@ -161,6 +164,32 @@ describe('DomainContactPanel', () => {
     await waitUntil(() => expect(whoisSaves()).toHaveLength(1))
     expect(bodyOf(whoisSaves()[0])).toMatchObject({ contact: { firstName: 'Linus', lastName: 'T', city: 'Helsinki', postalCode: '00100' } })
     await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
+  })
+
+  it('asks for the extra fields of the domain, shows the stored values and sends them with the contact', async () => {
+    table[`GET ${domainPath(DomainAction.Contact)}`] = { body: { ...registrant, extendedAttributes: { 'holder-number': 'N-1' } } }
+    table[`GET ${CatalogPath.DomainFields}`] = {
+      body: [{
+        key: 'holder-number', label: 'Holder number', type: 'Text', required: true, description: null, placeholder: null,
+        pattern: null, minLength: null, maxLength: null, options: [],
+      }],
+    }
+    table[`PUT ${domainPath(DomainAction.Whois)}`] = { body: {} }
+    const wrapper = mountClient(DomainContactPanel, { props: { domainId: DOMAIN_ID } })
+    await waitUntil(() => expect(field(wrapper, 'firstName')).toBe('Margaret'))
+
+    useDomainsStore().domain = { id: Number(DOMAIN_ID), name: 'name.alpha' } as DomainDetail
+
+    /** The input of the registry field. */
+    const input = () => wrapper.find('[data-testid="domain-contact-fields-holder-number"]')
+    await waitUntil(() => expect((input().element as HTMLInputElement).value).toBe('N-1'))
+    expect(requestsTo(stub.requests, CatalogPath.DomainFields)[0]?.url)
+      .toBe(CatalogPath.DomainFields + '?domain=name.alpha&operation=contactChange&holder=individual')
+    await input().setValue('N-2')
+    await wrapper.find('form').trigger('submit')
+
+    await waitUntil(() => expect(whoisSaves()).toHaveLength(1))
+    expect(bodyOf(whoisSaves()[0])).toMatchObject({ extendedAttributes: { 'holder-number': 'N-2' } })
   })
 
   it('shows the refusal when the save fails', async () => {

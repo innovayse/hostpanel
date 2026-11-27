@@ -103,15 +103,20 @@ export const useDomainsApi = () => {
    * Replaces the domain's WHOIS registrant contact.
    *
    * @param id - Domain id.
-   * @param contact - The registrant contact; sent as `{ contact }`, the backend's
+   * @param contact - The registrant contact; sent as `{ contact, extendedAttributes }`, the backend's
    * `ModifyMyDomainContactCommand` body.
+   * @param extendedAttributes - The registry's extra values by field key; they replace the stored ones.
    * @returns Whatever the endpoint answers with.
    * @throws Whatever `apiFetch` throws.
    */
-  const setWhois = (id: string, contact: DomainContactFields): Promise<unknown> =>
+  const setWhois = (
+    id: string,
+    contact: DomainContactFields,
+    extendedAttributes: Record<string, string>
+  ): Promise<unknown> =>
     apiFetch(`/api/portal/client/domains/${id}/whois`, {
       method: HttpMethod.Put,
-      body: { contact }
+      body: { contact, extendedAttributes }
     })
 
   /**

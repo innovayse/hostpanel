@@ -239,7 +239,7 @@ public sealed class DomainDnsController : BaseApiController
     /// 204 on success; 404 when the id names no domain; 502 when the registrar rejects the
     /// update; 401 without a session; 403 for a caller who is not staff;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
-    /// 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the contact; 503 also with
+    /// 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the contact, or with <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values (<c>extendedAttributes</c>) do not match the fields the registrar plugin declares for the domain; 503 also with
     /// <c>REGISTRAR_ACCESS_DENIED</c> or <c>REGISTRAR_INSUFFICIENT_FUNDS</c> when the registrar refuses the saved
     /// credentials or the balance is short.
     /// </returns>

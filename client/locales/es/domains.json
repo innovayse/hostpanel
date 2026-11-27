@@ -69,6 +69,10 @@
     "promoTransferNote": "* Excluye ciertas extensiones y dominios renovados recientemente",
     "transferEppPlaceholder": "Código EPP / Código de autenticación",
     "transferDomainPlaceholder": "ejemplo.com",
-    "years": "{n} año | {n} años"
+    "years": "{n} año | {n} años",
+    "fields": {
+      "title": "Datos del registro",
+      "note": "El registro de este dominio solicita estos datos además del contacto. Se guardan cifrados y se envían al registrador tal cual."
+    }
   }
 }

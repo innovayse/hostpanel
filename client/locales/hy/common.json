@@ -32,7 +32,12 @@
     "phoneExample": "00 000 000",
     "phoneCountry": "Երկրի կոդ",
     "searchCountry": "Որոնել երկիր կամ կոդ",
-    "noCountries": "Երկիր չի գտնվել"
+    "noCountries": "Երկիր չի գտնվել",
+    "datePicker": {
+      "day": "Օր",
+      "month": "Ամիս",
+      "year": "Տարի"
+    }
   },
   "common": {
     "actions": "Գործողություններ",

@@ -257,6 +257,38 @@ describe('useCheckoutStore.placeOrder', () => {
     ])
   })
 
+  it('sends the registry values a domain line carries, and none for a line without them', async () => {
+    const cart = useCartStore()
+    cart.items = [
+      cartLine(5, 12),
+      {
+        pid: 9, name: 'name.alpha', billingcycle: PricingCycle.Annual, cycleLabel: '1 Year', amount: 8, currency: 'USD',
+        itemType: CartItemType.Domain, domain: 'name.alpha', domainAction: DomainOrderAction.Register, years: 1,
+        extendedAttributes: { 'holder-number': 'N-1' },
+      },
+    ]
+    const store = useCheckoutStore()
+    store.selectedMethod = 'bank_transfer'
+
+    await store.placeOrder(input(() => true))
+
+    const body = bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0]) as { items: Record<string, unknown>[] }
+    expect(body.items[0]).not.toHaveProperty('extendedAttributes')
+    expect(body.items[1]?.extendedAttributes).toEqual({ 'holder-number': 'N-1' })
+  })
+
+  it('keeps the API refusal of an extra field by its key', async () => {
+    table[CREATE_ROUTE] = {
+      status: 422,
+      body: { type: 'DOMAIN_FIELD_REQUIRED', detail: 'A required registry detail is missing.', errors: { 'holder-number': ['A required registry detail is missing.'] } },
+    }
+    const store = arrange('bank_transfer')
+
+    await store.placeOrder(input(() => true))
+
+    expect(store.fieldErrors['holder-number']).toBe('A required registry detail is missing.')
+  })
+
   it('sends no bundle id for a cart of plain lines', async () => {
     const store = arrange('bank_transfer')
 

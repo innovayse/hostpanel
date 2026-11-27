@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Registrar;
@@ -97,7 +98,10 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
                 request.WhoisPrivacy,
                 request.AutoRenew,
                 nameservers,
-                RegistrarContactMapper.ToPlugin(request.Contact)),
+                RegistrarContactMapper.ToPlugin(request.Contact))
+            {
+                ExtendedAttributes = ToPluginAttributes(request.ExtendedAttributes),
+            },
             ct);
 
         return Order(nameof(RegisterAsync), answer);
@@ -112,7 +116,10 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
                 request.DomainName,
                 request.EppCode,
                 request.WhoisPrivacy,
-                RegistrarContactMapper.ToPlugin(request.Contact)),
+                RegistrarContactMapper.ToPlugin(request.Contact))
+            {
+                ExtendedAttributes = ToPluginAttributes(request.ExtendedAttributes),
+            },
             ct);
 
         return Order(nameof(TransferAsync), answer);
@@ -250,7 +257,11 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
     public async Task<RegistrarResult> ModifyContactDetailsAsync(DomainContactChange change, CancellationToken ct)
     {
         var answer = await _plugin.SetContactAsync(
-            new RegistrarContactContext(_connection, ToPlugin(change.Domain), RegistrarContactMapper.ToPlugin(change.Contact)), ct);
+            new RegistrarContactContext(_connection, ToPlugin(change.Domain), RegistrarContactMapper.ToPlugin(change.Contact))
+            {
+                ExtendedAttributes = ToPluginAttributes(change.ExtendedAttributes),
+            },
+            ct);
 
         return Settle(nameof(ModifyContactDetailsAsync), answer);
     }
@@ -451,6 +462,17 @@ public sealed class PluginRegistrarProvider : IRegistrarProvider
     private static RegistrarDomain ToPlugin(DomainRef domain)
     {
         return new RegistrarDomain(domain.Name, domain.RegistrarRef);
+    }
+
+    /// <summary>
+    /// Hands the registry's extra values to the plugin: the one place the three contexts that carry them get them, so what a
+    /// plugin receives is the same for a registration, a transfer and a contact change.
+    /// </summary>
+    /// <param name="attributes">The values by field key, or <see langword="null"/> for none.</param>
+    /// <returns>The values, never <see langword="null"/>: the SDK promises a plugin an empty set rather than none.</returns>
+    private static IReadOnlyDictionary<string, string> ToPluginAttributes(IReadOnlyDictionary<string, string>? attributes)
+    {
+        return attributes ?? FrozenDictionary<string, string>.Empty;
     }
 
     /// <summary>The answer of an optional operation the plugin does not offer.</summary>

@@ -545,6 +545,7 @@ public sealed class FulfillOrderLinesHandler
                     RecurringAmount: item.RecurringAmount,
                     PaymentMethod: order.PaymentMethod,
                     PriceCurrency: order.Currency,
+                    ExtendedAttributes: item.ExtendedAttributes.Values,
                     OrderId: order.Id), ct);
 
             return outcome.IsFailure
@@ -570,6 +571,7 @@ public sealed class FulfillOrderLinesHandler
                     RecurringAmount: item.RecurringAmount,
                     PaymentMethod: order.PaymentMethod,
                     Years: item.Years ?? 1,
+                    ExtendedAttributes: item.ExtendedAttributes.Values,
                     OrderId: order.Id), ct);
 
             return outcome.IsFailure

@@ -36,4 +36,10 @@ public static class DomainsErrors
     /// <see cref="RegisteredDomain.RemoveForwardingRule"/>.
     /// </summary>
     public const string DomainForwardingRuleNotFound = "DOMAIN_FORWARDING_RULE_NOT_FOUND";
+
+    /// <summary>
+    /// A value given for a registry's extra domain field is refused (422): <see cref="DomainExtendedAttributes.From"/> when the
+    /// values would not fit the stored form, and the check against the fields the registrar plugin declares.
+    /// </summary>
+    public const string DomainFieldInvalid = "DOMAIN_FIELD_INVALID";
 }

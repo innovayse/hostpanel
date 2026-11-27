@@ -22,5 +22,9 @@
     "import": "Importar",
     "previousPage": "Anterior",
     "page": "Página {page}"
+  },
+  "domainFields": {
+    "title": "Datos del registro",
+    "note": "El registro de este dominio solicita estos datos además del contacto. Se guardan cifrados y se envían al registrador tal cual."
   }
 }

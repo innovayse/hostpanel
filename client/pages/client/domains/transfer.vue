@@ -39,6 +39,14 @@
           testid="transfer-epp"
         />
 
+        <DomainFieldsForm
+          v-model="form.extendedAttributes"
+          :fields="fields"
+          :errors="domainsStore.transferFieldErrors"
+          :disabled="submitting"
+          testid="transfer-fields"
+        />
+
         <UiSelect
           :model-value="form.years"
           :label="$t('client.domainTransfer.periodLabel')"
@@ -83,9 +91,15 @@
  * The form keeps a short column (a width cap, an allowed exception: form fields are intrinsically
  * narrow, so this is not page layout; the page width itself comes from the shared container).
  */
+import { watchDebounced } from '@vueuse/core'
+import DomainFieldsForm from '~/components/domains/DomainFieldsForm.vue'
 import { CLIENT_DOMAINS_PATH, clientInvoicePath } from '~/constants/clientRoutes'
 import { ArrowLeftRight, CheckCircle, CreditCard } from 'lucide-vue-next'
+import { useAuthStore } from '~/stores/auth'
 import { useDomainsStore } from '~/stores/domains'
+import type { DomainField } from '~/types/domainfield'
+import { DomainFieldOperation } from '~/types/domainfieldoperation'
+import { attributesFor, holderOf } from '~/utils/domainFields'
 import { toPaymentMethodOptions } from '~/utils/paymentMethodOptions'
 import { buildYearOptions } from '~/utils/yearOptions'
 
@@ -102,11 +116,37 @@ const form = reactive({
   eppcode: (route.query.eppcode as string) || '',
   years: 1,
   paymentmethod: '',
+  /** The registry's extra values by field key, as typed. */
+  extendedAttributes: {} as Record<string, string>,
 })
+
+/** The signed-in account, whose company decides the kind of registrant. */
+const { user } = storeToRefs(useAuthStore())
+
+/** The extra fields the registrar plugin asks for the domain typed so far; empty until they are read. */
+const fields = ref<DomainField[]>([])
+
+/** How long typing in the domain field settles before the fields are read, in milliseconds. */
+const FIELDS_DEBOUNCE_MS = 400
+
+/**
+ * Reads the extra fields for the typed domain and keeps the values of the fields that still apply.
+ *
+ * @returns Resolves when the fields are read.
+ */
+const loadFields = async (): Promise<void> => {
+  const name = form.domain.trim()
+  fields.value = name.includes('.')
+    ? await domainsStore.loadDomainFields(name, DomainFieldOperation.Transfer, holderOf(user.value?.companyName))
+    : []
+  form.extendedAttributes = attributesFor(fields.value, form.extendedAttributes)
+}
 
 /** The domains store; reset so a previous order's result does not linger. */
 const domainsStore = useDomainsStore()
 domainsStore.reset()
+
+watchDebounced(() => form.domain, loadFields, { debounce: FIELDS_DEBOUNCE_MS, immediate: true })
 
 /** Whether the order request is in flight. */
 const submitting = computed(() => domainsStore.transferSaving)
@@ -142,6 +182,6 @@ watch(paymentOptions, (options) => {
  * @returns Resolves when the attempt has ended.
  */
 const submit = async (): Promise<void> => {
-  await domainsStore.placeTransfer(form)
+  await domainsStore.placeTransfer({ ...form, extendedAttributes: attributesFor(fields.value, form.extendedAttributes) })
 }
 </script>

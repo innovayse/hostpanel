@@ -743,6 +743,8 @@ public static class DependencyInjection
         // Domains
         services.AddScoped<RegistrarProviderResolver>();
         services.AddScoped<RegistrantContactReader>();
+        services.AddScoped<DomainFieldReader>();
+        services.AddScoped<DomainFieldsValidation>();
         services.AddScoped<RenewalSettingsReader>();
 
         // Plugins: the build's own folder first (its plugins cannot be removed or shadowed), then
@@ -870,6 +872,7 @@ public static class DependencyInjection
         // catalogue answers from the manifests which registrars are installed and what each offers.
         services.AddScoped<IRegistrarProviderFactory, PluginRegistrarProviderFactory>();
         services.AddScoped<IRegistrarModuleCatalogue, RegistrarModuleCatalogue>();
+        services.AddScoped<IRegistrarDomainFieldCatalogue, RegistrarDomainFieldCatalogue>();
 
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one

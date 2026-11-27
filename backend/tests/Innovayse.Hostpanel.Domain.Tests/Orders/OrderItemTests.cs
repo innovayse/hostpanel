@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -33,6 +34,34 @@ public sealed class OrderItemTests
         Assert.Equal(DomainAction.Register, item.DomainAction);
         Assert.Null(item.EppCode);
         Assert.Equal(1, item.Years);
+    }
+
+    /// <summary>A domain line keeps the registry's extra values it was ordered with, as one stored JSON text.</summary>
+    [Fact]
+    public void AddItem_WithExtendedAttributes_KeepsThemOnTheLine()
+    {
+        var order = Order.Create("ORD-0003", 1, PaymentMethodNames.Card, null, "USD", Now);
+        var values = DomainExtendedAttributes.From(new Dictionary<string, string> { ["holder-number"] = "N-1" });
+
+        order.AddItem(
+            99, "Domain Registration", BillingCycle.Annual, 12.99m, 12.99m, "name.alpha", null,
+            DomainAction.Register, years: 1, extendedAttributes: values);
+
+        var item = order.Items[0];
+        item.ExtendedAttributes.Should().Be(values);
+        item.ExtendedAttributesJson.Should().Be(values.Serialize());
+    }
+
+    /// <summary>A line ordered without extra values stores none.</summary>
+    [Fact]
+    public void AddItem_WithoutExtendedAttributes_StoresNothing()
+    {
+        var order = Order.Create("ORD-0004", 1, PaymentMethodNames.Card, null, "USD", Now);
+
+        order.AddItem(99, "Hosting", BillingCycle.Monthly, 5m, 5m, null, null);
+
+        order.Items[0].ExtendedAttributes.IsEmpty.Should().BeTrue();
+        order.Items[0].ExtendedAttributesJson.Should().BeNull();
     }
 
     /// <summary>AddItem with transfer action stores EPP code.</summary>

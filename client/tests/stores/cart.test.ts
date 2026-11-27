@@ -85,6 +85,58 @@ describe('useCartStore', () => {
     expect(cart.staleItems(null)).toEqual([])
   })
 
+  describe('extendedAttributes', () => {
+    /** A domain line that registers one name. */
+    const domainLine = (): CartItem => ({
+      pid: 9,
+      name: 'name.alpha',
+      billingcycle: PricingCycle.Annual,
+      cycleLabel: '1 Year',
+      amount: 10,
+      currency: 'USD',
+      domain: 'name.alpha',
+      itemType: CartItemType.Domain,
+      domainAction: DomainOrderAction.Register
+    })
+
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    it('sets the values on the line it names and clears them when none are left', () => {
+      const cart = useCartStore()
+      cart.items = [domainLine()]
+
+      cart.setExtendedAttributes('name.alpha', DomainOrderAction.Register, { 'holder-number': 'N-1' })
+      expect(cart.items[0]?.extendedAttributes).toEqual({ 'holder-number': 'N-1' })
+
+      cart.setExtendedAttributes('name.alpha', DomainOrderAction.Register, {})
+      expect(cart.items[0]?.extendedAttributes).toBeUndefined()
+    })
+
+    it('never writes the values to the stored cart', () => {
+      const cart = useCartStore()
+      cart.addItem(domainLine())
+      cart.setExtendedAttributes('name.alpha', DomainOrderAction.Register, { 'holder-number': 'N-SECRET' })
+
+      cart.addItem({ ...domainLine(), pid: 10, name: 'other.alpha', domain: 'other.alpha' })
+
+      expect(localStorage.getItem('innovayse_cart')).not.toContain('N-SECRET')
+      expect(localStorage.getItem('innovayse_cart')).not.toContain('extendedAttributes')
+      expect(cart.items[0]?.extendedAttributes).toEqual({ 'holder-number': 'N-SECRET' })
+    })
+
+    it('drops a stored line that carries the values', () => {
+      localStorage.setItem('innovayse_cart', JSON.stringify([{ ...domainLine(), extendedAttributes: { 'holder-number': 'N-1' } }, domainLine()]))
+      const cart = useCartStore()
+
+      cart.init()
+
+      expect(cart.items).toHaveLength(1)
+      expect(cart.items[0]?.extendedAttributes).toBeUndefined()
+    })
+  })
+
   describe('removeItem', () => {
     it('removes a hosting line by product and billing cycle, keeping the same plan on the other cycle', () => {
       const cart = useCartStore()

@@ -237,4 +237,28 @@ public enum PluginManifestRule
 
     /// <summary>A helper of the package has a name that is not allowed, is not a regular file or is too large, or there are too many helpers.</summary>
     SshAgentHelperInvalid = 57,
+
+    /// <summary>A plugin that is not a registrar plugin declares <c>domainFields</c>.</summary>
+    DomainFieldsNotRegistrar = 58,
+
+    /// <summary>A domain field key is not well formed, or two fields of one set share a key.</summary>
+    DomainFieldKeyInvalid = 59,
+
+    /// <summary>A set of domain fields names no zone, or a zone that is not well formed.</summary>
+    DomainZoneInvalid = 60,
+
+    /// <summary>A zone is named by two sets that apply to the same registrant and the same operation.</summary>
+    DomainZoneDuplicate = 61,
+
+    /// <summary>A set of domain fields names no operation, or a bit that is not an operation.</summary>
+    DomainOperationsInvalid = 62,
+
+    /// <summary>A domain field has options but is not a select field, or a select field has none or lists a value twice or an empty one.</summary>
+    DomainFieldOptionsInvalid = 63,
+
+    /// <summary>A domain field pattern is not a valid regular expression, is too long or runs too long.</summary>
+    DomainFieldPatternInvalid = 64,
+
+    /// <summary>A domain field has a negative length bound or a minimum length above its maximum.</summary>
+    DomainFieldLengthInvalid = 65,
 }

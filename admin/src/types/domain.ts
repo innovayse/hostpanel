@@ -251,6 +251,105 @@ export interface UpdateDomainPayload {
 /** WHOIS registrant contact fields, keyed by the field name the API expects. */
 export type DomainContactPayload = Record<string, string>
 
+/** The input kinds of an extra domain field, as the API writes them (by name). */
+export enum DomainFieldType {
+  /** Single-line plain text. */
+  Text = 'Text',
+  /** Multi-line text. */
+  Textarea = 'Textarea',
+  /** One of a fixed list of options. */
+  Select = 'Select',
+  /** A calendar date, written `yyyy-MM-dd`. */
+  Date = 'Date',
+  /** A number with an optional sign and decimal point. */
+  Number = 'Number',
+  /** An absolute web address. */
+  Url = 'Url',
+}
+
+/** The domain operations a registrar plugin can ask extra fields for, as the API names them in its query. */
+export enum DomainFieldOperation {
+  /** Registering a new domain. */
+  Register = 'register',
+  /** Transferring a domain in. */
+  Transfer = 'transfer',
+  /** Changing the registrant contact of a domain the registrar holds. */
+  ContactChange = 'contactChange',
+}
+
+/** The kind of registrant a set of extra domain fields applies to, as the API names it in its query. */
+export enum DomainFieldHolder {
+  /** Not said: only the fields declared for every registrant apply. */
+  Any = 'any',
+  /** A private person. */
+  Individual = 'individual',
+  /** A company or other organisation. */
+  Organization = 'organization',
+}
+
+/** One choice of a select domain field. */
+export interface DomainFieldOption {
+  /** The value stored and sent when the choice is picked. */
+  value: string
+  /** The text shown for the choice, already in the reader's language. */
+  label: string
+}
+
+/**
+ * One extra field a registrar plugin declares for a domain, as `GET /api/domains/fields` answers it. Every text is already in
+ * the reader's language; the screen renders the field and never interprets what it means.
+ */
+export interface DomainField {
+  /** The key the value is sent and stored under. */
+  key: string
+  /** The text shown for the field. */
+  label: string
+  /** The input kind. */
+  type: DomainFieldType
+  /** Whether the field must have a value before the operation goes ahead. */
+  required: boolean
+  /** Help text under the field; null for none. */
+  description: string | null
+  /** Hint in an empty input; null for none. */
+  placeholder: string | null
+  /** Regular expression the whole value must match; null for none. */
+  pattern: string | null
+  /** Fewest characters of a value; null for no lower bound. */
+  minLength: number | null
+  /** Most characters of a value; null for no upper bound. */
+  maxLength: number | null
+  /** The choices of a select field; empty for every other kind. */
+  options: DomainFieldOption[]
+}
+
+/** The registrant contact of a domain and the registry's extra values held beside it, as `GET /api/domains/{id}/contact` answers. */
+export interface DomainContactDetails {
+  /** Registrant first name. */
+  firstName: string
+  /** Registrant last name. */
+  lastName: string
+  /** Organization name; null when the registrant has none. */
+  organization: string | null
+  /** Contact email address. */
+  email: string
+  /** Contact phone number. */
+  phone: string
+  /** Street address line 1. */
+  address1: string
+  /** Street address line 2; null when there is none. */
+  address2: string | null
+  /** City. */
+  city: string
+  /** State or province. */
+  state: string
+  /** Postal or ZIP code. */
+  postalCode: string
+  /** ISO 3166-1 alpha-2 country code. */
+  country: string
+  /** The registry's extra values by field key, as last sent to the registrar; empty when it asked for none. */
+  extendedAttributes: Record<string, string>
+}
+
 /** Body that adds or replaces a DNS record. */
 export interface DnsRecordPayload {
   /** Record type (A, MX and so on). */

@@ -12,6 +12,8 @@ import { expectLastRequest, startTransport } from '../../helpers/stubTransport'
 import type { ExpectedRequest } from '../../helpers/stubTransport'
 import type { StubServer } from '../../helpers/stubServer'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
+import { DomainFieldHolder } from '~/types/domainfieldholder'
+import { DomainFieldOperation } from '~/types/domainfieldoperation'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub started by the current test. */
@@ -40,6 +42,7 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchSlides asks for the language', call: () => api.fetchSlides('hy'), method: HttpMethod.Get, url: '/api/portal/public/slides?lang=hy' },
   { name: 'fetchCountries reads the list', call: () => api.fetchCountries(), method: HttpMethod.Get, url: '/api/portal/public/countries' },
   { name: 'checkDomain posts one domain', call: () => api.checkDomain('a.am'), method: HttpMethod.Post, url: '/api/portal/public/domain-check', body: { domain: 'a.am' } },
+  { name: 'fetchDomainFields asks for the domain, the operation and the holder', call: () => api.fetchDomainFields('name.alpha', DomainFieldOperation.Transfer, DomainFieldHolder.Organization), method: HttpMethod.Get, url: '/api/portal/public/domain-fields?domain=name.alpha&operation=transfer&holder=organization' },
 ]
 
 describe('useCatalogApi', () => {

@@ -1711,4 +1711,37 @@
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>Le registraire n'indique pas la date d'expiration de ce domaine, il ne peut donc pas être importé.</value>
   </data>
+  <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
+    <value>Une information obligatoire exigée par le registre est manquante.</value>
+  </data>
+  <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
+    <value>Une information exigée par le registre n'est pas valide.</value>
+  </data>
+  <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
+    <value>Le registre ne demande pas cette information.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
+    <value>Seul un plugin de registraire peut déclarer domainFields.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID" xml:space="preserve">
+    <value>Une clé de champ de domaine dans domainFields est mal écrite, ou deux champs du même ensemble ont la même clé.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID" xml:space="preserve">
+    <value>Un ensemble de domainFields ne nomme aucune zone ou nomme une zone mal écrite.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE" xml:space="preserve">
+    <value>Deux ensembles de domainFields nomment la même zone pour le même type de titulaire et la même opération.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID" xml:space="preserve">
+    <value>Un ensemble de domainFields ne nomme aucune opération ou nomme ce qui n'est pas une opération.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID" xml:space="preserve">
+    <value>Un champ de domaine a des options mais n'est pas une liste, ou une liste n'a aucune option, répète une valeur ou en a une vide.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID" xml:space="preserve">
+    <value>Le motif d'un champ de domaine n'est pas une expression régulière valide ou il est trop long.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
+    <value>Un champ de domaine a une borne de longueur négative ou une longueur minimale supérieure au maximum.</value>
+  </data>
 </root>

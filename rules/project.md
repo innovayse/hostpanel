@@ -290,7 +290,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.16.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.17.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -324,6 +324,34 @@ docker/                              compose set (shared·dev·prod·platform), 
   a second paid renewal (the `CurrentExpiresAt` idempotency stops a double charge on retry), and a renewal carries the expiry the host held
   (`DomainRenewalOrder.CurrentExpiresAt`). The domain DTOs carry `RegistrarCapabilitiesDto`, so both frontends hide the actions a
   registrar does not offer. A registrar plugin's release must add the `connectionRole` settings before the host that calls it.
+- **Extra domain fields are declared by the registrar plugin and collected generically (#1510).** Some registries need
+  registrant data beyond the standard contact. The host holds nothing about any zone or country: the `domainFields` block of the
+  installed registrar plugin's manifest (SDK 3.17.0, `PluginDomainFieldSet`, `PluginDomainField`) says which fields apply to which
+  zones, holder and operation, and the host only draws, validates, stores and hands them on. `IRegistrarDomainFieldCatalogue`
+  (`Application/Common/Interfaces`, adapter `Infrastructure/Plugins/RegistrarDomainFieldCatalogue`) answers the manifest of a
+  registrar module from the loaded plugins, running no plugin code. `DomainFieldReader` (Application) is the one place that finds the
+  registrar (the module stored on a domain, else its extension's, the way `RegistrarProviderResolver` chooses) and lets the SDK's
+  `PluginDomainFieldRules.Match` pick the set; `DomainFieldsValidation` is the one check of the values (`PluginDomainFieldRules.Validate`),
+  refusing with `DOMAIN_FIELD_REQUIRED`, `DOMAIN_FIELD_UNKNOWN` or `DOMAIN_FIELD_INVALID` (422, the first offending key in `errors`, sentences
+  in every language). It is a service, not a validator rule, because choosing the fields reads the TLD configuration and no validator reads
+  the database; the handlers call it before they act (`PlaceOrder` before anything is priced or created, `RegisterDomain`, `TransferDomain`
+  and `ModifyDomainContact` before the registrar is called). The holder is the registrant's: an organisation on the contact is
+  `Organization`, anything else (a guest included) `Individual`. `GET /api/domains/fields?domain=&operation=&holder=` (`GetDomainFields`,
+  anonymous like the availability check) answers the fields with their texts resolved through `PluginText` in the caller's language; the
+  operation is one of `register`, `transfer`, `contactChange`. The values travel as `ExtendedAttributes` (a string map by field key) on
+  `PlaceOrderItemDto`, `RegisterDomainCommand`, `TransferDomainCommand`, `TransferMyDomainCommand`, `ModifyDomainContactCommand`,
+  `ModifyMyDomainContactCommand`, `DomainRegistrationOrder`, `DomainTransferOrder` and `DomainContactChange`, always printed masked (they
+  can be personal data). `DomainExtendedAttributes` (Domain value object) drops blank values, serialises to one JSON text of at most
+  `MaxSerializedLength` characters and is kept on `OrderItems.ExtendedAttributesJson` and `Domains.ExtendedAttributesJson`, both listed in
+  `ProtectedColumns` (encrypted at rest, sized from `ProtectedValueLimits.DomainExtendedAttributes`). Order fulfilment hands the line's values
+  to the registration or transfer, `RegisteredDomain.ReplaceExtendedAttributes` stores the ones a contact change sent, and
+  `GET .../contact` (`DomainContactDto.ExtendedAttributes`) reads them back for both contact forms. `PluginRegistrarProvider` sets them on the
+  register, transfer and contact contexts through one private helper. The client and the admin each have one generic
+  `DomainFieldsForm` (kit input, text area, list or date picker by the declared kind): the client shows it at checkout for every domain line
+  of the cart (`CheckoutDomainFields`, every entry point), on the signed-in transfer order and in the contact panel; the admin shows it in the
+  contact modal. The cart keeps the values on the line in memory only, never in the stored cart. `DomainFieldNeutralityTests` (backend) and
+  `tests/config/domainFieldsNeutrality.test.ts` (client) keep any extension, country code or national document out of the feature's code,
+  tests and texts: a test that needs a zone invents one.
 - **Registration sends the registrar auto renew separately (#1481).** `RegisterDomainCommand.AutoRenew` is the panel's own renewal flag and is never sent to the registrar; `RegisterDomainCommand.RegistrarAutoRenew` (default `false`) is the separate, explicit registrar auto renew input and is the only value `RegisterDomainHandler` puts into `DomainRegistrationOrder.AutoRenew`. Order fulfilment registers with `AutoRenew: true`, so the panel renews and the registrar does not.
 - **Importing the domains a registrar already holds (#1476).** A registrar plugin that declares `registrarDomainList` and implements the SDK's `IRegistrarDomainListPlugin` lets staff bring a domain registered before the panel was set up into a client, with no order, invoice or charge. `IRegistrarProvider.ListDomainsAsync(cursor)` is the port operation (`PluginRegistrarProvider` is the one adapter that calls the plugin, reached only when the manifest declares the capability, else `REGISTRAR_OPERATION_UNSUPPORTED`; `UnavailableRegistrarProvider` answers `REGISTRAR_NOT_CONFIGURED`; the demo registry holds nothing), and answers a `RegistrarHeldDomainPage` (name, the registrar's reference and the expiry, which may be unknown) with the registrar's own cursor. `GET /api/domains/registrar/{module}` (`ListRegistrarDomains`, `RegistrarDomainsController`) reads one page through `IRegistrarProviderFactory` for the installed plugin the route names (`MustBeInstalledRegistrar`, so an unknown id is a 400) and marks each domain `InPanel` by its normalised name, whoever owns it. `POST /api/domains/registrar/{module}/import` (`ImportRegistrarDomain`, body `clientId` and `domainName`) never takes the reference or the expiry from the caller: it walks the registrar's list (at most 500 pages) until the name is found, answering `REGISTRAR_DOMAIN_NOT_FOUND` when it is not, `DOMAIN_IMPORT_EXPIRY_UNKNOWN` (409) when the registrar gives no expiry, `DOMAIN_ALREADY_REGISTERED` for a name the panel has and `CLIENT_NOT_FOUND`. `RegisteredDomain.ImportFromRegistrar` builds the row through `Import` (so no domain event is raised and nobody is notified or invoiced): the registrar module and reference are stored, the expiry is the registrar's, the next due date follows it, the status is `Expired` when the expiry has passed and `Active` otherwise, the registration date is the moment of the import (the registrar does not report it) and the panel's own renewal is off. The recurring amount is the extension's one-year renew sell price (`GetTldRenewPriceQuery`) converted to the client's billing currency through `ConvertAmountsQuery`, and zero when the extension is not configured (`TLD_CONFIG_NOT_FOUND`), has no renew price or has no exchange rate; any other refusal of the price read or of the conversion is the import's own failure. The import is one line in the client's activity log, saved with the domain. The admin opens it from the Domains list header ("Import from registrar", `RegistrarDomainImportDialog`: registrar, client picker, one cursor-paged table, an import button per row), through `stores/registrarDomains` and `useRegistrarDomainsApi`; only registrars that declare the capability are offered (`useRegistrarModuleOptions(PluginCapability.RegistrarDomainList)`).
 - **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the

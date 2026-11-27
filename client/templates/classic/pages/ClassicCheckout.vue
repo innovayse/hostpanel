@@ -142,6 +142,9 @@
               </UiStack>
             </UiCard>
 
+            <!-- The registry's extra values for each domain registration or transfer -->
+            <CheckoutDomainFields />
+
             <!-- Payment method section -->
             <UiCard padding="none" tone="bare" class="rounded-lg border-classic-border bg-classic-surface p-6 shadow-sm md:p-8" data-testid="checkout-payment">
               <UiStack direction="row" align="center" gap="md" class="mb-6">

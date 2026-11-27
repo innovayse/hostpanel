@@ -1813,4 +1813,13 @@
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
     <value>Das ist keine gültige Benachrichtigungs-ID.</value>
   </data>
+  <data name="DomainFieldsOperationInvalid" xml:space="preserve">
+    <value>Der Vorgang muss register, transfer oder contactChange sein.</value>
+  </data>
+  <data name="DomainFieldsHolderInvalid" xml:space="preserve">
+    <value>Der Inhaber muss any, individual oder organization sein.</value>
+  </data>
+  <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
+    <value>Registerangaben sind nur bei einer Domainregistrierung oder einem Domaintransfer zulässig.</value>
+  </data>
 </root>

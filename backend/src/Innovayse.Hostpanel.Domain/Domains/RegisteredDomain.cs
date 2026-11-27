@@ -127,6 +127,18 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <summary>Gets whether email forwarding is enabled for this domain.</summary>
     public bool EmailForwarding { get; private set; }
 
+    /// <summary>
+    /// Gets the stored form of <see cref="ExtendedAttributes"/>, a JSON object, or <see langword="null"/> when the domain has
+    /// none. The column is encrypted (see <c>ProtectedColumns</c>), because the values can be personal data.
+    /// </summary>
+    public string? ExtendedAttributesJson { get; private set; }
+
+    /// <summary>
+    /// Gets the extra values the registry asks for beside the standard contact, as they were last sent to the registrar plugin.
+    /// Empty when the registrar asked for none.
+    /// </summary>
+    public DomainExtendedAttributes ExtendedAttributes => DomainExtendedAttributes.Parse(ExtendedAttributesJson);
+
     /// <summary>Gets the read-only view of nameservers assigned to this domain.</summary>
     public IReadOnlyList<Nameserver> Nameservers => _nameservers.AsReadOnly();
 
@@ -180,6 +192,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
     /// <param name="registrarModule">The id of the registrar plugin the registration was placed at.</param>
     /// <param name="orderId">The order whose line registers the domain, or <see langword="null"/> for a registration that is not an order's.</param>
+    /// <param name="extendedAttributes">The registry's extra values sent with the registration; <see langword="null"/> for none.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingRegistration"/> state.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> or <paramref name="priceCurrency"/> is null or whitespace.
@@ -188,7 +201,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
         int clientId, string name, DateTimeOffset registeredAt, DateTimeOffset expiresAt, bool autoRenew, bool whoisPrivacy,
         string priceCurrency, decimal recurringAmount = 0, decimal firstPaymentAmount = 0,
         string? registrar = null, int registrationPeriod = 1, string? paymentMethod = null,
-        string? registrarModule = null, int? orderId = null)
+        string? registrarModule = null, int? orderId = null, DomainExtendedAttributes? extendedAttributes = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);
@@ -197,6 +210,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
             ClientId = clientId,
             Name = NormaliseName(name),
             Tld = ExtractTld(name),
+            ExtendedAttributesJson = extendedAttributes?.Serialize(),
             Status = DomainStatus.PendingRegistration,
             RegisteredAt = registeredAt,
             ExpiresAt = expiresAt,
@@ -310,6 +324,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="registrationPeriod">Registration period bought with the transfer, in years.</param>
     /// <param name="registrarModule">The id of the registrar plugin the transfer was placed at.</param>
     /// <param name="orderId">The order whose line transfers the domain in, or <see langword="null"/> for a transfer that is not an order's.</param>
+    /// <param name="extendedAttributes">The registry's extra values sent with the transfer; <see langword="null"/> for none.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingTransfer"/> state.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> or <paramref name="priceCurrency"/> is null or whitespace.
@@ -317,7 +332,8 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     public static RegisteredDomain CreateTransfer(
         int clientId, string name, DateTimeOffset registeredAt, string priceCurrency,
         decimal firstPaymentAmount = 0, decimal recurringAmount = 0, string? paymentMethod = null,
-        int registrationPeriod = 1, string? registrarModule = null, int? orderId = null)
+        int registrationPeriod = 1, string? registrarModule = null, int? orderId = null,
+        DomainExtendedAttributes? extendedAttributes = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);
@@ -326,6 +342,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
             ClientId = clientId,
             Name = NormaliseName(name),
             Tld = ExtractTld(name),
+            ExtendedAttributesJson = extendedAttributes?.Serialize(),
             Status = DomainStatus.PendingTransfer,
             RegisteredAt = registeredAt,
             ExpiresAt = DateTimeOffset.MinValue,
@@ -555,6 +572,17 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="code">The EPP code provided by the registrar.</param>
     public void SetEppCode(string code) => EppCode = code;
+
+    /// <summary>
+    /// Replaces the registry's extra values with the ones just sent to the registrar with a contact change, so the stored values
+    /// are always the registrar's current ones.
+    /// </summary>
+    /// <param name="attributes">The values now in force; empty clears them.</param>
+    public void ReplaceExtendedAttributes(DomainExtendedAttributes attributes)
+    {
+        ArgumentNullException.ThrowIfNull(attributes);
+        ExtendedAttributesJson = attributes.Serialize();
+    }
 
     /// <summary>
     /// Replaces the entire nameserver list for this domain.

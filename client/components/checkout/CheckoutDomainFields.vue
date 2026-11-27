@@ -47,13 +47,16 @@ const { user } = storeToRefs(useAuthStore())
 /** The fields of each line by `action:domain`, as last read. */
 const fieldsByLine = reactive<Record<string, DomainField[]>>({})
 
+/** A cart line that registers or transfers a domain: its name and its action are known. */
+type AskedLine = CartItem & { domain: string, domainAction: DomainOrderAction }
+
 /**
  * Tells whether a cart line is a registration or a transfer, the only lines the registry asks extra values for.
  *
  * @param item - The cart line.
  * @returns True for a domain line that registers or transfers.
  */
-const isAskedLine = (item: CartItem): boolean =>
+const isAskedLine = (item: CartItem): item is AskedLine =>
   item.itemType === CartItemType.Domain && !!item.domain &&
   (item.domainAction === DomainOrderAction.Register || item.domainAction === DomainOrderAction.Transfer)
 
@@ -85,20 +88,20 @@ const load = async (): Promise<void> => {
   const holder = holderOf(user.value?.companyName)
   await Promise.all(lines.value.map(async (line) => {
     const operation = line.domainAction === DomainOrderAction.Transfer ? DomainFieldOperation.Transfer : DomainFieldOperation.Register
-    const fields = await domains.loadDomainFields(line.domain!, operation, holder)
+    const fields = await domains.loadDomainFields(line.domain, operation, holder)
     fieldsByLine[keyOf(line)] = fields
-    cart.setExtendedAttributes(line.domain!, line.domainAction!, attributesFor(fields, line.extendedAttributes ?? {}))
+    cart.setExtendedAttributes(line.domain, line.domainAction, attributesFor(fields, line.extendedAttributes ?? {}))
   }))
 }
 
 /**
  * Stores an edit of one line's values on the cart line.
  *
- * @param line - The cart line.
+ * @param line - The asked cart line.
  * @param values - The whole set of values after the edit.
  */
-const edit = (line: CartItem, values: Record<string, string>): void => {
-  cart.setExtendedAttributes(line.domain!, line.domainAction!, attributesFor(fieldsOf(line), values))
+const edit = (line: AskedLine, values: Record<string, string>): void => {
+  cart.setExtendedAttributes(line.domain, line.domainAction,attributesFor(fieldsOf(line), values))
 }
 
 // Read again when a domain joins or leaves the cart, or when the signed-in company (the kind of registrant) is known.

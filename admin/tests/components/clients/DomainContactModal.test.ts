@@ -77,7 +77,8 @@ describe('DomainContactModal', () => {
     await wrapper.get('[data-testid="clients-domain-contact-country"]').setValue('XX')
     await wrapper.get('form').trigger('submit')
 
-    const [payload, attributes] = wrapper.emitted('save')?.[0] as [Record<string, string>, Record<string, string>]
+    const saved = wrapper.emitted('save')?.[0] as [Record<string, string>, Record<string, string>]
+    const [payload, attributes] = saved
     expect(payload.firstName).toBe('Ada')
     expect(payload.country).toBe('XX')
     expect(attributes).toEqual({})
@@ -118,7 +119,8 @@ describe('DomainContactModal', () => {
 
     expect(String(mock.mock.calls.find(call => String(call[0]).startsWith('/api/domains/fields'))?.[0]))
       .toBe('/api/domains/fields?domain=name.alpha&operation=contactChange&holder=individual')
-    const [, attributes] = wrapper.emitted('save')?.[0] as [Record<string, string>, Record<string, string>]
+    const saved = wrapper.emitted('save')?.[0] as [Record<string, string>, Record<string, string>]
+    const [, attributes] = saved
     expect(attributes).toEqual({ 'holder-number': 'N-2' })
   })
 

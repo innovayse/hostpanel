@@ -31,7 +31,8 @@ export interface DateParts {
  */
 export const splitIsoDate = (iso: string | null | undefined): DateParts => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '')
-  return match ? { year: match[1]!, month: match[2]!, day: match[3]! } : { year: '', month: '', day: '' }
+  const [, year = '', month = '', day = ''] = match ?? []
+  return { year, month, day }
 }
 
 /**

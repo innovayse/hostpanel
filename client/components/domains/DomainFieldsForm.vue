@@ -78,7 +78,7 @@ interface Props {
   fields: DomainField[]
   /** The values by field key. */
   modelValue: Record<string, string>
-  /** The API's refusal per field key, as `apiFieldErrors` reads it; empty when nothing was refused. */
+  /** The API's refusal per field key, as the store keeps it; empty when nothing was refused. */
   errors?: Record<string, string>
   /** Disables every field. */
   disabled?: boolean

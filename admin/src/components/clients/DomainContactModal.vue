@@ -35,6 +35,7 @@ const props = withDefaults(defineProps<{
   /** The API's refusal per field key from the last failed save; empty when nothing was refused. */
   fieldErrors?: Record<string, string>
 }>(), {
+  /** No refusal until a save fails. */
   fieldErrors: () => ({}),
 })
 

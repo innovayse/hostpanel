@@ -2741,7 +2741,7 @@ is plain runtime env. `site.url` is read at runtime by nuxt-site-config from `NU
 deployment. Do not add a `process.env` read outside `runtimeConfig` that differs per deployment.
 
 That widget is a host-provided header widget, written elsewhere, but it is **served from this portal's own origin**:
-`server/routes/widget/[file].ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
+`server/routes/widget/[file].ts` relays `header.js`, `header.v2.js` and `account-elements.js` (the account menu elements the widget loads) from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those three names). The script builds every
 address for switching account, adding an account, its configuration and its launcher from the origin it was
 served from; loaded from the host's origin it sent the switch through the host's sign-in client and callback, so
 the visitor landed on a page that does not exist here and kept the old account. Served from here, those

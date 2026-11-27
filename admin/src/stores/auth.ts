@@ -414,14 +414,15 @@ export const useAuthStore = defineStore('auth', () => {
     // Tell the SSO where to send the browser afterwards. Without this the end-session endpoint
     // has nowhere to go and answers 200 with an empty body, which is a blank white page: the
     // sign-out worked, but it looked like the app had died. The address must be one registered
-    // for this client on the SSO side, which the root of this origin is.
+    // for this client on the SSO side, and the SSO compares it literally: the bare origin, with no
+    // trailing slash, is how it is registered, so `new URL('/', origin).href` would be refused.
     const endSessionUrl = await api.endSessionUrl()
     if (!endSessionUrl) {
       location.href = '/'
       return
     }
     const url = new URL(endSessionUrl)
-    url.searchParams.set(POST_LOGOUT_PARAM, new URL('/', location.origin).href)
+    url.searchParams.set(POST_LOGOUT_PARAM, location.origin)
     location.href = url.toString()
   }
 

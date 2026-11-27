@@ -38,6 +38,15 @@ describe('button variants', () => {
     expect(buttonBaseClasses).not.toContain('opacity')
   })
 
+  it('centers the label of every button look and starts the text of the text link look', () => {
+    for (const variant of [UiButtonVariant.Primary, UiButtonVariant.Secondary, UiButtonVariant.Ghost, UiButtonVariant.Danger]) {
+      expect(buttonVariantClasses[variant]).toContain('justify-center')
+    }
+    expect(buttonVariantClasses.link).toContain('justify-start')
+    expect(buttonVariantClasses.link).not.toContain('justify-center')
+    expect(buttonBaseClasses).not.toContain('justify-')
+  })
+
   it('applies hover and the gradient only while the control is not disabled', () => {
     expect(buttonVariantClasses.primary).toContain('not-disabled:gradient-brand')
     expect(buttonVariantClasses.primary).toContain('not-disabled:shadow-glow-primary')

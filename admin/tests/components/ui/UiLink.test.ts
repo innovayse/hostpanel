@@ -53,6 +53,15 @@ describe('UiLink', () => {
     expect(route.classes()).toContain('text-text-accent')
   })
 
+  it('starts the text of a text link and centers the label of a button-like link', () => {
+    const text = mount(UiLink, { props: { href: '/a' } })
+    const button = mount(UiLink, { props: { href: '/a', variant: UiButtonVariant.Secondary } })
+
+    expect(text.classes()).toContain('justify-start')
+    expect(text.classes()).not.toContain('justify-center')
+    expect(button.classes()).toContain('justify-center')
+  })
+
   it('takes the accent look', () => {
     const wrapper = mount(UiLink, { props: { href: '/a', variant: 'link' } })
 

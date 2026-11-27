@@ -31,7 +31,7 @@ defineProps<{
   <button
     :type="UiButtonType.Button"
     :aria-label="label"
-    :class="[buttonBaseClasses, 'h-[2.625rem] w-10.5 min-w-0 gap-2.5 rounded-control border border-transparent bg-transparent px-0 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary @4xl:ml-6 @4xl:w-full @4xl:max-w-[460px] @4xl:flex-1 @4xl:justify-start @4xl:border-border-control @4xl:bg-surface-field @4xl:px-3.5 @4xl:text-text-muted']"
+    :class="[buttonBaseClasses, 'h-[2.625rem] w-10.5 min-w-0 justify-center gap-2.5 rounded-control border border-transparent bg-transparent px-0 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary @4xl:ml-6 @4xl:w-full @4xl:max-w-[460px] @4xl:flex-1 @4xl:justify-start @4xl:border-border-control @4xl:bg-surface-field @4xl:px-3.5 @4xl:text-text-muted']"
   >
     <UiIcon :markup="Icon.Search" :size="UiSize.Sm" />
     <UiText :tone="UiTextTone.Muted" class="hidden flex-1 truncate text-left @4xl:block">{{ text }}</UiText>

@@ -87,8 +87,8 @@ const edit = (key: string, value: string | null): void => {
 
 <template>
   <UiStack v-if="fields.length" :gap="UiGap.Md" data-testid="clients-domain-fields">
-    <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('domainFields.title') }}</UiHeading>
-    <UiText tone="secondary" :size="UiTextSize.Sm">{{ t('domainFields.note') }}</UiText>
+    <UiHeading :level="3" :variant="UiHeadingVariant.Card">{{ t('domains.domainFields.title') }}</UiHeading>
+    <UiText tone="secondary" :size="UiTextSize.Sm">{{ t('domains.domainFields.note') }}</UiText>
 
     <UiField
       v-for="field in fields"

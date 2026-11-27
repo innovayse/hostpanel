@@ -1,7 +1,7 @@
 /**
  * Plugin registry flow: with the registry switched on the plugin manager offers a Browse tab, the
  * tab lists what the registry offers, installing one posts the chosen version, shows the outcome and
- * the restart banner, and the listing then shows the plugin as installed.
+ * the restart banner, and the listing then shows the plugin as installed and waiting for the restart.
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
@@ -55,7 +55,8 @@ test('browsing the registry and installing a plugin posts its version and shows 
   await expect(page.getByTestId('plugin-processing-outcome')).toBeVisible()
   await expect(page.getByTestId('plugin-processing-restart')).toBeVisible()
   await page.getByTestId('plugin-processing-close').click()
-  await expect(page.getByTestId(`plugin-card-badge-active-${registryGateway.id}`)).toBeVisible()
+  // Installed and switched on, it waits for a restart to load, and the registry card says so like the installed card.
+  await expect(page.getByTestId(`plugin-card-badge-pendingRestart-${registryGateway.id}`)).toBeVisible()
   await expect(page.getByTestId(`plugin-card-version-${registryGateway.id}`)).toContainText(registryGateway.latestVersion)
   await expect(page.getByTestId(`registry-install-${registryGateway.id}`)).toHaveCount(0)
   await expect(page.getByTestId('plugins-restart-banner')).toBeVisible()

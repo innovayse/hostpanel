@@ -159,7 +159,7 @@ describe('PluginRegistryBrowser', () => {
   })
 
   it('shows a plain active card, with no install button, for a current plugin', async () => {
-    const wrapper = await mountBrowser()
+    const wrapper = await mountBrowser({ installedPlugins: { 'example-host': installedRow('example-host') } })
 
     expect(wrapper.find('[data-testid="plugin-card-badge-active-example-host"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="plugin-card-version-example-host"]').text()).toContain('2.0.0')

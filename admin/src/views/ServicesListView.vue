@@ -5,11 +5,13 @@
  *
  * The search text, the filters and the page live in the address (`useListQuery`), so a reload, a shared link and the
  * back button restore the same list, and the API applies them before it pages. Shows id, product, domain, client,
- * price, billing cycle, next due date and status. Reads `stores/services`; a refused load shows `store.error` with a
+ * price, billing cycle, next due date and status; a row's action opens the service under its client. The header's add
+ * action opens `AddExistingServiceModal`, which asks for the client, and reloads the page once a service was added. Reads `stores/services`; a refused load shows `store.error` with a
  * retry.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
 import ServiceFilterFields from '@/components/services/ServiceFilterFields.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -20,6 +22,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -31,12 +34,17 @@ import { BILLING_CYCLE_OPTIONS, SERVICE_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
+import type { ServiceListItem } from '@/types/service'
 import { useServicesStore } from '@/stores/services'
 import { useSettingsStore } from '@/stores/settings'
-import { clientPath } from '@/lib/routes'
+import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
 import { schemaHeader } from '@/lib/schemaHeader'
 import { useListQuery } from '@/composables/useListQuery'
 import { ServiceFilterKey, useServiceFilters } from '@/composables/useServiceFilters'
+import { UiActionKind } from '@/utils/ui/actions'
+import { headerAction } from '@/utils/ui/actionBar'
+import type { UiHeaderAction } from '@/utils/ui/actionBar'
+import type { UiMenuAction } from '@/utils/ui/menu'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
 import { UiTableDensity } from '@/utils/ui/injection'
@@ -72,12 +80,58 @@ loadOnChange(load)
 /** True while the first load is in flight and there are no rows yet; the toolbar and the table then keep their layout. */
 const initialLoading = computed<boolean>(() => store.loading && store.services.length === 0)
 
+/** Whether the add dialog is open. */
+const adding = ref(false)
+
+/** The header action that opens the add dialog. */
+const headerActions = computed<UiHeaderAction[]>(() => [
+  headerAction(UiActionKind.Add, {
+    label: t('clients.addExistingService.open'),
+    variant: UiButtonVariant.Primary,
+    testid: 'services-add',
+    /**
+     * Opens the add dialog.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      adding.value = true
+    },
+  }),
+])
+
+/**
+ * Reloads the page the address names after a service was added, and closes the dialog.
+ *
+ * @returns Nothing.
+ */
+const handleAdded = (): void => {
+  adding.value = false
+  void load()
+}
+
+/**
+ * The row actions of a service: its one action opens the service under its client as a real link.
+ *
+ * @param service - The service of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const serviceActions = (service: ServiceListItem): UiMenuAction[] => [
+  {
+    label: t('shared.view'),
+    icon: Icon.Eye,
+    testid: `services-view-${service.id}`,
+    to: clientItemPath(service.clientId, ClientSection.Services, service.id),
+  },
+]
+
 onMounted(() => settingsStore.fetchProducts())
 </script>
 
 <template>
   <UiStack>
     <UiPageHeader
+      :actions="headerActions"
       v-bind="schemaHeader(schema, t)"
       data-testid="services-header"
     />
@@ -149,6 +203,9 @@ onMounted(() => settingsStore.fetchProducts())
               {{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}
             </UiBadge>
           </UiTableCell>
+          <UiTableCell actions>
+            <UiRowActions :actions="serviceActions(service)" :testid="`services-actions-${service.id}`" />
+          </UiTableCell>
         </UiTableRow>
       </UiTableBody>
       <template #empty>
@@ -167,5 +224,7 @@ onMounted(() => settingsStore.fetchProducts())
         </UiEmptyState>
       </template>
     </UiDataTable>
+
+    <AddExistingServiceModal v-if="adding" @added="handleAdded" @close="adding = false" />
   </UiStack>
 </template>

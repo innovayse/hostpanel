@@ -3,9 +3,9 @@
  *
  * Quarters of the last few calendar years, newest first, grouped by year. A row in the list reads
  * `Q4 · Oct–Dec` under its year heading; once picked, the trigger reads `Q4 2026 · Oct–Dec` on one
- * line. The month names are short and come from `Intl` in the reader's language.
+ * line. The month names are short and come from `Intl` in the reader's language, or from the app's own messages where the engine lacks it.
  */
-import { PART_SEPARATOR } from '@/lib/format'
+import { PART_SEPARATOR, shortMonthName } from '@/lib/format'
 import type { UiSelectOption } from '@/utils/ui/select'
 
 /** Number of quarters in a year. */
@@ -49,13 +49,12 @@ export const parseQuarterValue = (value: string): { year: string; quarter: strin
  * @returns One option per quarter, newest first, each carrying its year as `group`.
  */
 export const buildQuarterOptions = (now: Date, years: number, locale: string): UiSelectOption<string>[] => {
-  const monthName = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' })
   const options: UiSelectOption<string>[] = []
   for (let year = now.getFullYear(); year > now.getFullYear() - years; year--) {
     for (let quarter = QUARTERS_PER_YEAR; quarter >= 1; quarter--) {
       const firstMonth = (quarter - 1) * MONTHS_PER_QUARTER
       const months = [firstMonth, firstMonth + MONTHS_PER_QUARTER - 1]
-        .map(month => monthName.format(new Date(Date.UTC(year, month, 1))))
+        .map(month => shortMonthName(month, locale))
         .join(MONTH_RANGE_SEPARATOR)
       options.push({
         value: quarterValue(year, quarter),

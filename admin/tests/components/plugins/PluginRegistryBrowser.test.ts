@@ -8,8 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
-import { PluginCategory, PluginPricing } from '@/types/plugin'
-import type { PluginRegistryItemDto } from '@/types/plugin'
+import { PluginCategory, PluginPricing, PluginStatus } from '@/types/plugin'
+import type { PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 import { mountScreen } from '../../helpers/mount'
 
 /** A verified, free listing that is not installed. */
@@ -49,6 +49,34 @@ const current: PluginRegistryItemDto = {
   installed: true,
   installedVersion: '2.0.0',
 }
+
+/**
+ * Builds the installed list's row of a loaded, switched-on plugin; the overrides replace the defaults.
+ *
+ * @param id - The plugin id.
+ * @param overrides - Fields to change.
+ * @returns The row.
+ */
+const installedRow = (id: string, overrides: Partial<PluginListItemDto> = {}): PluginListItemDto => ({
+  id,
+  name: id,
+  version: '1.0.0',
+  author: 'Hostpanel',
+  description: '',
+  type: 'payment',
+  category: 'Payments',
+  color: '#123456',
+  iconUrl: null,
+  isLoaded: true,
+  isBuiltIn: false,
+  isEnabled: true,
+  status: PluginStatus.Loaded,
+  refusedRule: null,
+  refusedDetail: null,
+  stagedVersion: null,
+  capabilities: [],
+  ...overrides,
+})
 
 /**
  * Mounts the browser with a default page of the three listings.
@@ -131,7 +159,7 @@ describe('PluginRegistryBrowser', () => {
   })
 
   it('shows a plain active card, with no install button, for a current plugin', async () => {
-    const wrapper = await mountBrowser()
+    const wrapper = await mountBrowser({ installedPlugins: { 'example-host': installedRow('example-host') } })
 
     expect(wrapper.find('[data-testid="plugin-card-badge-active-example-host"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="plugin-card-version-example-host"]').text()).toContain('2.0.0')
@@ -209,9 +237,28 @@ describe('PluginRegistryBrowser', () => {
   })
 
   it('wears the staged badge with the staged version', async () => {
-    const wrapper = await mountBrowser({ stagedVersions: { 'example-registrar': '2.0.0' } })
+    const wrapper = await mountBrowser({ installedPlugins: { 'example-registrar': installedRow('example-registrar', { stagedVersion: '2.0.0' }) } })
 
     expect(wrapper.get('[data-testid="plugin-card-badge-staged-example-registrar"]').text()).toContain('2.0.0')
+  })
+
+  it('gives an installed plugin the badge of its installed state, so registry and installed cards agree', async () => {
+    const wrapper = await mountBrowser({
+      installedPlugins: {
+        'example-registrar': installedRow('example-registrar', { isEnabled: false }),
+        'example-host': installedRow('example-host'),
+      },
+    })
+
+    expect(wrapper.get('[data-testid="plugin-card-badge-disabled-example-registrar"]').text()).toBe('Disabled')
+    expect(wrapper.find('[data-testid="plugin-card-badge-active-example-registrar"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="plugin-card-badge-active-example-host"]').text()).toBe('Active')
+  })
+
+  it('shows no state badge for a plugin that is not in the installed list', async () => {
+    const wrapper = await mountBrowser()
+
+    expect(wrapper.find('[data-testid="plugin-card-badge-active-example-host"]').exists()).toBe(false)
   })
 
   it('shows the empty state when nothing matches', async () => {

@@ -24,6 +24,13 @@ describe('TransactionChart', () => {
     expect(series?.data[0]).toBe(0)
   })
 
+  it('captions the days in the active locale, not the browser one', () => {
+    const wrapper = mountWithApp(TransactionChart, { props: { transactions: [] }, stubs: { UiChart: true } })
+
+    const labels = wrapper.findComponent(UiChart).props('labels') as string[]
+    expect(labels[0]).toMatch(/^[A-Z][a-z]{2} \d{1,2}$/)
+  })
+
   it('ignores transactions with an unreadable date', () => {
     const wrapper = mountWithApp(TransactionChart, {
       props: { transactions: [transactionFixture({ date: 'not a date' })] },

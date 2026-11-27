@@ -79,14 +79,14 @@ export const flattenKeys = (value: unknown, prefix = ''): string[] => {
 }
 
 /**
- * Extracts the literal keys passed to `t('key')` / `$t('key')` / `i18n.global.t('key')` / `translate('key')` / `translateOrRaw('key', raw)`.
+ * Extracts the literal keys passed to `t('key')` / `$t('key')` / `i18n.global.t('key')` / `translate('key')` / `translateIn('key', locale)` / `translateOrRaw('key', raw)`.
  *
  * @param source - Source text.
  * @returns The set of literal keys.
  */
 export const literalKeys = (source: string): Set<string> => {
   const found = new Set<string>()
-  for (const match of source.matchAll(/(?<![\w$])(?:\$?t|translate|translateOrRaw)\(\s*(['"])([^'"`]+)\1/g)) {
+  for (const match of source.matchAll(/(?<![\w$])(?:\$?t|translate|translateIn|translateOrRaw)\(\s*(['"])([^'"`]+)\1/g)) {
     found.add(match[2] as string)
   }
   return found
@@ -100,7 +100,7 @@ export const literalKeys = (source: string): Set<string> => {
  */
 export const dynamicPrefixes = (source: string): string[] => {
   const found: string[] = []
-  for (const match of source.matchAll(/(?<![\w$])(?:\$?t|translate|translateOrRaw)\(\s*`([^`$]*)\$\{/g)) {
+  for (const match of source.matchAll(/(?<![\w$])(?:\$?t|translate|translateIn|translateOrRaw)\(\s*`([^`$]*)\$\{/g)) {
     found.push(match[1] as string)
   }
   return found

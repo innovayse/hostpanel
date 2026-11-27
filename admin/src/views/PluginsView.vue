@@ -48,7 +48,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import { PluginCategory, PluginCategoryAll, PluginProcessingStep, PluginsTab } from '@/types/plugin'
-import type { PluginActionOutcome } from '@/types/plugin'
+import type { PluginActionOutcome, PluginListItemDto } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiActionKind } from '@/utils/ui/actions'
 import { headerAction } from '@/utils/ui/actionBar'
@@ -229,11 +229,9 @@ const licensedIds = computed<string[]>(() =>
     .map(([id]) => id),
 )
 
-/** Staged version per installed plugin id, for the registry cards' staged state. */
-const stagedVersions = computed<Record<string, string>>(() =>
-  Object.fromEntries(
-    store.installed.flatMap(plugin => (plugin.stagedVersion === null ? [] : [[plugin.id, plugin.stagedVersion]])),
-  ),
+/** The installed list's row per plugin id, so a registry card reads its state and staged version from the same rows as an installed card. */
+const installedById = computed<Record<string, PluginListItemDto>>(() =>
+  Object.fromEntries(store.installed.map(plugin => [plugin.id, plugin])),
 )
 
 /**
@@ -437,7 +435,7 @@ onMounted(() => Promise.all([
         :loading="store.registryLoading"
         :error="store.registryError"
         :installing-ids="installingIds"
-        :staged-versions="stagedVersions"
+        :installed-plugins="installedById"
         :licensed-ids="licensedIds"
         @update:page="handleRegistryPage"
         @install="handleRegistryInstallRequest"

@@ -8,6 +8,7 @@ import type { VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
 import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
+import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import { BillingCycle } from '@/types/service'
 import { createTestI18n } from '../../helpers/i18n'
@@ -54,13 +55,14 @@ const tableLookups: Record<string, RouteHandler> = {
 let pinia: Pinia
 
 /**
- * Mounts the modal for client 36 and waits for the lookups.
+ * Mounts the modal (for client 36 unless told otherwise) and waits for the lookups.
  *
+ * @param props - The modal's props; no client id makes it ask for the client.
  * @returns The wrapper.
  */
-const mountModal = async (): Promise<VueWrapper> => {
+const mountModal = async (props: { clientId?: number } = { clientId: 36 }): Promise<VueWrapper> => {
   const wrapper = mount(AddExistingServiceModal, {
-    props: { clientId: 36 },
+    props,
     global: { plugins: [createTestI18n(), pinia], stubs: { teleport: true } },
   })
   await flushPromises()
@@ -142,6 +144,32 @@ describe('AddExistingServiceModal', () => {
       confirmSharedDomain: false,
     })
     expect(wrapper.emitted('added')).toHaveLength(1)
+  })
+
+  it('asks for the client when it is not bound to one and posts the chosen client', async () => {
+    const mock = stubRoutes({
+      ...lookups,
+      'GET /api/clients': () => json({ items: [{ id: 9, firstName: 'Alan', lastName: 'Turing', companyName: null, email: 'a@example.test', status: 'Active' }], totalCount: 1 }),
+      [CREATE_LINE]: () => json(27, 201),
+    })
+    const wrapper = await mountModal({})
+
+    await fill(wrapper)
+    expect(wrapper.get('[data-testid="add-existing-service-save"]').attributes('disabled')).toBeDefined()
+    wrapper.getComponent(UiClientSelect).vm.$emit('update:modelValue', '9')
+    await flushPromises()
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(createBody(mock)).toMatchObject({ clientId: 9, productId: 4, serverId: 2 })
+    expect(wrapper.emitted('added')).toHaveLength(1)
+  })
+
+  it('draws no client picker when it is bound to a client', async () => {
+    stubRoutes({ ...lookups })
+    const wrapper = await mountModal()
+
+    expect(wrapper.findComponent(UiClientSelect).exists()).toBe(false)
   })
 
   it('does not post an incomplete form', async () => {

@@ -2,6 +2,7 @@
  * Date, time and text formatting helpers shared by the admin screens: localized dates, sizes, the
  * compact support date-time, time of day, elapsed and relative time, and day-string helpers.
  */
+import { translateCountIn, translateIn } from '@/lib/translate'
 
 /** What every screen shows where a value or a date is missing or unreadable: one em dash, defined once. */
 export const EMPTY_VALUE = '—'
@@ -84,6 +85,59 @@ export const splitIsoDate = (iso: string): { year: number; month: number; day: n
 }
 
 /**
+ * Tells whether this engine ships the date data of a locale. A browser can lack it (Armenian is the usual one) and then
+ * silently writes month names in English, so callers word the month from the app's own messages instead.
+ *
+ * @param locale - Locale code to check.
+ * @returns True when `Intl.DateTimeFormat` knows the locale.
+ */
+const hasDateLocaleData = (locale: string): boolean => Intl.DateTimeFormat.supportedLocalesOf([locale]).length > 0
+
+/**
+ * Writes the short name of a month in a language: from `Intl` where the engine has the locale's data, else from the
+ * app's own `calendar.monthsShort` messages. The one place a short month name is made, so no caller falls back alone.
+ *
+ * @param month - Zero-based month, 0 for January.
+ * @param locale - Language of the name, such as `hy`.
+ * @returns The short month name, such as "Mar".
+ */
+export const shortMonthName = (month: number, locale: string): string =>
+  hasDateLocaleData(locale)
+    ? new Date(Date.UTC(2000, month, 1)).toLocaleDateString(locale, { month: 'short', timeZone: 'UTC' })
+    : translateIn(`calendar.monthsShort.${month + 1}`, locale)
+
+/**
+ * Writes a calendar day as a short day and month in a language, in the order a reader of that language expects
+ * (month first or day first), from `Intl` where the engine has the locale's data, else from the app's own month names and
+ * its `calendar.shortDay` message, which holds the order of that language.
+ *
+ * @param date - The calendar day, read in UTC.
+ * @param locale - Language of the text.
+ * @returns For example "Mar 7" or "12 Mar".
+ */
+export const formatShortDay = (date: Date, locale: string): string => {
+  if (hasDateLocaleData(locale)) {
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' })
+  }
+  return translateIn('calendar.shortDay', locale, { month: shortMonthName(date.getUTCMonth(), locale), day: date.getUTCDate() })
+}
+
+/**
+ * Writes a moment as a medium date with the time of day in a language ("Mar 7, 2026, 9:30 AM"), from `Intl` where the
+ * engine has the locale's data, else with the month from the app's own messages and a 24-hour time.
+ *
+ * @param moment - The moment, read in the viewer's time zone.
+ * @param locale - Language of the text.
+ * @returns The date and the time.
+ */
+export const formatMediumDateTime = (moment: Date, locale: string): string => {
+  if (hasDateLocaleData(locale)) {
+    return moment.toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
+  }
+  return `${moment.getDate()} ${shortMonthName(moment.getMonth(), locale)} ${moment.getFullYear()}, ${pad(moment.getHours())}:${pad(moment.getMinutes())}`
+}
+
+/**
  * Formats a `YYYY-MM-DD` day as a short month and day in the given language, for a chart axis.
  *
  * The day is read as a calendar day (UTC), so the viewer's time zone never moves it.
@@ -97,7 +151,7 @@ export const formatMonthDay = (iso: string, locale: string): string => {
   if (isNaN(year) || isNaN(month) || isNaN(day)) {
     return iso
   }
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(locale, { month: 'short', day: 'numeric', timeZone: 'UTC' })
+  return formatShortDay(new Date(Date.UTC(year, month - 1, day)), locale)
 }
 
 /**
@@ -234,10 +288,39 @@ export const formatElapsed = (iso: string | null | undefined, now: number = Date
   return parts.join(' ')
 }
 
+/** One step of the relative wording: the unit's `Intl` name, the message that words it without `Intl`, and its count. */
+interface RelativeSpan {
+  /** The unit `Intl.RelativeTimeFormat` counts in. */
+  unit: Intl.RelativeTimeFormatUnit
+  /** Catalogue key of the counted sentence in the app's own messages. */
+  messageKey: string
+  /** How many of the unit have passed. */
+  count: number
+}
+
+/**
+ * Picks the largest whole unit (minute, hour, day) that fits the seconds passed.
+ *
+ * @param seconds - Seconds since the moment, at least one minute.
+ * @returns The unit, its message key and the count.
+ */
+const relativeSpan = (seconds: number): RelativeSpan => {
+  const minutes = Math.floor(seconds / MINUTE_SECONDS)
+  if (minutes < MINUTES_PER_HOUR) {
+    return { unit: 'minute', messageKey: 'duration.minutesAgo', count: minutes }
+  }
+  const hours = Math.floor(minutes / MINUTES_PER_HOUR)
+  if (hours < HOURS_PER_DAY) {
+    return { unit: 'hour', messageKey: 'duration.hoursAgo', count: hours }
+  }
+  return { unit: 'day', messageKey: 'duration.daysAgo', count: Math.floor(hours / HOURS_PER_DAY) }
+}
+
 /**
  * Describes how long ago a moment was, in the given locale ("now", "5 minutes ago", "2 days ago").
- * Built on `Intl.RelativeTimeFormat`, so unit names and plurals come from the locale instead of a
- * sentence written here.
+ * Built on `Intl.RelativeTimeFormat`, so unit names and plurals come from the locale. A browser can ship without the
+ * data of a locale (Armenian is the usual one) and then silently answers in English, so for such a locale the wording
+ * comes from the app's own messages (`duration.*`, a plural form per count) instead.
  *
  * @param iso - ISO 8601 timestamp of the moment.
  * @param locale - Locale code the wording is produced in.
@@ -245,20 +328,13 @@ export const formatElapsed = (iso: string | null | undefined, now: number = Date
  * @returns The relative wording.
  */
 export const formatRelativeFromNow = (iso: string, locale: string, now: number = Date.now()): string => {
-  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
   const seconds = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000))
+  const formatter = Intl.RelativeTimeFormat.supportedLocalesOf([locale]).length > 0 ? new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }) : null
   if (seconds < MINUTE_SECONDS) {
-    return formatter.format(0, 'second')
+    return formatter === null ? translateIn('duration.relativeNow', locale) : formatter.format(0, 'second')
   }
-  const minutes = Math.floor(seconds / MINUTE_SECONDS)
-  if (minutes < MINUTES_PER_HOUR) {
-    return formatter.format(-minutes, 'minute')
-  }
-  const hours = Math.floor(minutes / MINUTES_PER_HOUR)
-  if (hours < HOURS_PER_DAY) {
-    return formatter.format(-hours, 'hour')
-  }
-  return formatter.format(-Math.floor(hours / HOURS_PER_DAY), 'day')
+  const { unit, messageKey, count } = relativeSpan(seconds)
+  return formatter === null ? translateCountIn(messageKey, count, locale) : formatter.format(-count, unit)
 }
 
 /**

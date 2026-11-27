@@ -6,6 +6,7 @@
  * strings, configuration identifiers and operator-facing copy stored in the database, so they
  * are not part of this catalogue.
  */
+import { watch } from 'vue'
 import { createI18n } from 'vue-i18n'
 import { MessageLanguage, messages } from '@/locales/messages'
 
@@ -22,18 +23,21 @@ const DEFAULT_LOCALE = MessageLanguage.En
 const STORAGE_KEY = 'admin.locale'
 
 /**
+ * The shipped locale a code names, or English for a code the panel does not ship (or none).
+ *
+ * @param code - A locale code, such as a saved preference or the language a formatter was asked for.
+ * @returns A supported locale code.
+ */
+export const toSupportedLocale = (code: string | null | undefined): SupportedLocale =>
+  SUPPORTED_LOCALES.find((locale) => locale === code) ?? DEFAULT_LOCALE
+
+/**
  * Reads the operator's saved locale preference, falling back to English for
  * an unseen visitor or a value the panel no longer ships.
  *
  * @returns A supported locale code.
  */
-const initialLocale = (): SupportedLocale => {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (stored && (SUPPORTED_LOCALES as readonly string[]).includes(stored)) {
-    return stored as SupportedLocale
-  }
-  return DEFAULT_LOCALE
-}
+const initialLocale = (): SupportedLocale => toSupportedLocale(localStorage.getItem(STORAGE_KEY))
 
 /**
  * Russian plural rule: picks "one | few | many" (1 год, 2 года, 5 лет) from a three-form message.
@@ -76,3 +80,9 @@ export const setLocale = (locale: SupportedLocale): void => {
   i18n.global.locale.value = locale
   localStorage.setItem(STORAGE_KEY, locale)
 }
+
+// The document language follows the active locale, from startup and on every change, so assistive technology and the
+// browser's own hyphenation, spell check and font choice use the language the panel is shown in.
+watch(i18n.global.locale, (locale) => {
+  document.documentElement.lang = locale
+}, { immediate: true })

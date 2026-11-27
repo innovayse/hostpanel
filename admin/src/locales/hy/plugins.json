@@ -140,7 +140,7 @@
     "categoryPlaceholder": "Կատեգորիա",
     "search": "Որոնել կատալոգում",
     "allCategories": "Բոլոր կատեգորիաները",
-    "byAuthor": "հեղինակ՝ {author}",
+    "byAuthor": "Հեղինակ՝ {author}",
     "version": "v{version}",
     "verified": "Ստուգված",
     "update": "Թարմացնել մինչև {version}",

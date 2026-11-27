@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiProgress from '@/components/ui/UiProgress.vue'
+import { UiTone } from '@/utils/ui/tone'
 
 describe('UiProgress', () => {
   it('shows the label and the rounded percentage on a native bar', () => {
@@ -34,6 +35,14 @@ describe('UiProgress', () => {
 
     expect(bar.attributes('data-state')).toBe('warning')
     expect(bar.classes()).toContain('[&::-webkit-progress-value]:bg-[image:var(--gradient-bar-warn)]')
+  })
+
+  it('fills the bar with the solid colour of its tone and never warns, even when full', () => {
+    const bar = mount(UiProgress, { props: { value: 100, label: 'Job', tone: UiTone.Success } }).get('progress')
+
+    expect(bar.attributes('data-state')).toBe('normal')
+    expect(bar.classes()).toContain('[&::-webkit-progress-value]:bg-status-green')
+    expect(bar.classes().join(' ')).not.toContain('gradient-bar')
   })
 
   it('draws placeholder bars and no native bar while loading', () => {

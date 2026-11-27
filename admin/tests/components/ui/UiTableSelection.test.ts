@@ -2,7 +2,7 @@
  * Unit tests for the selectable table: the checkbox column drawn by UiTableRow, the select-all state, row toggling
  * with a Shift range, the selected look and aria-selected.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -40,6 +40,16 @@ const harness = () => {
 }
 
 describe('selectable UiTable', () => {
+  it('keeps a click on the checkbox from reaching the click of the row', async () => {
+    const { wrapper } = harness()
+    const onRowClick = vi.fn()
+    wrapper.get('[data-testid="row-1"]').element.addEventListener('click', onRowClick)
+
+    await wrapper.get('[data-testid="pick-1"]').trigger('click')
+
+    expect(onRowClick).not.toHaveBeenCalled()
+  })
+
   it('draws a select-all header cell and a checkbox per row, named for assistive tech', () => {
     const { wrapper } = harness()
 

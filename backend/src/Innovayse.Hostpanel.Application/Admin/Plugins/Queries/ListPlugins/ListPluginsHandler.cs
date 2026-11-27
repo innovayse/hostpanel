@@ -1,8 +1,10 @@
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins.Enums;
+using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +12,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
 
 /// <summary>
 /// Handles <see cref="ListPluginsQuery"/> by reading the plugins on disk from
-/// <see cref="IPluginPackageStore"/>, cross-referencing loaded and refused status from <see cref="IPluginRegistry"/>
+/// <see cref="IPluginPackageStore"/>, cross-referencing loaded and refused status from <see cref="IPluginRegistry"/>, the enabled switch from the integration settings
 /// and adding the removed plugins whose stored data is still kept.
 /// </summary>
 public sealed class ListPluginsHandler
@@ -55,6 +57,7 @@ public sealed class ListPluginsHandler
         var refused = _registry.GetRefusedPlugins().ToDictionary(r => r.PluginId, StringComparer.OrdinalIgnoreCase);
         var installs = (await _context.InstalledPlugins.AsNoTracking().ToListAsync(ct))
             .ToDictionary(p => p.PluginId, StringComparer.Ordinal);
+        var settings = await IntegrationSettingsLookup.LoadAsync(_context, IntegrationSettingKeys.RootPrefix, ct);
         var shown = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var result = new List<PluginListItemDto>();
 
@@ -81,6 +84,7 @@ public sealed class ListPluginsHandler
                 manifest.Color,
                 refusal is null && _registry.IsLoaded(manifest.Id),
                 package.IsBuiltIn,
+                refusal is null && settings.IsEnabled(manifest.Id),
                 refusal is null ? manifest.Capabilities : [],
                 refusal is null ? PluginListStatus.Loaded : PluginListStatus.Refused,
                 refusal?.Rule,
@@ -123,6 +127,6 @@ public sealed class ListPluginsHandler
     {
         return new PluginListItemDto(
             pluginId, pluginId, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty,
-            false, false, [], PluginListStatus.Removed, HostAccess: []);
+            false, false, false, [], PluginListStatus.Removed, HostAccess: []);
     }
 }

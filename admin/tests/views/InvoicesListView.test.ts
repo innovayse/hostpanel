@@ -41,6 +41,39 @@ describe('InvoicesListView', () => {
     expect(rows[0]?.text()).toContain('Unpaid')
   })
 
+  it('opens the invoice from its number link and from a click on the row, but not from the select box or the actions', async () => {
+    stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const { wrapper, router } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="billing-invoice-open-1"]').attributes('href')).toBe('/billing/invoices/1/view')
+
+    await wrapper.get('[data-testid="billing-invoice-select-1"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/billing/invoices')
+
+    await wrapper.get('[data-testid="billing-invoice-row-1"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/billing/invoices/1/view')
+  })
+
+  it('leaves a click on the number link to the link: one navigation, and none for a modifier click', async () => {
+    stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
+    const { wrapper, router } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices')
+    await flushPromises()
+    const push = vi.spyOn(router, 'push')
+
+    await wrapper.get('[data-testid="billing-invoice-open-1"]').trigger('click', { ctrlKey: true })
+    await flushPromises()
+    expect(push).not.toHaveBeenCalled()
+
+    await wrapper.get('[data-testid="billing-invoice-open-1"]').trigger('click')
+    await flushPromises()
+    expect(push).toHaveBeenCalledTimes(1)
+    expect(router.currentRoute.value.fullPath).toBe('/billing/invoices/1/view')
+  })
+
   it('opens the view and edit pages from the row actions menu', async () => {
     stubRoutes({ 'GET /api/billing?': () => json({ items: [invoiceRowFixture()], pageNumber: 1, pageSize: 25, totalCount: 1, totalPages: 1 }) })
     const { wrapper, router } = await mountRouted(InvoicesListView, '/billing/invoices', '/billing/invoices')

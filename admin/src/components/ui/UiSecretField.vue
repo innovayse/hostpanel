@@ -80,8 +80,14 @@ const emit = defineEmits<{
 /** True while the operator is typing a replacement for a stored value. */
 const replacing = ref(false)
 
-/** Classes of the read-only box: the same surface, radius and height as a text input. */
-const boxClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fieldSizeClasses[props.size]} flex min-w-0 flex-1 items-center gap-2`
+/** Surface, radius and height of the read-only box, the same as a text input; the width rule is added per box. */
+const boxBaseClasses = `${fieldWidthClasses} ${fieldBaseClasses} ${fieldSizeClasses[props.size]} flex flex-1 items-center gap-2`
+
+/** Classes of the box that holds a sentence, which may shrink with the row and truncate. */
+const boxClasses = `${boxBaseClasses} min-w-0`
+
+/** Classes of the box that holds the key icon and the "Set" chip: it never shrinks below them, so the chip keeps its full text (a longer word in Armenian included). */
+const maskedBoxClasses = `${boxBaseClasses} min-w-fit`
 
 /** Hint of the empty input: the screen's own, else "Not set" or "Type the new value" by whether a value is stored. */
 const inputPlaceholder = computed<string>(() =>
@@ -133,7 +139,7 @@ const onInput = (value: string | number | null): void => {
       </UiButton>
     </template>
     <template v-else-if="hasValue && !replacing">
-      <div :class="boxClasses" :data-testid="`${testid}-masked`">
+      <div :class="maskedBoxClasses" :data-testid="`${testid}-masked`">
         <UiIcon :markup="Icon.Key" :size="UiSize.Sm" class="text-text-muted" aria-hidden="true" />
         <UiBadge :tone="UiTone.Success" small>{{ t('settings.secret.set') }}</UiBadge>
       </div>

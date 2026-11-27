@@ -1,14 +1,17 @@
 /**
- * Narrowing of the installed plugin list for its search box and filters: the state a plugin is in,
- * and the pure filter the Installed tab applies to the store's list.
+ * Narrowing of the installed plugin list for its search box and filters: the state a plugin is in, the words and tone
+ * every screen shows it with, and the pure filter the Installed tab applies to the store's list.
  */
 import { PluginManifestRule, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Closed set of the states the Installed tab filters by; the strings are the values kept in the address. */
 export const InstalledPluginState = {
-  /** Loaded and running. */
+  /** Loaded and switched on. */
   Active: 'active',
+  /** Loaded, but its enabled switch is off, so it does nothing. */
+  Disabled: 'disabled',
   /** On disk but waiting for a restart to load. */
   PendingRestart: 'pendingRestart',
   /** Skipped by the host because it broke a manifest rule. */
@@ -19,6 +22,26 @@ export const InstalledPluginState = {
 
 /** One of the {@link InstalledPluginState} values. */
 export type InstalledPluginState = (typeof InstalledPluginState)[keyof typeof InstalledPluginState]
+
+/** How a state looks wherever it is shown: the locale key of its name and the tone of its badge. */
+export interface InstalledPluginStateLook {
+  /** Locale key of the state's name. */
+  labelKey: string
+  /** Tone of the state's badge. */
+  tone: UiTone
+}
+
+/**
+ * The one table from a state to its name and tone, read by the card badge, the state filter and the details page, so
+ * a plugin in one state is worded and coloured the same on every screen.
+ */
+export const INSTALLED_PLUGIN_STATE_LOOK: Readonly<Record<InstalledPluginState, InstalledPluginStateLook>> = {
+  [InstalledPluginState.Active]: { labelKey: 'shared.active', tone: UiTone.Success },
+  [InstalledPluginState.Disabled]: { labelKey: 'shared.disabled', tone: UiTone.Neutral },
+  [InstalledPluginState.PendingRestart]: { labelKey: 'plugins.pluginCard.pendingRestart', tone: UiTone.Warning },
+  [InstalledPluginState.Refused]: { labelKey: 'plugins.pluginCard.refused', tone: UiTone.Danger },
+  [InstalledPluginState.LoadFailed]: { labelKey: 'plugins.pluginCard.loadFailed', tone: UiTone.Danger },
+}
 
 /** What the Installed tab narrows by; an empty string means the criterion is not set. */
 export interface InstalledPluginFilter {
@@ -44,7 +67,7 @@ const isLoadFailed = (plugin: PluginListItemDto): boolean => plugin.refusedRule 
  *
  * @param plugin - The installed plugin.
  * @returns LoadFailed for a plugin whose assembly did not load, Refused for one the host skipped, Active for a loaded
- * one, PendingRestart otherwise.
+ * one that is switched on, Disabled for a loaded one that is switched off, PendingRestart otherwise.
  */
 export const installedPluginState = (plugin: PluginListItemDto): InstalledPluginState => {
   if (isLoadFailed(plugin)) {
@@ -53,7 +76,10 @@ export const installedPluginState = (plugin: PluginListItemDto): InstalledPlugin
   if (plugin.status === PluginStatus.Refused) {
     return InstalledPluginState.Refused
   }
-  return plugin.isLoaded ? InstalledPluginState.Active : InstalledPluginState.PendingRestart
+  if (!plugin.isLoaded) {
+    return InstalledPluginState.PendingRestart
+  }
+  return plugin.isEnabled ? InstalledPluginState.Active : InstalledPluginState.Disabled
 }
 
 /**

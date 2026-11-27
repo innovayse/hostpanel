@@ -8,6 +8,7 @@
  */
 import { onBeforeUnmount, onMounted } from 'vue'
 import type { Router } from 'vue-router'
+import { anchorOf } from '@/lib/anchor'
 import { prefetchRoute } from '@/lib/prefetchRoute'
 
 /** The events that announce the operator is about to use a link, in the order they usually fire. */
@@ -48,12 +49,8 @@ export const useLinkPrefetch = (router: Router): void => {
    * @param event - A pointer, focus or touch event.
    */
   const onIntent = (event: Event): void => {
-    const target = event.target
-    if (!(target instanceof Element)) {
-      return
-    }
-    const anchor = target.closest('a[href]')
-    if (!(anchor instanceof HTMLAnchorElement)) {
+    const anchor = anchorOf(event.target)
+    if (anchor === null) {
       return
     }
     const path = inAppPathOf(anchor, router)

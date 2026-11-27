@@ -32,6 +32,7 @@ const plugin = {
   iconUrl: null,
   isLoaded: true,
   isBuiltIn: false,
+  isEnabled: true,
   status: 'Loaded',
   refusedRule: null,
   refusedDetail: null,

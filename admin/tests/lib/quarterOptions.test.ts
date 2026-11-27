@@ -2,11 +2,24 @@
  * Tests for the shared quarter option builder: grouping by year, newest first, the one-line labels with
  * short localized month names, and the value round trip.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildQuarterOptions, parseQuarterValue, quarterValue } from '@/lib/quarterOptions'
 
 /** A moment in the middle of 2026. */
 const NOW = new Date(2026, 5, 15)
+
+describe('buildQuarterOptions without the locale data in the engine', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('writes the months from the app messages', () => {
+    vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(buildQuarterOptions(NOW, 1, 'hy')[0]?.displayLabel).toBe('Q4 · Հկտ–Դկտ')
+    expect(buildQuarterOptions(NOW, 1, 'ru')[0]?.displayLabel).toBe('Q4 · окт–дек')
+  })
+})
 
 describe('buildQuarterOptions', () => {
   it('offers four quarters per year, newest first, each grouped under its year', () => {

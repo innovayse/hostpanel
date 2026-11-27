@@ -17,7 +17,7 @@ const DETAIL_SEPARATOR = ' · '
 /**
  * Words for notification-feed events in the active locale.
  *
- * @returns `title`, `detail` and `time` for one event.
+ * @returns The `title`, `detail` and `time` writers; each takes one feed event and returns its words.
  */
 export const useActivityEventText = () => {
   const { t, locale } = useI18n()

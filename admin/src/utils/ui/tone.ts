@@ -63,3 +63,13 @@ export const toneDotClasses: Record<UiTone, string> = {
   warning: 'bg-status-yellow',
   danger: 'bg-status-red',
 }
+
+/** Fill classes of a progress bar per tone, for both engines' pseudo-elements (a bar whose colour states an outcome). */
+export const toneProgressClasses: Record<UiTone, string> = {
+  neutral: '[&::-moz-progress-bar]:bg-text-muted [&::-webkit-progress-value]:bg-text-muted',
+  primary: '[&::-moz-progress-bar]:bg-primary-500 [&::-webkit-progress-value]:bg-primary-500',
+  info: '[&::-moz-progress-bar]:bg-primary-500 [&::-webkit-progress-value]:bg-primary-500',
+  success: '[&::-moz-progress-bar]:bg-status-green [&::-webkit-progress-value]:bg-status-green',
+  warning: '[&::-moz-progress-bar]:bg-status-yellow [&::-webkit-progress-value]:bg-status-yellow',
+  danger: '[&::-moz-progress-bar]:bg-status-red [&::-webkit-progress-value]:bg-status-red',
+}

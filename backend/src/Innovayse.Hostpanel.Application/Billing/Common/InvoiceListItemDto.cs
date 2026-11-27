@@ -13,7 +13,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="Tax">Calculated tax amount.</param>
 /// <param name="InvoiceDate">Invoice issue date (UTC).</param>
 /// <param name="PaidAt">Payment timestamp, null if never paid, kept after a refund.</param>
-/// <param name="PaymentMethod">Configured payment method label.</param>
+/// <param name="PaymentMethod">The payment method of the invoice, kept by the domain: the one chosen for it, otherwise the gateway of the first payment recorded on it; null while neither exists.</param>
 /// <param name="Currency">ISO 4217 code of the currency the invoice is issued in, which the amounts above are in.</param>
 public sealed record InvoiceListItemDto(
     int Id,

@@ -2,6 +2,7 @@
  * Pure helpers behind the dashboard panels: the greeting's part of the day, the signed change text and the
  * caption of a chart day.
  */
+import { formatShortDay } from '@/lib/format'
 
 /** Closed set of parts of the day the dashboard greets for; the value is also the locale key suffix. */
 export const DayPart = {
@@ -54,4 +55,4 @@ export const formatChange = (change: number): string => {
  * @returns For example "12 Mar".
  */
 export const formatDayCaption = (date: string, locale: string): string =>
-  new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
+  formatShortDay(new Date(`${date}T00:00:00Z`), locale)

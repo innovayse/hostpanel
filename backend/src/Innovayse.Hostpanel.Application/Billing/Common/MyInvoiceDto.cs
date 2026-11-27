@@ -24,7 +24,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="ReverseCharge">Whether the invoice was raised under the reverse charge: no tax, the client accounts for it.</param>
 /// <param name="ClientVatNumber">The client's VAT number the reverse charge was applied for; null when it does not apply.</param>
 /// <param name="IsBankTransferPending">Whether the client chose a manual bank transfer that staff have not yet confirmed or rejected. A <c>PaymentPending</c> invoice that is not (an imported one) is false, so the portal shows bank details only for a real transfer.</param>
-/// <param name="PaymentMethod">Preferred payment method; null when not specified.</param>
+/// <param name="PaymentMethod">The payment method of the invoice, kept by the domain: the one chosen for it, otherwise the gateway of the first payment recorded on it; null while neither exists.</param>
 /// <param name="Items">Line items on the invoice.</param>
 /// <param name="Transactions">Money movements recorded against the invoice.</param>
 public sealed record MyInvoiceDto(

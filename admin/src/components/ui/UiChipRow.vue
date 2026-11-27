@@ -6,7 +6,8 @@
  *
  * The fit is arithmetic over widths measured once: a hidden copy of every chip (and of the widest "+N" chip) is
  * measured when the labels change, and a resize only compares the row's width with those numbers, so no layout is read
- * while the row is being resized. The row's width comes from a `ResizeObserver`, which reports at most once per frame.
+ * while the row is being resized. The row's width comes from a `ResizeObserver`, which reports at most once per frame
+ * and also when a hidden row (a background tab) becomes visible, which is when the chips are measured if they could not be before.
  * Until the first measurement the row is invisible, so it never flashes a wrong count.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -53,15 +54,21 @@ const shownChips = computed<string[]>(() => props.chips.slice(0, visibleCount.va
 /** The chips the "+N" chip stands for. */
 const hiddenChips = computed<string[]>(() => props.chips.slice(visibleCount.value))
 
-/** Reads the width of every chip of the hidden copy, and the width of its last child, the "+N" chip. */
+/** Reads the width of every chip of the hidden copy, and the width of its last child, the "+N" chip; does nothing while the row is hidden. */
 const measure = (): void => {
   const copy = ruler.value
   if (copy === null) {
     return
   }
   const children = Array.from(copy.children) as HTMLElement[]
+  const more = children.at(-1)?.offsetWidth ?? 0
+  // A hidden row (a background tab, a closed panel) lays nothing out, so every width reads 0: keep waiting for the
+  // row to show, the observer measures then.
+  if (more === 0) {
+    return
+  }
   widths.value = children.slice(0, -1).map(child => child.offsetWidth)
-  moreWidth.value = children.at(-1)?.offsetWidth ?? 0
+  moreWidth.value = more
   gap.value = parseFloat(getComputedStyle(copy).columnGap) || 0
   measured.value = true
 }
@@ -76,6 +83,10 @@ onMounted(() => {
     available.value = row.value.clientWidth
     observer = new ResizeObserver((entries) => {
       available.value = entries[0]?.contentRect.width ?? available.value
+      // The row showing up after being hidden is a resize from 0: that is the moment the chips can be measured.
+      if (!measured.value) {
+        measure()
+      }
     })
     observer.observe(row.value)
   }

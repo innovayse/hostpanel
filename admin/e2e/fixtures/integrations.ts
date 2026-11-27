@@ -53,6 +53,7 @@ export const panelPlugin: PluginListItemDto = {
   category: 'Hosting / Provisioning',
   color: '#1a73e8',
   isLoaded: true,
+  isEnabled: true,
   iconUrl: null,
   isBuiltIn: false,
   status: PluginStatus.Loaded,

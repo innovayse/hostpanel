@@ -2,11 +2,13 @@
  * Mount tests for ServicesListView: rows render with price, cycle, status label and a client
  * link, the search, the status, product and billing cycle filters and the page are kept in the address and sent to
  * the API, each applied filter shows as a removable chip, and a refused load or an empty result shows the right
- * state.
+ * state, the row action opens the service under its client, and the header's add action opens the add dialog, which reloads
+ * the list once a service was added.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
+import AddExistingServiceModal from '@/components/clients/AddExistingServiceModal.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import ServicesListView from '@/views/ServicesListView.vue'
 import schema from '@/views/ServicesListView.schema'
@@ -251,5 +253,35 @@ describe('ServicesListView', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="services-row-11"]').text()).toContain('VPS Small')
+  })
+
+  it('links the row action to the service under its client', async () => {
+    stubList()
+    const wrapper = await mountList()
+
+    expect(wrapper.get('[data-testid="services-view-11"]').attributes('href')).toBe('/clients/3/services/11')
+  })
+
+  it('opens the add dialog from the header and reloads the list once a service was added', async () => {
+    const mock = stubRoutes({
+      'GET /api/services': () => json({ items: [service], totalCount: 1 }),
+      'GET /api/products': () => json(products),
+      'GET /api/clients': () => json({ items: [], totalCount: 0 }),
+      'GET /api/admin/servers/options': () => json([]),
+    })
+    const wrapper = await mountList()
+    expect(wrapper.findComponent(AddExistingServiceModal).exists()).toBe(false)
+    const loads = listUrls(mock).length
+
+    await wrapper.get('[data-testid="services-add"]').trigger('click')
+    await flushPromises()
+    const modal = wrapper.getComponent(AddExistingServiceModal)
+    expect(modal.props('clientId')).toBeUndefined()
+
+    modal.vm.$emit('added')
+    await flushPromises()
+
+    expect(wrapper.findComponent(AddExistingServiceModal).exists()).toBe(false)
+    expect(listUrls(mock).length).toBe(loads + 1)
   })
 })

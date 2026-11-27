@@ -125,11 +125,7 @@
       "app": "App mit eigenen Seiten"
     },
     "state": {
-      "label": "Zustand",
-      "running": "Geladen und aktiv",
-      "afterRestart": "Wird nach dem nächsten Neustart geladen",
-      "refused": "Beim Start abgelehnt",
-      "loadFailed": "Beim Start nicht geladen"
+      "label": "Zustand"
     },
     "sourceLabel": "Quelle",
     "source": {

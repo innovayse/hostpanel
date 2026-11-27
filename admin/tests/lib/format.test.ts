@@ -2,8 +2,8 @@
  * Tests for the date and text helpers in `lib/format`: the date-only and date-time formatters
  * fall back on empty or implausible input, `toDateInputValue` cuts the day.
  */
-import { describe, expect, it } from 'vitest'
-import { formatCompactNumber, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMonthDay, formatRelativeFromNow, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, joinParts, toDateInputValue } from '@/lib/format'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { formatCompactNumber, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatDecimal, formatElapsed, formatMediumDateTime, formatMonthDay, formatRelativeFromNow, shortMonthName, formatShare, formatSizeBytes, formatSizeMb, initialsOf, EMPTY_VALUE, formatTime, joinParts, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -127,6 +127,33 @@ describe('formatRelativeFromNow', () => {
   })
 })
 
+describe('formatRelativeFromNow in an engine without the locale data', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it.each([
+    ['hy', 'հիմա', '5 րոպե առաջ', '3 ժամ առաջ', '4 օր առաջ'],
+    ['en', 'now', '5 minutes ago', '3 hours ago', '4 days ago'],
+    ['ru', 'сейчас', '5 минут назад', '3 часа назад', '4 дня назад'],
+    ['de', 'jetzt', 'vor 5 Minuten', 'vor 3 Stunden', 'vor 4 Tagen'],
+    ['es', 'ahora', 'hace 5 minutos', 'hace 3 horas', 'hace 4 días'],
+  ])('words %s from the app messages instead of answering in English', (locale, now, minutes, hours, days) => {
+    vi.spyOn(Intl.RelativeTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(formatRelativeFromNow(ago(10), locale, NOW)).toBe(now)
+    expect(formatRelativeFromNow(ago(5 * 60), locale, NOW)).toBe(minutes)
+    expect(formatRelativeFromNow(ago(3 * 3600), locale, NOW)).toBe(hours)
+    expect(formatRelativeFromNow(ago(4 * 86400), locale, NOW)).toBe(days)
+  })
+
+  it('keeps the singular form for one unit', () => {
+    vi.spyOn(Intl.RelativeTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(formatRelativeFromNow(ago(86400), 'en', NOW)).toBe('1 day ago')
+  })
+})
+
 describe('formatClock', () => {
   it('writes the time of day with seconds in the viewer zone', () => {
     const local = new Date(2026, 9, 5, 8, 7, 9)
@@ -158,6 +185,48 @@ describe('formatMonthDay', () => {
 
   it('returns the input when it is not a day', () => {
     expect(formatMonthDay('soon', 'en')).toBe('soon')
+  })
+})
+
+describe('month names in an engine without the locale data', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it.each([
+    ['hy', 'Մրտ'],
+    ['en', 'Mar'],
+    ['ru', 'мар'],
+    ['de', 'Mär'],
+    ['es', 'mar'],
+  ])('writes the short March of %s from the app messages', (locale, march) => {
+    vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(shortMonthName(2, locale)).toBe(march)
+  })
+
+  it.each([
+    ['en', 'Mar 7'],
+    ['hy', '7 Մրտ'],
+    ['de', '7. Mär'],
+  ])('takes the order of the chart axis day from the app messages of %s', (locale, expected) => {
+    vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(formatMonthDay('2026-03-07', locale)).toBe(expected)
+  })
+
+  it('writes a medium date and time with the month from the app messages', () => {
+    vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(formatMediumDateTime(new Date(2026, 2, 7, 9, 5), 'hy')).toBe('7 Մրտ 2026, 09:05')
+  })
+
+  it('leaves the engine to write the medium date where it has the data', () => {
+    expect(formatMediumDateTime(new Date(2026, 2, 7, 9, 5), 'en')).toContain('Mar 7, 2026')
+  })
+
+  it('leaves the engine to write the month where it has the data', () => {
+    expect(shortMonthName(2, 'en')).toBe('Mar')
   })
 })
 

@@ -74,6 +74,12 @@ describe('checkI18n', () => {
     const source = "translate('common.save') translate(`calendar.months.${i}`)"
     expect(checkI18n({ catalogues: make(keys, keys, keys), source })).toEqual([])
   })
+
+  it('reads keys passed to translateIn() in a given locale like t()', () => {
+    const keys = ['calendar.monthsShort.1', 'duration.relativeNow']
+    const source = "translateIn('duration.relativeNow', locale) translateIn(`calendar.monthsShort.${month + 1}`, locale)"
+    expect(checkI18n({ catalogues: make(keys, keys, keys), source })).toEqual([])
+  })
 })
 
 describe('declaredKeys', () => {

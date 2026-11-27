@@ -24,7 +24,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useFilterQuery } from '@/composables/useFilterQuery'
 import { enumValueOf } from '@/lib/enumValue'
-import { filterInstalledPlugins, InstalledPluginState } from '@/lib/installedPlugins'
+import { filterInstalledPlugins, INSTALLED_PLUGIN_STATE_LOOK, InstalledPluginState } from '@/lib/installedPlugins'
 import { categoryLabel, fromInstalled } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
 import { PluginCardAction } from '@/types/plugin'
@@ -86,10 +86,7 @@ const filters = reactive(useFilterQuery(Object.values(InstalledFilterKey), { sea
 /** Options of the state filter: any state, then each state a plugin can be in. */
 const stateOptions = computed<{ value: string; label: string }[]>(() => [
   { value: '', label: t('shared.any') },
-  { value: InstalledPluginState.Active, label: t('shared.active') },
-  { value: InstalledPluginState.PendingRestart, label: t('plugins.pluginCard.pendingRestart') },
-  { value: InstalledPluginState.Refused, label: t('plugins.pluginCard.refused') },
-  { value: InstalledPluginState.LoadFailed, label: t('plugins.pluginCard.loadFailed') },
+  ...Object.values(InstalledPluginState).map(state => ({ value: state, label: t(INSTALLED_PLUGIN_STATE_LOOK[state].labelKey) })),
 ])
 
 /** Options of the category filter: any category, then each category the installed plugins have. */

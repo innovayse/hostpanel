@@ -2,17 +2,20 @@
 /**
  * Modal for adding a service to a client for a hosting account that already exists on a server:
  * restored after a reinstall, moved from another server, or set up by hand. The service starts
- * Active; nothing is created on the panel and no welcome mail is sent.
+ * Active; nothing is created on the panel and no welcome mail is sent. Opened from a client's own tab it
+ * knows the client; opened from the list of all services (no `clientId`) it asks which client the service belongs to.
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BILLING_CYCLE_OPTIONS } from '@/lib/constants'
 import { useServersStore } from '@/stores/servers'
+import { useClientOptions } from '@/composables/useClientOptions'
 import { useServicesStore } from '@/stores/services'
 import { useSettingsStore } from '@/stores/settings'
 import { AddExistingRefusal, BillingCycle } from '@/types/service'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
+import UiClientSelect from '@/components/ui/UiClientSelect.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -37,8 +40,8 @@ const { t } = useI18n()
 
 /** Props for AddExistingServiceModal. */
 const props = defineProps<{
-  /** The client the service is added to. */
-  clientId: number
+  /** The client the service is added to; absent when the modal is opened from the list of all services, which then asks. */
+  clientId?: number
 }>()
 
 const emit = defineEmits<{
@@ -56,6 +59,20 @@ const serversStore = useServersStore()
 
 /** Settings store, for the product choice. */
 const settingsStore = useSettingsStore()
+
+/** The clients the picker offers, and the call that loads them; only used while the modal is not bound to a client. */
+const { clients, load: loadClients } = useClientOptions()
+
+/** The client chosen in the picker, empty until one is chosen. */
+const chosenClient = ref<string | number | null>(null)
+
+/** The client the service goes to: the one the modal was opened for, else the one chosen; null while none is. */
+const ownerId = computed<number | null>(() => {
+  if (props.clientId !== undefined) {
+    return props.clientId
+  }
+  return chosenClient.value === null || chosenClient.value === '' ? null : Number(chosenClient.value)
+})
 
 /** Chosen product, or null. */
 const productId = ref<number | null>(null)
@@ -103,7 +120,7 @@ const serverOptions = computed(() =>
 
 /** True when every required field has a value. */
 const complete = computed(() =>
-  productId.value !== null && serverId.value !== null && domain.value.trim() !== '' && username.value.trim() !== '',
+  ownerId.value !== null && productId.value !== null && serverId.value !== null && domain.value.trim() !== '' && username.value.trim() !== '',
 )
 
 /**
@@ -117,7 +134,7 @@ const handleSave = async (): Promise<void> => {
   }
   saving.value = true
   const ok = await store.addExisting({
-    clientId: props.clientId,
+    clientId: ownerId.value as number, // `complete` guarantees a client
     productId: productId.value as number,
     billingCycle: billingCycle.value,
     recurringAmount: recurringAmount.value ?? 0,
@@ -150,6 +167,9 @@ onMounted(() => {
   store.actionError = null
   serversStore.fetchServerOptions()
   settingsStore.fetchProducts()
+  if (props.clientId === undefined) {
+    void loadClients()
+  }
 })
 </script>
 
@@ -161,6 +181,14 @@ onMounted(() => {
         {{ store.actionError }}
       </UiAlert>
       <UiGrid :columns="2" container>
+        <UiField v-if="clientId === undefined" :label="t('shared.client')" required :error="store.fieldErrors.clientId">
+          <UiClientSelect
+            v-model="chosenClient"
+            :clients="clients"
+            :placeholder="t('shared.selectAClient')"
+            data-testid="add-existing-service-client"
+          />
+        </UiField>
         <UiField :label="t('shared.productService')" required :error="store.fieldErrors.productId">
           <UiSelect
             v-model="productId"

@@ -7,12 +7,12 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiChart from '@/components/ui/UiChart.vue'
-import { toIsoDay } from '@/lib/format'
+import { formatMonthDay, toIsoDay } from '@/lib/format'
 import type { Transaction } from '@/types/transaction'
 import { ChartKind } from '@/utils/ui/chart'
 import type { UiChartSeries } from '@/utils/ui/chart'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** How many days back the chart reaches, today included. */
 const DAYS = 30
@@ -52,7 +52,7 @@ const days = computed<string[]>(() => {
 
 /** X-axis captions: the month and day of each ISO day. */
 const labels = computed<string[]>(() =>
-  days.value.map((day) => new Date(day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+  days.value.map((day) => formatMonthDay(day, locale.value)),
 )
 
 /** The one series: net revenue per day. */

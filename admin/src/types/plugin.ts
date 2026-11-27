@@ -246,6 +246,8 @@ export interface PluginListItemDto {
   isLoaded: boolean
   /** Whether the plugin ships with the server build; a built-in plugin cannot be removed. */
   isBuiltIn: boolean
+  /** Whether the plugin's enabled switch is on, the same flag its settings screen shows; a loaded plugin that is switched off does nothing. */
+  isEnabled: boolean
   /** Whether the row is a loaded plugin, one refused at startup (never enabled) or a removed plugin whose data is kept. */
   status: PluginStatus
   /** The manifest rule a refused plugin broke, null for a loaded one. */
@@ -734,8 +736,10 @@ export enum PluginCardAction {
 
 /** Closed set of badges a plugin card can wear; the strings are the parts of the test ids. */
 export enum PluginCardBadge {
-  /** The plugin is loaded and running. */
+  /** The plugin is loaded and switched on. */
   Active = 'active',
+  /** The plugin is loaded but its enabled switch is off, so it does nothing. */
+  Disabled = 'disabled',
   /** The plugin is on disk and waits for a restart to load. */
   PendingRestart = 'pendingRestart',
   /** The host skipped the plugin because it broke a manifest rule. */

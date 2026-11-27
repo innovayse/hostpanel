@@ -24,6 +24,9 @@ describe('UiSecretField', () => {
     expect(box.text()).toContain('Set')
     expect(box.find('svg').exists()).toBe(true)
     expect(box.classes()).toContain('h-10.5')
+    // The box never shrinks below the icon and the chip, so the chip keeps its full text at any width.
+    expect(box.classes()).toContain('min-w-fit')
+    expect(box.classes()).not.toContain('min-w-0')
     expect(wrapper.find('[data-testid="secret-input"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="secret-replace"]').classes()).toContain('h-8')
     expect(wrapper.get('[data-testid="secret-clear"]').classes()).toContain('h-8')

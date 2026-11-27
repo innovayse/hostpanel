@@ -2,7 +2,8 @@
  * Unit tests for the plugin card mappers: an installed plugin and a registry listing become the same card model.
  */
 import { describe, expect, it } from 'vitest'
-import { categoryLabel, fromInstalled, fromRegistry } from '@/lib/pluginCard'
+import { INSTALLED_PLUGIN_STATE_LOOK, InstalledPluginState } from '@/lib/installedPlugins'
+import { categoryLabel, fromInstalled, fromRegistry, stateLookOfBadge } from '@/lib/pluginCard'
 import { PluginCardBadge, PluginCategory, PluginChangeResult, PluginManifestRule, PluginPricing, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 
@@ -19,6 +20,7 @@ const installed: PluginListItemDto = {
   iconUrl: '/icon.png',
   isLoaded: true,
   isBuiltIn: false,
+  isEnabled: true,
   status: PluginStatus.Loaded,
   refusedRule: null,
   refusedDetail: null,
@@ -70,6 +72,10 @@ describe('fromInstalled', () => {
 
     expect(card.badges).toEqual([PluginCardBadge.Active])
     expect(card.failedChange).toBeNull()
+  })
+
+  it('does not call a loaded plugin whose enabled switch is off Active', () => {
+    expect(fromInstalled({ ...installed, isEnabled: false }, null).badges).toEqual([PluginCardBadge.Disabled])
   })
 
   it('maps a running plugin to an Active card', () => {
@@ -135,10 +141,10 @@ describe('fromRegistry', () => {
     })
   })
 
-  it('shows the installed version with Active, Staged and Update badges', () => {
+  it('shows the installed version with the installed state, Staged and Update badges', () => {
     const card = fromRegistry(
       { ...listed, installed: true, installedVersion: '1.0.0', updateAvailable: true },
-      '1.5.0',
+      { ...installed, stagedVersion: '1.5.0' },
     )
 
     expect(card.version).toBe('1.0.0')
@@ -147,10 +153,38 @@ describe('fromRegistry', () => {
     expect(card.stagedVersion).toBe('1.5.0')
   })
 
+  it('wears the same state badge as the installed card of the same plugin', () => {
+    const item = { ...listed, installed: true, installedVersion: '1.2.0' }
+    const rows = [
+      installed,
+      { ...installed, isEnabled: false },
+      { ...installed, isLoaded: false },
+      { ...installed, isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load' },
+    ]
+
+    for (const row of rows) {
+      expect(fromRegistry(item, row).badges[0]).toBe(fromInstalled(row, null).badges[0])
+    }
+  })
+
   it('treats missing tags and downloads as none', () => {
     const card = fromRegistry({ ...listed, tags: null, downloads: undefined }, null)
 
     expect(card.tags).toEqual([])
     expect(card.downloads).toBeNull()
+  })
+})
+
+describe('stateLookOfBadge', () => {
+  it('gives a state badge the look of its state', () => {
+    expect(stateLookOfBadge(PluginCardBadge.Active)).toBe(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.Active])
+    expect(stateLookOfBadge(PluginCardBadge.LoadFailed)).toBe(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.LoadFailed])
+  })
+
+  it('gives no look to a badge that is not a state', () => {
+    expect(stateLookOfBadge(PluginCardBadge.Update)).toBeNull()
+    expect(stateLookOfBadge(PluginCardBadge.Staged)).toBeNull()
+    expect(stateLookOfBadge(PluginCardBadge.ChangeFailed)).toBeNull()
+    expect(stateLookOfBadge(PluginCardBadge.BuiltIn)).toBeNull()
   })
 })

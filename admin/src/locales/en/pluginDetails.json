@@ -99,11 +99,7 @@
       "app": "App with its own pages"
     },
     "state": {
-      "label": "State",
-      "running": "Loaded and running",
-      "afterRestart": "Loads after the next restart",
-      "refused": "Refused at startup",
-      "loadFailed": "Failed to load at startup"
+      "label": "State"
     },
     "sourceLabel": "Source",
     "source": {

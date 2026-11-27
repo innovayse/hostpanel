@@ -3,9 +3,10 @@
  * category narrowing the Installed tab applies.
  */
 import { describe, expect, it } from 'vitest'
-import { filterInstalledPlugins, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
+import { filterInstalledPlugins, INSTALLED_PLUGIN_STATE_LOOK, InstalledPluginState, installedPluginState } from '@/lib/installedPlugins'
 import { PluginManifestRule, PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
+import { UiTone } from '@/utils/ui/tone'
 
 /**
  * Builds an installed plugin row; the overrides replace the defaults.
@@ -25,6 +26,7 @@ const makePlugin = (overrides: Partial<PluginListItemDto> = {}): PluginListItemD
   iconUrl: null,
   isLoaded: true,
   isBuiltIn: false,
+  isEnabled: true,
   status: PluginStatus.Loaded,
   refusedRule: null,
   refusedDetail: null,
@@ -41,6 +43,12 @@ describe('installedPluginState', () => {
     expect(installedPluginState(makePlugin({ status: PluginStatus.Refused, isLoaded: false }))).toBe(InstalledPluginState.Refused)
     expect(installedPluginState(makePlugin({ isLoaded: false }))).toBe(InstalledPluginState.PendingRestart)
     expect(installedPluginState(makePlugin())).toBe(InstalledPluginState.Active)
+  })
+
+  it('tells a loaded plugin whose enabled switch is off from an active one', () => {
+    expect(installedPluginState(makePlugin({ isEnabled: false }))).toBe(InstalledPluginState.Disabled)
+    expect(installedPluginState(makePlugin({ isEnabled: true }))).toBe(InstalledPluginState.Active)
+    expect(installedPluginState(makePlugin({ isEnabled: false, isLoaded: false }))).toBe(InstalledPluginState.PendingRestart)
   })
 
   it('tells an installed plugin whose assembly failed to load from a refused one, whatever its listing status', () => {
@@ -78,5 +86,16 @@ describe('filterInstalledPlugins', () => {
     expect(filterInstalledPlugins(all, { ...ANY, category: 'Email' })).toEqual([mail])
     expect(filterInstalledPlugins(all, { search: 'example', state: InstalledPluginState.PendingRestart, category: 'Email' })).toEqual([mail])
     expect(filterInstalledPlugins(all, { search: 'nothing', state: '', category: '' })).toEqual([])
+  })
+})
+
+describe('INSTALLED_PLUGIN_STATE_LOOK', () => {
+  it('names and colours every state once, with a locale key of its own', () => {
+    const looks = Object.values(InstalledPluginState).map(state => INSTALLED_PLUGIN_STATE_LOOK[state])
+
+    expect(new Set(looks.map(look => look.labelKey)).size).toBe(looks.length)
+    expect(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.Active].tone).toBe(UiTone.Success)
+    expect(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.PendingRestart].tone).toBe(UiTone.Warning)
+    expect(INSTALLED_PLUGIN_STATE_LOOK[InstalledPluginState.Refused].tone).toBe(UiTone.Danger)
   })
 })

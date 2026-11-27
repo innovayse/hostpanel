@@ -95,4 +95,40 @@ describe('UiChipRow', () => {
 
     expect(wrapper.get('[data-testid="ui-chip-row-more"]').text()).toBe('+2')
   })
+
+  it('draws the chips that fit once a row hidden at mount becomes visible', async () => {
+    let shown = false
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return shown ? (this.textContent ?? '').trim().length * 10 : 0
+    })
+    const wrapper = mount(UiChipRow, { props: { chips: ['#aaaa', '#bbbb', '#cccc'] } })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.classes()).toContain('invisible')
+
+    shown = true
+    reportResize?.([{ contentRect: { width: ROW_WIDTH } } as ResizeObserverEntry], {} as ResizeObserver)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.classes()).not.toContain('invisible')
+    expect(wrapper.findAll('[data-testid="ui-chip-row-chip"]').map(chip => chip.text())).toEqual(['#aaaa'])
+    expect(wrapper.get('[data-testid="ui-chip-row-more"]').text()).toBe('+2')
+  })
+
+  it('stops following the row when it unmounts', () => {
+    const disconnect = vi.fn()
+    vi.stubGlobal('ResizeObserver', class {
+      /** Takes the callback and ignores it. */
+      constructor() {}
+      /** Watches nothing. */
+      observe = (): void => {}
+      /** Records the stop. */
+      disconnect = disconnect
+    })
+    const wrapper = mount(UiChipRow, { props: { chips: ['#a'] } })
+
+    wrapper.unmount()
+
+    expect(disconnect).toHaveBeenCalledTimes(1)
+  })
 })

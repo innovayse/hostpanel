@@ -1,5 +1,9 @@
 {
   "years": "{n} J.",
   "months": "{n} Mon.",
-  "lessThanMonth": "Weniger als ein Monat"
+  "lessThanMonth": "Weniger als ein Monat",
+  "relativeNow": "jetzt",
+  "minutesAgo": "vor {n} Minute | vor {n} Minuten",
+  "hoursAgo": "vor {n} Stunde | vor {n} Stunden",
+  "daysAgo": "vor {n} Tag | vor {n} Tagen"
 }

@@ -33,6 +33,7 @@ import { formatCompactNumber, joinParts } from '@/lib/format'
 import { Icon } from '@/lib/icons'
 import { PluginCardBadge } from '@/types/plugin'
 import { failureSentence } from '@/lib/pluginChange'
+import { stateLookOfBadge } from '@/lib/pluginCard'
 import type { PluginCardModel } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiSize } from '@/utils/ui/size'
@@ -73,26 +74,36 @@ const tagLabels = computed<string[]>(() => props.plugin.tags.map(tag => t('plugi
 /** True when the badge row has anything to draw: a badge, or the placeholder of the update badge. */
 const hasBadgeRow = computed<boolean>(() => props.plugin.badges.length > 0 || props.checkingUpdate === true)
 
-/** Tone of each badge. */
-const badgeTone: Record<PluginCardBadge, UiTone> = {
-  [PluginCardBadge.Active]: UiTone.Success,
-  [PluginCardBadge.PendingRestart]: UiTone.Warning,
-  [PluginCardBadge.Refused]: UiTone.Danger,
-  [PluginCardBadge.LoadFailed]: UiTone.Danger,
-  [PluginCardBadge.Staged]: UiTone.Info,
-  [PluginCardBadge.ChangeFailed]: UiTone.Danger,
-  [PluginCardBadge.Update]: UiTone.Warning,
-  [PluginCardBadge.BuiltIn]: UiTone.Neutral,
+/**
+ * Tone of a badge: the state's own tone for a state badge, the badge's for the rest.
+ *
+ * @param badge - The badge to colour.
+ * @returns The tone of the badge.
+ */
+const badgeTone = (badge: PluginCardBadge): UiTone => {
+  const look = stateLookOfBadge(badge)
+  if (look !== null) {
+    return look.tone
+  }
+  switch (badge) {
+    case PluginCardBadge.Staged:
+      return UiTone.Info
+    case PluginCardBadge.ChangeFailed:
+      return UiTone.Danger
+    case PluginCardBadge.Update:
+      return UiTone.Warning
+    default:
+      return UiTone.Neutral
+  }
 }
 
-/** The badges that are a state of the plugin and so carry a status dot. */
-const dotBadges: PluginCardBadge[] = [
-  PluginCardBadge.Active,
-  PluginCardBadge.PendingRestart,
-  PluginCardBadge.Refused,
-  PluginCardBadge.LoadFailed,
-  PluginCardBadge.ChangeFailed,
-]
+/**
+ * Whether a badge carries a status dot: the state badges and the failed change.
+ *
+ * @param badge - The badge to draw.
+ * @returns True for a state of the plugin or a failed change.
+ */
+const hasDot = (badge: PluginCardBadge): boolean => stateLookOfBadge(badge) !== null || badge === PluginCardBadge.ChangeFailed
 
 /**
  * Text of a badge, with the version it names where it names one.
@@ -101,22 +112,18 @@ const dotBadges: PluginCardBadge[] = [
  * @returns The label in the operator's language.
  */
 const badgeLabel = (badge: PluginCardBadge): string => {
+  const look = stateLookOfBadge(badge)
+  if (look !== null) {
+    return t(look.labelKey)
+  }
   switch (badge) {
-    case PluginCardBadge.Active:
-      return t('shared.active')
-    case PluginCardBadge.PendingRestart:
-      return t('plugins.pluginCard.pendingRestart')
-    case PluginCardBadge.Refused:
-      return t('plugins.pluginCard.refused')
-    case PluginCardBadge.LoadFailed:
-      return t('plugins.pluginCard.loadFailed')
     case PluginCardBadge.Staged:
       return t('plugins.pluginCard.staged', { version: props.plugin.stagedVersion })
     case PluginCardBadge.ChangeFailed:
       return t('plugins.pluginCard.changeFailed')
     case PluginCardBadge.Update:
       return t('plugins.pluginCard.updateAvailable', { version: props.plugin.updateVersion })
-    case PluginCardBadge.BuiltIn:
+    default:
       return t('plugins.pluginCard.builtIn')
   }
 }
@@ -162,8 +169,8 @@ const metaParts = computed<string[]>(() =>
       <UiBadge
         v-for="badge in plugin.badges"
         :key="badge"
-        :tone="badgeTone[badge]"
-        :dot="dotBadges.includes(badge)"
+        :tone="badgeTone(badge)"
+        :dot="hasDot(badge)"
         small
         :title="badgeLabel(badge)"
         :data-testid="`plugin-card-badge-${badge}-${plugin.id}`"

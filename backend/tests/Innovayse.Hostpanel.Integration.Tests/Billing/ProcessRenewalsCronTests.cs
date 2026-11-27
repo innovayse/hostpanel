@@ -481,6 +481,10 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
             await context.SaveChangesAsync(CancellationToken.None);
             var invoice = Invoice.Create(client.Id, TestMoments.Seeded.AddDays(7), "USD", TestMoments.Seeded);
             invoice.AddItem("Hosting", 10m, 1);
+
+            // The method is chosen up front, so neither payment writes the invoice row (a first payment on an invoice with no
+            // method records its gateway there) and the two saves race only on what this test is about.
+            invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, "Manual", invoice.TaxRate);
             context.Invoices.Add(invoice);
             await context.SaveChangesAsync(CancellationToken.None);
             invoiceId = invoice.Id;

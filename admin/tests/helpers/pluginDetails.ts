@@ -84,6 +84,7 @@ export const makeInstalled = (overrides: Partial<PluginListItemDto> = {}): Plugi
   iconUrl: null,
   isLoaded: true,
   isBuiltIn: false,
+  isEnabled: true,
   status: PluginStatus.Loaded,
   refusedRule: null,
   refusedDetail: null,

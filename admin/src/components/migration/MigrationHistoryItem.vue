@@ -67,7 +67,7 @@ const createdAgo = computed<string>(() => formatRelativeFromNow(props.job.create
           {{ t(migrationStatusLabelKey[job.status]) }}
         </UiBadge>
       </UiStack>
-      <UiProgress :value="job.overallPercent" :label="t('migration.migrationProgressCard.jobId', { id: job.id })" />
+      <UiProgress :value="job.overallPercent" :tone="migrationStatusTone[job.status]" :label="t('migration.migrationProgressCard.jobId', { id: job.id })" />
       <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Xs" data-testid="migration-job-created">
         {{ createdAgo }}
       </UiText>

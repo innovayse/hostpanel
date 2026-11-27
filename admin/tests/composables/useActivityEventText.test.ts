@@ -68,6 +68,13 @@ describe('useActivityEventText', () => {
     expect(text.time(activityEvent({ occurredAt: '2026-12-05T09:00:00Z' }), NOW)).toBe('On Dec 5')
   })
 
+  it('words the time in Armenian, not in English', () => {
+    const time = textIn('hy').time(activityEvent({ occurredAt: '2026-10-11T09:00:00Z' }), NOW)
+
+    expect(time).not.toContain('ago')
+    expect(time).toMatch(/[Ա-֏]/)
+  })
+
   it('words the time in the active locale', () => {
     const time = textIn('ru').time(activityEvent({ occurredAt: '2026-10-14T09:00:00Z' }), NOW)
 

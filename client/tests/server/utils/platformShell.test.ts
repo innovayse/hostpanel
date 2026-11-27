@@ -55,8 +55,9 @@ describe('readWidgetScript', () => {
   it('keeps one copy per file', async () => {
     await platformShell.readWidgetScript('header.js')
     await platformShell.readWidgetScript('header.v2.js')
+    await platformShell.readWidgetScript('account-elements.js')
 
-    expect(shell.requests.map(request => request.url)).toEqual(['/widget/header.js', '/widget/header.v2.js'])
+    expect(shell.requests.map(request => request.url)).toEqual(['/widget/header.js', '/widget/header.v2.js', '/widget/account-elements.js'])
   })
 
   it('asks the shell again once the copy is older than the cache window', async () => {
@@ -92,7 +93,7 @@ describe('readWidgetScript', () => {
     expect(error).toMatchObject({ statusCode: 502, data: { code: platformShell.SHELL_UNAVAILABLE } })
   })
 
-  it('offers only the two known files', () => {
-    expect([...platformShell.WIDGET_FILES].sort()).toEqual(['header.js', 'header.v2.js'])
+  it('offers only the three known files', () => {
+    expect([...platformShell.WIDGET_FILES].sort()).toEqual(['account-elements.js', 'header.js', 'header.v2.js'])
   })
 })

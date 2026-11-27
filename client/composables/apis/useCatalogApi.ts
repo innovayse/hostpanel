@@ -13,6 +13,9 @@ import { apiFetch } from '~/composables/useApi'
 import type { CatalogBundle } from '~/types/catalogbundle'
 import type { CountryOption } from '~/types/countryoption'
 import type { DomainCheckResult } from '~/types/domaincheckresult'
+import type { DomainField } from '~/types/domainfield'
+import type { DomainFieldHolder } from '~/types/domainfieldholder'
+import type { DomainFieldOperation } from '~/types/domainfieldoperation'
 import type { DomainProduct } from '~/types/domainproduct'
 import type { PortalCurrency } from '~/types/portalcurrency'
 import type { PortalProduct } from '~/types/portalproduct'
@@ -145,6 +148,22 @@ export const useCatalogApi = () => {
     })
 
   /**
+   * Reads the extra fields the registrar plugin asks for a domain and an operation.
+   *
+   * @param domain - Fully qualified domain name.
+   * @param operation - What is about to be done with it.
+   * @param holder - The kind of registrant.
+   * @returns The fields in the plugin's order, texts in the reader's language; empty when the registrar asks for none.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchDomainFields = (
+    domain: string,
+    operation: DomainFieldOperation,
+    holder: DomainFieldHolder
+  ): Promise<DomainField[]> =>
+    read<DomainField[]>('/api/portal/public/domain-fields', { query: { domain, operation, holder } })
+
+  /**
    * Reads the country list the address forms offer.
    *
    * @returns The country options.
@@ -163,6 +182,7 @@ export const useCatalogApi = () => {
     fetchCountries,
     fetchTldPricing,
     fetchSlides,
-    checkDomain
+    checkDomain,
+    fetchDomainFields
   }
 }

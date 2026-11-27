@@ -349,6 +349,12 @@ public sealed class SecretRecordPrintingTests
             return new[] { text };
         }
 
+        // The registry's extra values of a domain order: a map by field key whose values can be personal data.
+        if (memberType == typeof(IReadOnlyDictionary<string, string>))
+        {
+            return new Dictionary<string, string> { [name] = text };
+        }
+
         return null;
     }
 

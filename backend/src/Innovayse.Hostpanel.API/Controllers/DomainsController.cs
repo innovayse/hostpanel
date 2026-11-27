@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Application.Domains.Commands.UpdateDomain;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Queries.CheckDomainAvailability;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetDomain;
+using Innovayse.Hostpanel.Application.Domains.Queries.GetDomainFields;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetWhois;
 using Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
 using Innovayse.Hostpanel.Application.Domains.Queries.ListUpcomingDomainRenewals;
@@ -103,7 +104,7 @@ public sealed class DomainsController : BaseApiController
     /// <c>REGISTRAR_OPERATION_UNSUPPORTED</c> when the registrar does not offer registration; 404 with
     /// <c>REGISTRAR_DOMAIN_NOT_FOUND</c> when the registrar does not know the name; 409 also with <c>REGISTRAR_TLD_NOT_SUPPORTED</c>
     /// when the registrar does not sell the extension; 422 with <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c>, <c>REGISTRAR_NAMESERVER_INVALID</c>
-    /// or <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects what it was sent;
+    /// or <c>REGISTRAR_DNS_RECORD_INVALID</c> when the registrar rejects what it was sent, or with <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values (<c>extendedAttributes</c>) do not match the fields the registrar plugin declares for the domain;
     /// 502 when the registrar rejects the request; 503 also with <c>REGISTRAR_ACCESS_DENIED</c> when the registrar refuses the saved credentials; 401 without a session; 403 for a caller who is not staff;
     /// 400 when the body, query or route fails validation; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
     /// </returns>
@@ -131,7 +132,7 @@ public sealed class DomainsController : BaseApiController
     /// 201 with a link to the new domain; 404 with <c>REGISTRAR_DOMAIN_NOT_FOUND</c> when the registrar
     /// does not know the name; 409 also with <c>REGISTRAR_TLD_NOT_SUPPORTED</c> or <c>REGISTRAR_TRANSFER_NOT_ALLOWED</c> when the registrar
     /// does not sell the extension or does not allow the transfer; 422 with <c>REGISTRAR_EPP_CODE_INVALID</c> or
-    /// <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the authorization code or the contact;
+    /// <c>REGISTRAR_CONTACT_VALIDATION_FAILED</c> when the registrar rejects the authorization code or the contact, or with <c>DOMAIN_FIELD_REQUIRED</c>, <c>DOMAIN_FIELD_INVALID</c> or <c>DOMAIN_FIELD_UNKNOWN</c> when the registry's extra values (<c>extendedAttributes</c>) do not match the fields the registrar plugin declares for the domain;
     /// 502 when the registrar rejects the transfer; 503 also with <c>REGISTRAR_ACCESS_DENIED</c> when the registrar refuses the saved credentials; 401 without a session; 403 for a caller who is not staff;
     /// 400 when the body, query or route fails validation; 409 with <c>REGISTRAR_OPERATION_UNSUPPORTED</c> or <c>REGISTRAR_DOMAIN_NOT_ACTIVE</c> when the registrar does not offer the operation or the domain is not active there; 429 when the rate limit is hit; 503 with <c>REGISTRAR_NOT_CONFIGURED</c> when no registrar is set up.
     /// </returns>
@@ -352,6 +353,27 @@ public sealed class DomainsController : BaseApiController
         [FromBody] CheckDomainAvailabilityQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<DomainCheckResultDto>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Lists the extra fields the registrar plugin of a domain's extension asks for an operation, so a screen can render them next
+    /// to the standard contact.
+    /// </summary>
+    /// <param name="query">The domain, the operation (<c>register</c>, <c>transfer</c> or <c>contactChange</c>) and, optionally, the kind of registrant.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the fields in declared order, their texts in the caller's language (an empty list when the registrar asks for
+    /// nothing); 400 <c>VALIDATION_ERROR</c> when the name is not a well-formed domain name or the operation is none of the
+    /// three. Anonymous, like the availability check: the storefront needs it before sign-in; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("fields")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(IReadOnlyList<DomainFieldDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetFieldsAsync([FromQuery] GetDomainFieldsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<DomainFieldDto>>>(query, ct);
         return HandleResult(outcome);
     }
 

@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 /// <param name="PaymentMethod">Payment method label to record on the domain; null if not set.</param>
 /// <param name="Years">Registration period bought with the transfer, in years (1-10).</param>
 /// <param name="PriceCurrency">ISO 4217 code of the currency the amounts are in (the paid order's currency); null bills in the client's billing currency.</param>
+/// <param name="ExtendedAttributes">The registry's extra values by field key (see <c>GET /api/domains/fields</c>), checked against the fields the registrar plugin declares; empty or absent for none. Printed masked, they can be personal data.</param>
 /// <param name="OrderId">
 /// The order whose line transfers the domain in, set only by order fulfilment and stored on the domain so a retry of the
 /// line can tell the transfer it made from a domain the client holds from elsewhere. Never bound from a request body.
@@ -28,6 +29,7 @@ public sealed record TransferDomainCommand(
     string? PaymentMethod = null,
     int Years = 1,
     string? PriceCurrency = null,
+    [property: SecretMember] IReadOnlyDictionary<string, string>? ExtendedAttributes = null,
     [property: JsonIgnore] int? OrderId = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>

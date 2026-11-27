@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
@@ -40,6 +41,18 @@ public sealed class OrderItem : BaseEntity
 
     /// <summary>Gets the domain registration or transfer period in years. Null for hosting items.</summary>
     public int? Years { get; private set; }
+
+    /// <summary>
+    /// Gets the stored form of <see cref="ExtendedAttributes"/>, a JSON object, or <see langword="null"/> when the line carries
+    /// none. The column is encrypted (see <c>ProtectedColumns</c>), because the values can be personal data.
+    /// </summary>
+    public string? ExtendedAttributesJson { get; private set; }
+
+    /// <summary>
+    /// Gets the extra values the registry asks for, taken at checkout and handed to the registrar plugin when the line registers
+    /// or transfers the domain. Empty for every other line.
+    /// </summary>
+    public DomainExtendedAttributes ExtendedAttributes => DomainExtendedAttributes.Parse(ExtendedAttributesJson);
 
     /// <summary>Gets the first payment amount snapshot at order time.</summary>
     public decimal FirstPaymentAmount { get; private set; }
@@ -154,6 +167,7 @@ public sealed class OrderItem : BaseEntity
     /// <param name="domainAction">The domain action. Null for hosting.</param>
     /// <param name="eppCode">EPP authorization code for transfers.</param>
     /// <param name="years">Registration period in years for domain items.</param>
+    /// <param name="extendedAttributes">The registry's extra values for a domain registration or transfer; <see langword="null"/> for none.</param>
     /// <returns>A new pending <see cref="OrderItem"/>.</returns>
     internal static OrderItem Create(
         int productId,
@@ -165,7 +179,8 @@ public sealed class OrderItem : BaseEntity
         string? hostname,
         DomainAction? domainAction = null,
         string? eppCode = null,
-        int? years = null)
+        int? years = null,
+        DomainExtendedAttributes? extendedAttributes = null)
     {
         return new OrderItem
         {
@@ -179,6 +194,7 @@ public sealed class OrderItem : BaseEntity
             DomainAction = domainAction,
             EppCode = eppCode,
             Years = years,
+            ExtendedAttributesJson = extendedAttributes?.Serialize(),
             Status = OrderItemStatus.Pending,
         };
     }

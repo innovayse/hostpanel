@@ -60,7 +60,8 @@ describe('contactFromRegistrant', () => {
   it('maps the registrar contact and reads the null optional lines as empty', () => {
     expect(contactFromRegistrant({
       firstName: 'Ada', lastName: 'Lovelace', organization: null, email: 'ada@example.com', phone: '+44 1',
-      address1: '1 Main St', address2: null, city: 'London', state: 'LDN', postalCode: 'N1', country: 'GB'
+      address1: '1 Main St', address2: null, city: 'London', state: 'LDN', postalCode: 'N1', country: 'GB',
+      extendedAttributes: {}
     })).toEqual({
       firstName: 'Ada', lastName: 'Lovelace', organization: '', email: 'ada@example.com',
       address1: '1 Main St', address2: '', city: 'London', state: 'LDN',

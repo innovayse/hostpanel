@@ -58,6 +58,14 @@ internal static class PluginRuleMap
             PackageManifestRule.MinHostVersionBelowSdk => PluginManifestRule.MinHostVersionBelowSdk,
             PackageManifestRule.SshAgentProfileInvalid => PluginManifestRule.SshAgentProfileInvalid,
             PackageManifestRule.SshAgentProfileNotAllowed => PluginManifestRule.SshAgentProfileNotAllowed,
+            PackageManifestRule.DomainFieldsNotRegistrar => PluginManifestRule.DomainFieldsNotRegistrar,
+            PackageManifestRule.DomainFieldKeyInvalid => PluginManifestRule.DomainFieldKeyInvalid,
+            PackageManifestRule.DomainZoneInvalid => PluginManifestRule.DomainZoneInvalid,
+            PackageManifestRule.DomainZoneDuplicate => PluginManifestRule.DomainZoneDuplicate,
+            PackageManifestRule.DomainOperationsInvalid => PluginManifestRule.DomainOperationsInvalid,
+            PackageManifestRule.DomainFieldOptionsInvalid => PluginManifestRule.DomainFieldOptionsInvalid,
+            PackageManifestRule.DomainFieldPatternInvalid => PluginManifestRule.DomainFieldPatternInvalid,
+            PackageManifestRule.DomainFieldLengthInvalid => PluginManifestRule.DomainFieldLengthInvalid,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this package rule."),
         };
     }

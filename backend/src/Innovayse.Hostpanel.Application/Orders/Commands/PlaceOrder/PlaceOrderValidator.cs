@@ -62,6 +62,13 @@ public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
             item.RuleFor(i => i.ProductId).GreaterThan(0).WithMessage(L["PlaceOrderItemProductIdInvalid"]);
             item.RuleFor(i => i.BillingCycle).IsInEnum().WithMessage(L["PlaceOrderItemBillingCycleInvalid"]);
 
+            // The registry's extra values belong to a registration or a transfer; the fields they must match are the
+            // registrar plugin's and need the domain's extension, so the handler checks them.
+            item.RuleFor(i => i.ExtendedAttributes)
+                .Must(attributes => attributes is null or { Count: 0 })
+                .When(i => i.DomainAction is not (DomainAction.Register or DomainAction.Transfer))
+                .WithMessage(L["PlaceOrderItemExtendedAttributesNotAllowed"]);
+
             // Domain lines are checked here so the handler never prices or saves a line with an
             // unknown action, no name to price, or a transfer that could never be carried out.
             item.When(i => i.DomainAction is not null, () =>

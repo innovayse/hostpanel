@@ -41,6 +41,10 @@ import { DomainActionOutcome } from '~/types/domainactionoutcome'
 import type { AccountContact } from '~/types/accountcontact'
 import type { ClientUser } from '~/types/clientuser'
 import type { DomainContactFields } from '~/types/domaincontactfields'
+import type { DomainField } from '~/types/domainfield'
+import type { DomainFieldHolder } from '~/types/domainfieldholder'
+import type { DomainFieldOperation } from '~/types/domainfieldoperation'
+import type { DomainRegistrant } from '~/types/domainregistrant'
 import type { DomainDetail } from '~/types/domaindetail'
 import type { WhoisRecord } from '~/types/whoisrecord'
 import type { DomainOrderResult } from '~/types/domainorderresult'
@@ -299,6 +303,9 @@ export const useDomainsStore = defineStore('domains', () => {
   /** Whether a transfer order is in flight. */
   const transferSaving = ref(false)
 
+  /** The refusal of each extra domain field by key from the last failed transfer order; empty when there is none. */
+  const transferFieldErrors = ref<Record<string, string>>({})
+
   /**
    * Raises an order to transfer a domain in.
    *
@@ -308,11 +315,13 @@ export const useDomainsStore = defineStore('domains', () => {
   const placeTransfer = async (transfer: Record<string, unknown>): Promise<DomainActionOutcome> => {
     transferSaving.value = true
     transferError.value = ''
+    transferFieldErrors.value = {}
     try {
       transferResult.value = await api.createTransferOrder(transfer)
       return DomainActionOutcome.Done
     } catch (e: unknown) {
       transferError.value = apiErrorMessage(e)
+      transferFieldErrors.value = apiFieldErrors(e)
       return DomainActionOutcome.Failed
     } finally {
       transferSaving.value = false
@@ -506,6 +515,9 @@ export const useDomainsStore = defineStore('domains', () => {
   /** The sentence for the last failed WHOIS save; empty when there is none. */
   const whoisError = ref('')
 
+  /** The refusal of each extra domain field by key from the last failed save; empty when there is none. */
+  const whoisFieldErrors = ref<Record<string, string>>({})
+
   /**
    * Reads the registry's WHOIS record of the domain.
    *
@@ -527,13 +539,36 @@ export const useDomainsStore = defineStore('domains', () => {
    * Reads the registrant contact the registrar currently holds for the domain.
    *
    * @param id - Domain id.
-   * @returns The contact as form fields, or null when the registrar holds none or it could not be read.
+   * @returns The contact as form fields with the registry's extra values, or null when the registrar holds none or it could
+   * not be read.
    */
-  const loadRegistrant = async (id: string): Promise<DomainContactFields | null> => {
+  const loadRegistrant = async (id: string): Promise<DomainRegistrant | null> => {
     try {
-      return contactFromRegistrant(await api.fetchContact(id))
+      const registrant = await api.fetchContact(id)
+      return { contact: contactFromRegistrant(registrant), extendedAttributes: registrant.extendedAttributes ?? {} }
     } catch {
       return null
+    }
+  }
+
+  /**
+   * Reads the extra fields the registrar plugin asks for a domain and an operation.
+   *
+   * @param domainName - Fully qualified domain name.
+   * @param operation - What is about to be done with it.
+   * @param holder - The kind of registrant.
+   * @returns The fields in the plugin's order; empty when the registrar asks for none or they could not be read (the
+   * order itself is checked by the API, so an unread form never lets a wrong value through).
+   */
+  const loadDomainFields = async (
+    domainName: string,
+    operation: DomainFieldOperation,
+    holder: DomainFieldHolder
+  ): Promise<DomainField[]> => {
+    try {
+      return await catalog.fetchDomainFields(domainName, operation, holder)
+    } catch {
+      return []
     }
   }
 
@@ -555,16 +590,24 @@ export const useDomainsStore = defineStore('domains', () => {
    *
    * @param id - Domain id.
    * @param contact - The registrant contact to write.
-   * @returns How the save ended; on failure {@link whoisError} holds the sentence.
+   * @param extendedAttributes - The registry's extra values by field key; they replace the stored ones.
+   * @returns How the save ended; on failure {@link whoisError} holds the sentence and {@link whoisFieldErrors} the
+   * refusal of each field.
    */
-  const saveWhois = async (id: string, contact: DomainContactFields): Promise<DomainActionOutcome> => {
+  const saveWhois = async (
+    id: string,
+    contact: DomainContactFields,
+    extendedAttributes: Record<string, string>
+  ): Promise<DomainActionOutcome> => {
     whoisSaving.value = true
     whoisError.value = ''
+    whoisFieldErrors.value = {}
     try {
-      await api.setWhois(id, contact)
+      await api.setWhois(id, contact, extendedAttributes)
       return DomainActionOutcome.Done
     } catch (e: unknown) {
       whoisError.value = apiErrorMessage(e)
+      whoisFieldErrors.value = apiFieldErrors(e)
       return DomainActionOutcome.Failed
     } finally {
       whoisSaving.value = false
@@ -588,6 +631,8 @@ export const useDomainsStore = defineStore('domains', () => {
     eppCode.value = ''
     eppError.value = ''
     whoisError.value = ''
+    whoisFieldErrors.value = {}
+    transferFieldErrors.value = {}
   }
 
   return {
@@ -638,6 +683,9 @@ export const useDomainsStore = defineStore('domains', () => {
     whoisLoading,
     whoisSaving,
     whoisError,
+    whoisFieldErrors,
+    loadDomainFields,
+    transferFieldErrors,
     loadWhois,
     loadRegistrant,
     loadContacts,

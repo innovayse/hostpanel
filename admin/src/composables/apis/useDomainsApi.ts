@@ -8,8 +8,12 @@
 import { buildQuery, useApi } from '@/composables/useApi'
 import type {
   DnsRecordPayload,
+  DomainContactDetails,
   DomainContactPayload,
   DomainDetail,
+  DomainField,
+  DomainFieldHolder,
+  DomainFieldOperation,
   DomainFilter,
   DomainRegistration,
   DomainToggle,
@@ -159,10 +163,42 @@ export const useDomainsApi = () => {
    *
    * @param id - Domain id.
    * @param contact - The contact fields.
+   * @param extendedAttributes - The registry's extra values by field key; they replace the stored ones.
    * @returns Nothing.
    */
-  const modifyContact = (id: number | string, contact: DomainContactPayload): Promise<void> =>
-    request<void>(`${ApiPath.Domains}/${id}/modify-contact`, { method: HttpMethod.Post, body: JSON.stringify(contact) })
+  const modifyContact = (
+    id: number | string,
+    contact: DomainContactPayload,
+    extendedAttributes: Record<string, string>,
+  ): Promise<void> =>
+    request<void>(`${ApiPath.Domains}/${id}/modify-contact`, {
+      method: HttpMethod.Post,
+      body: JSON.stringify({ ...contact, extendedAttributes }),
+    })
+
+  /**
+   * Reads the registrant contact the registrar holds and the registry's extra values stored beside it.
+   *
+   * @param id - Domain id.
+   * @returns The contact and its extra values.
+   */
+  const getContact = (id: number | string): Promise<DomainContactDetails> =>
+    request<DomainContactDetails>(`${ApiPath.Domains}/${id}/contact`)
+
+  /**
+   * Reads the extra fields the registrar plugin asks for a domain and an operation.
+   *
+   * @param domain - Fully qualified domain name.
+   * @param operation - What is about to be done with it.
+   * @param holder - The kind of registrant.
+   * @returns The fields in the plugin's order, texts in the reader's language; empty when the registrar asks for none.
+   */
+  const getDomainFields = (
+    domain: string,
+    operation: DomainFieldOperation,
+    holder: DomainFieldHolder,
+  ): Promise<DomainField[]> =>
+    request<DomainField[]>(`${ApiPath.Domains}/fields${buildQuery({ domain, operation, holder })}`)
 
   /**
    * Starts an outgoing transfer and reads back the EPP code.
@@ -247,7 +283,7 @@ export const useDomainsApi = () => {
   return {
     listDomains, getDomain, updateDomain, registerDomain, renewDomain,
     setAutoRenew, setRegistrarAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
-    modifyContact, initiateOutgoingTransfer, cancelTransfer,
+    modifyContact, getContact, getDomainFields, initiateOutgoingTransfer, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,
     addForwardingRule, updateForwardingRule, deleteForwardingRule,
   }

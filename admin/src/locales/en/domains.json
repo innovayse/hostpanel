@@ -22,5 +22,9 @@
     "import": "Import",
     "previousPage": "Previous",
     "page": "Page {page}"
+  },
+  "domainFields": {
+    "title": "Registry details",
+    "note": "The registry for this domain asks for these details beside the contact. They are kept encrypted and sent to the registrar as they are."
   }
 }

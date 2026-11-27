@@ -47,6 +47,14 @@ internal static class PluginManifestValidator
     {
         ArgumentNullException.ThrowIfNull(manifest);
 
+        // First, because it names the real cause: a plugin built on an SDK newer than the host ships fails the package's
+        // own minHostVersion check as well (no host release carries that SDK yet), and that generic refusal would hide it.
+        var newer = CheckSdkNotNewerThanHost(manifest);
+        if (newer is not null)
+        {
+            return newer;
+        }
+
         var violation = PluginManifestChecker.Validate(manifest, Options);
         if (violation is not null)
         {
@@ -55,8 +63,7 @@ internal static class PluginManifestValidator
 
         // What follows is what only the host knows: the access kinds and capabilities it defines and whether it serves
         // the plugin's endpoints. The package knows none of these.
-        return CheckSdkNotNewerThanHost(manifest)
-            ?? CheckHostAccess(manifest)
+        return CheckHostAccess(manifest)
             ?? PluginCapabilityRules.Validate(manifest)
             ?? CheckServerModules(manifest)
             ?? CheckEndpointsDeclared(manifest)

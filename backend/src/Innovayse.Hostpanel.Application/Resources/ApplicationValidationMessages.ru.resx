@@ -1813,4 +1813,13 @@
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
     <value>Это недопустимый идентификатор уведомления.</value>
   </data>
+  <data name="DomainFieldsOperationInvalid" xml:space="preserve">
+    <value>Операция должна быть register, transfer или contactChange.</value>
+  </data>
+  <data name="DomainFieldsHolderInvalid" xml:space="preserve">
+    <value>Тип владельца должен быть any, individual или organization.</value>
+  </data>
+  <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
+    <value>Данные реестра принимаются только в строке регистрации или переноса домена.</value>
+  </data>
 </root>

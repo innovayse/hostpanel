@@ -16,5 +16,6 @@ export const CatalogPath = {
   BillingCurrencies: '/api/portal/public/billing-currencies',
   TldPricing: '/api/portal/public/tld-pricing',
   DomainCheck: '/api/portal/public/domain-check',
+  DomainFields: '/api/portal/public/domain-fields',
   Countries: '/api/portal/public/countries',
 } as const

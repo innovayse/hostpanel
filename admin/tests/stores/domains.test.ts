@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { translate } from '@/lib/translate'
 import { useDomainsStore } from '@/stores/domains'
-import { DomainStatus } from '@/types/domain'
+import { DomainFieldHolder, DomainFieldOperation, DomainStatus } from '@/types/domain'
 import { json, problem, stubFetch, stubOffline, callOf, invalid } from '../helpers/fetch'
 
 describe('domainsStore loads', () => {
@@ -68,6 +68,49 @@ describe('domainsStore loads', () => {
     stubFetch(problem('No such domain.', 404))
     expect(await store.fetchById(4)).toBe(false)
     expect(store.error).toBe('No such domain.')
+  })
+})
+
+describe('domainsStore contact and extra fields', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('fetchContact reads the contact with its extra values, and gives null with a sentence when refused', async () => {
+    const mock = stubFetch(json({ firstName: 'Ada', extendedAttributes: { 'holder-number': 'N-1' } }))
+    const store = useDomainsStore()
+
+    expect(await store.fetchContact(3)).toMatchObject({ extendedAttributes: { 'holder-number': 'N-1' } })
+    expect(callOf(mock).url).toBe('/api/domains/3/contact')
+
+    stubFetch(problem('No contact.', 404))
+    expect(await store.fetchContact(3)).toBeNull()
+    expect(store.contactReadError).toBe('No contact.')
+  })
+
+  it('fetchDomainFields asks for the domain, the operation and the holder, and reads none when refused', async () => {
+    const mock = stubFetch(json([{ key: 'holder-number' }]))
+    const store = useDomainsStore()
+
+    expect(await store.fetchDomainFields('name.alpha', DomainFieldOperation.ContactChange, DomainFieldHolder.Organization))
+      .toEqual([{ key: 'holder-number' }])
+    expect(callOf(mock).url).toBe('/api/domains/fields?domain=name.alpha&operation=contactChange&holder=organization')
+
+    stubFetch(problem('Refused.', 400))
+    expect(await store.fetchDomainFields('name.alpha', DomainFieldOperation.ContactChange, DomainFieldHolder.Organization)).toEqual([])
+  })
+
+  it('modifyContact sends the extra values beside the contact, and keeps the refusal of each field', async () => {
+    const mock = stubFetch(invalid('A required registry detail is missing.', { 'holder-number': ['A required registry detail is missing.'] }))
+    const store = useDomainsStore()
+
+    expect(await store.modifyContact(3, { firstName: 'Ann' }, { 'holder-number': '' })).toBe(false)
+    expect(callOf(mock).body).toEqual({ firstName: 'Ann', extendedAttributes: { 'holder-number': '' } })
+    expect(store.fieldErrors).toEqual({ 'holder-number': 'A required registry detail is missing.' })
   })
 })
 

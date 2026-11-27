@@ -11,7 +11,13 @@ namespace Innovayse.Hostpanel.Application.Domains.Common;
 /// <param name="EppCode">Authorization/EPP code obtained from the losing registrar.</param>
 /// <param name="WhoisPrivacy">Whether to enable WHOIS privacy after the transfer completes.</param>
 /// <param name="Contact">The registrant contact, built from the client's details, sent for every contact role.</param>
-public record DomainTransferOrder(string DomainName, string EppCode, bool WhoisPrivacy, DomainContact Contact)
+/// <param name="ExtendedAttributes">The registry's extra values by field key, already checked against the registrar plugin's fields; absent for none. Printed masked.</param>
+public record DomainTransferOrder(
+    string DomainName,
+    string EppCode,
+    bool WhoisPrivacy,
+    DomainContact Contact,
+    [property: SecretMember] IReadOnlyDictionary<string, string>? ExtendedAttributes = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

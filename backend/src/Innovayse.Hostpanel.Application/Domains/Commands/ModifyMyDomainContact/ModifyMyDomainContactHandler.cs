@@ -56,7 +56,7 @@ public sealed class ModifyMyDomainContactHandler
             new ModifyDomainContactCommand(
                 cmd.DomainId, contact.FirstName, contact.LastName, contact.Organization, contact.Email,
                 contact.Phone, contact.Address1, contact.Address2, contact.City, contact.State,
-                contact.PostalCode, contact.Country),
+                contact.PostalCode, contact.Country, cmd.ExtendedAttributes),
             ct);
     }
 }

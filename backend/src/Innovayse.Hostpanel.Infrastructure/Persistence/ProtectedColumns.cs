@@ -1,4 +1,6 @@
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Auth;
@@ -23,5 +25,7 @@ public static class ProtectedColumns
         new(typeof(ClientService), nameof(ClientService.Password), ProtectedValueLimits.ServicePassword),
         new(typeof(AppUser), nameof(AppUser.TwoFactorSecret), ProtectedValueLimits.TwoFactorSecret),
         new(typeof(AppUser), nameof(AppUser.PendingTwoFactorSecret), ProtectedValueLimits.TwoFactorSecret),
+        new(typeof(OrderItem), nameof(OrderItem.ExtendedAttributesJson), ProtectedValueLimits.DomainExtendedAttributes),
+        new(typeof(RegisteredDomain), nameof(RegisteredDomain.ExtendedAttributesJson), ProtectedValueLimits.DomainExtendedAttributes),
     ];
 }

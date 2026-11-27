@@ -32,7 +32,12 @@
     "phoneExample": "00 000 000",
     "phoneCountry": "Prefijo telefónico del país",
     "searchCountry": "Buscar país o prefijo",
-    "noCountries": "No se encontró ningún país"
+    "noCountries": "No se encontró ningún país",
+    "datePicker": {
+      "day": "Día",
+      "month": "Mes",
+      "year": "Año"
+    }
   },
   "common": {
     "actions": "Acciones",

@@ -438,6 +438,8 @@ plugins page. The host calls the hosting panel contracts (see [Hosting panel plu
 contracts (see "Registrar plugins" below); it does not call the virtual server and `tax` contracts yet: a feature starts to use
 one when it ships, and a plugin that declares one before then is loaded but never asked.
 
+A registrar plugin whose registry needs more than the standard contact declares it in the `domainFields` block of its manifest (manifest version 2): each set names the `zones` it applies to, the registrant `holder` (`any`, `individual` or `organization`), the `operations` (`register`, `transfer`, `contactChange`) and the `fields` to ask, each with a key, a label, a type (`text`, `textarea`, `select`, `date`, `number`, `url`), whether it is required and optional length, pattern and options. The host draws the fields at checkout, on the transfer order and in the contact forms, checks the values with the SDK's `PluginDomainFieldRules` before an order is placed or the registrar is called, keeps them encrypted, and passes them to your plugin unchanged as the `ExtendedAttributes` of the register, transfer and contact contexts. The host knows nothing about any zone: what is asked, for which zones, comes only from your manifest.
+
 An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
 `api` routes or `ui` menus, pages or slots must declare `endpoints`, or the package is refused at install and skipped at
 startup (`PLUGIN_ENDPOINTS_NOT_DECLARED`). This is how one plugin, for example a `Fulfilment` plugin that sells credits,

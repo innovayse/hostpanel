@@ -11,6 +11,7 @@ import { stubClientRuntime } from '~/tests/helpers/mountClient'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { DomainEndpoint } from '~/tests/helpers/domainPanelPaths'
 import { clientInvoicePath } from '~/constants/clientRoutes'
 import { readOf, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
@@ -81,6 +82,26 @@ describe('domain transfer page', () => {
     await waitUntil(() => expect(wrapper.find('[data-testid="transfer-success"]').exists()).toBe(true))
     expect(bodyOf(requestsTo(stub.requests, DomainEndpoint.TransferOrder)[0])).toMatchObject({ domain: 'moving.org', eppcode: 'AUTH-1', years: 1, paymentmethod: 'card_gateway' })
     expect(wrapper.find('[data-testid="transfer-pay-invoice"]').attributes('href')).toBe(clientInvoicePath(90))
+  })
+
+  it('asks for the extra fields of the typed domain and sends the values with the order', async () => {
+    table[readOf(CatalogPath.DomainFields)] = {
+      body: [{
+        key: 'holder-number', label: 'Holder number', type: 'Text', required: true, description: null, placeholder: null,
+        pattern: null, minLength: null, maxLength: null, options: [],
+      }],
+    }
+    table[writeOf(DomainEndpoint.TransferOrder)] = { body: { orderId: 3, invoiceId: 90 } }
+    const wrapper = await mountRenderedClientPage(TransferPage, PAGE_MARKER)
+
+    await waitUntil(() => expect(wrapper.find('[data-testid="transfer-fields-holder-number"]').exists()).toBe(true))
+    expect(requestsTo(stub.requests, CatalogPath.DomainFields)[0]?.url)
+      .toBe(CatalogPath.DomainFields + '?domain=moving.org&operation=transfer&holder=individual')
+    await wrapper.find('[data-testid="transfer-fields-holder-number"]').setValue('N-3')
+    await wrapper.find('form').trigger('submit')
+
+    await waitUntil(() => expect(requestsTo(stub.requests, DomainEndpoint.TransferOrder)).toHaveLength(1))
+    expect(bodyOf(requestsTo(stub.requests, DomainEndpoint.TransferOrder)[0])).toMatchObject({ extendedAttributes: { 'holder-number': 'N-3' } })
   })
 
   it('shows the refusal and keeps the form when the order fails', async () => {

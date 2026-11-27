@@ -993,6 +993,30 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest sshAgentProfile is set on a plugin that does not declare the provisioningPanel capability (400).</summary>
     public const string PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED = "PLUGIN_MANIFEST_SSH_AGENT_PROFILE_NOT_ALLOWED";
 
+    /// <summary>A plugin that is not a registrar plugin declares domainFields. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR = "PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR";
+
+    /// <summary>A domain field key is not well formed, or two fields of one set share a key. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID = "PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID";
+
+    /// <summary>A set of domain fields names no zone, or a zone that is not well formed. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID = "PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID";
+
+    /// <summary>A zone is named by two sets that apply to the same registrant and the same operation. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE = "PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE";
+
+    /// <summary>A set of domain fields names no operation, or a bit that is not an operation. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID = "PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID";
+
+    /// <summary>A domain field has options but is not a select field, or a select field has none or lists a value twice or an empty one. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID = "PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID";
+
+    /// <summary>A domain field pattern is not a valid regular expression, is too long or runs too long. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID = "PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID";
+
+    /// <summary>A domain field has a negative length bound or a minimum length above its maximum. (400).</summary>
+    public const string PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID = "PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID";
+
     /// <summary>The manifest names an sshAgentProfile but the package has no profile file (400).</summary>
     public const string PLUGIN_SSH_AGENT_PROFILE_MISSING = "PLUGIN_SSH_AGENT_PROFILE_MISSING";
 
@@ -1785,6 +1809,24 @@ public static class HostpanelErrorCodes
     /// <see cref="Domain.Domains.RegisteredDomain.RemoveForwardingRule"/>.
     /// </summary>
     public const string DOMAIN_FORWARDING_RULE_NOT_FOUND = Domain.Domains.DomainsErrors.DomainForwardingRuleNotFound;
+
+    /// <summary>
+    /// A value given for a registry's extra domain field is refused (422): it does not match the field's type, options, length or
+    /// pattern as the registrar plugin's manifest declares them. The key of the field is in <c>errors</c>.
+    /// </summary>
+    public const string DOMAIN_FIELD_INVALID = Domain.Domains.DomainsErrors.DomainFieldInvalid;
+
+    /// <summary>
+    /// A required extra domain field has no value (422), as the registrar plugin's manifest declares the field. The key of the
+    /// field is in <c>errors</c>.
+    /// </summary>
+    public const string DOMAIN_FIELD_REQUIRED = "DOMAIN_FIELD_REQUIRED";
+
+    /// <summary>
+    /// A value was given for a key the registrar plugin's manifest declares no domain field under (422). The key is in
+    /// <c>errors</c>.
+    /// </summary>
+    public const string DOMAIN_FIELD_UNKNOWN = "DOMAIN_FIELD_UNKNOWN";
 
     /// <summary>
     /// The order is not Pending (400): <see cref="Domain.Orders.Order.Accept"/>,

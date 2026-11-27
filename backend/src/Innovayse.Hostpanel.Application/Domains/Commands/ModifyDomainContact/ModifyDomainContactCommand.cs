@@ -1,3 +1,6 @@
+using System.Text;
+using Innovayse.Hostpanel.SharedKernel.Domain;
+
 namespace Innovayse.Hostpanel.Application.Domains.Commands.ModifyDomainContact;
 
 /// <summary>
@@ -22,6 +25,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.ModifyDomainContact;
 /// <param name="State">State or province.</param>
 /// <param name="PostalCode">Postal or ZIP code.</param>
 /// <param name="Country">ISO 3166-1 alpha-2 country code.</param>
+/// <param name="ExtendedAttributes">The registry's extra values by field key (see <c>GET /api/domains/fields</c>), checked against the fields the registrar plugin declares; they replace the ones stored, so an empty or absent set clears them. Printed masked, they can be personal data.</param>
 public sealed record ModifyDomainContactCommand(
     int? DomainId,
     string FirstName,
@@ -34,4 +38,14 @@ public sealed record ModifyDomainContactCommand(
     string City,
     string State,
     string PostalCode,
-    string Country);
+    string Country,
+    [property: SecretMember] IReadOnlyDictionary<string, string>? ExtendedAttributes = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

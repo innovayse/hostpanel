@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Application.Domains.Common;
 /// <param name="State">State or province.</param>
 /// <param name="PostalCode">Postal or ZIP code.</param>
 /// <param name="Country">ISO 3166-1 alpha-2 country code.</param>
+/// <param name="ExtendedAttributes">The registry's extra values of the domain by field key, as last sent to the registrar; empty when it asked for none.</param>
 public sealed record DomainContactDto(
     string FirstName,
     string LastName,
@@ -26,4 +27,5 @@ public sealed record DomainContactDto(
     string City,
     string State,
     string PostalCode,
-    string Country);
+    string Country,
+    IReadOnlyDictionary<string, string> ExtendedAttributes);

@@ -509,7 +509,7 @@ onUnmounted(cancelSearchTimer)
           >
             <span class="flex min-w-0 flex-1 flex-col">
               <span v-if="opt.caption" class="break-words text-[0.68rem] font-semibold opacity-70">{{ opt.caption }}</span>
-              <span class="break-words">{{ opt.displayLabel ?? opt.label }}</span>
+              <span class="break-words" data-testid="ui-select-option-label">{{ opt.displayLabel ?? opt.label }}</span>
               <span v-if="opt.description" class="break-words text-[0.75rem] opacity-70">{{ opt.description }}</span>
             </span>
             <UiIcon

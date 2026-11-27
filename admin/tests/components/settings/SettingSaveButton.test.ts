@@ -45,7 +45,7 @@ describe('SettingSaveButton', () => {
     const wrapper = mountButton({ dirty: true })
 
     expect(wrapper.get('[data-testid="ui-form-actions"]').classes()).toEqual(expect.arrayContaining(['max-sm:w-full', 'max-sm:items-stretch']))
-    expect(wrapper.get('button').classes().join(' ')).toContain('bg-primary')
+    expect(wrapper.get('button').classes()).toContain('not-disabled:gradient-brand')
   })
 
   it('puts the attributes it is given on the button, not on the row', () => {

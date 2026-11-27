@@ -6,6 +6,7 @@ import {
   toneAlertClasses,
   toneBadgeClasses,
   toneDotClasses,
+  toneProgressClasses,
   toneTextClasses,
   UiTone,
 } from '@/utils/ui/tone'
@@ -18,6 +19,7 @@ describe('tone maps', () => {
     ['alert', toneAlertClasses],
     ['text', toneTextClasses],
     ['dot', toneDotClasses],
+    ['progress', toneProgressClasses],
   ])('the %s map covers every tone with non-empty classes', (_name, map) => {
     for (const tone of tones) {
       expect(map[tone].length).toBeGreaterThan(0)

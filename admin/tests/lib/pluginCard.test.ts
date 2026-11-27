@@ -19,6 +19,7 @@ const installed: PluginListItemDto = {
   iconUrl: '/icon.png',
   isLoaded: true,
   isBuiltIn: false,
+  isEnabled: true,
   status: PluginStatus.Loaded,
   refusedRule: null,
   refusedDetail: null,
@@ -70,6 +71,10 @@ describe('fromInstalled', () => {
 
     expect(card.badges).toEqual([PluginCardBadge.Active])
     expect(card.failedChange).toBeNull()
+  })
+
+  it('does not call a loaded plugin whose enabled switch is off Active', () => {
+    expect(fromInstalled({ ...installed, isEnabled: false }, null).badges).toEqual([PluginCardBadge.Disabled])
   })
 
   it('maps a running plugin to an Active card', () => {
@@ -135,16 +140,30 @@ describe('fromRegistry', () => {
     })
   })
 
-  it('shows the installed version with Active, Staged and Update badges', () => {
+  it('shows the installed version with the installed state, Staged and Update badges', () => {
     const card = fromRegistry(
       { ...listed, installed: true, installedVersion: '1.0.0', updateAvailable: true },
-      '1.5.0',
+      { ...installed, stagedVersion: '1.5.0' },
     )
 
     expect(card.version).toBe('1.0.0')
     expect(card.badges).toEqual([PluginCardBadge.Active, PluginCardBadge.Staged, PluginCardBadge.Update])
     expect(card.updateVersion).toBe('2.0.0')
     expect(card.stagedVersion).toBe('1.5.0')
+  })
+
+  it('wears the same state badge as the installed card of the same plugin', () => {
+    const item = { ...listed, installed: true, installedVersion: '1.2.0' }
+    const rows = [
+      installed,
+      { ...installed, isEnabled: false },
+      { ...installed, isLoaded: false },
+      { ...installed, isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load' },
+    ]
+
+    for (const row of rows) {
+      expect(fromRegistry(item, row).badges[0]).toBe(fromInstalled(row, null).badges[0])
+    }
   })
 
   it('treats missing tags and downloads as none', () => {

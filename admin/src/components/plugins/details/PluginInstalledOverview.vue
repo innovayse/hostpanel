@@ -47,6 +47,7 @@ const typeLabel = computed<string>(() => translateOrRaw(`pluginDetails.overview.
 /** The locale key naming each state a plugin can be in on this server. */
 const STATE_LABEL_KEYS: Readonly<Record<InstalledPluginState, string>> = {
   [InstalledPluginState.Active]: 'pluginDetails.overview.state.running',
+  [InstalledPluginState.Disabled]: 'pluginDetails.overview.state.disabled',
   [InstalledPluginState.PendingRestart]: 'pluginDetails.overview.state.afterRestart',
   [InstalledPluginState.Refused]: 'pluginDetails.overview.state.refused',
   [InstalledPluginState.LoadFailed]: 'pluginDetails.overview.state.loadFailed',

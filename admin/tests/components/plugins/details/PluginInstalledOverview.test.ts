@@ -101,6 +101,7 @@ describe('PluginInstalledOverview', () => {
 
   it('names the state of a loaded, a waiting and a refused plugin', () => {
     expect(fact(mountOverview({ isLoaded: true }), 'state')).toContain('Loaded and running')
+    expect(fact(mountOverview({ isLoaded: true, isEnabled: false }), 'state')).toContain('Loaded, switched off')
     expect(fact(mountOverview({ isLoaded: false }), 'state')).toContain('Loads after the next restart')
     expect(fact(mountOverview({ status: PluginStatus.Refused, isLoaded: false }), 'state')).toContain('Refused at startup')
     expect(fact(mountOverview({ isLoaded: false, refusedRule: PluginManifestRule.AssemblyLoadFailed, refusedDetail: 'Could not load file or assembly' }), 'state'))

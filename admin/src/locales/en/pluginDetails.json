@@ -101,6 +101,7 @@
     "state": {
       "label": "State",
       "running": "Loaded and running",
+      "disabled": "Loaded, switched off",
       "afterRestart": "Loads after the next restart",
       "refused": "Refused at startup",
       "loadFailed": "Failed to load at startup"

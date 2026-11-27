@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { MessageLanguage } from '@/locales/messages'
 import { useThemeStore } from '@/stores/theme'
 import UiDateTimePicker from '@/components/ui/UiDateTimePicker.vue'
 import { createTestI18n } from '../../helpers/i18n'
@@ -111,6 +112,19 @@ describe('UiDateTimePicker on a phone', () => {
 
     await wrapper.get('[data-testid="pick"]').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([new Date(2026, 0, 2)])
+  })
+
+  it('writes the chosen moment with the app month names in a locale the engine lacks', () => {
+    stubPhone(true)
+    vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+    setActivePinia(createPinia())
+    const wrapper = mount(UiDateTimePicker, {
+      props: { modelValue: new Date(2026, 0, 2, 9, 30) },
+      global: { plugins: [createTestI18n(MessageLanguage.Hy)], stubs: { teleport: true } },
+    })
+
+    expect(wrapper.get('[data-testid="date-time-trigger"]').text()).toBe('2 Հնվ 2026, 09:30')
+    vi.restoreAllMocks()
   })
 
   it('shows the chosen moment on the field, clears it from the sheet and closes', async () => {

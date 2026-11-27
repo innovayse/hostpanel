@@ -23,6 +23,15 @@ export const categoryLabel = (category: string): string => {
   return known === null ? category : translate(`plugins.pluginRegistry.category.${known}`)
 }
 
+/** The badge each state of a plugin that was neither refused nor failed wears; the card reads the same state as the filter and the details page. */
+const CARD_BADGE_OF_STATE: Readonly<Record<InstalledPluginState, PluginCardBadge>> = {
+  [InstalledPluginState.Active]: PluginCardBadge.Active,
+  [InstalledPluginState.Disabled]: PluginCardBadge.Disabled,
+  [InstalledPluginState.PendingRestart]: PluginCardBadge.PendingRestart,
+  [InstalledPluginState.Refused]: PluginCardBadge.Refused,
+  [InstalledPluginState.LoadFailed]: PluginCardBadge.LoadFailed,
+}
+
 /**
  * Builds the card of an installed plugin.
  *
@@ -41,7 +50,7 @@ export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string |
   } else if (state === InstalledPluginState.Refused) {
     badges.push(PluginCardBadge.Refused)
   } else {
-    badges.push(state === InstalledPluginState.Active ? PluginCardBadge.Active : PluginCardBadge.PendingRestart)
+    badges.push(CARD_BADGE_OF_STATE[state])
     if (plugin.stagedVersion !== null) {
       badges.push(PluginCardBadge.Staged)
     }
@@ -80,13 +89,16 @@ export const fromInstalled = (plugin: PluginListItemDto, updateVersion: string |
  * Builds the card of a plugin the registry lists.
  *
  * @param item - The registry listing.
- * @param stagedVersion - Version of this plugin staged for the next restart, null when none.
- * @returns The card model; an installed plugin wears Active, a newer registry version adds Update.
+ * @param installedPlugin - This plugin's row in the installed list, null when it is not installed or the list is not read yet.
+ * @returns The card model; an installed plugin wears the badge of the state the installed list gives it (the same
+ * mapping as {@link fromInstalled}, so the two cards always agree), a staged upload adds Staged and a newer registry
+ * version adds Update.
  */
-export const fromRegistry = (item: PluginRegistryItemDto, stagedVersion: string | null): PluginCardModel => {
+export const fromRegistry = (item: PluginRegistryItemDto, installedPlugin: PluginListItemDto | null): PluginCardModel => {
+  const stagedVersion = installedPlugin?.stagedVersion ?? null
   const badges: PluginCardBadge[] = []
-  if (item.installed) {
-    badges.push(PluginCardBadge.Active)
+  if (installedPlugin !== null) {
+    badges.push(CARD_BADGE_OF_STATE[installedPluginState(installedPlugin)])
   }
   if (stagedVersion !== null) {
     badges.push(PluginCardBadge.Staged)

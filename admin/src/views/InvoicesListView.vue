@@ -3,13 +3,14 @@
  * Billing invoices list: every client's invoices, with a paid, due and overdue summary of the page, a search box
  * (invoice number or payment method), a filter dialog (client, status and invoice date) whose applied filters show as
  * chips, paging, bulk actions on the selected rows (`useRowSelection`, the floating `InvoiceBulkBar`) and a confirmed
- * delete. The filters, the search text and the page live in the address (`useListQuery`), so a reload or a shared link
+ * delete. An invoice number opens the invoice as a real link, and so does a click anywhere else on the row. The filters, the search text and the page live in the address (`useListQuery`), so a reload or a shared link
  * shows the same list, and the API applies them before it pages. The client is chosen, not typed: only the Clients module
  * can read client names, so the list cannot search them. Deleting and cancelling are confirmed first; every action
  * reports its outcome (success, or the API's sentence) above the table, and a refused load shows the sentence with a Retry.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import InvoiceBulkBar from '@/components/billing/InvoiceBulkBar.vue'
 import InvoiceFilterFields from '@/components/billing/InvoiceFilterFields.vue'
 import UiListToolbar from '@/components/ui/UiListToolbar.vue'
@@ -29,6 +30,7 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiMenuAction } from '@/utils/ui/menu'
@@ -50,6 +52,7 @@ import type { InvoiceBulkAction } from '@/types/invoice'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoiceEditPath, invoiceViewPath } from '@/lib/routes'
 import { Icon } from '@/lib/icons'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiGap } from '@/utils/ui/layout'
 import { UiTone } from '@/utils/ui/tone'
@@ -58,6 +61,9 @@ import { schemaHeader } from '@/lib/schemaHeader'
 const { t } = useI18n()
 
 const store = useBillingStore()
+
+/** Router, which a click on a row uses to open the invoice. */
+const router = useRouter()
 
 /** The filter fields kept in the address, beside the search text and the page: the shared invoice filters and the client. */
 const FilterKey = {
@@ -210,6 +216,16 @@ const invoiceActions = (id: number): UiMenuAction[] => [
   },
 ]
 
+/**
+ * Opens an invoice's detail page.
+ *
+ * @param id - The invoice id.
+ * @returns Nothing.
+ */
+const openInvoice = (id: number): void => {
+  router.push(invoiceViewPath(id))
+}
+
 // The address is the source of truth: the first load and every change of a filter, the search or the page read the list.
 list.loadOnChange(load)
 
@@ -305,12 +321,16 @@ onMounted(loadClients)
         <UiTableRow
           v-for="invoice in store.invoices"
           :key="invoice.id"
-          hoverable
+          clickable
           :row-id="invoice.id"
           :select-testid="`billing-invoice-select-${invoice.id}`"
+          :data-testid="`billing-invoice-row-${invoice.id}`"
+          @click="openInvoice(invoice.id)"
         >
-          <UiTableCell muted>
-            #{{ invoice.id }}
+          <UiTableCell>
+            <UiLink :variant="UiButtonVariant.Link" :to="invoiceViewPath(invoice.id)" :data-testid="`billing-invoice-open-${invoice.id}`">
+              #{{ invoice.id }}
+            </UiLink>
           </UiTableCell>
           <UiTableCell hide-below="sm">
             <UiText class="truncate">{{ invoice.clientName }}</UiText>
@@ -322,7 +342,7 @@ onMounted(loadClients)
           <UiTableCell>
             <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}</UiBadge>
           </UiTableCell>
-          <UiTableCell actions>
+          <UiTableCell actions @click.stop>
             <UiRowActions :actions="invoiceActions(invoice.id)" :testid="`billing-invoice-actions-${invoice.id}`" />
           </UiTableCell>
         </UiTableRow>

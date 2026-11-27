@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Color">Hex colour for the plugin logo block.</param>
 /// <param name="IsLoaded">Whether the DLL was successfully loaded at startup; never true for a refused or removed row.</param>
 /// <param name="IsBuiltIn">Whether the plugin ships with the build; a built-in plugin cannot be removed.</param>
+/// <param name="IsEnabled">Whether the plugin's enabled switch is on, the same stored flag the integration settings screen reads; a loaded plugin that is switched off does nothing.</param>
 /// <param name="Capabilities">
 /// The capabilities the manifest declares (<c>storedCredentials</c>, <c>endpoints</c>), as the SDK spells them, in
 /// manifest order; empty when it declares none and for a refused or removed row.
@@ -66,6 +67,7 @@ public sealed record PluginListItemDto(
     string Color,
     bool IsLoaded,
     bool IsBuiltIn,
+    bool IsEnabled,
     IReadOnlyList<string> Capabilities,
     PluginListStatus Status = PluginListStatus.Loaded,
     PluginManifestRule? RefusedRule = null,

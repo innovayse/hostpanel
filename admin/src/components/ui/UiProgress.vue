@@ -2,13 +2,16 @@
 /**
  * A labelled progress bar: the native `progress` element, so assistive technology reads its value,
  * styled from the theme tokens: an 8px track with 6px corners, filled with the blue to violet gradient, which
- * turns to the amber to red one once it reaches `warnAt` percent (a capacity bar nearly full). `loading`
+ * turns to the amber to red one once it reaches `warnAt` percent (a capacity bar nearly full), unless a `tone` states
+ * the outcome (done is green, failed red, running the accent) and the bar is filled with that solid colour. `loading`
  * draws a label bar and a track bar of the same sizes in place of the numbers. The percentage beside the label
  * (or the caller's `valueText`) is always shown, so the state is never carried by colour alone. The value is a percentage clamped to 0..100, so a caller can never draw
  * past the bar; the label sits above it with the rounded percentage beside it.
  */
 import { computed } from 'vue'
 import UiSkeletonBar from '@/components/ui/UiSkeletonBar.vue'
+import { toneProgressClasses } from '@/utils/ui/tone'
+import type { UiTone } from '@/utils/ui/tone'
 
 /** Props for UiProgress. */
 const props = withDefaults(defineProps<{
@@ -20,6 +23,8 @@ const props = withDefaults(defineProps<{
   valueText?: string
   /** The percentage from which the bar turns to the warning colour. */
   warnAt?: number
+  /** Fills the bar with the solid colour of an outcome (done, failed, running) instead of the gradient, and never warns. */
+  tone?: UiTone
   /** Shows placeholder bars in place of the label, the percentage and the fill. */
   loading?: boolean
 }>(), {
@@ -34,12 +39,17 @@ const FULL = 100
 const percent = computed<number>(() => (Number.isFinite(props.value) ? Math.min(FULL, Math.max(0, props.value)) : 0))
 
 /** True once the bar has reached the warning threshold. */
-const warning = computed<boolean>(() => percent.value >= props.warnAt)
+const warning = computed<boolean>(() => props.tone === undefined && percent.value >= props.warnAt)
 
-/** Fill classes of the bar: the gradient normally, the warning colour past the threshold. */
-const fillClasses = computed<string>(() => (warning.value
-  ? '[&::-moz-progress-bar]:bg-[image:var(--gradient-bar-warn)] [&::-webkit-progress-value]:bg-[image:var(--gradient-bar-warn)]'
-  : '[&::-moz-progress-bar]:bg-[image:var(--gradient-bar)] [&::-webkit-progress-value]:bg-[image:var(--gradient-bar)]'))
+/** Fill classes of the bar: the tone's colour when one is given, else the gradient, or the warning colour past the threshold. */
+const fillClasses = computed<string>(() => {
+  if (props.tone !== undefined) {
+    return toneProgressClasses[props.tone]
+  }
+  return warning.value
+    ? '[&::-moz-progress-bar]:bg-[image:var(--gradient-bar-warn)] [&::-webkit-progress-value]:bg-[image:var(--gradient-bar-warn)]'
+    : '[&::-moz-progress-bar]:bg-[image:var(--gradient-bar)] [&::-webkit-progress-value]:bg-[image:var(--gradient-bar)]'
+})
 </script>
 
 <template>

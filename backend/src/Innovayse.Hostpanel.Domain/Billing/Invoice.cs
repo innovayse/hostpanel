@@ -194,7 +194,10 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
-    /// <summary>Gets the preferred payment method; null when not specified.</summary>
+    /// <summary>
+    /// Gets the payment method of the invoice: the one chosen for it, otherwise the gateway of the first payment recorded on
+    /// it (<see cref="AddPayment"/> and <see cref="Settle"/> fill it when none was chosen); null while neither exists.
+    /// </summary>
     public string? PaymentMethod { get; private set; }
 
     /// <summary>
@@ -756,6 +759,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
         var tx = InvoiceTransaction.Create(Id, date, gateway, transactionId, amount, InvoiceTransactionType.Payment, fees, notes);
         _transactions.Add(tx);
+        PaymentMethod ??= gateway;
         if (PaymentsRecorded >= Total)
         {
             ApplyPaid(transactionId, date);
@@ -1039,6 +1043,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         // RefundableAmount stay right after a partial AddPayment followed by a settlement.
         _transactions.Add(InvoiceTransaction.Create(
             Id, paidAt, paymentMethod, reference, taken, InvoiceTransactionType.Payment, 0m, null));
+        PaymentMethod ??= paymentMethod;
         ApplyPaid(reference, paidAt);
         return Transaction.CreateInvoicePayment(this, paidAt, paymentMethod, reference, taken, 0m, source);
     }

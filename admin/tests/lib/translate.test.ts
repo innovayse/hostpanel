@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setLocale } from '@/i18n'
 import { MessageLanguage } from '@/locales/messages'
-import { translate, translateOrRaw } from '@/lib/translate'
+import { translate, translateCountIn, translateIn, translateOrRaw } from '@/lib/translate'
 
 describe('translate', () => {
   afterEach(() => {
@@ -45,5 +45,20 @@ describe('translateOrRaw', () => {
 
   it('returns the raw value when the catalogue has no such key', () => {
     expect(translateOrRaw('ticketStatus.SomethingNew', 'SomethingNew')).toBe('SomethingNew')
+  })
+})
+
+describe('translateIn and translateCountIn', () => {
+  it('write a message in the given language whatever the active one is', () => {
+    expect(translateIn('duration.relativeNow', 'hy')).toBe('հիմա')
+    expect(translateIn('duration.relativeNow', 'en')).toBe('now')
+  })
+
+  it('choose the plural form of the count in the given language', () => {
+    expect(translateCountIn('duration.daysAgo', 1, 'en')).toBe('1 day ago')
+    expect(translateCountIn('duration.daysAgo', 4, 'en')).toBe('4 days ago')
+    expect(translateCountIn('duration.daysAgo', 4, 'ru')).toBe('4 дня назад')
+    expect(translateCountIn('duration.daysAgo', 5, 'ru')).toBe('5 дней назад')
+    expect(translateCountIn('duration.daysAgo', 4, 'hy')).toBe('4 օր առաջ')
   })
 })

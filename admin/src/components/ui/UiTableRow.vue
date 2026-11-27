@@ -8,7 +8,8 @@
  *
  * In a selectable table (`UiTable` with `selection`) the row draws the checkbox column itself: inside the header a
  * select-all cell (indeterminate over a partial selection), in the body a row checkbox for a row with a `rowId`. A click
- * toggles the row and Shift extends the range from the last toggled row. A ticked row gets the selected look (soft accent
+ * toggles the row and Shift extends the range from the last toggled row; the click stays on the checkbox cell, so it does not
+ * reach the row's own click (a `clickable` row that opens its record). A ticked row gets the selected look (soft accent
  * background, accent bar on the left edge) and `aria-selected`.
  *
  * On a phone (see `UiTable`) a body row is a `UiRecordCard` and not a `<tr>`: the row sorts its cells by their column's role into the card's parts (the
@@ -231,7 +232,7 @@ const toggleRow = (event: MouseEvent): void => {
         @change="table?.selection?.toggleAll()"
       />
     </UiTableHeader>
-    <UiTableCell v-else-if="showsCheckbox" select :column-index="0">
+    <UiTableCell v-else-if="showsCheckbox" select :column-index="0" @click.stop>
       <UiCheckbox
         :model-value="isSelected"
         :aria-label="table?.selectRowLabel"

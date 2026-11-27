@@ -6,6 +6,7 @@
  * strings, configuration identifiers and operator-facing copy stored in the database, so they
  * are not part of this catalogue.
  */
+import { watch } from 'vue'
 import { createI18n } from 'vue-i18n'
 import { MessageLanguage, messages } from '@/locales/messages'
 
@@ -76,3 +77,9 @@ export const setLocale = (locale: SupportedLocale): void => {
   i18n.global.locale.value = locale
   localStorage.setItem(STORAGE_KEY, locale)
 }
+
+// The document language follows the active locale, from startup and on every change, so assistive technology and the
+// browser's own hyphenation, spell check and font choice use the language the panel is shown in.
+watch(i18n.global.locale, (locale) => {
+  document.documentElement.lang = locale
+}, { immediate: true })

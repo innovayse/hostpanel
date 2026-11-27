@@ -17,6 +17,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiFloatingSurface from '@/components/ui/UiFloatingSurface.vue'
 import { useDrawerPresentation } from '@/composables/useDrawerPresentation'
 import { useDropdown } from '@/composables/useDropdown'
+import { formatMediumDateTime } from '@/lib/format'
 import { useThemeStore } from '@/stores/theme'
 import { UiActionKind } from '@/utils/ui/actions'
 import { dateLibraryThemeClasses } from '@/utils/ui/datePicker'
@@ -68,7 +69,7 @@ const { open, root, trigger, panel, hide, toggle } = useDropdown()
 
 /** The chosen moment as the field shows it on a phone, in the active language; empty while nothing is chosen. */
 const shown = computed<string>(() =>
-  props.modelValue === null ? '' : props.modelValue.toLocaleString(locale.value, { dateStyle: 'medium', timeStyle: 'short' }),
+  props.modelValue === null ? '' : formatMediumDateTime(props.modelValue, locale.value),
 )
 
 /**

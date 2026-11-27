@@ -25,7 +25,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import { fromRegistry } from '@/lib/pluginCard'
 import { pluginPath } from '@/lib/routes'
 import { PluginCardAction, PluginPricing } from '@/types/plugin'
-import type { PluginRegistryItemDto } from '@/types/plugin'
+import type { PluginListItemDto, PluginRegistryItemDto } from '@/types/plugin'
 import { UiTextSize } from '@/utils/ui/text'
 import { UiGap } from '@/utils/ui/layout'
 
@@ -50,8 +50,8 @@ const props = withDefaults(defineProps<{
   installingIds: string[]
   /** Ids of paid plugins with a saved licence key; a paid plugin outside this list offers Details, not Install. */
   licensedIds?: string[]
-  /** Staged version per plugin id, for plugins whose upgrade waits for the restart. */
-  stagedVersions?: Record<string, string>
+  /** The installed list's row per plugin id, the one source of each card's state (active, disabled, waiting for a restart) and staged version. */
+  installedPlugins?: Record<string, PluginListItemDto>
 }>(), {
   /**
    * Default for `licensedIds`.
@@ -60,11 +60,11 @@ const props = withDefaults(defineProps<{
    */
   licensedIds: () => [],
   /**
-   * Default for `stagedVersions`.
+   * Default for `installedPlugins`.
    *
-   * @returns No staged upgrade.
+   * @returns No installed plugin.
    */
-  stagedVersions: () => ({}),
+  installedPlugins: () => ({}),
 })
 
 /** Events emitted by PluginRegistryBrowser. */
@@ -178,7 +178,7 @@ const onAction = (item: PluginRegistryItemDto, action: PluginCardAction): void =
         <PluginCard
           v-for="item in items"
           :key="item.id"
-          :plugin="fromRegistry(item, stagedVersions[item.id] ?? null)"
+          :plugin="fromRegistry(item, installedPlugins[item.id] ?? null)"
           :to="pluginPath(item.id)"
         >
           <template #action>

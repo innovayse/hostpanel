@@ -101,6 +101,7 @@
     "state": {
       "label": "Estado",
       "running": "Cargado y en ejecución",
+      "disabled": "Cargado, desactivado",
       "afterRestart": "Se carga tras el próximo reinicio",
       "refused": "Rechazado al iniciar",
       "loadFailed": "No se pudo cargar al iniciar"

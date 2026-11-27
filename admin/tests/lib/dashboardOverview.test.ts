@@ -1,7 +1,7 @@
 /**
  * Tests for the dashboard helpers: the part of the day, the signed change text, and the chart day caption.
  */
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { dayPartOf, DayPart, formatChange, formatDayCaption } from '@/lib/dashboardOverview'
 
 describe('dayPartOf', () => {
@@ -26,9 +26,19 @@ describe('formatChange', () => {
 })
 
 describe('formatDayCaption', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('writes the day and the short month in the language given', () => {
     expect(formatDayCaption('2026-03-12', 'en')).toBe('Mar 12')
     expect(formatDayCaption('2026-03-12', 'ru')).toMatch(/^12 мар/)
+  })
+
+  it('writes the day first and the month from the app messages when the engine lacks the locale', () => {
+    vi.spyOn(Intl.DateTimeFormat, 'supportedLocalesOf').mockReturnValue([])
+
+    expect(formatDayCaption('2026-03-12', 'hy')).toBe('12 Մրտ')
   })
 
   it('does not move the day with the time zone of the machine', () => {

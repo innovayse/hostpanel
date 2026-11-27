@@ -30,3 +30,24 @@ export const translate = (key: string, named: Record<string, unknown> = {}): str
  */
 export const translateOrRaw = (key: string, raw: string): string =>
   i18n.global.te(key) ? i18n.global.t(key) : raw
+
+/**
+ * Resolves a counted message key in a given language rather than the current one, choosing the plural form of
+ * the count ("1 day ago", "2 days ago").
+ *
+ * @param key - Dotted key whose message holds the plural forms, with `{n}` for the count.
+ * @param count - The counted number; selects the form and fills `{n}`.
+ * @param locale - Language to write the sentence in.
+ * @returns The sentence in that language, English when the catalogue lacks it.
+ */
+export const translateCountIn = (key: string, count: number, locale: string): string =>
+  i18n.global.t(key, count, { locale })
+
+/**
+ * Resolves a message key in a given language rather than the current one.
+ *
+ * @param key - Dotted key present in every locale catalogue.
+ * @param locale - Language to write the sentence in.
+ * @returns The sentence in that language, English when the catalogue lacks it.
+ */
+export const translateIn = (key: string, locale: string): string => i18n.global.t(key, {}, { locale })

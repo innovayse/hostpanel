@@ -7,8 +7,10 @@ import type { PluginListItemDto } from '@/types/plugin'
 
 /** Closed set of the states the Installed tab filters by; the strings are the values kept in the address. */
 export const InstalledPluginState = {
-  /** Loaded and running. */
+  /** Loaded and switched on. */
   Active: 'active',
+  /** Loaded, but its enabled switch is off, so it does nothing. */
+  Disabled: 'disabled',
   /** On disk but waiting for a restart to load. */
   PendingRestart: 'pendingRestart',
   /** Skipped by the host because it broke a manifest rule. */
@@ -44,7 +46,7 @@ const isLoadFailed = (plugin: PluginListItemDto): boolean => plugin.refusedRule 
  *
  * @param plugin - The installed plugin.
  * @returns LoadFailed for a plugin whose assembly did not load, Refused for one the host skipped, Active for a loaded
- * one, PendingRestart otherwise.
+ * one that is switched on, Disabled for a loaded one that is switched off, PendingRestart otherwise.
  */
 export const installedPluginState = (plugin: PluginListItemDto): InstalledPluginState => {
   if (isLoadFailed(plugin)) {
@@ -53,7 +55,10 @@ export const installedPluginState = (plugin: PluginListItemDto): InstalledPlugin
   if (plugin.status === PluginStatus.Refused) {
     return InstalledPluginState.Refused
   }
-  return plugin.isLoaded ? InstalledPluginState.Active : InstalledPluginState.PendingRestart
+  if (!plugin.isLoaded) {
+    return InstalledPluginState.PendingRestart
+  }
+  return plugin.isEnabled ? InstalledPluginState.Active : InstalledPluginState.Disabled
 }
 
 /**

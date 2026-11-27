@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 using Microsoft.EntityFrameworkCore;
@@ -276,6 +277,44 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         {
             await client.DeleteAsync($"/api/admin/plugins/{withIconId}");
             await client.DeleteAsync($"/api/admin/plugins/{plainId}");
+        }
+    }
+
+    /// <summary>
+    /// <c>isEnabled</c> is the integration settings' enabled switch, the same flag the plugin's settings screen shows:
+    /// a loaded plugin whose switch is on reads enabled and one whose switch was never turned on reads disabled, so the
+    /// card and the screen cannot disagree.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task IsEnabled_ReadsTheIntegrationEnabledSwitchAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var onId = $"test-on-{Guid.NewGuid():N}";
+        var offId = $"test-off-{Guid.NewGuid():N}";
+        (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(onId))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(offId))).StatusCode.Should().Be(HttpStatusCode.OK);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        try
+        {
+            await PluginActivationTestSeeds.EnableAsync(db, onId);
+            var registry = new FakePluginRegistry();
+            registry.Add(PluginActivationTestSeeds.Plugin(onId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
+            registry.Add(PluginActivationTestSeeds.Plugin(offId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, typeof(object)).Manifest);
+
+            var rows = await NewHandler(registry).HandleAsync(new ListPluginsQuery(), CancellationToken.None);
+
+            rows.Value!.Single(r => r.Id == onId).IsEnabled.Should().BeTrue();
+            rows.Value!.Single(r => r.Id == offId).IsEnabled.Should().BeFalse("its switch was never turned on");
+        }
+        finally
+        {
+            db.Settings.RemoveRange(db.Settings.Where(s => s.Key == IntegrationSettingKeys.EnabledKey(onId)));
+            await db.SaveChangesAsync(CancellationToken.None);
+            await client.DeleteAsync($"/api/admin/plugins/{onId}");
+            await client.DeleteAsync($"/api/admin/plugins/{offId}");
         }
     }
 

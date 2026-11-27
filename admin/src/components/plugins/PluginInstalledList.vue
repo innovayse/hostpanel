@@ -87,6 +87,7 @@ const filters = reactive(useFilterQuery(Object.values(InstalledFilterKey), { sea
 const stateOptions = computed<{ value: string; label: string }[]>(() => [
   { value: '', label: t('shared.any') },
   { value: InstalledPluginState.Active, label: t('shared.active') },
+  { value: InstalledPluginState.Disabled, label: t('shared.disabled') },
   { value: InstalledPluginState.PendingRestart, label: t('plugins.pluginCard.pendingRestart') },
   { value: InstalledPluginState.Refused, label: t('plugins.pluginCard.refused') },
   { value: InstalledPluginState.LoadFailed, label: t('plugins.pluginCard.loadFailed') },

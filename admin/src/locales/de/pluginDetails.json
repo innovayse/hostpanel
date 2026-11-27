@@ -127,6 +127,7 @@
     "state": {
       "label": "Zustand",
       "running": "Geladen und aktiv",
+      "disabled": "Geladen, ausgeschaltet",
       "afterRestart": "Wird nach dem nächsten Neustart geladen",
       "refused": "Beim Start abgelehnt",
       "loadFailed": "Beim Start nicht geladen"

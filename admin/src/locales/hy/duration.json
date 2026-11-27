@@ -1,5 +1,9 @@
 {
   "years": "{n} տ.",
   "months": "{n} ամիս",
-  "lessThanMonth": "Մեկ ամսից պակաս"
+  "lessThanMonth": "Մեկ ամսից պակաս",
+  "relativeNow": "հիմա",
+  "minutesAgo": "{n} րոպե առաջ",
+  "hoursAgo": "{n} ժամ առաջ",
+  "daysAgo": "{n} օր առաջ"
 }

@@ -164,6 +164,7 @@ describe('PluginCard', () => {
     const wrapper = mountCard({
       badges: [
         PluginCardBadge.Active,
+        PluginCardBadge.Disabled,
         PluginCardBadge.PendingRestart,
         PluginCardBadge.Refused,
         PluginCardBadge.LoadFailed,
@@ -176,6 +177,7 @@ describe('PluginCard', () => {
     })
 
     expect(wrapper.get('[data-testid="plugin-card-badge-active-example-pay"]').text()).toBe('Active')
+    expect(wrapper.get('[data-testid="plugin-card-badge-disabled-example-pay"]').text()).toBe('Disabled')
     expect(wrapper.get('[data-testid="plugin-card-badge-pendingRestart-example-pay"]').text()).toBe('Pending restart')
     expect(wrapper.get('[data-testid="plugin-card-badge-refused-example-pay"]').text()).toBe('Refused')
     expect(wrapper.get('[data-testid="plugin-card-badge-loadFailed-example-pay"]').text()).toBe('Failed to load')

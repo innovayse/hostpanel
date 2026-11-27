@@ -76,6 +76,7 @@ const hasBadgeRow = computed<boolean>(() => props.plugin.badges.length > 0 || pr
 /** Tone of each badge. */
 const badgeTone: Record<PluginCardBadge, UiTone> = {
   [PluginCardBadge.Active]: UiTone.Success,
+  [PluginCardBadge.Disabled]: UiTone.Neutral,
   [PluginCardBadge.PendingRestart]: UiTone.Warning,
   [PluginCardBadge.Refused]: UiTone.Danger,
   [PluginCardBadge.LoadFailed]: UiTone.Danger,
@@ -88,6 +89,7 @@ const badgeTone: Record<PluginCardBadge, UiTone> = {
 /** The badges that are a state of the plugin and so carry a status dot. */
 const dotBadges: PluginCardBadge[] = [
   PluginCardBadge.Active,
+  PluginCardBadge.Disabled,
   PluginCardBadge.PendingRestart,
   PluginCardBadge.Refused,
   PluginCardBadge.LoadFailed,
@@ -104,6 +106,8 @@ const badgeLabel = (badge: PluginCardBadge): string => {
   switch (badge) {
     case PluginCardBadge.Active:
       return t('shared.active')
+    case PluginCardBadge.Disabled:
+      return t('shared.disabled')
     case PluginCardBadge.PendingRestart:
       return t('plugins.pluginCard.pendingRestart')
     case PluginCardBadge.Refused:

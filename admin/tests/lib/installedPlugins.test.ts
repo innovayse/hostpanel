@@ -25,6 +25,7 @@ const makePlugin = (overrides: Partial<PluginListItemDto> = {}): PluginListItemD
   iconUrl: null,
   isLoaded: true,
   isBuiltIn: false,
+  isEnabled: true,
   status: PluginStatus.Loaded,
   refusedRule: null,
   refusedDetail: null,
@@ -41,6 +42,12 @@ describe('installedPluginState', () => {
     expect(installedPluginState(makePlugin({ status: PluginStatus.Refused, isLoaded: false }))).toBe(InstalledPluginState.Refused)
     expect(installedPluginState(makePlugin({ isLoaded: false }))).toBe(InstalledPluginState.PendingRestart)
     expect(installedPluginState(makePlugin())).toBe(InstalledPluginState.Active)
+  })
+
+  it('tells a loaded plugin whose enabled switch is off from an active one', () => {
+    expect(installedPluginState(makePlugin({ isEnabled: false }))).toBe(InstalledPluginState.Disabled)
+    expect(installedPluginState(makePlugin({ isEnabled: true }))).toBe(InstalledPluginState.Active)
+    expect(installedPluginState(makePlugin({ isEnabled: false, isLoaded: false }))).toBe(InstalledPluginState.PendingRestart)
   })
 
   it('tells an installed plugin whose assembly failed to load from a refused one, whatever its listing status', () => {

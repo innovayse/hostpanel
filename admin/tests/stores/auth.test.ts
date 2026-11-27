@@ -282,6 +282,23 @@ describe('authStore.checkSession', () => {
     expect(readRecent('a@b.c')).toEqual([])
     window.localStorage.clear()
   })
+
+  it('sends the SSO sign-out the bare origin as the address to return to', async () => {
+    const origin = 'https://admin.example.test'
+    const fakeLocation = { origin, href: '' }
+    vi.stubGlobal('location', fakeLocation)
+    stubFetch(json({ endSessionUrl: 'https://sso.example.test/connect/logout?id_token_hint=abc' }))
+    const store = useAuthStore()
+    store.mode = AuthMode.Sso
+
+    await store.logout()
+
+    const target = new URL(fakeLocation.href)
+    expect(target.origin).toBe('https://sso.example.test')
+    expect(target.searchParams.get('id_token_hint')).toBe('abc')
+    // The SSO compares the address literally, so a trailing slash would be refused.
+    expect(target.searchParams.get('post_logout_redirect_uri')).toBe(origin)
+  })
 })
 
 describe('auth store accountKey', () => {

@@ -1719,4 +1719,28 @@
   <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
     <value>El registro no solicita este dato.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
+    <value>Solo un plugin de registrador puede declarar domainFields.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID" xml:space="preserve">
+    <value>Una clave de campo de dominio en domainFields está mal escrita, o dos campos del mismo conjunto comparten clave.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID" xml:space="preserve">
+    <value>Un conjunto de domainFields no indica zona o indica una zona mal escrita.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE" xml:space="preserve">
+    <value>Dos conjuntos de domainFields indican la misma zona para el mismo tipo de titular y la misma operación.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID" xml:space="preserve">
+    <value>Un conjunto de domainFields no indica operación o indica algo que no es una operación.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID" xml:space="preserve">
+    <value>Un campo de dominio tiene opciones pero no es una lista, o una lista no tiene opciones, repite un valor o tiene uno vacío.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID" xml:space="preserve">
+    <value>El patrón de un campo de dominio no es una expresión regular válida o es demasiado largo.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
+    <value>Un campo de dominio tiene un límite de longitud negativo o una longitud mínima mayor que la máxima.</value>
+  </data>
 </root>

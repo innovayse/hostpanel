@@ -1720,4 +1720,28 @@
   <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
     <value>Գրանցամատյանը այս դաշտը չի պահանջում։</value>
   </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
+    <value>domainFields-ը կարող է հայտարարել միայն գրանցողի պլագինը։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID" xml:space="preserve">
+    <value>domainFields-ում դոմենի դաշտի բանալին սխալ է գրված, կամ նույն հավաքածուի երկու դաշտ ունեն նույն բանալին։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID" xml:space="preserve">
+    <value>domainFields-ի հավաքածուն գոտի չի նշում կամ նշում է սխալ գրված գոտի։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE" xml:space="preserve">
+    <value>domainFields-ի երկու հավաքածու նշում են նույն գոտին նույն սեփականատիրոջ տեսակի և նույն գործողության համար։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID" xml:space="preserve">
+    <value>domainFields-ի հավաքածուն գործողություն չի նշում կամ նշում է այն, ինչ գործողություն չէ։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID" xml:space="preserve">
+    <value>Դոմենի դաշտն ունի տարբերակներ, բայց ընտրացանկ չէ, կամ ընտրացանկը տարբերակներ չունի, արժեքը կրկնվում է կամ դատարկ է։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID" xml:space="preserve">
+    <value>Դոմենի դաշտի ձևանմուշը ճիշտ կանոնավոր արտահայտություն չէ կամ չափազանց երկար է։</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
+    <value>Դոմենի դաշտի երկարության սահմանը բացասական է, կամ նվազագույն երկարությունը գերազանցում է առավելագույնը։</value>
+  </data>
 </root>

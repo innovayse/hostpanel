@@ -1720,4 +1720,28 @@
   <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
     <value>The registry does not ask for this detail.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
+    <value>Only a registrar plugin can declare domainFields.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID" xml:space="preserve">
+    <value>A domain field key in domainFields is not well formed, or two fields of one set share a key.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID" xml:space="preserve">
+    <value>A set of domainFields names no zone, or a zone that is not well formed.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE" xml:space="preserve">
+    <value>Two sets of domainFields name the same zone for the same registrant and the same operation.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID" xml:space="preserve">
+    <value>A set of domainFields names no operation, or one that is not an operation.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID" xml:space="preserve">
+    <value>A domain field has options but is not a select field, or a select field has no options, a repeated value or an empty one.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID" xml:space="preserve">
+    <value>A domain field pattern is not a valid regular expression, or it is too long.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
+    <value>A domain field has a negative length bound, or a minimum length above its maximum.</value>
+  </data>
 </root>

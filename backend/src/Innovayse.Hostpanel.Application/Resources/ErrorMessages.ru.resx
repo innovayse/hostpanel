@@ -1720,4 +1720,28 @@
   <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
     <value>Реестр не запрашивает это поле.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
+    <value>Объявить domainFields может только плагин регистратора.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID" xml:space="preserve">
+    <value>Ключ поля домена в domainFields записан неверно, или два поля одного набора имеют один ключ.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID" xml:space="preserve">
+    <value>Набор domainFields не указывает зону или указывает зону в неверной записи.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE" xml:space="preserve">
+    <value>Два набора domainFields указывают одну зону для одного типа владельца и одной операции.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID" xml:space="preserve">
+    <value>Набор domainFields не указывает операцию или указывает то, что не является операцией.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID" xml:space="preserve">
+    <value>У поля домена есть варианты, но это не список, либо у списка нет вариантов, значение повторяется или пустое.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID" xml:space="preserve">
+    <value>Шаблон поля домена не является верным регулярным выражением или слишком длинный.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
+    <value>У поля домена отрицательная граница длины или минимальная длина больше максимальной.</value>
+  </data>
 </root>

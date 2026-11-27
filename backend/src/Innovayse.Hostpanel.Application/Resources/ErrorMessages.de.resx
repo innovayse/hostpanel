@@ -695,4 +695,28 @@
   <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
     <value>Die Registrierungsstelle verlangt diese Angabe nicht.</value>
   </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
+    <value>Nur ein Registrar-Plugin kann domainFields deklarieren.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_KEY_INVALID" xml:space="preserve">
+    <value>Ein Domainfeld-Schlüssel in domainFields ist ungültig geschrieben, oder zwei Felder derselben Gruppe haben denselben Schlüssel.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_INVALID" xml:space="preserve">
+    <value>Eine Gruppe in domainFields nennt keine Zone oder eine ungültig geschriebene Zone.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_ZONE_DUPLICATE" xml:space="preserve">
+    <value>Zwei Gruppen in domainFields nennen dieselbe Zone für denselben Inhabertyp und denselben Vorgang.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_OPERATIONS_INVALID" xml:space="preserve">
+    <value>Eine Gruppe in domainFields nennt keinen Vorgang oder einen, der kein Vorgang ist.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_OPTIONS_INVALID" xml:space="preserve">
+    <value>Ein Domainfeld hat Optionen, ist aber keine Auswahl, oder eine Auswahl hat keine Optionen, einen doppelten oder leeren Wert.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_PATTERN_INVALID" xml:space="preserve">
+    <value>Das Muster eines Domainfelds ist kein gültiger regulärer Ausdruck oder zu lang.</value>
+  </data>
+  <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
+    <value>Ein Domainfeld hat eine negative Längengrenze oder eine Mindestlänge über dem Maximum.</value>
+  </data>
 </root>

@@ -291,7 +291,7 @@ public sealed class StartMyTrialTests(IntegrationTestFactory factory) : IClassFi
         var response = await client.PostAsJsonAsync("/api/me/services/trial", new { productId });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_NOT_AVAILABLE);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_PRICE_UNAVAILABLE);
         using var check = factory.Services.CreateScope();
         var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await context.ClientServices.AnyAsync(s => s.ClientId == clientId)).Should().BeFalse();

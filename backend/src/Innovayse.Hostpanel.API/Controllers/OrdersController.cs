@@ -227,7 +227,7 @@ public sealed class OrdersController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 when cancelled, its open invoice cancelled; 400 with <c>VALIDATION_ERROR</c> for a non-positive id,
-    /// <c>ORDER_NOT_PENDING</c> when it is not pending, or <c>INVOICE_CANCEL_NOT_ALLOWED</c> / <c>INVOICE_HAS_PAYMENTS</c>
+    /// <c>ORDER_CANCEL_NOT_PENDING</c> when it is not pending, or <c>INVOICE_CANCEL_NOT_ALLOWED</c> / <c>INVOICE_HAS_PAYMENTS</c>
     /// when its invoice already took money and cannot be cancelled; 401 without a session; 403 for a non-admin; 404 with
     /// <c>ORDER_NOT_FOUND</c> when the id names no order;
     /// 429 when the rate limit is hit.

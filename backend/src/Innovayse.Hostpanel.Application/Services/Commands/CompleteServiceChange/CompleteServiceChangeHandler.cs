@@ -72,7 +72,7 @@ public sealed class CompleteServiceChangeHandler
     /// <returns>
     /// Success (also for a request that is already Completed, so a replayed payment event is harmless), or
     /// <c>SERVICE_CHANGE_REQUEST_NOT_FOUND</c>, <c>SERVICE_CHANGE_INVALID_STATE</c> when the request is not Approved or the
-    /// service has left the plan it was requested from, <c>SERVICE_NOT_FOUND</c>, <c>SERVICE_NOT_ACTIVE</c>,
+    /// service has left the plan it was requested from, <c>SERVICE_NOT_FOUND</c>, <c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c>,
     /// <c>SERVICE_CHANGE_INVOICE_UNPAID</c>, <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_PACKAGE_MISSING</c> when a provisioned
     /// service's new plan names no hosting package, or the provisioning use case's failure, for example
     /// <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c>; the request stays Approved in each failure.
@@ -111,7 +111,7 @@ public sealed class CompleteServiceChangeHandler
 
         if (service.Status is not ServiceStatus.Active)
         {
-            return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+            return Result.FailureCode(HostpanelErrorCodes.SERVICE_PLAN_CHANGE_NOT_ACTIVE);
         }
 
         if (request.InvoiceId is { } invoiceId && !await IsInvoicePaidAsync(invoiceId, ct))

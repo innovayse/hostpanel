@@ -147,7 +147,7 @@ public sealed class InvoiceCreditNoteCapTests
 
         var act = () => invoice.RemoveCreditNoted(10.01m);
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteInvalidState);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceCreditNotedExceeded);
     }
 
     /// <summary>A note of nothing is refused.</summary>

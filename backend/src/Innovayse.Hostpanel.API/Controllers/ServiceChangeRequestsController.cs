@@ -54,7 +54,7 @@ public sealed class ServiceChangeRequestsController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 when the service now runs on the new plan; 400 when the body fails validation, or with
-    /// <c>SERVICE_NOT_ACTIVE</c> when the service is not active; 401 without a session; 402 with
+    /// <c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c> when the service is not active; 401 without a session; 402 with
     /// <c>SERVICE_CHANGE_INVOICE_UNPAID</c> when the upgrade invoice is not paid; 403 for a caller who is not an admin;
     /// 404 with <c>SERVICE_CHANGE_REQUEST_NOT_FOUND</c>; 409 with <c>SERVICE_CHANGE_INVALID_STATE</c> when the request is
     /// Completed or Rejected or the service left its plan, or <c>PRODUCT_PACKAGE_MISSING</c> when the new plan names no

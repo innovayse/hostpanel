@@ -38,7 +38,7 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
         record.Status.Should().Be(FulfilmentStatus.Done);
         record.Attempts.Should().Be(1);
         record.CompletedAt.Should().NotBeNull();
-        record.LastError.Should().BeNull();
+        record.LastErrorCode.Should().BeNull();
     }
 
     /// <summary>A record already done is not delivered again by a later pass.</summary>
@@ -119,7 +119,7 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
         scenario.Plugin.Calls.Should().HaveCount(2, "the failing delivery must not stop the pass");
         var failed = await scenario.ReadAsync(failing, FulfilmentKind.Paid);
         failed.Status.Should().Be(FulfilmentStatus.Pending);
-        failed.LastError.Should().Contain("boom");
+        failed.LastErrorCode.Should().Be(BillingErrors.FulfilmentPluginFailed);
         (await scenario.ReadAsync(healthy, FulfilmentKind.Paid)).Status.Should().Be(FulfilmentStatus.Done);
     }
 
@@ -175,24 +175,6 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
         record.Attempts.Should().Be(FulfilmentRecord.MaxAttempts);
     }
 
-    /// <summary>A long error text is stored cut to 2000 characters, starting with what failed.</summary>
-    /// <returns>A task.</returns>
-    [Fact]
-    public async Task LongErrorText_IsStoredCutToTwoThousandCharacters()
-    {
-        using var scenario = new FulfilmentScenario(factory);
-        var invoiceId = await scenario.SeedInvoiceAsync();
-        await scenario.SeedRecordsAsync(invoiceId, FulfilmentKind.Paid);
-        scenario.Plugin.Behaviour = (_, _, _) =>
-            Task.FromException(new InvalidOperationException(new string('x', FulfilmentRecord.MaxErrorLength * 3)));
-
-        await scenario.RunPassAsync();
-
-        var record = await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid);
-        record.LastError.Should().HaveLength(FulfilmentRecord.MaxErrorLength);
-        record.LastError.Should().StartWith("InvalidOperationException: xxx");
-    }
-
     /// <summary>A plugin that never answers fails the attempt at the call timeout instead of holding the pass.</summary>
     /// <returns>A task.</returns>
     [Fact]
@@ -207,7 +189,7 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
 
         var record = await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid);
         record.Status.Should().Be(FulfilmentStatus.Pending);
-        record.LastError.Should().Contain("did not answer within 1 seconds");
+        record.LastErrorCode.Should().Be(BillingErrors.FulfilmentPluginTimedOut);
     }
 
     /// <summary>
@@ -254,7 +236,7 @@ public sealed class FulfilmentDispatcherTests(IntegrationTestFactory factory) : 
         var abandoned = await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid);
         scenario.Plugin.Calls.Should().BeEmpty("an abandoned attempt is recorded, not delivered");
         abandoned.Status.Should().Be(FulfilmentStatus.Pending);
-        abandoned.LastError.Should().Be(FulfilmentRecord.AbandonedAttemptError);
+        abandoned.LastErrorCode.Should().Be(BillingErrors.FulfilmentAttemptAbandoned);
 
         scenario.Clock.Advance(FulfilmentRecord.InitialBackoff);
         await scenario.RunPassAsync();

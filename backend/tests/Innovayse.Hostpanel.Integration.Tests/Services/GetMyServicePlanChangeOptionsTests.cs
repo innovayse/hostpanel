@@ -118,7 +118,7 @@ public sealed class GetMyServicePlanChangeOptionsTests(IntegrationTestFactory fa
     /// <summary>A service that is not active has no plan to change.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task APendingService_Returns400WithServiceNotActive()
+    public async Task APendingService_Returns400WithServicePlanChangeNotActive()
     {
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "options-pending");
         var serviceId = await ServicesTestSeeds.SeedPendingServiceAsync(factory, clientId);
@@ -126,7 +126,7 @@ public sealed class GetMyServicePlanChangeOptionsTests(IntegrationTestFactory fa
         var response = await owner.GetAsync(RouteOf(serviceId));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_PLAN_CHANGE_NOT_ACTIVE);
     }
 
     /// <summary>A stranger is told the service does not exist, as for an id that names nothing.</summary>

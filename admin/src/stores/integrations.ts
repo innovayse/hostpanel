@@ -10,9 +10,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useIntegrationsApi } from '@/composables/apis/useIntegrationsApi'
 import { runAction } from '@/lib/runAction'
+import { translate } from '@/lib/translate'
 import { IntegrationCategory, IntegrationCategoryName } from '@/types/integration'
 import { PluginType } from '@/types/plugin'
 import type {
+  FieldDefinitionDto,
   IntegrationConfigPayload,
   IntegrationDetailDto,
   IntegrationDto,
@@ -54,6 +56,41 @@ const normaliseCategory = (integration: IntegrationDto): IntegrationCategory => 
   return byType ?? CATEGORY_MAP[integration.category] ?? integration.category
 }
 
+/**
+ * Translates the texts of a built-in field definition: the API sends admin locale keys for a built-in integration
+ * (a plugin's texts arrive finished, in the request language).
+ *
+ * @param field - The field definition as the API sent it.
+ * @returns The definition with its label and option labels in the operator's language.
+ */
+const localiseField = (field: FieldDefinitionDto): FieldDefinitionDto => ({
+  ...field,
+  label: translate(field.label),
+  optionLabels: field.optionLabels
+    ? Object.fromEntries(Object.entries(field.optionLabels).map(([value, key]) => [value, translate(key)]))
+    : field.optionLabels,
+})
+
+/**
+ * Translates the name of a built-in integration summary; a plugin's name is plain text and stays as sent.
+ *
+ * @param integration - The summary as returned by the backend.
+ * @returns The summary with a built-in name in the operator's language.
+ */
+const localiseSummary = (integration: IntegrationDto): IntegrationDto =>
+  integration.isPlugin ? integration : { ...integration, name: translate(integration.name) }
+
+/**
+ * Translates the name and field texts of a built-in integration's detail; a plugin's arrive finished.
+ *
+ * @param detail - The detail as returned by the backend.
+ * @returns The detail with built-in texts in the operator's language.
+ */
+const localiseDetail = (detail: IntegrationDetailDto): IntegrationDetailDto =>
+  detail.isPlugin
+    ? detail
+    : { ...detail, name: translate(detail.name), fieldDefinitions: detail.fieldDefinitions.map(localiseField) }
+
 /** Manages the integrations summary list and the config of the integration being edited. */
 export const useIntegrationsStore = defineStore('integrations', () => {
   const api = useIntegrationsApi()
@@ -91,7 +128,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, api.listIntegrations)
     loading.value = false
     if (result.ok) {
-      integrations.value = result.value.map(i => ({ ...i, category: normaliseCategory(i) }))
+      integrations.value = result.value.map(i => ({ ...localiseSummary(i), category: normaliseCategory(i) }))
     }
   }
 
@@ -107,7 +144,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, () => api.getIntegration(slug))
     loading.value = false
     if (result.ok) {
-      current.value = result.value
+      current.value = localiseDetail(result.value)
     }
   }
 

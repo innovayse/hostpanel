@@ -41,8 +41,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("ReadAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("UserId", "EventKey")
-                        .HasName("PK_ActivityReads");
+                    b.HasKey("UserId", "EventKey");
 
                     b.HasIndex("UserId");
 
@@ -448,9 +447,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("LastError")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                    b.Property<string>("LastErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTimeOffset>("NextAttemptAt")
                         .HasColumnType("timestamp with time zone");

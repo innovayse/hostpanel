@@ -60,7 +60,7 @@ public sealed class OrderServiceHandler
     /// <returns>
     /// The newly created client service id (or, for an order line that already has one, that service's id, also when a
     /// concurrent attempt of the line created it first), or <c>PRODUCT_NOT_FOUND</c> when the id names no
-    /// product, <c>CLIENT_NOT_FOUND</c> when it names no client, or <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active or an amount was
+    /// product, <c>CLIENT_NOT_FOUND</c> when it names no client, or <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active, <c>PRODUCT_PRICE_UNAVAILABLE</c> when an amount was
     /// left for this handler to price and the product has no price for that cycle in the
     /// client's currency, or <c>ORDER_LINE_SERVICE_CONFLICT</c> when the service already stored for the order line belongs to another
     /// client or product, or, for a service ordered with no order line, <c>ORDER_PRODUCT_SOLD_OUT</c> or
@@ -230,7 +230,7 @@ public sealed class OrderServiceHandler
     /// </summary>
     /// <param name="cmd">The order command, naming the client and the cycle.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The amount, or <c>PRODUCT_NOT_AVAILABLE</c> when the product has no such price.</returns>
+    /// <returns>The amount, or <c>PRODUCT_PRICE_UNAVAILABLE</c> when the product has no such price.</returns>
     private async Task<Result<decimal>> ResolveCyclePriceAsync(
         OrderServiceCommand cmd, CancellationToken ct)
     {
@@ -240,7 +240,7 @@ public sealed class OrderServiceHandler
             new GetProductCyclePricesQuery([lookup]), ct);
         var price = prices.Value?.FirstOrDefault()?.Amount;
         return price is null
-            ? Result<decimal>.FailureCode(HostpanelErrorCodes.PRODUCT_NOT_AVAILABLE)
+            ? Result<decimal>.FailureCode(HostpanelErrorCodes.PRODUCT_PRICE_UNAVAILABLE)
             : Result<decimal>.Success(price.Value);
     }
 }

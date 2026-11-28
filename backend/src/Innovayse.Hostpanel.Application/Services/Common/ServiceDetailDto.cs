@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <param name="ProductName">Name of the ordered product; every service has one, since its product cannot be deleted.</param>
 /// <param name="Domain">Linked domain name, or <see langword="null"/> if no domain is linked.</param>
 /// <param name="Status">Current lifecycle status.</param>
+/// <param name="AllowedStatuses">The statuses staff may move the service to, the current one included; the domain's status table, so a screen offers only moves that are accepted.</param>
 /// <param name="CreatedAt">UTC timestamp when the service was ordered.</param>
 /// <param name="TerminatedAt">UTC timestamp when the service was terminated.</param>
 /// <param name="AdminNotes">Internal admin notes.</param>
@@ -29,6 +30,7 @@ public sealed record ServiceDetailDto(
     string ProductName,
     string? Domain,
     ServiceStatus Status,
+    IReadOnlyList<ServiceStatus> AllowedStatuses,
     DateTimeOffset CreatedAt,
     DateTimeOffset? TerminatedAt,
     string? AdminNotes,

@@ -62,31 +62,31 @@
     <value>Error de validación</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>Se produjeron uno o más errores de validación.</value>
+    <value>Algunos de los valores introducidos no son válidos, por lo que no se guardó nada. Revise los mensajes junto a cada campo, corríjalos y envíe el formulario de nuevo.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
     <value>No autorizado</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>No está autorizado para realizar esta acción.</value>
+    <value>No ha iniciado sesión o su sesión ha caducado, por lo que la acción no se realizó. Inicie sesión de nuevo y repítala.</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
     <value>Recurso no encontrado</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>No se encontró el recurso solicitado.</value>
+    <value>El elemento solicitado no existe o fue eliminado. Recargue la página y ábralo de nuevo desde la lista.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
     <value>Error interno del servidor</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>Se produjo un error inesperado. Inténtelo de nuevo más tarde.</value>
+    <value>Se produjo un error en el servidor y es posible que la acción no se haya completado. Espere un minuto y repítala, y si el problema continúa, póngase en contacto con el administrador e indique la hora del error.</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
     <value>Infracción de una regla de negocio</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>La solicitud infringe una regla de negocio.</value>
+    <value>La acción no es posible en el estado actual de este elemento, por lo que no se cambió nada. Recargue la página para ver su estado actual y compruebe que sus datos son compatibles con él.</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
     <value>Conflicto de concurrencia</value>
@@ -98,10 +98,10 @@
     <value>Cuerpo de la solicitud no válido</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>No se pudo leer el cuerpo de la solicitud. Compruebe su formato.</value>
+    <value>El servidor no pudo leer los datos enviados con esta solicitud, por ejemplo porque están mal formados, tienen un valor del tipo incorrecto o son demasiado grandes. Recargue la página y envíela de nuevo, y si llama a la API directamente, compruebe el JSON que envía.</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>El valor '{0}' no es un número válido.</value>
+    <value>El valor '{0}' no es un número válido. Introduzca solo dígitos, con un punto como separador decimal, por ejemplo 12.50.</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
     <value>Prohibido</value>
@@ -110,9 +110,9 @@
     <value>Esta solicitud debe enviarse desde el propio panel. Recargue la página e inténtelo de nuevo.</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>No tiene permiso para realizar esta acción.</value>
+    <value>Su cuenta no tiene el permiso que requiere esta acción, por lo que no se realizó. Pida a un administrador que se lo conceda, o inicie sesión con una cuenta que lo tenga.</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>Este valor no es válido.</value>
+    <value>No se pudo leer este valor en el formato esperado. Revise lo que introdujo y corríjalo.</value>
   </data>
 </root>

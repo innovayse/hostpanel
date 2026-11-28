@@ -12,15 +12,13 @@ namespace Innovayse.Hostpanel.Application.Services.Events;
 /// <summary>
 /// Suspends every active service of a closed account through <see cref="SuspendServiceCommand"/>, the
 /// one use case every suspension goes through, so the hosting account is suspended on its panel too.
-/// The suspension is <see cref="SuspensionSource.Other"/>: a payment never lifts it. A
+/// The suspension is <see cref="SuspensionSource.Other"/>: a payment never lifts it, and that stored
+/// source is the reason; no sentence is written, so none can be left in one language. A
 /// non-notification handler, and safe as one: suspending is refused for a service that is no longer
 /// active, and a failure is logged for staff.
 /// </summary>
 public sealed class ClientClosedServicesHandler
 {
-    /// <summary>Why the services are suspended, passed on to the hosting panel.</summary>
-    private const string Reason = "Client account closed";
-
     /// <summary>The module's data context, to find the client's active services.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -57,7 +55,7 @@ public sealed class ClientClosedServicesHandler
             foreach (var serviceId in serviceIds)
             {
                 var outcome = await _bus.InvokeAsync<Result>(
-                    new SuspendServiceCommand(serviceId, SuspensionSource.Other, Reason), ct);
+                    new SuspendServiceCommand(serviceId, SuspensionSource.Other), ct);
                 if (outcome.IsFailure)
                 {
                     _logger.LogWarning(

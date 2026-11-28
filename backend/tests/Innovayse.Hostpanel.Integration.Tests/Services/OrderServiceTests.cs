@@ -246,7 +246,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
             new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, null, null), CancellationToken.None);
 
         outcome.IsFailure.Should().BeTrue();
-        outcome.ErrorCode.Should().Be(HostpanelErrorCodes.PRODUCT_NOT_AVAILABLE);
+        outcome.ErrorCode.Should().Be(HostpanelErrorCodes.PRODUCT_PRICE_UNAVAILABLE);
     }
 
     /// <summary>An unknown product id refuses <c>PRODUCT_NOT_FOUND</c>.</summary>

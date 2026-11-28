@@ -50,7 +50,7 @@ export type IntegrationSlug = (typeof IntegrationSlug)[keyof typeof IntegrationS
 export interface IntegrationDto {
   /** URL-safe slug used in routes and API calls. */
   slug: string
-  /** Human-readable name, as the integration list shows it. */
+  /** Display name; the API sends an admin locale key for a built-in integration, which the store translates. */
   name: string
   /** Category this integration belongs to. */
   category: IntegrationCategory
@@ -102,7 +102,7 @@ export interface IntegrationConnection {
 export interface FieldDefinitionDto {
   /** Storage key used in the Settings table (e.g. "secret_key"). */
   key: string
-  /** Human-readable label shown above the input. */
+  /** Label shown above the input; an admin locale key for a built-in integration (translated by the store), finished text for a plugin. */
   label: string
   /** Input kind of the field. */
   type: IntegrationFieldType
@@ -118,7 +118,7 @@ export interface FieldDefinitionDto {
   description?: string | null
   /** Hint shown in the empty input, already in the request language; absent or null for none. */
   placeholder?: string | null
-  /** The text shown for each option value, keyed by the value; absent or null when an option shows its value. */
+  /** The text shown for each option value, keyed by the value (a locale key for a built-in integration, translated by the store); absent or null when an option shows its value. */
   optionLabels?: Record<string, string> | null
 }
 
@@ -136,7 +136,7 @@ export interface IntegrationFieldValue {
 export interface IntegrationDetailDto {
   /** URL-safe slug used in routes and API calls. */
   slug: string
-  /** Human-readable name from the built-in catalogue or the plugin manifest. */
+  /** Display name: an admin locale key for a built-in integration (translated by the store), the manifest name for a plugin. */
   name: string
   /** Whether this integration is currently enabled. */
   isEnabled: boolean

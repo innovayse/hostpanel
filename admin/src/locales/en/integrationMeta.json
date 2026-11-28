@@ -1,22 +1,30 @@
 {
   "bankTransfer": {
+    "name": "Bank Transfer",
     "shortDescription": "Allow clients to pay via direct bank transfer with your banking details.",
     "fieldAccountName": "Account Name",
-    "fieldInstructions": "Payment Instructions"
+    "fieldIban": "IBAN",
+    "fieldSwift": "SWIFT / BIC",
+    "fieldInstructions": "Payment Instructions",
+    "fieldExpiryDays": "Days until an unconfirmed transfer lapses"
   },
   "cpanel": {
+    "name": "cPanel WHM",
     "shortDescription": "Provision and manage hosting accounts via cPanel WHM server API.",
     "fieldHost": "WHM Host",
     "fieldPort": "Port",
     "fieldApiToken": "API Token"
   },
   "smtp": {
+    "name": "SMTP Server",
     "shortDescription": "Configure outgoing email delivery via your SMTP mail server.",
     "fieldHost": "SMTP Host",
     "fieldFromAddress": "From Address",
-    "fieldEncryption": "Encryption"
+    "fieldEncryption": "Encryption",
+    "encryptionNone": "None"
   },
   "maxmind": {
+    "name": "MaxMind",
     "shortDescription": "Detect fraudulent orders with MaxMind's GeoIP risk scoring.",
     "fieldLicenseKey": "License Key",
     "fieldAccountId": "Account ID"

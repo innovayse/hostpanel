@@ -125,7 +125,7 @@
     "cancellationRequests": "Չեղարկման հայտեր",
     "reviewAndProcessServiceCancellation": "Ծառայությունների չեղարկման հայտերի դիտում և մշակում",
     "noCancellationRequestsFound": "Չեղարկման հայտեր չեն գտնվել",
-    "searchRequests": "Որոնում ըստ պատճառի կամ համարի",
+    "searchRequests": "Որոնում ըստ պատճառի, ծառայության, հաճախորդի կամ համարի",
     "noRequestsMatchYourFilters": "Ֆիլտրերին համապատասխան չեղարկման հայտեր չկան",
     "deleteCancellationRequest": "Ջնջել չեղարկման հայտը",
     "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս չեղարկման հայտը։",
@@ -228,7 +228,7 @@
       "senderRejected": "Ուղարկողի հասցեն մերժվեց",
       "messageRejected": "Նամակը մերժվեց"
     },
-    "searchEmails": "Որոնել նամակներում"
+    "searchEmails": "Որոնում ըստ թեմայի կամ ստացողի"
   },
   "clientInvoices": {
     "createInvoice": "Ստեղծել հաշիվ",
@@ -249,7 +249,7 @@
     "activityLog": "Գործունեության մատյան",
     "logEntry": "Մատյանի գրառում",
     "user": "Օգտատեր",
-    "searchLog": "Որոնել գործունեության մատյանում"
+    "searchLog": "Որոնում ըստ ադմինի, նկարագրության կամ IP հասցեի"
   },
   "clientOpenTicket": {
     "ticketSubject": "Տոմսի թեմա",
@@ -307,6 +307,7 @@
     "dedicatedIp": "Հատկացված IP",
     "moduleCommands": "Մոդուլի հրամաններ",
     "serviceTerminated": "Ծառայությունը դադարեցված է",
+    "statusLocked": "Դադարեցված ծառայությունը հնարավոր չէ տեղափոխել այլ կարգավիճակ, ուստի այստեղ փոխելու բան չկա։ Այս ծառայությունը կրկին տրամադրելու համար հաճախորդի համար նոր պատվեր կատարեք։",
     "terminate": "Դադարեցնել",
     "suspend": "Կասեցնել",
     "changePackage": "Փոխել փաթեթը",

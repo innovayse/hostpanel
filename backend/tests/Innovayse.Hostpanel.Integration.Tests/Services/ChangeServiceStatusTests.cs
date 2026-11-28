@@ -35,12 +35,12 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>
-    /// Asking to move a service back to Pending is refused with <c>SERVICE_STATUS_CHANGE_NOT_ALLOWED</c>
+    /// Asking to move a service back to Pending is refused with <c>SERVICE_STATUS_PENDING_UNREACHABLE</c>
     /// and leaves the service untouched.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task ChangeStatus_ToPending_Returns400StatusChangeNotAllowedAsync()
+    public async Task ChangeStatus_ToPending_Returns400StatusPendingUnreachableAsync()
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, ServiceStatus.Active);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
@@ -48,7 +48,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
         var response = await client.PutAsJsonAsync($"/api/services/{serviceId}/status", new { status = "Pending" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_STATUS_CHANGE_NOT_ALLOWED);
+        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_STATUS_PENDING_UNREACHABLE);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var stored = await context.ClientServices.AsNoTracking().SingleAsync(s => s.Id == serviceId);
@@ -56,7 +56,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>
-    /// Moves the status table refuses answer 400 <c>SERVICE_STATUS_CHANGE_NOT_ALLOWED</c> before any
+    /// Moves the status table refuses answer 400 with the code of their reason before any
     /// transition runs, and leave the service as it was: nothing leaves Terminated, and a Pending
     /// service cannot be suspended or unsuspended.
     /// </summary>
@@ -68,7 +68,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     [InlineData(ServiceStatus.Terminated, "Suspended")]
     [InlineData(ServiceStatus.Pending, "Suspended")]
     [InlineData(ServiceStatus.Pending, "Active")]
-    public async Task ChangeStatus_OutsideTheTable_Returns400StatusChangeNotAllowedAsync(ServiceStatus from, string target)
+    public async Task ChangeStatus_OutsideTheTable_Returns400TheReasonOfTheRefusalAsync(ServiceStatus from, string target)
     {
         var serviceId = await ServicesTestSeeds.SeedServiceAsync(factory, from);
         var client = await ServicesTestSeeds.AdminClientAsync(factory);
@@ -76,7 +76,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
         var response = await client.PutAsJsonAsync($"/api/services/{serviceId}/status", new { status = target });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_STATUS_CHANGE_NOT_ALLOWED);
+        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(from is ServiceStatus.Terminated ? HostpanelErrorCodes.SERVICE_TERMINATED_STATUS_LOCKED : HostpanelErrorCodes.SERVICE_PENDING_NOT_ACTIVATED);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var stored = await context.ClientServices.AsNoTracking().SingleAsync(s => s.Id == serviceId);

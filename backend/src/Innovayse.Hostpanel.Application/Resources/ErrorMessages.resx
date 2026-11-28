@@ -64,7 +64,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="HOSTPANEL_UNEXPECTED" xml:space="preserve">
-    <value>An unexpected error occurred.</value>
+    <value>Something went wrong on the server and the request was not completed. Please try again. If it keeps happening, check the server log or contact the site administrator.</value>
   </data>
 <data name="HOSTPANEL_RATE_LIMITED" xml:space="preserve">
     <value>Too many requests. Please wait a moment and try again.</value>
@@ -76,16 +76,16 @@
     <value>No such currency is configured.</value>
   </data>
 <data name="CURRENCY_BASE_NOT_RECOMPUTED" xml:space="preserve">
-    <value>The base currency's prices are the source and are not recomputed.</value>
+    <value>The base currency's prices are the source and are never recalculated from exchange rates. Edit them directly, or choose only the other currencies to recalculate.</value>
   </data>
 <data name="BASE_CURRENCY_NOT_CONFIGURED" xml:space="preserve">
-    <value>No base currency is configured, so amounts cannot be converted.</value>
+    <value>No base currency is configured, so amounts cannot be converted. Mark one currency as the base currency in the currency settings, then try again.</value>
   </data>
 <data name="INVOICE_NOT_FOUND" xml:space="preserve">
     <value>No such invoice.</value>
   </data>
 <data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
-    <value>This invoice has too many lines to download as a PDF.</value>
+    <value>This document has more lines than the PDF limit allows, so it cannot be downloaded as a PDF. View it on screen instead, or ask the administrator to raise the PDF line limit.</value>
   </data>
 <data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
     <value>Too many invoice PDFs are being prepared right now. Please try again shortly.</value>
@@ -109,13 +109,13 @@
     <value>No such client.</value>
   </data>
 <data name="BULK_INVOICE_ACTION_UNKNOWN" xml:space="preserve">
-    <value>That bulk action is not recognised.</value>
+    <value>That bulk action is not recognised, so nothing was changed. Choose one of the supported bulk actions and try again.</value>
   </data>
 <data name="PAYMENT_PLUGIN_NOT_CONFIGURED" xml:space="preserve">
-    <value>No payment plugin is configured for that invoice's gateway.</value>
+    <value>The payment plugin for this invoice's gateway is not installed, enabled or configured, so the payment cannot be processed. Set it up, or choose another payment method.</value>
   </data>
 <data name="INVOICE_NOT_PAYABLE" xml:space="preserve">
-    <value>This invoice cannot be paid in its current status.</value>
+    <value>This invoice is not open for payment, because it is not unpaid or overdue. It may be a draft, already paid, cancelled or waiting for a bank transfer to be confirmed. Open the invoice to see its status, and contact support if it looks wrong.</value>
   </data>
 <data name="GATEWAY_SESSION_ALREADY_STARTED" xml:space="preserve">
     <value>A payment attempt is already in progress for this invoice. Please wait or complete the existing payment.</value>
@@ -130,13 +130,13 @@
     <value>This account has no saved payment methods.</value>
   </data>
 <data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
-    <value>That return address is not allowed for this deployment.</value>
+    <value>The return address is missing, is not a full web address, or its site is not one this installation trusts. Use an address on this panel's own site, or ask the administrator to add that origin to the allowed origins.</value>
   </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
-    <value>The payment gateway is temporarily unavailable. Please try again shortly.</value>
+    <value>The payment gateway plugin could not be reached or did not respond, so this request was not completed. Try again in a few minutes. If it keeps happening, check that the gateway plugin is running and configured.</value>
   </data>
   <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
-    <value>The service that links your account to a client profile is temporarily unavailable. Please try again shortly.</value>
+    <value>The identity plugin that links your account to a client profile did not answer, so the request was not completed. Try again in a few minutes. If it keeps happening, ask the administrator to check that the identity plugin is running.</value>
   </data>
 <data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>This account has no client profile, so there is nothing to show in the client area.</value>
@@ -196,34 +196,34 @@
     <value>This domain is already registered in the system.</value>
   </data>
 <data name="DOMAIN_REGISTRATION_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to complete the registration. Please try again shortly.</value>
+    <value>The registrar was unable to complete the registration. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_RENEWAL_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to complete the renewal. Please try again shortly.</value>
+    <value>The registrar was unable to complete the renewal. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to start the transfer. Please try again shortly.</value>
+    <value>The registrar was unable to start the transfer. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_TRANSFER_CANCEL_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to cancel the pending transfer. Please try again shortly.</value>
+    <value>The registrar was unable to cancel the pending transfer. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_NO_REGISTRAR_REF" xml:space="preserve">
-    <value>This domain has no registrar reference, so it cannot be changed at the registrar.</value>
+    <value>This domain was never placed at a registrar, so it has no registrar reference and cannot be changed there. Register or transfer it through a registrar module first, or import it from the registrar.</value>
   </data>
 <data name="DOMAIN_OUTGOING_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to start the outgoing transfer. Please try again shortly.</value>
+    <value>The registrar was unable to start the outgoing transfer. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_EPP_CODE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar did not return an authorization code for this domain.</value>
+    <value>The registrar did not return an authorization code for this domain, so the transfer out cannot proceed yet. Try again in a few minutes, or request the code in the registrar's own control panel.</value>
   </data>
 <data name="DOMAIN_AUTO_RENEW_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update automatic renewal. Please try again shortly.</value>
+    <value>The registrar was unable to update automatic renewal. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_WHOIS_NOT_FOUND" xml:space="preserve">
     <value>No WHOIS record was found for this domain.</value>
   </data>
 <data name="DOMAIN_PRODUCT_NOT_CONFIGURED" xml:space="preserve">
-    <value>Domains cannot be ordered on this site at the moment.</value>
+    <value>Domains cannot be ordered because this site has no active domain product yet. If you manage the site, activate a product of the Domain type, otherwise contact the site owner.</value>
   </data>
   <data name="RENEWAL_INVOICE_OPEN" xml:space="preserve">
     <value>A renewal invoice for this domain cannot be released right now: it is overdue together with other items, or a payment on it is in progress. Settle that invoice first, then renew.</value>
@@ -232,34 +232,34 @@
     <value>No such DNS record on this domain.</value>
   </data>
 <data name="DNS_RECORD_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to apply the DNS record change. Please try again shortly.</value>
+    <value>The registrar was unable to apply the DNS record change. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="NAMESERVERS_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update the nameservers. Please try again shortly.</value>
+    <value>The registrar was unable to update the nameservers. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DNS_MANAGEMENT_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update DNS management. Please try again shortly.</value>
+    <value>The registrar was unable to update DNS management. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="REGISTRAR_LOCK_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update the transfer lock. Please try again shortly.</value>
+    <value>The registrar was unable to update the transfer lock. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="WHOIS_PRIVACY_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update WHOIS privacy. Please try again shortly.</value>
+    <value>The registrar was unable to update WHOIS privacy. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="DOMAIN_CONTACT_NOT_FOUND" xml:space="preserve">
     <value>No registrant contact record was found for this domain.</value>
   </data>
 <data name="DOMAIN_CONTACT_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update the registrant contact details. Please try again shortly.</value>
+    <value>The registrar was unable to update the registrant contact details. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="EMAIL_FORWARDING_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to update email forwarding. Please try again shortly.</value>
+    <value>The registrar was unable to update email forwarding. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="EMAIL_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
     <value>No such email forwarding rule on this domain.</value>
   </data>
 <data name="EMAIL_FORWARDING_RULE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar was unable to apply the email forwarding rule change. Please try again shortly.</value>
+    <value>The registrar was unable to apply the email forwarding rule change. It either rejected the request or did not respond. Try again in a few minutes, and if it keeps failing check the registrar module settings.</value>
   </data>
 <data name="TLD_CONFIG_NOT_FOUND" xml:space="preserve">
     <value>No such TLD configuration.</value>
@@ -268,7 +268,7 @@
     <value>A TLD configuration for this extension already exists.</value>
   </data>
 <data name="TLD_REGISTRAR_MODULE_UNKNOWN" xml:space="preserve">
-    <value>Unrecognized registrar module.</value>
+    <value>That registrar module is not installed or not recognised. Choose an installed registrar module and try again.</value>
   </data>
 <data name="KBARTICLE_NOT_FOUND" xml:space="preserve">
     <value>No such knowledge base article exists.</value>
@@ -295,22 +295,22 @@
     <value>This order has no invoice to act on yet.</value>
   </data>
 <data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>That payment method is not available right now.</value>
+    <value>That payment method is not set up or is switched off, so it cannot be used. Choose another method from the list at checkout.</value>
   </data>
   <data name="PAYMENT_NO_COMMON_METHOD" xml:space="preserve">
     <value>No payment method is available for every product in this order. Order them separately.</value>
   </data>
   <data name="PAYMENT_METHOD_NOT_ALLOWED" xml:space="preserve">
-    <value>This payment method is not allowed for the products being paid.</value>
+    <value>The product groups on this invoice do not allow that payment method. Choose one of the payment methods offered for this invoice.</value>
   </data>
 <data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
-    <value>That currency is not offered.</value>
+    <value>That currency is not offered here, or it has been switched off. Choose one of the currencies shown at checkout.</value>
   </data>
   <data name="ACCOUNT_EMAIL_EXISTS" xml:space="preserve">
     <value>An account with this email address already exists. Sign in to continue.</value>
   </data>
   <data name="ORDER_NUMBER_RANGE_EXHAUSTED" xml:space="preserve">
-    <value>Orders cannot be numbered right now. Please try again later.</value>
+    <value>No new order can be numbered, because the order numbers have outgrown the configured prefix. The order number prefix has to be shortened before orders can be placed again.</value>
   </data>
 <data name="ORDER_GUEST_DETAILS_REQUIRED" xml:space="preserve">
     <value>Your name, email and password are required to place this order.</value>
@@ -319,7 +319,7 @@
     <value>That product has no price in your currency for the billing cycle you chose.</value>
   </data>
 <data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
-    <value>That domain cannot be priced for this order. Check the name and try again.</value>
+    <value>A domain in this order could not be priced. Check the domain name, the action (register or transfer) and the registration period, then try again.</value>
   </data>
   <data name="ORDER_BUNDLE_ITEMS_MISMATCH" xml:space="preserve">
     <value>The products in the order do not match the bundle. Order each product of the bundle once, and nothing else.</value>
@@ -331,7 +331,7 @@
     <value>A bundle can include a domain registration or transfer, not a renewal.</value>
   </data>
   <data name="ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE" xml:space="preserve">
-    <value>The currency of this bundle's discount is not available, so the bundle cannot be ordered.</value>
+    <value>This bundle's fixed discount is set in a currency the store does not use, so it cannot be applied to the order currency and the bundle cannot be ordered. Order the products separately, or change the currency of the bundle discount.</value>
   </data>
 <data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
     <value>No such support department exists.</value>
@@ -388,16 +388,16 @@
     <value>No such product.</value>
   </data>
 <data name="PRODUCT_NOT_AVAILABLE" xml:space="preserve">
-    <value>That product is not available for ordering.</value>
+    <value>The product was not ordered because it is not on sale. Only an active product can be ordered. Choose another product, or contact support.</value>
   </data>
 <data name="SERVICE_NOT_PENDING" xml:space="preserve">
-    <value>Only a pending service can be set up.</value>
+    <value>Only a service in Pending status can be set up, and this service has another status. Check the service status before setting it up.</value>
   </data>
 <data name="NO_ELIGIBLE_SERVER" xml:space="preserve">
-    <value>No server is available to provision this service right now. Please try again shortly.</value>
+    <value>No server for this product has room for the service right now. Try again after freeing up space or adding a server for this product.</value>
   </data>
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Provisioning the service failed. Please try again or contact support.</value>
+    <value>The hosting server did not complete the account setup, so the service is still pending. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
     <value>We could not confirm whether the hosting account was created. Please try again in a few minutes.</value>
@@ -409,37 +409,37 @@
     <value>The hosting account name is already taken on the server. Our team has been notified and will finish the setup.</value>
   </data>
 <data name="SERVICE_NOT_PROVISIONED" xml:space="preserve">
-    <value>This service has not been provisioned yet.</value>
+    <value>This service has no hosting account yet, so there is nothing to act on. Set the service up first.</value>
   </data>
 <data name="SERVICE_NO_SERVER_ASSIGNED" xml:space="preserve">
-    <value>This service has no hosting server assigned.</value>
+    <value>This service has no hosting server assigned, or the assigned server no longer exists. Assign an existing server to the service and try again.</value>
   </data>
 <data name="SERVICE_PASSWORD_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The password could not be changed on the hosting server. Please try again or contact support.</value>
+    <value>The hosting server did not accept the password change, so the password is unchanged. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The hosting package could not be changed. Please try again or contact support.</value>
+    <value>The hosting server did not accept the package change, so the package is unchanged. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_PACKAGES_UPSTREAM_FAILED" xml:space="preserve">
     <value>The list of hosting packages could not be read from the server. Please try again or enter the package name by hand.</value>
   </data>
 <data name="SERVICE_PANEL_SYNC_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The hosting account could not be read from the control panel. Please try again or contact support.</value>
+    <value>The hosting server did not return the hosting account details from its control panel. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The service could not be suspended on the hosting server. Please try again or contact support.</value>
+    <value>The hosting server did not accept the suspension, so the service was not suspended. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_TERMINATE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The service could not be terminated on the hosting server. Please try again or contact support.</value>
+    <value>The hosting server did not accept the termination, so the service was not terminated. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The service could not be reactivated on the hosting server. Please try again or contact support.</value>
+    <value>The hosting server did not accept the reactivation, so the service was not reactivated. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_PANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
-    <value>A control panel session could not be started. Please try again or contact support.</value>
+    <value>The hosting server did not open a control panel session. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The account credentials could not be retrieved. Please try again or contact support.</value>
+    <value>The hosting server did not return the account credentials. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
 <data name="PRODUCT_GROUP_NOT_FOUND" xml:space="preserve">
     <value>No such product group.</value>
@@ -493,16 +493,16 @@
     <value>An option price cannot be negative, and a percentage cannot be above 100.</value>
   </data>
 <data name="PRODUCT_OPTION_NOT_FOUND" xml:space="preserve">
-    <value>No such product option.</value>
+    <value>This product option no longer exists, it may have been deleted. Reload the product and try again.</value>
   </data>
 <data name="PRODUCT_OPTION_GROUP_NOT_FOUND" xml:space="preserve">
-    <value>No such product option group.</value>
+    <value>This product option group no longer exists, it may have been deleted. Reload the product and try again.</value>
   </data>
 <data name="PRODUCT_OPTION_GROUP_ORDER_MISMATCH" xml:space="preserve">
-    <value>The list must name every option group of the product exactly once.</value>
+    <value>The new order does not list every option group of this product exactly once, so the groups may have changed. Reload the product and sort the groups again.</value>
   </data>
 <data name="SLIDE_NOT_FOUND" xml:space="preserve">
-    <value>No such slide.</value>
+    <value>This slide no longer exists, it may have been deleted. Reload the list and try again.</value>
   </data>
 <data name="SETUP_ALREADY_COMPLETED" xml:space="preserve">
     <value>This installation has already been set up and someone already holds the administrator role. Ask them to grant you access.</value>
@@ -514,7 +514,7 @@
     <value>That code did not match. Check your authenticator app and try again.</value>
   </data>
 <data name="SIGN_IN_UNAUTHORIZED" xml:space="preserve">
-    <value>Invalid email or password.</value>
+    <value>The email or password is not correct. Check both and try again, or reset your password.</value>
   </data>
 <data name="SIGN_IN_ACCOUNT_LOCKED" xml:space="preserve">
     <value>Too many wrong passwords. This account is locked for a while, try again later.</value>
@@ -529,7 +529,7 @@
     <value>The link is invalid or has expired. Request a new one.</value>
   </data>
 <data name="REGISTRATION_FAILED" xml:space="preserve">
-    <value>We could not create the account. Check the details and try again.</value>
+    <value>We could not create the account, most often because the password is too weak or the email address is already registered. Check both and try again.</value>
   </data>
 <data name="TWO_FACTOR_ALREADY_ENABLED" xml:space="preserve">
     <value>Two-factor authentication is already on. Switch it off before setting it up again.</value>
@@ -541,7 +541,7 @@
     <value>This email address is already used by another account.</value>
   </data>
 <data name="MIGRATION_JOB_NOT_FOUND" xml:space="preserve">
-    <value>No such migration job.</value>
+    <value>This migration job does not exist, it may have been deleted. Go back to the migration list and pick another one.</value>
   </data>
 <data name="MIGRATION_JOB_NOT_PENDING" xml:space="preserve">
     <value>This migration job has already started or finished and cannot be started again.</value>
@@ -550,37 +550,37 @@
     <value>This migration job has not failed, so it cannot be retried.</value>
   </data>
 <data name="MIGRATION_JOB_INVALID_TRANSITION" xml:space="preserve">
-    <value>This migration job cannot do that in its current state.</value>
+    <value>This migration job is in a state where that step is not allowed, for example it has already finished. Reload the job to see its current state.</value>
   </data>
 <data name="MIGRATION_PLUGIN_NOT_FOUND" xml:space="preserve">
-    <value>The migration plugin is not available on this deployment.</value>
+    <value>The files of the migration plugin are not present on this deployment, so it cannot be downloaded. Ask whoever runs this installation to add them.</value>
   </data>
 <data name="MIGRATION_CONNECTION_UPSTREAM_FAILED" xml:space="preserve">
     <value>Could not reach the source system. Check the address and try again.</value>
   </data>
 <data name="SERVER_NOT_FOUND" xml:space="preserve">
-    <value>No such provisioning server.</value>
+    <value>This provisioning server no longer exists, it may have been deleted. Reload the server list and try again.</value>
   </data>
 <data name="SERVER_CONNECTION_UNREACHABLE" xml:space="preserve">
     <value>Could not reach the server. See the server log for detail.</value>
   </data>
 <data name="SERVER_CONNECTION_NO_ACCESS_HASH" xml:space="preserve">
-    <value>No access hash is configured for this server.</value>
+    <value>This server has no access hash saved, so the connection cannot be tested. Add the access hash in the server settings and test again.</value>
   </data>
 <data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
-    <value>No API key or access hash is configured for this server.</value>
+    <value>This server has no API key or access hash saved, so the connection cannot be tested. Add one in the server settings and test again.</value>
   </data>
 <data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
-    <value>No such server group.</value>
+    <value>This server group no longer exists, it may have been deleted. Reload the server group list and try again.</value>
   </data>
 <data name="PLUGIN_MANIFEST_INVALID" xml:space="preserve">
     <value>That archive is not a valid plugin. Check that plugin.json is present at its root and correctly formed.</value>
   </data>
 <data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve">
-    <value>This plugin was built for a different SDK version and cannot be installed here.</value>
+    <value>This plugin was built for an SDK version this server does not support, so it cannot be installed here. Install a release of the plugin built for the SDK version of this server.</value>
   </data>
 <data name="PLUGIN_MANIFEST_VERSION_UNKNOWN" xml:space="preserve">
-    <value>This plugin's manifest declares a manifest version this server does not know.</value>
+    <value>The manifest of this plugin declares a manifest version this server does not know. Use a release of the plugin that matches this server, or update Hostpanel.</value>
   </data>
 <data name="PLUGIN_SDK_ASSEMBLY_OUTDATED" xml:space="preserve">
     <value>This plugin was built against an older SDK and has to be rebuilt against the current one.</value>
@@ -589,22 +589,22 @@
     <value>This plugin asks for a permission that does not exist. Use a client permission name or Any.</value>
   </data>
 <data name="PLUGIN_ADMIN_PERMISSION_DECLARED" xml:space="preserve">
-    <value>This plugin declares a permission on an admin route, page or slot, and the admin area takes none.</value>
+    <value>This plugin declares a permission on an admin route, page or slot, and the admin area takes none. Remove the permission from those admin items in the manifest.</value>
   </data>
 <data name="PLUGIN_ROUTE_PATH_INVALID" xml:space="preserve">
     <value>This plugin declares a route path that is not valid. Use lowercase segments and parameters in curly brackets, with no empty segment and no dot segment.</value>
   </data>
 <data name="PLUGIN_ROUTE_DUPLICATE" xml:space="preserve">
-    <value>This plugin declares the same route twice for one method in one panel.</value>
+    <value>This plugin declares the same route twice for one method in one panel. Remove the repeated route from the manifest.</value>
   </data>
 <data name="PLUGIN_LABEL_KEY_MISSING" xml:space="preserve">
-    <value>This plugin uses a text key that its English texts do not define.</value>
+    <value>This plugin uses a text key that its English texts do not define. Add the key to the English texts or correct its name in the manifest.</value>
   </data>
 <data name="PLUGIN_SLOT_UNKNOWN" xml:space="preserve">
-    <value>This plugin puts content into a slot that the server does not offer.</value>
+    <value>This plugin puts content into a slot that the server does not offer. Check the slot name in the manifest.</value>
   </data>
 <data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
-    <value>This plugin asks a slot for context that the slot does not offer.</value>
+    <value>This plugin asks a slot for context that the slot does not offer. Remove that context key from the plugin or check its name.</value>
   </data>
 <data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
     <value>A file in this plugin could not be read, so the plugin cannot be checked. Upload it again.</value>
@@ -613,7 +613,7 @@
     <value>A widget id in this plugin is not valid: use lowercase letters, digits, hyphens and underscores, starting with a letter or digit.</value>
   </data>
 <data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
-    <value>This plugin declares the same widget id twice for one slot.</value>
+    <value>This plugin declares the same widget id twice for one slot. Give each widget in a slot its own id.</value>
   </data>
 <data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
     <value>The plugin id in the manifest is not valid: use lowercase letters and digits, with single hyphens between words.</value>
@@ -628,7 +628,7 @@
     <value>The minimum or maximum host version in the manifest is not valid: write it as major.minor.patch, for example 2.1.0.</value>
   </data>
 <data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
-    <value>The minimum host version in the manifest is above its maximum host version.</value>
+    <value>The minimum host version in the manifest is above its maximum host version. Set the minimum equal to or lower than the maximum.</value>
   </data>
 <data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
     <value>The changelog in the manifest is too long: keep it to 4000 characters.</value>
@@ -655,7 +655,7 @@
     <value>A registrar plugin that declares a connectionRole must declare both accountName and apiKey.</value>
   </data>
   <data name="PLUGIN_MANIFEST_SDK_PACKAGE_VERSION_INVALID" xml:space="preserve">
-    <value>The sdkPackageVersion in this plugin's manifest is not a valid version.</value>
+    <value>The sdkPackageVersion in this plugin's manifest is not a valid version: write it as major.minor.patch, for example 3.6.0.</value>
   </data>
   <data name="PLUGIN_MANIFEST_MIN_HOST_BELOW_SDK" xml:space="preserve">
     <value>The minHostVersion in this plugin's manifest is missing or lower than the first Hostpanel release that ships the SDK the plugin was built against.</value>
@@ -667,19 +667,19 @@
     <value>This plugin is installed but could not be loaded. See the load error shown with it.</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
-    <value>This plugin names a view document that its package does not contain.</value>
+    <value>This plugin names a view document that its package does not contain. Check the view paths in the manifest and rebuild the package.</value>
   </data>
 <data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
-    <value>One of this plugin's view documents is not a valid view document.</value>
+    <value>One of this plugin's view documents is not a valid view document. Correct the document in the plugin and rebuild the package.</value>
   </data>
 <data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
-    <value>One of this plugin's view documents uses a schema version this server does not support.</value>
+    <value>One of this plugin's view documents uses a schema version this server does not support. Use a plugin release built for this server version, or update Hostpanel.</value>
   </data>
 <data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
-    <value>One of this plugin's view documents uses a block kind that this server does not know.</value>
+    <value>One of this plugin's view documents uses a block kind that this server does not know. Use a plugin release built for this server version, or update Hostpanel.</value>
   </data>
 <data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
-    <value>One of this plugin's view documents calls a route that the plugin does not declare.</value>
+    <value>One of this plugin's view documents calls a route that the plugin does not declare. Declare the route in the manifest or remove the call from the view.</value>
   </data>
   <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
     <value>This plugin gives a menu an icon that is not a plain icon name: use 1 to 64 lowercase letters, digits and hyphens.</value>
@@ -694,7 +694,7 @@
     <value>This plugin declares the endpoints capability but does not implement it. Remove the capability from the manifest or implement the endpoints contract.</value>
   </data>
   <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
-    <value>This plugin has no icon.</value>
+    <value>This plugin has no icon to show. Its manifest names none, or the icon file is not in the package.</value>
   </data>
   <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
     <value>This plugin declares a callback route that names a permission or streams its reply. A callback has no signed-in caller and answers with one reply.</value>
@@ -703,7 +703,7 @@
     <value>This plugin declares a page whose id is not valid or is used twice in one panel: use 1 to 64 lowercase letters, digits, hyphens and underscores, starting with a letter or digit.</value>
   </data>
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
-    <value>This plugin page does not exist.</value>
+    <value>This plugin page does not exist, or the plugin is not available in this panel. Check the address, or make sure the plugin is installed and switched on.</value>
   </data>
   <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
     <value>This plugin declares routes, pages or slots, but it is not an app plugin and does not declare the "endpoints" capability.</value>
@@ -718,7 +718,7 @@
     <value>That archive contains entries that cannot be unpacked together, for example a file and a folder with the same name, and was rejected.</value>
   </data>
 <data name="PLUGIN_ID_INVALID" xml:space="preserve">
-    <value>That plugin id is not valid.</value>
+    <value>That plugin id is not valid. Use only lower-case letters, digits and single hyphens.</value>
   </data>
 <data name="PLUGIN_NOT_FOUND" xml:space="preserve">
     <value>No such plugin is installed.</value>
@@ -763,19 +763,19 @@
     <value>This plugin is still installed. Remove it before purging the data it kept.</value>
   </data>
 <data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
-    <value>Nothing is served at this address.</value>
+    <value>Nothing is served at this address. The plugin may be missing, switched off or not configured, or it does not offer this request. Check the plugin in the plugin list.</value>
   </data>
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
-    <value>That page area is not available.</value>
+    <value>That page area does not exist in this panel. Check the slot id in the request.</value>
   </data>
   <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
-    <value>The widget is not declared by that plugin.</value>
+    <value>That plugin does not declare a widget with this id in this page area, so there is nothing to bind products to. Check the widget id.</value>
   </data>
   <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
-    <value>That part of the page is not available.</value>
+    <value>This part of the page is not available to you. It may no longer exist or is not shown for your account. Reload the page, and contact support if it stays missing.</value>
   </data>
 <data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
-    <value>A context is required for this page area.</value>
+    <value>This page area needs the id of a service or a client, and the request did not include one. Add it and try again.</value>
   </data>
   <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
     <value>None of the products exist, so the widget was not bound. Send an empty list to clear the binding.</value>
@@ -790,13 +790,13 @@
     <value>This plugin's storage for this account is full. Please contact support.</value>
   </data>
 <data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
-    <value>The plugin used its storage incorrectly. Please try again later.</value>
+    <value>The plugin tried to save data under a key that is empty, too long or has characters that are not allowed, so nothing was saved. This is a fault in the plugin, so report it to the plugin author.</value>
   </data>
 <data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
-    <value>The plugin used its storage incorrectly. Please try again later.</value>
+    <value>The plugin tried to save a value that is missing or too long, so nothing was saved. This is a fault in the plugin, so report it to the plugin author.</value>
   </data>
 <data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
-    <value>The request is too large for this plugin.</value>
+    <value>The request is larger than this server passes to a plugin. Send less data, for example a smaller file or fewer fields.</value>
   </data>
 <data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
     <value>The plugin reported a problem with the request.</value>
@@ -808,10 +808,10 @@
     <value>The integration does not declare that field.</value>
   </data>
 <data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
-    <value>That value is not accepted for this integration field.</value>
+    <value>That value does not fit the type of this integration field. Check the value and save again.</value>
   </data>
 <data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
-    <value>This integration has no connection test.</value>
+    <value>This integration cannot be tested because its plugin does not provide a connection test. Save the settings and check the integration's own status instead.</value>
   </data>
 <data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
     <value>The plugin reports that it works.</value>
@@ -835,10 +835,10 @@
     <value>No such setting.</value>
   </data>
 <data name="INVALID_SETTING_VALUE" xml:space="preserve">
-    <value>That value is not accepted for this setting.</value>
+    <value>That value is not accepted for this setting. The field shows what is expected, so correct it and save again.</value>
   </data>
 <data name="SETTING_NOT_EDITABLE" xml:space="preserve">
-    <value>This setting cannot be changed here.</value>
+    <value>This setting cannot be changed on the general settings page. Integration fields and switches are saved on the integration's own page.</value>
   </data>
 <data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
     <value>That file could not be read as an image. Upload a PNG, JPEG, WebP, GIF or BMP.</value>
@@ -878,13 +878,13 @@
   </data>
   <!-- Domain aggregate refusals (A6 Task 8) -->
   <data name="CURRENCY_BASE_DISABLE_NOT_ALLOWED" xml:space="preserve">
-    <value>The base currency cannot be disabled.</value>
+    <value>The base currency cannot be disabled because prices and invoices are calculated from it. Make another currency the base first, then disable this one.</value>
   </data>
   <data name="INVOICE_NOT_DRAFT" xml:space="preserve">
     <value>Only a draft invoice can be published.</value>
   </data>
   <data name="INVOICE_NOT_EDITABLE" xml:space="preserve">
-    <value>This invoice can no longer be edited.</value>
+    <value>This invoice can no longer be edited because it is no longer a draft or unpaid. Create a new invoice if you need different items.</value>
   </data>
   <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>No such line item on this invoice.</value>
@@ -905,13 +905,13 @@
     <value>A paid, refunded or already cancelled invoice cannot be cancelled.</value>
   </data>
   <data name="INVOICE_NOT_PAID" xml:space="preserve">
-    <value>This action requires the invoice to be paid.</value>
+    <value>This action works only on a paid invoice, and this one is not paid yet. Record the payment first, or choose a different action.</value>
   </data>
   <data name="QUOTE_NOT_EDITABLE" xml:space="preserve">
-    <value>This quote can no longer be edited.</value>
+    <value>This quote can no longer be edited because its stage is past Draft, Delivered and On hold. Create a new quote if you need different items.</value>
   </data>
   <data name="QUOTE_NOT_ACCEPTABLE" xml:space="preserve">
-    <value>This quote's stage does not allow acceptance.</value>
+    <value>This quote cannot be accepted because it is not in the Draft, Delivered or On hold stage. Check the quote's current stage.</value>
   </data>
   <data name="QUOTE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>No such line item on this quote.</value>
@@ -935,16 +935,16 @@
     <value>This user is already the account owner.</value>
   </data>
   <data name="CLIENT_CREDIT_INSUFFICIENT" xml:space="preserve">
-    <value>The client's credit balance is too low for this deduction.</value>
+    <value>The client's credit balance is lower than the amount to deduct. Enter an amount that does not exceed the balance.</value>
   </data>
   <data name="CLIENT_SUSPEND_NOT_ALLOWED" xml:space="preserve">
-    <value>This account cannot be suspended in its current state.</value>
+    <value>This account is already suspended or closed, so it cannot be suspended. Only an active or inactive account can be suspended.</value>
   </data>
   <data name="CLIENT_CLOSE_NOT_ALLOWED" xml:space="preserve">
-    <value>This account is already closed.</value>
+    <value>This account is already closed. Closing is permanent, so there is nothing more to do.</value>
   </data>
   <data name="CLIENT_ACTIVATE_NOT_ALLOWED" xml:space="preserve">
-    <value>A closed account cannot be reactivated this way.</value>
+    <value>This account is closed. Closing is permanent, so a closed account cannot be reactivated.</value>
   </data>
   <data name="CLIENT_DEACTIVATE_NOT_ALLOWED" xml:space="preserve">
     <value>Only an active account can be deactivated. Activate a suspended account first; a closed account cannot be changed.</value>
@@ -965,13 +965,13 @@
     <value>This account is closed, so its contacts and users can no longer be changed.</value>
   </data>
   <data name="DOMAIN_CANCEL_NOT_ALLOWED" xml:space="preserve">
-    <value>This domain's status does not allow cancellation.</value>
+    <value>An active domain cannot be cancelled, and a transferred or already cancelled domain has nothing left to cancel. Only a domain that is pending, expired or in redemption can be cancelled.</value>
   </data>
   <data name="DOMAIN_RENEW_NOT_ALLOWED" xml:space="preserve">
-    <value>This domain's status does not allow renewal.</value>
+    <value>This domain is cancelled or transferred, so it is no longer managed here and cannot be renewed.</value>
   </data>
   <data name="DOMAIN_LINK_NOT_ALLOWED" xml:space="preserve">
-    <value>This domain's status does not allow linking a hosting service.</value>
+    <value>This domain is cancelled or transferred, so it is no longer managed here and a hosting service cannot be linked to it.</value>
   </data>
   <data name="DOMAIN_DNS_RECORD_NOT_FOUND" xml:space="preserve">
     <value>No such DNS record on this domain.</value>
@@ -980,10 +980,10 @@
     <value>No such email forwarding rule on this domain.</value>
   </data>
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
-    <value>This action requires the order to be pending.</value>
+    <value>The order was not accepted because it is no longer pending. Only a pending order can be accepted. Open the order and check its status, it may already be accepted or cancelled.</value>
   </data>
   <data name="ORDER_NOT_ACCEPTED" xml:space="preserve">
-    <value>Only an accepted order has lines to fulfil.</value>
+    <value>The lines of this order cannot be fulfilled because the order has not been accepted. Accept the pending order first.</value>
   </data>
   <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
     <value>This order line cannot be retried now. Only a failed line of an accepted order can be retried, and not while another retry is already running.</value>
@@ -1010,22 +1010,22 @@
     <value>The service already stored for this order line belongs to another client or product, so the line cannot reuse it. Check the line and its service.</value>
   </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
-    <value>This service is not active.</value>
+    <value>The service was not suspended because it is not active. Only an active service can be suspended. Check the service status, it may already be suspended or terminated.</value>
   </data>
   <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
-    <value>This service is already terminated.</value>
+    <value>This service is already terminated, so there is nothing more to terminate.</value>
   </data>
   <data name="SERVICE_NOT_SUSPENDED" xml:space="preserve">
-    <value>This service is not suspended.</value>
+    <value>Only a suspended service can be unsuspended, and this service is not suspended. Check the service status.</value>
   </data>
   <data name="TICKET_REPLY_NOT_ALLOWED" xml:space="preserve">
-    <value>A closed ticket cannot receive new replies.</value>
+    <value>This ticket is closed, so it cannot receive a reply. Reopen the ticket first.</value>
   </data>
   <data name="TICKET_CLOSE_NOT_ALLOWED" xml:space="preserve">
     <value>This ticket is already closed.</value>
   </data>
   <data name="BACKCHANNEL_LOGOUT_UNAUTHORIZED" xml:space="preserve">
-    <value>The sign-out key is missing or wrong.</value>
+    <value>The sign-out request was rejected because the X-Logout-Key header is missing or does not match the configured key. Check the sign-out key on both sides.</value>
   </data>
   <data name="TESTIMONIAL_NOT_FOUND" xml:space="preserve">
     <value>No such testimonial.</value>
@@ -1073,7 +1073,7 @@
     <value>The rating must be from 1 to 5.</value>
   </data>
   <data name="SSH_KEY_INVALID" xml:space="preserve">
-    <value>The key is not a valid ED25519 public key.</value>
+    <value>The key is not a valid ED25519 public key. Paste the whole public key, the line that starts with ssh-ed25519.</value>
   </data>
   <data name="SSH_PRIVATE_KEY_REJECTED" xml:space="preserve">
     <value>That is a private key. Paste the public key (the .pub file) instead.</value>
@@ -1082,7 +1082,7 @@
     <value>This key is already installed on the service.</value>
   </data>
   <data name="SSH_KEY_LIMIT_REACHED" xml:space="preserve">
-    <value>The service already holds the maximum number of SSH keys.</value>
+    <value>The service already holds the maximum number of SSH keys. Remove a key you no longer use, then add this one.</value>
   </data>
   <data name="SSH_KEY_NOT_FOUND" xml:space="preserve">
     <value>No such SSH key.</value>
@@ -1091,10 +1091,10 @@
     <value>This key was issued on the service's previous server. Contact support to remove it.</value>
   </data>
   <data name="SSH_ACCESS_UNAVAILABLE" xml:space="preserve">
-    <value>SSH key management is not available for this service.</value>
+    <value>SSH keys cannot be managed for this service right now. The service must be active, its server must have SSH key management enabled, and shell access must be allowed on the account.</value>
   </data>
   <data name="SSH_SERVER_UNAVAILABLE" xml:space="preserve">
-    <value>The hosting server could not be reached. Please try again later.</value>
+    <value>The SSH key agent on the hosting server failed or did not answer, so the change was not completed. Try again in a few minutes, and contact support if it keeps failing.</value>
   </data>
   <data name="SSH_HOST_KEY_UNREADABLE" xml:space="preserve">
     <value>No SSH host key was received from the agent host and port. Check that the port runs sshd.</value>
@@ -1109,70 +1109,70 @@
     <value>The agent host accepted the connection and closed it before the SSH greeting: sshd is turning HostPanel's address away. On OpenSSH 9.8 or later this is usually PerSourcePenalties after failed or unauthenticated connections; add HostPanel's address to PerSourcePenaltyExemptList. Also check MaxStartups and TCP wrappers (hosts.deny).</value>
   </data>
   <data name="SSH_MODULE_NOT_SUPPORTED" xml:space="preserve">
-    <value>SSH key management is not supported for this server type.</value>
+    <value>The control panel module of this server has no SSH key support. Use a server whose panel module supports it, or leave SSH key management off for this server.</value>
   </data>
   <data name="SSH_SETTINGS_INCOMPLETE" xml:space="preserve">
-    <value>The SSH settings for this server are incomplete.</value>
+    <value>The SSH settings of this server lack a value that is needed. Fill in all SSH fields in the server settings and save again.</value>
   </data>
   <data name="SSH_AGENT_NOT_VERIFIED" xml:space="preserve">
     <value>Run a successful agent test with these settings before enabling SSH key management.</value>
   </data>
   <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
-    <value>Another server already uses this agent host and port.</value>
+    <value>Another server already uses this agent host and port. Enter a different host or port.</value>
   </data>
   <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
-    <value>The registrar for this domain is not configured.</value>
+    <value>No credentials are set for the registrar of this domain. Enter them in the registrar settings and try again.</value>
   </data>
   <data name="REGISTRAR_ORDER_UPSTREAM_FAILED" xml:space="preserve">
-    <value>The registrar refused the request. Please try again shortly.</value>
+    <value>The registrar refused the request or did not confirm it. Try again in a few minutes, and if it keeps failing, check the registrar account and its status.</value>
   </data>
   <data name="REGISTRAR_OPERATION_UNSUPPORTED" xml:space="preserve">
     <value>The registrar does not offer this action. Please contact the registrar's support.</value>
   </data>
   <data name="REGISTRAR_DOMAIN_NOT_FOUND" xml:space="preserve">
-    <value>The registrar does not hold this domain.</value>
+    <value>The registrar account does not hold a domain with this name, so nothing was changed. Check the domain name and that it is registered with this registrar.</value>
   </data>
   <data name="REGISTRAR_DOMAIN_NOT_ACTIVE" xml:space="preserve">
-    <value>The registrar has not activated this domain yet.</value>
+    <value>The registrar holds this domain but has not reported it active yet, so nothing was changed. Wait until the registrar activates it, then try again.</value>
   </data>
   <data name="REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE" xml:space="preserve">
-    <value>This domain has no WHOIS privacy subscription at the registrar.</value>
+    <value>This domain has no WHOIS privacy subscription at the registrar, so privacy cannot be switched on or off. Order WHOIS privacy for the domain at the registrar first.</value>
   </data>
   <data name="REGISTRAR_DOMAIN_UNAVAILABLE" xml:space="preserve">
-    <value>The registrar says this domain name is not available.</value>
+    <value>The registrar says this domain name is not available to register or transfer, and the account does not hold it. Nothing was ordered. Choose another name.</value>
   </data>
   <data name="REGISTRAR_INSUFFICIENT_FUNDS" xml:space="preserve">
-    <value>The registrar account does not have enough balance for this purchase.</value>
+    <value>The registrar account does not have enough balance for this purchase, so nothing was ordered. Add funds at the registrar, then try again.</value>
   </data>
   <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
-    <value>The registrant contact details are incomplete, so the registrar cannot be sent the order.</value>
+    <value>The registrant contact is missing a detail the registrar requires, so nothing was bought. Complete the contact details and try again.</value>
   </data>
   <data name="REGISTRAR_TLD_NOT_SUPPORTED" xml:space="preserve">
-    <value>The registrar does not sell this domain extension.</value>
+    <value>The registrar does not sell this domain extension, so nothing was ordered. Use a different extension or another registrar.</value>
   </data>
   <data name="REGISTRAR_EPP_CODE_INVALID" xml:space="preserve">
-    <value>The registrar rejected the transfer authorization code.</value>
+    <value>The registrar rejected the transfer authorization code. Get the code again from the current registrar of the domain and enter it exactly.</value>
   </data>
   <data name="REGISTRAR_TRANSFER_NOT_ALLOWED" xml:space="preserve">
-    <value>The registrar does not allow this domain to be transferred right now.</value>
+    <value>The registrar does not allow this domain to be transferred right now. Check the domain's status and transfer lock at its current registrar, then try again.</value>
   </data>
   <data name="REGISTRAR_NAMESERVER_INVALID" xml:space="preserve">
-    <value>The registrar rejected the nameservers.</value>
+    <value>The registrar rejected the nameservers, so they were not changed. Check that each nameserver is a valid host name and try again.</value>
   </data>
   <data name="REGISTRAR_DNS_RECORD_INVALID" xml:space="preserve">
-    <value>The registrar rejected the DNS record.</value>
+    <value>The registrar rejected the DNS record, so it was not saved. Check its type, name and value and try again.</value>
   </data>
   <data name="REGISTRAR_ACCESS_DENIED" xml:space="preserve">
     <value>The registrar did not accept the saved account credentials. Contact the administrator.</value>
   </data>
   <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
-    <value>A transaction must have an incoming or outgoing amount.</value>
+    <value>A transaction needs an incoming or outgoing amount, and both are empty. Enter an amount in one of them.</value>
   </data>
   <data name="INVOICE_REFUND_EXCEEDS_PAID" xml:space="preserve">
-    <value>The refund is more than what was paid and not yet refunded.</value>
+    <value>The refund is more than what was paid and not yet refunded, so nothing was refunded. Enter an amount up to the remaining paid amount.</value>
   </data>
   <data name="INVOICE_CREDIT_EXCEEDS_DUE" xml:space="preserve">
-    <value>The credit is more than the invoice still owes.</value>
+    <value>The credit is more than the invoice still owes. Enter an amount up to the amount still due.</value>
   </data>
   <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
     <value>No payment gateway took money for this invoice, so it cannot be refunded through one.</value>
@@ -1190,22 +1190,28 @@
     <value>A fulfilment plugin allows no refund of this invoice right now. Nothing was refunded.</value>
   </data>
   <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
-    <value>The payment gateway reported an amount or currency that does not match the invoice.</value>
+    <value>The payment gateway reported an amount or currency that does not match the invoice, so the invoice stays unpaid. Check the payment in the gateway account.</value>
   </data>
   <data name="INVOICE_NOT_DELETABLE" xml:space="preserve">
-    <value>Only a draft or cancelled invoice can be deleted.</value>
+    <value>Only a draft or cancelled invoice can be deleted, and this invoice has another status, so nothing was deleted.</value>
   </data>
-  <data name="SERVICE_STATUS_CHANGE_NOT_ALLOWED" xml:space="preserve">
-    <value>This service cannot be moved to that status.</value>
+  <data name="SERVICE_TERMINATED_STATUS_LOCKED" xml:space="preserve">
+    <value>A terminated service cannot be moved to any other status. Terminated is final, so nothing was changed. To provide this service again, order a new one for the client.</value>
+  </data>
+  <data name="SERVICE_STATUS_PENDING_UNREACHABLE" xml:space="preserve">
+    <value>A service cannot be moved back to Pending. Pending only means the service was ordered and not yet set up, so nothing was changed. Choose Active, Suspended or Terminated instead.</value>
+  </data>
+  <data name="SERVICE_PENDING_NOT_ACTIVATED" xml:space="preserve">
+    <value>This service is still Pending, so it cannot be set to Active or Suspended by changing its status. Nothing was changed. Activate or provision the service first, or terminate it if the order is not wanted.</value>
   </data>
   <data name="SERVICE_AUTOMATION_INCONSISTENT" xml:space="preserve">
     <value>Set a hold date only with the suspension hold, and a termination reason only with the end-of-cycle termination.</value>
   </data>
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
-    <value>Only a terminated service has a termination date to correct.</value>
+    <value>Only a terminated service has a termination date to correct, and this service is not terminated. Nothing was changed.</value>
   </data>
   <data name="SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
-    <value>A control panel session could not be started. The panel returned an address that is not on its server.</value>
+    <value>A control panel session could not be started, because the panel returned an address that is not on its own server, so it was not used. Try again, and if it repeats check the server's panel settings.</value>
   </data>
   <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
     <value>The hosting account username is not valid for cPanel. Use lowercase letters and digits, start with a letter, at most 16 characters.</value>
@@ -1223,7 +1229,7 @@
     <value>This product has no server group, and your servers run more than one control panel. Assign the product a server group so its package goes to the right panel.</value>
   </data>
   <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
-    <value>The payment is more than the invoice still owes.</value>
+    <value>The payment is more than the invoice still owes. Enter an amount up to the amount still due.</value>
   </data>
   <data name="INVOICE_AMOUNT_STILL_DUE" xml:space="preserve">
     <value>The invoice still owes money, so it has to be settled rather than marked paid.</value>
@@ -1232,7 +1238,7 @@
     <value>The invoice already took a payment. Refund or delete that payment first.</value>
   </data>
   <data name="INVOICE_TOTAL_BELOW_PAID" xml:space="preserve">
-    <value>The invoice would then charge less than the payments it already took.</value>
+    <value>The invoice would then charge less than the payments it already took, so nothing was changed. Keep the total at or above the amount already paid, or refund the payment first.</value>
   </data>
   <data name="SERVER_IN_USE" xml:space="preserve">
     <value>This server still hosts client services or SSH keys. Move or remove them first.</value>
@@ -1241,10 +1247,10 @@
     <value>Products still use this server group. Assign them to another group first.</value>
   </data>
   <data name="USER_NOT_FOUND" xml:space="preserve">
-    <value>No such user.</value>
+    <value>This user was not found. It may have been deleted, so reload the list and try again.</value>
   </data>
   <data name="USER_CANNOT_DELETE_SELF" xml:space="preserve">
-    <value>You cannot delete your own account.</value>
+    <value>You cannot delete your own account, so nothing was deleted. Ask another administrator to do it.</value>
   </data>
   <data name="USER_LAST_ADMIN" xml:space="preserve">
     <value>This is the last active administrator. Make another user an administrator first.</value>
@@ -1253,7 +1259,7 @@
     <value>The exchange rate source is not answering right now. Try again later.</value>
   </data>
   <data name="EXCHANGE_RATE_BASE_NOT_QUOTED" xml:space="preserve">
-    <value>The exchange rate source does not quote the base currency.</value>
+    <value>The exchange rate source quotes nothing against the configured base currency. Use a source that quotes it, or change the base currency.</value>
   </data>
   <data name="CLIENT_CARD_PAYMENT_DISABLED" xml:space="preserve">
     <value>Card payments are disabled for this account. Pay by another method or contact support.</value>
@@ -1268,7 +1274,7 @@
     <value>This client is invoiced under the reverse charge, so a tax rate cannot be set on their invoices.</value>
   </data>
   <data name="CLIENT_VAT_NUMBER_MISSING" xml:space="preserve">
-    <value>This client has no VAT number to check.</value>
+    <value>This client has no VAT number to check. Enter the VAT number on the client first.</value>
   </data>
   <data name="CLIENT_VAT_COUNTRY_NOT_SUPPORTED" xml:space="preserve">
     <value>VAT numbers can be checked only for EU countries and the United Kingdom. Set the client's billing country first.</value>
@@ -1295,34 +1301,34 @@
     <value>The trial must last from 1 to 365 days, with at most 5 different reminder days that fall before its end, and a grace period of 0 to 30 days.</value>
   </data>
   <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
-    <value>This external account is already linked to another client.</value>
+    <value>This external account is already linked to another client, so it cannot be linked to this one. Use an account that is not linked yet.</value>
   </data>
   <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
-    <value>The fulfilment record was not found.</value>
+    <value>The fulfilment record was not found. It may have been removed, so reload the list and try again.</value>
   </data>
   <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
-    <value>Only a failed fulfilment record can be retried.</value>
+    <value>Only a failed fulfilment record can be retried, and this one has not failed, so nothing was retried.</value>
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>The refund could not be checked right now, so nothing was refunded. Try again later.</value>
   </data>
 <data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
-    <value>This payment gateway cannot keep payment methods for later charges.</value>
+    <value>The payment gateway module is not installed or enabled, or it does not offer saved payment methods, so a payment method cannot be kept for later charges. Install or enable a gateway that supports saved methods.</value>
   </data>
 <data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
-    <value>No consent to charge a saved payment method is on file.</value>
+    <value>No active consent to charge a saved payment method is on file, so nothing was charged. The client must save a payment method and agree to the charges first.</value>
   </data>
 <data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
-    <value>That consent was not found.</value>
+    <value>No saved payment method consent with this id exists for this account. Reload the page and choose an existing one.</value>
   </data>
 <data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
-    <value>The payment method was not saved. Start again.</value>
+    <value>The payment method was not saved, because the gateway session was abandoned or expired. Start saving it again.</value>
   </data>
 <data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
-    <value>A charge for this invoice is already in progress.</value>
+    <value>A charge for this invoice is already in progress, so a second one was not started. Wait for it to finish.</value>
   </data>
 <data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
-    <value>That charge was not found.</value>
+    <value>That charge was not found. Reload the invoice and try again.</value>
   </data>
 <data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
     <value>The invoice has a card charge that has not finished, so it cannot be cancelled or paid by hand yet.</value>
@@ -1331,37 +1337,37 @@
     <value>The invoice has a card charge held for an operator, so it cannot be paid online until that money is settled.</value>
   </data>
 <data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
-    <value>The consent already covers a different payment method.</value>
+    <value>The consent already covers a different payment method than the one just saved, so nothing was changed.</value>
   </data>
   <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
-    <value>The plugin registry is not switched on for this server.</value>
+    <value>The plugin registry is switched off or has no address in this server's configuration. Ask the administrator to enable it and set its address.</value>
   </data>
   <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
-    <value>The plugin registry could not be reached. Try again later.</value>
+    <value>The plugin registry could not be reached, so nothing was installed or changed. Check that this server can reach the internet and try again in a few minutes.</value>
   </data>
   <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
-    <value>The plugin registry did not answer in time. Try again later.</value>
+    <value>The plugin registry did not answer in time, so nothing was installed or changed. The registry may be busy. Try again in a few minutes.</value>
   </data>
   <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
-    <value>The plugin registry sent an answer this server cannot use.</value>
+    <value>The plugin registry sent a reply this server cannot read, so nothing was changed. Try again later. If it keeps happening, contact the operator of the registry.</value>
   </data>
   <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
-    <value>The plugin registry does not list that plugin or version.</value>
+    <value>The plugin registry does not list that plugin or version. It may have been removed or renamed. Refresh the plugin list and choose one that is shown.</value>
   </data>
   <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
-    <value>The package offered by the plugin registry was refused.</value>
+    <value>The package offered by the plugin registry was refused because its address, size or contents do not match what was asked for. Nothing was installed. Try again later or contact the operator of the registry.</value>
   </data>
   <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
     <value>The downloaded package does not match the checksum the plugin registry published, so it was not installed.</value>
   </data>
   <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
-    <value>The plugin registry trust setting does not allow installing this plugin.</value>
+    <value>The plugin registry trust policy of this installation does not admit this plugin or the key it is signed with, so it was not installed. Ask the operator of this server to review the plugin registry trust settings.</value>
   </data>
   <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
     <value>A licence key is required to use this plugin from the plugin registry.</value>
   </data>
   <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
-    <value>The plugin registry did not accept the licence key.</value>
+    <value>The plugin registry did not accept the licence key. Check the key for typing mistakes and that it was issued for this plugin, then enter it again.</value>
   </data>
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>This version of the plugin does not run on this Hostpanel version.</value>
@@ -1406,7 +1412,7 @@
     <value>The registration with the plugin registry ran out of time or was forgotten, so it starts again with a new key.</value>
   </data>
   <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
-    <value>No registration with this id is waiting for confirmation.</value>
+    <value>No registration with this id is waiting for confirmation. It may already be confirmed or may have expired. Start the registration again from the Plugins page.</value>
   </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
@@ -1439,7 +1445,7 @@
     <value>One of this plugin's view documents gives the same id to more than one block.</value>
   </data>
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
-    <value>This line has no renewal claim to release.</value>
+    <value>This line is not a domain renewal that is currently reserved, so there is nothing to release. It may already be applied or released. Reload the invoice to see its current state.</value>
   </data>
   <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
     <value>This entry is part of the credit history and cannot be changed or deleted. Add a credit adjustment to correct it.</value>
@@ -1454,13 +1460,13 @@
     <value>A paid credit top-up can only be refunded by hand: record the refund as a manual one.</value>
   </data>
   <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
-    <value>The amount is outside the range allowed for adding funds.</value>
+    <value>The amount is below the minimum or above the maximum allowed for adding funds. Enter an amount between the minimum and the maximum.</value>
   </data>
   <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
     <value>You already have unpaid top-ups. Pay or cancel one before adding more funds.</value>
   </data>
   <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
-    <value>The credit note was not found.</value>
+    <value>The credit note was not found. It may have been deleted. Reload the list and try again.</value>
   </data>
   <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
     <value>A credit top-up invoice is credit already, so a credit note cannot be issued on it. A paid top-up is refunded by hand.</value>
@@ -1472,7 +1478,7 @@
     <value>A credit note needs at least one line with a description, a price and a quantity, and a reason.</value>
   </data>
   <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
-    <value>The credit note is not in a state that allows this action.</value>
+    <value>This credit note has already been issued, and only a draft can be issued. Open the credit note to check its status, and create a new credit note if another one is needed.</value>
   </data>
   <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
     <value>This credit note is already voided.</value>
@@ -1484,22 +1490,22 @@
     <value>This credit note was paid out as a gateway refund. The refund cannot be taken back, so the note cannot be voided.</value>
   </data>
   <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
-    <value>No such status page group.</value>
+    <value>No such status page group. It may have been deleted. Reload the status page settings and try again.</value>
   </data>
   <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
-    <value>No such status page component.</value>
+    <value>No such status page component. It may have been deleted. Reload the status page settings and try again.</value>
   </data>
   <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
-    <value>No such status page incident.</value>
+    <value>No such status page incident. It may have been deleted. Reload the incident list and try again.</value>
   </data>
   <data name="STATUS_CHECK_URL_REQUIRED" xml:space="preserve">
     <value>A monitored component needs an address to check.</value>
   </data>
   <data name="STATUS_FAILURE_THRESHOLD_INVALID" xml:space="preserve">
-    <value>The failure threshold is out of range.</value>
+    <value>The failure threshold must be a number from 1 to 400. Enter a value in that range.</value>
   </data>
   <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
-    <value>A name is required.</value>
+    <value>A name is required. Enter a name and save again.</value>
   </data>
   <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
     <value>A display order cannot be negative.</value>
@@ -1514,7 +1520,7 @@
     <value>The incident is resolved and takes no more updates.</value>
   </data>
   <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
-    <value>No such client group exists.</value>
+    <value>No such client group exists. It may have been deleted. Reload the client groups and try again.</value>
   </data>
   <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
     <value>This client group still has clients. Move them to another group first.</value>
@@ -1529,7 +1535,7 @@
     <value>A colour must be written as #RRGGBB.</value>
   </data>
   <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
-    <value>No such plan change request.</value>
+    <value>No such plan change request. It may have been cancelled or already handled. Reload the service and try again.</value>
   </data>
   <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
     <value>A plan change is already pending for this service.</value>
@@ -1541,7 +1547,7 @@
     <value>This plan costs the same as the current one, so there is nothing to change.</value>
   </data>
   <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
-    <value>This plan is not available for the service.</value>
+    <value>The plan you picked is not active, or it belongs to a different product group than this service. Pick an active plan from the same product group.</value>
   </data>
   <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
     <value>This plan has no price for the service's billing cycle in your currency.</value>
@@ -1550,7 +1556,7 @@
     <value>The service has no renewal date, so the plan cannot be changed in the middle of a billing cycle.</value>
   </data>
   <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
-    <value>The plan change request is not in a state that allows this action.</value>
+    <value>This plan change request is already completed or rejected, or it is not in the status this action needs. Check the status of the request before continuing.</value>
   </data>
   <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
     <value>The invoice for the plan change must be paid before the plan changes.</value>
@@ -1562,10 +1568,10 @@
     <value>Only a draft campaign can be edited, scheduled or deleted.</value>
   </data>
   <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
-    <value>This campaign is not scheduled.</value>
+    <value>This campaign is not scheduled, so its schedule cannot be cancelled and it cannot start sending. Schedule the campaign first, or check its current status.</value>
   </data>
   <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
-    <value>This campaign is not being sent.</value>
+    <value>This campaign is not being sent, so it cannot receive recipients or be marked as finished. Check the current status of the campaign.</value>
   </data>
   <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
     <value>Add at least one recipient segment before scheduling the campaign.</value>
@@ -1574,10 +1580,10 @@
     <value>Choose a send time in the future.</value>
   </data>
   <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
-    <value>The value of a recipient segment does not fit its filter.</value>
+    <value>A recipient segment value is missing, is given for a filter that takes none, or does not fit its filter. Correct the segment value and save again.</value>
   </data>
   <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
-    <value>This recipient is no longer waiting for delivery.</value>
+    <value>This recipient is no longer waiting for delivery, so its delivery result cannot be recorded again. Nothing needs to be done.</value>
   </data>
   <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
     <value>This unsubscribe link is not valid.</value>
@@ -1604,7 +1610,7 @@
     <value>A VAT rate must be between 0 and 100 percent.</value>
   </data>
   <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
-    <value>This order is not waiting for a fraud review.</value>
+    <value>This order is not held for a fraud review, so it cannot be approved or rejected here. Refresh the order to see its current status.</value>
   </data>
   <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
     <value>We could not accept this order. Please contact support if you think this is a mistake.</value>
@@ -1613,7 +1619,7 @@
     <value>We could not create this account. Please contact support if you think this is a mistake.</value>
   </data>
   <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
-    <value>The value does not fit the chosen block list type.</value>
+    <value>The value does not fit the chosen block list type. Use an IP address, an IP range, an email domain such as example.com, or a two letter country code, matching the type you chose.</value>
   </data>
   <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
     <value>This value is already on the block list.</value>
@@ -1649,40 +1655,40 @@
     <value>More than one installed plugin serves this server's control panel type. Keep only one of them.</value>
   </data>
   <data name="PANEL_OPERATION_NOT_SUPPORTED" xml:space="preserve">
-    <value>This control panel does not support the requested action.</value>
+    <value>The plugin for this control panel does not support the requested action. Do it in the control panel itself, or check the plugin on the Plugins page.</value>
   </data>
   <data name="PANEL_ACCOUNT_NOT_FOUND" xml:space="preserve">
-    <value>The control panel has no account for this service.</value>
+    <value>The control panel holds no account for this service. Check the control panel of the server assigned to this service to see whether the account exists there.</value>
   </data>
   <data name="PANEL_PACKAGE_UNKNOWN" xml:space="preserve">
-    <value>The control panel does not know the hosting package of this service.</value>
+    <value>The control panel does not know the hosting package of this service. Create that package in the control panel, or correct the package name on the product.</value>
   </data>
   <data name="PANEL_USERNAME_INVALID" xml:space="preserve">
-    <value>The control panel does not accept this account username.</value>
+    <value>The control panel does not accept this account username, for example because of its length or characters. Use a username the panel accepts.</value>
   </data>
   <data name="PANEL_DOMAIN_INVALID" xml:space="preserve">
-    <value>The control panel does not accept this domain name.</value>
+    <value>The control panel does not accept this domain name. Check that it is a valid domain and that the panel allows it, then try again.</value>
   </data>
   <data name="PANEL_PASSWORD_REJECTED" xml:space="preserve">
     <value>The control panel rejected the password. Choose a stronger one.</value>
   </data>
   <data name="PANEL_LIMIT_REACHED" xml:space="preserve">
-    <value>The control panel has reached its limit and cannot take this change.</value>
+    <value>The control panel has reached a limit, such as an account or resource quota, and cannot take this change. Free up capacity or raise the limit in the control panel.</value>
   </data>
   <data name="PANEL_ACCESS_DENIED" xml:space="preserve">
-    <value>The control panel refused the credentials saved for this server.</value>
+    <value>The control panel refused the credentials saved for this server. Update the credentials in the server settings and run the connection test again.</value>
   </data>
   <data name="PANEL_REFUSED" xml:space="preserve">
-    <value>The control panel refused the request.</value>
+    <value>The control panel refused the request for a reason that has no more specific message here. Check the control panel's own log for the reason.</value>
   </data>
   <data name="PROVISIONING_PENDING" xml:space="preserve">
     <value>The hosting account is being created. Please check again in a few minutes.</value>
   </data>
   <data name="SERVER_CONNECTION_NOT_CONFIGURED" xml:space="preserve">
-    <value>The server's connection details are incomplete for this control panel.</value>
+    <value>The server's connection details are incomplete for this control panel. Complete them in the server settings and run the connection test again.</value>
   </data>
   <data name="SERVER_CONNECTION_AUTH_FAILED" xml:space="preserve">
-    <value>The control panel refused the saved credentials.</value>
+    <value>The control panel refused the saved credentials. Update them in the server settings and run the connection test again.</value>
   </data>
   <data name="SERVER_CONNECTION_TIMED_OUT" xml:space="preserve">
     <value>The server did not answer in time. Check that the panel is running and not blocked by a firewall.</value>
@@ -1697,7 +1703,7 @@
     <value>Only a plugin that declares the provisioningPanel capability can name an sshAgentProfile.</value>
   </data>
   <data name="PLUGIN_SSH_AGENT_PROFILE_MISSING" xml:space="preserve">
-    <value>The manifest names an sshAgentProfile but the package has no agent/profile.conf.</value>
+    <value>The manifest names an sshAgentProfile but the package has no agent/profile.conf. Add that file to the package or remove sshAgentProfile from the manifest.</value>
   </data>
   <data name="PLUGIN_SSH_AGENT_PROFILE_FILE_INVALID" xml:space="preserve">
     <value>The SSH key agent profile in the package is not valid. See the detail shown with it.</value>
@@ -1706,19 +1712,19 @@
     <value>A helper of the SSH key agent profile in the package is not valid, or the package carries too many helpers. See the detail shown with it.</value>
   </data>
   <data name="SSH_AGENT_PROFILE_NOT_FOUND" xml:space="preserve">
-    <value>No installed plugin ships this SSH key agent profile.</value>
+    <value>No installed plugin ships this SSH key agent profile. Install the plugin that provides it, or choose another profile.</value>
   </data>
   <data name="DOMAIN_IMPORT_EXPIRY_UNKNOWN" xml:space="preserve">
     <value>The registrar does not report when this domain expires, so it cannot be imported.</value>
   </data>
   <data name="DOMAIN_FIELD_REQUIRED" xml:space="preserve">
-    <value>A required registry detail is missing.</value>
+    <value>A registry detail that the registrar requires for this domain is missing. Fill in all required registry fields and try again.</value>
   </data>
   <data name="DOMAIN_FIELD_INVALID" xml:space="preserve">
-    <value>A registry detail is not valid.</value>
+    <value>A registry detail has a value that the registry rules do not accept. Correct the registry fields and try again.</value>
   </data>
   <data name="DOMAIN_FIELD_UNKNOWN" xml:space="preserve">
-    <value>The registry does not ask for this detail.</value>
+    <value>A registry detail was sent that this registry does not ask for. Remove it and try again.</value>
   </data>
   <data name="PLUGIN_MANIFEST_DOMAIN_FIELDS_NOT_REGISTRAR" xml:space="preserve">
     <value>Only a registrar plugin can declare domainFields.</value>
@@ -1743,5 +1749,68 @@
   </data>
   <data name="PLUGIN_MANIFEST_DOMAIN_FIELD_LENGTH_INVALID" xml:space="preserve">
     <value>A domain field has a negative length bound, or a minimum length above its maximum.</value>
+  </data>
+  <data name="INTEGRATION_TEST_CONFIGURED" xml:space="preserve">
+    <value>All required fields are filled in. This check does not contact the provider, so confirm the credentials with a real action before you rely on them.</value>
+  </data>
+  <data name="INTEGRATION_TEST_FIELDS_MISSING" xml:space="preserve">
+    <value>The integration is not fully set up, because some required fields are empty. Fill in and save these fields, then run the test again:</value>
+  </data>
+  <data name="INTEGRATION_TEST_GATEWAY_OK" xml:space="preserve">
+    <value>The payment gateway answered and accepted the saved credentials. The integration is ready to take payments.</value>
+  </data>
+  <data name="INTEGRATION_TEST_GATEWAY_FAILED" xml:space="preserve">
+    <value>The payment gateway test failed, so the saved credentials may be wrong or the gateway cannot be reached right now. Check the credentials and the gateway status, then test again. The server log has the technical detail.</value>
+  </data>
+  <data name="FULFILMENT_ATTEMPT_ABANDONED" xml:space="preserve">
+    <value>The delivery attempt did not report a result, probably because the server restarted while it was running. It was counted as failed and will be tried again automatically. If it keeps failing, check that the plugin is enabled and working, then retry the record.</value>
+  </data>
+  <data name="FULFILMENT_PLUGIN_TIMED_OUT" xml:space="preserve">
+    <value>The plugin did not answer in time, so the delivery attempt was stopped and counted as failed. It will be tried again automatically. If it keeps failing, check that the plugin and the service behind it are reachable, then retry the record.</value>
+  </data>
+  <data name="FULFILMENT_PLUGIN_FAILED" xml:space="preserve">
+    <value>The plugin could not complete the delivery, so the attempt was counted as failed. It will be tried again automatically. If it keeps failing, check the plugin settings and its service, then retry the record. The technical details are in the server log.</value>
+  </data>
+  <data name="ORDER_CANCEL_NOT_PENDING" xml:space="preserve">
+    <value>The order was not cancelled because it is no longer pending. Only a pending order can be cancelled. Open the order and check its current status.</value>
+  </data>
+  <data name="ORDER_FRAUD_NOT_PENDING" xml:space="preserve">
+    <value>The order was not marked as fraud because it is no longer pending. Only a pending order can be marked as fraud. Open the order and check its current status, then refresh the page.</value>
+  </data>
+  <data name="ORDER_HOLD_NOT_PENDING" xml:space="preserve">
+    <value>The order was not held for review because it is no longer pending. Only a pending order can be held for review. Open the order, check its current status and decide again.</value>
+  </data>
+  <data name="SERVICE_PLAN_CHANGE_NOT_ACTIVE" xml:space="preserve">
+    <value>The plan was not changed because the service is not active. A plan can only be changed on an active service. Activate the service or lift its suspension, then try again, or contact support.</value>
+  </data>
+  <data name="SERVICE_SSH_KEYS_RESTORE_NOT_ACTIVE" xml:space="preserve">
+    <value>The SSH keys were not restored because the service is not active. Suspended keys are only put back on an active service. Activate the service or lift its suspension, then restore the keys again.</value>
+  </data>
+  <data name="SERVICE_HOSTING_ACCOUNT_REMOVED" xml:space="preserve">
+    <value>The action was not sent to the panel because the service is terminated and its hosting account has been removed. There is nothing left on the panel to change. If you still need hosting, order a new service.</value>
+  </data>
+  <data name="PRODUCT_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>The order was not placed because this product has no price for the chosen billing cycle in your currency. Choose another billing cycle, or contact support so the price can be set.</value>
+  </data>
+  <data name="INVOICE_NOTHING_DUE" xml:space="preserve">
+    <value>This invoice has nothing left to pay, so there is nothing to transfer or charge. Open the invoice to check its balance, and leave it as it is if it is already covered.</value>
+  </data>
+  <data name="INVOICE_NOT_FREE" xml:space="preserve">
+    <value>This invoice cannot be settled as free, because an amount is still due on it. Record the payment instead, or change the invoice so that nothing is due, then try again.</value>
+  </data>
+  <data name="INVOICE_AMOUNT_CHANGED" xml:space="preserve">
+    <value>The amount due on this invoice changed while the card charge was being prepared, so the card was not charged. Open the invoice to see the new amount due, and try again.</value>
+  </data>
+  <data name="CREDIT_NOTE_NOT_ISSUED" xml:space="preserve">
+    <value>This credit note cannot be applied, because it is not issued. It is still a draft, or it has already been applied or voided. Issue the draft first, or open the credit note to check its status.</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_REFERENCE_REQUIRED" xml:space="preserve">
+    <value>A credit note paid out as a gateway refund needs the gateway reference of that refund, and none was given, so the note was not applied. Complete the refund at the gateway, then record it again with its reference.</value>
+  </data>
+  <data name="CREDIT_NOTE_DRAFT_NOT_VOIDABLE" xml:space="preserve">
+    <value>A draft credit note was never issued, so there is nothing to void. Leave the draft as it is, or issue it first and then void it if it is still wrong.</value>
+  </data>
+  <data name="INVOICE_CREDIT_NOTED_EXCEEDED" xml:space="preserve">
+    <value>The invoice holds less credit note value than the amount to be released, so the credit note could not be voided. Reload the invoice to see its credit notes, and contact support if the totals look wrong.</value>
   </data>
 </root>

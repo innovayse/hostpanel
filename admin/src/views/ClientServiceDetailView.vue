@@ -276,8 +276,13 @@ const dangerConfirm = ref<DangerAction | null>(null)
 /** Whether SSO URL is loading. */
 const ssoLoading = ref(false)
 
-/** Status options for dropdown. */
-const statusOptions = SERVICE_STATUS_OPTIONS
+/** Status options for the dropdown: only the statuses the domain allows from the current one (the service's `allowedStatuses`). */
+const statusOptions = computed(() =>
+  SERVICE_STATUS_OPTIONS.filter(option => service.value?.allowedStatuses.includes(option.value)),
+)
+
+/** Whether the service can be moved to any status other than its own; false when the status is final. */
+const canChangeStatus = computed<boolean>(() => statusOptions.value.length > 1)
 
 /** Billing cycle options for the UiSelect dropdown. */
 const billingCycleOptions = BILLING_CYCLE_OPTIONS
@@ -943,7 +948,12 @@ onMounted(() => {
           </template>
 
           <template #card-commands>
+            <UiText v-if="service && !canChangeStatus" :tone="UiTextTone.Muted" data-testid="client-service-status-locked">
+              {{ t('clients.clientServiceDetail.statusLocked') }}
+            </UiText>
+
             <UiForm
+              v-else
               :aria-busy="saving === ServiceSection.Status"
               data-testid="client-service-status-form"
               @submit="saveStatus"

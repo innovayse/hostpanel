@@ -48,7 +48,7 @@ public sealed class ServicePlanChangeQuoter
     /// <param name="toProductId">The plan asked for.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The quote, or <c>SERVICE_NOT_ACTIVE</c> when the service is not active, <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> when
+    /// The quote, or <c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c> when the service is not active, <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> when
     /// it has no renewal date to prorate against, <c>SERVICE_CHANGE_SAME_PRODUCT</c> when it already runs on the plan,
     /// <c>PRODUCT_NOT_FOUND</c> when the plan does not exist, <c>SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE</c> when it is
     /// inactive or of another group, <c>SERVICE_CHANGE_PRICE_UNAVAILABLE</c> when it has no price for the cycle in the
@@ -100,7 +100,7 @@ public sealed class ServicePlanChangeQuoter
     /// <param name="service">The service to move.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The plans, or <c>SERVICE_NOT_ACTIVE</c> / <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> as for
+    /// The plans, or <c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c> / <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> as for
     /// <see cref="QuoteAsync"/>, or <c>PRODUCT_NOT_FOUND</c> when the service's own product is gone. A plan with no price
     /// for the cycle in the client's currency, or with the same price as the current one, is left out.
     /// </returns>
@@ -144,7 +144,7 @@ public sealed class ServicePlanChangeQuoter
     {
         if (service.Status is not ServiceStatus.Active)
         {
-            return Result<DateTimeOffset>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+            return Result<DateTimeOffset>.FailureCode(HostpanelErrorCodes.SERVICE_PLAN_CHANGE_NOT_ACTIVE);
         }
 
         return service.NextRenewalAt is { } renewal

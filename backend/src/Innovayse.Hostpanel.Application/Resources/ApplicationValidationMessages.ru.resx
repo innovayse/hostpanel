@@ -100,11 +100,7 @@
     <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
   </data>
   <data name="InvalidFilterValue" xml:space="preserve">
-    <value>Недопустимое значение фильтра: {0}.</value>
-    <comment>GetMigrationLogsValidator. {0} is the value submitted for the action or entity-type filter.</comment>
-  </data>
-  <data name="MigrationJobIdInvalid" xml:space="preserve">
-    <value>Укажите корректное задание миграции.</value>
+    <value>Значение {0} не подходит для этого фильтра. Выберите одно из значений, которые предлагает фильтр.</value>
   </data>
   <data name="MigrationSelectionRequired" xml:space="preserve">
     <value>Выберите, какие данные экспортировать.</value>
@@ -113,7 +109,7 @@
     <value>Введите адрес исходной системы.</value>
   </data>
   <data name="MigrationSourceUrlInvalid" xml:space="preserve">
-    <value>Введите корректный абсолютный URL-адрес.</value>
+    <value>Адрес исходной системы должен быть полным URL-адресом со схемой, например https://old.example.com.</value>
   </data>
 <data name="CurrencyCodeInvalid" xml:space="preserve">
     <value>Код валюты должен быть трёхбуквенным кодом ISO 4217.</value>
@@ -137,13 +133,13 @@
     <value>Укажите хотя бы одну валюту для обновления.</value>
   </data>
 <data name="InvoiceIdInvalid" xml:space="preserve">
-    <value>Укажите корректный счёт.</value>
+    <value>Счёт указан неверно, его идентификатор должен быть положительным целым числом. Выберите счёт из списка и повторите попытку.</value>
   </data>
 <data name="FulfilmentRecordIdInvalid" xml:space="preserve">
-    <value>Укажите корректную запись выполнения.</value>
+    <value>Идентификатор записи выполнения должен быть положительным числом. Выберите существующую запись выполнения.</value>
   </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
-    <value>Укажите корректного клиента для выставления счёта.</value>
+    <value>Идентификатор клиента должен быть положительным числом. Выберите существующего клиента для выставления счёта.</value>
   </data>
 <data name="InvoiceDueDateInPast" xml:space="preserve">
     <value>Срок оплаты не может быть в прошлом.</value>
@@ -170,19 +166,19 @@
     <value>Способ оплаты может содержать не более {0} символов.</value>
   </data>
 <data name="QuoteIdInvalid" xml:space="preserve">
-    <value>Укажите корректную смету.</value>
+    <value>Предложение указано неверно, его идентификатор должен быть положительным целым числом. Выберите предложение из списка и повторите попытку.</value>
   </data>
 <data name="QuoteClientIdInvalid" xml:space="preserve">
-    <value>Укажите корректного клиента для сметы.</value>
+    <value>Идентификатор клиента должен быть положительным числом. Выберите существующего клиента для предложения.</value>
   </data>
 <data name="QuoteSubjectInvalid" xml:space="preserve">
-    <value>Тема сметы не должна превышать {0} символов.</value>
+    <value>Тема предложения не должна превышать {0} символов.</value>
   </data>
 <data name="QuoteStageInvalid" xml:space="preserve">
-    <value>Укажите корректный этап сметы.</value>
+    <value>Этап предложения должен быть одним из значений: Draft, Delivered, OnHold, Accepted, Lost, Expired или Dead.</value>
   </data>
 <data name="QuoteValidityInvalid" xml:space="preserve">
-    <value>Укажите, действительны сметы или просрочены.</value>
+    <value>Фильтр действительности должен быть Valid или Expired.</value>
   </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Добавьте хотя бы одну позицию.</value>
@@ -200,10 +196,10 @@
     <value>Скидка позиции должна быть от 0 до 100.</value>
   </data>
 <data name="BillableItemIdInvalid" xml:space="preserve">
-    <value>Укажите корректную позицию начисления.</value>
+    <value>Идентификатор позиции начисления должен быть положительным числом. Выберите существующую позицию начисления.</value>
   </data>
 <data name="BillableItemClientIdInvalid" xml:space="preserve">
-    <value>Укажите корректного клиента для начисления.</value>
+    <value>Идентификатор клиента должен быть положительным числом. Выберите существующего клиента для начисления.</value>
   </data>
 <data name="BillableItemDescriptionInvalid" xml:space="preserve">
     <value>Описание позиции начисления не должно превышать {0} символов.</value>
@@ -236,10 +232,10 @@
     <value>Ставка записи времени не может быть отрицательной.</value>
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
-    <value>Укажите действительного клиента для транзакции.</value>
+    <value>Клиент указан неверно, его идентификатор должен быть положительным целым числом. Выберите клиента из списка и повторите попытку.</value>
   </data>
 <data name="TransactionDirectionInvalid" xml:space="preserve">
-    <value>Укажите, поступления это или списания.</value>
+    <value>Фильтр направления должен быть In (поступления) или Out (списания).</value>
   </data>
 <data name="TransactionAmountInvalid" xml:space="preserve">
     <value>Искомая сумма должна быть больше нуля.</value>
@@ -266,7 +262,7 @@
     <value>Хотя бы одна из сумм (зачисление или списание) должна быть больше нуля.</value>
   </data>
 <data name="TransactionIdInvalid" xml:space="preserve">
-    <value>Укажите действительную транзакцию.</value>
+    <value>Идентификатор транзакции должен быть положительным числом. Выберите существующую транзакцию и повторите попытку.</value>
   </data>
 <data name="InvoicePaymentGatewayInvalid" xml:space="preserve">
     <value>Укажите использованный платёжный шлюз, не более {0} символов.</value>
@@ -308,7 +304,7 @@
     <value>Укажите хотя бы один счёт для действия.</value>
   </data>
 <data name="BulkInvoiceActionIdInvalid" xml:space="preserve">
-    <value>Каждый идентификатор счёта должен быть действительным.</value>
+    <value>Каждый идентификатор счёта должен быть положительным числом. Уберите неверный идентификатор из выбора и повторите.</value>
   </data>
 <data name="BulkInvoiceActionNameInvalid" xml:space="preserve">
     <value>Действие должно быть одним из: MarkPaid, MarkUnpaid, MarkCancelled, Duplicate, Delete.</value>
@@ -401,7 +397,7 @@
     <value>Размер страницы должен быть от 1 до 100.</value>
   </data>
   <data name="TicketPeriodInvalid" xml:space="preserve">
-    <value>Период не является допустимым отчётным периодом.</value>
+    <value>Период должен быть одним из: Today, Yesterday, Last7Days, Last30Days.</value>
   </data>
   <data name="GatewayLogResultInvalid" xml:space="preserve">
     <value>Результат должен быть одним из: Payment, Refund, Credit, Pending.</value>
@@ -419,7 +415,7 @@
     <value>Заголовок может содержать не более {0} символов.</value>
   </data>
   <data name="KbArticleSlugInvalid" xml:space="preserve">
-    <value>Адрес статьи недопустим.</value>
+    <value>Адрес статьи должен содержать от 1 до 150 символов: латинские буквы и цифры, части разделяются одиночными дефисами (например, 'reset-password').</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Категория не должна превышать {0} символов.</value>
@@ -572,10 +568,10 @@
     <value>Добавьте в заказ хотя бы один товар.</value>
   </data>
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
-    <value>Для каждой позиции нужен корректный товар.</value>
+    <value>У одной из позиций заказа не выбран корректный товар. Выберите товар для каждой позиции или удалите пустую позицию и отправьте заказ снова.</value>
   </data>
   <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
-    <value>Набор указан неверно.</value>
+    <value>Идентификатор набора должен быть положительным числом. Выберите набор из списка или уберите набор из заказа и отправьте заказ снова.</value>
   </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Период оплаты должен быть 'monthly', 'annual' или 'annually'.</value>
@@ -632,7 +628,7 @@
     <value>Телефон не должен превышать 50 символов.</value>
   </data>
   <data name="ClientContactTypeInvalid" xml:space="preserve">
-    <value>Нераспознанный тип контакта.</value>
+    <value>Тип контакта не относится к поддерживаемым. Выберите один из типов контакта, предложенных в списке.</value>
   </data>
   <data name="ClientContactStreetInvalid" xml:space="preserve">
     <value>Улица не должна превышать 200 символов.</value>
@@ -659,7 +655,7 @@
     <value>Требуется идентификатор пользователя.</value>
   </data>
   <data name="ClientPermissionsInvalid" xml:space="preserve">
-    <value>Значение прав доступа не является допустимой комбинацией известных флагов.</value>
+    <value>Среди прав есть флаг, которого не существует. Выберите права из списка в форме и сохраните ещё раз.</value>
   </data>
   <data name="ClientNewUserEmailInvalid" xml:space="preserve">
     <value>Требуется корректный адрес электронной почты.</value>
@@ -740,7 +736,7 @@
     <value>Требуется название файла для скачивания.</value>
   </data>
   <data name="DownloadCategoryIdInvalid" xml:space="preserve">
-    <value>Выберите корректную категорию загрузок.</value>
+    <value>Категория загрузок не выбрана. Выберите существующую категорию, её идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="DownloadCategoryNameRequired" xml:space="preserve">
     <value>Требуется название категории.</value>
@@ -758,7 +754,7 @@
     <value>Требуется текст ответа.</value>
   </data>
   <data name="PredefinedReplyCategoryIdInvalid" xml:space="preserve">
-    <value>Выберите корректную категорию готовых ответов.</value>
+    <value>Категория готовых ответов не выбрана. Выберите существующую категорию, её идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="PredefinedReplyCategoryNameRequired" xml:space="preserve">
     <value>Требуется название категории.</value>
@@ -767,7 +763,7 @@
     <value>Требуется поисковый запрос.</value>
   </data>
   <data name="ServiceIdInvalid" xml:space="preserve">
-    <value>Укажите корректную услугу.</value>
+    <value>Услуга не выбрана. Выберите существующую услугу, её идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Тип должен быть 'Immediate' или 'EndOfBillingPeriod'.</value>
@@ -776,16 +772,16 @@
     <value>Статус должен быть 'Open' или 'Closed'.</value>
   </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
-    <value>Укажите корректный запрос на отмену.</value>
+    <value>Запрос на отмену не выбран. Выберите существующий запрос, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="OrderServiceClientIdInvalid" xml:space="preserve">
-    <value>Укажите корректного клиента.</value>
+    <value>Клиент не выбран. Выберите существующего клиента, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="StartTrialProductIdInvalid" xml:space="preserve">
-    <value>Укажите корректный продукт.</value>
+    <value>Продукт не выбран. Выберите существующий продукт, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="OrderServiceProductIdInvalid" xml:space="preserve">
-    <value>Укажите корректный продукт.</value>
+    <value>Продукт не выбран. Выберите существующий продукт, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="OrderServiceBillingCycleInvalid" xml:space="preserve">
     <value>Цикл оплаты должен быть 'monthly', 'annual' или 'annually'.</value>
@@ -821,7 +817,7 @@
     <value>Размер страницы должен быть от 1 до 100.</value>
   </data>
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
-    <value>Укажите корректного клиента для фильтрации.</value>
+    <value>Фильтр по клиенту задан неверно. Выберите существующего клиента для фильтрации, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="ServiceListStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из: Pending, Active, Suspended, Terminated.</value>
@@ -875,10 +871,10 @@
     <value>Количество должно быть не меньше 1.</value>
   </data>
   <data name="ServiceProductIdInvalid" xml:space="preserve">
-    <value>Укажите корректный продукт.</value>
+    <value>Продукт не выбран. Выберите существующий продукт, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="HostingAccountServerIdInvalid" xml:space="preserve">
-    <value>Укажите корректный сервер.</value>
+    <value>Сервер не выбран. Выберите существующий сервер, его идентификатор должен быть положительным целым числом.</value>
   </data>
   <data name="ServiceSuspendUntilWithoutOverride" xml:space="preserve">
     <value>Дату отсрочки можно указать только при включённой отсрочке приостановки.</value>
@@ -1040,7 +1036,7 @@
     <value>Название не должно превышать {0} символов.</value>
   </data>
   <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
-    <value>Выберите корректный тип группы опций.</value>
+    <value>Выберите, как клиент отвечает на эту группу опций: выпадающий список, переключатель, флажок или количество.</value>
   </data>
   <data name="ProductOptionNameRequired" xml:space="preserve">
     <value>Опции требуется название.</value>
@@ -1052,13 +1048,13 @@
     <value>Порядок отображения не может быть отрицательным.</value>
   </data>
   <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
-    <value>Выберите корректный тип цены.</value>
+    <value>Выберите, как считается цена опции: фиксированная (сумма) или процентная (доля цены продукта).</value>
   </data>
   <data name="ProductOptionPriceInvalid" xml:space="preserve">
     <value>Цена не может быть отрицательной.</value>
   </data>
   <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
-    <value>Укажите идентификаторы групп опций в новом порядке.</value>
+    <value>Список идентификаторов групп опций пуст. Перечислите все группы опций продукта в том порядке, в котором их нужно показывать.</value>
   </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Укажите корректный идентификатор слайда.</value>
@@ -1082,7 +1078,7 @@
     <value>Порядок сортировки не может быть отрицательным.</value>
   </data>
   <data name="SlideTargetAudienceInvalid" xml:space="preserve">
-    <value>Выберите известную целевую аудиторию.</value>
+    <value>Выберите, кому показывать слайд: всем, только гостям или только вошедшим клиентам.</value>
   </data>
   <data name="SlideTranslationLocaleRequired" xml:space="preserve">
     <value>Каждому переводу требуется локаль.</value>
@@ -1106,7 +1102,7 @@
     <value>Укажите имя хоста или IP-адрес без схемы, пути, порта и пробелов.</value>
   </data>
   <data name="ServerApiHostRefused" xml:space="preserve">
-    <value>К этому адресу подключение невозможно: адреса loopback, link-local и облачных метаданных не допускаются.</value>
+    <value>Этот адрес нельзя использовать как хост API сервера, потому что адреса loopback, link-local и облачных метаданных заблокированы. Укажите вместо него адрес сервера в публичной или частной сети.</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Требуется указать имя пользователя.</value>
@@ -1142,10 +1138,10 @@
     <value>Идентификатор плагина может содержать только строчные латинские буквы, цифры и одиночные дефисы, не более 64 символов.</value>
   </data>
   <data name="PluginSlotIdInvalid" xml:space="preserve">
-    <value>Некорректный идентификатор области страницы.</value>
+    <value>Идентификатор области не должен быть пустым и должен содержать не более 100 символов. Используйте идентификатор, который плагин объявляет для области страницы.</value>
   </data>
   <data name="PluginWidgetIdInvalid" xml:space="preserve">
-    <value>Некорректный идентификатор виджета.</value>
+    <value>Идентификатор виджета не должен быть пустым и должен содержать не более 100 символов. Используйте идентификатор, который плагин объявляет для виджета.</value>
   </data>
   <data name="PluginProductIdsInvalid" xml:space="preserve">
     <value>Выберите не более {0} продуктов.</value>
@@ -1154,7 +1150,7 @@
     <value>Требуется указать слаг интеграции.</value>
   </data>
   <data name="IntegrationConfigRequired" xml:space="preserve">
-    <value>Требуются поля конфигурации.</value>
+    <value>Конфигурация отсутствует. Передайте настройки интеграции как объект, даже если все поля пустые.</value>
   </data>
   <data name="UserIdRequired" xml:space="preserve">
     <value>Требуется идентификатор пользователя.</value>
@@ -1175,7 +1171,7 @@
     <value>Пароль должен содержать не менее 8 символов.</value>
   </data>
   <data name="SettingIdInvalid" xml:space="preserve">
-    <value>Укажите корректный идентификатор настройки.</value>
+    <value>Идентификатор настройки должен быть целым числом больше 0. Выберите настройку в списке настроек и повторите попытку.</value>
   </data>
   <data name="SettingKeysRequired" xml:space="preserve">
     <value>Укажите хотя бы один ключ настройки.</value>
@@ -1187,7 +1183,7 @@
     <value>Требуется файл изображения.</value>
   </data>
   <data name="ActivityLogClientIdInvalid" xml:space="preserve">
-    <value>Укажите корректный идентификатор клиента.</value>
+    <value>Идентификатор клиента должен быть целым числом больше 0. Откройте журнал активности со страницы клиента.</value>
   </data>
   <data name="DateRangeInvalid" xml:space="preserve">
     <value>Дата окончания не может быть раньше даты начала.</value>
@@ -1196,7 +1192,7 @@
     <value>Месяц должен быть от 1 до 12.</value>
   </data>
   <data name="ReportClientIdInvalid" xml:space="preserve">
-    <value>Укажите корректный идентификатор клиента.</value>
+    <value>Идентификатор клиента должен быть целым числом больше 0. Выберите клиента из списка клиентов.</value>
   </data>
   <data name="ReportPageRequired" xml:space="preserve">
     <value>Номер страницы должен быть не меньше 1.</value>
@@ -1214,7 +1210,7 @@
     <value>Количество должно быть от 1 до 100.</value>
   </data>
   <data name="BackchannelLogoutEmailInvalid" xml:space="preserve">
-    <value>Требуется корректный адрес электронной почты.</value>
+    <value>Введите адрес электронной почты в виде name@example.com, не длиннее 256 символов.</value>
   </data>
   <data name="SignInEmailRequired" xml:space="preserve">
     <value>Необходимо указать адрес электронной почты.</value>
@@ -1262,7 +1258,7 @@
     <value>Каждый пункт не должен превышать {0} символов.</value>
   </data>
   <data name="ContentIdInvalid" xml:space="preserve">
-    <value>Укажите корректный идентификатор.</value>
+    <value>Идентификатор должен быть целым числом больше 0. Выберите элемент в его списке и повторите попытку.</value>
   </data>
   <data name="ContentSortOrderInvalid" xml:space="preserve">
     <value>Порядок отображения не может быть отрицательным.</value>
@@ -1358,7 +1354,7 @@
     <value>Описание может содержать не более {0} символов.</value>
   </data>
   <data name="FaqCategoryInvalid" xml:space="preserve">
-    <value>Выберите корректную категорию.</value>
+    <value>Категория не распознана. Выберите «Общие» или «Продукты».</value>
   </data>
   <data name="FaqQuestionRequired" xml:space="preserve">
     <value>Введите вопрос.</value>
@@ -1379,7 +1375,7 @@
     <value>Один запрос на изменение порядка может содержать не более {0} элементов.</value>
   </data>
   <data name="SshKeyIdInvalid" xml:space="preserve">
-    <value>Укажите корректный SSH-ключ.</value>
+    <value>Идентификатор SSH-ключа не указан или пуст. Выберите ключ в списке SSH-ключей услуги.</value>
   </data>
   <data name="SshLabelRequired" xml:space="preserve">
     <value>Введите название ключа.</value>
@@ -1391,28 +1387,28 @@
     <value>Вставьте открытый ключ.</value>
   </data>
   <data name="SshPublicKeyTooLong" xml:space="preserve">
-    <value>Открытый ключ слишком длинный.</value>
+    <value>Открытый ключ может содержать не более 1024 символов. Проверьте, что вставлен только открытый ключ.</value>
   </data>
   <data name="SshHostnameInvalid" xml:space="preserve">
-    <value>Введите корректное имя хоста.</value>
+    <value>Введите имя хоста не длиннее 255 символов, используя только буквы, цифры, точки и дефисы. В адресе агента также допускаются двоеточия.</value>
   </data>
   <data name="SshPortInvalid" xml:space="preserve">
     <value>Порт должен быть от 1 до 65535.</value>
   </data>
   <data name="SshAgentUsernameInvalid" xml:space="preserve">
-    <value>Введите корректное имя служебного пользователя.</value>
+    <value>Введите имя служебного пользователя не длиннее 32 символов. Оно должно начинаться со строчной буквы или подчёркивания, далее допускаются строчные буквы, цифры, подчёркивания и дефисы.</value>
   </data>
   <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
     <value>Отпечаток ключа хоста должен состоять из SHA256: и 43 символов.</value>
   </data>
   <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
-    <value>Закрытый ключ слишком длинный.</value>
+    <value>Закрытый ключ может содержать не более 8000 символов. Проверьте, что вставлен только закрытый ключ.</value>
   </data>
   <data name="SshTimeoutInvalid" xml:space="preserve">
-    <value>Тайм-ауты вне допустимого диапазона.</value>
+    <value>Тайм-аут подключения должен быть от 1 до 120 секунд, а тайм-аут операции от 1 до 300 секунд.</value>
   </data>
   <data name="InvoiceStatusInvalid" xml:space="preserve">
-    <value>Статус должен быть одним из известных статусов счёта.</value>
+    <value>Статус должен быть одним из: Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending, PartiallyRefunded.</value>
   </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Укажите корректный новый адрес электронной почты.</value>
@@ -1439,7 +1435,7 @@
     <value>Текст поиска не может быть длиннее {0} символов.</value>
   </data>
   <data name="ListClientIdInvalid" xml:space="preserve">
-    <value>Укажите существующего клиента.</value>
+    <value>Фильтр по клиенту должен быть идентификатором существующего клиента, числом больше нуля. Выберите клиента из списка.</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>Фильтр по email не может быть длиннее {0} символов.</value>
@@ -1457,7 +1453,7 @@
     <value>Значение настройки не должно превышать {0} символов.</value>
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
-    <value>Недопустимый вид уведомления.</value>
+    <value>Вид уведомления должен быть одним из: General, Invoice, Support, Product, Domain, Affiliate.</value>
   </data>
   <data name="ClientExternalAccountPairRequired" xml:space="preserve">
     <value>Укажите и внешнюю систему, и идентификатор аккаунта, либо ни одного, чтобы убрать связь.</value>
@@ -1472,7 +1468,7 @@
     <value>Ожидается: {0}.</value>
   </data>
   <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Это поле не объявлено интеграцией.</value>
+    <value>У этой интеграции нет настройки с таким ключом, поэтому она не сохранена. Удалите поле и сохраните снова.</value>
   </data>
   <data name="IntegrationFieldExpectSecret" xml:space="preserve">
     <value>непустое значение; чтобы оставить сохранённый секрет, не передавайте поле</value>
@@ -1505,16 +1501,16 @@
     <value>Подтвердите согласие на списания с сохранённого способа оплаты по вашим счетам.</value>
   </data>
   <data name="StoredChargeSessionIdRequired" xml:space="preserve">
-    <value>Укажите сеанс сохранения.</value>
+    <value>Не указан идентификатор сеанса сохранения. Передайте идентификатор сеанса, который платёжный шлюз вернул при сохранении карты.</value>
   </data>
   <data name="CardConsentIdInvalid" xml:space="preserve">
-    <value>Укажите согласие.</value>
+    <value>Идентификатор согласия должен быть числом больше нуля. Укажите идентификатор существующего согласия на списание с карты.</value>
   </data>
   <data name="StoredChargeInvalid" xml:space="preserve">
-    <value>Укажите списание и чем оно закончилось.</value>
+    <value>Идентификатор списания должен быть числом больше нуля, а результат должен быть одним из: Succeeded, Declined, ActionRequired, Pending.</value>
   </data>
   <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
-    <value>Статус должен быть одним из известных статусов платёжной заявки.</value>
+    <value>Статус должен быть одним из: Open, ActionRequired, Pending, Settled, Declined, Abandoned, Held.</value>
   </data>
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Версия плагина обязательна.</value>
@@ -1523,7 +1519,7 @@
     <value>Лицензионный ключ обязателен.</value>
   </data>
   <data name="PluginLicenceKeyTooLong" xml:space="preserve">
-    <value>Лицензионный ключ слишком длинный.</value>
+    <value>Лицензионный ключ может содержать не более 256 символов. Проверьте, что вставлен только ключ.</value>
   </data>
   <data name="PluginLicenceKeyInvalid" xml:space="preserve">
     <value>Лицензионный ключ может содержать только печатные символы ASCII без пробелов.</value>
@@ -1535,10 +1531,10 @@
     <value>Текст поиска может содержать не более 100 символов.</value>
   </data>
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
-    <value>Выберите допустимую категорию.</value>
+    <value>Категория должна быть одной из: Payment, Provisioning, Registrar, App, Other.</value>
   </data>
   <data name="InvoiceItemIdInvalid" xml:space="preserve">
-    <value>Укажите корректную позицию счёта.</value>
+    <value>Идентификатор позиции счёта должен быть числом больше нуля. Укажите идентификатор существующей позиции счёта.</value>
   </data>
   <data name="RenewalWindowInvalid" xml:space="preserve">
     <value>Выберите период продления: 30, 60 или 90 дней.</value>
@@ -1559,13 +1555,13 @@
     <value>Сумма должна быть больше нуля.</value>
   </data>
   <data name="CreditNoteIdInvalid" xml:space="preserve">
-    <value>Укажите существующую кредит-ноту.</value>
+    <value>Идентификатор кредит-ноты должен быть числом больше нуля. Укажите идентификатор существующей кредит-ноты.</value>
   </data>
   <data name="CreditNoteMethodInvalid" xml:space="preserve">
     <value>Выберите, куда пойдёт кредит-нота: на баланс клиента или возвратом через платёжный шлюз.</value>
   </data>
   <data name="CreditNoteStatusInvalid" xml:space="preserve">
-    <value>Выберите допустимый статус кредит-ноты.</value>
+    <value>Статус кредит-ноты должен быть одним из: Draft, Issued, Applied, Voided.</value>
   </data>
   <data name="CreditNoteReasonRequired" xml:space="preserve">
     <value>Укажите причину кредит-ноты.</value>
@@ -1613,7 +1609,7 @@
     <value>Сообщение не может быть длиннее {0} символов.</value>
   </data>
   <data name="StatusStateInvalid" xml:space="preserve">
-    <value>Выберите допустимое состояние.</value>
+    <value>Состояние компонента указано неверно. Выберите работает, обслуживание, снижена производительность или сбой либо снимите переопределение и сохраните ещё раз.</value>
   </data>
   <data name="StatusCheckUrlRequired" xml:space="preserve">
     <value>Укажите адрес для проверки.</value>
@@ -1649,16 +1645,16 @@
     <value>Цвет нужно записать в виде #RRGGBB.</value>
   </data>
   <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
-    <value>Укажите корректный запрос на смену тарифа.</value>
+    <value>Идентификатор запроса на смену тарифа должен быть числом больше нуля. Откройте запрос из списка смен тарифа и повторите действие.</value>
   </data>
   <data name="ServiceChangeNoteTooLong" xml:space="preserve">
     <value>Заметка не должна быть длиннее {0} символов.</value>
   </data>
   <data name="ServiceChangeStatusInvalid" xml:space="preserve">
-    <value>Выберите корректный статус запроса на смену тарифа.</value>
+    <value>Статус смены тарифа должен быть одним из: Pending, Approved, Completed, Rejected. Выберите одно из этих значений для фильтра списка.</value>
   </data>
   <data name="CampaignIdInvalid" xml:space="preserve">
-    <value>Укажите корректную рассылку.</value>
+    <value>Идентификатор рассылки должен быть числом больше нуля. Откройте рассылку из списка рассылок и повторите действие.</value>
   </data>
   <data name="CampaignSubjectRequired" xml:space="preserve">
     <value>Введите тему письма.</value>
@@ -1679,7 +1675,7 @@
     <value>В рассылке может быть не более {0} сегментов.</value>
   </data>
   <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
-    <value>Выберите известный фильтр для каждого сегмента.</value>
+    <value>В сегменте указан несуществующий фильтр. Выберите один из фильтров из списка сегмента: продукт, страна, окончание срока, группа клиентов, последний вход или все активные клиенты.</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
     <value>Значение не подходит к фильтру: для продукта нужен id продукта, для страны двухбуквенный код, для окончания срока число дней от 1 до 365, для группы клиентов id группы, для фильтра по входу число дней от 1 до 3650, а фильтр всех активных клиентов значения не принимает.</value>
@@ -1691,13 +1687,13 @@
     <value>В ссылке для отписки нет токена.</value>
   </data>
   <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
-    <value>Эта ссылка для отписки недействительна.</value>
+    <value>Эта ссылка для отписки недействительна, возможно, она была обрезана при копировании. Используйте ссылку из исходного письма.</value>
   </data>
   <data name="CampaignMailLinkInvalid" xml:space="preserve">
-    <value>Эта ссылка недействительна.</value>
+    <value>Эта ссылка недействительна, возможно, она была обрезана при копировании. Используйте ссылку из исходного письма.</value>
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
-    <value>Ключ письма обязателен.</value>
+    <value>Ключ письма обязателен. Откройте письмо из списка отправленных писем, чтобы ключ подставился автоматически.</value>
   </data>
   <data name="ClientTaxIdInvalid" xml:space="preserve">
     <value>Налоговый номер не должен превышать 50 символов.</value>
@@ -1736,16 +1732,16 @@
     <value>Укажите дату начала от 1993 до 2100 года.</value>
   </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
-    <value>Недопустимый тип чёрного списка.</value>
+    <value>Тип чёрного списка должен быть одним из: Ip, Cidr, EmailDomain, Country. Выберите одно из этих значений.</value>
   </data>
   <data name="FraudBlockListValueInvalid" xml:space="preserve">
-    <value>Значение не подходит к выбранному типу чёрного списка.</value>
+    <value>Значение не подходит к выбранному типу чёрного списка или длиннее 255 символов. Для Ip укажите IP-адрес, для Cidr диапазон вида 203.0.113.0/24, для EmailDomain домен вида example.com, для Country двухбуквенный код.</value>
   </data>
   <data name="FraudBlockListNoteTooLong" xml:space="preserve">
     <value>Примечание не должно быть длиннее 500 символов.</value>
   </data>
   <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
-    <value>Идентификатор записи чёрного списка должен быть больше нуля.</value>
+    <value>Идентификатор записи чёрного списка должен быть числом больше нуля. Откройте запись из чёрного списка и повторите действие.</value>
   </data>
   <data name="FraudScoreOutOfRange" xml:space="preserve">
     <value>Оценка риска должна быть целым числом от 0 до 100.</value>
@@ -1760,13 +1756,13 @@
     <value>Лимит должен быть целым числом от 1 до 100.</value>
   </data>
   <data name="FraudCheckKindInvalid" xml:space="preserve">
-    <value>Недопустимый вид проверки на мошенничество.</value>
+    <value>Вид проверки на мошенничество должен быть Registration или Order. Выберите одно из этих значений.</value>
   </data>
   <data name="FraudDecisionInvalid" xml:space="preserve">
-    <value>Недопустимое решение по мошенничеству.</value>
+    <value>Решение по мошенничеству должно быть одним из: Approved, Review, Rejected, ManualApproved. Выберите одно из этих значений.</value>
   </data>
   <data name="FraudReasonInvalid" xml:space="preserve">
-    <value>Недопустимая причина по мошенничеству.</value>
+    <value>Причина по мошенничеству должна быть одной из: BlockedIp, BlockedEmailDomain, BlockedCountry, DisposableEmail. Выберите одно из этих значений для фильтра журнала.</value>
   </data>
   <data name="OrderReviewReasonRequired" xml:space="preserve">
     <value>Укажите причину, которую увидит клиент.</value>
@@ -1793,13 +1789,13 @@
     <value>Статус должен быть одним из: Active, Inactive.</value>
   </data>
   <data name="PaymentReturnParametersTooMany" xml:space="preserve">
-    <value>Слишком много параметров возврата.</value>
+    <value>Плательщик вернулся из платёжного шлюза с более чем 32 различными параметрами. Передавайте в адресе возврата не больше 32 параметров.</value>
   </data>
   <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
     <value>Имя параметра возврата ограничено 64 символами.</value>
   </data>
   <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
-    <value>Значение параметра возврата слишком длинное.</value>
+    <value>Значение параметра возврата длиннее 2048 символов. Сократите его в адресе возврата из платёжного шлюза.</value>
   </data>
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Максимальное число активных услуг должно быть 0 или пустым (без ограничений) либо положительным числом.</value>
@@ -1808,10 +1804,10 @@
     <value>Идентификатор заказа шлюза содержит от 1 до 255 символов, без пробелов по краям и управляющих символов.</value>
   </data>
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
-    <value>Курсор страницы регистратора слишком длинный.</value>
+    <value>Курсор страницы длиннее 1000 символов. Используйте курсор в том виде, в каком его вернула предыдущая страница, или начните с первой страницы.</value>
   </data>
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
-    <value>Это недопустимый идентификатор уведомления.</value>
+    <value>Идентификатор уведомления пуст или длиннее 100 символов. Обновите список уведомлений и отметьте запись прочитанной ещё раз.</value>
   </data>
   <data name="DomainFieldsOperationInvalid" xml:space="preserve">
     <value>Операция должна быть register, transfer или contactChange.</value>
@@ -1821,5 +1817,23 @@
   </data>
   <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
     <value>Данные реестра принимаются только в строке регистрации или переноса домена.</value>
+  </data>
+  <data name="StatusIncidentStateInvalid" xml:space="preserve">
+    <value>Состояние инцидента указано неверно. Выберите расследуется, причина найдена, наблюдение или решён и опубликуйте обновление ещё раз.</value>
+  </data>
+  <data name="ClientPermissionModeInvalid" xml:space="preserve">
+    <value>Режим прав указан неверно. Выберите, даёт ли приглашение все права или только выбранные вами, и отправьте его ещё раз.</value>
+  </data>
+  <data name="ClientPermissionListInvalid" xml:space="preserve">
+    <value>Права должны быть списком, где в каждой записи одно известное право. Выберите права в форме, не объединяя их, и отправьте приглашение ещё раз.</value>
+  </data>
+  <data name="ClientPermissionListMustBeEmpty" xml:space="preserve">
+    <value>Приглашение, дающее все права, не должно перечислять отдельные права. Снимите выбранные права или переключитесь на выбор прав и отправьте приглашение ещё раз.</value>
+  </data>
+  <data name="ClientPermissionListRequired" xml:space="preserve">
+    <value>Ни одно право не выбрано. Выберите хотя бы одно право или переключите приглашение на все права и отправьте его ещё раз.</value>
+  </data>
+  <data name="MigrationJobIdInvalid" xml:space="preserve">
+    <value>Идентификатор задания миграции должен быть положительным числом. Выберите существующее задание миграции.</value>
   </data>
 </root>

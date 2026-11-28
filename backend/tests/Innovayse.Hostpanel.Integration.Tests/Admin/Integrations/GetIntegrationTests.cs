@@ -35,7 +35,7 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
         save.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var get = await client.GetFromJsonAsync<JsonElement>("/api/admin/integrations/smtp");
-        get.GetProperty("name").GetString().Should().Be("SMTP Server");
+        get.GetProperty("name").GetString().Should().Be("integrationMeta.smtp.name");
         get.GetProperty("isEnabled").GetBoolean().Should().BeTrue();
         get.GetRawText().Should().NotContain("secret_should_never_be_echoed_back");
         var secret = get.GetProperty("config").GetProperty("password");

@@ -49,7 +49,7 @@ public sealed class RefreshServiceFromPanelHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the id names no service, <c>SERVICE_NOT_PROVISIONED</c> when the service has never
-    /// been provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated, <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server,
+    /// been provisioned, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when it is terminated, <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server,
     /// the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses with a reason, or
     /// <c>SERVICE_PANEL_SYNC_UPSTREAM_FAILED</c> when the panel cannot be read.
     /// </returns>

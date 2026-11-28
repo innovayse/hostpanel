@@ -34,16 +34,16 @@ public sealed class SettleFreeInvoiceTests(IntegrationTestFactory factory) : ICl
         (await context.Transactions.AsNoTracking().AnyAsync(t => t.InvoiceId == invoiceId)).Should().BeFalse();
     }
 
-    /// <summary>An invoice that still owes money is refused with <c>INVOICE_NOT_PAYABLE</c>.</summary>
+    /// <summary>An invoice that still owes money is refused with <c>INVOICE_NOT_FREE</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task HandleAsync_AmountStillDue_RefusesNotPayableAsync()
+    public async Task HandleAsync_AmountStillDue_RefusesNotFreeAsync()
     {
         var invoiceId = await SeedInvoiceAsync(10m);
 
         var result = await InvokeAsync(new SettleFreeInvoiceCommand(invoiceId));
 
-        result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_NOT_FREE);
     }
 
     /// <summary>Seeds an unpaid one-line invoice for a new client.</summary>

@@ -44,7 +44,7 @@ public sealed class RestoreServiceSshKeysHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success once every suspended key was attempted, also when there was none;
-    /// <c>SERVICE_NOT_FOUND</c> when the id names no service; <c>SERVICE_NOT_ACTIVE</c> when the
+    /// <c>SERVICE_NOT_FOUND</c> when the id names no service; <c>SERVICE_SSH_KEYS_RESTORE_NOT_ACTIVE</c> when the
     /// service is not active.
     /// </returns>
     public async Task<Result> HandleAsync(RestoreServiceSshKeysCommand cmd, CancellationToken ct)
@@ -62,7 +62,7 @@ public sealed class RestoreServiceSshKeysHandler
 
         if (service.Status is not ServiceStatus.Active)
         {
-            return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+            return Result.FailureCode(HostpanelErrorCodes.SERVICE_SSH_KEYS_RESTORE_NOT_ACTIVE);
         }
 
         var keys = await _context.SshKeys

@@ -100,9 +100,9 @@ internal sealed class FulfilmentScenario : IDisposable
     /// </summary>
     /// <param name="invoiceId">The invoice.</param>
     /// <param name="kind">The kind of the record.</param>
-    /// <param name="error">The error the last attempt failed with.</param>
+    /// <param name="errorCode">The code the last attempt failed with.</param>
     /// <returns>The saved record id.</returns>
-    public async Task<int> SeedFailedRecordAsync(int invoiceId, FulfilmentKind kind, string error)
+    public async Task<int> SeedFailedRecordAsync(int invoiceId, FulfilmentKind kind, string errorCode)
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -112,7 +112,7 @@ internal sealed class FulfilmentScenario : IDisposable
         {
             now = now.AddDays(1);
             record.Claim(now, TimeSpan.FromMinutes(5)).Should().BeTrue();
-            record.MarkFailed(error, now);
+            record.MarkFailed(errorCode, now);
         }
 
         db.FulfilmentRecords.Add(record);

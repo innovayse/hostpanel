@@ -63,28 +63,28 @@ public sealed class OrderTests
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderNotPending);
     }
 
-    /// <summary>Cancel on a non-Pending order throws <see cref="DomainRuleException"/> with <c>ORDER_NOT_PENDING</c>.</summary>
+    /// <summary>Cancel on a non-Pending order throws <see cref="DomainRuleException"/> with <c>ORDER_CANCEL_NOT_PENDING</c>.</summary>
     [Fact]
-    public void Cancel_WhenNotPending_ThrowsWithOrderNotPending()
+    public void Cancel_WhenNotPending_ThrowsWithOrderCancelNotPending()
     {
         var order = Order.Create("ORD-0002", clientId: 1, paymentMethod: "manual", ipAddress: null, currency: "USD", now: Now);
         order.Accept(Now);
 
         var act = order.Cancel;
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderNotPending);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderCancelNotPending);
     }
 
-    /// <summary>MarkFraud on a non-Pending order throws <see cref="DomainRuleException"/> with <c>ORDER_NOT_PENDING</c>.</summary>
+    /// <summary>MarkFraud on a non-Pending order throws <see cref="DomainRuleException"/> with <c>ORDER_FRAUD_NOT_PENDING</c>.</summary>
     [Fact]
-    public void MarkFraud_WhenNotPending_ThrowsWithOrderNotPending()
+    public void MarkFraud_WhenNotPending_ThrowsWithOrderFraudNotPending()
     {
         var order = Order.Create("ORD-0003", clientId: 1, paymentMethod: "manual", ipAddress: null, currency: "USD", now: Now);
         order.Accept(Now);
 
         var act = order.MarkFraud;
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderNotPending);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderFraudNotPending);
     }
 
     /// <summary>Every new order carries a token, so no order is ever payable by id alone.</summary>

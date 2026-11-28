@@ -1,22 +1,30 @@
 {
   "bankTransfer": {
+    "name": "Բանկային փոխանցում",
     "shortDescription": "Թույլ տվեք հաճախորդներին վճարել ուղիղ բանկային փոխանցմամբ՝ ձեր բանկային տվյալներով։",
     "fieldAccountName": "Հաշվի տիրոջ անուն",
-    "fieldInstructions": "Վճարման հրահանգներ"
+    "fieldIban": "IBAN",
+    "fieldSwift": "SWIFT / BIC",
+    "fieldInstructions": "Վճարման հրահանգներ",
+    "fieldExpiryDays": "Օրեր մինչև չհաստատված փոխանցման ժամկետի լրանալը"
   },
   "cpanel": {
+    "name": "cPanel WHM",
     "shortDescription": "Ստեղծեք հոսթինգ հաշիվներ և կառավարեք դրանք cPanel WHM սերվերի API-ի միջոցով։",
     "fieldHost": "WHM հոսթ",
     "fieldPort": "Պորտ",
     "fieldApiToken": "API թոքեն"
   },
   "smtp": {
+    "name": "SMTP սերվեր",
     "shortDescription": "Կարգավորեք ելքային նամակների առաքումը ձեր SMTP սերվերի միջոցով։",
     "fieldHost": "SMTP հոսթ",
     "fieldFromAddress": "Ուղարկողի հասցե",
-    "fieldEncryption": "Գաղտնագրում"
+    "fieldEncryption": "Գաղտնագրում",
+    "encryptionNone": "Ոչ մեկը"
   },
   "maxmind": {
+    "name": "MaxMind",
     "shortDescription": "Հայտնաբերեք խարդախ պատվերները MaxMind-ի GeoIP ռիսկերի գնահատմամբ։",
     "fieldLicenseKey": "Լիցենզիայի բանալի",
     "fieldAccountId": "Հաշվի ID"

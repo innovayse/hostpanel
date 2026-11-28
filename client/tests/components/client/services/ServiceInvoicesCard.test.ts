@@ -9,6 +9,7 @@
  */
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { flushPromises } from '@vue/test-utils'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ServiceInvoicesCard from '~/components/client/services/ServiceInvoicesCard.vue'
@@ -67,6 +68,10 @@ const mountLoaded = async (reply: StubReply) => {
 }
 
 describe('ServiceInvoicesCard', () => {
+  beforeEach(() => {
+    stubLocalePath()
+  })
+
   beforeEach(async () => {
     table = {}
     stub = await startTransport(routeTable(table))

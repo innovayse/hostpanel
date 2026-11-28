@@ -177,7 +177,10 @@ internal static class PdfDocumentLayout
         var renderer = new PdfDocumentRenderer { Document = document };
         renderer.RenderDocument();
         using var pdf = renderer.PdfDocument;
-        var titleArea = renderer.DocumentRenderer.GetRenderInfoFromPage(1)
+        // The first page always exists once the document is rendered; no render info for it is a broken renderer.
+        var firstPage = renderer.DocumentRenderer.GetRenderInfoFromPage(1)
+            ?? throw new InvalidOperationException("The rendered document has no first page.");
+        var titleArea = firstPage
             .First(info => ReferenceEquals(info.DocumentObject, titleTable))
             .LayoutInfo.ContentArea;
         DrawPill(pdf.Pages[0], content.Pill, content.Title, titleArea.X.Point, titleArea.Y.Point, titleArea.Height.Point);

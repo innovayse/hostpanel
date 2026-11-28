@@ -5,7 +5,8 @@
  * @module tests/components/client/credit/HistoryTable.test
  */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { mountClient } from '~/tests/helpers/mountClient'
 import HistoryTable from '~/components/client/credit/HistoryTable.vue'
 import type { ClientCreditEntry } from '~/types/clientcreditentry'
@@ -25,6 +26,10 @@ const adjusted: ClientCreditEntry = { id: 13, date: '2026-10-03T09:00:00Z', move
 const downgraded: ClientCreditEntry = { id: 14, date: '2026-10-04T09:00:00Z', movement: CreditMovement.PlanChangeCredit, change: 6.25, balanceAfter: 35.75, invoiceId: null }
 
 describe('ClientCreditHistoryTable', () => {
+  beforeEach(() => {
+    stubLocalePath()
+  })
+
   it('says nothing has moved the balance when there are no lines', () => {
     const wrapper = mountClient(HistoryTable, { props: { entries: [], currency: 'USD' } })
 

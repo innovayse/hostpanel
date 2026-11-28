@@ -5,7 +5,8 @@
  * @module tests/components/client/creditnotes/Table.test
  */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { mountClient } from '~/tests/helpers/mountClient'
 import CreditNotesTable from '~/components/client/creditnotes/Table.vue'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
@@ -35,6 +36,10 @@ const note = (overrides: Partial<ClientCreditNote> = {}): ClientCreditNote => ({
 })
 
 describe('CreditNotesTable', () => {
+  beforeEach(() => {
+    stubLocalePath()
+  })
+
   it('lists one row per note in the order the backend sent them', () => {
     const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ id: 4, number: 'CN-0004' }), note()], loading: false } })
 

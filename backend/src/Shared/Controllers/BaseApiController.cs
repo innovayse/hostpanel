@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Filters;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Shared.Controllers;
 
@@ -365,6 +367,60 @@ public abstract class BaseApiController : ControllerBase
             result.Value,
             services.GetRequiredService<TimeProvider>(),
             services.GetRequiredService<ILogger<EventStreamResult>>());
+    }
+
+    /// <summary>
+    /// The outcome of a use case that may have streamed its progress while it ran. When it opened a stream (the caller asked
+    /// for <c>text/event-stream</c> and the use case reported a step), the stream ends with a <c>done</c> event carrying the
+    /// value, or a <c>failed</c> event carrying the standard error body; otherwise the answer is <see cref="HandleResult{T}(Result{T})"/>,
+    /// so a refusal before the first event keeps its own status and the standard error body.
+    /// </summary>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="result">The handler's outcome.</param>
+    /// <returns>The response.</returns>
+    protected IActionResult HandleReported<T>(Result<T> result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (!EventStreamWriter.IsOpen(Response))
+        {
+            return HandleResult(result);
+        }
+
+        if (result.IsFailure)
+        {
+            return FailedEvent(result);
+        }
+
+        var json = HttpContext.RequestServices.GetRequiredService<IOptions<JsonOptions>>().Value.JsonSerializerOptions;
+        return new EventStreamEndResult(new StreamedEvent(JsonSerializer.Serialize(result.Value, json), EventStreamEndResult.DoneEvent));
+    }
+
+    /// <summary>
+    /// The outcome of queued work with no value (a restart) that may have streamed its progress while it ran: a <c>done</c>
+    /// event with an empty object, or a <c>failed</c> event, once a stream is open; otherwise <see cref="AcceptedResult"/>.
+    /// </summary>
+    /// <param name="result">The handler's outcome.</param>
+    /// <returns>The response.</returns>
+    protected IActionResult AcceptedOrReported(Result result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (!EventStreamWriter.IsOpen(Response))
+        {
+            return AcceptedResult(result);
+        }
+
+        return result.IsFailure ? FailedEvent(result) : new EventStreamEndResult(new StreamedEvent("{}", EventStreamEndResult.DoneEvent));
+    }
+
+    /// <summary>The <c>failed</c> event of an open stream: the body <see cref="MapFailure"/> would have answered with, as its data.</summary>
+    /// <param name="result">A failed outcome.</param>
+    /// <returns>The result that ends the stream.</returns>
+    private EventStreamEndResult FailedEvent(Result result)
+    {
+        var body = ErrorBody.ForCode(HttpContext.RequestServices, result.ErrorCode ?? SharedErrorCodes.Unexpected);
+        return new EventStreamEndResult(new StreamedEvent(ErrorBody.Serialize(body), EventStreamEndResult.FailedEvent));
     }
 
     /// <summary>Maps a refusal to its status and localizes its sentence by code; a 503 also carries <c>Retry-After</c>.</summary>

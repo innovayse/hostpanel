@@ -36,24 +36,30 @@ public sealed class InstallPluginHandler
     /// <summary>Applies the accepted package in the running process when it can, and words the answer.</summary>
     private readonly PluginChangeApplier _applier;
 
+    /// <summary>Tells the caller how far the install has come.</summary>
+    private readonly IPluginChangeProgress _reporter;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Checks and unpacks the uploaded archive.</param>
     /// <param name="activityLogger">Stages the audit line for the install.</param>
     /// <param name="db">Saves the audit line and the install record.</param>
     /// <param name="recorder">Stages the install record of the accepted package.</param>
     /// <param name="applier">Applies the accepted package in the running process when it can, and words the answer.</param>
+    /// <param name="reporter">Tells the caller how far the install has come.</param>
     public InstallPluginHandler(
         IPluginPackageStore store,
         IActivityLogger activityLogger,
         IHostpanelDbContext db,
         InstalledPluginRecorder recorder,
-        PluginChangeApplier applier)
+        PluginChangeApplier applier,
+        IPluginChangeProgress reporter)
     {
         _store = store;
         _activityLogger = activityLogger;
         _db = db;
         _recorder = recorder;
         _applier = applier;
+        _reporter = reporter;
     }
 
     /// <summary>
@@ -96,6 +102,8 @@ public sealed class InstallPluginHandler
             .Select(s => s.Value)
             .FirstOrDefaultAsync(ct));
 
+        // The upload is already in: what the caller follows from here starts with the package checks.
+        await _reporter.EnterAsync(PluginChangeStage.Verify, ct);
         var outcome = await _store.InstallAsync(new PluginPackageUpload(command.Content!, allowUnsigned, command.ForceDowngrade), ct);
         if (outcome.Outcome == PluginPackageOutcome.DowngradeRefused)
         {

@@ -60,6 +60,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <summary>The version of the running Hostpanel build, which the package's host version range must admit.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
+    /// <summary>Tells the caller of an install when the checks have passed and the package is being put in place.</summary>
+    private readonly IPluginChangeProgress _reporter;
+
     /// <summary>The entry count and uncompressed size limits of an upload, in the form the archive guards of the packaging package take.</summary>
     private PluginArchiveLimits Limits => new(_options.MaxEntryCount, _options.MaxUncompressedBytes);
 
@@ -69,18 +72,21 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <param name="registry">Tells whether a plugin is loaded, whose folder must then never be overwritten in place.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build, which the package's host version range must admit.</param>
     /// <param name="logger">Records why an upload was refused; the response carries only a code.</param>
+    /// <param name="reporter">Tells the caller of an install when the checks have passed and the package is being put in place.</param>
     public PluginPackageStore(
         IOptions<PluginOptions> options,
         PluginSignatureVerifier signatures,
         IPluginRegistry registry,
         IInstalledVersionProvider hostVersion,
-        ILogger<PluginPackageStore> logger)
+        ILogger<PluginPackageStore> logger,
+        IPluginChangeProgress reporter)
     {
         _options = options.Value;
         _signatures = signatures;
         _registry = registry;
         _hostVersion = hostVersion;
         _logger = logger;
+        _reporter = reporter;
     }
 
     /// <inheritdoc/>
@@ -467,6 +473,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
                 "Plugin install refused: {PluginId} fails signature rule {Rule}: {Detail}.", id, signature.Rule, signature.Detail);
             return new PluginPackageResult(PluginPackageOutcome.SignatureRefused, id, sha256, SignatureRule: signature.Rule);
         }
+
+        // Every check has passed: what follows puts the package in place.
+        await _reporter.EnterAsync(PluginChangeStage.Stage, ct);
 
         // What the install record keeps of the package, read before the unpacked files are moved out of the work folder:
         // the key is named only when its signature verifies, so an unsigned package admitted by policy names none.

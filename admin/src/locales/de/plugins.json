@@ -68,8 +68,6 @@
   },
   "restart": {
     "title": "Server wird neu gestartet",
-    "restarting": "Neustart läuft",
-    "hint": "Das Panel ist gleich wieder da. Lassen Sie dieses Fenster bitte geöffnet.",
     "running": "Geladen und aktiv",
     "timedOut": "Der Server ist nicht rechtzeitig zurückgekehrt. Prüfen Sie, ob er startet, und versuchen Sie es erneut.",
     "pluginVersion": "{name}, Version {version}",
@@ -117,9 +115,32 @@
     "removing": "{name} wird entfernt",
     "uploading": "{name} wird hochgeladen",
     "done": "Fertig.",
-    "reloaded": "{name} wurde aktualisiert und läuft ohne Neustart.",
     "restartNeeded": "Starten Sie den Server neu, um die Änderung anzuwenden.",
-    "close": "Schließen"
+    "close": "Schließen",
+    "restarting": "Server wird neu gestartet",
+    "progress": "Fortschritt",
+    "elapsed": "Vergangen {time}",
+    "targetVersion": "Version {version}",
+    "loadedVersion": "Geladen und aktiv, Version {version}",
+    "removedDone": "{name} wurde entfernt.",
+    "steps": {
+      "upload": "Hochladen",
+      "download": "Herunterladen",
+      "verify": "Signatur prüfen",
+      "stage": "Bereitstellen",
+      "remove": "Dateien entfernen",
+      "apply": "Anwenden",
+      "reload": "Anwenden (Neuladen im Betrieb)",
+      "restart": "Neustart",
+      "loaded": "Geladen und aktiv",
+      "removed": "Entfernt"
+    },
+    "state": {
+      "pending": "Wartet",
+      "running": "Läuft",
+      "done": "Erledigt",
+      "failed": "Fehlgeschlagen"
+    }
   },
   "pluginSlotWidgets": {
     "title": "Slot-Widgets: {plugin}",

@@ -39,7 +39,7 @@ import { usePluginProcessing } from '@/composables/usePluginProcessing'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { usePageCrumbs } from '@/composables/usePageCrumbs'
 import { AppRoute } from '@/lib/routes'
-import { PluginErrorCode, PluginProcessingStep, PluginRestartState, VersionRelation } from '@/types/plugin'
+import { PluginErrorCode, PluginProcessingPlan, PluginProcessingStep, PluginRestartState, VersionRelation } from '@/types/plugin'
 import type { PluginListItemDto, PluginSlotWidgetBindingDto, RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
 import type { ServerOptionDto } from '@/types/server'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
@@ -325,6 +325,9 @@ const processing = usePluginProcessing()
 /** Name the processing dialog shows: the plugin's, its id while the list does not know it. */
 const processingName = computed<string>(() => plugin.value?.name ?? details.value?.name ?? pluginId.value)
 
+/** Icon the processing dialog shows: the installed plugin's, else the registry's, null when neither has one. */
+const processingIcon = computed<string | null>(() => plugin.value?.iconUrl ?? details.value?.iconUrl ?? null)
+
 /** Closes the prompt and installs the version the operator confirmed, behind the processing dialog. */
 const handleInstall = async (): Promise<void> => {
   const pending = pendingInstall.value
@@ -335,6 +338,11 @@ const handleInstall = async (): Promise<void> => {
   await processing.run({
     name: processingName.value,
     step: plugin.value === undefined ? PluginProcessingStep.Installing : PluginProcessingStep.Updating,
+    plan: PluginProcessingPlan.Registry,
+    pluginId: pluginId.value,
+    version: pending.version,
+    iconUrl: processingIcon.value,
+    color: plugin.value?.color,
     /**
      * The store call the dialog waits for.
      *
@@ -363,6 +371,10 @@ const handleUninstall = async (): Promise<void> => {
   const outcome = await processing.run({
     name: processingName.value,
     step: PluginProcessingStep.Removing,
+    plan: PluginProcessingPlan.Removal,
+    pluginId: pluginId.value,
+    iconUrl: processingIcon.value,
+    color: plugin.value?.color,
     /**
      * The store call the dialog waits for.
      *

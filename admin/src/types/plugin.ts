@@ -820,7 +820,94 @@ export enum PluginProcessingStep {
   Removing = 'removing',
   /** A plugin archive is being uploaded and read. */
   Uploading = 'uploading',
+  /** The server restarts to apply the staged plugin changes. */
+  Restarting = 'restarting',
 }
+
+/** Closed set of the step lists the processing dialog walks through, one per kind of job. */
+export enum PluginProcessingPlan {
+  /** An install or update from the registry: download, verify, stage, apply, loaded. */
+  Registry = 'registry',
+  /** An install or update from an uploaded archive: upload, verify, stage, apply, loaded. */
+  Archive = 'archive',
+  /** An archive being uploaded and read before the admin confirms it: the upload alone. */
+  ArchiveRead = 'archiveRead',
+  /** A removal: remove the files, apply, removed. */
+  Removal = 'removal',
+  /** A restart the admin asked for: restart, loaded. */
+  Restart = 'restart',
+}
+
+/** Closed set of the steps the processing dialog lists; the strings are the parts of the locale keys. */
+export enum PluginProgressStep {
+  /** The archive goes up to the server. */
+  Upload = 'upload',
+  /** The package comes down from the registry. */
+  Download = 'download',
+  /** The checksum, the manifest and the signature are checked. */
+  Verify = 'verify',
+  /** The checked package is put in place. */
+  Stage = 'stage',
+  /** The plugin's files are deleted. */
+  Remove = 'remove',
+  /** The change is applied; how is not known yet. */
+  Apply = 'apply',
+  /** The change was applied in the running server, with no restart. */
+  Reload = 'reload',
+  /** The server restarts to apply the change. */
+  Restart = 'restart',
+  /** The plugin is loaded and runs. */
+  Loaded = 'loaded',
+  /** The plugin is gone from the running server. */
+  Removed = 'removed',
+}
+
+/** Closed set of where a processing job stands as a whole; it picks the colour of the bar and the closing line. */
+export enum PluginProcessingPhase {
+  /** A step still runs: the accent. */
+  Running = 'running',
+  /** Every step that was to run has finished: green. */
+  Done = 'done',
+  /** A step failed: red, with the reason. */
+  Failed = 'failed',
+}
+
+/** Closed set of the stages the server streams for a running change; the strings are the API's enum names. */
+export enum PluginChangeStage {
+  /** The package is being downloaded from the registry. */
+  Download = 'Download',
+  /** The package is being checked. */
+  Verify = 'Verify',
+  /** The package is being put in place, or a removed plugin's files deleted. */
+  Stage = 'Stage',
+  /** The change is being applied in the running server. */
+  Apply = 'Apply',
+  /** The server has started its restart to apply the change. */
+  Restart = 'Restart',
+}
+
+/** Closed set of the event names a streamed plugin change sends. */
+export enum PluginChangeEvent {
+  /** A step moved on: the data is a {@link PluginChangeProgressDto}. */
+  Progress = 'progress',
+  /** The change ended well: the data is the answer the JSON call carries. */
+  Done = 'done',
+  /** The change was refused: the data is the standard error body. */
+  Failed = 'failed',
+}
+
+/** The data of one `progress` event of a streamed plugin change. */
+export interface PluginChangeProgressDto {
+  /** The stage the change is in. */
+  stage: PluginChangeStage
+  /** Bytes of the package downloaded so far; zero outside the download. */
+  bytesDone: number
+  /** Size of the package the registry declared, null when it declared none or outside the download. */
+  bytesTotal: number | null
+}
+
+/** Told each step of a streamed plugin change as it arrives. */
+export type PluginChangeListener = (progress: PluginChangeProgressDto) => void
 
 /** Closed set of the stages of a server restart the panel waits through; the strings are the parts of the locale keys. */
 export enum PluginRestartState {

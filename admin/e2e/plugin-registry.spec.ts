@@ -7,7 +7,7 @@ import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import { installedGateway, registryGateway, registryGatewayInstalled, registryTrustRow } from './fixtures/pluginRegistry'
 import type { PluginListItemDto, PluginRegistryItemDto } from '../src/types/plugin'
-import { json, stubApi } from './support/stubApi'
+import { changeEvents, json, stubApi } from './support/stubApi'
 
 /** Listings per page the stubbed registry answers with. */
 const pageSize = 20
@@ -34,7 +34,7 @@ test('browsing the registry and installing a plugin posts its version and shows 
         respond: () => {
           installed.push(installedGateway)
           listing = registryGatewayInstalled
-          return { body: { requiresRestart: true, stagedVersion: null } }
+          return changeEvents({ requiresRestart: true, stagedVersion: null })
         },
       },
     ],

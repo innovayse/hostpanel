@@ -26,6 +26,11 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// <summary>
 /// Staff administration of installable provider plugins. A write answers <c>requiresRestart: true</c> when the running
 /// process could not apply the change itself; the client then calls <see cref="RestartAsync"/> before it takes effect.
+/// An install, a registry install or update, a removal and a restart asked with <c>Accept: text/event-stream</c> answer
+/// with a stream of server-sent events instead: a <c>progress</c> event per step (<c>stage</c> <c>Download</c>,
+/// <c>Verify</c>, <c>Stage</c>, <c>Apply</c> or <c>Restart</c>, with <c>bytesDone</c> and <c>bytesTotal</c> while the package
+/// downloads), then <c>done</c> with the same body the JSON answer carries, or <c>failed</c> with the standard error body.
+/// A refusal before the first step (validation, permission, the demo) keeps its own status and error body.
 /// </summary>
 [Route("api/admin/plugins")]
 [Authorize(Policy = Policies.Admin)]
@@ -159,7 +164,7 @@ public sealed class PluginsController : BaseApiController
     {
         await using var content = file?.OpenReadStream();
         var outcome = await _bus.InvokeAsync<Result<PluginActionResultDto>>(new InstallPluginCommand(content, force), ct);
-        return HandleResult(outcome);
+        return HandleReported(outcome);
     }
 
     /// <summary>
@@ -362,7 +367,7 @@ public sealed class PluginsController : BaseApiController
     public async Task<IActionResult> InstallRegistryAsync(string id, [FromBody] InstallRegistryPluginCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginActionResultDto>>(command with { PluginId = id }, ct);
-        return HandleResult(outcome);
+        return HandleReported(outcome);
     }
 
     /// <summary>
@@ -389,7 +394,7 @@ public sealed class PluginsController : BaseApiController
     public async Task<IActionResult> RemoveAsync(string id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PluginActionResultDto>>(new RemovePluginCommand(id), ct);
-        return HandleResult(outcome);
+        return HandleReported(outcome);
     }
 
     /// <summary>
@@ -434,6 +439,6 @@ public sealed class PluginsController : BaseApiController
     public async Task<IActionResult> RestartAsync(CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new RestartPluginHostCommand(), ct);
-        return AcceptedResult(outcome);
+        return AcceptedOrReported(outcome);
     }
 }

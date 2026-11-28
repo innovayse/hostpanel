@@ -57,6 +57,7 @@ describe('limits', () => {
       [PollKind.MigrationStatus]: 2000,
       [PollKind.ServerRestart]: 2000,
       [PollKind.PluginFollowUp]: 3000,
+      [PollKind.ProcessingClock]: 1000,
       [PollKind.DemoCountdown]: 60000,
     })
   })

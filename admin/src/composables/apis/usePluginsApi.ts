@@ -4,10 +4,13 @@
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { buildQuery, useApi } from '@/composables/useApi'
+import { ApiError, BROKEN_STREAM_STATUS, buildQuery, useApi } from '@/composables/useApi'
+import { PluginChangeEvent } from '@/types/plugin'
 import type {
   InstallRegistryPluginBody,
   PluginActionResultDto,
+  PluginChangeListener,
+  PluginChangeProgressDto,
   PluginListItemDto,
   PluginPackagePreviewDto,
   PluginRegistryItemDto,
@@ -22,6 +25,7 @@ import type {
 } from '@/types/plugin'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
+import type { ServerSentEvent } from '@/types/http'
 
 /**
  * Endpoint functions for `/admin/plugins`.
@@ -29,7 +33,62 @@ import { HttpMethod } from '@/types/http'
  * @returns One typed function per endpoint.
  */
 export const usePluginsApi = () => {
-  const { request, upload } = useApi()
+  const { request, upload, stream } = useApi()
+
+  /**
+   * Runs one plugin change as a stream: hands each `progress` event to the listener and resolves with the `done` event's
+   * data, or rejects with the `failed` event's error body as an {@link ApiError}. A stream that ends with neither (the
+   * server went away mid-change) rejects with a plain error that carries no status.
+   *
+   * @param endpoint - API path of the change.
+   * @param body - The JSON body, a `FormData`, or undefined for none.
+   * @param method - The HTTP method.
+   * @param onProgress - Told each step as it arrives.
+   * @returns The change's answer.
+   * @throws {ApiError} The refusal before or during the change.
+   */
+  const streamChange = async <T>(
+    endpoint: string,
+    body: unknown,
+    method: HttpMethod,
+    onProgress: PluginChangeListener,
+  ): Promise<T> => {
+    /** The last event, once the change has ended. */
+    let end: ServerSentEvent | null = null
+    await stream(
+      endpoint,
+      body,
+      (event) => {
+        if (event.type === PluginChangeEvent.Progress) {
+          onProgress(event.data as PluginChangeProgressDto)
+        } else if (event.type === PluginChangeEvent.Done || event.type === PluginChangeEvent.Failed) {
+          end = event
+        }
+      },
+      new AbortController().signal,
+      method,
+    )
+    const last = end as ServerSentEvent | null
+    if (last === null) {
+      throw new Error('The plugin change stream ended without an outcome.')
+    }
+    if (last.type === PluginChangeEvent.Failed) {
+      throw new ApiError((last.data as { status?: number } | null)?.status ?? BROKEN_STREAM_STATUS, last.data)
+    }
+    return last.data as T
+  }
+
+  /**
+   * Builds the multipart body of an uploaded archive.
+   *
+   * @param file - The ZIP file.
+   * @returns The form with the file under `file`.
+   */
+  const archiveForm = (file: File): FormData => {
+    const form = new FormData()
+    form.append('file', file)
+    return form
+  }
 
   /**
    * Lists the installed plugins.
@@ -40,14 +99,16 @@ export const usePluginsApi = () => {
     request<PluginListItemDto[]>(ApiPath.AdminPlugins)
 
   /**
-   * Uploads a plugin ZIP for installation.
+   * Uploads a plugin ZIP for installation, streaming each step of it.
    *
    * @param file - The ZIP file.
    * @param force - True to install a version older than the installed one (a downgrade).
+   * @param onProgress - Told each step as it arrives.
    * @returns Whether a restart is needed.
    */
-  const installPlugin = (file: File, force = false): Promise<PluginActionResultDto> =>
-    upload<PluginActionResultDto>(`${ApiPath.AdminPlugins}/install${force ? '?force=true' : ''}`, file)
+  const installPlugin = (file: File, force: boolean, onProgress: PluginChangeListener): Promise<PluginActionResultDto> =>
+    streamChange<PluginActionResultDto>(
+      `${ApiPath.AdminPlugins}/install${force ? '?force=true' : ''}`, archiveForm(file), HttpMethod.Post, onProgress)
 
   /**
    * Reads what a plugin ZIP asks for before it is installed; nothing is installed.
@@ -59,13 +120,14 @@ export const usePluginsApi = () => {
     upload<PluginPackagePreviewDto>(`${ApiPath.AdminPlugins}/inspect`, file)
 
   /**
-   * Removes an installed plugin.
+   * Removes an installed plugin, streaming each step of it.
    *
    * @param id - Plugin id as declared in plugin.json.
+   * @param onProgress - Told each step as it arrives.
    * @returns Whether a restart is needed.
    */
-  const removePlugin = (id: string): Promise<PluginActionResultDto> =>
-    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(id)}`, { method: HttpMethod.Delete })
+  const removePlugin = (id: string, onProgress: PluginChangeListener): Promise<PluginActionResultDto> =>
+    streamChange<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(id)}`, undefined, HttpMethod.Delete, onProgress)
 
   /**
    * Deletes the data a removed plugin kept.
@@ -77,12 +139,13 @@ export const usePluginsApi = () => {
     request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(id)}/data`, { method: HttpMethod.Delete })
 
   /**
-   * Asks the server for a graceful restart.
+   * Asks the server for a graceful restart, streaming the step that says it has begun.
    *
+   * @param onProgress - Told each step as it arrives.
    * @returns Nothing; the server may drop the connection before it answers.
    */
-  const restartServer = (): Promise<void> =>
-    request<void>(`${ApiPath.AdminPlugins}/restart`, { method: HttpMethod.Post })
+  const restartServer = (onProgress: PluginChangeListener): Promise<void> =>
+    streamChange<void>(`${ApiPath.AdminPlugins}/restart`, undefined, HttpMethod.Post, onProgress)
 
   /**
    * Lists the slot widgets one loaded plugin declares, with the products the operator bound each to.
@@ -142,17 +205,20 @@ export const usePluginsApi = () => {
     request<PluginRegistryItemDto[]>(`${ApiPath.AdminPlugins}/registry/updates`)
 
   /**
-   * Installs (or stages an upgrade of) a plugin from the registry.
+   * Installs (or stages an upgrade of) a plugin from the registry, streaming each step of it, the download's bytes included.
    *
    * @param id - Plugin id as listed by the registry.
    * @param body - The version to install.
+   * @param onProgress - Told each step as it arrives.
    * @returns Whether a restart is needed, and the staged version for an upgrade.
    */
-  const installFromRegistry = (id: string, body: InstallRegistryPluginBody): Promise<PluginActionResultDto> =>
-    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/install`, {
-      method: HttpMethod.Post,
-      body: JSON.stringify(body),
-    })
+  const installFromRegistry = (
+    id: string,
+    body: InstallRegistryPluginBody,
+    onProgress: PluginChangeListener,
+  ): Promise<PluginActionResultDto> =>
+    streamChange<PluginActionResultDto>(
+      `${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/install`, body, HttpMethod.Post, onProgress)
 
   /**
    * Reads where this server stands with the plugin registry.

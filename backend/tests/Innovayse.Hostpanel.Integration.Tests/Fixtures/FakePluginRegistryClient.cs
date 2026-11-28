@@ -144,7 +144,8 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     }
 
     /// <inheritdoc/>
-    public Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null)
+    public Task<Result<Stream>> DownloadAsync(
+        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeProgress? progress = null)
     {
         LastLicenceKey = licenceKey;
         DownloadCount++;

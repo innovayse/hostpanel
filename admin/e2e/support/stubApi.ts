@@ -34,7 +34,17 @@ export interface StubResponse {
   status?: number
   /** JSON body; omitted for an empty response. */
   body?: unknown
+  /** A server-sent event stream answered as `text/event-stream` instead of a JSON body; see {@link changeEvents}. */
+  stream?: string
 }
+
+/**
+ * The answer of a streamed plugin change that ended well: the `done` event carrying the body.
+ *
+ * @param body - The answer the `done` event carries.
+ * @returns The stub answer.
+ */
+export const changeEvents = (body: unknown): StubResponse => ({ stream: `event: done\ndata: ${JSON.stringify(body)}\n\n` })
 
 /** Computes the answer for one matched request. */
 export type Responder = (call: RecordedCall) => StubResponse | Promise<StubResponse>
@@ -188,8 +198,8 @@ export const stubApi = async (page: Page, options: StubOptions = {}): Promise<St
     const answer = await hit.respond(call)
     await route.fulfill({
       status: answer.status ?? 200,
-      contentType: 'application/json',
-      body: answer.body === undefined ? '' : JSON.stringify(answer.body),
+      contentType: answer.stream === undefined ? 'application/json' : 'text/event-stream',
+      body: answer.stream ?? (answer.body === undefined ? '' : JSON.stringify(answer.body)),
     })
   })
 

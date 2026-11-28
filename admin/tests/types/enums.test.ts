@@ -12,7 +12,6 @@ import { CurrencyCode } from '@/types/currency'
 import { DemoAccountRole } from '@/types/demo'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode, FraudSettingsField } from '@/types/fraud'
-import { PaymentGateway } from '@/types/gateway'
 import { IntegrationFieldType } from '@/types/integration'
 import { InvoiceOpenAction, InvoiceStatus } from '@/types/invoice'
 import { MigrationEntityType } from '@/types/migration'
@@ -62,7 +61,6 @@ describe('billing value sets', () => {
   it('keep the wire strings of methods, gateways, cycles and actions', () => {
     expect(PaymentMethod.Card).toBe('Credit/Debit Card')
     expect(PaymentMethod.BankTransfer).toBe('Bank Transfer')
-    expect(PaymentGateway.BankTransfer).toBe('BankTransfer')
     expect(Object.values(BillingCycle)).toEqual(['Monthly', 'Quarterly', 'SemiAnnual', 'Annual', 'Biennial'])
     expect(Object.values(BillableItemType)).toEqual(['OneTime', 'Recurring'])
     expect(Object.values(BillableItemInvoiced)).toEqual(['true', 'false'])

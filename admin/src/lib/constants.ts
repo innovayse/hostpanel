@@ -17,7 +17,6 @@ import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { CampaignStatus } from '@/types/emailcampaign'
 import { EmailLogOutcome } from '@/types/emaillog'
 import { EnabledFilter } from '@/types/enabledfilter'
-import { PaymentGateway } from '@/types/gateway'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
@@ -236,8 +235,8 @@ export const NETWORK_ISSUE_STATUS_OPTIONS: SelectOption<NetworkIssueStatus>[] = 
 
 /** Payment gateway options. */
 export const GATEWAY_OPTIONS: SelectOption[] = [
-  { value: PaymentGateway.None, get label() { return translate('shared.none') } },
-  { value: PaymentGateway.BankTransfer, get label() { return translate('constants.paymentMethodOptions.bankTransfer') } },
+  { value: PaymentMethod.None, get label() { return translate('shared.none') } },
+  { value: PaymentMethod.BankTransfer, get label() { return translate('constants.paymentMethodOptions.bankTransfer') } },
 ]
 
 /** Order status options for filter dropdowns. */

@@ -17,7 +17,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiColumnSize, UiCardRole } from '@/utils/ui/table'
 import UiText from '@/components/ui/UiText.vue'
 import { TRANSACTION_TYPE_OPTIONS } from '@/lib/constants'
-import { transactionTypeTone, statusLabel } from '@/lib/tones'
+import { paymentMethodLabel, transactionTypeTone, statusLabel } from '@/lib/tones'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
@@ -65,7 +65,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
       <UiTableBody>
         <UiTableRow v-for="transaction in payments" :key="transaction.id" hoverable>
           <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
-          <UiTableCell>{{ transaction.gateway }}</UiTableCell>
+          <UiTableCell>{{ paymentMethodLabel(transaction.gateway) }}</UiTableCell>
           <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell numeric>
             <UiText :tone="UiTextTone.Success">{{ formatPlainAmount(transaction.amount, invoice.currency) }}</UiText>
@@ -96,7 +96,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
       <UiTableBody>
         <UiTableRow v-for="transaction in allTransactions" :key="transaction.id" hoverable>
           <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
-          <UiTableCell>{{ transaction.gateway }}</UiTableCell>
+          <UiTableCell>{{ paymentMethodLabel(transaction.gateway) }}</UiTableCell>
           <UiTableCell muted>{{ transaction.transactionId || EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
             <UiBadge :tone="transactionTypeTone(transaction.type)">{{ statusLabel(TRANSACTION_TYPE_OPTIONS, transaction.type) }}</UiBadge>

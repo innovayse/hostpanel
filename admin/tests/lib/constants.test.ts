@@ -50,7 +50,6 @@ import { CampaignStatus } from '@/types/emailcampaign'
 import { EmailLogOutcome } from '@/types/emaillog'
 import { EnabledFilter } from '@/types/enabledfilter'
 import { FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
-import { PaymentGateway } from '@/types/gateway'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { NetworkIssuePriority, NetworkIssueStatus, NetworkIssueType } from '@/types/networkissue'
@@ -93,7 +92,7 @@ describe('option lists', () => {
     expect(valuesOf(BILLING_CYCLE_OPTIONS)).toEqual(membersOf(BillingCycle))
     expect(valuesOf(BILLABLE_ITEM_TYPE_OPTIONS)).toEqual(membersOf(BillableItemType))
     expect(valuesOf(RECURRING_PERIOD_OPTIONS)).toEqual(membersOf(RecurringPeriod))
-    expect(valuesOf(GATEWAY_OPTIONS)).toEqual(membersOf(PaymentGateway))
+    expect(valuesOf(GATEWAY_OPTIONS)).toEqual([PaymentMethod.None, PaymentMethod.BankTransfer])
     expect(valuesOf(CAMPAIGN_STATUS_OPTIONS)).toEqual(membersOf(CampaignStatus))
     expect(valuesOf(ENABLED_FILTER_OPTIONS)).toEqual(membersOf(EnabledFilter))
     expect(valuesOf(PUBLISHED_FILTER_OPTIONS)).toEqual(membersOf(PublishedFilter))
@@ -196,7 +195,7 @@ describe('option lists', () => {
     const noneLabel = translate('shared.none')
 
     expect(PAYMENT_METHOD_OPTIONS.find((option) => option.value === '')?.label).toBe(noneLabel)
-    expect(GATEWAY_OPTIONS.find((option) => option.value === PaymentGateway.None)?.label).toBe(noneLabel)
+    expect(GATEWAY_OPTIONS.find((option) => option.value === PaymentMethod.None)?.label).toBe(noneLabel)
     expect(noneLabel).not.toBe('shared.none')
   })
 })

@@ -17,7 +17,7 @@ import { InvoiceFilterKey, useInvoiceFilters } from '@/composables/useInvoiceFil
 import { useListQuery } from '@/composables/useListQuery'
 import { useRowSelection } from '@/composables/useRowSelection'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
-import { invoiceStatusTone, statusLabel } from '@/lib/tones'
+import { invoiceStatusTone, paymentMethodLabel, statusLabel } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceOpenAction } from '@/types/invoice'
@@ -505,7 +505,7 @@ list.loadOnChange(fetchInvoices)
             <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
             <UiTableCell muted>{{ invoice.paidAt ? formatDate(invoice.paidAt) : '-' }}</UiTableCell>
             <UiTableCell numeric>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
-            <UiTableCell muted>{{ invoice.paymentMethod || '-' }}</UiTableCell>
+            <UiTableCell muted>{{ invoice.paymentMethod ? paymentMethodLabel(invoice.paymentMethod) : '-' }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}</UiBadge>
             </UiTableCell>

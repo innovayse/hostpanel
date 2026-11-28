@@ -8,6 +8,7 @@
  * with a raw API string is wrapped in a function that falls back to the neutral tone, so a value
  * the API adds later is shown as received instead of breaking the screen.
  */
+import { GATEWAY_OPTIONS } from '@/lib/constants'
 import { translate, translateOrRaw } from '@/lib/translate'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientStatus } from '@/types/client'
@@ -475,6 +476,15 @@ export const cancellationStatusLabel = (status: CancellationStatus): string => {
  */
 export const statusLabel = (options: ReadonlyArray<{ value: string; label: string }>, status: string): string =>
   options.find((option) => option.value === status)?.label ?? status
+
+/**
+ * Display label of the payment method an invoice or transaction stores: the translation of a built-in
+ * method, the stored name as received for a method a plugin records under its own name.
+ *
+ * @param method - Payment method as sent by the API.
+ * @returns The label to show.
+ */
+export const paymentMethodLabel = (method: string): string => statusLabel(GATEWAY_OPTIONS, method)
 
 /**
  * Display label of a ticket status: the translation when the catalogue has one, the raw status

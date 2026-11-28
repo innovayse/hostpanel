@@ -16,7 +16,10 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.OrderService;
 /// Amount charged on each renewal invoice. <see langword="null"/> means "read it from the
 /// product's price in the client's currency"; <c>0</c> is a genuinely free renewal.
 /// </param>
-/// <param name="PaymentMethod">Payment method used (e.g. a card gateway name, "BankTransfer").</param>
+/// <param name="PaymentMethod">
+/// Payment module id the order was placed with (a plugin's module id, or
+/// <see cref="Billing.Constants.BuiltInPaymentModules.BankTransfer"/>).
+/// </param>
 /// <param name="Domain">Domain name to pre-fill, when purchased alongside hosting.</param>
 /// <param name="FirstInvoiceId">
 /// The order's invoice the first payment is charged on, or <see langword="null"/> when the service

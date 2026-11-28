@@ -113,8 +113,14 @@ export interface TransactionFormValues {
   addToCredit: boolean
 }
 
-/** Closed set of payment methods a ledger transaction or domain can name, as the API stores them. */
+/**
+ * Closed set of payment methods an invoice, ledger transaction or domain can name, as the API stores them.
+ * The bank transfer value mirrors the server's PaymentMethodNames.BankTransfer, the one name it records a
+ * confirmed transfer under, so a payment the admin records by hand is stored under the same name.
+ */
 export const PaymentMethod = {
+  /** No method chosen. */
+  None: 'None',
   /** Paid by credit or debit card. */
   Card: 'Credit/Debit Card',
   /** Paid by bank transfer. */

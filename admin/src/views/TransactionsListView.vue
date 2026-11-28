@@ -47,6 +47,7 @@ import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
+import { paymentMethodLabel } from '@/lib/tones'
 import { useTransactionsStore } from '@/stores/billingTransactions'
 import type { TransactionFilters } from '@/types/transaction'
 import { AppRoute, transactionEditPath } from '@/lib/routes'
@@ -260,7 +261,7 @@ const transactionActions = (id: number): UiMenuAction[] => [
           <UiTableRow v-for="transaction in store.transactions" :key="transaction.id" hoverable>
             <UiTableCell>{{ transaction.clientName }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
-            <UiTableCell>{{ transaction.paymentMethod || t('billing.transactionsList.manual') }}</UiTableCell>
+            <UiTableCell>{{ transaction.paymentMethod ? paymentMethodLabel(transaction.paymentMethod) : t('billing.transactionsList.manual') }}</UiTableCell>
             <UiTableCell>{{ transaction.description }}</UiTableCell>
             <UiTableCell numeric>
               <UiText :tone="transaction.amountIn > 0 ? UiTextTone.Success : UiTextTone.Muted">{{ cell(transaction.amountIn, transaction.currency) }}</UiText>

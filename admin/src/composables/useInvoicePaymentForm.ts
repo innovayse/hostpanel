@@ -13,10 +13,10 @@ import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { GATEWAY_OPTIONS } from '@/lib/constants'
 import type { SelectOption } from '@/lib/constants'
 import type { InvoicePaymentPayload } from '@/types/invoice'
-import { PaymentGateway } from '@/types/gateway'
+import { PaymentMethod } from '@/types/transaction'
 
 /** Gateway preselected in the form: the built-in offline one, since gateways from plugins are not known here. */
-export const DEFAULT_PAYMENT_GATEWAY: PaymentGateway = PaymentGateway.BankTransfer
+export const DEFAULT_PAYMENT_GATEWAY: PaymentMethod = PaymentMethod.BankTransfer
 
 /** What the caller supplies to {@link useInvoicePaymentForm}. */
 export interface InvoicePaymentFormOptions {
@@ -35,7 +35,7 @@ export interface InvoicePaymentForm {
   /** Payment date (ISO day), null until picked. */
   paymentDate: Ref<string | null>
   /** Gateway the payment came through. */
-  gateway: Ref<PaymentGateway>
+  gateway: Ref<PaymentMethod>
   /** Gateway transaction reference. */
   transactionId: Ref<string>
   /** Amount received. */
@@ -45,7 +45,7 @@ export interface InvoicePaymentForm {
   /** True while the payment is being recorded. */
   submitting: Ref<boolean>
   /** Gateways the operator can pick: every real one, never "none". */
-  gatewayOptions: ComputedRef<SelectOption<PaymentGateway>[]>
+  gatewayOptions: ComputedRef<SelectOption<PaymentMethod>[]>
   /** True when the fields have what the API needs. */
   canSubmit: ComputedRef<boolean>
   /** Records the payment against the invoice; true when accepted. The form is cleared on success. */
@@ -65,7 +65,7 @@ export const useInvoicePaymentForm = (options: InvoicePaymentFormOptions): Invoi
   const paymentDate = ref<string | null>(null)
 
   /** Gateway the payment came through. */
-  const gateway = ref<PaymentGateway>(DEFAULT_PAYMENT_GATEWAY)
+  const gateway = ref<PaymentMethod>(DEFAULT_PAYMENT_GATEWAY)
 
   /** Gateway transaction reference. */
   const transactionId = ref('')
@@ -83,8 +83,8 @@ export const useInvoicePaymentForm = (options: InvoicePaymentFormOptions): Invoi
   const feedback = useOutcomeToast()
 
   /** Gateways to offer: the option objects are reused so their labels keep following the language. */
-  const gatewayOptions = computed<SelectOption<PaymentGateway>[]>(
-    () => GATEWAY_OPTIONS.filter((option) => option.value !== PaymentGateway.None) as SelectOption<PaymentGateway>[],
+  const gatewayOptions = computed<SelectOption<PaymentMethod>[]>(
+    () => GATEWAY_OPTIONS.filter((option) => option.value !== PaymentMethod.None) as SelectOption<PaymentMethod>[],
   )
 
   /** True when the fields have what the API needs. */

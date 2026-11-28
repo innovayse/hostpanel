@@ -223,7 +223,7 @@ describe('PluginsView', () => {
       'GET /api/admin/plugins': () => json(rows),
       'DELETE /api/admin/plugins/example-pay/data': () => {
         rows = []
-        return changeStream({ requiresRestart: false })
+        return json({ requiresRestart: false })
       },
     })
     const wrapper = await mountPlugins()

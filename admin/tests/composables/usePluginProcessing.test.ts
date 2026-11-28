@@ -8,6 +8,7 @@ import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
+import { pluginProgressView } from '@/lib/pluginProgress'
 import { usePluginsStore } from '@/stores/plugins'
 import { PluginProcessingPhase, PluginProcessingPlan, PluginProcessingStep, PluginRestartState } from '@/types/plugin'
 import type { PluginActionOutcome } from '@/types/plugin'
@@ -65,6 +66,13 @@ describe('usePluginProcessing', () => {
     finish(outcomeOf({ reloaded: true }))
     await pending
     expect(processing.busy.value).toBe(false)
+    expect(processing.view.value).toEqual(pluginProgressView({
+      plan: PluginProcessingPlan.Registry,
+      progress: null,
+      outcome: outcomeOf({ reloaded: true }),
+      restartState: PluginRestartState.Idle,
+      restartFailed: false,
+    }))
     expect(processing.view.value.percent).toBe(100)
     expect(processing.message.value).toContain('2.0.0')
     processing.close()

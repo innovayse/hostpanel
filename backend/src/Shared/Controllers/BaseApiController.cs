@@ -372,7 +372,7 @@ public abstract class BaseApiController : ControllerBase
     /// <summary>
     /// The outcome of a use case that may have streamed its progress while it ran. When it opened a stream (the caller asked
     /// for <c>text/event-stream</c> and the use case reported a step), the stream ends with a <c>done</c> event carrying the
-    /// value, or a <c>failed</c> event carrying the standard error body; otherwise the answer is <see cref="HandleResult{T}"/>,
+    /// value, or a <c>failed</c> event carrying the standard error body; otherwise the answer is <see cref="HandleResult{T}(Result{T})"/>,
     /// so a refusal before the first event keeps its own status and the standard error body.
     /// </summary>
     /// <typeparam name="T">The value type.</typeparam>

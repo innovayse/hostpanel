@@ -7,6 +7,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import PluginProcessingDialog from '@/components/plugins/PluginProcessingDialog.vue'
+import { UiStepState } from '@/components/ui/UiStepList.vue'
 import { usePluginProcessing } from '@/composables/usePluginProcessing'
 import { usePluginsStore } from '@/stores/plugins'
 import { PluginProcessingPlan, PluginProcessingStep } from '@/types/plugin'
@@ -49,7 +50,7 @@ describe('PluginProcessingDialog', () => {
     expect(wrapper.get('h2').text()).toBe('Example Pay')
     expect(wrapper.get('[data-testid="plugin-processing-version"]').text()).toContain('1.2.0')
     expect(wrapper.find('[data-testid="plugin-processing-progress"]').exists()).toBe(true)
-    expect(wrapper.get('[data-testid="ui-step-download"]').attributes('data-state')).toBe('running')
+    expect(wrapper.get('[data-testid="ui-step-download"]').attributes('data-state')).toBe(UiStepState.Running)
     expect(wrapper.find('[data-testid="plugin-processing-close"]').exists()).toBe(false)
   })
 
@@ -64,7 +65,7 @@ describe('PluginProcessingDialog', () => {
   it('shows the green loaded state after a change applied in place', async () => {
     const wrapper = await mountDialog({ ok: true, stagedVersion: null, reloaded: true, restarting: false, error: null })
 
-    expect(wrapper.get('[data-testid="ui-step-loaded"]').attributes('data-state')).toBe('done')
+    expect(wrapper.get('[data-testid="ui-step-loaded"]').attributes('data-state')).toBe(UiStepState.Done)
     expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('1.2.0')
   })
 
@@ -72,7 +73,7 @@ describe('PluginProcessingDialog', () => {
     const wrapper = await mountDialog({ ok: false, stagedVersion: null, reloaded: false, restarting: false, error: 'Plugin is in use.' }, true)
 
     expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Plugin is in use.')
-    expect(wrapper.get('[data-testid="ui-step-download"]').attributes('data-state')).toBe('failed')
+    expect(wrapper.get('[data-testid="ui-step-download"]').attributes('data-state')).toBe(UiStepState.Failed)
     expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(false)
   })
 })

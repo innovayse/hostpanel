@@ -465,7 +465,7 @@ describe('pluginsStore upgrade and downgrade', () => {
 
 describe('pluginsStore.purge', () => {
   it('deletes the kept data and reloads the list', async () => {
-    const mock = stubFetch(changeStream({ requiresRestart: false }), json([]))
+    const mock = stubFetch(json({ requiresRestart: false }), json([]))
     const store = usePluginsStore()
     store.plugins.push({ id: 'a', status: 'Removed' } as never)
 

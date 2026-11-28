@@ -68,8 +68,6 @@
   },
   "restart": {
     "title": "Restarting the server",
-    "restarting": "Restarting",
-    "hint": "The panel will be back in a moment. Please keep this window open.",
     "running": "Loaded and running",
     "timedOut": "The server did not come back in time. Check that it is starting, then try again.",
     "pluginVersion": "{name}, version {version}",
@@ -117,9 +115,32 @@
     "removing": "Removing {name}",
     "uploading": "Uploading {name}",
     "done": "Done.",
-    "reloaded": "{name} was updated and runs without a restart.",
     "restartNeeded": "Restart the server to apply the change.",
-    "close": "Close"
+    "close": "Close",
+    "restarting": "Restarting the server",
+    "progress": "Progress",
+    "elapsed": "Elapsed {time}",
+    "targetVersion": "Version {version}",
+    "loadedVersion": "Loaded and running, version {version}",
+    "removedDone": "{name} was removed.",
+    "steps": {
+      "upload": "Upload",
+      "download": "Download",
+      "verify": "Verify signature",
+      "stage": "Stage",
+      "remove": "Remove files",
+      "apply": "Apply",
+      "reload": "Apply (in place reload)",
+      "restart": "Restart",
+      "loaded": "Loaded and running",
+      "removed": "Removed"
+    },
+    "state": {
+      "pending": "Waiting",
+      "running": "In progress",
+      "done": "Done",
+      "failed": "Failed"
+    }
   },
   "pluginSlotWidgets": {
     "title": "Slot widgets: {plugin}",

@@ -47,7 +47,7 @@ import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
-import { PluginCategory, PluginCategoryAll, PluginProcessingStep, PluginsTab } from '@/types/plugin'
+import { PluginCategory, PluginCategoryAll, PluginProcessingPlan, PluginProcessingStep, PluginsTab } from '@/types/plugin'
 import type { PluginActionOutcome, PluginListItemDto } from '@/types/plugin'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiActionKind } from '@/utils/ui/actions'
@@ -119,6 +119,7 @@ const handleForceDowngrade = async (): Promise<void> => {
   await processing.run({
     name: store.downgradeFile?.name ?? '',
     step: PluginProcessingStep.Installing,
+    plan: PluginProcessingPlan.Archive,
     /**
      * The store call the dialog waits for.
      *
@@ -149,6 +150,7 @@ const handleUpload = async (file: File): Promise<void> => {
   await processing.run({
     name: file.name,
     step: PluginProcessingStep.Uploading,
+    plan: PluginProcessingPlan.ArchiveRead,
     /**
      * The store call the dialog waits for.
      *
@@ -171,6 +173,9 @@ const handleConfirmInstall = async (): Promise<void> => {
   await processing.run({
     name,
     step: PluginProcessingStep.Installing,
+    plan: PluginProcessingPlan.Archive,
+    pluginId: store.preview?.id,
+    version: store.preview?.version,
     /**
      * The store call the dialog waits for.
      *
@@ -301,10 +306,16 @@ const confirmUpdate = async (): Promise<void> => {
  * @param version - Version to install.
  */
 const handleRegistryInstall = async (id: string, version: string): Promise<void> => {
-  const installed = store.installed.some(plugin => plugin.id === id)
+  const installed = store.installed.find(plugin => plugin.id === id)
+  const listed = store.registryItems.find(item => item.id === id)
   await processing.run({
-    name: store.registryItems.find(item => item.id === id)?.name ?? store.installed.find(plugin => plugin.id === id)?.name ?? id,
-    step: installed ? PluginProcessingStep.Updating : PluginProcessingStep.Installing,
+    name: listed?.name ?? installed?.name ?? id,
+    step: installed === undefined ? PluginProcessingStep.Installing : PluginProcessingStep.Updating,
+    plan: PluginProcessingPlan.Registry,
+    pluginId: id,
+    version,
+    iconUrl: installed?.iconUrl ?? listed?.iconUrl ?? null,
+    color: installed?.color,
     /**
      * The store call the dialog waits for.
      *

@@ -9,7 +9,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { usePluginsStore } from '@/stores/plugins'
 import { PluginCategory, PluginErrorCode, PluginPricing } from '@/types/plugin'
 import type { PluginRegistryItemDto, RegistryPluginDetailsDto } from '@/types/plugin'
-import { callOf, json, problem, stubFetch } from '../helpers/fetch'
+import { changeStream, callOf, json, problem, stubFetch } from '../helpers/fetch'
 import { requestsOf, stubRoutes } from '../helpers/routes'
 
 /** One registry listing. */
@@ -162,7 +162,7 @@ describe('pluginsStore.fetchRegistryUpdates', () => {
 describe('pluginsStore.installFromRegistry', () => {
   it('posts the version, raises the restart flag and reloads the lists', async () => {
     const mock = stubRoutes({
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true, stagedVersion: '2.0.0' }),
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
       'GET /api/admin/plugins': () => json([]),
@@ -186,7 +186,7 @@ describe('pluginsStore.installFromRegistry', () => {
 
   it('leaves the restart flag down when no restart is needed', async () => {
     stubRoutes({
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: false }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: false }),
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
       'GET /api/admin/plugins': () => json([]),
@@ -329,7 +329,7 @@ describe('pluginsStore busy state', () => {
     const mock = stubRoutes({
       'POST /api/admin/plugins/registry/example-pay/install': () => {
         seen = [store.isBusy('example-pay'), store.isBusy('other'), store.registryInstallingId === 'example-pay']
-        return json({ requiresRestart: false })
+        return changeStream({ requiresRestart: false })
       },
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
@@ -347,7 +347,7 @@ describe('pluginsStore busy state', () => {
 
   it('reloads the details of a plugin that is on show', async () => {
     const mock = stubRoutes({
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: false }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: false }),
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry/example-pay': () => json(details),
       'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
@@ -366,7 +366,7 @@ describe('pluginsStore busy state', () => {
 describe('pluginsStore per call outcomes', () => {
   it('gives two parallel installs each its own result', async () => {
     stubRoutes({
-      'POST /api/admin/plugins/registry/slow-one/install': () => json({ requiresRestart: true, stagedVersion: '3.0.0', reloaded: false, restarting: false }),
+      'POST /api/admin/plugins/registry/slow-one/install': () => changeStream({ requiresRestart: true, stagedVersion: '3.0.0', reloaded: false, restarting: false }),
       'POST /api/admin/plugins/registry/bad-one/install': () => problem('That publisher is not trusted.', 403),
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),

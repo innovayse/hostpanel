@@ -197,7 +197,8 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
     }
 
     /// <inheritdoc/>
-    public Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null)
+    public Task<Result<Stream>> DownloadAsync(
+        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeReporter? progress = null)
     {
         var restricted = release.Distribution == PluginRegistryDistribution.HostOnly;
         return RunAsync<Stream>(async (baseUri, token) =>
@@ -227,7 +228,8 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 FileOptions.DeleteOnClose | FileOptions.Asynchronous);
             try
             {
-                await CopyLimitedAsync(response.Content, file, _options.MaxDownloadBytes, HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED, token);
+                await CopyLimitedAsync(
+                    response.Content, file, _options.MaxDownloadBytes, HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED, token, progress);
                 file.Position = 0;
                 return file;
             }
@@ -586,8 +588,10 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
     /// <param name="maxBytes">The most bytes accepted.</param>
     /// <param name="overLimitCode">The error code for a body over the limit.</param>
     /// <param name="ct">The limited token.</param>
+    /// <param name="progress">Told the bytes copied so far and the declared length after every read; <see langword="null"/> when no one follows the copy.</param>
     /// <returns>A task that completes once the body is copied.</returns>
-    private static async Task CopyLimitedAsync(HttpContent content, Stream destination, long maxBytes, string overLimitCode, CancellationToken ct)
+    private static async Task CopyLimitedAsync(
+        HttpContent content, Stream destination, long maxBytes, string overLimitCode, CancellationToken ct, IPluginChangeReporter? progress = null)
     {
         // The declared length refuses an oversized body before reading a byte; the counted write below is the real limit.
         if (content.Headers.ContentLength is { } declared && declared > maxBytes)
@@ -608,6 +612,10 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
             }
 
             await destination.WriteAsync(buffer.AsMemory(0, read), ct);
+            if (progress is not null)
+            {
+                await progress.DownloadedAsync(total, content.Headers.ContentLength, ct);
+            }
         }
     }
 

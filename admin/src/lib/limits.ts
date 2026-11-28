@@ -92,6 +92,7 @@ export const POLL_INTERVALS_MS: Record<PollKind, number> = {
   [PollKind.MigrationStatus]: 2 * MS_PER_SECOND,
   [PollKind.ServerRestart]: 2 * MS_PER_SECOND,
   [PollKind.PluginFollowUp]: 3 * MS_PER_SECOND,
+  [PollKind.ProcessingClock]: MS_PER_SECOND,
   [PollKind.DemoCountdown]: MS_PER_MINUTE,
 }
 

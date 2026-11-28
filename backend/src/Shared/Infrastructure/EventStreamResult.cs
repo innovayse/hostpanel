@@ -1,4 +1,3 @@
-using System.Text;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -73,13 +72,6 @@ public sealed class EventStreamResult : IActionResult
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
         var ct = lifetime.Token;
 
-        var headers = http.Response.Headers;
-        http.Response.ContentType = ContentType;
-        headers.CacheControl = "no-cache";
-
-        // Tells a buffering reverse proxy to pass each write on at once.
-        headers["X-Accel-Buffering"] = "no";
-
         IAsyncEnumerator<StreamedEvent>? events = null;
         Task<bool>? pending = null;
         try
@@ -87,8 +79,7 @@ public sealed class EventStreamResult : IActionResult
             events = _reply.Events.GetAsyncEnumerator(ct);
 
             // Sent now, so the client sees the stream open before the first event exists.
-            await http.Response.StartAsync(ct);
-            await http.Response.Body.FlushAsync(ct);
+            await EventStreamWriter.OpenAsync(http.Response, ct);
 
             // The producer's own silence: restarted by each of its events, never by the host's heartbeat.
             var idleSince = _time.GetTimestamp();
@@ -116,13 +107,13 @@ public sealed class EventStreamResult : IActionResult
                         limit.OnExpired();
                         foreach (var end in limit.EndEvents)
                         {
-                            await WriteAsync(http, ServerSentEvent.Format(end), ct);
+                            await EventStreamWriter.WriteAsync(http.Response, ServerSentEvent.Format(end), ct);
                         }
 
                         return;
                     }
 
-                    await WriteAsync(http, ServerSentEvent.Heartbeat, ct);
+                    await EventStreamWriter.WriteAsync(http.Response, ServerSentEvent.Heartbeat, ct);
                     continue;
                 }
 
@@ -132,7 +123,7 @@ public sealed class EventStreamResult : IActionResult
                     return;
                 }
 
-                await WriteAsync(http, ServerSentEvent.Format(events.Current), ct);
+                await EventStreamWriter.WriteAsync(http.Response, ServerSentEvent.Format(events.Current), ct);
                 idleSince = _time.GetTimestamp();
                 pending = events.MoveNextAsync().AsTask();
             }
@@ -191,17 +182,6 @@ public sealed class EventStreamResult : IActionResult
         {
             _logger.LogWarning(ex, "What a streamed reply's producer held failed while it was being released.");
         }
-    }
-
-    /// <summary>Writes text to the response and flushes it.</summary>
-    /// <param name="http">The request's context.</param>
-    /// <param name="text">The text to write.</param>
-    /// <param name="ct">Cancelled when the client disconnects.</param>
-    /// <returns>A task that completes once the text has been flushed.</returns>
-    private static async Task WriteAsync(HttpContext http, string text, CancellationToken ct)
-    {
-        await http.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(text), ct);
-        await http.Response.Body.FlushAsync(ct);
     }
 
     /// <summary>

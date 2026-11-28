@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.API.Identity;
+using Innovayse.Hostpanel.API.Plugins;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -153,6 +154,10 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, HttpCurrentUserService>();
         services.AddScoped<ICallerClientMemo, HttpCallerClientMemo>();
+
+        // The progress of a plugin install, update, removal or restart, streamed on the request's own response to a caller
+        // that asked for server-sent events.
+        services.AddSingleton<IPluginChangeReporter, EventStreamPluginChangeReporter>();
 
         // The caller's own bearer token, for an adapter that acts as the person against an outside service.
         services.AddScoped<ICallerAccessToken, HttpCallerAccessToken>();

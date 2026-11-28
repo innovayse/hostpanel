@@ -13,7 +13,7 @@ import PluginsView from '@/views/PluginsView.vue'
 import PluginUploader from '@/components/plugins/PluginUploader.vue'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes as stubAllRoutes } from '../helpers/routes'
-import { json, problem } from '../helpers/fetch'
+import { changeStream, json, problem } from '../helpers/fetch'
 import { PluginErrorCode } from '@/types/plugin'
 import { makeDetails, makeVersion } from '../helpers/pluginDetails'
 import { PluginSettingKey } from '@/types/setting'
@@ -223,7 +223,7 @@ describe('PluginsView', () => {
       'GET /api/admin/plugins': () => json(rows),
       'DELETE /api/admin/plugins/example-pay/data': () => {
         rows = []
-        return json({ requiresRestart: false })
+        return changeStream({ requiresRestart: false })
       },
     })
     const wrapper = await mountPlugins()
@@ -276,7 +276,7 @@ describe('PluginsView', () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
       'POST /api/admin/plugins/inspect': () => json(preview),
-      'POST /api/admin/plugins/install': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/install': () => changeStream({ requiresRestart: true }),
     })
     const wrapper = await mountPlugins()
     await upload(wrapper, new File(['z'], 'new.zip'))
@@ -284,41 +284,41 @@ describe('PluginsView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="plugin-processing-running"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-processing-outcome"]').exists()).toBe(true)
     await wrapper.get('[data-testid="plugin-processing-close"]').trigger('click')
     expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(false)
   })
 
-  it('says the plugin runs without a restart when the host reloaded it, and shows no restart banner', async () => {
+  it('says the plugin is loaded and running when the host reloaded it, and shows no restart banner', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
       'POST /api/admin/plugins/inspect': () => json(preview),
-      'POST /api/admin/plugins/install': () => json({ requiresRestart: false, stagedVersion: null, reloaded: true }),
+      'POST /api/admin/plugins/install': () => changeStream({ requiresRestart: false, stagedVersion: null, reloaded: true }),
     })
     const wrapper = await mountPlugins()
     await upload(wrapper, new File(['z'], 'new.zip'))
     await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Example Pay was updated and runs without a restart.')
+    expect(wrapper.get('[data-testid="plugin-processing-message"]').text()).toContain('Loaded and running')
     expect(wrapper.find('[data-testid="plugin-processing-restart"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
   })
 
-  it('closes the processing dialog into the restart dialog when the host restarts itself, with no banner and no restart request', async () => {
+  it('keeps the processing dialog on the restart step when the host restarts itself, with no banner and no restart request', async () => {
     const mock = stubRoutes({
       'GET /health': () => json({ status: 'Healthy', timestamp: 't', processStartedAt: 'A' }),
       'GET /api/admin/plugins': () => json([plugin]),
       'POST /api/admin/plugins/inspect': () => json(preview),
-      'POST /api/admin/plugins/install': () => json({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: true }),
+      'POST /api/admin/plugins/install': () => changeStream({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: true }),
     })
     const wrapper = await mountPlugins()
     await upload(wrapper, new File(['z'], 'new.zip'))
     await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="plugin-restart-waiting"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-processing-dialog"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-step-restart"]').attributes('data-state')).toBe('running')
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(false)
     expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/restart')).toBe(false)
   })
@@ -330,7 +330,7 @@ describe('PluginsView', () => {
     await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="plugin-processing-running"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="ui-step-upload"]').attributes('data-state')).toBe('running')
     expect(wrapper.find('[data-testid="dialog-close"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="plugin-processing-close"]').exists()).toBe(false)
   })
@@ -353,7 +353,7 @@ describe('PluginsView', () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
       'POST /api/admin/plugins/inspect': () => json(preview),
-      'POST /api/admin/plugins/install': () => json({ requiresRestart: true, stagedVersion: '1.3.0' }),
+      'POST /api/admin/plugins/install': () => changeStream({ requiresRestart: true, stagedVersion: '1.3.0' }),
     })
     const wrapper = await mountPlugins()
 
@@ -369,7 +369,7 @@ describe('PluginsView', () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
       'POST /api/admin/plugins/inspect': () => json(preview),
-      'POST /api/admin/plugins/install': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/install': () => changeStream({ requiresRestart: true }),
     })
     const wrapper = await mountPlugins()
 
@@ -402,7 +402,7 @@ describe('PluginsView', () => {
   it('shows the downgrade refusal and forces the older version after a confirmation', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
-      'POST /api/admin/plugins/install?force=true': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/install?force=true': () => changeStream({ requiresRestart: true }),
       'POST /api/admin/plugins/install': () => json(
         { type: 'PLUGIN_DOWNGRADE_REFUSED', title: 'Refused', status: 409, detail: 'Version 1.0.0 is older than 1.2.0.' },
         409,
@@ -526,7 +526,7 @@ describe('PluginsView', () => {
   it('installs from the registry, shows the restart banner and the staged sentence', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true, stagedVersion: '2.0.0' }),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
       'GET /api/admin/plugins': () => json([plugin]),
@@ -606,7 +606,7 @@ describe('PluginsView', () => {
   it('lists what the update changes before it installs, and installs nothing when dismissed', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true }),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
       'GET /api/admin/plugins': () => json([plugin]),
@@ -634,7 +634,7 @@ describe('PluginsView', () => {
   it('still lets the admin confirm an update when the notes cannot be read', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins/registry/example-pay': () => problem('The registry is unavailable.', 503),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true }),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
       'GET /api/admin/plugins': () => json([plugin]),
@@ -655,7 +655,7 @@ describe('PluginsView', () => {
   it('updates an installed plugin from its Update button, after the confirmation', async () => {
     const mock = stubRoutes({
       'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true, stagedVersion: '2.0.0' }),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
       'GET /api/admin/plugins': () => json([plugin]),

@@ -16,6 +16,15 @@ import { vi } from 'vitest'
 export const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status })
 
 /**
+ * Builds the server-sent event stream of a plugin change that ended well: no step, then the `done` event with the answer.
+ *
+ * @param body - The answer the `done` event carries.
+ * @returns The response.
+ */
+export const changeStream = (body: unknown): Response =>
+  new Response(`event: done\ndata: ${JSON.stringify(body)}\n\n`, { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
+
+/**
  * Builds a `application/problem+json` refusal carrying a finished sentence.
  *
  * @param detail - The sentence the API wrote.

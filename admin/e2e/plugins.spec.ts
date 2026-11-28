@@ -11,7 +11,7 @@ import { panelPlugin } from './fixtures/integrations'
 import { tinyPng } from './fixtures/settings'
 import type { PluginListItemDto, PluginPackagePreviewDto } from '../src/types/plugin'
 import type { Setting } from '../src/types/setting'
-import { json, stubApi } from './support/stubApi'
+import { changeEvents, json, stubApi } from './support/stubApi'
 
 /** What the server reads out of the uploaded archive: SSH access, a changelog and no version limit. */
 const panelPreview: PluginPackagePreviewDto = {
@@ -43,10 +43,10 @@ test('uploading an archive installs the plugin and offers the restart', async ({
         path: '/api/admin/plugins/install',
         respond: () => {
           stored.push({ ...panelPlugin, isLoaded: false })
-          return { body: { requiresRestart: true } }
+          return changeEvents({ requiresRestart: true })
         },
       },
-      { method: HttpMethod.Post, path: '/api/admin/plugins/restart', respond: () => ({ status: 202 }) },
+      { method: HttpMethod.Post, path: '/api/admin/plugins/restart', respond: () => changeEvents({}) },
     ],
   })
 
@@ -75,8 +75,8 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   await page.getByTestId('plugins-restart').click()
   await page.getByTestId('dialog-confirm').click()
   await expect.poll(() => api.callsTo(HttpMethod.Post, '/api/admin/plugins/restart').length).toBe(1)
-  // The panel now waits for the server behind a blocking dialog.
-  await expect(page.getByTestId('plugin-restart-waiting')).toBeVisible()
+  // The panel now waits for the server in the processing dialog, on its restart step.
+  await expect(page.getByTestId('ui-step-restart')).toBeVisible()
 })
 
 test('the gear of an installed plugin opens its own page', async ({ page }) => {

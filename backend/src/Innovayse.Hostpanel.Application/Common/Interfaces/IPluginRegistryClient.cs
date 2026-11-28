@@ -46,12 +46,14 @@ public interface IPluginRegistryClient
     /// <param name="release">The release to download.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
+    /// <param name="progress">Told the bytes read so far and the size the registry declared, as the package arrives; <see langword="null"/> when no one follows the download.</param>
     /// <returns>
     /// A seekable stream positioned at the start, owned and disposed by the caller; disposing it deletes the file. Or a
     /// <c>PLUGIN_REGISTRY_*</c> failure (<c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> for a 401, <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>
     /// for a 403), with nothing left on disk.
     /// </returns>
-    public Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null);
+    public Task<Result<Stream>> DownloadAsync(
+        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeReporter? progress = null);
 
     /// <summary>Reads the registry's full page for one plugin.</summary>
     /// <param name="pluginId">The plugin id.</param>

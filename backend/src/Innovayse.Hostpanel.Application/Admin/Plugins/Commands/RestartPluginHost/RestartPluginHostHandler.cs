@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
@@ -19,15 +20,20 @@ public sealed class RestartPluginHostHandler
     /// <summary>Starts the graceful stop of the host.</summary>
     private readonly IHostRestarter _restarter;
 
+    /// <summary>Tells the caller that the host is restarting, so the panel waits for it to come back.</summary>
+    private readonly IPluginChangeReporter _reporter;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="activityLogger">Stages the audit line for the restart.</param>
     /// <param name="db">Saves the audit line before the host starts to stop.</param>
     /// <param name="restarter">Starts the graceful stop of the host.</param>
-    public RestartPluginHostHandler(IActivityLogger activityLogger, IHostpanelDbContext db, IHostRestarter restarter)
+    /// <param name="reporter">Tells the caller that the host is restarting, so the panel waits for it to come back.</param>
+    public RestartPluginHostHandler(IActivityLogger activityLogger, IHostpanelDbContext db, IHostRestarter restarter, IPluginChangeReporter reporter)
     {
         _activityLogger = activityLogger;
         _db = db;
         _restarter = restarter;
+        _reporter = reporter;
     }
 
     /// <summary>Records the restart, saves it and starts the host's graceful stop.</summary>
@@ -41,6 +47,7 @@ public sealed class RestartPluginHostHandler
         // Saved before the stop starts: once the process exits nothing can record who asked for it.
         await _db.SaveChangesAsync(ct);
 
+        await _reporter.EnterAsync(PluginChangeStage.Restart, ct);
         _restarter.Restart();
         return Result.Success();
     }

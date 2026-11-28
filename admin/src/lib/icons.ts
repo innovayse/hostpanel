@@ -91,6 +91,8 @@ export const Icon = {
   ChevronUp: '<polyline points="6 15 12 9 18 15"/>',
   /** A horizontal dash, for a part-selected box. */
   Minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
+  /** An empty ring, for a step that has not started yet. */
+  Circle: '<circle cx="12" cy="12" r="8"/>',
   /** Three horizontal lines, for the menu button. */
   Menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
   /** A bell, for notifications. */

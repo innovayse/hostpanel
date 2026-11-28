@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * Everything a plugins screen needs for the server restart, in one place: the warning banner while a restart is
- * pending, the confirmation the "Restart now" button opens, and the blocking dialog that waits for the server to
- * come back. The screens render it once and hold no restart state of their own.
+ * The restart controls of a plugins screen: the warning banner while a restart is
+ * pending and the confirmation the "Restart now" button opens. The wait for the server is shown by the screen's
+ * processing dialog, the one dialog of every plugin job. The screens render it once and hold no restart state of their own.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import PluginRestartDialog from '@/components/plugins/PluginRestartDialog.vue'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -58,5 +57,4 @@ const confirm = async (): Promise<void> => {
     @confirm="confirm"
     @close="dismiss"
   />
-  <PluginRestartDialog />
 </template>

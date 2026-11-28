@@ -30,17 +30,23 @@ public sealed class PluginChangeApplier
     /// <summary>Saves the audit line.</summary>
     private readonly IHostpanelDbContext _db;
 
+    /// <summary>Tells the caller when the change is being applied, and when the host restarts for it.</summary>
+    private readonly IPluginChangeReporter _reporter;
+
     /// <summary>Initializes the applier.</summary>
     /// <param name="reloader">Loads the staged version in place of the running one, or unloads a removed plugin.</param>
     /// <param name="restarter">Restarts the host for a change that cannot be applied in the running process.</param>
     /// <param name="activityLogger">Stages the audit line with the result of the apply.</param>
     /// <param name="db">Saves the audit line.</param>
-    public PluginChangeApplier(IPluginHotReloader reloader, IHostRestarter restarter, IActivityLogger activityLogger, IHostpanelDbContext db)
+    /// <param name="reporter">Tells the caller when the change is being applied, and when the host restarts for it.</param>
+    public PluginChangeApplier(
+        IPluginHotReloader reloader, IHostRestarter restarter, IActivityLogger activityLogger, IHostpanelDbContext db, IPluginChangeReporter reporter)
     {
         _reloader = reloader;
         _restarter = restarter;
         _activityLogger = activityLogger;
         _db = db;
+        _reporter = reporter;
     }
 
     /// <summary>
@@ -57,6 +63,7 @@ public sealed class PluginChangeApplier
     /// </returns>
     public async Task<Result<PluginActionResultDto>> AcceptedAsync(PluginPackageResult outcome, bool staged, CancellationToken ct)
     {
+        await _reporter.EnterAsync(PluginChangeStage.Apply, ct);
         var reload = staged ? await _reloader.ReloadAsync(outcome.PluginId!, ct) : PluginReloadOutcome.NeedsRestart;
         var line = $"Plugin ID: {Clean(outcome.PluginId)} - Version: {Clean(outcome.PreviousVersion)} to {Clean(outcome.Version)}";
         return await ConcludeAsync(reload, line, staged ? outcome.Version : null, ct);
@@ -68,6 +75,7 @@ public sealed class PluginChangeApplier
     /// <returns>The answer: unloaded with no restart, or restarting.</returns>
     public async Task<Result<PluginActionResultDto>> RemovedAsync(string pluginId, CancellationToken ct)
     {
+        await _reporter.EnterAsync(PluginChangeStage.Apply, ct);
         var reload = await _reloader.UnloadAsync(pluginId, ct);
         return await ConcludeAsync(reload, $"Plugin ID: {Clean(pluginId)} - Removal", null, ct);
     }
@@ -97,6 +105,7 @@ public sealed class PluginChangeApplier
                 return Result<PluginActionResultDto>.FailureCode(HostpanelErrorCodes.PLUGIN_APPLY_FAILED);
             default:
                 // After the save, so the line is written whatever happens to the process next.
+                await _reporter.EnterAsync(PluginChangeStage.Restart, ct);
                 _restarter.Restart();
                 return Result<PluginActionResultDto>.Success(
                     new PluginActionResultDto(RequiresRestart: true, StagedVersion: stagedVersion, Restarting: true));

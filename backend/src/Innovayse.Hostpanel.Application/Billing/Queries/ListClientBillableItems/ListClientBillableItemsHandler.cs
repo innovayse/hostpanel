@@ -41,7 +41,7 @@ public sealed class ListClientBillableItemsHandler
         var clientItems = _context.BillableItems
             .AsNoTracking()
             .Where(x => x.ClientId == qry.ClientId)
-            .Matching(qry);
+            .Matching(qry, clientsMatchingSearch: []);
 
         var uninvoicedDtos = await clientItems
             .Where(x => !x.IsInvoiced)

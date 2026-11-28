@@ -247,7 +247,7 @@ watch(
           </UiTableCell>
           <UiTableCell numeric muted>{{ record.attempts }}</UiTableCell>
           <UiTableCell muted>
-            <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
+            <UiText v-if="record.lastErrorMessage" :tone="UiTextTone.Danger">{{ record.lastErrorMessage }}</UiText>
             <template v-else>{{ EMPTY_VALUE }}</template>
           </UiTableCell>
           <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>

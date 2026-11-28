@@ -25,11 +25,9 @@ description: Փոփոխության յուրաքանչյուր տեսակի ֆա
 | Էության կարգավորում | `Innovayse.Hostpanel.Infrastructure/Persistence/Configurations/<Entity>Configuration.cs` |
 | Միգրացիա | `Innovayse.Hostpanel.Infrastructure/Persistence/Migrations/` |
 | Ադապտեր | `Innovayse.Hostpanel.Infrastructure/<Capability>/<Adapter>.cs` |
-| Ինտեգրացիոն թեստ | `Innovayse.Hostpanel.Integration.Tests/<Feature>/<UseCase>Tests.cs` |
 | Ադմինի էկրան | `admin/src/views/<area>/<ScreenName>View.vue` |
 | Ադմինի store | `admin/src/stores/<area>.ts` |
 | Ադմինի API կոմպոզաբլ | `admin/src/composables/apis/use<Area>Api.ts` |
-| Ադմինի end-to-end թեստ | `admin/e2e/<area>.spec.ts` |
 | Հաճախորդի էջ | `client/pages/<area>/<page>.vue` |
 | Հաճախորդի store | `client/stores/<area>.ts` |
 | Հաճախորդի API կոմպոզաբլ | `client/composables/use<Area>Api.ts` |
@@ -47,24 +45,21 @@ description: Փոփոխության յուրաքանչյուր տեսակի ֆա
 
 Ավելացրեք `GET /api/admin/labels` action `Innovayse.Hostpanel.API/Controllers/LabelsController.cs` ֆայլում (ստեղծեք այն, եթե չկա)։ Action-ը ստեղծում է `GetLabelsQuery`, կանչում է `await _bus.InvokeAsync<Result<IReadOnlyList<LabelDto>>>(query, ct)` և արդյունքը փոխանցում է `HandleResult`-ին։
 
-**3. Ինտեգրացիոն թեստ**
 
-Ստեղծեք `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs` ֆայլը։ Թեստը լցնում է տվյալների բազան, կանչում է endpoint-ը և ստուգում պատասխանի ձևը։
-
-**4. Ադմինի store և API կոմպոզաբլ**
+**3. Ադմինի store և API կոմպոզաբլ**
 
 Ավելացրեք `admin/src/stores/labels.ts` ֆայլը `fetchLabels` action-ով, որը կանչում է `runAction`։ Ավելացրեք `admin/src/composables/apis/useLabelsApi.ts` ֆայլը `getLabels` ֆունկցիայով, որը կանչում է `useApi`։
 
-**5. Ադմինի էկրան**
+**4. Ադմինի էկրան**
 
 Ստեղծեք `admin/src/views/labels/LabelsView.vue` ֆայլը։ View-ն store-ի action-ը կանչում է մաունթի ժամանակ և արտացոլում ցանկը։ View-ում `useApi`-ի ուղիղ կանչեր չկան։
 
-**6. Գործարկեք ստուգումները**
+**5. Գործարկեք ստուգումները**
 
 ```bash
 # backend (from docker/)
 ./scripts/manage.sh test
 
 # admin
-cd admin && npm run lint && npm run typecheck && npm test -- --maxWorkers=2
+cd admin && npm run lint && npm run typecheck
 ```

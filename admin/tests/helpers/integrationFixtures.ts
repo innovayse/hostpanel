@@ -1,16 +1,17 @@
 /**
  * Fixtures of the integrations tests: a summary and a detail as the admin API returns them.
  */
-import type { IntegrationDetailDto, IntegrationDto } from '@/types/integration'
+import type { IntegrationDetailWireDto, IntegrationWireDto } from '@/types/integration'
 import { IntegrationFieldType } from '@/types/integration'
 
 /**
- * Builds an integration summary.
+ * Builds an integration summary as the API sends it (the name as plain text), the body a stubbed route answers with;
+ * a component takes it through `labelSummary`.
  *
  * @param overrides - Fields to change on the default summary.
  * @returns The summary.
  */
-export const integrationDto = (overrides: Partial<IntegrationDto> = {}): IntegrationDto => ({
+export const integrationDto = (overrides: Partial<IntegrationWireDto> = {}): IntegrationWireDto => ({
   slug: 'bank-transfer',
   name: 'Bank Transfer',
   category: 'payments',
@@ -31,10 +32,11 @@ export const integrationDto = (overrides: Partial<IntegrationDto> = {}): Integra
  * @param overrides - Fields to change on the default detail.
  * @returns The detail.
  */
-export const integrationDetail = (overrides: Partial<IntegrationDetailDto> = {}): IntegrationDetailDto => ({
+export const integrationDetail = (overrides: Partial<IntegrationDetailWireDto> = {}): IntegrationDetailWireDto => ({
   slug: 'bank-transfer',
   name: 'Bank Transfer',
   isEnabled: true,
+  isPlugin: false,
   config: {
     secretKey: { value: null, isSecret: true, hasValue: true },
     mode: { value: 'Test', isSecret: false, hasValue: true },

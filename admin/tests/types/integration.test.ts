@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { IntegrationCategoryName, IntegrationEncryption, IntegrationMode, IntegrationYesNo } from '@/types/integration'
-import { INTEGRATION_CATEGORIES, INTEGRATION_CATEGORY_BY_KEY, INTEGRATION_META } from '@/types/integrationmeta'
+import { INTEGRATION_CATEGORIES, INTEGRATION_CATEGORY_BY_KEY, integrationMetaOf } from '@/types/integrationmeta'
 import { translate } from '@/lib/translate'
 import { PluginCategory, PluginType } from '@/types/plugin'
 
@@ -48,7 +48,7 @@ describe('integration value sets', () => {
   })
 
   it('offer the encryption modes through the enum', () => {
-    const encryptionField = INTEGRATION_META.smtp.fields.find((field) => field.key === 'encryption')
+    const encryptionField = integrationMetaOf('smtp')?.fields.find((field) => field.key === 'encryption')
 
     expect(encryptionField?.options?.map(option => option.value)).toEqual([IntegrationEncryption.None])
   })

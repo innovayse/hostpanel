@@ -118,7 +118,7 @@ export const fulfilmentFixture = (overrides: Partial<FulfilmentRecord> = {}): Fu
   status: FulfilmentStatus.Failed,
   attempts: 2,
   nextAttemptAt: '2026-10-20T10:00:00Z',
-  lastError: 'The upstream account is locked.',
+  lastErrorMessage: 'The upstream account is locked.',
   completedAt: null,
   createdAt: '2026-10-19T08:00:00Z',
   canRetry: true,

@@ -198,6 +198,10 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     /// <param name="errorCode">What went wrong, as a <c>FULFILMENT_*</c> code of <see cref="BillingErrors"/>.</param>
     /// <param name="now">When the attempt failed (UTC).</param>
     /// <exception cref="InvalidOperationException">The record is not claimed (Processing).</exception>
+    /// <exception cref="ArgumentException"><paramref name="errorCode"/> is null, empty or white space.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="errorCode"/> is longer than <see cref="ErrorCodeMaxLength"/> characters.
+    /// </exception>
     public void MarkFailed(string errorCode, DateTimeOffset now)
     {
         EnsureProcessing();
@@ -233,6 +237,10 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="errorCode">What went wrong, as a <c>FULFILMENT_*</c> code of <see cref="BillingErrors"/>.</param>
     /// <param name="now">When the attempt failed (UTC).</param>
+    /// <exception cref="ArgumentException"><paramref name="errorCode"/> is null, empty or white space.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="errorCode"/> is longer than <see cref="ErrorCodeMaxLength"/> characters.
+    /// </exception>
     private void RecordFailure(string errorCode, DateTimeOffset now)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(errorCode);

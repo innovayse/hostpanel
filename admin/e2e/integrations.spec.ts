@@ -4,7 +4,7 @@
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
-import { bankTransfer, bankTransferDetail } from './fixtures/integrations'
+import { bankTransfer, bankTransferDetail, bankTransferName } from './fixtures/integrations'
 import { fieldOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
@@ -16,7 +16,7 @@ test('the payments page lists its integrations and a card opens the configuratio
 
   await page.goto('/integrations/payments')
   await expect(page.getByTestId('integrations-grid')).toBeVisible()
-  await expect(page.getByTestId(`integration-card-${bankTransfer.slug}`)).toContainText(bankTransfer.name)
+  await expect(page.getByTestId(`integration-card-${bankTransfer.slug}`)).toContainText(bankTransferName)
 
   await page.getByTestId(`integration-card-${bankTransfer.slug}`).click()
 

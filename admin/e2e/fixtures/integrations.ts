@@ -2,15 +2,18 @@
  * Fixtures for the integrations screens and the plugin manager: one payment integration, its
  * detail with a field list, and one installed plugin.
  */
-import type { IntegrationDetailDto, IntegrationDto } from '../../src/types/integration'
+import type { IntegrationDetailWireDto, IntegrationWireDto } from '../../src/types/integration'
 import { IntegrationFieldType } from '../../src/types/integration'
 import type { PluginListItemDto } from '../../src/types/plugin'
 import { PluginStatus } from '../../src/types/plugin'
 
+/** The name the bank transfer integration is listed under. */
+export const bankTransferName = 'Bank Transfer'
+
 /** A disabled payment integration as the list endpoint returns it. */
-export const bankTransfer: IntegrationDto = {
+export const bankTransfer: IntegrationWireDto = {
   slug: 'bank-transfer',
-  name: 'Bank Transfer',
+  name: bankTransferName,
   category: 'payments',
   isEnabled: false,
   isConfigured: false,
@@ -22,10 +25,11 @@ export const bankTransfer: IntegrationDto = {
 }
 
 /** The same integration with the fields its configuration form renders. */
-export const bankTransferDetail: IntegrationDetailDto = {
+export const bankTransferDetail: IntegrationDetailWireDto = {
   slug: bankTransfer.slug,
   name: bankTransfer.name,
   isEnabled: bankTransfer.isEnabled,
+  isPlugin: bankTransfer.isPlugin,
   config: {
     accountHolder: { value: '', isSecret: false, hasValue: false },
     iban: { value: '', isSecret: false, hasValue: false },

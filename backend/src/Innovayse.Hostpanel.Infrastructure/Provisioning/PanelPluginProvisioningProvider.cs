@@ -125,8 +125,10 @@ public sealed class PanelPluginProvisioningProvider : IProvisioningProvider
         await RunActionAsync(
             nameof(IProvisioningPanelPlugin.SuspendAccountAsync),
             req.ServiceId,
+            // The published SDK contract takes a non-null reason; a plugin treats blank as none.
             (plugin, server, token) => plugin.SuspendAccountAsync(
-                new PanelSuspendContext(server, new PanelService(req.ServiceId, req.ProvisioningRef), req.Reason), token),
+                new PanelSuspendContext(
+                    server, new PanelService(req.ServiceId, req.ProvisioningRef), req.Reason ?? string.Empty), token),
             ct);
     }
 

@@ -174,7 +174,7 @@ public sealed class WhmApiClient
     /// <param name="reason">The reason WHM records and shows the account owner; left out of the call when blank, since WHM takes it as optional.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The reply.</returns>
-    public Task<WhmReply> SuspendAccountAsync(WhmConnection connection, string user, string reason, CancellationToken ct) =>
+    public Task<WhmReply> SuspendAccountAsync(WhmConnection connection, string user, string? reason, CancellationToken ct) =>
         CallAsync(
             connection,
             "suspendacct",

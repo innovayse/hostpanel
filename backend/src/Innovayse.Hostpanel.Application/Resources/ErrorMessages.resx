@@ -1754,7 +1754,7 @@
     <value>All required fields are filled in. This check does not contact the provider, so confirm the credentials with a real action before you rely on them.</value>
   </data>
   <data name="INTEGRATION_TEST_FIELDS_MISSING" xml:space="preserve">
-    <value>The integration is not fully set up, because some required fields are empty. Fill in and save these fields, then run the test again:</value>
+    <value>The integration is not fully set up, because some required fields are empty. Fill in and save these fields, then run the test again: {0}.</value>
   </data>
   <data name="INTEGRATION_TEST_GATEWAY_OK" xml:space="preserve">
     <value>The payment gateway answered and accepted the saved credentials. The integration is ready to take payments.</value>

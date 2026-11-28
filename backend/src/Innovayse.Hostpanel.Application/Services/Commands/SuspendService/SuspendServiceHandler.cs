@@ -60,14 +60,14 @@ public sealed class SuspendServiceHandler
         }
 
         var outcome = await _hostedAccounts.SuspendAsync(
-            new HostedAccountSuspension(HostedAccountTarget.Of(service), cmd.Reason ?? string.Empty), ct);
+            new HostedAccountSuspension(HostedAccountTarget.Of(service), cmd.Reason), ct);
         if (outcome is HostedAccountOutcome.Failed)
         {
             return Result.FailureCode(HostpanelErrorCodes.SERVICE_SUSPEND_UPSTREAM_FAILED);
         }
 
         // The panel was asked above and its failure answered, so the event that would ask again is skipped.
-        service.Suspend(_clock.UtcNow, cmd.Reason ?? string.Empty, hostingAlreadyUpdated: true, source: cmd.Source);
+        service.Suspend(_clock.UtcNow, cmd.Reason, hostingAlreadyUpdated: true, source: cmd.Source);
 
         await _context.SaveChangesAsync(ct);
         return Result.Success();

@@ -1,7 +1,10 @@
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 
 /// <summary>Static description of one built-in integration.</summary>
-/// <param name="Category">Stable category name the admin groups the integration under; an identifier, not display text.</param>
+/// <param name="Category">
+/// Category wire value the admin matches against its closed set of category names to group the integration;
+/// fixed text, never shown as written.
+/// </param>
 /// <param name="Fields">Ordered field definitions the admin form renders; they carry no wording, the admin words them by slug and field key.</param>
 /// <param name="RequiredFields">
 /// Field keys that must hold a non-blank stored value for the integration to count as configured.

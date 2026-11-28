@@ -276,13 +276,13 @@ const dangerConfirm = ref<DangerAction | null>(null)
 /** Whether SSO URL is loading. */
 const ssoLoading = ref(false)
 
-/** Status options for the dropdown: only the statuses the domain allows from the current one (the service's `allowedStatuses`). */
+/** Status options for the dropdown: only the statuses the domain allows from the current one (`allowedStatuses`). */
 const statusOptions = computed(() =>
   SERVICE_STATUS_OPTIONS.filter(option => service.value?.allowedStatuses.includes(option.value)),
 )
 
-/** Whether the service can be moved to any status other than its own; false when the status is final. */
-const canChangeStatus = computed<boolean>(() => statusOptions.value.length > 1)
+/** Whether the service is terminated: its status is final, so the status form gives way to the locked note. */
+const isTerminated = computed<boolean>(() => service.value?.status === ServiceStatus.Terminated)
 
 /** Billing cycle options for the UiSelect dropdown. */
 const billingCycleOptions = BILLING_CYCLE_OPTIONS
@@ -948,7 +948,7 @@ onMounted(() => {
           </template>
 
           <template #card-commands>
-            <UiText v-if="service && !canChangeStatus" :tone="UiTextTone.Muted" data-testid="client-service-status-locked">
+            <UiText v-if="isTerminated" :tone="UiTextTone.Muted" data-testid="client-service-status-locked">
               {{ t('clients.clientServiceDetail.statusLocked') }}
             </UiText>
 
@@ -975,7 +975,7 @@ onMounted(() => {
             </UiForm>
 
             <UiForm
-              v-if="service?.status === ServiceStatus.Terminated"
+              v-if="isTerminated"
               :aria-busy="saving === ServiceSection.TerminationDate"
               data-testid="client-service-termination-form"
               @submit="saveTerminationDate"

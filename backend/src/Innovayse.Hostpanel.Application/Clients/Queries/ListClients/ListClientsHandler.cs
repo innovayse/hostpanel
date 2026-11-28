@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Clients.Common;
-using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -53,7 +52,7 @@ public sealed class ListClientsHandler
             query.Search,
             c => c.Id,
             c => searchSubjects.Contains(c.UserId),
-            ClientSearchExtensions.SearchColumns);
+            [.. ClientSearchColumns.All]);
 
         clients = clients.Search(query.Phone, c => c.Phone);
 

@@ -443,7 +443,7 @@ describe('ClientServiceDetailView', () => {
   })
 
   it('moves to a non-terminal status without a prompt', async () => {
-    const { wrapper, mock } = await mountLoaded()
+    const { wrapper, mock } = await mountLoaded({ ...detail, status: ServiceStatus.Suspended })
 
     const statusSelect = wrapper.findAllComponents(UiSelect).find((select) => select.attributes('data-testid') === 'client-service-status')
     statusSelect?.vm.$emit('update:modelValue', ServiceStatus.Active)

@@ -502,7 +502,9 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// and <see cref="ServiceSuspendedEvent"/>.
     /// </summary>
     /// <param name="now">The current moment (UTC), read by the caller; becomes <see cref="SuspendedAt"/> and is stamped on the domain events.</param>
-    /// <param name="reason">Human-readable reason for the suspension.</param>
+    /// <param name="reason">
+    /// Human-readable reason for the suspension, or <see langword="null"/> when none is given.
+    /// </param>
     /// <param name="hostingAlreadyUpdated">
     /// The caller has already suspended the hosting account itself (and answered its failure), so
     /// <see cref="ServiceSuspendedEvent"/>, the request for the panel to do it, is not raised
@@ -510,7 +512,7 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// </param>
     /// <param name="source">Why it is suspended; decides whether a later payment may lift it.</param>
     /// <exception cref="DomainRuleException">Thrown when the service is not in Active status.</exception>
-    public void Suspend(DateTimeOffset now, string reason = "", bool hostingAlreadyUpdated = false, SuspensionSource source = Enums.SuspensionSource.Manual)
+    public void Suspend(DateTimeOffset now, string? reason = null, bool hostingAlreadyUpdated = false, SuspensionSource source = Enums.SuspensionSource.Manual)
     {
         if (!CanSuspend)
         {

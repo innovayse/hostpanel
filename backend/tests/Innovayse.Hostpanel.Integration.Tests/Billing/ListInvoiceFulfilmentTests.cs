@@ -43,7 +43,7 @@ public sealed class ListInvoiceFulfilmentTests(IntegrationTestFactory factory) :
         var failed = rows.Single(r => r.GetProperty("id").GetInt32() == failedId);
         failed.GetProperty("status").GetString().Should().Be(nameof(FulfilmentStatus.Failed));
         failed.GetProperty("attempts").GetInt32().Should().Be(FulfilmentRecord.MaxAttempts);
-        failed.GetProperty("lastError").GetString().Should().NotBeNullOrWhiteSpace().And.NotBe(BillingErrors.FulfilmentPluginFailed);
+        failed.GetProperty("lastErrorMessage").GetString().Should().NotBeNullOrWhiteSpace().And.NotBe(BillingErrors.FulfilmentPluginFailed);
         failed.GetProperty("canRetry").GetBoolean().Should().BeTrue();
     }
 

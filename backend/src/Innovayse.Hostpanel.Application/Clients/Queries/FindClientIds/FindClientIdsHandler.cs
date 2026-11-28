@@ -1,4 +1,5 @@
-using Innovayse.Hostpanel.Application.Clients.Extensions;
+using Innovayse.Hostpanel.Application.Clients.Common;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
@@ -12,12 +13,6 @@ namespace Innovayse.Hostpanel.Application.Clients.Queries.FindClientIds;
 /// </summary>
 public sealed class FindClientIdsHandler
 {
-    /// <summary>
-    /// How many clients one search answers with. The caller turns the answer into an <c>IN</c> clause, so a search that
-    /// matches more clients than this is drawn from the first of them and the person narrows the text.
-    /// </summary>
-    private const int MatchLimit = 500;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -50,11 +45,15 @@ public sealed class FindClientIdsHandler
         var clients = _context.Clients.AsNoTracking();
 
         var byName = clients
-            .Search(query.Search, ClientSearchExtensions.SearchColumns)
+            .Search(query.Search, [.. ClientSearchColumns.All])
             .Select(c => c.Id);
         var byAccount = clients.Where(c => subjects.Contains(c.UserId)).Select(c => c.Id);
 
-        IReadOnlyList<int> ids = await byName.Union(byAccount).OrderBy(id => id).Take(MatchLimit).ToListAsync(ct);
+        IReadOnlyList<int> ids = await byName
+            .Union(byAccount)
+            .OrderBy(id => id)
+            .Take(PagingLimits.MaxSearchMatches)
+            .ToListAsync(ct);
 
         return Result<IReadOnlyList<int>>.Success(ids);
     }

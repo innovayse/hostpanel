@@ -3,8 +3,19 @@
  * (name, logo, description and the wording of their settings fields) the admin renders.
  */
 
-import { IntegrationCategory, IntegrationEncryption, IntegrationFieldKey } from '@/types/integration'
-import type { IntegrationFieldMeta, IntegrationMeta, IntegrationSlug } from '@/types/integration'
+import { IntegrationCategory, IntegrationEncryption, IntegrationFieldKey, IntegrationLabelKind } from '@/types/integration'
+import type {
+  FieldDefinitionDto,
+  FieldDefinitionWire,
+  IntegrationDetailDto,
+  IntegrationDetailWireDto,
+  IntegrationDto,
+  IntegrationFieldMeta,
+  IntegrationLabel,
+  IntegrationMeta,
+  IntegrationSlug,
+  IntegrationWireDto,
+} from '@/types/integration'
 import { PluginCategory } from '@/types/plugin'
 import { Icon } from '@/lib/icons'
 import { translate } from '@/lib/translate'
@@ -39,9 +50,10 @@ const logoUrl = (file: string): string =>
 /**
  * Static metadata for all supported integrations.
  * Keyed by slug for O(1) lookup. This is the one place that words a built-in integration: the API sends
- * no name, field label or option label for it, and the store resolves them here from the slug and the field key.
+ * no name, field label or option label for it, and the store labels them from here by the slug and the field key;
+ * a screen words the label as it draws.
  */
-export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
+const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   'bank-transfer': {
     slug: 'bank-transfer',
     labelKey: 'integrationMeta.bankTransfer.name',
@@ -107,12 +119,12 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
 }
 
 /**
- * Finds the catalogue entry of a built-in integration.
+ * Finds the catalogue entry of a built-in integration; the one lookup of the catalogue by slug.
  *
  * @param slug - Slug of any integration; a plugin's slug is not in the catalogue.
  * @returns The entry, or undefined when the slug is not a built-in integration.
  */
-const builtInMetaOf = (slug: string): IntegrationMeta | undefined =>
+export const integrationMetaOf = (slug: string): IntegrationMeta | undefined =>
   (INTEGRATION_META as Record<string, IntegrationMeta | undefined>)[slug]
 
 /**
@@ -123,42 +135,121 @@ const builtInMetaOf = (slug: string): IntegrationMeta | undefined =>
  * @returns The field's wording, or undefined when the integration is not built in or declares no wording for that key.
  */
 const fieldMetaOf = (slug: string, key: string): IntegrationFieldMeta | undefined =>
-  builtInMetaOf(slug)?.fields.find(field => field.key === key)
+  integrationMetaOf(slug)?.fields.find(field => field.key === key)
 
 /**
- * Words the name of a built-in integration in the operator's language.
+ * Wraps a locale key as an integration label, translated only when the label is drawn.
+ *
+ * @param key - Dotted key present in every locale catalogue.
+ * @returns The label.
+ */
+const keyLabel = (key: string): IntegrationLabel => ({ kind: IntegrationLabelKind.Key, key })
+
+/**
+ * Wraps finished text as an integration label, shown as it is.
+ *
+ * @param text - Finished text.
+ * @returns The label.
+ */
+const textLabel = (text: string): IntegrationLabel => ({ kind: IntegrationLabelKind.Text, text })
+
+/**
+ * Labels the name of an integration: a plugin's own text, else the catalogue's name key of a built-in integration.
  *
  * @param slug - Slug of the integration.
- * @returns The translated name; the slug itself when the integration is not built in.
+ * @param name - The name the API sent; null for a built-in integration.
+ * @returns The label; the slug itself as text when the integration is neither a plugin nor built in.
  */
-export const builtInIntegrationName = (slug: string): string => {
-  const meta = builtInMetaOf(slug)
-  return meta ? translate(meta.labelKey) : slug
+export const integrationNameLabel = (slug: string, name: string | null): IntegrationLabel => {
+  if (name !== null) {
+    return textLabel(name)
+  }
+  const meta = integrationMetaOf(slug)
+  return meta ? keyLabel(meta.labelKey) : textLabel(slug)
 }
 
 /**
- * Words the label of a field of a built-in integration in the operator's language.
+ * Labels one field of an integration: a plugin's own text, else the catalogue's label key of the built-in field.
  *
  * @param slug - Slug of the integration.
  * @param key - The field's key, as the API sends it.
- * @returns The translated label; the key itself when the integration declares no label for it.
+ * @param label - The label the API sent; null for a built-in integration.
+ * @returns The label; the key itself as text when the integration declares no label for it.
  */
-export const builtInFieldLabel = (slug: string, key: string): string => {
+export const fieldLabel = (slug: string, key: string, label: string | null | undefined): IntegrationLabel => {
+  if (label) {
+    return textLabel(label)
+  }
   const meta = fieldMetaOf(slug, key)
-  return meta ? translate(meta.labelKey) : key
+  return meta ? keyLabel(meta.labelKey) : textLabel(key)
 }
 
 /**
- * Words the options of a field of a built-in integration in the operator's language.
+ * Labels the options of a field: a plugin's own texts, else the catalogue's option keys of the built-in field.
  *
  * @param slug - Slug of the integration.
  * @param key - The field's key, as the API sends it.
- * @returns Option value to translated text for the options that have their own wording; null when none has.
+ * @param labels - The option texts the API sent; null or absent for a built-in integration.
+ * @returns Option value to label for the options that have their own wording; undefined when none has.
  */
-export const builtInOptionLabels = (slug: string, key: string): Record<string, string> | null => {
+export const optionLabels = (
+  slug: string,
+  key: string,
+  labels: Record<string, string> | null | undefined,
+): Record<string, IntegrationLabel> | undefined => {
+  if (labels) {
+    return Object.fromEntries(Object.entries(labels).map(([value, text]) => [value, textLabel(text)]))
+  }
   const options = fieldMetaOf(slug, key)?.options
-  return options ? Object.fromEntries(options.map(option => [option.value, translate(option.labelKey)])) : null
+  return options ? Object.fromEntries(options.map(option => [option.value, keyLabel(option.labelKey)])) : undefined
 }
+
+/**
+ * Words an integration label in the operator's current language. Called while a screen draws, so the text follows a
+ * language switch.
+ *
+ * @param label - The label from the store.
+ * @returns The finished text, or the translation of the key.
+ */
+export const integrationLabelText = (label: IntegrationLabel): string =>
+  label.kind === IntegrationLabelKind.Key ? translate(label.key) : label.text
+
+/**
+ * Labels a field definition: a plugin's label and option labels arrive finished, in the request language; the API sends
+ * none for a built-in integration, so they become the catalogue's locale keys, worded when a screen draws them.
+ *
+ * @param slug - Slug of the integration the field belongs to.
+ * @param field - The field definition as the API sent it.
+ * @returns The definition with its label and option labels as typed labels.
+ */
+const labelField = (slug: string, field: FieldDefinitionWire): FieldDefinitionDto => ({
+  ...field,
+  label: fieldLabel(slug, field.key, field.label),
+  optionLabels: optionLabels(slug, field.key, field.optionLabels),
+})
+
+/**
+ * Labels an integration summary: a plugin's name arrives finished; the API sends none for a built-in integration.
+ *
+ * @param integration - The summary as returned by the backend.
+ * @returns The summary with its name as a typed label.
+ */
+export const labelSummary = (integration: IntegrationWireDto): IntegrationDto => ({
+  ...integration,
+  name: integrationNameLabel(integration.slug, integration.name),
+})
+
+/**
+ * Labels an integration detail: the name and field texts the API leaves out for a built-in integration.
+ *
+ * @param detail - The detail as returned by the backend.
+ * @returns The detail with its texts as typed labels.
+ */
+export const labelDetail = (detail: IntegrationDetailWireDto): IntegrationDetailDto => ({
+  ...detail,
+  name: integrationNameLabel(detail.slug, detail.name),
+  fieldDefinitions: detail.fieldDefinitions.map(field => labelField(detail.slug, field)),
+})
 
 /**
  * Ordered category definitions: the order of the inner menu and of the layout skeleton.

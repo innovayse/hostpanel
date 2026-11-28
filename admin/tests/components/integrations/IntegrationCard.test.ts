@@ -8,11 +8,21 @@ import IntegrationCard from '@/components/integrations/IntegrationCard.vue'
 import { PluginType } from '@/types/plugin'
 import { IntegrationConnectionState } from '@/types/integration'
 import { mountWithApp } from '../../helpers/mount'
+import { labelSummary } from '@/types/integrationmeta'
+import type { IntegrationWireDto } from '@/types/integration'
 import { integrationDto } from '../../helpers/integrationFixtures'
+
+/**
+ * Builds the summary a card takes: the API's summary after the store has labelled it.
+ *
+ * @param overrides - Fields to change on the default summary.
+ * @returns The labelled summary.
+ */
+const cardDto = (overrides: Partial<IntegrationWireDto> = {}) => labelSummary(integrationDto(overrides))
 
 describe('IntegrationCard', () => {
   it('links to the configuration page and shows name and active status', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto() } })
 
     expect(wrapper.get('[data-testid="integration-card-bank-transfer"]').attributes('href')).toBe('/integrations/bank-transfer/configure')
     expect(wrapper.text()).toContain('Bank Transfer')
@@ -20,28 +30,28 @@ describe('IntegrationCard', () => {
   })
 
   it('shows an inactive integration as inactive', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isEnabled: false }) } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto({ isEnabled: false }) } })
 
     expect(wrapper.get('[data-testid="integration-status-bank-transfer"]').text()).toBe('Inactive')
   })
 
   it('marks an integration whose required fields are not stored as not configured', () => {
-    const configured = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
-    const unconfigured = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isConfigured: false }) } })
+    const configured = mountWithApp(IntegrationCard, { props: { integration: cardDto() } })
+    const unconfigured = mountWithApp(IntegrationCard, { props: { integration: cardDto({ isConfigured: false }) } })
 
     expect(configured.find('[data-testid="integration-unconfigured-bank-transfer"]').exists()).toBe(false)
     expect(unconfigured.get('[data-testid="integration-unconfigured-bank-transfer"]').text()).toBe('Not configured')
   })
 
   it('marks a plugin-provided integration', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true }) } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto({ isPlugin: true }) } })
 
     expect(wrapper.text()).toContain('Plugin')
   })
 
   it('marks a plugin once and draws no badge for its category or type', () => {
     const wrapper = mountWithApp(IntegrationCard, {
-      props: { integration: integrationDto({ isPlugin: true, pluginType: PluginType.Fulfilment }) },
+      props: { integration: cardDto({ isPlugin: true, pluginType: PluginType.Fulfilment }) },
     })
 
     expect(wrapper.findAll('[data-testid="integration-plugin-bank-transfer"]')).toHaveLength(1)
@@ -50,13 +60,13 @@ describe('IntegrationCard', () => {
   })
 
   it('shows no plugin marker on a built-in integration', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto() } })
 
     expect(wrapper.find('[data-testid="integration-plugin-bank-transfer"]').exists()).toBe(false)
   })
 
   it('keeps the name on one line and gives the full name as its tooltip', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ name: 'A very long integration name' }) } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto({ name: 'A very long integration name' }) } })
     const name = wrapper.get('[data-testid="integration-card-name"]')
 
     expect(name.classes()).toContain('truncate')
@@ -64,23 +74,23 @@ describe('IntegrationCard', () => {
   })
 
   it('shows the catalogue text of a built-in integration', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto() } })
 
     expect(wrapper.text()).toContain('Allow clients to pay via direct bank transfer with your banking details.')
   })
 
   it("shows the plugin's own description as the body", () => {
     const wrapper = mountWithApp(IntegrationCard, {
-      props: { integration: integrationDto({ slug: 'deliver', isPlugin: true, description: 'Delivers licence keys after payment.' }) },
+      props: { integration: cardDto({ slug: 'deliver', isPlugin: true, description: 'Delivers licence keys after payment.' }) },
     })
 
     expect(wrapper.text()).toContain('Delivers licence keys after payment.')
   })
 
   it('shows a plugin integration with its icon and falls back to the initial', () => {
-    const withIcon = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true, iconUrl: '/icon.png' }) } })
-    const without = mountWithApp(IntegrationCard, { props: { integration: integrationDto({ isPlugin: true }) } })
-    const builtIn = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+    const withIcon = mountWithApp(IntegrationCard, { props: { integration: cardDto({ isPlugin: true, iconUrl: '/icon.png' }) } })
+    const without = mountWithApp(IntegrationCard, { props: { integration: cardDto({ isPlugin: true }) } })
+    const builtIn = mountWithApp(IntegrationCard, { props: { integration: cardDto() } })
 
     expect(withIcon.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
     expect(without.find('[data-testid="plugin-avatar-fallback"]').exists()).toBe(true)
@@ -90,7 +100,7 @@ describe('IntegrationCard', () => {
   it('shows the connection state a plugin reported as a short badge, with its message only as the tooltip', () => {
     const wrapper = mountWithApp(IntegrationCard, {
       props: {
-        integration: integrationDto({
+        integration: cardDto({
           isPlugin: true,
           pluginType: PluginType.Fulfilment,
           connection: {
@@ -109,7 +119,7 @@ describe('IntegrationCard', () => {
   })
 
   it('shows no connection state when the API sent none', () => {
-    const wrapper = mountWithApp(IntegrationCard, { props: { integration: integrationDto() } })
+    const wrapper = mountWithApp(IntegrationCard, { props: { integration: cardDto() } })
 
     expect(wrapper.find('[data-testid="integration-connection-bank-transfer"]').exists()).toBe(false)
   })

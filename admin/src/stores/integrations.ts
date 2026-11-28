@@ -10,15 +10,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useIntegrationsApi } from '@/composables/apis/useIntegrationsApi'
 import { runAction } from '@/lib/runAction'
-import { builtInFieldLabel, builtInIntegrationName, builtInOptionLabels } from '@/types/integrationmeta'
+import { labelDetail, labelSummary } from '@/types/integrationmeta'
 import { IntegrationCategory, IntegrationCategoryName } from '@/types/integration'
 import { PluginType } from '@/types/plugin'
 import type {
-  FieldDefinitionDto,
-  FieldDefinitionWire,
   IntegrationConfigPayload,
   IntegrationDetailDto,
-  IntegrationDetailWireDto,
   IntegrationDto,
   IntegrationTestResult,
   IntegrationWireDto,
@@ -59,43 +56,6 @@ const normaliseCategory = (integration: IntegrationWireDto): IntegrationCategory
   return byType ?? CATEGORY_MAP[integration.category] ?? integration.category
 }
 
-/**
- * Words a field definition: a plugin's label and option labels arrive finished, in the request language; the API sends
- * none for a built-in integration, so the admin words them from the slug and the field key.
- *
- * @param slug - Slug of the integration the field belongs to.
- * @param field - The field definition as the API sent it.
- * @returns The definition with its label and option labels in the operator's language.
- */
-const localiseField = (slug: string, field: FieldDefinitionWire): FieldDefinitionDto => ({
-  ...field,
-  label: field.label ?? builtInFieldLabel(slug, field.key),
-  optionLabels: field.optionLabels ?? builtInOptionLabels(slug, field.key),
-})
-
-/**
- * Words an integration summary: a plugin's name arrives finished; the API sends none for a built-in integration.
- *
- * @param integration - The summary as returned by the backend.
- * @returns The summary with its name in the operator's language.
- */
-const localiseSummary = (integration: IntegrationWireDto): IntegrationDto => ({
-  ...integration,
-  name: integration.name ?? builtInIntegrationName(integration.slug),
-})
-
-/**
- * Words an integration detail: the name and field texts the API leaves out for a built-in integration.
- *
- * @param detail - The detail as returned by the backend.
- * @returns The detail with its texts in the operator's language.
- */
-const localiseDetail = (detail: IntegrationDetailWireDto): IntegrationDetailDto => ({
-  ...detail,
-  name: detail.name ?? builtInIntegrationName(detail.slug),
-  fieldDefinitions: detail.fieldDefinitions.map(field => localiseField(detail.slug, field)),
-})
-
 /** Manages the integrations summary list and the config of the integration being edited. */
 export const useIntegrationsStore = defineStore('integrations', () => {
   const api = useIntegrationsApi()
@@ -133,7 +93,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, api.listIntegrations)
     loading.value = false
     if (result.ok) {
-      integrations.value = result.value.map(i => ({ ...localiseSummary(i), category: normaliseCategory(i) }))
+      integrations.value = result.value.map(i => ({ ...labelSummary(i), category: normaliseCategory(i) }))
     }
   }
 
@@ -149,7 +109,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, () => api.getIntegration(slug))
     loading.value = false
     if (result.ok) {
-      current.value = localiseDetail(result.value)
+      current.value = labelDetail(result.value)
     }
   }
 

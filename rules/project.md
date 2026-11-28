@@ -2187,13 +2187,25 @@ feature does not exist is not kept. The decisions:
   or an id, building chips) are `useListQuery`, and the ticket filters both ticket screens share are `useTicketFilters` and
   `SupportTicketFilterFields`.
   The order list (`ListOrdersQuery`, the admin Orders screen) is on it with `SearchIncludingId` on the order number and id and a
-  `Status` enum filter; it does not search the client name, which only the Clients module can read, so Orders never joins it.
+  `Status` enum filter; it also finds the orders of the clients the text names, through the shared client id search below, since only the
+  Clients module can read the client row and so Orders never joins it.
   The service list (`GetServicesQuery`, behind the admin Services screen and the services tab of a client, which adds
   `ClientId`) is on it with a search over the service's own domain, its linked registered domain, the product name and the service id
   (the linked domain names and the product names are asked of the Domains and Products modules, `FindServiceIdsByDomainNameQuery` and
   `FindProductIdsByNameQuery`, so the list reads neither table), and `Status`, `ProductId` and `BillingCycle` filters; the screens share `useServiceFilters` and
   `ServiceFilterFields`. `Page` and `PageSize` are required on `GET /api/services`, so a caller that sent neither (the
   billable item lookup did) now sends `page=1`.
+  **The shared id searches.** A list that matches rows another module owns asks for ids and keeps them with
+  `SearchIncludingIdOrMatching`; it never rebuilds the match. Clients: `ClientBriefBusExtensions.FindClientIdsMatchingAsync(term, ct)`
+  (the client row through `ClientSearchColumns.All`, an immutable value in `Clients/Common`, plus the identity provider through
+  `IdentitySearchExtensions.FindSubjectsAsync`). A list that can be scoped to one client (invoices, quotes, billable items, credit
+  notes, transactions, domains) calls the overload `FindClientIdsMatchingAsync(term, query.ClientId, ct)`, which answers none for a
+  scoped list, because matching the client's own name would keep every one of its rows; the rule lives in that one overload. The client tabs
+  that have no `ClientId` filter pass an empty list to `Matching`. Services: `ServiceSearchBusExtensions.FindServiceIdsMatchingAsync(term, ct)`
+  in `Services/Extensions` (own domain, linked domain, product, client and service id, through `FindServiceIdsBySearchQuery`), used by the
+  service list (which passes its `ClientId`, so a client's own services tab does not search the client name) and the cancellation request list; both extensions answer none for a blank term without a round trip. Both searches draw on
+  at most `PagingLimits.MaxSearchMatches` ids (500, the lowest first), defined once, because the answer becomes an `IN` clause.
+  `Matching` takes the matched client ids as a required, non-nullable list.
   The admin user list (`ListUsersQuery`, Clients, Manage Users) is on it with the search alone: the identity provider can narrow only by a search text, so
   there is no filter to add and none is faked; the provider matches the text itself (name, email), the handler passes page, page size and search through
   `IdentityAccountListQuery`, and the two user pickers (the add-client and add-user searches) already send `page=1` with their page size, which is now
@@ -2268,7 +2280,8 @@ feature does not exist is not kept. The decisions:
   `BillableItemListQueryValidator<T>` and applied once by `BillableItemFilterExtensions.Matching`, so the search and
   the type narrow the uninvoiced list and the invoiced list alike, while `Page` and `PageSize` cut the invoiced list only. The cancellation request list
   (`ListCancellationRequestsQuery`) is on it with `SearchIncludingId` on the reason and id and `Type` and `Status` filters, all applied to the requests
-  before they are joined to their service (and counted there), and it does not search the product or the client name, which other modules own.
+  before they are joined to their service (and counted there); the service a request is for is matched through the shared service id search
+  (domain, product, client name, service id), so a number in the box matches both the request id and the service id.
   The invoice lists (`ListInvoicesQuery`, the admin Invoices screen, and `ListClientInvoicesQuery`, the invoices tab of a client) are on it
   with `SearchIncludingId` over the invoice id and its payment method and the shared `IInvoiceListFilters` (`Status`, `From`, `To`),
   validated once by `InvoiceListQueryValidator<T>` and applied once by `InvoiceFilterExtensions.Matching`; the staff list adds `ClientId`, and

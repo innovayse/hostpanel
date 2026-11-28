@@ -122,7 +122,8 @@ public sealed class SyncServiceWithPanelHandler
         {
             case PanelSyncField.Status:
                 var status = service.Status is ServiceStatus.Suspended
-                    ? await _hostedAccounts.SuspendAsync(new HostedAccountSuspension(HostedAccountTarget.Of(service), string.Empty), ct)
+                    ? await _hostedAccounts.SuspendAsync(
+                        new HostedAccountSuspension(HostedAccountTarget.Of(service)), ct)
                     : await _hostedAccounts.UnsuspendAsync(new HostedAccountUnsuspension(HostedAccountTarget.Of(service)), ct);
                 return status is HostedAccountOutcome.Updated ? PanelSyncOutcome.Applied : PanelSyncOutcome.Failed;
             case PanelSyncField.Package:

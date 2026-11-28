@@ -130,8 +130,29 @@ public static class ClientBriefBusExtensions
     }
 
     /// <summary>
-    /// The ids of the clients a list's search text names (by first name, last name, full name, company, sign-in address or
-    /// account name), for a list that shows a client per row and keeps the rows of these clients next to its own text matches.
+    /// The ids of the clients a list's search text names, for a list that may be scoped to one client: a scoped list
+    /// holds only that client's rows, so matching the client's name would keep every one of them and the answer is none.
+    /// </summary>
+    /// <param name="bus">The Wolverine bus to dispatch the query through.</param>
+    /// <param name="term">What the person typed; blank means no search and matches no client.</param>
+    /// <param name="scopedClientId">The client the list is scoped to, or <see langword="null"/> for a list of every client.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching client ids, or none when the list is scoped to one client or the term is blank.</returns>
+    public static async Task<IReadOnlyList<int>> FindClientIdsMatchingAsync(
+        this IMessageBus bus, string? term, int? scopedClientId, CancellationToken ct)
+    {
+        if (scopedClientId is not null)
+        {
+            return [];
+        }
+
+        return await bus.FindClientIdsMatchingAsync(term, ct);
+    }
+
+    /// <summary>
+    /// The ids of the clients a list's search text names (by first name, last name, full name, company, sign-in
+    /// address or account name), for a list that shows a client per row and keeps the rows of these clients next to
+    /// its own text matches.
     /// </summary>
     /// <param name="bus">The Wolverine bus to dispatch the query through.</param>
     /// <param name="term">What the person typed; blank means no search and matches no client.</param>

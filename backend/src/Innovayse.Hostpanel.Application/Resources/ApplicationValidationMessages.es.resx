@@ -880,6 +880,9 @@
   <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
     <value>Indique un motivo de finalización solo cuando el servicio termine al final de su ciclo.</value>
   </data>
+  <data name="RenewalDueAtWithoutTrialService" xml:space="preserve">
+    <value>Indique una fecha de vencimiento solo para la factura de conversión de una prueba.</value>
+  </data>
   <data name="ServiceTerminatedAtRequired" xml:space="preserve">
     <value>Introduzca la fecha en que se dio de baja el servicio.</value>
   </data>

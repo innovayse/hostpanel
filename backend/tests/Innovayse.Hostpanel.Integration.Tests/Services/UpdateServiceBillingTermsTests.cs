@@ -56,6 +56,45 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
         stored.ProvisioningRef.Should().Be("acct1");
     }
 
+    /// <summary>
+    /// A service whose free trial is running refuses a new next due date with 409 <c>SERVICE_TRIAL_DUE_DATE_FIXED</c> and
+    /// keeps every term; the same save with the due date unchanged answers 204 and stores the other terms.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UpdateBillingTerms_OfARunningTrial_RefusesANewDueDateOnlyAsync()
+    {
+        var clientId = (await ClientsTestSeeds.RegisterClientAsync(factory, "billing-terms-trial")).ClientId;
+        var serviceId = await UpgradeMyTrialTests.SeedTrialServiceAsync(factory, clientId, trial: true);
+        var productId = await ProductOfAsync(serviceId);
+        var dueAt = await NextRenewalOfAsync(serviceId);
+        var client = await ServicesTestSeeds.AdminClientAsync(factory);
+        object Body(DateTimeOffset? nextRenewalAt) => new
+        {
+            productId,
+            quantity = 1,
+            billingCycle = nameof(BillingCycle.Monthly),
+            firstPaymentAmount = 0m,
+            recurringAmount = 25m,
+            nextRenewalAt,
+        };
+
+        var moved = await client.PutAsJsonAsync($"/api/services/{serviceId}/billing", Body(dueAt!.Value.AddDays(30)));
+
+        moved.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ServicesTestSeeds.CodeOfAsync(moved)).Should().Be(HostpanelErrorCodes.SERVICE_TRIAL_DUE_DATE_FIXED);
+        (await NextRenewalOfAsync(serviceId)).Should().Be(dueAt);
+
+        var kept = await client.PutAsJsonAsync($"/api/services/{serviceId}/billing", Body(dueAt));
+
+        kept.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var stored = await context.ClientServices.AsNoTracking().SingleAsync(s => s.Id == serviceId);
+        stored.RecurringAmount.Should().Be(25m);
+        stored.NextRenewalAt.Should().Be(dueAt);
+    }
+
     /// <summary>Moving the service to a product that does not exist answers 404 <c>PRODUCT_NOT_FOUND</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -150,6 +189,19 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
         firstPaymentAmount = 1m,
         recurringAmount = 1m,
     };
+
+    /// <summary>Reads the next renewal date of a stored service.</summary>
+    /// <param name="serviceId">The service primary key.</param>
+    /// <returns>The next renewal date as stored.</returns>
+    private async Task<DateTimeOffset?> NextRenewalOfAsync(int serviceId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.ClientServices.AsNoTracking()
+            .Where(s => s.Id == serviceId)
+            .Select(s => s.NextRenewalAt)
+            .SingleAsync();
+    }
 
     /// <summary>Reads the product a stored service is of.</summary>
     /// <param name="serviceId">The service primary key.</param>

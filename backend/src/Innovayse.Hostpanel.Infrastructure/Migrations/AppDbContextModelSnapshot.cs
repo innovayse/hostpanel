@@ -4359,6 +4359,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<DateTimeOffset?>("TrialPaymentDueAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("TrialReminderDays")
                         .HasColumnType("text");
 
@@ -4518,6 +4521,32 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasFilter("\"Status\" IN ('Pending', 'Approved')");
 
                     b.ToTable("ServiceChangeRequests");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.TrialReminder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DaysBefore")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId", "DaysBefore")
+                        .IsUnique()
+                        .HasDatabaseName("IX_TrialReminders_ServiceId_DaysBefore");
+
+                    b.ToTable("TrialReminders");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Settings.Setting", b =>
@@ -6396,6 +6425,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ToProductId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.TrialReminder", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Services.ClientService", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

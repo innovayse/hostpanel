@@ -10,4 +10,14 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInv
 /// <see langword="true"/> when staff asked for the run (the activity log records it); the daily sweep leaves it
 /// <see langword="false"/>. It says why the run happens, not who runs it: the caller is read from the token.
 /// </param>
-public sealed record RaiseClientRenewalInvoicesCommand(int ClientId, bool Manual = false);
+/// <param name="TrialServiceId">
+/// The converted trial whose first paid period is invoiced instead of the client's due renewals: only that
+/// service's line is raised, on an invoice of its own, and only while its trial awaits payment. The daily sweep
+/// leaves it <see langword="null"/>.
+/// </param>
+/// <param name="DueAt">
+/// The due date of the conversion invoice (the end of the trial's grace); given only with
+/// <paramref name="TrialServiceId"/>. When it is left out the invoice is dated like a renewal.
+/// </param>
+public sealed record RaiseClientRenewalInvoicesCommand(
+    int ClientId, bool Manual = false, int? TrialServiceId = null, DateTimeOffset? DueAt = null);

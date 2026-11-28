@@ -1980,6 +1980,15 @@ public static class HostpanelErrorCodes
     /// <summary>The service is not Active (400): <see cref="Domain.Services.ClientService.Suspend"/>.</summary>
     public const string SERVICE_NOT_ACTIVE = Domain.Services.ServicesErrors.ServiceNotActive;
 
+    /// <summary>The service is not in a running free trial (409): <see cref="Domain.Services.ClientService.BeginTrialConversion"/>.</summary>
+    public const string SERVICE_NOT_IN_TRIAL = Domain.Services.ServicesErrors.ServiceNotInTrial;
+
+    /// <summary>
+    /// The next due date of a service whose free trial is running cannot be changed (409):
+    /// <see cref="Domain.Services.ClientService.ChangeBillingTerms"/>.
+    /// </summary>
+    public const string SERVICE_TRIAL_DUE_DATE_FIXED = Domain.Services.ServicesErrors.ServiceTrialDueDateFixed;
+
     /// <summary>The service is already terminated (400): <see cref="Domain.Services.ClientService.Terminate"/>.</summary>
     public const string SERVICE_TERMINATE_NOT_ALLOWED = Domain.Services.ServicesErrors.ServiceTerminateNotAllowed;
 

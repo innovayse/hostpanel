@@ -142,6 +142,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the records of the free trials clients used, one per client and product.</summary>
     public DbSet<ClientProductTrial> ClientProductTrials => Set<ClientProductTrial>();
 
+    /// <summary>Gets the free trial reminders already sent, one per service and reminder day.</summary>
+    public DbSet<TrialReminder> TrialReminders => Set<TrialReminder>();
+
     /// <summary>Gets the plan change requests table.</summary>
     public DbSet<ServiceChangeRequest> ServiceChangeRequests => Set<ServiceChangeRequest>();
 
@@ -565,6 +568,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // RequestMyServicePlanChangeHandler answers it as the request that is already open.
             throw new ConcurrencyConflictException(
                 "Another call opened a plan change request for the same service concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: TrialReminderConfiguration.ServiceDaysBeforeIndex,
+        })
+        {
+            // Two runs of the daily trial step recorded the same reminder of one trial at once: the same lost race as a
+            // concurrent save. ProcessTrialHandler answers it as the reminder already sent, so the client is mailed once.
+            throw new ConcurrencyConflictException(
+                "Another run recorded the same trial reminder concurrently.", ex);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {

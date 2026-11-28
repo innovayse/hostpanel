@@ -54,6 +54,7 @@ public sealed class MyServicesRoutesAreOwnershipScopedTests(IntegrationTestFacto
         { "DELETE", "ssh/keys/{keyId:guid}", $"ssh/keys/{FixedKeyId}", null },
         { "GET", "plan-change-options", "plan-change-options", null },
         { "POST", "plan-change", "plan-change", new { toProductId = 1 } },
+        { "POST", "upgrade-trial", "upgrade-trial", null },
     };
 
     /// <summary>A request for another client's service id answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>

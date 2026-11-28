@@ -886,6 +886,9 @@
   <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
     <value>Give a termination reason only when the service ends with its cycle.</value>
   </data>
+  <data name="RenewalDueAtWithoutTrialService" xml:space="preserve">
+    <value>Give a due date only for the conversion invoice of a trial.</value>
+  </data>
   <data name="ServiceTerminatedAtRequired" xml:space="preserve">
     <value>Enter the date the service was terminated.</value>
   </data>

@@ -880,6 +880,9 @@
   <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
     <value>Geben Sie einen Kündigungsgrund nur an, wenn der Service mit seinem Zyklus endet.</value>
   </data>
+  <data name="RenewalDueAtWithoutTrialService" xml:space="preserve">
+    <value>Geben Sie ein Fälligkeitsdatum nur für die Umwandlungsrechnung einer Testphase an.</value>
+  </data>
   <data name="ServiceTerminatedAtRequired" xml:space="preserve">
     <value>Geben Sie das Datum ein, an dem der Service beendet wurde.</value>
   </data>

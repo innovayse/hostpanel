@@ -1012,6 +1012,12 @@
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Այս ծառայությունը ակտիվ չէ։</value>
   </data>
+  <data name="SERVICE_NOT_IN_TRIAL" xml:space="preserve">
+    <value>Այս ծառայությունը ընթացիկ անվճար փորձաշրջանում չէ։</value>
+  </data>
+  <data name="SERVICE_TRIAL_DUE_DATE_FIXED" xml:space="preserve">
+    <value>Ընթացիկ անվճար փորձաշրջանում գտնվող ծառայության հաջորդ վճարման ամսաթիվը հնարավոր չէ փոխել։</value>
+  </data>
   <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
     <value>Այս ծառայությունն արդեն դադարեցված է։</value>
   </data>

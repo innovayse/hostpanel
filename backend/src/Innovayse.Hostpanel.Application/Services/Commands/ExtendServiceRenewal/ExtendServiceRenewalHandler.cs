@@ -31,6 +31,7 @@ public sealed class ExtendServiceRenewalHandler
         }
 
         service.ExtendRenewalTo(cmd.PeriodEnd);
+        service.CompleteTrialConversion();
         await _context.SaveChangesAsync(ct);
         return Result.Success();
     }

@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -34,7 +35,8 @@ public sealed class UpdateServiceBillingTermsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the id names no service, or <c>PRODUCT_NOT_FOUND</c>
-    /// when the service is moved to a product that does not exist.
+    /// when the service is moved to a product that does not exist, or <c>SERVICE_TRIAL_DUE_DATE_FIXED</c> when its free
+    /// trial is running and another next renewal date is given (nothing is saved).
     /// </returns>
     public async Task<Result> HandleAsync(UpdateServiceBillingTermsCommand cmd, CancellationToken ct)
     {
@@ -56,15 +58,23 @@ public sealed class UpdateServiceBillingTermsHandler
             service.ChangeProduct(cmd.ProductId);
         }
 
-        service.ChangeBillingTerms(new ServiceBillingTerms(
-            cmd.BillingCycle,
-            cmd.Quantity,
-            cmd.FirstPaymentAmount,
-            cmd.RecurringAmount,
-            cmd.NextRenewalAt,
-            cmd.PaymentMethod,
-            cmd.PromotionCode,
-            cmd.SubscriptionId));
+        try
+        {
+            service.ChangeBillingTerms(new ServiceBillingTerms(
+                cmd.BillingCycle,
+                cmd.Quantity,
+                cmd.FirstPaymentAmount,
+                cmd.RecurringAmount,
+                cmd.NextRenewalAt,
+                cmd.PaymentMethod,
+                cmd.PromotionCode,
+                cmd.SubscriptionId));
+        }
+        catch (DomainRuleException ex)
+        {
+            // A running trial keeps its due date: its conversion invoice is found by it.
+            return Result.FailureCode(ex.Code);
+        }
 
         await _context.SaveChangesAsync(ct);
         return Result.Success();

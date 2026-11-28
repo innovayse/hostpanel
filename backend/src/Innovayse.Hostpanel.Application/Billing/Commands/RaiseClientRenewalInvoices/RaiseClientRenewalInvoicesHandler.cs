@@ -8,7 +8,9 @@ using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetTldRenewPrice;
 using Innovayse.Hostpanel.Application.Orders.Queries.ListPendingDomainRenewOrderInvoices;
+using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
+using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -25,6 +27,11 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInv
 /// inside the lead time that are not already invoiced for their next period, prices them, raises one
 /// invoice (or one per line under <c>SeparateInvoices</c>), and applies credit. Nothing is extended
 /// here: that happens only when the line is paid (<c>ApplyPaidRenewalsCommand</c>).
+/// <para>
+/// With <see cref="RaiseClientRenewalInvoicesCommand.TrialServiceId"/> it raises the conversion invoice of that
+/// trial instead: one invoice with only that service's line, due on
+/// <see cref="RaiseClientRenewalInvoicesCommand.DueAt"/>, under the same client checks, lock and credit rules.
+/// </para>
 /// <para>
 /// Due date: the earliest period start on the invoice when that is still ahead; when a period
 /// already started (a back-dated renewal date, a service catching up after a missed payment) the
@@ -154,8 +161,16 @@ public sealed class RaiseClientRenewalInvoicesHandler
         var payer = await _payerCurrency.ForClientAsync(client.Id, ct);
 
         var lines = new List<PendingLine>();
-        lines.AddRange(await DueServiceLinesAsync(client.Id, now, horizon, ct));
-        lines.AddRange(await DueDomainLinesAsync(client.Id, now, settings, payer, ct));
+        if (cmd.TrialServiceId is { } trialServiceId)
+        {
+            lines.AddRange(await TrialConversionLinesAsync(client.Id, trialServiceId, ct));
+        }
+        else
+        {
+            lines.AddRange(await DueServiceLinesAsync(client.Id, now, horizon, ct));
+            lines.AddRange(await DueDomainLinesAsync(client.Id, now, settings, payer, ct));
+        }
+
         if (lines.Count == 0)
         {
             return Result.Success(0);
@@ -169,7 +184,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
         var raised = 0;
         foreach (var group in groups)
         {
-            var invoice = Invoice.Create(client.Id, DueDateOf(group, now, settings.InvoiceDaysBefore), payer.Code, now);
+            var invoice = Invoice.Create(client.Id, cmd.DueAt ?? DueDateOf(group, now, settings.InvoiceDaysBefore), payer.Code, now);
             foreach (var line in group)
             {
                 line.AddTo(invoice);
@@ -286,46 +301,91 @@ public sealed class RaiseClientRenewalInvoicesHandler
         var result = new List<PendingLine>();
         foreach (var service in services)
         {
-            var start = service.NextRenewalAt;
-            var terminating = service.AutoTerminateEndOfCycle;
-            if (terminating || service.HasOpenCancellation)
+            if (service.EndsAtPeriodEnd)
             {
-                if (start < now)
+                if (service.NextRenewalAt < now)
                 {
                     _logger.LogWarning(
                         "Service {ServiceId} is running past its paid period without billing (renewal date {NextRenewalAt:u}; {Why}); terminate it or clear the flag.",
-                        service.Id, start, terminating ? "set to terminate at the end of its cycle" : "open cancellation request");
+                        service.Id,
+                        service.NextRenewalAt,
+                        service.AutoTerminateEndOfCycle ? "set to terminate at the end of its cycle" : "open cancellation request");
                 }
 
                 continue;
             }
 
-            var end = RenewalPeriod.EndOf(start, service.BillingCycle, service.AnchorDay);
-
-            if (service.RecurringAmount < 0)
+            if (await ServiceLineAsync(service, products[service.ProductId], ct) is { } line)
             {
-                // A bad price on one service must not stop the client's other renewals; staff fix
-                // the amount and the next run raises it.
-                _logger.LogWarning(
-                    "Service {ServiceId} has a negative recurring amount {Amount}; not invoiced.", service.Id, service.RecurringAmount);
-                continue;
+                result.Add(line);
             }
-
-            if (await IsServiceInvoicedAsync(service.Id, start, ct))
-            {
-                continue;
-            }
-
-            // The line keeps what the product is now, so a fulfilment plugin told about the paid renewal
-            // delivers what is sold today, not what the catalogue held when the service was first ordered.
-            var product = products[service.ProductId];
-            var snapshot = product.Fulfilment.ToSnapshot(service.BillingCycle);
-            result.Add(new PendingLine(
-                start,
-                inv => inv.AddServiceRenewal($"Renewal: {product.Name}", service.RecurringAmount, service.Id, start, end, snapshot)));
         }
 
         return result;
+    }
+
+    /// <summary>The line of a converted trial's first paid period, when the trial still awaits that payment.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <param name="serviceId">The trial service.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The one line to raise, or none.</returns>
+    /// <remarks>
+    /// Read through its own query, not <c>GetRenewableServices</c>, which leaves running trials out of the
+    /// sweep. Nothing is raised for a service of another client, a trial not awaiting payment, a service set to
+    /// end (termination is the trial job's), a negative price, or a period already invoiced, so a repeated
+    /// conversion raises the invoice once.
+    /// </remarks>
+    private async Task<List<PendingLine>> TrialConversionLinesAsync(int clientId, int serviceId, CancellationToken ct)
+    {
+        var service = await _bus.GetTrialConversionServiceAsync(serviceId, ct);
+        if (service is null || service.ClientId != clientId)
+        {
+            return [];
+        }
+
+        if (service.EndsAtPeriodEnd)
+        {
+            _logger.LogInformation(
+                "Trial service {ServiceId} not invoiced for its conversion: it is set to end.", service.Id);
+            return [];
+        }
+
+        var products = await _bus.GetRequiredProductSummariesByIdAsync([service.ProductId], ct);
+        return await ServiceLineAsync(service, products[service.ProductId], ct) is { } line ? [line] : [];
+    }
+
+    /// <summary>
+    /// The line billing a service's next period, shared by the renewal sweep and the trial conversion; the caller has
+    /// already left out a service set to end at the end of its period.
+    /// </summary>
+    /// <param name="service">The service, with the start of the period to bill.</param>
+    /// <param name="product">The product the service was ordered from.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The line, or <see langword="null"/> for a negative price (logged) or a period already invoiced.</returns>
+    private async Task<PendingLine?> ServiceLineAsync(RenewableServiceDto service, ProductSummaryDto product, CancellationToken ct)
+    {
+        if (service.RecurringAmount < 0)
+        {
+            // A bad price on one service must not stop the client's other renewals; staff fix
+            // the amount and the next run raises it.
+            _logger.LogWarning(
+                "Service {ServiceId} has a negative recurring amount {Amount}; not invoiced.", service.Id, service.RecurringAmount);
+            return null;
+        }
+
+        var start = service.NextRenewalAt;
+        if (await IsServiceInvoicedAsync(service.Id, start, ct))
+        {
+            return null;
+        }
+
+        // The line keeps what the product is now, so a fulfilment plugin told about the paid renewal
+        // delivers what is sold today, not what the catalogue held when the service was first ordered.
+        var end = RenewalPeriod.EndOf(start, service.BillingCycle, service.AnchorDay);
+        var snapshot = product.Fulfilment.ToSnapshot(service.BillingCycle);
+        return new PendingLine(
+            start,
+            inv => inv.AddServiceRenewal($"Renewal: {product.Name}", service.RecurringAmount, service.Id, start, end, snapshot));
     }
 
     /// <summary>The client's domains due a renewal line, priced from their TLD.</summary>

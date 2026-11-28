@@ -1,9 +1,11 @@
+using Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInvoices;
 using Innovayse.Hostpanel.Application.Billing.Commands.SendRenewalReminder;
 using Innovayse.Hostpanel.Application.Billing.Commands.SendRenewalRemindersCron;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +52,8 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
         var invoice = Invoice.Create(client.Id, now.AddDays(dueInDays), "USD", now);
         if (renewal)
         {
-            invoice.AddServiceRenewal("Hosting renewal", 25m, 1, now.AddDays(dueInDays), now.AddDays(dueInDays + 30));
+            // No real service: a seeded id would let these open lines block another test's renewal of that service.
+            invoice.AddServiceRenewal("Hosting renewal", 25m, ServicesTestSeeds.NoSuchServiceId, now.AddDays(dueInDays), now.AddDays(dueInDays + 30));
         }
         else
         {
@@ -281,5 +284,45 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
         var dispatched = session.Executed.MessagesOf<SendRenewalReminderCommand>().Select(c => c.InvoiceId).ToList();
         dispatched.Should().NotContain(longOverdueId);
         dispatched.Should().Contain([justOverdueId, dueSoonId]);
+    }
+
+    /// <summary>
+    /// The conversion invoice of a trial is an ordinary renewal invoice raised its grace days (3) before due, so
+    /// with thresholds 7, 3, 1 it gets only the 1-day reminder: nothing on the day it is raised or a day later,
+    /// one mail with one day left. The reminder is the accepted payment nudge, not suppressed for trials.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ConversionInvoice_IsRemindedOnlyBelowTheGrace()
+    {
+        var sender = new FakeEmailSender();
+        using var host = Host(sender);
+        var (clientId, serviceId, email) = await TrialTestSeeds.SeedTrialAsync(
+            host.Services, new TrialSeed(GraceDays: 3, EndsAt: TestMoments.Seeded));
+        var (_, dueAt) = await TrialTestSeeds.BeginConversionAsync(host.Services, serviceId, TestMoments.Seeded);
+        dueAt.Should().Be(TestMoments.Seeded.AddDays(3));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync<Result<int>>(
+            new RaiseClientRenewalInvoicesCommand(clientId, TrialServiceId: serviceId, DueAt: dueAt), CancellationToken.None)).Value.Should().Be(1);
+        var invoiceId = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).Select(i => i.Id).SingleAsync();
+
+        int Reminders() => sender.Sent.Count(m => m.To == email && m.Subject.Contains($"Invoice #{invoiceId} is due on", StringComparison.Ordinal));
+
+        await RunAsync(scope.ServiceProvider);
+        Reminders().Should().Be(0);
+
+        host.Clock.Advance(TimeSpan.FromDays(1));
+        await RunAsync(scope.ServiceProvider);
+        Reminders().Should().Be(0);
+
+        host.Clock.Advance(TimeSpan.FromDays(1));
+        await RunAsync(scope.ServiceProvider);
+        await RunAsync(scope.ServiceProvider);
+        Reminders().Should().Be(1);
+
+        var days = await context.InvoiceReminders.AsNoTracking()
+            .Where(r => r.InvoiceId == invoiceId).Select(r => r.DaysBefore).ToListAsync();
+        days.Should().Equal(1);
     }
 }

@@ -15,6 +15,15 @@ public static class ServicesErrors
     /// <summary>The service is not Active (400): <see cref="ClientService.Suspend"/>.</summary>
     public const string ServiceNotActive = "SERVICE_NOT_ACTIVE";
 
+    /// <summary>The service is not in a running free trial (409): <see cref="ClientService.BeginTrialConversion"/>.</summary>
+    public const string ServiceNotInTrial = "SERVICE_NOT_IN_TRIAL";
+
+    /// <summary>
+    /// The next due date of a service whose free trial is running cannot be changed (409), from
+    /// <see cref="ClientService.ChangeBillingTerms"/>: the trial's conversion invoice is found by that date.
+    /// </summary>
+    public const string ServiceTrialDueDateFixed = "SERVICE_TRIAL_DUE_DATE_FIXED";
+
     /// <summary>The service is already terminated (400): <see cref="ClientService.Terminate"/>.</summary>
     public const string ServiceTerminateNotAllowed = "SERVICE_TERMINATE_NOT_ALLOWED";
 

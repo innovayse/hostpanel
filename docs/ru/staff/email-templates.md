@@ -104,7 +104,12 @@ keywords: "шаблоны писем, плейсхолдеры, транзакц
 <SettingTable :settings="[
   { name: 'service-provisioned', type: 'string', default: '', description: 'Отправляется клиенту, когда услуга настроена. Плейсхолдеры: service.id, service.provisioning_ref, service.domain, service.username' },
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Отправляется сотрудникам, когда не удалось завершить услугу. Плейсхолдеры: service.id, reason' },
+  { name: 'trial-ending', type: 'string', default: '', description: 'Отправляется клиенту перед окончанием пробного периода в каждый день напоминания продукта. Плейсхолдеры: trial.service_id, trial.product_name, trial.end_date, trial.service_url, days_left' },
+  { name: 'trial-converted', type: 'string', default: '', description: 'Отправляется клиенту, когда пробный период переведён на платную услугу и выставлен счёт. Плейсхолдеры: trial.service_id, trial.product_name, trial.end_date, trial.service_url, payment_due_date' },
+  { name: 'trial-ended', type: 'string', default: '', description: 'Отправляется клиенту, когда пробный период завершён. Плейсхолдеры: trial.service_id, trial.product_name, trial.end_date, trial.service_url' },
 ]" />
+
+Три шаблона пробного периода (`trial-ending`, `trial-converted`, `trial-ended`) создаются на английском, русском, армянском, немецком и испанском, как и остальные шаблоны. Французской версии нет, поэтому клиент с французским языком получает английский текст.
 
 ### Плагины {#plugins}
 

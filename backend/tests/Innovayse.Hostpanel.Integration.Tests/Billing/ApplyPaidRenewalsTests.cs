@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Commands.ApplyPaidRenewals;
+using Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInvoices;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -131,6 +132,68 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
         }
 
         return sender.Sent.Where(m => m.To == AdminEmail).ToList();
+    }
+
+    /// <summary>
+    /// The paid conversion invoice of a trial extends the service one month past the end of the trial and marks
+    /// the trial converted to paid.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ConversionInvoicePaid_MarksTheServiceConvertedToPaid()
+    {
+        using var host = new ClockedHost(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, new FakeEmailSender()));
+        var (clientId, serviceId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        var (start, dueAt) = await TrialTestSeeds.BeginConversionAsync(host.Services, serviceId, TestMoments.Seeded);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        (await bus.InvokeAsync<Result<int>>(
+            new RaiseClientRenewalInvoicesCommand(clientId, TrialServiceId: serviceId, DueAt: dueAt), CancellationToken.None)).Value.Should().Be(1);
+        var invoice = await context.Invoices.SingleAsync(i => i.ClientId == clientId, CancellationToken.None);
+        invoice.RecordPaidHistory("t", TestMoments.Seeded);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var service = await ReloadServiceAsync(context, serviceId);
+        service.TrialStatus.Should().Be(TrialStatus.ConvertedToPaid);
+        service.TrialEndsAt.Should().Be(start);
+        service.NextRenewalAt.Should().Be(start.AddMonths(1));
+    }
+
+    /// <summary>
+    /// A conversion invoice the client's credit covers is paid when it is raised, and applying it converts the
+    /// trial at once: the service was already awaiting payment when the invoice was raised.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ZeroTotalConversionInvoice_ConvertsAtOnce()
+    {
+        using var host = new ClockedHost(factory, configure: builder => EventHandlerTestHost.UseFakeRelay(builder, new FakeEmailSender()));
+        var (clientId, serviceId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        var (start, dueAt) = await TrialTestSeeds.BeginConversionAsync(host.Services, serviceId, TestMoments.Seeded);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var client = await context.Clients.SingleAsync(c => c.Id == clientId, CancellationToken.None);
+        client.AddCredit(50m);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        (await bus.InvokeAsync<Result<int>>(
+            new RaiseClientRenewalInvoicesCommand(clientId, TrialServiceId: serviceId, DueAt: dueAt), CancellationToken.None)).Value.Should().Be(1);
+        var invoice = await context.Invoices.AsNoTracking().SingleAsync(i => i.ClientId == clientId, CancellationToken.None);
+        invoice.Status.Should().Be(InvoiceStatus.Paid);
+        invoice.Total.Should().Be(0m);
+
+        // The fast path is suppressed on this host, so the command the payment event would send is sent here.
+        var result = await bus.InvokeAsync<Result>(new ApplyPaidRenewalsCommand(invoice.Id), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var service = await ReloadServiceAsync(context, serviceId);
+        service.TrialStatus.Should().Be(TrialStatus.ConvertedToPaid);
+        service.NextRenewalAt.Should().Be(start.AddMonths(1));
     }
 
     /// <summary>A fully paid service line extends the service to the period end and is marked applied.</summary>

@@ -1062,4 +1062,149 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
     }
+
+    /// <summary>
+    /// The conversion of a trial raises one invoice holding only the trial's line, for one month from the end of the
+    /// trial and due on the date given, even while the client has another service and a domain due.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TrialConversion_RaisesOneInvoiceWithTheServiceLineDueAtTheGivenDate()
+    {
+        using var host = Host(new FakeEmailSender());
+        var (clientId, trialId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        var (start, dueAt) = await TrialTestSeeds.BeginConversionAsync(host.Services, trialId, TestMoments.Seeded);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var (_, other, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), clientId: clientId);
+        var (domain, _) = await SeedDomainAsync(context, clientId, TestMoments.Seeded.AddDays(10), new() { [1] = 12m });
+
+        var result = await RaiseConversionAsync(bus, clientId, trialId, dueAt);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(1);
+        var trialEndsAt = (await ReloadServiceAsync(context, trialId)).TrialEndsAt;
+        trialEndsAt.Should().Be(start);
+        var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
+        invoice.Status.Should().Be(InvoiceStatus.Unpaid);
+        invoice.DueDate.Should().Be(dueAt);
+        invoice.Total.Should().Be(10m);
+        invoice.Currency.Should().Be("USD");
+        dueAt.Should().Be(start.AddDays(3));
+        var line = invoice.Items.Should().ContainSingle().Subject;
+        line.ClientServiceId.Should().Be(trialId);
+        line.RegisteredDomainId.Should().BeNull();
+        line.Description.Should().Be("Renewal: Trial Starter");
+        line.Amount.Should().Be(10m);
+        line.RenewalPeriodStart.Should().Be(trialEndsAt);
+        line.RenewalPeriodEnd.Should().Be(start.AddMonths(1));
+        invoice.Items.Should().NotContain(l => l.ClientServiceId == other.Id || l.RegisteredDomainId == domain.Id);
+    }
+
+    /// <summary>Raising the conversion invoice twice raises it once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TrialConversion_Twice_RaisesOnce()
+    {
+        using var host = Host(new FakeEmailSender());
+        var (clientId, trialId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        var (_, dueAt) = await TrialTestSeeds.BeginConversionAsync(host.Services, trialId, TestMoments.Seeded);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        (await RaiseConversionAsync(bus, clientId, trialId, dueAt)).Value.Should().Be(1);
+        var again = await RaiseConversionAsync(bus, clientId, trialId, dueAt);
+
+        again.IsSuccess.Should().BeTrue();
+        again.Value.Should().Be(0);
+        (await InvoicesOfAsync(context, clientId)).Should().ContainSingle();
+    }
+
+    /// <summary>A trial that is still running (not converted) raises nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TrialConversion_OfAnActiveTrial_RaisesNothing()
+    {
+        using var host = Host(new FakeEmailSender());
+        var (clientId, trialId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var result = await RaiseConversionAsync(bus, clientId, trialId, TestMoments.Seeded.AddDays(3));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(0);
+        (await InvoicesOfAsync(context, clientId)).Should().BeEmpty();
+    }
+
+    /// <summary>A converted trial named under another client raises nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TrialConversion_OfAnotherClientsService_RaisesNothing()
+    {
+        using var host = Host(new FakeEmailSender());
+        var (ownerId, trialId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        var (_, dueAt) = await TrialTestSeeds.BeginConversionAsync(host.Services, trialId, TestMoments.Seeded);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var stranger = await SeedClientAsync(context);
+
+        var result = await RaiseConversionAsync(bus, stranger.Id, trialId, dueAt);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(0);
+        (await InvoicesOfAsync(context, stranger.Id)).Should().BeEmpty();
+        (await InvoicesOfAsync(context, ownerId)).Should().BeEmpty();
+    }
+
+    /// <summary>The daily sweep still leaves a converted trial awaiting payment out, while it bills the client's other service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DailySweep_StillSkipsTheConversionService()
+    {
+        using var host = Host(new FakeEmailSender());
+        var (clientId, trialId, _) = await TrialTestSeeds.SeedTrialAsync(host.Services, new TrialSeed(EndsAt: TestMoments.Seeded.AddDays(-1)));
+        await TrialTestSeeds.BeginConversionAsync(host.Services, trialId, TestMoments.Seeded);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var (_, other, _) = await SeedServiceAsync(context, TestMoments.Seeded.AddDays(10), clientId: clientId);
+
+        var result = await RaiseAsync(bus, clientId);
+
+        result.Value.Should().Be(1);
+        var invoice = (await InvoicesOfAsync(context, clientId)).Should().ContainSingle().Subject;
+        invoice.Items.Should().ContainSingle().Which.ClientServiceId.Should().Be(other.Id);
+    }
+
+    /// <summary>A due date without a trial service is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DueAtWithoutATrialService_IsRefused()
+    {
+        using var host = Host(new FakeEmailSender());
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var client = await SeedClientAsync(context);
+
+        var act = () => bus.InvokeAsync<Result<int>>(
+            new RaiseClientRenewalInvoicesCommand(client.Id, DueAt: TestMoments.Seeded.AddDays(3)), CancellationToken.None);
+
+        await act.Should().ThrowAsync<FluentValidation.ValidationException>();
+    }
+
+    /// <summary>Raises the conversion invoice of a trial.</summary>
+    /// <param name="bus">The message bus.</param>
+    /// <param name="clientId">The client.</param>
+    /// <param name="serviceId">The trial service.</param>
+    /// <param name="dueAt">The invoice's due date.</param>
+    /// <returns>The command's result.</returns>
+    private static Task<Result<int>> RaiseConversionAsync(IMessageBus bus, int clientId, int serviceId, DateTimeOffset dueAt) =>
+        bus.InvokeAsync<Result<int>>(
+            new RaiseClientRenewalInvoicesCommand(clientId, TrialServiceId: serviceId, DueAt: dueAt), CancellationToken.None);
 }

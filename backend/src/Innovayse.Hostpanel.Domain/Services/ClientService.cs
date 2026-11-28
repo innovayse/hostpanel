@@ -52,6 +52,12 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <summary>Gets how many days the first invoice of a converted trial may stay unpaid.</summary>
     public int TrialGracePeriodDays { get; private set; }
 
+    /// <summary>Gets the UTC moment a converted trial's first invoice must be paid by, or <see langword="null"/> until the trial is converted. It is never cleared afterwards.</summary>
+    public DateTimeOffset? TrialPaymentDueAt { get; private set; }
+
+    /// <summary>Gets whether the trial is running: <see cref="Enums.TrialStatus.Active"/> or <see cref="Enums.TrialStatus.AwaitingPayment"/>.</summary>
+    public bool IsTrialRunning => TrialStatus is Enums.TrialStatus.Active or Enums.TrialStatus.AwaitingPayment;
+
     /// <summary>Gets the days before the trial end reminders go out on, comma separated and descending (for example <c>3,1</c>), or <see langword="null"/> when it is not a trial.</summary>
     public string? TrialReminderDays { get; private set; }
 
@@ -302,7 +308,7 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <param name="now">The moment to count from (UTC), read by the caller.</param>
     /// <returns>
     /// The days left, or <see langword="null"/> when the service is not a trial or its trial is not
-    /// <see cref="Enums.TrialStatus.Active"/> (no other status exists yet).
+    /// <see cref="Enums.TrialStatus.Active"/> (it is also null once the trial is awaiting payment, converted or terminated).
     /// </returns>
     public int? TrialDaysLeft(DateTimeOffset now)
     {
@@ -314,6 +320,84 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         var remaining = endsAt - now;
 
         return remaining <= TimeSpan.Zero ? 0 : (int)Math.Ceiling(remaining.TotalDays);
+    }
+
+    /// <summary>
+    /// Converts the running trial into a paid service awaiting its first payment: the paid period starts at
+    /// the earlier of the trial end and <paramref name="now"/> (an early upgrade starts it now), the first
+    /// invoice is due the grace days later (from <paramref name="now"/> when that is already past), and
+    /// <see cref="TrialConvertedEvent"/> is raised.
+    /// </summary>
+    /// <param name="now">The current moment (UTC), read by the caller.</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="ServicesErrors.ServiceNotInTrial"/> unless the trial is Active, and with
+    /// <see cref="ServicesErrors.ServiceNotActive"/> unless the service is Active.
+    /// </exception>
+    public void BeginTrialConversion(DateTimeOffset now)
+    {
+        if (TrialStatus != Enums.TrialStatus.Active || TrialEndsAt is not { } endsAt)
+        {
+            throw new DomainRuleException(ServicesErrors.ServiceNotInTrial, "The service is not in a running free trial.");
+        }
+
+        if (Status is not ServiceStatus.Active)
+        {
+            throw new DomainRuleException(
+                ServicesErrors.ServiceNotActive, $"Cannot convert the trial of a service with status {Status}.");
+        }
+
+        var start = endsAt < now ? endsAt : now;
+        var due = start.AddDays(TrialGracePeriodDays);
+        if (due < now)
+        {
+            due = now.AddDays(TrialGracePeriodDays);
+        }
+
+        TrialEndsAt = start;
+        NextRenewalAt = start;
+        TrialPaymentDueAt = due;
+        TrialStatus = Enums.TrialStatus.AwaitingPayment;
+        AddDomainEvent(new TrialConvertedEvent(Id, ClientId, start, due, now));
+    }
+
+    /// <summary>Marks a converted trial as paid: <see cref="Enums.TrialStatus.AwaitingPayment"/> becomes <see cref="Enums.TrialStatus.ConvertedToPaid"/>.</summary>
+    /// <returns><see langword="true"/> when the status changed; <see langword="false"/> (and nothing happens) in any other state.</returns>
+    public bool CompleteTrialConversion()
+    {
+        if (TrialStatus != Enums.TrialStatus.AwaitingPayment)
+        {
+            return false;
+        }
+
+        TrialStatus = Enums.TrialStatus.ConvertedToPaid;
+        return true;
+    }
+
+    /// <summary>
+    /// Finds the reminder due now: the smallest reminder day that is not below the days left, so a day
+    /// that was missed is not sent late once a smaller one is due.
+    /// </summary>
+    /// <param name="now">The current moment (UTC), read by the caller.</param>
+    /// <returns>The reminder day, or <see langword="null"/> when the trial is not Active, has ended, or no reminder day applies yet.</returns>
+    public int? DueTrialReminder(DateTimeOffset now)
+    {
+        if (Status is not ServiceStatus.Active || TrialStatus != Enums.TrialStatus.Active
+            || TrialEndsAt is not { } endsAt || endsAt <= now)
+        {
+            return null;
+        }
+
+        var daysLeft = TrialDaysLeft(now) ?? 0;
+        int? due = null;
+        foreach (var day in ProductTrial.ParseReminderDays(TrialReminderDays))
+        {
+            if (day >= daysLeft && (due is null || day < due))
+            {
+                due = day;
+            }
+        }
+
+        return due;
     }
 
     /// <summary>
@@ -513,7 +597,8 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Terminates the service and raises <see cref="ClientServiceTerminatedEvent"/>
-    /// and <see cref="ServiceTerminatedEvent"/>.
+    /// and <see cref="ServiceTerminatedEvent"/>. A running free trial is marked terminated and raises
+    /// <see cref="TrialEndedEvent"/> with the earlier of its end and <paramref name="now"/> as the end date.
     /// </summary>
     /// <param name="now">The current moment (UTC), read by the caller; becomes <see cref="TerminatedAt"/> and is stamped on the domain events.</param>
     /// <param name="reason">Human-readable reason for the termination.</param>
@@ -532,6 +617,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         Status = ServiceStatus.Terminated;
         TerminatedAt = now;
         AddDomainEvent(new ClientServiceTerminatedEvent(Id, ClientId, now));
+        if (IsTrialRunning)
+        {
+            // An early termination ends the trial now, so the mail never names an end still to come.
+            var endedAt = TrialEndsAt is { } endsAt && endsAt < now ? endsAt : now;
+            TrialStatus = Enums.TrialStatus.Terminated;
+            AddDomainEvent(new TrialEndedEvent(Id, ClientId, endedAt, now));
+        }
+
         if (!hostingAlreadyUpdated)
         {
             AddDomainEvent(new ServiceTerminatedEvent(Id, ClientId, reason, now));
@@ -583,12 +676,22 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Replaces what the service is billed: cycle, quantity, both amounts, the next renewal date and the
-    /// payment references, as one change.
+    /// payment references, as one change. While a free trial is running (<see cref="IsTrialRunning"/>) the next
+    /// renewal date stays as it is: the trial's end and its conversion invoice are found by it.
     /// </summary>
     /// <param name="terms">The new billing terms.</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="ServicesErrors.ServiceTrialDueDateFixed"/> when the trial is running and the terms name another
+    /// next renewal date.
+    /// </exception>
     public void ChangeBillingTerms(ServiceBillingTerms terms)
     {
         ArgumentNullException.ThrowIfNull(terms);
+        if (IsTrialRunning && terms.NextRenewalAt != NextRenewalAt)
+        {
+            throw new DomainRuleException(
+                ServicesErrors.ServiceTrialDueDateFixed, "The next due date of a service in a running free trial cannot be changed.");
+        }
 
         BillingCycle = terms.BillingCycle;
         Quantity = terms.Quantity;

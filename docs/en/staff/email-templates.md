@@ -104,7 +104,12 @@ Example using a condition and a loop:
 <SettingTable :settings="[
   { name: 'service-provisioned', type: 'string', default: '', description: 'Sent to the client when a service is provisioned. Placeholders: service.id, service.provisioning_ref, service.domain, service.username' },
   { name: 'service-termination-failed-admin', type: 'string', default: '', description: 'Sent to staff when service termination fails. Placeholders: service.id, reason' },
+  { name: 'trial-ending', type: 'string', default: '', description: 'Sent to the client before a free trial ends, on each reminder day of the product. Placeholders: trial.service_id, trial.product_name, trial.end_date, trial.service_url, days_left' },
+  { name: 'trial-converted', type: 'string', default: '', description: 'Sent to the client when a free trial is converted and its invoice is raised. Placeholders: trial.service_id, trial.product_name, trial.end_date, trial.service_url, payment_due_date' },
+  { name: 'trial-ended', type: 'string', default: '', description: 'Sent to the client when a free trial is terminated. Placeholders: trial.service_id, trial.product_name, trial.end_date, trial.service_url' },
 ]" />
+
+The three trial templates (`trial-ending`, `trial-converted`, `trial-ended`) are created in English, Russian, Armenian, German and Spanish, like the other templates. There is no French version, so a client whose language is French gets the English text.
 
 ### Plugins
 

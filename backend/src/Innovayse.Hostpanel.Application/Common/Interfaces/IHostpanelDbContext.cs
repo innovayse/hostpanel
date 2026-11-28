@@ -108,6 +108,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the records of the free trials clients used, one per client and product.</summary>
     public DbSet<ClientProductTrial> ClientProductTrials { get; }
 
+    /// <summary>Gets the free trial reminders already sent, one per service and reminder day.</summary>
+    public DbSet<TrialReminder> TrialReminders { get; }
+
     /// <summary>Gets the plan change requests table.</summary>
     public DbSet<ServiceChangeRequest> ServiceChangeRequests { get; }
 

@@ -36,6 +36,7 @@ export const integrationDetail = (overrides: Partial<IntegrationDetailWireDto> =
   slug: 'bank-transfer',
   name: 'Bank Transfer',
   isEnabled: true,
+  isPlugin: false,
   config: {
     secretKey: { value: null, isSecret: true, hasValue: true },
     mode: { value: 'Test', isSecret: false, hasValue: true },

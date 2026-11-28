@@ -29,6 +29,7 @@ export const bankTransferDetail: IntegrationDetailWireDto = {
   slug: bankTransfer.slug,
   name: bankTransfer.name,
   isEnabled: bankTransfer.isEnabled,
+  isPlugin: bankTransfer.isPlugin,
   config: {
     accountHolder: { value: '', isSecret: false, hasValue: false },
     iban: { value: '', isSecret: false, hasValue: false },

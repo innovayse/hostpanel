@@ -99,6 +99,9 @@ public static class StatusMapping
             // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host
             // assembly refusal; the CONFLICT in the name must not reach the generic arm below that answers 409.
             "PLUGIN_ASSEMBLY_CONFLICT" => new(400, "Bad Request"),
+            // Exact row: a terminated service cannot change status, a refusal of the request itself (400) like the other
+            // two status reasons; the _LOCKED ending must not reach the generic arm below that answers 423.
+            "SERVICE_TERMINATED_STATUS_LOCKED" => new(400, "Bad Request"),
             // An upload older than the installed version, and a purge of data whose plugin is still installed: the target's state refuses it.
             "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
             // Exact row: the package is well formed, but the running host version is outside the range it declares.

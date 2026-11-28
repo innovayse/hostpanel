@@ -41,6 +41,11 @@ public sealed class FindClientIdsHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        if (string.IsNullOrWhiteSpace(query.Search))
+        {
+            return Result<IReadOnlyList<int>>.Success([]);
+        }
+
         var subjects = await _identity.FindSubjectsAsync(query.Search, ct);
         var clients = _context.Clients.AsNoTracking();
 

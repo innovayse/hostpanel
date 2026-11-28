@@ -92,7 +92,7 @@ describe('option lists', () => {
     expect(valuesOf(BILLING_CYCLE_OPTIONS)).toEqual(membersOf(BillingCycle))
     expect(valuesOf(BILLABLE_ITEM_TYPE_OPTIONS)).toEqual(membersOf(BillableItemType))
     expect(valuesOf(RECURRING_PERIOD_OPTIONS)).toEqual(membersOf(RecurringPeriod))
-    expect(valuesOf(GATEWAY_OPTIONS)).toEqual([PaymentMethod.None, PaymentMethod.BankTransfer])
+    expect(valuesOf(GATEWAY_OPTIONS)).toEqual([PaymentMethod.BankTransfer, PaymentMethod.None])
     expect(valuesOf(CAMPAIGN_STATUS_OPTIONS)).toEqual(membersOf(CampaignStatus))
     expect(valuesOf(ENABLED_FILTER_OPTIONS)).toEqual(membersOf(EnabledFilter))
     expect(valuesOf(PUBLISHED_FILTER_OPTIONS)).toEqual(membersOf(PublishedFilter))

@@ -3,7 +3,7 @@
     "services": "Услуги",
     "viewAndManageAllClient": "Просмотр всех хостинг-услуг клиентов и управление ими",
     "noServicesFound": "Услуги не найдены",
-    "searchServices": "Поиск по домену, продукту или ID",
+    "searchServices": "Поиск по домену, продукту, клиенту или ID",
     "noServicesMatchYourFilters": "Нет услуг, соответствующих фильтрам"
   }
 }

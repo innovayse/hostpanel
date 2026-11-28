@@ -176,7 +176,7 @@
   "supportTickets": {
     "supportTickets": "Tickets de soporte",
     "manageAllClientSupportRequests": "Gestionar todas las solicitudes de soporte de clientes",
-    "searchTicketsBySubject": "Buscar tickets por asunto...",
+    "searchTicketsBySubject": "Buscar por asunto o ID del ticket",
     "flag": "Marcar",
     "unflag": "Desmarcar",
     "noRepliesYet": "Todavía no hay respuestas",

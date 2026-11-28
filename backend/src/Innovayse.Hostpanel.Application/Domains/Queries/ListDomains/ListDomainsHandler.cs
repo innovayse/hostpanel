@@ -10,7 +10,7 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
 
 /// <summary>
-/// Returns a paginated list of all domains for the admin view, narrowed by the search text on the name and by owner,
+/// Returns a paginated list of all domains for the admin view, narrowed by the search text on the name, id and owning client (name, company, sign-in email) and by owner,
 /// status and registrar module, all in SQL ahead of paging.
 /// </summary>
 public sealed class ListDomainsHandler
@@ -45,7 +45,9 @@ public sealed class ListDomainsHandler
             domainsQuery = domainsQuery.Where(x => x.ClientId == query.ClientId.Value);
         }
 
-        domainsQuery = domainsQuery.Search(query.Search, x => x.Name);
+        // The client is not a column of the domain, so the Clients module is asked which clients the text names.
+        var matchingClientIds = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        domainsQuery = domainsQuery.SearchIncludingIdOrMatching(query.Search, x => x.Id, x => matchingClientIds.Contains(x.ClientId), x => x.Name);
 
         if (query.Status is { } status)
         {

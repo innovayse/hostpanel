@@ -11,7 +11,7 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Orders.Queries.ListOrders;
 
 /// <summary>
-/// Returns a paged list of orders, narrowed by the search text on the order number and id and by status in SQL ahead of
+/// Returns a paged list of orders, narrowed by the search text on the order number, id and client (name, company, sign-in email) and by status in SQL ahead of
 /// paging, mapped to <see cref="OrderListItemDto"/>. Batch-fetches client names from the Clients module in one dispatch to avoid N+1 queries.
 /// </summary>
 public sealed class ListOrdersHandler
@@ -39,7 +39,10 @@ public sealed class ListOrdersHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var filtered = _context.Orders.AsNoTracking().SearchIncludingId(query.Search, o => o.Id, o => o.OrderNumber);
+        // The client is not a column of the order, so the Clients module is asked which clients the text names.
+        var matchingClientIds = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        var filtered = _context.Orders.AsNoTracking()
+            .SearchIncludingIdOrMatching(query.Search, o => o.Id, o => matchingClientIds.Contains(o.ClientId), o => o.OrderNumber);
         if (query.Status is { } status)
         {
             filtered = filtered.Where(o => o.Status == status);

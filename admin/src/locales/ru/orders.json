@@ -30,7 +30,7 @@
   },
   "ordersList": {
     "manageCustomerOrders": "Управление заказами клиентов",
-    "searchOrders": "Поиск заказов по номеру или id",
+    "searchOrders": "Поиск по номеру заказа, id или клиенту",
     "order": "Заказ №",
     "items": "Позиции",
     "noOrdersFound": "Заказы не найдены",

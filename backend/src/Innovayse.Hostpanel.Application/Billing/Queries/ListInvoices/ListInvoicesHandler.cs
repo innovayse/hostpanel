@@ -40,6 +40,8 @@ public sealed class ListInvoicesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+
         IQueryable<Invoice> filtered = _context.Invoices.AsNoTracking();
 
         if (query.ClientId is { } clientId)
@@ -49,7 +51,7 @@ public sealed class ListInvoicesHandler
 
         // The id ends the order so a page never repeats or skips a row between requests.
         var ordered = filtered
-            .Matching(query)
+            .Matching(query, clientsMatchingSearch)
             .OrderByDescending(x => x.CreatedAt)
             .ThenByDescending(x => x.Id);
         var total = await ordered.CountAsync(ct);

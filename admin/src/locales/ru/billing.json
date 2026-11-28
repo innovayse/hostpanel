@@ -100,7 +100,7 @@
   "billableItems": {
     "billableItems": "Оплачиваемые позиции",
     "manageUninvoicedAndRecurringCharges": "Управление невыставленными и повторяющимися начислениями",
-    "searchItems": "Поиск по описанию или номеру",
+    "searchItems": "Поиск по описанию, номеру, имени или email клиента",
     "invoiced": "Выставлено",
     "typeOneTime": "Разовое",
     "typeRecurring": "Повторяющееся",
@@ -222,6 +222,7 @@
     "collections": "Взыскание",
     "paymentPending": "Ожидает оплаты",
     "searchInvoices": "Поиск по номеру счёта или способу оплаты",
+    "searchAllInvoices": "Поиск по номеру счёта, способу оплаты, имени или email клиента",
     "deleteInvoice": "Удалить счёт",
     "deleteInvoiceMessage": "Удалить счёт №{id}? Это действие нельзя отменить.",
     "deleteInvoices": "Удалить счета",
@@ -267,7 +268,8 @@
     "noQuotesFound": "Предложения не найдены.",
     "expired": "Истекло",
     "valid": "Действительно",
-    "searchQuotes": "Поиск по теме или номеру предложения"
+    "searchQuotes": "Поиск по теме или номеру предложения",
+    "searchAllQuotes": "Поиск по теме, номеру предложения, имени или email клиента"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Платёжные транзакции и записи",
@@ -283,7 +285,8 @@
     "paymentsSent": "Отправленные платежи",
     "deleteTransaction": "Удалить транзакцию",
     "deleteTransactionMessage": "Удалить транзакцию №{id}? Это действие нельзя отменить.",
-    "searchTransactions": "Поиск по описанию, ссылке или способу оплаты"
+    "searchTransactions": "Поиск по описанию, ссылке или способу оплаты",
+    "searchAllTransactions": "Поиск по описанию, ссылке, способу оплаты, имени или email клиента"
   },
   "invoiceItems": {
     "removeItem": "Удалить строку",
@@ -353,7 +356,7 @@
     "voidedAt": "Аннулирована",
     "empty": "Кредит-ноты не найдены.",
     "emptyForInvoice": "По этому счёту кредит-ноты не выписывались.",
-    "searchCreditNotes": "Поиск по номеру, причине, номеру возврата или идентификатору",
+    "searchCreditNotes": "Поиск по номеру, причине, номеру возврата, идентификатору, имени или email клиента",
     "status": {
       "Draft": "Черновик",
       "Issued": "Выписана",

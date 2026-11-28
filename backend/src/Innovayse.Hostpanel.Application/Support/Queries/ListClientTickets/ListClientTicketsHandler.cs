@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Application.Support.Queries.ListClientTickets;
 
 /// <summary>
 /// Returns a paginated list of tickets for a specific client with department names resolved, narrowed by the
-/// search text on the subject and by status, priority and department, all in SQL ahead of paging.
+/// search text on the subject and the ticket id and by status, priority and department, all in SQL ahead of paging.
 /// </summary>
 public sealed class ListClientTicketsHandler
 {
@@ -31,7 +31,7 @@ public sealed class ListClientTicketsHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The client, the paging window, the optional subject search and the filters.</param>
+    /// <param name="query">The client, the paging window, the optional search and the filters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The page of ticket summaries. This use case answers no refusal code.</returns>
     public async Task<Result<PaginatedList<TicketListItemDto>>> HandleAsync(

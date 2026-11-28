@@ -100,7 +100,7 @@
   "billableItems": {
     "billableItems": "Abrechenbare Positionen",
     "manageUninvoicedAndRecurringCharges": "Nicht abgerechnete und wiederkehrende Gebühren verwalten",
-    "searchItems": "Nach Beschreibung oder ID suchen",
+    "searchItems": "Nach Beschreibung, ID, Kundenname oder E-Mail suchen",
     "invoiced": "Abgerechnet",
     "typeOneTime": "Einmalig",
     "typeRecurring": "Wiederkehrend",
@@ -222,6 +222,7 @@
     "collections": "Inkasso",
     "paymentPending": "Zahlung ausstehend",
     "searchInvoices": "Nach Rechnungsnummer oder Zahlungsart suchen",
+    "searchAllInvoices": "Nach Rechnungsnummer, Zahlungsart, Kundenname oder E-Mail suchen",
     "deleteInvoice": "Rechnung löschen",
     "deleteInvoiceMessage": "Rechnung #{id} löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
     "deleteInvoices": "Rechnungen löschen",
@@ -267,7 +268,8 @@
     "noQuotesFound": "Keine Angebote gefunden.",
     "expired": "Abgelaufen",
     "valid": "Gültig",
-    "searchQuotes": "Nach Betreff oder Angebotsnummer suchen"
+    "searchQuotes": "Nach Betreff oder Angebotsnummer suchen",
+    "searchAllQuotes": "Nach Betreff, Angebotsnummer, Kundenname oder E-Mail suchen"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Zahlungstransaktionen und Datensätze",
@@ -283,7 +285,8 @@
     "paymentsSent": "Zahlungsausgänge",
     "deleteTransaction": "Transaktion löschen",
     "deleteTransactionMessage": "Transaktion #{id} löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "searchTransactions": "Nach Beschreibung, Referenz oder Zahlungsart suchen"
+    "searchTransactions": "Nach Beschreibung, Referenz oder Zahlungsart suchen",
+    "searchAllTransactions": "Nach Beschreibung, Referenz, Zahlungsart, Kundenname oder E-Mail suchen"
   },
   "invoiceItems": {
     "removeItem": "Position entfernen",
@@ -353,7 +356,7 @@
     "voidedAt": "Entwertet",
     "empty": "Keine Gutschriften gefunden.",
     "emptyForInvoice": "Für diese Rechnung wurden keine Gutschriften ausgestellt.",
-    "searchCreditNotes": "Nach Nummer, Grund, Erstattungsreferenz oder ID suchen",
+    "searchCreditNotes": "Nach Nummer, Grund, Erstattungsreferenz, ID, Kundenname oder E-Mail suchen",
     "status": {
       "Draft": "Entwurf",
       "Issued": "Ausgestellt",

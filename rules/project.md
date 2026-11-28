@@ -234,6 +234,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   test knows and for a plugin that implements `IPluginStatus`; the admin hides Test Connection otherwise, and the route
   answers 400 `INTEGRATION_NOT_TESTABLE` for such a plugin. The admin card and the status sidebar show the state
   (`integrations.connectionState.*`, tone from `lib/tones.ts`) with the API's sentence.
+- **Built-in integration texts are admin locale keys.** `IntegrationCatalogue` carries `integrationMeta.*` keys (name, field labels, `OptionLabels`) instead of English; the admin store (`stores/integrations.ts`) translates them for an entry that is not a plugin, so a built-in integration is worded in the operator's language like the plugin texts the API resolves itself. The category stays a stable name the admin maps to its own labels.
 - **Enums live in `Enums/` namespaces** (`Domain/<Area>/Enums/`, `SharedKernel/Domain/Enums/`,
   `Infrastructure/Email/Enums/`); `EnumPlacementTests` enforces it.
 - **Domain refusals are `DomainException(code, message)`** (abstract, in the kernel); the exception
@@ -2246,8 +2247,9 @@ feature does not exist is not kept. The decisions:
   cached whole. The SSH keys of a service (`ListMySshKeys`) are the few keys of one of the caller's own services, shown whole on that service. The credit notes of a client
   (`ListMyCreditNotes`) are the caller's own account's only, a short list the portal's credit notes page shows whole; the list is scoped by the credential and not by a client id, so no screen can ask for more than its own.
   The billable item list (`ListBillableItemsQuery`, the admin Billable Items screen) is on it with `SearchIncludingId` on the description and id and
-  `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it does not search the client name,
-  which only the Clients module can read, so the screen filters by a client chosen from the client picker. The billable items tab of a client
+  `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it also finds the items of the clients
+  whose name, company or sign-in address matches the text: Billing asks the Clients module for those ids (`FindClientIdsQuery`, sent through
+  `ClientBriefBusExtensions.FindClientIdsMatchingAsync`, which looks in the client row and, through `IdentitySearchExtensions.FindSubjectsAsync`, in the identity provider) and passes them to `Matching(query, clientsMatchingSearch)`, which keeps them with `SearchIncludingIdOrMatching`. The same holds for the staff invoice, quote, transaction and credit note lists; a client's own tab does not pass the ids, since its rows are one client's. The billable items tab of a client
   (`ListClientBillableItemsQuery`: `ClientId`, `Page`, `PageSize`, `Search`, `Type`) shares the `IBillableItemListFilters` (`Type`) with it, validated once by
   `BillableItemListQueryValidator<T>` and applied once by `BillableItemFilterExtensions.Matching`, so the search and
   the type narrow the uninvoiced list and the invoiced list alike, while `Page` and `PageSize` cut the invoiced list only. The cancellation request list
@@ -2256,8 +2258,8 @@ feature does not exist is not kept. The decisions:
   The invoice lists (`ListInvoicesQuery`, the admin Invoices screen, and `ListClientInvoicesQuery`, the invoices tab of a client) are on it
   with `SearchIncludingId` over the invoice id and its payment method and the shared `IInvoiceListFilters` (`Status`, `From`, `To`),
   validated once by `InvoiceListQueryValidator<T>` and applied once by `InvoiceFilterExtensions.Matching`; the staff list adds `ClientId`, and
-  the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list does not search the client name, which only the Clients
-  module can read, so it offers the client as a picker (`ClientId`, `useClientOptions`) and Billing never joins the client tables. The credit
+  the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list also searches the client (name, company, sign-in address) through the ids the Clients module answers, and offers the client as a picker
+  (`ClientId`, `useClientOptions`); Billing never joins the client tables. The credit
   note list (`ListCreditNotesQuery`) is on it with `SearchIncludingId` over the number, the reason and the refund reference and `InvoiceId`,
   `ClientId`, `Status` and `Method` filters. The two billing lists that offer a period, the invoice lists and the transaction lists, take it through `IPeriodListFilter` (see the paragraph on the
   logs above): `From` and `To` are bare days (`DateOnly`, bound from `yyyy-MM-dd`; a timestamp is a 400), applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`,

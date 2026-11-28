@@ -176,7 +176,7 @@
   "supportTickets": {
     "supportTickets": "Тикеты поддержки",
     "manageAllClientSupportRequests": "Управление всеми обращениями клиентов в поддержку",
-    "searchTicketsBySubject": "Поиск тикетов по теме",
+    "searchTicketsBySubject": "Поиск по теме или ID тикета",
     "flag": "Пометить",
     "unflag": "Снять пометку",
     "noRepliesYet": "Ответов пока нет",

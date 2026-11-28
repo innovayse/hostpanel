@@ -42,7 +42,10 @@ public sealed class ListTransactionsHandler
 
         // Credit-only lines moved no cash and belong to the credit history, not to this list. The summary totals below
         // run on this same narrowed set, so the tiles always describe the rows the filters left, not the whole ledger.
-        var filtered = _context.Transactions.AsNoTracking().Where(Transaction.MovedMoneyFilter).Matching(query);
+        // A client's own list (the route names the client) is already that client's rows, so the search does not look
+        // for clients there: matching the client's name would list every row of that client.
+        var clientsMatchingSearch = query.ClientId is null ? await _bus.FindClientIdsMatchingAsync(query.Search, ct) : null;
+        var filtered = _context.Transactions.AsNoTracking().Where(Transaction.MovedMoneyFilter).Matching(query, clientsMatchingSearch);
 
         // The id ends the order so a page never repeats or skips a row between requests.
         var ordered = filtered.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);

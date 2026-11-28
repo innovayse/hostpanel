@@ -1,14 +1,12 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
-using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
-using Innovayse.Hostpanel.Application.Domains.Queries.FindServiceIdsByDomainName;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetLinkedDomainNames;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
-using Innovayse.Hostpanel.Application.Products.Queries.FindProductIdsByName;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductCyclePrices;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Services.Queries.FindServiceIdsBySearch;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
@@ -67,16 +65,13 @@ public sealed class GetServicesHandler
             servicesQuery = servicesQuery.Where(s => s.ClientId == qry.ClientId.Value);
         }
 
-        // A service shows its registered domain when one is linked and its own domain otherwise, and the product name is
-        // not a column of the service, so the search also asks the owners of those tables which services and products
-        // match. Each answer is one array parameter in the query, however many ids it holds.
+        // The services the text names (own domain, linked domain, product, client or id) come from the one lookup the
+        // services lists share.
         if (!string.IsNullOrWhiteSpace(qry.Search))
         {
-            var ownMatches = servicesQuery.SearchIncludingId(qry.Search, s => s.Id, s => s.Domain).Select(s => s.Id);
-            var domainServiceIds = await FindIdsAsync(new FindServiceIdsByDomainNameQuery(qry.Search), ct);
-            var matchingProductIds = await FindIdsAsync(new FindProductIdsByNameQuery(qry.Search), ct);
-            servicesQuery = servicesQuery.Where(s =>
-                ownMatches.Contains(s.Id) || domainServiceIds.Contains(s.Id) || matchingProductIds.Contains(s.ProductId));
+            var answer = await _bus.InvokeAsync<Result<IReadOnlyList<int>>>(new FindServiceIdsBySearchQuery(qry.Search), ct);
+            var matchingServiceIds = answer.Value ?? [];
+            servicesQuery = servicesQuery.Where(s => matchingServiceIds.Contains(s.Id));
         }
 
         if (qry.Status is { } status)
@@ -163,16 +158,5 @@ public sealed class GetServicesHandler
 
         return Result<PaginatedList<ServiceListItemDto>>.Success(
             new PaginatedList<ServiceListItemDto>(result, total, qry.Page, qry.PageSize));
-    }
-
-    /// <summary>Asks the module that owns a table which of its ids match the search; a refusal is no match.</summary>
-    /// <param name="query">The lookup, a message answered with the matching ids.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>The matching ids.</returns>
-    private async Task<IReadOnlyList<int>> FindIdsAsync(object query, CancellationToken ct)
-    {
-        var answer = await _bus.InvokeAsync<Result<IReadOnlyList<int>>>(query, ct);
-
-        return answer.Value ?? [];
     }
 }

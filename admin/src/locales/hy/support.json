@@ -176,7 +176,7 @@
   "supportTickets": {
     "supportTickets": "Աջակցության տոմսեր",
     "manageAllClientSupportRequests": "Հաճախորդների բոլոր աջակցության հայտերի կառավարում",
-    "searchTicketsBySubject": "Տոմսերի որոնում ըստ թեմայի",
+    "searchTicketsBySubject": "Որոնում ըստ թեմայի կամ տոմսի ID-ի",
     "flag": "Նշել դրոշակով",
     "unflag": "Հանել դրոշակը",
     "noRepliesYet": "Պատասխաններ դեռ չկան",

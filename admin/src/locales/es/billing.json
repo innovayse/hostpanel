@@ -100,7 +100,7 @@
   "billableItems": {
     "billableItems": "Elementos facturables",
     "manageUninvoicedAndRecurringCharges": "Gestionar cargos no facturados y recurrentes",
-    "searchItems": "Buscar por descripción o ID",
+    "searchItems": "Buscar por descripción, ID, nombre o correo del cliente",
     "invoiced": "Facturado",
     "typeOneTime": "Una vez",
     "typeRecurring": "Recurrente",
@@ -222,6 +222,7 @@
     "collections": "Cobros",
     "paymentPending": "Pago pendiente",
     "searchInvoices": "Buscar por número de factura o método de pago",
+    "searchAllInvoices": "Buscar por número de factura, método de pago, nombre o correo del cliente",
     "deleteInvoice": "Eliminar factura",
     "deleteInvoiceMessage": "¿Eliminar factura #{id}? Esta acción no se puede deshacer.",
     "deleteInvoices": "Eliminar facturas",
@@ -267,7 +268,8 @@
     "noQuotesFound": "No se encontraron cotizaciones.",
     "expired": "Expirada",
     "valid": "Válida",
-    "searchQuotes": "Buscar por asunto o número de presupuesto"
+    "searchQuotes": "Buscar por asunto o número de presupuesto",
+    "searchAllQuotes": "Buscar por asunto, número de presupuesto, nombre o correo del cliente"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Transacciones y registros de pago",
@@ -283,7 +285,8 @@
     "paymentsSent": "Pagos enviados",
     "deleteTransaction": "Eliminar transacción",
     "deleteTransactionMessage": "¿Eliminar transacción #{id}? Esta acción no se puede deshacer.",
-    "searchTransactions": "Buscar por descripción, referencia o método de pago"
+    "searchTransactions": "Buscar por descripción, referencia o método de pago",
+    "searchAllTransactions": "Buscar por descripción, referencia, método de pago, nombre o correo del cliente"
   },
   "invoiceItems": {
     "removeItem": "Eliminar línea",
@@ -353,7 +356,7 @@
     "voidedAt": "Anulada",
     "empty": "No se encontraron notas de crédito.",
     "emptyForInvoice": "No se emitieron notas de crédito contra esta factura.",
-    "searchCreditNotes": "Buscar por número, motivo, referencia del reembolso o ID",
+    "searchCreditNotes": "Buscar por número, motivo, referencia del reembolso, ID, nombre o correo del cliente",
     "status": {
       "Draft": "Borrador",
       "Issued": "Emitida",

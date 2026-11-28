@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Application.Services.Queries.GetServices;
 /// <param name="Page">1-based page number.</param>
 /// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
 /// <param name="Search">
-/// Optional text; only services whose own domain, linked registered domain or product name contain it (case-insensitive),
+/// Optional text; only services whose own domain, linked registered domain, product name or client (name, company, sign-in email) contain it (case-insensitive),
 /// or whose id it is, are returned. Blank returns all.
 /// </param>
 /// <param name="ClientId">Optional client ID to filter services by owner; null returns all.</param>

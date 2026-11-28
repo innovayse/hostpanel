@@ -7,8 +7,8 @@ namespace Innovayse.Hostpanel.Application.Services.Queries.ListCancellationReque
 /// <param name="Page">1-based page number.</param>
 /// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
 /// <param name="Search">
-/// Optional text; only requests whose reason contains it (case-insensitive), or whose id it is when it is a whole number,
-/// are listed. Blank lists all. The product and the client are not searched: only their own modules can read their names.
+/// Optional text; only requests whose reason contains it (case-insensitive), or whose id it is when it is a whole number, or whose
+/// service (its own domain, linked domain, product name, client name, company or sign-in email, or id) matches, are listed. Blank lists all.
 /// </param>
 /// <param name="Type">Optional type filter, bound by name from the query string; <see langword="null"/> for every type.</param>
 /// <param name="Status">Optional status filter, bound by name from the query string; <see langword="null"/> for every status.</param>

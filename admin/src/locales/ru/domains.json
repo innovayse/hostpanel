@@ -1,7 +1,7 @@
 {
   "domainsList": {
     "manageAllRegisteredDomainNames": "Управление всеми зарегистрированными доменными именами клиентов",
-    "searchDomains": "Поиск доменов",
+    "searchDomains": "Поиск по домену, клиенту или ID",
     "expiresAt": "Истекает",
     "renewalPrice": "Цена продления",
     "regPeriod": "Срок регистрации",

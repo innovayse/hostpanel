@@ -274,7 +274,7 @@ onMounted(loadClients)
       v-model:search="list.search.value"
       search-testid="billing-invoices-search"
       filter-testid="billing-invoices-filter"
-      :search-placeholder="t('billing.invoicesList.searchInvoices')"
+      :search-placeholder="t('billing.invoicesList.searchAllInvoices')"
       :active-count="list.activeCount.value"
       :chips="chips"
       @apply="list.apply"

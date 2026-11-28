@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Common;
+using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -11,14 +12,11 @@ namespace Innovayse.Hostpanel.Application.Clients.Queries.ListClients;
 
 /// <summary>
 /// Returns a paginated list of clients with the details of the people behind them. Supports
-/// filtering by name (first, last or full name), company, client id, email, phone, status and client group. The order is
+/// searching by name (first, last or full name), company, client id, sign-in email, phone, status and client group. The order is
 /// stable: last name, first name, then id, so a page never repeats or skips a row between requests.
 /// </summary>
 public sealed class ListClientsHandler
 {
-    /// <summary>How many address matches an email filter draws on. See the note at the call site.</summary>
-    private const int EmailMatchLimit = 500;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -44,30 +42,18 @@ public sealed class ListClientsHandler
 
         // Page and page size are validated (400 when out of range), so they are used as given.
 
-        // The address is not a column on the client row, so filtering by it means asking the
-        // identity provider which subjects match and then filtering on those.
-        //
-        // Bounded, because the answer becomes an IN clause. A search matching more people than
-        // this would build a query the database has to be talked into accepting, so the page is
-        // drawn from the first EmailMatchLimit matches instead.
-        IReadOnlyList<string>? emailUserIds = null;
-        if (!string.IsNullOrWhiteSpace(query.Email))
-        {
-            var matches = await _identity.ListAsync(new IdentityAccountListQuery(query.Email, 1, EmailMatchLimit), ct);
-            emailUserIds = matches.Items.Select(m => m.Subject).ToList();
-        }
+        // The address is not a column on the client row, so searching by it means asking the identity provider
+        // which subjects match (bounded, see IdentitySearchExtensions) and then keeping the clients of those subjects.
+        var searchSubjects = await _identity.FindSubjectsAsync(query.Search, ct);
+        var emailSubjects = string.IsNullOrWhiteSpace(query.Email) ? null : await _identity.FindSubjectsAsync(query.Email, ct);
 
         var clients = _context.Clients.AsNoTracking().AsQueryable();
 
-        // The full name is matched as "First Last" so a staff member can type a person's name the
-        // way it is read, which neither column alone contains.
-        clients = clients.SearchIncludingId(
+        clients = clients.SearchIncludingIdOrMatching(
             query.Search,
             c => c.Id,
-            c => c.FirstName,
-            c => c.LastName,
-            c => c.FirstName + " " + c.LastName,
-            c => c.CompanyName);
+            c => searchSubjects.Contains(c.UserId),
+            ClientSearchExtensions.SearchColumns);
 
         clients = clients.Search(query.Phone, c => c.Phone);
 
@@ -81,9 +67,9 @@ public sealed class ListClientsHandler
             clients = clients.Where(c => c.ClientGroupId == clientGroupId);
         }
 
-        if (emailUserIds is not null)
+        if (emailSubjects is not null)
         {
-            clients = clients.Where(c => emailUserIds.Contains(c.UserId));
+            clients = clients.Where(c => emailSubjects.Contains(c.UserId));
         }
 
         var totalCount = await clients.CountAsync(ct);

@@ -266,7 +266,7 @@ A credit top-up invoice takes no credit note (`CREDIT_NOTE_TOP_UP_INVOICE`): it 
 
 A number is taken as the last step before the note is saved, once every check has passed, and a save that fails is retried under the same number. The counter is a database sequence, which hands a value out for good, so it **cannot promise there are no gaps**: a server that stops between taking a number and saving the note, or a note that is refused only after the invoice changed under it, leaves its number unused. If your jurisdiction requires gap-free numbering, check that against how you operate before relying on it.
 
-An issued credit note is never deleted. It can only be voided, and a voided note keeps its number and stays in the list and in the client's list, stamped **VOIDED** on its PDF.
+An issued credit note is never deleted. It can only be voided, and a voided note keeps its number and stays in the list and in the client's list, shown with a grey **Voided** label on its PDF.
 
 ### List, open, void and PDF
 
@@ -400,7 +400,9 @@ A client in your own country keeps the rate of the tax rules. The rate is fixed 
 
 Click **Download PDF** or **Print** on the invoice page to generate a PDF.
 
-- Draft invoices are stamped **DRAFT** and are only accessible by staff.
+- The PDF prints in the client's language (English, Russian, Armenian, German or Spanish), with a small coloured status label beside the title: green for paid, red for overdue, amber for unpaid or payment pending, grey for draft, cancelled or refunded. Draft invoices are only accessible by staff.
+- An unpaid invoice shows what is due and when, a **Pay online** link to the invoice page in the client portal and, when bank transfer is enabled and filled in, the bank details with the invoice reference.
+- The seller block is read from System Settings: the company name (**portal.legal.company_name**, the site name when empty), the address in the client's language (**portal.contact.address**, with its language variants), the tax ID (**portal.legal.tax_id**), the registration number (**portal.legal.registration_number**), the e-mail (**portal.contact.email**) and the phone (**portal.contact.phone**). The accent colour is **portal.brand.primary**.
 - Invoices with more than 500 lines cannot be downloaded as a PDF (`INVOICE_PDF_EXCEEDS_LIMIT`). The limit is set by `InvoicePdf__MaxLines` in the configuration.
 
 <Callout type="note">

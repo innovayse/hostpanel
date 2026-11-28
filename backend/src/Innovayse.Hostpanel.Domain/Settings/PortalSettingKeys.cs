@@ -89,6 +89,12 @@ public static class PortalSettingKeys
     /// <summary>Company tax identifier shown in the footer.</summary>
     public const string LegalTaxId = "portal.legal.tax_id";
 
+    /// <summary>Registered company name printed as the seller on invoices and credit notes.</summary>
+    public const string LegalCompanyName = "portal.legal.company_name";
+
+    /// <summary>Company registration number printed on invoices and credit notes.</summary>
+    public const string LegalRegistrationNumber = "portal.legal.registration_number";
+
     /// <summary>Whether the header app launcher is shown: <c>true</c> or <c>false</c>.</summary>
     public const string AppsEnabled = "portal.apps.enabled";
 
@@ -534,7 +540,9 @@ public static class PortalSettingKeys
         new(SocialLinkedin,      "",       "LinkedIn page URL. Empty hides the icon."),
         new(SocialYoutube,       "",       "YouTube channel URL. Empty hides the icon."),
         new(ContactPhone,        "",       "Public phone number shown in the footer. Empty hides it."),
-        new(LegalTaxId,          "",       "Company tax identifier shown in the footer. Empty hides it."),
+        new(LegalTaxId,          "",       "Company tax identifier shown in the footer and on invoices. Empty hides it."),
+        new(LegalCompanyName,    "",       "Registered company name printed as the seller on invoices and credit notes. Empty prints the site name."),
+        new(LegalRegistrationNumber, "",   "Company registration number printed on invoices and credit notes. Empty hides it."),
         new(AppsEnabled,         "false",  "Show the header app launcher. Off unless this deployment runs the apps it links to."),
         new(AppsAccount,         "",       "URL for the Account entry in the header app launcher. Empty hides it."),
         new(AppsTasks,           "",       "URL for the Tasks entry in the header app launcher. Empty hides it."),

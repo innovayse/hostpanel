@@ -141,7 +141,7 @@ public static readonly IReadOnlyList<string> All = [Default, "ru", "hy", "fr"];
 
 **Backend-ի լրացումներ․**
 
-- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/CreditNotePdfLabelSets.cs`՝ ավելացրեք լեզվի պիտակների հավաքածուն և նրա կոդի ճյուղը `For` մեթոդի `switch`-ում, որպեսզի կրեդիտ նոտայի PDF-ը տպվի այդ լեզվով։
+- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/DocumentPdfLabelSets.cs`՝ ավելացրեք լեզվի պիտակների հավաքածուն (բառերը, ամսաթվի մշակույթը և ձևաչափը) և նրա կոդի ճյուղը `For` մեթոդի `switch`-ում, որպեսզի հաշվի և կրեդիտ նոտայի PDF-ները տպվեն այդ լեզվով։
 - Նամակների ձևանմուշների seeder-ները `backend/src/Innovayse.Hostpanel.Application/Notifications/Seeding/` պանակում՝ յուրաքանչյուր seeder ավելացնում է իր ձևանմուշի տարբերակը նոր լեզվով, իսկ `SeededEmailLayout.RightsReserved`-ը ստանում է ստորագրի նախադասությունը։
 - Դեմո տվյալների թարգմանությունները `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` և `DemoStorefrontSeeder.cs` ֆայլերում։
 - `ResourceCoverageTests`-ի (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) լեզուների theory թեստերը և լեզուները թվարկող մյուս թեստերը՝ նոր կոդի համար պետք է տող ավելացնել։

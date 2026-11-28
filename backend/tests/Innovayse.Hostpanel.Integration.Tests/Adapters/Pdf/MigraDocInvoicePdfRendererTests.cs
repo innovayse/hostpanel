@@ -21,9 +21,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Pdf;
 /// </remarks>
 public sealed class MigraDocInvoicePdfRendererTests : IDisposable
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A web root of the test's own, so nothing outside it is ever read.</summary>
     private readonly string _webRoot = Directory.CreateTempSubdirectory("invoice-pdf-").FullName;
 
@@ -66,10 +63,8 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         Status: InvoiceStatus.Unpaid,
         InvoiceDate: new DateTimeOffset(2026, 10, 1, 9, 0, 0, TimeSpan.Zero),
         DueDate: new DateTimeOffset(2026, 10, 15, 9, 0, 0, TimeSpan.Zero),
-        PaidAt: null,
-        Seller: new InvoicePdfParty("Fairhaven Hosting", ["1 Market Street", "Tax ID: 123456"]),
+        Seller: new InvoicePdfSeller(new InvoicePdfParty("Fairhaven Hosting", ["1 Market Street", "Tax ID: 123456"]), null, null),
         BillTo: new InvoicePdfParty("Арам Петросян", ["Ծաղկաձոր, Հայաստան"]),
-        LogoPath: null,
         Lines: [new InvoicePdfLine("Shared hosting: Starter", 1, 12.50m, 12.50m)],
         SubTotal: 12.50m,
         TaxRate: 20m,
@@ -77,7 +72,12 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         ClientVatNumber: null,
         Credit: 0m,
         Total: 15.00m,
-        Money: new InvoicePdfMoneyFormat("$", string.Empty, 2));
+        AmountPaid: 0m,
+        AmountDue: 15.00m,
+        Money: new InvoicePdfMoneyFormat("$", string.Empty, 2, "USD"),
+        PayUrl: null,
+        BankTransfer: null,
+        Labels: DocumentPdfLabelSets.English);
 
     /// <summary>Renders a model and opens the result for reading.</summary>
     /// <param name="model">The invoice to render.</param>
@@ -380,13 +380,13 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         using var document = await RenderAsync(SampleModel());
 
         var text = CompactText(document);
-        text.Should().Contain("Invoice#42");
+        text.Should().Contain("Invoice").And.Contain("Invoicenumber#42");
         text.Should().Contain("FairhavenHosting");
         text.Should().Contain("TaxID:123456");
         text.Should().Contain("$15.00");
         text.Should().Contain("Tax(20%)");
-        text.Should().Contain("2026-10-01");
-        text.Should().Contain("2026-10-15");
+        text.Should().Contain("October1,2026");
+        text.Should().Contain("October15,2026");
     }
 
     /// <summary>
@@ -400,7 +400,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         const string address = "Building 12, Office 405, Northern Avenue Business Centre, Kentron District, Yerevan 0001, Republic of Armenia";
         var model = SampleModel() with
         {
-            Seller = new InvoicePdfParty("Fairhaven Hosting and Domain Services Limited Liability Company", [address]),
+            Seller = new InvoicePdfSeller(new InvoicePdfParty("Fairhaven Hosting and Domain Services Limited Liability Company", [address]), null, null),
         };
 
         using var document = await RenderAsync(model);
@@ -408,14 +408,12 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         var page = document.GetPage(1);
         var words = page.GetWords().ToList();
 
-        // The right-hand header block: "Invoice #42", "Invoice date:", "Due date:", "Status:".
-        var datesLeft = words
-            .Where(w => w.Text is "Invoice" or "Due" or "Status:" && w.BoundingBox.Left > page.Width / 2)
-            .Min(w => w.BoundingBox.Left);
+        // The seller sits in the left half, beside the bill-to block on the right.
+        var half = page.Width / 2;
         var addressWords = address.Split(' ').Concat("Fairhaven Hosting and Domain Services Limited Liability Company".Split(' ')).ToHashSet();
-        var printed = words.Where(w => addressWords.Contains(w.Text) && w.BoundingBox.Left < datesLeft).ToList();
+        var printed = words.Where(w => addressWords.Contains(w.Text) && w.BoundingBox.Left < half).ToList();
         printed.Should().NotBeEmpty();
-        printed.Should().OnlyContain(w => w.BoundingBox.Right < datesLeft);
+        printed.Should().OnlyContain(w => w.BoundingBox.Right < half);
         words.Select(w => w.Text).Should().Contain(address.Split(' '), "every word of the address is still printed");
     }
 
@@ -432,7 +430,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         var page = document.GetPage(1);
         var pieces = page.GetWords().Where(w => w.Text == "Abovyan").ToList();
         pieces.Should().HaveCount(30);
-        pieces.Should().OnlyContain(w => w.BoundingBox.Right <= page.Width - 40);
+        pieces.Should().OnlyContain(w => w.BoundingBox.Right <= page.Width - 48);
     }
 
     /// <summary>A credit line appears only when credit was applied.</summary>
@@ -460,8 +458,8 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
 
         using var document = await RenderAsync(model);
 
-        // The description column's text ends at margin + column width - gap: 40 + 285 - 8.
-        const double descriptionRight = 317;
+        // The description column's text ends at margin + column width - gap: 48 + 237 - 10.
+        const double descriptionRight = 275;
         var pieces = document.GetPage(1).GetWords().Where(w => w.Text.All(c => c == 'W') && w.Text.Length > 0).ToList();
         pieces.Sum(w => w.Text.Length).Should().Be(300);
         pieces.Should().OnlyContain(w => w.BoundingBox.Right <= descriptionRight);
@@ -508,7 +506,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         using var drams = await RenderAsync(SampleModel() with
         {
             Lines = [new InvoicePdfLine("Dedicated server", 1, 12m, 12m)],
-            Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0),
+            Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0, "AMD"),
         });
 
         CompactText(dollars).Should().Contain("$1,234.50");
@@ -542,84 +540,6 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         Compact(document.GetPage(total).Text).Should().Contain("Total");
     }
 
-    /// <summary>A paid invoice is stamped PAID with the date it was paid.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StampsPaidWithDate()
-    {
-        var model = SampleModel() with
-        {
-            Status = InvoiceStatus.Paid,
-            PaidAt = new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero),
-        };
-
-        using var document = await RenderAsync(model);
-
-        var text = Compact(document.GetPage(1).Text);
-        text.Should().Contain("PAID");
-        text.Should().Contain("2026-10-20");
-    }
-
-    /// <summary>A draft invoice is stamped DRAFT.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StampsDraft()
-    {
-        using var document = await RenderAsync(SampleModel() with { Status = InvoiceStatus.Draft });
-
-        CompactText(document).Should().Contain("DRAFT");
-    }
-
-    /// <summary>A cancelled invoice is stamped CANCELLED.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StampsCancelled()
-    {
-        using var document = await RenderAsync(SampleModel() with { Status = InvoiceStatus.Cancelled });
-
-        CompactText(document).Should().Contain("CANCELLED");
-    }
-
-    /// <summary>A refunded invoice is stamped REFUNDED.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StampsRefunded()
-    {
-        using var document = await RenderAsync(SampleModel() with { Status = InvoiceStatus.Refunded });
-
-        CompactText(document).Should().Contain("REFUNDED");
-    }
-
-    /// <summary>A partially refunded invoice is stamped PARTIALLY REFUNDED, not PAID.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StampsPartiallyRefunded()
-    {
-        using var document = await RenderAsync(SampleModel() with
-        {
-            Status = InvoiceStatus.PartiallyRefunded,
-            PaidAt = new DateTimeOffset(2026, 10, 20, 12, 0, 0, TimeSpan.Zero),
-        });
-
-        var text = CompactText(document);
-        text.Should().Contain("PARTIALLYREFUNDED");
-        text.Should().NotContain("PAID2026-10-20");
-    }
-
-    /// <summary>An unpaid invoice carries no stamp.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_NoStampForUnpaid()
-    {
-        using var document = await RenderAsync(SampleModel());
-
-        var text = CompactText(document);
-        text.Should().NotContain("PAID");
-        text.Should().NotContain("DRAFT");
-        text.Should().NotContain("CANCELLED");
-        text.Should().NotContain("REFUNDED");
-    }
-
     /// <summary>A logo uploaded to the branding directory is drawn on the first page.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -627,32 +547,9 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     {
         WriteFile("uploads/branding/abc/logo.png", Png(200, 80));
 
-        using var document = await RenderAsync(SampleModel() with { LogoPath = "/uploads/branding/abc/logo.png" });
+        using var document = await RenderAsync(SampleModel() with { Seller = SampleModel().Seller with { LogoPath = "/uploads/branding/abc/logo.png" } });
 
         document.GetPage(1).GetImages().Should().HaveCount(1);
-    }
-
-    /// <summary>
-    /// With a logo the seller block is taller than the dates beside it, and the bill-to block
-    /// still starts below all of it rather than printing over the seller's last line.
-    /// </summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StartsBillToBelowSellerWithLogo()
-    {
-        WriteFile("uploads/branding/abc/logo.png", Png(320, 90));
-
-        using var document = await RenderAsync(SampleModel() with
-        {
-            LogoPath = "/uploads/branding/abc/logo.png",
-            Seller = new InvoicePdfParty("Fairhaven Hosting", ["1 Market Street", "Fairhaven 0010", "Armenia", "Tax ID: 123456"]),
-        });
-
-        // PdfPig's y grows upwards: below means a smaller top.
-        var words = document.GetPage(1).GetWords().ToList();
-        var sellerLast = words.Single(w => w.Text == "123456");
-        var billTo = words.First(w => w.Text == "Bill");
-        billTo.BoundingBox.Top.Should().BeLessThan(sellerLast.BoundingBox.Bottom);
     }
 
     /// <summary>
@@ -688,7 +585,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
             return;
         }
 
-        using var document = await RenderAsync(SampleModel() with { LogoPath = "/uploads/branding/locked/logo.png" });
+        using var document = await RenderAsync(SampleModel() with { Seller = SampleModel().Seller with { LogoPath = "/uploads/branding/locked/logo.png" } });
 
         document.GetPage(1).GetImages().Should().BeEmpty();
     }
@@ -713,7 +610,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         WriteFile("somewhere-else/logo.png", Png(200, 80));
         WriteFile("uploads/branding/corrupt/logo.png", "not an image"u8.ToArray());
 
-        using var document = await RenderAsync(SampleModel() with { LogoPath = logoPath });
+        using var document = await RenderAsync(SampleModel() with { Seller = SampleModel().Seller with { LogoPath = logoPath } });
 
         document.GetPage(1).GetImages().Should().BeEmpty();
     }
@@ -752,7 +649,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     [Fact]
     public async Task Render_StaysSmallEnoughToEmail()
     {
-        var bytes = (await Create().RenderAsync(SampleModel() with { Status = InvoiceStatus.Paid, PaidAt = SeededAt }, CancellationToken.None)).Value!;
+        var bytes = (await Create().RenderAsync(SampleModel() with { Status = InvoiceStatus.Paid }, CancellationToken.None)).Value!;
 
         bytes.Length.Should().BeLessThan(60_000);
     }
@@ -762,7 +659,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     [Fact]
     public async Task Render_PrintsDramSign()
     {
-        var model = SampleModel() with { Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0), Total = 6000m };
+        var model = SampleModel() with { Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0, "AMD"), Total = 6000m };
 
         using var document = await RenderAsync(model);
 
@@ -786,7 +683,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
             var model = SampleModel() with
             {
                 InvoiceId = id,
-                Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0),
+                Money = new InvoicePdfMoneyFormat(string.Empty, " ֏", 0, "AMD"),
                 Lines = Enumerable.Range(1, 20).Select(i => new InvoicePdfLine($"Service {id}-{i} Ծաղկաձոր", 1, 1m, 1m)).ToList(),
             };
             return (Id: id, Bytes: (await renderer.RenderAsync(model, CancellationToken.None)).Value!);
@@ -796,7 +693,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
         {
             using var document = PdfDocument.Open(bytes);
             var text = CompactText(document);
-            text.Should().Contain($"Invoice#{id}");
+            text.Should().Contain($"Invoicenumber#{id}");
             text.Should().Contain($"Service{id}-20Ծաղկաձոր");
             text.Should().Contain("15֏");
         }

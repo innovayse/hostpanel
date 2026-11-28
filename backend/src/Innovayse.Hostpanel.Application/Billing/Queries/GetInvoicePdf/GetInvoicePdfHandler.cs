@@ -17,8 +17,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.GetInvoicePdf;
 /// Serves the staff route as it is, and the client route once <c>GetMyInvoicePdfHandler</c> has
 /// settled that the caller owns a published invoice. It prints whatever invoice it is given,
 /// drafts included; keeping drafts from clients is the ownership rule's job. It reads invoices and
-/// currencies, which are Billing's own; the client's address and the seller's settings belong to
-/// other modules and are asked for over the bus.
+/// currencies, which are Billing's own; the client's address and language, the seller's settings and the bank details
+/// belong to other modules and are asked for over the bus. The document is printed in the language of the client, so staff
+/// and client download the same document.
 /// </remarks>
 public sealed class GetInvoicePdfHandler
 {
@@ -31,26 +32,36 @@ public sealed class GetInvoicePdfHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>The message bus, for the client's address and the seller's settings.</summary>
+    /// <summary>The message bus, for the client's address and language, the seller's settings and the bank details.</summary>
     private readonly IMessageBus _bus;
 
     /// <summary>Draws the PDF.</summary>
     private readonly IInvoicePdfRenderer _renderer;
+
+    /// <summary>Where the client portal is, for the link to the invoice page.</summary>
+    private readonly ClientPortalOptions _clientPortal;
 
     /// <summary>The most lines an invoice may have and still be rendered.</summary>
     private readonly int _maxLines;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    /// <param name="bus">The message bus, for the client's address and the seller's settings.</param>
+    /// <param name="bus">The message bus, for the client's address and language, the seller's settings and the bank details.</param>
     /// <param name="renderer">Draws the PDF.</param>
     /// <param name="options">How large an invoice this deployment will render.</param>
-    public GetInvoicePdfHandler(IHostpanelDbContext context, IMessageBus bus, IInvoicePdfRenderer renderer, IOptions<InvoicePdfOptions> options)
+    /// <param name="clientPortal">Where the client portal is, for the link to the invoice page.</param>
+    public GetInvoicePdfHandler(
+        IHostpanelDbContext context,
+        IMessageBus bus,
+        IInvoicePdfRenderer renderer,
+        IOptions<InvoicePdfOptions> options,
+        IOptions<ClientPortalOptions> clientPortal)
     {
         _context = context;
         _bus = bus;
         _renderer = renderer;
         _maxLines = options.Value.MaxLines;
+        _clientPortal = clientPortal.Value;
     }
 
     /// <summary>Handles the query.</summary>
@@ -66,75 +77,73 @@ public sealed class GetInvoicePdfHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        // One statement: the line items join in and the currency row comes back as a correlated
-        // subquery. AsSingleQuery() overrides the context's split-query default, which would
-        // otherwise send the items as a second round trip. The items stop one past the ceiling,
-        // which is enough to tell an invoice over it without reading all of its lines.
+        // The invoice comes with its payments, which the amounts paid and due are worked out from. The lines are a
+        // second, bounded read: they stop one past the ceiling, which is enough to tell an invoice over it without
+        // reading all of its lines.
         var invoice = await _context.Invoices
             .AsNoTracking()
-            .AsSingleQuery()
-            .Where(i => i.Id == query.InvoiceId)
-            .Select(i => new
-            {
-                i.Id,
-                i.ClientId,
-                i.Status,
-                i.InvoiceDate,
-                i.DueDate,
-                i.PaidAt,
-                i.SubTotal,
-                i.TaxRate,
-                i.Tax,
-                i.ReverseCharge,
-                i.ClientVatNumber,
-                i.Credit,
-                i.Total,
-                i.Currency,
-                Lines = i.Items
-                    .OrderBy(item => item.Id)
-                    .Take(_maxLines + 1)
-                    .Select(item => new InvoicePdfLine(item.Description, item.Quantity, item.UnitPrice, item.Amount))
-                    .ToList(),
-                Money = _context.Currencies
-                    .Where(c => c.Code == i.Currency)
-                    .Select(c => new InvoicePdfMoneyFormat(c.Prefix, c.Suffix, c.Decimals))
-                    .FirstOrDefault(),
-            })
-            .FirstOrDefaultAsync(ct);
+            .Include(i => i.Transactions)
+            .FirstOrDefaultAsync(i => i.Id == query.InvoiceId, ct);
         if (invoice is null)
         {
             return Result<FileDownloadDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_FOUND);
         }
 
-        if (invoice.Lines.Count > _maxLines)
+        var lines = await _context.InvoiceItems
+            .AsNoTracking()
+            .Where(item => item.InvoiceId == invoice.Id)
+            .OrderBy(item => item.Id)
+            .Take(_maxLines + 1)
+            .Select(item => new InvoicePdfLine(item.Description, item.Quantity, item.UnitPrice, item.Amount))
+            .ToListAsync(ct);
+        if (lines.Count > _maxLines)
         {
             return Result<FileDownloadDto>.FailureCode(HostpanelErrorCodes.INVOICE_PDF_EXCEEDS_LIMIT);
         }
 
+        var money = await _context.Currencies
+            .AsNoTracking()
+            .Where(c => c.Code == invoice.Currency)
+            .Select(c => new InvoicePdfMoneyFormat(c.Prefix, c.Suffix, c.Decimals, c.Code))
+            .FirstOrDefaultAsync(ct);
+
         // FK_Invoices_Clients_ClientId restricts deleting a client that has invoices, so a missing
-        // client is a broken database, not an invoice to print without an addressee.
-        var client = await _bus.GetRequiredClientBriefAsync(invoice.ClientId, withEmail: false, ct);
-        var seller = await _bus.ReadPdfSellerAsync(DocumentPdfLabels.English.TaxId, ct);
+        // client is a broken database, not an invoice to print without an addressee. The language is a
+        // property of the owner account, resolved together with the email address.
+        var client = await _bus.GetRequiredClientBriefAsync(invoice.ClientId, withEmail: true, ct);
+        var labels = DocumentPdfLabelSets.For(client.Language);
+        var seller = await _bus.ReadPdfSellerAsync(labels, ct);
+
+        // Only an invoice that can still be paid points to the payment page and the bank account.
+        BankTransferDetailsDto? bankTransfer = null;
+        if (invoice.IsPayable)
+        {
+            var settings = await _bus.LoadBankTransferSettingsAsync(ct);
+            bankTransfer = settings is { IsEnabled: true, HasPayerDetails: true } ? settings.ToDetails(invoice) : null;
+        }
 
         var model = new InvoicePdfModel(
             InvoiceId: invoice.Id,
             Status: invoice.Status,
             InvoiceDate: invoice.InvoiceDate,
             DueDate: invoice.DueDate,
-            PaidAt: invoice.PaidAt,
-            Seller: seller.Party,
-            BillTo: client.ToPdfParty(),
-            LogoPath: seller.LogoPath,
-            Lines: invoice.Lines,
+            Seller: seller,
+            BillTo: client.ToPdfParty(labels),
+            Lines: lines,
             SubTotal: invoice.SubTotal,
             TaxRate: invoice.TaxRate,
             Tax: invoice.Tax,
             ClientVatNumber: invoice.ReverseCharge ? invoice.ClientVatNumber : null,
             Credit: invoice.Credit,
             Total: invoice.Total,
+            AmountPaid: invoice.AmountPaid,
+            AmountDue: invoice.AmountDue,
             // A currency with no row still prints, with its code after each amount so the reader
             // can tell which currency the figures are in.
-            Money: invoice.Money ?? new InvoicePdfMoneyFormat(string.Empty, " " + invoice.Currency, FallbackDecimals));
+            Money: money ?? new InvoicePdfMoneyFormat(string.Empty, " " + invoice.Currency, FallbackDecimals, invoice.Currency),
+            PayUrl: invoice.IsPayable ? _clientPortal.InvoiceUrl(invoice.Id) : null,
+            BankTransfer: bankTransfer,
+            Labels: labels);
 
         var rendered = await _renderer.RenderAsync(model, ct);
         if (rendered.IsFailure)

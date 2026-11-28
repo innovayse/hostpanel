@@ -141,7 +141,7 @@ The backend list above covers the core error and validation messages. The follow
 
 **Backend extras:**
 
-- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/CreditNotePdfLabelSets.cs`: add a label set for the language and an arm for its code to the `switch` in `For`, so the credit note PDF prints in it.
+- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/DocumentPdfLabelSets.cs`: add a label set for the language (its words, its date culture and format) and an arm for its code to the `switch` in `For`, so the invoice and credit note PDFs print in it.
 - The email template seeders under `backend/src/Innovayse.Hostpanel.Application/Notifications/Seeding/`: each seeder adds a version of its template in the new language, and `SeededEmailLayout.RightsReserved` gets the footer sentence.
 - The demo seed translations in `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` and `DemoStorefrontSeeder.cs`.
 - The language theories of `ResourceCoverageTests` (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) and the other tests that list the languages, which take a row for the new code.

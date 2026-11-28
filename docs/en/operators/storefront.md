@@ -135,7 +135,7 @@ Related operator settings, all optional and hidden when empty:
 `portal.contact.phone`, `portal.contact.address`, `portal.contact.map_url` (https only),
 `portal.stats.clients`, `portal.stats.uptime`, `portal.stats.regions`, `portal.hero.badge`,
 `portal.chat.provider`, `portal.newsletter.action_url`,
-`portal.legal.tax_id`, `portal.social.{facebook,instagram,twitter,linkedin,youtube}`, and the
+`portal.legal.tax_id`, `portal.legal.company_name`, `portal.legal.registration_number`, `portal.social.{facebook,instagram,twitter,linkedin,youtube}`, and the
 support hours `portal.contact.hours` with their zone `portal.contact.timezone`.
 
 The email, phone, address, map, hours and zone are all editable in **Admin → Settings → Storefront**;

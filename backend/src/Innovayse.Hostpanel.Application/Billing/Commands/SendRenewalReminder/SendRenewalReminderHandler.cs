@@ -120,7 +120,7 @@ public sealed class SendRenewalReminderHandler
                 invoice.Total,
                 invoice.Currency,
                 invoice.DueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}"));
+                _clientPortal.Value.InvoiceUrl(invoice.Id)));
 
             // Mail first, record second, so a crash between the two retries the mail on the next run
             // rather than recording a reminder that was never attempted; the key (invoice and threshold,

@@ -163,7 +163,7 @@ describe('StorefrontContentCard', () => {
     const { wrapper } = await mountSettingsCard(StorefrontContentCard, [rows[0] as Setting])
 
     expect(wrapper.find('[data-testid="storefront-hero-badge"]').exists()).toBe(false)
-    expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(11)
+    expect(wrapper.findAll('[data-testid="setting-not-seeded"]')).toHaveLength(14)
     expect(wrapper.text()).toContain('portal.hero.badge')
   })
 

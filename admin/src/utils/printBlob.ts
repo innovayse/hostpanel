@@ -1,7 +1,7 @@
 /**
  * Hands a PDF the page already holds to the browser's print flow.
  *
- * @module lib/printBlob
+ * @module utils/printBlob
  */
 
 /** How long the printed file's object URL and frame stay alive, in milliseconds; printing is asynchronous and has no reliable end event for a PDF. */

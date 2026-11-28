@@ -163,10 +163,10 @@ describe('ClientTransactionsView', () => {
 
   it('restores the search, the filters and the page from the address and sends them together', async () => {
     const mock = stubRoutes({ 'GET /api/transactions/client/7': ledger })
-    const { wrapper } = await mountLedgerAt('?search=refund&direction=Out&paymentMethod=Credit%2FDebit%20Card&from=2026-03-01&to=2026-03-31&amount=20&page=2')
+    const { wrapper } = await mountLedgerAt('?search=refund&direction=Out&paymentMethod=Card&from=2026-03-01&to=2026-03-31&amount=20&page=2')
 
     expect(listUrls(mock)[0]).toBe(
-      '/api/transactions/client/7?page=2&pageSize=25&search=refund&direction=Out&paymentMethod=Credit%2FDebit+Card&from=2026-03-01&to=2026-03-31&amount=20',
+      '/api/transactions/client/7?page=2&pageSize=25&search=refund&direction=Out&paymentMethod=Card&from=2026-03-01&to=2026-03-31&amount=20',
     )
     expect(wrapper.get('[data-testid="filter-trigger-count"]').text()).toBe('5')
   })

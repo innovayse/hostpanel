@@ -8,7 +8,7 @@
  * with a raw API string is wrapped in a function that falls back to the neutral tone, so a value
  * the API adds later is shown as received instead of breaking the screen.
  */
-import { GATEWAY_OPTIONS } from '@/lib/constants'
+import { GATEWAY_OPTIONS, TRANSACTION_METHOD_OPTIONS } from '@/lib/constants'
 import { translate, translateOrRaw } from '@/lib/translate'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientStatus } from '@/types/client'
@@ -484,7 +484,8 @@ export const statusLabel = (options: ReadonlyArray<{ value: string; label: strin
  * @param method - Payment method as sent by the API.
  * @returns The label to show.
  */
-export const paymentMethodLabel = (method: string): string => statusLabel(GATEWAY_OPTIONS, method)
+export const paymentMethodLabel = (method: string): string =>
+  statusLabel([...GATEWAY_OPTIONS, ...TRANSACTION_METHOD_OPTIONS], method)
 
 /**
  * Display label of a ticket status: the translation when the catalogue has one, the raw status

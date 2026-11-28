@@ -57,9 +57,9 @@ describe('billingTransactionsStore', () => {
     const mock = stubFetch(json({ ...ledger, totalIn: 3 }))
     const store = useTransactionsStore()
 
-    await store.fetchAll(1, { search: 'renewal', clientId: 4, direction: 'In', paymentMethod: 'Credit/Debit Card', from: '2026-03-01', amount: 3 })
+    await store.fetchAll(1, { search: 'renewal', clientId: 4, direction: 'In', paymentMethod: 'Card', from: '2026-03-01', amount: 3 })
     expect(callOf(mock).url).toBe(
-      '/api/transactions?page=1&pageSize=25&search=renewal&clientId=4&direction=In&paymentMethod=Credit%2FDebit+Card&from=2026-03-01&amount=3',
+      '/api/transactions?page=1&pageSize=25&search=renewal&clientId=4&direction=In&paymentMethod=Card&from=2026-03-01&amount=3',
     )
     expect(store.summary.totalIn).toBe(3)
   })

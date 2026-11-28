@@ -31,7 +31,7 @@ describe('useTransactionsApi', () => {
       search: 'renewal',
       clientId: 4,
       direction: 'In',
-      paymentMethod: 'Credit/Debit Card',
+      paymentMethod: 'Card',
       from: '2026-03-01',
       to: '2026-03-31',
       amount: 12.5,
@@ -39,7 +39,7 @@ describe('useTransactionsApi', () => {
     await api.list(1, 25, { search: '', direction: undefined })
     await api.listByClient(7, 2, 10, { direction: 'Out', amount: 40 })
     expect(callOf(mock, 0).url).toBe(
-      '/api/transactions?page=1&pageSize=25&search=renewal&clientId=4&direction=In&paymentMethod=Credit%2FDebit+Card&from=2026-03-01&to=2026-03-31&amount=12.5',
+      '/api/transactions?page=1&pageSize=25&search=renewal&clientId=4&direction=In&paymentMethod=Card&from=2026-03-01&to=2026-03-31&amount=12.5',
     )
     expect(callOf(mock, 1).url).toBe('/api/transactions?page=1&pageSize=25')
     expect(callOf(mock, 2).url).toBe('/api/transactions/client/7?page=2&pageSize=10&direction=Out&amount=40')

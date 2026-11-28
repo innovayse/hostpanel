@@ -59,7 +59,7 @@ describe('status enums', () => {
 
 describe('billing value sets', () => {
   it('keep the wire strings of methods, gateways, cycles and actions', () => {
-    expect(PaymentMethod.Card).toBe('Credit/Debit Card')
+    expect(PaymentMethod.Card).toBe('Card')
     expect(PaymentMethod.BankTransfer).toBe('Bank Transfer')
     expect(Object.values(BillingCycle)).toEqual(['Monthly', 'Quarterly', 'SemiAnnual', 'Annual', 'Biennial'])
     expect(Object.values(BillableItemType)).toEqual(['OneTime', 'Recurring'])

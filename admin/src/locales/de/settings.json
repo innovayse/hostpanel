@@ -76,7 +76,7 @@
     },
     "legalTaxId": {
       "label": "Steuernummer",
-      "hint": "Erscheint in der Fußzeile der Website und auf Rechnungen"
+      "hint": "12/345/67890"
     },
     "legalRegistrationNumber": {
       "label": "Handelsregisternummer",

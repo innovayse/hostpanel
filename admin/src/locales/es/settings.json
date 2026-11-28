@@ -76,7 +76,7 @@
     },
     "legalTaxId": {
       "label": "NIF",
-      "hint": "Se muestra en el pie del sitio y en las facturas"
+      "hint": "B12345678"
     },
     "legalRegistrationNumber": {
       "label": "Número de registro mercantil",

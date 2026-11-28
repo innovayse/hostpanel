@@ -76,7 +76,7 @@
     },
     "legalTaxId": {
       "label": "Tax ID",
-      "hint": "Printed in the storefront footer and on invoices"
+      "hint": "12-3456789"
     },
     "legalRegistrationNumber": {
       "label": "Company registration number",

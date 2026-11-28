@@ -4,29 +4,29 @@
  * @module utils/printBlob
  */
 
-/** How long the printed file's object URL and frame stay alive, in milliseconds; printing is asynchronous and has no reliable end event for a PDF. */
+/** How long the hidden frame and its object URL live: long enough for the print dialog to be used, then released. */
 const PRINT_RELEASE_DELAY_MS = 60_000
 
 /**
- * Opens a blob in a hidden frame and prints it as soon as it has loaded.
+ * Prints a PDF without showing it: the blob is loaded into a hidden frame and the frame's print dialog opens once it has loaded.
  *
- * The frame is never visible. The object URL and the frame are released after {@link PRINT_RELEASE_DELAY_MS}, since the
- * print dialog outlives the load and a PDF viewer does not report when it is done.
+ * The frame and the object URL are released a minute later, since closing the dialog gives the page no event to release them on.
  *
- * @param blob - The file to print, a PDF.
+ * @param blob - The PDF's contents.
  */
 export const printBlob = (blob: Blob): void => {
   const url = URL.createObjectURL(blob)
   const frame = document.createElement('iframe')
-  frame.hidden = true
+  frame.className = 'fixed bottom-0 right-0 h-0 w-0 border-0'
+  frame.setAttribute('aria-hidden', 'true')
   frame.addEventListener('load', () => {
     frame.contentWindow?.focus()
     frame.contentWindow?.print()
-  })
+    setTimeout(() => {
+      frame.remove()
+      URL.revokeObjectURL(url)
+    }, PRINT_RELEASE_DELAY_MS)
+  }, { once: true })
   frame.src = url
   document.body.appendChild(frame)
-  window.setTimeout(() => {
-    frame.remove()
-    URL.revokeObjectURL(url)
-  }, PRINT_RELEASE_DELAY_MS)
 }

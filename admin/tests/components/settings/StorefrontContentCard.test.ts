@@ -67,7 +67,7 @@ describe('StorefrontContentCard', () => {
     expect(selectText(wrapper, 'storefront-contact-timezone')).toBe('UTC+04:00')
   })
 
-  it('groups the fields under Figures, Contacts, Messengers and Address and hours', async () => {
+  it('groups the fields under Figures, Contacts, Messengers, Address and hours and Company', async () => {
     const { wrapper } = await mountSettingsCard(StorefrontContentCard, rows)
     /**
      * Finds one headed group of the card.
@@ -77,7 +77,7 @@ describe('StorefrontContentCard', () => {
      */
     const group = (name: string) => wrapper.get(`[data-testid="storefront-group-${name}"]`)
 
-    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['Figures', 'Contacts', 'Messengers', 'Address and hours'])
+    expect(wrapper.findAll('h3').map((heading) => heading.text())).toEqual(['Figures', 'Contacts', 'Messengers', 'Address and hours', 'Company'])
     expect(group('figures').find('[data-testid="storefront-stats-clients"]').exists()).toBe(true)
     expect(group('figures').find('[data-testid="storefront-hero-badge"]').exists()).toBe(true)
     expect(group('contacts').find('[data-testid="storefront-contact-email"]').exists()).toBe(true)

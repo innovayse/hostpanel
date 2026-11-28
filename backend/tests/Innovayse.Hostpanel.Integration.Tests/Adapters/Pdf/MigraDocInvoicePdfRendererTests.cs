@@ -332,7 +332,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
 
         var letters = document.GetPage(1).Letters.ToList();
         letters.Should().NotContain(l => l.Value == "\u0000");
-        var forBaseline = document.GetPage(1).GetWords().Single(w => w.Text == "for").Letters[0].StartBaseLine.Y;
+        var forBaseline = document.GetPage(1).GetWords().First(w => w.Text == "for").Letters[0].StartBaseLine.Y;
         var lines = letters.Where(l => l.Value == PdfFonts.Placeholder.ToString())
             .GroupBy(l => Math.Round(l.StartBaseLine.Y, 1))
             .OrderByDescending(g => g.Key)

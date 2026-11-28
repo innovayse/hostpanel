@@ -6,7 +6,7 @@ using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductCyclePrices;
 using Innovayse.Hostpanel.Application.Services.Common;
-using Innovayse.Hostpanel.Application.Services.Queries.FindServiceIdsBySearch;
+using Innovayse.Hostpanel.Application.Services.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
@@ -27,7 +27,7 @@ public sealed class GetServicesHandler
     /// <summary>The module's data context the services are read from.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>The bus the product, client and linked domain queries are dispatched through.</summary>
+    /// <summary>The bus the service search, product, client and linked domain queries are dispatched through.</summary>
     private readonly IMessageBus _bus;
 
     /// <summary>Resolves the currency each owning client is billed in.</summary>
@@ -38,10 +38,11 @@ public sealed class GetServicesHandler
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context the services are read from.</param>
-    /// <param name="bus">The bus the product, client and linked domain queries are dispatched through.</param>
+    /// <param name="bus">The bus the service search, product, client and linked domain queries go through.</param>
     /// <param name="payerCurrency">Resolves the currency each owning client is billed in.</param>
     /// <param name="clock">Tells the moment a trial's days left are counted from.</param>
-    public GetServicesHandler(IHostpanelDbContext context, IMessageBus bus, IPayerCurrencyResolver payerCurrency, IClock clock)
+    public GetServicesHandler(
+        IHostpanelDbContext context, IMessageBus bus, IPayerCurrencyResolver payerCurrency, IClock clock)
     {
         _clock = clock;
         _context = context;
@@ -56,7 +57,9 @@ public sealed class GetServicesHandler
     /// <param name="qry">The search, the filters and the paging window.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with the requested page; a page past the last answers an empty page, not a refusal.</returns>
-    /// <exception cref="InvalidOperationException">A service names a product or a client that does not exist, so the database is broken.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// A service names a product or a client that does not exist, so the database is broken.
+    /// </exception>
     public async Task<Result<PaginatedList<ServiceListItemDto>>> HandleAsync(GetServicesQuery qry, CancellationToken ct)
     {
         var servicesQuery = _context.ClientServices.AsNoTracking();
@@ -69,8 +72,7 @@ public sealed class GetServicesHandler
         // services lists share.
         if (!string.IsNullOrWhiteSpace(qry.Search))
         {
-            var answer = await _bus.InvokeAsync<Result<IReadOnlyList<int>>>(new FindServiceIdsBySearchQuery(qry.Search), ct);
-            var matchingServiceIds = answer.Value ?? [];
+            var matchingServiceIds = await _bus.FindServiceIdsMatchingAsync(qry.Search, qry.ClientId, ct);
             servicesQuery = servicesQuery.Where(s => matchingServiceIds.Contains(s.Id));
         }
 
@@ -111,7 +113,8 @@ public sealed class GetServicesHandler
             currencyMap[clientId] = await _payerCurrency.ForClientAsync(clientId, ct);
         }
 
-        // Batch-resolve linked domain names; a service that runs on a site of its own, not on a registered domain, shows its own domain
+        // Batch-resolve linked domain names; a service that runs on a site of its own, not on a registered domain,
+        // shows its own domain
         var serviceIds = services.Select(s => s.Id).ToList();
         var domains = await _bus.InvokeAsync<Result<IReadOnlyList<LinkedDomainNameDto>>>(
             new GetLinkedDomainNamesQuery(serviceIds), ct);
@@ -137,7 +140,8 @@ public sealed class GetServicesHandler
             .Select(svc =>
             {
                 var currency = currencyMap[svc.ClientId];
-                var price = priceMap.GetValueOrDefault(new ProductCyclePriceLookup(svc.ProductId, currency.Code, svc.BillingCycle)) ?? NoPrice;
+                var priceKey = new ProductCyclePriceLookup(svc.ProductId, currency.Code, svc.BillingCycle);
+                var price = priceMap.GetValueOrDefault(priceKey) ?? NoPrice;
 
                 return new ServiceListItemDto(
                     svc.Id,

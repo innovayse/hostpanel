@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Extensions;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Queries.FindServiceIdsByDomainName;
@@ -34,7 +35,7 @@ public sealed class FindServiceIdsBySearchHandler
     /// <summary>Handles the query.</summary>
     /// <param name="query">The text to look for.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The ids of the matching services, in no particular order. Never refuses.</returns>
+    /// <returns>The ids of the matching services, lowest first, at most one search's worth. Never refuses.</returns>
     public async Task<Result<IReadOnlyList<int>>> HandleAsync(FindServiceIdsBySearchQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -46,16 +47,20 @@ public sealed class FindServiceIdsBySearchHandler
 
         var domainServiceIds = await FindIdsAsync(new FindServiceIdsByDomainNameQuery(query.Search), ct);
         var productIds = await FindIdsAsync(new FindProductIdsByNameQuery(query.Search), ct);
-        var clientIds = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        var clientIds = await _bus.FindClientIdsMatchingAsync(query.Search, query.ClientId, ct);
 
         IReadOnlyList<int> serviceIds = await _context.ClientServices
             .AsNoTracking()
             .SearchIncludingIdOrMatching(
                 query.Search,
                 s => s.Id,
-                s => domainServiceIds.Contains(s.Id) || productIds.Contains(s.ProductId) || clientIds.Contains(s.ClientId),
+                s => domainServiceIds.Contains(s.Id)
+                    || productIds.Contains(s.ProductId)
+                    || clientIds.Contains(s.ClientId),
                 s => s.Domain)
             .Select(s => s.Id)
+            .OrderBy(id => id)
+            .Take(PagingLimits.MaxSearchMatches)
             .ToListAsync(ct);
 
         return Result<IReadOnlyList<int>>.Success(serviceIds);

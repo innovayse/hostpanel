@@ -45,9 +45,11 @@ public sealed class ListDomainsHandler
             domainsQuery = domainsQuery.Where(x => x.ClientId == query.ClientId.Value);
         }
 
-        // The client is not a column of the domain, so the Clients module is asked which clients the text names.
-        var matchingClientIds = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
-        domainsQuery = domainsQuery.SearchIncludingIdOrMatching(query.Search, x => x.Id, x => matchingClientIds.Contains(x.ClientId), x => x.Name);
+        // The client is not a column of the domain, so the Clients module is asked which clients the text names
+        // (none on a client's own list, whose rows all belong to that client).
+        var matchingClientIds = await _bus.FindClientIdsMatchingAsync(query.Search, query.ClientId, ct);
+        domainsQuery = domainsQuery.SearchIncludingIdOrMatching(
+            query.Search, x => x.Id, x => matchingClientIds.Contains(x.ClientId), x => x.Name);
 
         if (query.Status is { } status)
         {

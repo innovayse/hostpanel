@@ -3,8 +3,10 @@
  * Dynamic config form for a single integration.
  *
  * Renders the fields the API describes in `integration.fieldDefinitions`, each as the kit control
- * its `type` asks for, with the label, help text, placeholder and option labels the API already translated.
- * Test Connection is shown only when `integration.canTestConnection` says the integration can be tested. Emits `save` and `test` to the parent, which owns the requests.
+ * its `type` asks for. A plugin's label, help text, placeholder and option labels arrive already translated by the API;
+ * those of a built-in integration are the admin catalogue's locale keys, worded here as the form draws, so they follow
+ * a language switch. Test Connection is shown only when `integration.canTestConnection` says the integration can be
+ * tested. Emits `save` and `test` to the parent, which owns the requests.
  *
  * A secret field (the API marks it `isSecret` and never sends its value) is write only: it shows a
  * masked placeholder with Replace and Clear, its value is sent only when the admin typed a
@@ -15,8 +17,8 @@
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { INTEGRATION_META } from '@/types/integrationmeta'
-import type { FieldDefinitionDto, IntegrationConfigPayload, IntegrationDetailDto, IntegrationSlug } from '@/types/integration'
+import { integrationLabelText, integrationMetaOf } from '@/types/integrationmeta'
+import type { FieldDefinitionDto, IntegrationConfigPayload, IntegrationDetailDto } from '@/types/integration'
 import UiSecretField from '@/components/ui/UiSecretField.vue'
 import { fieldControlOf, fieldInputType, INTEGRATION_FIELD_RENDERINGS } from '@/lib/fieldControls'
 import { FieldControl } from '@/types/fieldcontrol'
@@ -50,7 +52,7 @@ const props = defineProps<{
   integration: IntegrationDetailDto
   /** True while a save request is in flight. */
   loading: boolean
-  /** True while a connection test is in flight. Separate from `loading` so Save never claims to be saving during a test. */
+  /** True while a connection test is in flight; apart from `loading` so Save never claims to be saving in a test. */
   testing: boolean
 }>()
 
@@ -62,8 +64,11 @@ const emit = defineEmits<{
   test: []
 }>()
 
-/** Static metadata for this integration (logo, tile colour and short description); absent for a plugin the admin has no metadata for. */
-const meta = computed(() => INTEGRATION_META[props.integration.slug as IntegrationSlug])
+/** Catalogue metadata (logo, tile colour, short description); absent for a plugin, which has none in the admin. */
+const meta = computed(() => integrationMetaOf(props.integration.slug))
+
+/** The integration's name in the operator's current language. */
+const name = computed<string>(() => integrationLabelText(props.integration.name))
 
 /**
  * The editable values of the plain fields of an integration; secret fields are left out because
@@ -201,13 +206,33 @@ const setNumber = (key: string, value: number | null): void => {
 }
 
 /**
+ * A field's label in the operator's current language.
+ *
+ * @param field - The field definition.
+ * @returns The label text.
+ */
+const fieldText = (field: FieldDefinitionDto): string => integrationLabelText(field.label)
+
+/**
+ * The text of one option of a select field; the option's value when it has no wording of its own.
+ *
+ * @param field - The field definition.
+ * @param option - The option's value.
+ * @returns The text shown for the option.
+ */
+const optionLabel = (field: FieldDefinitionDto, option: string): string => {
+  const label = field.optionLabels?.[option]
+  return label ? integrationLabelText(label) : option
+}
+
+/**
  * Select options of a field.
  *
  * @param field - The field definition.
  * @returns The options in the shape the select takes.
  */
 const optionsOf = (field: FieldDefinitionDto): { value: string; label: string }[] =>
-  (field.options ?? []).map(option => ({ value: option, label: field.optionLabels?.[option] ?? option }))
+  (field.options ?? []).map(option => ({ value: option, label: optionLabel(field, option) }))
 
 /**
  * The hint of an empty input: the plugin's own placeholder, already translated by the API, else the generic one.
@@ -216,7 +241,7 @@ const optionsOf = (field: FieldDefinitionDto): { value: string; label: string }[
  * @returns The placeholder text.
  */
 const placeholderOf = (field: FieldDefinitionDto): string =>
-  field.placeholder ?? t('integrations.integrationConfigForm.enterValue', { label: field.label })
+  field.placeholder ?? t('integrations.integrationConfigForm.enterValue', { label: fieldText(field) })
 
 /**
  * Stores a boolean field as the string the API keeps.
@@ -251,7 +276,7 @@ const handleSave = (): void => {
     <UiStack :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Md">
       <UiPluginAvatar
         v-if="integration.isPlugin"
-        :name="integration.name"
+        :name="name"
         :icon-url="integration.iconUrl"
         decorative
         data-testid="integration-plugin-avatar"
@@ -260,12 +285,12 @@ const handleSave = (): void => {
         <UiImage
           v-if="meta?.logo"
           :src="meta.logo"
-          :alt="integration.name"
+          :alt="name"
           class="h-full w-full object-contain brightness-0 invert"
         />
       </UiStack>
       <UiStack :gap="UiGap.Xs" class="min-w-0 flex-1">
-        <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ integration.name }}</UiHeading>
+        <UiHeading :level="2" :variant="UiHeadingVariant.Card">{{ name }}</UiHeading>
         <UiText v-if="meta" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" class="truncate">{{ meta.shortDescription }}</UiText>
       </UiStack>
       <UiLabel :variant="UiLabelVariant.Inline" class="shrink-0">
@@ -280,7 +305,7 @@ const handleSave = (): void => {
     <UiGrid :columns="2" :gap="UiGap.Md">
       <template v-for="field in integration.fieldDefinitions ?? []" :key="field.key">
         <UiField
-          :label="field.label"
+          :label="fieldText(field)"
           :hint="field.description ?? undefined"
           :required="field.required"
           :class="controlOf(field) === FieldControl.Textarea ? 'md:col-span-2' : ''"
@@ -313,7 +338,7 @@ const handleSave = (): void => {
               :model-value="localConfig[field.key] ?? ''"
               :options="optionsOf(field)"
               @update:model-value="setValue(field.key, $event)"
-              :placeholder="t('integrations.integrationConfigForm.chooseValue', { label: field.label })"
+              :placeholder="t('integrations.integrationConfigForm.chooseValue', { label: fieldText(field) })"
               :data-testid="`integration-field-${field.key}`"
             />
 

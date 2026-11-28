@@ -1754,7 +1754,7 @@
     <value>Tous les champs obligatoires sont remplis. Cette vérification ne contacte pas le fournisseur, confirmez donc les identifiants par une action réelle avant de vous y fier.</value>
   </data>
   <data name="INTEGRATION_TEST_FIELDS_MISSING" xml:space="preserve">
-    <value>L'intégration n'est pas entièrement configurée, car certains champs obligatoires sont vides. Remplissez et enregistrez ces champs, puis relancez le test :</value>
+    <value>L'intégration n'est pas entièrement configurée, car certains champs obligatoires sont vides. Remplissez et enregistrez ces champs, puis relancez le test : {0}.</value>
   </data>
   <data name="INTEGRATION_TEST_GATEWAY_OK" xml:space="preserve">
     <value>La passerelle de paiement a répondu et accepté les identifiants enregistrés. L'intégration est prête à recevoir des paiements.</value>

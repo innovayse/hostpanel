@@ -10,7 +10,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useIntegrationsApi } from '@/composables/apis/useIntegrationsApi'
 import { runAction } from '@/lib/runAction'
-import { builtInFieldLabel, builtInIntegrationName, builtInOptionLabels } from '@/types/integrationmeta'
+import { fieldLabel, integrationNameLabel, optionLabels } from '@/types/integrationmeta'
 import { IntegrationCategory, IntegrationCategoryName } from '@/types/integration'
 import { PluginType } from '@/types/plugin'
 import type {
@@ -60,40 +60,40 @@ const normaliseCategory = (integration: IntegrationWireDto): IntegrationCategory
 }
 
 /**
- * Words a field definition: a plugin's label and option labels arrive finished, in the request language; the API sends
- * none for a built-in integration, so the admin words them from the slug and the field key.
+ * Labels a field definition: a plugin's label and option labels arrive finished, in the request language; the API sends
+ * none for a built-in integration, so they become the catalogue's locale keys, worded when a screen draws them.
  *
  * @param slug - Slug of the integration the field belongs to.
  * @param field - The field definition as the API sent it.
- * @returns The definition with its label and option labels in the operator's language.
+ * @returns The definition with its label and option labels as typed labels.
  */
-const localiseField = (slug: string, field: FieldDefinitionWire): FieldDefinitionDto => ({
+const labelField = (slug: string, field: FieldDefinitionWire): FieldDefinitionDto => ({
   ...field,
-  label: field.label ?? builtInFieldLabel(slug, field.key),
-  optionLabels: field.optionLabels ?? builtInOptionLabels(slug, field.key),
+  label: fieldLabel(slug, field.key, field.label),
+  optionLabels: optionLabels(slug, field.key, field.optionLabels),
 })
 
 /**
- * Words an integration summary: a plugin's name arrives finished; the API sends none for a built-in integration.
+ * Labels an integration summary: a plugin's name arrives finished; the API sends none for a built-in integration.
  *
  * @param integration - The summary as returned by the backend.
- * @returns The summary with its name in the operator's language.
+ * @returns The summary with its name as a typed label.
  */
-const localiseSummary = (integration: IntegrationWireDto): IntegrationDto => ({
+const labelSummary = (integration: IntegrationWireDto): IntegrationDto => ({
   ...integration,
-  name: integration.name ?? builtInIntegrationName(integration.slug),
+  name: integrationNameLabel(integration.slug, integration.name),
 })
 
 /**
- * Words an integration detail: the name and field texts the API leaves out for a built-in integration.
+ * Labels an integration detail: the name and field texts the API leaves out for a built-in integration.
  *
  * @param detail - The detail as returned by the backend.
- * @returns The detail with its texts in the operator's language.
+ * @returns The detail with its texts as typed labels.
  */
-const localiseDetail = (detail: IntegrationDetailWireDto): IntegrationDetailDto => ({
+const labelDetail = (detail: IntegrationDetailWireDto): IntegrationDetailDto => ({
   ...detail,
-  name: detail.name ?? builtInIntegrationName(detail.slug),
-  fieldDefinitions: detail.fieldDefinitions.map(field => localiseField(detail.slug, field)),
+  name: integrationNameLabel(detail.slug, detail.name),
+  fieldDefinitions: detail.fieldDefinitions.map(field => labelField(detail.slug, field)),
 })
 
 /** Manages the integrations summary list and the config of the integration being edited. */
@@ -133,7 +133,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, api.listIntegrations)
     loading.value = false
     if (result.ok) {
-      integrations.value = result.value.map(i => ({ ...localiseSummary(i), category: normaliseCategory(i) }))
+      integrations.value = result.value.map(i => ({ ...labelSummary(i), category: normaliseCategory(i) }))
     }
   }
 
@@ -149,7 +149,7 @@ export const useIntegrationsStore = defineStore('integrations', () => {
     const result = await runAction(error, () => api.getIntegration(slug))
     loading.value = false
     if (result.ok) {
-      current.value = localiseDetail(result.value)
+      current.value = labelDetail(result.value)
     }
   }
 

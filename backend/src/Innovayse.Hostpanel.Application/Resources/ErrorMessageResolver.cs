@@ -25,9 +25,9 @@ public sealed class ErrorMessageResolver : IErrorMessageResolver
     }
 
     /// <inheritdoc />
-    public string Resolve(string code)
+    public string Resolve(string code, params object[] arguments)
     {
-        var entry = _localizer[code];
+        var entry = _localizer[code, arguments];
         if (!entry.ResourceNotFound)
         {
             return entry;

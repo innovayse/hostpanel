@@ -40,7 +40,7 @@ public sealed class ListInvoicesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, query.ClientId, ct);
 
         IQueryable<Invoice> filtered = _context.Invoices.AsNoTracking();
 

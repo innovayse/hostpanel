@@ -6,7 +6,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Summary row returned by the list-integrations endpoint.
 /// </summary>
 /// <param name="Slug">URL-safe identifier for the integration (e.g. "card").</param>
-/// <param name="Category">Grouping label (e.g. "Payment Gateways").</param>
+/// <param name="Category">
+/// Category the admin groups the integration under: a fixed wire value for a built-in integration, the manifest's
+/// own category text for a plugin.
+/// </param>
 /// <param name="IsEnabled">Whether the integration is currently active.</param>
 /// <param name="IsConfigured">Whether all required credential fields are non-empty.</param>
 /// <param name="IsPlugin">True if this entry comes from an installed plugin (not built-in).</param>

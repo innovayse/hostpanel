@@ -48,7 +48,7 @@ public sealed class ListClientQuotesHandler
         var ordered = _context.Quotes
             .AsNoTracking()
             .Where(q => q.ClientId == query.ClientId)
-            .Matching(query, _clock.UtcNow)
+            .Matching(query, _clock.UtcNow, clientsMatchingSearch: [])
             .OrderByDescending(q => q.CreatedAt)
             .ThenByDescending(q => q.Id);
         var total = await ordered.CountAsync(ct);

@@ -168,7 +168,7 @@ public sealed class TestIntegrationConnectionHandler
             var missingList = string.Join(", ", missing);
             return new IntegrationTestResultDto(
                 Success: false,
-                Message: $"{_messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_FIELDS_MISSING)} {missingList}.",
+                Message: _messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_FIELDS_MISSING, missingList),
                 TestedAt: testedAt);
         }
 

@@ -32,10 +32,7 @@ public static class BillingErrors
 
     /// <summary>
     /// The invoice is not open for payment, because it is not Unpaid or Overdue (400): <see cref="Invoice.MarkPaid"/>,
-    /// <see cref="Invoice.Settle"/>, <see cref="Invoice.AddPayment"/> and <see cref="Invoice.RequestBankTransfer"/>. The same string
-    /// <c>Application.Common.Errors.HostpanelErrorCodes.INVOICE_NOT_PAYABLE</c> already answers
-    /// with from <c>StartGatewayPaymentHandler</c>'s own pre-check: declared again here, not
-    /// renamed, only because Domain may not reference that Application-layer constant.
+    /// <see cref="Invoice.Settle"/>, <see cref="Invoice.AddPayment"/> and <see cref="Invoice.RequestBankTransfer"/>.
     /// </summary>
     public const string InvoiceNotPayable = "INVOICE_NOT_PAYABLE";
 

@@ -349,8 +349,8 @@ export interface FulfilmentRecord {
   attempts: number
   /** When the next attempt is due (ISO 8601); the API always sends it. */
   nextAttemptAt: string
-  /** Error of the last attempt, for staff; null when it did not fail. */
-  lastError: string | null
+  /** Sentence for the last failed attempt in the caller's language, for staff; null when it did not fail. */
+  lastErrorMessage: string | null
   /** When the record finished (ISO 8601); null while it has not. */
   completedAt: string | null
   /** When the record was created (ISO 8601). */

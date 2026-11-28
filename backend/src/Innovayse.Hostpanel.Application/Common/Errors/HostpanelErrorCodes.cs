@@ -677,7 +677,7 @@ public static class HostpanelErrorCodes
     public const string SSH_ACCESS_UNAVAILABLE = "SSH_ACCESS_UNAVAILABLE";
 
     /// <summary>The server's key agent failed or did not answer; the outcome is recorded on the key (503).</summary>
-    public const string SSH_SERVER_UNAVAILABLE = "SSH_SERVER_UNAVAILABLE";
+    public const string SSH_SERVER_UNAVAILABLE = Domain.Ssh.SshProviderException.ErrorCode;
 
     /// <summary>
     /// The agent endpoint presented no host key to an administrator's scan: wrong host or port, a
@@ -773,7 +773,7 @@ public static class HostpanelErrorCodes
     public const string PRODUCT_TRIAL_NOT_AVAILABLE = "PRODUCT_TRIAL_NOT_AVAILABLE";
 
     /// <summary>The service is not Pending, so it cannot be set up (400).</summary>
-    public const string SERVICE_NOT_PENDING = "SERVICE_NOT_PENDING";
+    public const string SERVICE_NOT_PENDING = Domain.Services.ServicesErrors.ServiceNotPending;
 
     /// <summary>
     /// No server of the product's module has room to provision the service right now (503): a

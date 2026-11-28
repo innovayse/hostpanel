@@ -25,11 +25,9 @@ description: The file for every kind of change and a worked example.
 | Entity configuration | `Innovayse.Hostpanel.Infrastructure/Persistence/Configurations/<Entity>Configuration.cs` |
 | Migration | `Innovayse.Hostpanel.Infrastructure/Persistence/Migrations/` |
 | Adapter | `Innovayse.Hostpanel.Infrastructure/<Capability>/<Adapter>.cs` |
-| Integration test | `Innovayse.Hostpanel.Integration.Tests/<Feature>/<UseCase>Tests.cs` |
 | Admin screen | `admin/src/views/<area>/<ScreenName>View.vue` |
 | Admin store | `admin/src/stores/<area>.ts` |
 | Admin API composable | `admin/src/composables/apis/use<Area>Api.ts` |
-| Admin end-to-end test | `admin/e2e/<area>.spec.ts` |
 | Client page | `client/pages/<area>/<page>.vue` |
 | Client store | `client/stores/<area>.ts` |
 | Client API composable | `client/composables/use<Area>Api.ts` |
@@ -47,24 +45,21 @@ Create `Innovayse.Hostpanel.Application/Labels/Queries/GetLabels/GetLabelsQuery.
 
 Add a `GET /api/admin/labels` action to `Innovayse.Hostpanel.API/Controllers/LabelsController.cs` (create it if it does not exist). The action creates a `GetLabelsQuery`, calls `await _bus.InvokeAsync<Result<IReadOnlyList<LabelDto>>>(query, ct)` and passes the result to `HandleResult`.
 
-**3. Integration test**
 
-Create `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs`. The test seeds the database, calls the endpoint and asserts the response shape.
-
-**4. Admin store and API composable**
+**3. Admin store and API composable**
 
 Add `admin/src/stores/labels.ts` with a `fetchLabels` action that calls `runAction`. Add `admin/src/composables/apis/useLabelsApi.ts` with a `getLabels` function that calls `useApi`.
 
-**5. Admin screen**
+**4. Admin screen**
 
 Create `admin/src/views/labels/LabelsView.vue`. The view calls the store action on mount and renders the list. No direct `useApi` calls in the view.
 
-**6. Run the checks**
+**5. Run the checks**
 
 ```bash
 # backend (from docker/)
 ./scripts/manage.sh test
 
 # admin
-cd admin && npm run lint && npm run typecheck && npm test -- --maxWorkers=2
+cd admin && npm run lint && npm run typecheck
 ```

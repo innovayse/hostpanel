@@ -42,7 +42,7 @@ public sealed class ListClientInvoicesHandler
         // The id ends the order so a page never repeats or skips a row between requests.
         var ordered = _context.Invoices.AsNoTracking()
             .Where(x => x.ClientId == query.ClientId)
-            .Matching(query)
+            .Matching(query, clientsMatchingSearch: [])
             .OrderByDescending(x => x.CreatedAt)
             .ThenByDescending(x => x.Id);
         var total = await ordered.CountAsync(ct);

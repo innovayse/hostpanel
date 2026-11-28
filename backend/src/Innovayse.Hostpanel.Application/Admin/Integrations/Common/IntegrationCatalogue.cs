@@ -8,16 +8,23 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// The one catalogue of built-in integrations: display name, category, form fields and the fields
 /// that make an integration "configured". The list, detail and connection-test use cases all read
 /// it, so an integration is added or changed here and nowhere else. The catalogue carries no wording: the admin owns the
-/// name, field labels and option labels of the built-in integrations and resolves them from the slug and the field key. The category is the stable
-/// name the admin groups by, not display text.
+/// name, field labels and option labels of the built-in integrations and resolves them from the slug and the field
+/// key. The category is a fixed wire value the admin matches against its own closed set of category names and never
+/// shows as written, so a value is never reworded.
 /// </summary>
 public static class IntegrationCatalogue
 {
-    /// <summary>Category label of the payment gateways.</summary>
+    /// <summary>Category wire value of the payment gateways.</summary>
     private const string PaymentGateways = "Payment Gateways";
 
-    /// <summary>Category label of the hosting and provisioning panels.</summary>
+    /// <summary>Category wire value of the hosting and provisioning panels.</summary>
     private const string HostingProvisioning = "Hosting / Provisioning";
+
+    /// <summary>Category wire value of the email delivery integrations.</summary>
+    private const string EmailSmtp = "Email / SMTP";
+
+    /// <summary>Category wire value of the fraud screening integrations.</summary>
+    private const string FraudProtection = "Fraud Protection";
 
     /// <summary>Input kind of a plain text field.</summary>
     private const IntegrationFieldType Text = IntegrationFieldType.Text;
@@ -55,7 +62,7 @@ public static class IntegrationCatalogue
                 new("api_token", Password, Required: true),
             ],
             ["host", "username", "api_token"]),
-        [IntegrationSlugs.Smtp] = new("Email / SMTP",
+        [IntegrationSlugs.Smtp] = new(EmailSmtp,
             [
                 new("host", Text, Required: true),
                 new("port", Text, Required: false),
@@ -65,7 +72,7 @@ public static class IntegrationCatalogue
                 new("encryption", Select, Required: false, Options: ["TLS", "SSL", "None"]),
             ],
             ["host", "username", "password", "from_address"]),
-        [IntegrationSlugs.MaxMind] = new("Fraud Protection",
+        [IntegrationSlugs.MaxMind] = new(FraudProtection,
             [
                 new("account_id", Text, Required: true),
                 new("license_key", Password, Required: true),

@@ -39,7 +39,7 @@ public sealed class ListCreditNotesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, query.ClientId, ct);
         var filtered = _context.CreditNotes.AsNoTracking()
             .SearchIncludingIdOrMatching(
                 query.Search,

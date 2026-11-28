@@ -1753,7 +1753,7 @@
     <value>Todos los campos obligatorios están completos. Esta comprobación no contacta con el proveedor, así que confirme las credenciales con una acción real antes de confiar en ellas.</value>
   </data>
   <data name="INTEGRATION_TEST_FIELDS_MISSING" xml:space="preserve">
-    <value>La integración no está completamente configurada, porque algunos campos obligatorios están vacíos. Complete y guarde estos campos y vuelva a ejecutar la prueba:</value>
+    <value>La integración no está completamente configurada, porque algunos campos obligatorios están vacíos. Complete y guarde estos campos y vuelva a ejecutar la prueba: {0}.</value>
   </data>
   <data name="INTEGRATION_TEST_GATEWAY_OK" xml:space="preserve">
     <value>La pasarela de pago respondió y aceptó las credenciales guardadas. La integración está lista para recibir pagos.</value>

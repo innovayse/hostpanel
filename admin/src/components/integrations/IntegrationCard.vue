@@ -13,8 +13,8 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { INTEGRATION_META } from '@/types/integrationmeta'
-import type { IntegrationDto, IntegrationSlug } from '@/types/integration'
+import { integrationLabelText, integrationMetaOf } from '@/types/integrationmeta'
+import type { IntegrationDto } from '@/types/integration'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<{
 })
 
 /** Static metadata for this integration (logo, color, description); absent while loading and for a plugin. */
-const meta = computed(() => (props.integration === null ? undefined : INTEGRATION_META[props.integration.slug as IntegrationSlug]))
+const meta = computed(() => (props.integration === null ? undefined : integrationMetaOf(props.integration.slug)))
 
 /** Body text: the plugin's own description, else the catalogue text of a built-in integration. */
 const description = computed<string | undefined>(() => props.integration?.description ?? meta.value?.shortDescription)
@@ -63,7 +63,7 @@ const description = computed<string | undefined>(() => props.integration?.descri
           <UiSkeletonBar v-if="integration === null" class="h-12 w-12 rounded-control" aria-hidden="true" />
           <UiPluginAvatar
             v-else-if="integration.isPlugin"
-            :name="integration.name"
+            :name="integrationLabelText(integration.name)"
             :icon-url="integration.iconUrl"
             :size="UiSize.Lg"
             decorative
@@ -73,7 +73,7 @@ const description = computed<string | undefined>(() => props.integration?.descri
             <UiImage
               v-if="meta?.logo"
               :src="meta.logo"
-              :alt="integration.name"
+              :alt="integrationLabelText(integration.name)"
               class="h-full w-full object-contain brightness-0 invert"
             />
           </UiStack>
@@ -98,8 +98,8 @@ const description = computed<string | undefined>(() => props.integration?.descri
 
         <UiSkeletonBar v-if="integration === null" class="h-5 w-40 rounded-md" aria-hidden="true" />
         <UiStack v-else :direction="UiDirection.Row" :align="UiAlignItems.Center" :gap="UiGap.Sm" class="min-w-0">
-          <UiHeading :level="3" :variant="UiHeadingVariant.Card" class="min-w-0 truncate" :title="integration.name" data-testid="integration-card-name">
-            {{ integration.name }}
+          <UiHeading :level="3" :variant="UiHeadingVariant.Card" class="min-w-0 truncate" :title="integrationLabelText(integration.name)" data-testid="integration-card-name">
+            {{ integrationLabelText(integration.name) }}
           </UiHeading>
           <UiBadge v-if="integration.isPlugin" :tone="UiTone.Primary" small class="shrink-0" :data-testid="`integration-plugin-${integration.slug}`">
             {{ t('integrations.integrationCard.plugin') }}

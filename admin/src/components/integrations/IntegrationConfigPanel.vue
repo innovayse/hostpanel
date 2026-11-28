@@ -11,8 +11,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useIntegrationsStore } from '@/stores/integrations'
 import { useOutcomeToast } from '@/composables/useOutcomeToast'
-import { INTEGRATION_META } from '@/types/integrationmeta'
-import type { IntegrationConfigPayload, IntegrationSlug } from '@/types/integration'
+import { integrationMetaOf } from '@/types/integrationmeta'
+import type { IntegrationConfigPayload } from '@/types/integration'
 import type { ServerOptionDto } from '@/types/server'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
@@ -43,7 +43,7 @@ const loadError = ref<string | null>(null)
 const feedback = useOutcomeToast()
 
 /** Static metadata hint for this integration. */
-const hint = computed<string | undefined>(() => INTEGRATION_META[props.slug as IntegrationSlug]?.hint)
+const hint = computed<string | undefined>(() => integrationMetaOf(props.slug)?.hint)
 
 /**
  * Host the integration talks to, for the status card. Only hosted-gateway and server-backed

@@ -6,6 +6,11 @@ namespace Innovayse.Hostpanel.Application.Services.Queries.FindServiceIdsBySearc
 /// </summary>
 /// <param name="Search">
 /// The text to look for, in any letter case, in the service's own domain, its linked registered domain, its product
-/// name and its client (name, company, sign-in email), or the service id when it is a whole number; a blank text matches nothing.
+/// name and its client (name, company, sign-in email), or the service id when it is a whole number; a blank text
+/// matches nothing.
 /// </param>
-public sealed record FindServiceIdsBySearchQuery(string Search);
+/// <param name="ClientId">
+/// The client the list is scoped to, or <see langword="null"/> for every client; a scoped list holds only that
+/// client's services, so the client's name is not searched.
+/// </param>
+public sealed record FindServiceIdsBySearchQuery(string Search, int? ClientId = null);

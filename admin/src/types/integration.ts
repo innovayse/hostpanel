@@ -46,12 +46,25 @@ export const IntegrationSlug = {
 /** All valid integration slugs. */
 export type IntegrationSlug = (typeof IntegrationSlug)[keyof typeof IntegrationSlug]
 
+/** Closed set of the ways an integration text is carried; it decides whether the text is translated when drawn. */
+export enum IntegrationLabelKind {
+  /** Finished text in the request language, shown as it is (a plugin's own wording). */
+  Text = 'text',
+  /** A locale key of the admin catalogue, translated when drawn so it follows a language switch. */
+  Key = 'key',
+}
+
+/** One text of an integration screen: either finished text or a locale key. */
+export type IntegrationLabel =
+  | { kind: IntegrationLabelKind.Text; text: string }
+  | { kind: IntegrationLabelKind.Key; key: string }
+
 /** Summary of a single integration returned by GET /api/admin/integrations. */
 export interface IntegrationDto {
   /** URL-safe slug used in routes and API calls. */
   slug: string
-  /** Display name: the manifest name for a plugin; for a built-in integration the store words it from the slug. */
-  name: string
+  /** Display name: the manifest name for a plugin, the catalogue's locale key for a built-in integration. */
+  name: IntegrationLabel
   /** Category this integration belongs to. */
   category: IntegrationCategory
   /** Whether this integration is currently enabled. */
@@ -69,7 +82,7 @@ export interface IntegrationDto {
    * integration and every other plugin.
    */
   connection: IntegrationConnection | null
-  /** The plugin's short description in the request language; null for a built-in integration, whose card text the admin owns. */
+  /** The plugin's short description in the request language; null for a built-in integration (admin-owned text). */
   description: string | null
 }
 
@@ -102,8 +115,8 @@ export interface IntegrationConnection {
 export interface FieldDefinitionDto {
   /** Storage key used in the Settings table (e.g. "secret_key"). */
   key: string
-  /** Label shown above the input: finished text for a plugin; for a built-in integration the store words it from the slug and the key. */
-  label: string
+  /** Label shown above the input: finished text for a plugin, the catalogue's locale key for a built-in integration. */
+  label: IntegrationLabel
   /** Input kind of the field. */
   type: IntegrationFieldType
   /** Whether the field is required before the integration can be enabled. */
@@ -118,12 +131,15 @@ export interface FieldDefinitionDto {
   description?: string | null
   /** Hint shown in the empty input, already in the request language; absent or null for none. */
   placeholder?: string | null
-  /** The text shown for each option value, keyed by the value (finished text for a plugin, worded by the store for a built-in integration); absent or null when an option shows its value. */
-  optionLabels?: Record<string, string> | null
+  /** The text shown for each option value, keyed by the value; absent when an option shows its value. */
+  optionLabels?: Record<string, IntegrationLabel>
 }
 
-/** A field definition as the API sends it: a built-in integration's label is null, the admin words it. */
-export type FieldDefinitionWire = Omit<FieldDefinitionDto, 'label'> & { label?: string | null }
+/** A field definition as the API sends it: a built-in integration's label is null and its option labels may be null. */
+export type FieldDefinitionWire = Omit<FieldDefinitionDto, 'label' | 'optionLabels'> & {
+  label?: string | null
+  optionLabels?: Record<string, string> | null
+}
 
 /** The stored state of one integration field. */
 export interface IntegrationFieldValue {
@@ -139,12 +155,12 @@ export interface IntegrationFieldValue {
 export interface IntegrationDetailDto {
   /** URL-safe slug used in routes and API calls. */
   slug: string
-  /** Display name: the manifest name for a plugin; for a built-in integration the store words it from the slug. */
-  name: string
+  /** Display name: the manifest name for a plugin, the catalogue's locale key for a built-in integration. */
+  name: IntegrationLabel
   /** Whether this integration is currently enabled. */
   isEnabled: boolean
   /** True if this integration comes from an installed plugin (not built-in). */
-  isPlugin?: boolean
+  isPlugin: boolean
   /** Address of the plugin's icon; null or absent for a built-in integration or a plugin without one. */
   iconUrl?: string | null
   /** Field key to its stored state; a secret field answers only whether it is set. */
@@ -160,10 +176,10 @@ export interface IntegrationDetailDto {
   connection: IntegrationConnection | null
 }
 
-/** An integration summary as the API sends it: a built-in integration's name is null, the admin words it. */
+/** An integration summary as the API sends it: a built-in integration's name is null, the store turns it into a key. */
 export type IntegrationWireDto = Omit<IntegrationDto, 'name'> & { name: string | null }
 
-/** An integration detail as the API sends it: a built-in integration's name and field labels are null, the admin words them. */
+/** An integration detail as the API sends it: a built-in integration's name and field labels are null. */
 export type IntegrationDetailWireDto = Omit<IntegrationDetailDto, 'name' | 'fieldDefinitions'> & {
   name: string | null
   fieldDefinitions: FieldDefinitionWire[]
@@ -239,27 +255,39 @@ export interface IntegrationOptionMeta {
   labelKey: string
 }
 
-/** Closed set of the field keys the API sends for the built-in integrations; the strings are the stored setting names. */
-export const IntegrationFieldKey = {
-  AccountName: 'account_name',
-  Iban: 'iban',
-  Swift: 'swift',
-  BankName: 'bank_name',
-  Instructions: 'instructions',
-  ExpiryDays: 'expiry_days',
-  Host: 'host',
-  Port: 'port',
-  Username: 'username',
-  Password: 'password',
-  ApiToken: 'api_token',
-  FromAddress: 'from_address',
-  Encryption: 'encryption',
-  AccountId: 'account_id',
-  LicenseKey: 'license_key',
-} as const
-
-/** One of the {@link IntegrationFieldKey} values. */
-export type IntegrationFieldKey = (typeof IntegrationFieldKey)[keyof typeof IntegrationFieldKey]
+/** Closed set of the field keys the API sends for the built-in integrations; the strings are the setting names. */
+export enum IntegrationFieldKey {
+  /** Bank transfer: account holder name. */
+  AccountName = 'account_name',
+  /** Bank transfer: IBAN. */
+  Iban = 'iban',
+  /** Bank transfer: SWIFT code. */
+  Swift = 'swift',
+  /** Bank transfer: bank name. */
+  BankName = 'bank_name',
+  /** Bank transfer: payment instructions. */
+  Instructions = 'instructions',
+  /** Bank transfer: days an invoice stays payable. */
+  ExpiryDays = 'expiry_days',
+  /** Host name of a server (cPanel, SMTP). */
+  Host = 'host',
+  /** Port of a server (cPanel, SMTP). */
+  Port = 'port',
+  /** Account user name (cPanel, SMTP). */
+  Username = 'username',
+  /** Account password (SMTP). */
+  Password = 'password',
+  /** cPanel API token. */
+  ApiToken = 'api_token',
+  /** SMTP sender address. */
+  FromAddress = 'from_address',
+  /** SMTP connection encryption. */
+  Encryption = 'encryption',
+  /** Fraud screening account id. */
+  AccountId = 'account_id',
+  /** Fraud screening license key. */
+  LicenseKey = 'license_key',
+}
 
 /** Closed set of input kinds an integration configuration field can use; the strings are the API's enum names. */
 export enum IntegrationFieldType {

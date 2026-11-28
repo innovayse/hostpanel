@@ -17,4 +17,10 @@ public static class PagingLimits
 
     /// <summary>The longest search or text-filter value a list accepts; far above any real name, address or number.</summary>
     public const int MaxSearchLength = 200;
+
+    /// <summary>
+    /// How many ids one id search (the clients, the services) answers with. A list turns the answer into an <c>IN</c>
+    /// clause, so a search that matches more rows than this would build a query the database has to be talked into
+    /// accepting; the answer is then the lowest ids and the person narrows the text.
+    /// </summary>
 }

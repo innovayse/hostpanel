@@ -23,8 +23,8 @@ afterEach(() => {
 describe('integrationsStore.fetchAll', () => {
   it('maps the backend category strings to the frontend keys', async () => {
     stubFetch(json([
-      { slug: 'bank-transfer', category: 'Payment Gateways' },
-      { slug: 'x', category: 'Unknown Group' },
+      { slug: 'bank-transfer', name: null, category: 'Payment Gateways' },
+      { slug: 'x', name: 'X', category: 'Unknown Group' },
     ]))
     const store = useIntegrationsStore()
 
@@ -35,11 +35,11 @@ describe('integrationsStore.fetchAll', () => {
 
   it('lists a plugin under the category of its declared type, whatever its manifest category says', async () => {
     stubFetch(json([
-      { slug: 'deliver', category: 'Extensions', pluginType: 'Fulfilment' },
-      { slug: 'sign-in', category: 'Extensions', pluginType: 'Identity' },
-      { slug: 'worker', category: 'Payment Gateways', pluginType: 'Hosted' },
-      { slug: 'bank', category: 'Payment', pluginType: 'Payment' },
-      { slug: 'smtp', category: 'Email / SMTP', pluginType: null },
+      { slug: 'deliver', name: 'Deliver', category: 'Extensions', pluginType: 'Fulfilment' },
+      { slug: 'sign-in', name: 'Sign in', category: 'Extensions', pluginType: 'Identity' },
+      { slug: 'worker', name: 'Worker', category: 'Payment Gateways', pluginType: 'Hosted' },
+      { slug: 'bank', name: 'Bank', category: 'Payment', pluginType: 'Payment' },
+      { slug: 'smtp', name: null, category: 'Email / SMTP', pluginType: null },
     ]))
     const store = useIntegrationsStore()
 
@@ -59,11 +59,11 @@ describe('integrationsStore.fetchAll', () => {
 
 describe('integrationsStore.fetchOne', () => {
   it('loads the detail', async () => {
-    stubFetch(json({ slug: 'bank-transfer' }))
+    stubFetch(json({ slug: 'bank-transfer', name: 'Bank Transfer', fieldDefinitions: [] }))
     const store = useIntegrationsStore()
 
     await store.fetchOne('bank-transfer')
-    expect(store.current).toEqual({ slug: 'bank-transfer' })
+    expect(store.current).toEqual({ slug: 'bank-transfer', name: 'Bank Transfer', fieldDefinitions: [] })
   })
 
   it('empties current and keeps the no-answer sentence offline', async () => {
@@ -79,12 +79,12 @@ describe('integrationsStore.fetchOne', () => {
 
 describe('integrationsStore.saveConfig', () => {
   it('re-reads the detail after the 204 instead of blanking the page', async () => {
-    const mock = stubFetch(new Response(null, { status: 204 }), json({ slug: 'bank-transfer', enabled: true }))
+    const mock = stubFetch(new Response(null, { status: 204 }), json({ slug: 'bank-transfer', name: 'Bank Transfer', fieldDefinitions: [], enabled: true }))
     const store = useIntegrationsStore()
 
     expect(await store.saveConfig('bank-transfer', { enabled: true, config: {} } as never)).toBe(true)
     expect(mock).toHaveBeenCalledTimes(2)
-    expect(store.current).toEqual({ slug: 'bank-transfer', enabled: true })
+    expect(store.current).toEqual({ slug: 'bank-transfer', name: 'Bank Transfer', fieldDefinitions: [], enabled: true })
   })
 
   it('keeps the API sentence and does not re-read on refusal', async () => {

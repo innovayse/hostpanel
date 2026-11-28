@@ -107,28 +107,39 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
 }
 
 /**
+ * Finds the catalogue entry of a built-in integration.
+ *
+ * @param slug - Slug of any integration; a plugin's slug is not in the catalogue.
+ * @returns The entry, or undefined when the slug is not a built-in integration.
+ */
+const builtInMetaOf = (slug: string): IntegrationMeta | undefined =>
+  (INTEGRATION_META as Record<string, IntegrationMeta | undefined>)[slug]
+
+/**
  * Finds the wording of one field of a built-in integration.
  *
- * @param slug - Slug of the built-in integration.
+ * @param slug - Slug of the integration.
  * @param key - The field's key, as the API sends it.
- * @returns The field's wording, or undefined when the integration declares no wording for that key.
+ * @returns The field's wording, or undefined when the integration is not built in or declares no wording for that key.
  */
 const fieldMetaOf = (slug: string, key: string): IntegrationFieldMeta | undefined =>
-  INTEGRATION_META[slug as IntegrationSlug].fields.find(field => field.key === key)
+  builtInMetaOf(slug)?.fields.find(field => field.key === key)
 
 /**
  * Words the name of a built-in integration in the operator's language.
  *
- * @param slug - Slug of the built-in integration.
- * @returns The translated name.
+ * @param slug - Slug of the integration.
+ * @returns The translated name; the slug itself when the integration is not built in.
  */
-export const builtInIntegrationName = (slug: string): string =>
-  translate(INTEGRATION_META[slug as IntegrationSlug].labelKey)
+export const builtInIntegrationName = (slug: string): string => {
+  const meta = builtInMetaOf(slug)
+  return meta ? translate(meta.labelKey) : slug
+}
 
 /**
  * Words the label of a field of a built-in integration in the operator's language.
  *
- * @param slug - Slug of the built-in integration.
+ * @param slug - Slug of the integration.
  * @param key - The field's key, as the API sends it.
  * @returns The translated label; the key itself when the integration declares no label for it.
  */
@@ -140,7 +151,7 @@ export const builtInFieldLabel = (slug: string, key: string): string => {
 /**
  * Words the options of a field of a built-in integration in the operator's language.
  *
- * @param slug - Slug of the built-in integration.
+ * @param slug - Slug of the integration.
  * @param key - The field's key, as the API sends it.
  * @returns Option value to translated text for the options that have their own wording; null when none has.
  */

@@ -62,31 +62,31 @@
     <value>Validation failed</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>One or more validation errors occurred.</value>
+    <value>Some of the entered values are not valid, so nothing was saved. Check the messages next to each field, correct them and send the form again.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
     <value>Unauthorized</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>You are not authorized to perform this action.</value>
+    <value>You are not signed in, or your session has expired, so the action was not performed. Sign in again and repeat it.</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
     <value>Resource not found</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>The requested resource was not found.</value>
+    <value>The item you asked for does not exist, or it was deleted. Reload the page and open it again from the list.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
     <value>Internal server error</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>An unexpected error occurred. Please try again later.</value>
+    <value>Something went wrong on the server and the action may not have been completed. Wait a minute and repeat it, and if the problem keeps happening, contact the administrator and mention the time it occurred.</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
     <value>Business rule violation</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>The request violates a business rule.</value>
+    <value>The action is not possible in the current state of this item, so nothing was changed. Reload the page to see its current state and check that your entries fit it.</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
     <value>Concurrency conflict</value>
@@ -98,10 +98,10 @@
     <value>Invalid request body</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>The request body could not be read. Check its format.</value>
+    <value>The server could not read the data sent with this request, for example because it is malformed, has a value of the wrong type or is too large. Reload the page and send it again, and if you call the API directly, check the JSON you send.</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>The value '{0}' is not a valid number.</value>
+    <value>The value '{0}' is not a valid number. Enter digits only, with a dot as the decimal separator, for example 12.50.</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
     <value>Forbidden</value>
@@ -110,9 +110,9 @@
     <value>This request must be sent from the panel itself. Reload the page and try again.</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>You do not have permission to perform this action.</value>
+    <value>Your account does not have the permission this action needs, so it was not performed. Ask an administrator to grant the permission, or sign in with an account that has it.</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>This value is not valid.</value>
+    <value>This value could not be read in the expected format. Check what you entered and correct it.</value>
   </data>
 </root>

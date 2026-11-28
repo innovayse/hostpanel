@@ -62,31 +62,31 @@
     <value>Validierung fehlgeschlagen</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>Es sind ein oder mehrere Validierungsfehler aufgetreten.</value>
+    <value>Einige der eingegebenen Werte sind ungültig, daher wurde nichts gespeichert. Prüfen Sie die Meldungen neben den einzelnen Feldern, korrigieren Sie die Werte und senden Sie das Formular erneut.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
     <value>Nicht autorisiert</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>Sie sind nicht berechtigt, diese Aktion auszuführen.</value>
+    <value>Sie sind nicht angemeldet oder Ihre Sitzung ist abgelaufen, daher wurde die Aktion nicht ausgeführt. Melden Sie sich erneut an und wiederholen Sie sie.</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
     <value>Ressource nicht gefunden</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>Die angeforderte Ressource wurde nicht gefunden.</value>
+    <value>Das angeforderte Element existiert nicht oder wurde gelöscht. Laden Sie die Seite neu und öffnen Sie es erneut über die Liste.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
     <value>Interner Serverfehler</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.</value>
+    <value>Auf dem Server ist ein Fehler aufgetreten, und die Aktion wurde möglicherweise nicht abgeschlossen. Warten Sie eine Minute und wiederholen Sie sie. Wenn das Problem weiterhin besteht, wenden Sie sich an den Administrator und nennen Sie die Uhrzeit des Fehlers.</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
     <value>Verstoß gegen eine Geschäftsregel</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>Die Anfrage verstößt gegen eine Geschäftsregel.</value>
+    <value>Die Aktion ist im aktuellen Zustand dieses Elements nicht möglich, daher wurde nichts geändert. Laden Sie die Seite neu, um den aktuellen Zustand zu sehen, und prüfen Sie, ob Ihre Eingaben dazu passen.</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
     <value>Gleichzeitigkeitskonflikt</value>
@@ -98,10 +98,10 @@
     <value>Ungültiger Anfragetext</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>Der Anfragetext konnte nicht gelesen werden. Prüfen Sie sein Format.</value>
+    <value>Der Server konnte die mit dieser Anfrage gesendeten Daten nicht lesen, zum Beispiel weil sie fehlerhaft aufgebaut sind, einen Wert des falschen Typs enthalten oder zu groß sind. Laden Sie die Seite neu und senden Sie die Anfrage erneut. Wenn Sie die API direkt aufrufen, prüfen Sie das gesendete JSON.</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>Der Wert '{0}' ist keine gültige Zahl.</value>
+    <value>Der Wert '{0}' ist keine gültige Zahl. Geben Sie nur Ziffern ein und verwenden Sie einen Punkt als Dezimaltrennzeichen, zum Beispiel 12.50.</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
     <value>Verboten</value>
@@ -110,9 +110,9 @@
     <value>Diese Anfrage muss vom Panel selbst gesendet werden. Laden Sie die Seite neu und versuchen Sie es erneut.</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>Sie haben keine Berechtigung, diese Aktion auszuführen.</value>
+    <value>Ihr Konto hat nicht die Berechtigung, die diese Aktion benötigt, daher wurde sie nicht ausgeführt. Bitten Sie einen Administrator, die Berechtigung zu erteilen, oder melden Sie sich mit einem Konto an, das sie besitzt.</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>Dieser Wert ist ungültig.</value>
+    <value>Dieser Wert konnte nicht im erwarteten Format gelesen werden. Prüfen Sie Ihre Eingabe und korrigieren Sie sie.</value>
   </data>
 </root>

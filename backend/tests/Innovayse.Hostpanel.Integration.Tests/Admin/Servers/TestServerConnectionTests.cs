@@ -86,7 +86,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     [Theory]
     [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_TIMED_OUT, "The server did not answer in time. Check that the panel is running and not blocked by a firewall.")]
     [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_TLS_FAILED, "The secure connection to the server failed. Check the certificate of the panel, or allow its self signed certificate in the server settings.")]
-    [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_AUTH_FAILED, "The control panel refused the saved credentials.")]
+    [InlineData(HostpanelErrorCodes.SERVER_CONNECTION_AUTH_FAILED, "The control panel refused the saved credentials. Update them in the server settings and run the connection test again.")]
     public async Task WhenProviderFailsForASpecificReason_AnswersItsCodeAndSentenceAsync(string code, string message)
     {
         var tester = new FakeServerConnectionTester { ShouldFail = true, FailureCode = code };

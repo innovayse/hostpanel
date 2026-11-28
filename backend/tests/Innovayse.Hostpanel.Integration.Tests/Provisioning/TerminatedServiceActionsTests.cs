@@ -59,7 +59,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
         ];
     }
 
-    /// <summary>A terminated service is refused with 400 <c>SERVICE_NOT_ACTIVE</c> and the provider is never called.</summary>
+    /// <summary>A terminated service is refused with 400 <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> and the provider is never called.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminated_AllFourRequestsAreRefusedWithoutReachingTheProviderAsync()
@@ -71,7 +71,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
         foreach (var response in await CallAllAsync(http, owned.ServiceId))
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+            (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_HOSTING_ACCOUNT_REMOVED);
         }
 
         provider.AccountCalls.Should().Be(0);
@@ -102,7 +102,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
 
     /// <summary>
     /// A terminated service and a live one share a server and a reference. The former owner is refused
-    /// with 400 <c>SERVICE_NOT_ACTIVE</c> and the provider receives no call, so nothing reaches the account
+    /// with 400 <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> and the provider receives no call, so nothing reaches the account
     /// that now belongs to the other service.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -134,7 +134,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
             $"/api/me/services/{former.ServiceId}/change-password", new { newPassword = "N3wPassw0rd!" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_HOSTING_ACCOUNT_REMOVED);
         provider.AccountCalls.Should().Be(0);
     }
 }

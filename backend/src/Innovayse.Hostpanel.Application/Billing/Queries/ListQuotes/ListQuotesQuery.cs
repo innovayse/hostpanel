@@ -8,9 +8,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListQuotes;
 /// <param name="Page">1-based page number.</param>
 /// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
 /// <param name="Search">
-/// Optional text; only quotes whose subject contains it (case-insensitive), or whose id it is when it is a whole number,
-/// are listed. Blank lists all. The client's name is not searched, which only the Clients module can read: filter by
-/// <paramref name="ClientId"/> instead.
+/// Optional text; only quotes whose subject contains it, or that belong to a client whose first name, last name, company,
+/// sign-in address or account name contains it (case-insensitive, a <c>%</c> or <c>_</c> matches itself), or whose id it is
+/// when it is a whole number, are listed. Blank lists all.
 /// </param>
 /// <param name="ClientId">Optional client filter; <see langword="null"/> for every client.</param>
 /// <param name="Stage">Optional stage filter, bound by name from the query string; <see langword="null"/> for every stage.</param>

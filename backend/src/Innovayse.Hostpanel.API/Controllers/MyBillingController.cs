@@ -168,7 +168,7 @@ public sealed class MyBillingController : BaseApiController
     /// <returns>
     /// 200 with the bank details and the reference (also when the transfer was already chosen); 401 without a session;
     /// 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's; 400 with <c>INVOICE_NOT_PAYABLE</c> when the invoice
-    /// is not open for payment; 409 with <c>BANK_TRANSFER_NOT_AVAILABLE</c> when the admin has it switched off,
+    /// is not open for payment or <c>INVOICE_NOTHING_DUE</c> when it owes nothing; 409 with <c>BANK_TRANSFER_NOT_AVAILABLE</c> when the admin has it switched off,
     /// <c>GATEWAY_SESSION_ALREADY_STARTED</c> while a hosted payment is still open, or <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>
     /// or <c>INVOICE_STORED_CHARGE_HELD</c> while a stored card charge blocks it; 403 with <c>CLIENT_PERMISSION_DENIED</c>
     /// when the user lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the account

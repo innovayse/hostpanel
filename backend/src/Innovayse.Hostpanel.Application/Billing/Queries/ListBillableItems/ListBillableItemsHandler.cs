@@ -39,7 +39,8 @@ public sealed class ListBillableItemsHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var filtered = _context.BillableItems.AsNoTracking().Matching(query);
+        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        var filtered = _context.BillableItems.AsNoTracking().Matching(query, clientsMatchingSearch);
         if (query.ClientId is { } clientId)
         {
             filtered = filtered.Where(x => x.ClientId == clientId);

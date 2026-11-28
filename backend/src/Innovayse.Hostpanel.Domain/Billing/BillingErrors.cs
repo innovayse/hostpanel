@@ -31,13 +31,19 @@ public static class BillingErrors
     public const string InvoiceNotEditable = "INVOICE_NOT_EDITABLE";
 
     /// <summary>
-    /// The invoice cannot be paid in its current status (400): <see cref="Invoice.MarkPaid"/>,
-    /// <see cref="Invoice.Settle"/> and <see cref="Invoice.AddPayment"/>. The same string
+    /// The invoice is not open for payment, because it is not Unpaid or Overdue (400): <see cref="Invoice.MarkPaid"/>,
+    /// <see cref="Invoice.Settle"/>, <see cref="Invoice.AddPayment"/> and <see cref="Invoice.RequestBankTransfer"/>. The same string
     /// <c>Application.Common.Errors.HostpanelErrorCodes.INVOICE_NOT_PAYABLE</c> already answers
     /// with from <c>StartGatewayPaymentHandler</c>'s own pre-check: declared again here, not
     /// renamed, only because Domain may not reference that Application-layer constant.
     /// </summary>
     public const string InvoiceNotPayable = "INVOICE_NOT_PAYABLE";
+
+    /// <summary>
+    /// The invoice is open but owes nothing, so there is nothing to transfer or charge (400):
+    /// <see cref="Invoice.RequestBankTransfer"/>.
+    /// </summary>
+    public const string InvoiceNothingDue = "INVOICE_NOTHING_DUE";
 
     /// <summary>
     /// The id names no line item on this invoice (404): <see cref="Invoice.RemoveItem"/> and
@@ -68,6 +74,25 @@ public static class BillingErrors
     /// <see cref="FulfilmentRecord.Retry"/>.
     /// </summary>
     public const string FulfilmentRecordNotRetryable = "FULFILMENT_RECORD_NOT_RETRYABLE";
+
+    /// <summary>
+    /// The dispatcher never reported an outcome before its claim ran out, because the process stopped or lost
+    /// the database between claiming the record and saving the result: <see cref="FulfilmentRecord.Claim"/>.
+    /// Stored in <see cref="FulfilmentRecord.LastErrorCode"/>, never answered.
+    /// </summary>
+    public const string FulfilmentAttemptAbandoned = "FULFILMENT_ATTEMPT_ABANDONED";
+
+    /// <summary>
+    /// The fulfilment plugin did not answer within the call timeout. Stored in
+    /// <see cref="FulfilmentRecord.LastErrorCode"/>, never answered.
+    /// </summary>
+    public const string FulfilmentPluginTimedOut = "FULFILMENT_PLUGIN_TIMED_OUT";
+
+    /// <summary>
+    /// The fulfilment plugin failed the delivery. Its own error text is only logged. Stored in
+    /// <see cref="FulfilmentRecord.LastErrorCode"/>, never answered.
+    /// </summary>
+    public const string FulfilmentPluginFailed = "FULFILMENT_PLUGIN_FAILED";
 
     /// <summary>
     /// The line is not a domain renewal left claimed, so there is no claim to release (409):
@@ -186,8 +211,20 @@ public static class BillingErrors
     /// <summary>A credit note needs at least one line, and every line a description, a price and a quantity (400): <see cref="CreditNote.Create"/>.</summary>
     public const string CreditNoteItemsRequired = "CREDIT_NOTE_ITEMS_REQUIRED";
 
-    /// <summary>The credit note is not in the state the action needs (409): <see cref="CreditNote.Issue"/>, <see cref="CreditNote.MarkApplied"/> and <see cref="CreditNote.Void"/>.</summary>
+    /// <summary>Only a draft credit note can be issued, and this one already has a number (409): <see cref="CreditNote.Issue"/>.</summary>
     public const string CreditNoteInvalidState = "CREDIT_NOTE_INVALID_STATE";
+
+    /// <summary>A credit note is applied only once it is issued, and this one is a draft, already applied or voided (409): <see cref="CreditNote.MarkApplied"/>.</summary>
+    public const string CreditNoteNotIssued = "CREDIT_NOTE_NOT_ISSUED";
+
+    /// <summary>A gateway refund credit note is applied with the gateway's reference of the refund it paid out, and none was given (409): <see cref="CreditNote.MarkApplied"/>.</summary>
+    public const string CreditNoteRefundReferenceRequired = "CREDIT_NOTE_REFUND_REFERENCE_REQUIRED";
+
+    /// <summary>A draft credit note was never issued, so there is nothing to void (409): <see cref="CreditNote.Void"/>.</summary>
+    public const string CreditNoteDraftNotVoidable = "CREDIT_NOTE_DRAFT_NOT_VOIDABLE";
+
+    /// <summary>More credit note value is released from the invoice than its credit notes ever noted on it (409): <see cref="Invoice.RemoveCreditNoted"/>.</summary>
+    public const string InvoiceCreditNotedExceeded = "INVOICE_CREDIT_NOTED_EXCEEDED";
 
     /// <summary>The credit note was already voided (409): <see cref="CreditNote.Void"/>.</summary>
     public const string CreditNoteAlreadyVoided = "CREDIT_NOTE_ALREADY_VOIDED";

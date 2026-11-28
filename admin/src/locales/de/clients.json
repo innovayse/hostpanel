@@ -125,7 +125,7 @@
     "cancellationRequests": "Kündigungsanfragen",
     "reviewAndProcessServiceCancellation": "Service-Kündigungsanfragen prüfen und bearbeiten",
     "noCancellationRequestsFound": "Keine Kündigungsanfragen gefunden",
-    "searchRequests": "Nach Grund oder ID suchen",
+    "searchRequests": "Nach Grund, Dienst, Kunde oder ID suchen",
     "noRequestsMatchYourFilters": "Keine Kündigungsanfragen entsprechen Ihren Filtern",
     "deleteCancellationRequest": "Kündigungsanfrage löschen",
     "areYouSureYouWant": "Sind Sie sicher, dass Sie diese Kündigungsanfrage löschen möchten?",
@@ -228,7 +228,7 @@
       "senderRejected": "Absenderadresse abgelehnt",
       "messageRejected": "Nachricht abgelehnt"
     },
-    "searchEmails": "E-Mails durchsuchen"
+    "searchEmails": "Nach Betreff oder Empfänger suchen"
   },
   "clientInvoices": {
     "createInvoice": "Rechnung erstellen",
@@ -249,7 +249,7 @@
     "activityLog": "Aktivitätsprotokoll",
     "logEntry": "Protokolleintrag",
     "user": "Benutzer",
-    "searchLog": "Aktivitätsprotokoll durchsuchen"
+    "searchLog": "Nach Administrator, Beschreibung oder IP-Adresse suchen"
   },
   "clientOpenTicket": {
     "ticketSubject": "Ticket-Betreff",
@@ -307,6 +307,7 @@
     "dedicatedIp": "Zugewiesene IP",
     "moduleCommands": "Modulbefehle",
     "serviceTerminated": "Service beendet",
+    "statusLocked": "Ein beendeter Dienst kann in keinen anderen Status versetzt werden, deshalb gibt es hier nichts zu ändern. Um diesen Dienst erneut bereitzustellen, bestellen Sie für den Kunden einen neuen.",
     "terminate": "Beenden",
     "suspend": "Sperren",
     "changePackage": "Paket ändern",

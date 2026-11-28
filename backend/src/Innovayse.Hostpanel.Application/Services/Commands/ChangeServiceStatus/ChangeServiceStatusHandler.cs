@@ -38,7 +38,7 @@ public sealed class ChangeServiceStatusHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success (also when the service already has that status), <c>SERVICE_NOT_FOUND</c> when the id
-    /// names no service, <c>SERVICE_STATUS_CHANGE_NOT_ALLOWED</c> when the service cannot be moved to
+    /// names no service, the reason code of the status table (<see cref="Domain.Services.ClientService.StatusChangeRefusal"/>) when the service cannot be moved to
     /// that status, or the transition's own failure (a refusal of the panel) otherwise.
     /// </returns>
     public async Task<Result> HandleAsync(ChangeServiceStatusCommand cmd, CancellationToken ct)
@@ -49,9 +49,9 @@ public sealed class ChangeServiceStatusHandler
             return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
         }
 
-        if (!service.CanChangeStatusTo(cmd.Status))
+        if (service.StatusChangeRefusal(cmd.Status) is { } refusal)
         {
-            return Result.FailureCode(HostpanelErrorCodes.SERVICE_STATUS_CHANGE_NOT_ALLOWED);
+            return Result.FailureCode(refusal);
         }
 
         if (cmd.Status == service.Status)
@@ -59,7 +59,7 @@ public sealed class ChangeServiceStatusHandler
             return Result.Success();
         }
 
-        // CanChangeStatusTo allows no other target, so the switch is exhaustive for every move it let through.
+        // StatusChangeRefusal allows no other target, so the switch is exhaustive for every move it let through.
         object transition = cmd.Status switch
         {
             ServiceStatus.Suspended => new SuspendServiceCommand(service.Id),

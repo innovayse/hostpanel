@@ -111,6 +111,8 @@ export interface ServiceDetail {
   domain: string | null
   /** Current lifecycle status. */
   status: ServiceStatus
+  /** The statuses the service may be moved to, its own included; the domain's status table. A lone entry means the status is final. */
+  allowedStatuses: ServiceStatus[]
   /** ISO 8601 creation timestamp. */
   createdAt: string
   /** ISO 8601 termination timestamp, if terminated. */

@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Architecture.Tests;
 public sealed class NoDirectClockTests
 {
     /// <summary>The solution directory.</summary>
-    private static string BackendRoot => UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+    private static string BackendRoot => BackendLayout.FindRoot(AppContext.BaseDirectory);
 
     /// <summary>Every authored C# source under <c>backend/src</c> outside the SDK submodule, as a path relative to it and its text.</summary>
     /// <returns>The sources; build output is not authored code.</returns>

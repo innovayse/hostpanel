@@ -36,7 +36,7 @@ public sealed class CancelOrderHandler
     /// <param name="cmd">The order to cancel.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <c>ORDER_NOT_FOUND</c> when the id names no order, or <c>ORDER_NOT_PENDING</c>
+    /// Success, or <c>ORDER_NOT_FOUND</c> when the id names no order, or <c>ORDER_CANCEL_NOT_PENDING</c>
     /// when it is not Pending, or whichever code <see cref="CancelInvoiceCommand"/> refuses the
     /// linked invoice with (an invoice that already took a payment is never cancelled, so its
     /// order is left unchanged).
@@ -56,7 +56,7 @@ public sealed class CancelOrderHandler
         // Checked before the invoice is touched, so a refused cancel never cancels the invoice.
         if (order.Status is not OrderStatus.Pending)
         {
-            return Result.FailureCode(HostpanelErrorCodes.ORDER_NOT_PENDING);
+            return Result.FailureCode(HostpanelErrorCodes.ORDER_CANCEL_NOT_PENDING);
         }
 
         if (order.InvoiceId is { } invoiceId)

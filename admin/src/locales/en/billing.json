@@ -100,7 +100,7 @@
   "billableItems": {
     "billableItems": "Billable Items",
     "manageUninvoicedAndRecurringCharges": "Manage uninvoiced and recurring charges",
-    "searchItems": "Search by description or id",
+    "searchItems": "Search by description, id, client name or email",
     "invoiced": "Invoiced",
     "typeOneTime": "One time",
     "typeRecurring": "Recurring",
@@ -222,6 +222,7 @@
     "collections": "Collections",
     "paymentPending": "Payment Pending",
     "searchInvoices": "Search by invoice number or payment method",
+    "searchAllInvoices": "Search by invoice number, payment method, client name or email",
     "deleteInvoice": "Delete invoice",
     "deleteInvoiceMessage": "Delete invoice #{id}? This action cannot be undone.",
     "deleteInvoices": "Delete invoices",
@@ -267,7 +268,8 @@
     "noQuotesFound": "No quotes found.",
     "expired": "Expired",
     "valid": "Valid",
-    "searchQuotes": "Search by subject or quote number"
+    "searchQuotes": "Search by subject or quote number",
+    "searchAllQuotes": "Search by subject, quote number, client name or email"
   },
   "transactionsList": {
     "paymentTransactionsAndRecords": "Payment transactions and records",
@@ -283,7 +285,8 @@
     "paymentsSent": "Payments Sent",
     "deleteTransaction": "Delete transaction",
     "deleteTransactionMessage": "Delete transaction #{id}? This action cannot be undone.",
-    "searchTransactions": "Search by description, reference or payment method"
+    "searchTransactions": "Search by description, reference or payment method",
+    "searchAllTransactions": "Search by description, reference, payment method, client name or email"
   },
   "invoiceItems": {
     "removeItem": "Remove line",
@@ -353,7 +356,7 @@
     "voidedAt": "Voided",
     "empty": "No credit notes found.",
     "emptyForInvoice": "No credit notes were issued against this invoice.",
-    "searchCreditNotes": "Search by number, reason, refund reference or id",
+    "searchCreditNotes": "Search by number, reason, refund reference, id, client name or email",
     "status": {
       "Draft": "Draft",
       "Issued": "Issued",

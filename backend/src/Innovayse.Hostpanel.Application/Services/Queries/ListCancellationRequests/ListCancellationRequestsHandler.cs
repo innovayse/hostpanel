@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Services.Queries.FindServiceIdsBySearch;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,8 +12,8 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Services.Queries.ListCancellationRequests;
 
 /// <summary>
-/// Handles listing cancellation requests with enriched service and client data, narrowed by the search text on the reason
-/// and id, the type and the status in SQL ahead of paging.
+/// Handles listing cancellation requests with enriched service and client data, narrowed by the search text on the reason, id and the service it
+/// is for (its domain, product and client), the type and the status in SQL ahead of paging.
 /// </summary>
 public sealed class ListCancellationRequestsHandler
 {
@@ -43,7 +44,11 @@ public sealed class ListCancellationRequestsHandler
     {
         // The search, the filters and the count run on the requests alone, ahead of the join: the join below only adds
         // the service's product and client, and it is an inner join over a cascading key, so it never drops a request.
-        var requests = _context.CancellationRequests.AsNoTracking().SearchIncludingId(qry.Search, r => r.Id, r => r.Reason);
+        // The service a request is for is matched through the lookup the services lists share (domain, product, client, id).
+        var answer = await _bus.InvokeAsync<Result<IReadOnlyList<int>>>(new FindServiceIdsBySearchQuery(qry.Search ?? string.Empty), ct);
+        var matchingServiceIds = answer.Value ?? [];
+        var requests = _context.CancellationRequests.AsNoTracking()
+            .SearchIncludingIdOrMatching(qry.Search, r => r.Id, r => matchingServiceIds.Contains(r.ServiceId), r => r.Reason);
         if (qry.Type is { } type)
         {
             requests = requests.Where(r => r.Type == type);

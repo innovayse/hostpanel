@@ -1,22 +1,30 @@
 {
   "bankTransfer": {
+    "name": "Банковский перевод",
     "shortDescription": "Позвольте клиентам платить прямым банковским переводом по вашим реквизитам.",
     "fieldAccountName": "Имя владельца счёта",
-    "fieldInstructions": "Инструкции по оплате"
+    "fieldIban": "IBAN",
+    "fieldSwift": "SWIFT / BIC",
+    "fieldInstructions": "Инструкции по оплате",
+    "fieldExpiryDays": "Дней до истечения неподтверждённого перевода"
   },
   "cpanel": {
+    "name": "cPanel WHM",
     "shortDescription": "Создавайте хостинг-аккаунты и управляйте ими через API сервера cPanel WHM.",
     "fieldHost": "Хост WHM",
     "fieldPort": "Порт",
     "fieldApiToken": "API-токен"
   },
   "smtp": {
+    "name": "SMTP-сервер",
     "shortDescription": "Настройте отправку исходящей почты через ваш SMTP-сервер.",
     "fieldHost": "SMTP-хост",
     "fieldFromAddress": "Адрес отправителя",
-    "fieldEncryption": "Шифрование"
+    "fieldEncryption": "Шифрование",
+    "encryptionNone": "Нет"
   },
   "maxmind": {
+    "name": "MaxMind",
     "shortDescription": "Выявляйте мошеннические заказы с помощью оценки рисков GeoIP от MaxMind.",
     "fieldLicenseKey": "Лицензионный ключ",
     "fieldAccountId": "ID аккаунта"

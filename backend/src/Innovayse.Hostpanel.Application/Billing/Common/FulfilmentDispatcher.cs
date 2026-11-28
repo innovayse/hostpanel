@@ -34,7 +34,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// </para>
 /// <para>
 /// A plugin that throws or does not answer in time fails only its own attempt: the error is recorded
-/// for staff (never shown to a client) and the pass goes on to the next record.
+/// for staff as a code (never shown to a client; the plugin's own text stays in the log) and the pass goes on to the next record.
 /// </para>
 /// </remarks>
 public sealed class FulfilmentDispatcher
@@ -190,11 +190,11 @@ public sealed class FulfilmentDispatcher
         catch (OperationCanceledException ex) when (timeout.IsCancellationRequested && JobFailure.IsFailure(ex, ct))
         {
             // The linked token is cancelled while the handler token is not: the call outlived its own timeout.
-            Fail(record, $"The plugin did not answer within {_options.Value.FulfilmentCallTimeoutSeconds} seconds.", ex);
+            Fail(record, BillingErrors.FulfilmentPluginTimedOut, ex);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
-            Fail(record, $"{ex.GetType().Name}: {ex.Message}", ex);
+            Fail(record, BillingErrors.FulfilmentPluginFailed, ex);
         }
 
         return await SaveOutcomeAsync(record, ct);
@@ -270,11 +270,11 @@ public sealed class FulfilmentDispatcher
 
     /// <summary>Records a failed attempt on the claimed record and logs it.</summary>
     /// <param name="record">The claimed record.</param>
-    /// <param name="error">What went wrong, for staff; the record cuts it to its maximum length.</param>
-    /// <param name="exception">The exception behind it, for the log.</param>
-    private void Fail(FulfilmentRecord record, string error, Exception exception)
+    /// <param name="errorCode">What went wrong, a <c>FULFILMENT_*</c> code of <see cref="BillingErrors"/>.</param>
+    /// <param name="exception">The exception behind it; its text goes to the log only, never onto the record.</param>
+    private void Fail(FulfilmentRecord record, string errorCode, Exception exception)
     {
-        record.MarkFailed(error, _clock.UtcNow);
+        record.MarkFailed(errorCode, _clock.UtcNow);
         _logger.LogWarning(
             exception,
             "Fulfilment record {RecordId} for invoice {InvoiceId} failed on attempt {Attempt} for plugin {PluginId}.",

@@ -16,7 +16,7 @@ public sealed class IntegrationFieldValueRulesTests
     private static FieldDefinitionDto Field(
         IntegrationFieldType type, bool required = false, string[]? options = null, decimal? min = null, decimal? max = null)
     {
-        return new FieldDefinitionDto("field", "Field", type, required, options, min, max);
+        return new FieldDefinitionDto("field", type, required, options, min, max);
     }
 
     /// <summary>An absolute http or https address is accepted as written.</summary>

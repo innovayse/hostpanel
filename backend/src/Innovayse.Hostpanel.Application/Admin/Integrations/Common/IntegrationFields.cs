@@ -21,7 +21,7 @@ public static class IntegrationFields
 
         if (IntegrationCatalogue.TryGet(slug, out var entry))
         {
-            return new IntegrationDefinition(entry.Name, entry.Fields);
+            return new IntegrationDefinition(entry.Fields);
         }
 
         var manifest = plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == slug);
@@ -32,6 +32,6 @@ public static class IntegrationFields
 
         // Texts in the request's language (X-Language), English where the plugin's locale lacks a key (#854).
         var texts = PluginUiTexts.For(manifest);
-        return new IntegrationDefinition(manifest.Name, manifest.GetSettings().Select(s => s.ToFieldDefinition(texts)).ToList());
+        return new IntegrationDefinition(manifest.GetSettings().Select(s => s.ToFieldDefinition(texts)).ToList(), manifest.Name);
     }
 }

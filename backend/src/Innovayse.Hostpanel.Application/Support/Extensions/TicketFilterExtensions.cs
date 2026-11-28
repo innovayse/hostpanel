@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Domain.Support;
 namespace Innovayse.Hostpanel.Application.Support.Extensions;
 
 /// <summary>
-/// The one way a ticket list narrows its tickets: the search text on the subject and the status, priority and
+/// The one way a ticket list narrows its tickets: the search text on the subject and the ticket id, and the status, priority and
 /// department filters, all in SQL ahead of ordering and paging, so the staff list and the client's list cannot differ.
 /// </summary>
 public static class TicketFilterExtensions
@@ -21,7 +21,7 @@ public static class TicketFilterExtensions
         ArgumentNullException.ThrowIfNull(tickets);
         ArgumentNullException.ThrowIfNull(query);
 
-        tickets = tickets.Search(query.Search, t => t.Subject);
+        tickets = tickets.SearchIncludingId(query.Search, t => t.Id, t => t.Subject);
 
         if (query.Status is { } status)
         {

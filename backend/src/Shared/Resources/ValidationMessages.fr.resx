@@ -62,31 +62,31 @@
     <value>Échec de la validation</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>Une ou plusieurs erreurs de validation se sont produites.</value>
+    <value>Certaines valeurs saisies ne sont pas valides, donc rien n'a été enregistré. Vérifiez les messages à côté de chaque champ, corrigez-les et envoyez de nouveau le formulaire.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
     <value>Non autorisé</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>Vous n'êtes pas autorisé à effectuer cette action.</value>
+    <value>Vous n'êtes pas connecté ou votre session a expiré, donc l'action n'a pas été effectuée. Reconnectez-vous et recommencez.</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
     <value>Ressource introuvable</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>La ressource demandée est introuvable.</value>
+    <value>L'élément demandé n'existe pas ou a été supprimé. Rechargez la page et rouvrez-le depuis la liste.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
     <value>Erreur interne du serveur</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>Une erreur inattendue s'est produite. Veuillez réessayer plus tard.</value>
+    <value>Une erreur s'est produite sur le serveur et l'action n'a peut-être pas abouti. Patientez une minute et recommencez, et si le problème persiste, contactez l'administrateur en indiquant l'heure de l'erreur.</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
     <value>Violation d'une règle métier</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>La requête enfreint une règle métier.</value>
+    <value>L'action n'est pas possible dans l'état actuel de cet élément, donc rien n'a été modifié. Rechargez la page pour voir son état actuel et vérifiez que votre saisie y correspond.</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
     <value>Conflit de concurrence</value>
@@ -98,10 +98,10 @@
     <value>Corps de requête invalide</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>Le corps de la requête n'a pas pu être lu. Vérifiez son format.</value>
+    <value>Le serveur n'a pas pu lire les données envoyées avec cette requête, par exemple parce qu'elles sont mal formées, contiennent une valeur du mauvais type ou sont trop volumineuses. Rechargez la page et renvoyez la requête, et si vous appelez l'API directement, vérifiez le JSON envoyé.</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>La valeur « {0} » n'est pas un nombre valide.</value>
+    <value>La valeur « {0} » n'est pas un nombre valide. Saisissez uniquement des chiffres, avec un point comme séparateur décimal, par exemple 12.50.</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
     <value>Interdit</value>
@@ -110,9 +110,9 @@
     <value>Cette requête doit être envoyée depuis le panneau lui-même. Rechargez la page et réessayez.</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>Vous n'avez pas la permission d'effectuer cette action.</value>
+    <value>Votre compte n'a pas l'autorisation requise pour cette action, donc elle n'a pas été effectuée. Demandez à un administrateur de vous l'accorder, ou connectez-vous avec un compte qui la possède.</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>Cette valeur n'est pas valide.</value>
+    <value>Cette valeur n'a pas pu être lue dans le format attendu. Vérifiez ce que vous avez saisi et corrigez-le.</value>
   </data>
 </root>

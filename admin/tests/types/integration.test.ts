@@ -50,6 +50,6 @@ describe('integration value sets', () => {
   it('offer the encryption modes through the enum', () => {
     const encryptionField = INTEGRATION_META.smtp.fields.find((field) => field.key === 'encryption')
 
-    expect(encryptionField?.options).toEqual([IntegrationEncryption.Tls, IntegrationEncryption.Ssl, IntegrationEncryption.None])
+    expect(encryptionField?.options?.map(option => option.value)).toEqual([IntegrationEncryption.None])
   })
 })

@@ -18,19 +18,19 @@ public sealed class InviteMyUserValidator : LocalizedValidator<InviteMyUserComma
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256).WithMessage(L["ClientInviteEmailInvalid"]);
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100).WithMessage(L["ClientInviteFirstNameInvalid"]);
         RuleFor(x => x.LastName).NotEmpty().MaximumLength(100).WithMessage(L["ClientInviteLastNameInvalid"]);
-        RuleFor(x => x.PermissionMode).IsInEnum().WithMessage(L["ClientPermissionsInvalid"]);
-        RuleFor(x => x.Permissions).NotNull().WithMessage(L["ClientPermissionsInvalid"]);
+        RuleFor(x => x.PermissionMode).IsInEnum().WithMessage(L["ClientPermissionModeInvalid"]);
+        RuleFor(x => x.Permissions).NotNull().WithMessage(L["ClientPermissionListInvalid"]);
         RuleFor(x => x.Permissions)
             .Empty()
             .When(x => x.PermissionMode == InvitePermissionMode.All)
-            .WithMessage(L["ClientPermissionsInvalid"]);
+            .WithMessage(L["ClientPermissionListMustBeEmpty"]);
         RuleFor(x => x.Permissions)
             .NotEmpty()
             .When(x => x.PermissionMode == InvitePermissionMode.Choose)
-            .WithMessage(L["ClientPermissionsInvalid"]);
+            .WithMessage(L["ClientPermissionListRequired"]);
         RuleForEach(x => x.Permissions)
             .Must(IsSinglePermission)
-            .WithMessage(L["ClientPermissionsInvalid"]);
+            .WithMessage(L["ClientPermissionListInvalid"]);
     }
 
     /// <summary>Whether a list entry names exactly one known permission.</summary>

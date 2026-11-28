@@ -25,7 +25,7 @@ description: Բոլոր ստուգումները, որ գործարկում է C
 
 **`Innovayse.Hostpanel.Domain.Tests`**․ unit թեստեր դոմեյնի տրամաբանության համար։
 
-**`Innovayse.Hostpanel.Integration.Tests`**․ յուրաքանչյուր օգտագործման դեպքի համար մեկ ֆայլ՝ `Integration.Tests/<Feature>/<UseCase>Tests.cs` ուղով։ Եթե օգտագործման դեպքի հենդլերը համապատասխան թեստային ֆայլ չունի, `UseCaseShapeTests`-ը խափանվում է։ Այս փաթեթը գործարկում է տվյալների բազայի իր սեփական կոնտեյները, ուստի արտաքին տվյալների բազա պետք չէ։ CI-ը այն բաժանում է զուգահեռ runner-ների միջև․ եթե ավելացնում եք նոր վերին մակարդակի ֆիչերի թղթապանակ, ավելացրեք այն `scripts/check-integration-shards.sh` ֆայլի որևէ մասում։
+**`Innovayse.Hostpanel.Integration.Tests`**․ յուրաքանչյուր օգտագործման դեպքի համար մեկ ֆայլ՝ `Integration.Tests/<Feature>/<UseCase>Tests.cs` ուղով։ Այս փաթեթը գործարկում է տվյալների բազայի իր սեփական կոնտեյները, ուստի արտաքին տվյալների բազա պետք չէ։ CI-ը այն բաժանում է զուգահեռ runner-ների միջև․ եթե ավելացնում եք նոր վերին մակարդակի ֆիչերի թղթապանակ, ավելացրեք այն `scripts/check-integration-shards.sh` ֆայլի որևէ մասում։
 
 **`Innovayse.Hostpanel.Architecture.Tests`**․ ստուգում է կառուցվածքային կանոնները.
 
@@ -33,7 +33,6 @@ description: Բոլոր ստուգումները, որ գործարկում է C
 |------------|---------------|
 | `PortPlacementTests` | Բոլոր `I<Port>` ինտերֆեյսները գտնվում են `Application/Common/Interfaces/` թղթապանակում |
 | `DatabaseIdentifierNamingTests` | Աղյուսակների, սյունակների և բանալիների բոլոր անունները PascalCase են |
-| `UseCaseShapeTests` | Յուրաքանչյուր հենդլեր ունի համապատասխան ինտեգրացիոն թեստային ֆայլ |
 | `ResourceCoverageTests` | Յուրաքանչյուր սխալի կոդ ունի նախադասություն `ErrorMessages.resx` ֆայլում |
 
 `ModelDiffBaselineTests`-ը գտնվում է `Integration.Tests/Persistence` թղթապանակում և ստուգում է, որ EF մոդելը համապատասխանում է վերջին միգրացիային։

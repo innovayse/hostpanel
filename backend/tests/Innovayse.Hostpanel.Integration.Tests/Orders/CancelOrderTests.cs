@@ -99,7 +99,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
         order.Status.Should().Be(OrderStatus.Pending);
     }
 
-    /// <summary>An active order is refused with <c>ORDER_NOT_PENDING</c>; only Pending orders may be cancelled.</summary>
+    /// <summary>An active order is refused with <c>ORDER_CANCEL_NOT_PENDING</c>; only Pending orders may be cancelled.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnActiveOrder()
@@ -110,7 +110,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
         var response = await admin.PostAsync($"/api/orders/{orderId}/cancel", content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.ORDER_NOT_PENDING);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.ORDER_CANCEL_NOT_PENDING);
     }
 
     /// <summary>Cancelling is not for anonymous callers.</summary>

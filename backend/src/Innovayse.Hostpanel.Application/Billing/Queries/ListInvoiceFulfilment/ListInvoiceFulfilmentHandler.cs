@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,11 +13,16 @@ public sealed class ListInvoiceFulfilmentHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>Turns a record's stored error code into the sentence staff read, in their language.</summary>
+    private readonly IErrorMessageResolver _messages;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    public ListInvoiceFulfilmentHandler(IHostpanelDbContext context)
+    /// <param name="messages">Turns a record's stored error code into the sentence staff read.</param>
+    public ListInvoiceFulfilmentHandler(IHostpanelDbContext context, IErrorMessageResolver messages)
     {
         _context = context;
+        _messages = messages;
     }
 
     /// <summary>Handles the query.</summary>
@@ -46,7 +52,8 @@ public sealed class ListInvoiceFulfilmentHandler
         // Projected after the read: CanRetry is the entity's own rule, not a column the database could filter on.
         return Result.Success<IReadOnlyList<FulfilmentRecordDto>>(records
             .Select(r => new FulfilmentRecordDto(
-                r.Id, r.InvoiceId, r.PluginId, r.Kind, r.Status, r.Attempts, r.NextAttemptAt, r.LastError,
+                r.Id, r.InvoiceId, r.PluginId, r.Kind, r.Status, r.Attempts, r.NextAttemptAt,
+                r.LastErrorCode is null ? null : _messages.Resolve(r.LastErrorCode),
                 r.CompletedAt, r.CreatedAt, r.CanRetry))
             .ToList());
     }

@@ -59,7 +59,7 @@ public sealed class GetPanelSsoUrlHandler
     /// <returns>
     /// A time-limited control-panel sign-in link, or <c>SERVICE_NOT_FOUND</c> when the id names no service,
     /// <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
-    /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server,
     /// <c>SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not an
     /// https address on its own server, or the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses with a reason, or

@@ -41,7 +41,7 @@ describe('usePredefinedRepliesApi', () => {
     const mock = stubFetch(json([]))
 
     await usePredefinedRepliesApi().searchReplies('a b&c')
-    expect(callOf(mock).url).toBe('/api/predefined-replies/search?q=a+b%26c')
+    expect(callOf(mock).url).toBe('/api/predefined-replies/search?search=a+b%26c')
   })
 
   it('reply writes hit /predefined-replies', async () => {

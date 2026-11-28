@@ -12,8 +12,11 @@ namespace Innovayse.Hostpanel.Domain.Services;
 /// </remarks>
 public static class ServicesErrors
 {
-    /// <summary>The service is not Active (400): <see cref="ClientService.Suspend"/>.</summary>
+    /// <summary>The service is not Active, so it cannot be suspended (400): <see cref="ClientService.Suspend"/>.</summary>
     public const string ServiceNotActive = "SERVICE_NOT_ACTIVE";
+
+    /// <summary>The service is not Active, so it cannot change plan (400): <see cref="ClientService.ChangePlan"/>.</summary>
+    public const string ServicePlanChangeNotActive = "SERVICE_PLAN_CHANGE_NOT_ACTIVE";
 
     /// <summary>The service is already terminated (400): <see cref="ClientService.Terminate"/>.</summary>
     public const string ServiceTerminateNotAllowed = "SERVICE_TERMINATE_NOT_ALLOWED";
@@ -28,10 +31,20 @@ public static class ServicesErrors
     public const string ServiceNotPending = "SERVICE_NOT_PENDING";
 
     /// <summary>
-    /// The asked-for status cannot be reached from the current one (400), when
-    /// <see cref="ClientService.CanChangeStatusTo"/> refuses it.
+    /// The service is Terminated, which no status leaves (400), from <see cref="ClientService.StatusChangeRefusal"/>.
     /// </summary>
-    public const string ServiceStatusChangeNotAllowed = "SERVICE_STATUS_CHANGE_NOT_ALLOWED";
+    public const string ServiceTerminatedStatusLocked = "SERVICE_TERMINATED_STATUS_LOCKED";
+
+    /// <summary>
+    /// Nothing is moved back to Pending (400), from <see cref="ClientService.StatusChangeRefusal"/>.
+    /// </summary>
+    public const string ServiceStatusPendingUnreachable = "SERVICE_STATUS_PENDING_UNREACHABLE";
+
+    /// <summary>
+    /// A Pending service was asked to become Active or Suspended before it was activated (400),
+    /// from <see cref="ClientService.StatusChangeRefusal"/>.
+    /// </summary>
+    public const string ServicePendingNotActivated = "SERVICE_PENDING_NOT_ACTIVATED";
 
     /// <summary>
     /// A hold date without the suspension hold, or a termination reason without the end-of-cycle

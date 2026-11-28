@@ -190,17 +190,17 @@ public sealed class CreditNote : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="at">When the value was given (UTC).</param>
     /// <param name="refundReference">The gateway's reference of the refund; required for a gateway refund note, ignored for account credit.</param>
-    /// <exception cref="DomainRuleException"><c>CREDIT_NOTE_INVALID_STATE</c> when the note is not Issued, or a gateway refund note has no reference.</exception>
+    /// <exception cref="DomainRuleException"><c>CREDIT_NOTE_NOT_ISSUED</c> when the note is not Issued, <c>CREDIT_NOTE_REFUND_REFERENCE_REQUIRED</c> when a gateway refund note has no reference.</exception>
     public void MarkApplied(DateTimeOffset at, string? refundReference)
     {
         if (Status != CreditNoteStatus.Issued)
         {
-            throw new DomainRuleException(BillingErrors.CreditNoteInvalidState, $"Only an issued note can be applied; current status is {Status}.");
+            throw new DomainRuleException(BillingErrors.CreditNoteNotIssued, $"Only an issued note can be applied; current status is {Status}.");
         }
 
         if (Method == CreditNoteMethod.GatewayRefund && string.IsNullOrWhiteSpace(refundReference))
         {
-            throw new DomainRuleException(BillingErrors.CreditNoteInvalidState, "A gateway refund note records the refund it paid out.");
+            throw new DomainRuleException(BillingErrors.CreditNoteRefundReferenceRequired, "A gateway refund note records the refund it paid out.");
         }
 
         RefundReference = Method == CreditNoteMethod.GatewayRefund ? refundReference : null;
@@ -218,7 +218,7 @@ public sealed class CreditNote : BaseEntity, IAggregateRoot
     /// <param name="reason">Why the note is voided; not blank.</param>
     /// <param name="at">When it is voided (UTC).</param>
     /// <exception cref="DomainRuleException">
-    /// <c>CREDIT_NOTE_ALREADY_VOIDED</c>, <c>CREDIT_NOTE_INVALID_STATE</c> for a draft, <c>CREDIT_NOTE_REFUND_NOT_VOIDABLE</c> for a
+    /// <c>CREDIT_NOTE_ALREADY_VOIDED</c>, <c>CREDIT_NOTE_DRAFT_NOT_VOIDABLE</c> for a draft, <c>CREDIT_NOTE_REFUND_NOT_VOIDABLE</c> for a
     /// gateway refund note that was paid out.
     /// </exception>
     public void Void(string reason, DateTimeOffset at)
@@ -232,7 +232,7 @@ public sealed class CreditNote : BaseEntity, IAggregateRoot
 
         if (Status == CreditNoteStatus.Draft)
         {
-            throw new DomainRuleException(BillingErrors.CreditNoteInvalidState, "A draft was never issued, so there is nothing to void.");
+            throw new DomainRuleException(BillingErrors.CreditNoteDraftNotVoidable, "A draft was never issued, so there is nothing to void.");
         }
 
         if (Method == CreditNoteMethod.GatewayRefund && Status == CreditNoteStatus.Applied)

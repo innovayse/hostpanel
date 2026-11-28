@@ -195,7 +195,7 @@ public sealed class CreditNoteTests
         var note = Draft(PaidInvoice(), 50m);
 
         var applyDraft = () => note.MarkApplied(Now, null);
-        applyDraft.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteInvalidState);
+        applyDraft.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteNotIssued);
 
         note.Issue("CN-0001", Now);
         var issueTwice = () => note.Issue("CN-0002", Now);
@@ -211,7 +211,7 @@ public sealed class CreditNoteTests
         note.Issue("CN-0001", Now);
 
         var without = () => note.MarkApplied(Now, null);
-        without.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteInvalidState);
+        without.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteRefundReferenceRequired);
 
         note.MarkApplied(Now, "re_123");
         note.RefundReference.Should().Be("re_123");
@@ -261,7 +261,7 @@ public sealed class CreditNoteTests
 
         var act = () => note.Void("Nope", Now);
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteInvalidState);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteDraftNotVoidable);
     }
 
     /// <summary>A note paid out as a gateway refund is never voided: the refund cannot be taken back.</summary>

@@ -3,7 +3,7 @@
     "services": "Services",
     "viewAndManageAllClient": "Alle gehosteten Services der Kunden anzeigen und verwalten",
     "noServicesFound": "Keine Services gefunden",
-    "searchServices": "Nach Domain, Produkt oder ID suchen",
+    "searchServices": "Nach Domain, Produkt, Kunde oder ID suchen",
     "noServicesMatchYourFilters": "Keine Services entsprechen Ihren Filtern"
   }
 }

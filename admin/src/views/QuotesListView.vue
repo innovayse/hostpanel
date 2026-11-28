@@ -107,7 +107,7 @@ onMounted(loadClients)
     <UiListToolbar
       v-model:search="search"
       search-testid="billing-quotes-search"
-      :search-placeholder="t('billing.quotesList.searchQuotes')"
+      :search-placeholder="t('billing.quotesList.searchAllQuotes')"
       filter-testid="billing-quotes-filter"
       :active-count="activeCount"
       :chips="chips"

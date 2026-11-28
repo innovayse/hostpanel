@@ -17,7 +17,7 @@ public sealed class PostStatusIncidentUpdateValidator : LocalizedValidator<PostS
         RuleFor(x => x.Id).MustBePositiveId(L["ContentIdInvalid"]);
 
         // IsInEnum: the model binder also accepts a numeric value that names no member.
-        RuleFor(x => x.State).IsInEnum().WithMessage(L["StatusStateInvalid"]);
+        RuleFor(x => x.State).IsInEnum().WithMessage(L["StatusIncidentStateInvalid"]);
         RuleFor(x => x.Message).NotEmpty().WithMessage(L["StatusMessageRequired"])
             .MaximumLength(StatusIncidentUpdate.MessageMaxLength).WithMessage(L["StatusMessageTooLong", StatusIncidentUpdate.MessageMaxLength]);
     }

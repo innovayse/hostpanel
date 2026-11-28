@@ -43,7 +43,7 @@ public sealed partial class NoVendorNamesTests
     [Fact]
     public void DemoSeedSources_CarryNoVendorName()
     {
-        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var backendRoot = BackendLayout.FindRoot(AppContext.BaseDirectory);
         var demoRoot = Path.Combine(backendRoot, "src", "Innovayse.Hostpanel.Infrastructure", "Demo");
 
         var offenders = Directory
@@ -64,7 +64,7 @@ public sealed partial class NoVendorNamesTests
     [Fact]
     public void ValidationMessageResources_CarryNoVendorName()
     {
-        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var backendRoot = BackendLayout.FindRoot(AppContext.BaseDirectory);
         var resources = Path.Combine(backendRoot, "src", "Innovayse.Hostpanel.Application", "Resources");
 
         var files = Directory.EnumerateFiles(resources, "ApplicationValidationMessages*.resx").ToList();
@@ -94,7 +94,7 @@ public sealed partial class NoVendorNamesTests
     [Fact]
     public void SdkSources_CarryNoVendorOrHostInternalName()
     {
-        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var backendRoot = BackendLayout.FindRoot(AppContext.BaseDirectory);
         var sdkRoot = Path.Combine(backendRoot, "src", "Hostpanel.Sdk");
         var separators = new[] { Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar };
 

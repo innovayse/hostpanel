@@ -26,7 +26,7 @@ public sealed class SearchPredefinedRepliesTests(IntegrationTestFactory factory)
             categoryId,
         });
 
-        var response = await client.GetAsync($"/api/predefined-replies/search?searchTerm={uniqueWord}");
+        var response = await client.GetAsync($"/api/predefined-replies/search?search={uniqueWord}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
@@ -40,7 +40,7 @@ public sealed class SearchPredefinedRepliesTests(IntegrationTestFactory factory)
     {
         var client = await SupportTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.GetAsync("/api/predefined-replies/search?searchTerm=");
+        var response = await client.GetAsync("/api/predefined-replies/search?search=");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -50,7 +50,7 @@ public sealed class SearchPredefinedRepliesTests(IntegrationTestFactory factory)
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
-        var response = await factory.CreateClient().GetAsync("/api/predefined-replies/search?searchTerm=anything");
+        var response = await factory.CreateClient().GetAsync("/api/predefined-replies/search?search=anything");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

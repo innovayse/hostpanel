@@ -42,7 +42,7 @@ public sealed class GetMyServicePlanChangeOptionsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The plans (none when the service has nowhere to move), or <c>SERVICE_NOT_FOUND</c> when the service is not the
-    /// caller's, or the quoter's refusal for a service that cannot change plan (<c>SERVICE_NOT_ACTIVE</c>,
+    /// caller's, or the quoter's refusal for a service that cannot change plan (<c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c>,
     /// <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c>).
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>

@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Domain.Billing;
 namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 
 /// <summary>
-/// The one way an invoice list narrows its invoices: the search text on the invoice id and the payment method, the status
+/// The one way an invoice list narrows its invoices: the search text on the invoice id, the payment method and (when the caller names them) the clients that match it, the status
 /// and the creation period, all in SQL ahead of ordering and paging, so the staff list and the client's list cannot differ.
 /// </summary>
 public static class InvoiceFilterExtensions
@@ -14,14 +14,18 @@ public static class InvoiceFilterExtensions
     /// <typeparam name="T">The invoice list query.</typeparam>
     /// <param name="invoices">The invoices to narrow.</param>
     /// <param name="query">The search text and the invoice filters.</param>
+    /// <param name="clientsMatchingSearch">The clients the search text names, whose invoices match too; <see langword="null"/> when the list does not search by client.</param>
     /// <returns>The narrowed invoices.</returns>
-    public static IQueryable<Invoice> Matching<T>(this IQueryable<Invoice> invoices, T query)
+    public static IQueryable<Invoice> Matching<T>(
+        this IQueryable<Invoice> invoices, T query, IReadOnlyList<int>? clientsMatchingSearch = null)
         where T : IListQuery, IInvoiceListFilters
     {
         ArgumentNullException.ThrowIfNull(invoices);
         ArgumentNullException.ThrowIfNull(query);
 
-        invoices = invoices.SearchIncludingId(query.Search, i => i.Id, i => i.PaymentMethod);
+        var clients = clientsMatchingSearch ?? [];
+        invoices = invoices.SearchIncludingIdOrMatching(
+            query.Search, i => i.Id, i => clients.Contains(i.ClientId), i => i.PaymentMethod);
 
         if (query.Status is { } status)
         {

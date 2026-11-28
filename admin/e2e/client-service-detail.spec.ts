@@ -126,7 +126,7 @@ const sectionCases: SectionCase[] = [
     edit: async (page) => {
       await page.getByTestId('client-service-status').getByTestId('ui-select-trigger').click()
       // The open list renders above the page (teleported to the body), so its options are not inside the field.
-      await page.getByTestId('ui-select-panel').getByTestId('ui-select-option').nth(2).click()
+      await page.getByTestId('ui-select-panel').getByTestId('ui-select-option').nth(1).click()
     },
     saveButton: 'client-service-status-save',
     body: { status: ServiceStatus.Suspended },

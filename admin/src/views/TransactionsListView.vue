@@ -200,7 +200,7 @@ const transactionActions = (id: number): UiMenuAction[] => [
     <UiListToolbar
       v-model:search="search"
       search-testid="billing-transactions-search"
-      :search-placeholder="t('billing.transactionsList.searchTransactions')"
+      :search-placeholder="t('billing.transactionsList.searchAllTransactions')"
       filter-testid="billing-transactions-filter"
       :active-count="activeCount"
       :chips="chips"

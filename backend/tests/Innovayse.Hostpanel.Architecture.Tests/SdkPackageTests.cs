@@ -13,7 +13,7 @@ public sealed class SdkPackageTests
 {
     /// <summary>The SDK project's folder, found from the solution root (a git submodule of its own repository).</summary>
     private static readonly string SdkRoot = Path.Combine(
-        UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src", "Hostpanel.Sdk");
+        BackendLayout.FindRoot(AppContext.BaseDirectory), "src", "Hostpanel.Sdk");
 
     /// <summary>The package licence is the MIT expression and no licence file overrides it.</summary>
     [Fact]
@@ -112,7 +112,7 @@ public sealed class SdkPackageTests
     [Fact]
     public void Dockerfile_PassesTheImageVersionWithoutOverridingTheSdkVersion()
     {
-        var dockerfile = File.ReadAllLines(Path.Combine(UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "Dockerfile"))
+        var dockerfile = File.ReadAllLines(Path.Combine(BackendLayout.FindRoot(AppContext.BaseDirectory), "Dockerfile"))
             .Where(line => !line.TrimStart().StartsWith('#'))
             .ToList();
 

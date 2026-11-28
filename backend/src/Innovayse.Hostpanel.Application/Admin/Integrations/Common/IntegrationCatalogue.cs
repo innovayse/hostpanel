@@ -7,7 +7,9 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <summary>
 /// The one catalogue of built-in integrations: display name, category, form fields and the fields
 /// that make an integration "configured". The list, detail and connection-test use cases all read
-/// it, so an integration is added or changed here and nowhere else.
+/// it, so an integration is added or changed here and nowhere else. The catalogue carries no wording: the admin owns the
+/// name, field labels and option labels of the built-in integrations and resolves them from the slug and the field key. The category is the stable
+/// name the admin groups by, not display text.
 /// </summary>
 public static class IntegrationCatalogue
 {
@@ -35,38 +37,38 @@ public static class IntegrationCatalogue
     /// </summary>
     private static readonly Dictionary<string, IntegrationCatalogueEntry> BuiltIn = new()
     {
-        [IntegrationSlugs.BankTransfer] = new("Bank Transfer", PaymentGateways,
+        [IntegrationSlugs.BankTransfer] = new(PaymentGateways,
             [
-                new(BankTransferFields.AccountName, "Account Name", Text, Required: false),
-                new(BankTransferFields.Iban, "IBAN", Text, Required: false),
-                new(BankTransferFields.Swift, "SWIFT / BIC", Text, Required: false),
-                new(BankTransferFields.BankName, "Bank Name", Text, Required: false),
-                new(BankTransferFields.Instructions, "Payment Instructions", TextArea, Required: false),
-                new(BankTransferFields.ExpiryDays, "Days until an unconfirmed transfer lapses", Text, Required: false),
+                new(BankTransferFields.AccountName, Text, Required: false),
+                new(BankTransferFields.Iban, Text, Required: false),
+                new(BankTransferFields.Swift, Text, Required: false),
+                new(BankTransferFields.BankName, Text, Required: false),
+                new(BankTransferFields.Instructions, TextArea, Required: false),
+                new(BankTransferFields.ExpiryDays, Text, Required: false),
             ],
             []),
-        [IntegrationSlugs.Cpanel] = new("cPanel WHM", HostingProvisioning,
+        [IntegrationSlugs.Cpanel] = new(HostingProvisioning,
             [
-                new("host", "WHM Host", Text, Required: true),
-                new("port", "Port", Text, Required: false),
-                new("username", "Username", Text, Required: true),
-                new("api_token", "API Token", Password, Required: true),
+                new("host", Text, Required: true),
+                new("port", Text, Required: false),
+                new("username", Text, Required: true),
+                new("api_token", Password, Required: true),
             ],
             ["host", "username", "api_token"]),
-        [IntegrationSlugs.Smtp] = new("SMTP Server", "Email / SMTP",
+        [IntegrationSlugs.Smtp] = new("Email / SMTP",
             [
-                new("host", "SMTP Host", Text, Required: true),
-                new("port", "Port", Text, Required: false),
-                new("username", "Username", Text, Required: false),
-                new("password", "Password", Password, Required: false),
-                new("from_address", "From Address", Text, Required: true),
-                new("encryption", "Encryption", Select, Required: false, Options: ["TLS", "SSL", "None"]),
+                new("host", Text, Required: true),
+                new("port", Text, Required: false),
+                new("username", Text, Required: false),
+                new("password", Password, Required: false),
+                new("from_address", Text, Required: true),
+                new("encryption", Select, Required: false, Options: ["TLS", "SSL", "None"]),
             ],
             ["host", "username", "password", "from_address"]),
-        [IntegrationSlugs.MaxMind] = new("MaxMind", "Fraud Protection",
+        [IntegrationSlugs.MaxMind] = new("Fraud Protection",
             [
-                new("account_id", "Account ID", Text, Required: true),
-                new("license_key", "License Key", Password, Required: true),
+                new("account_id", Text, Required: true),
+                new("license_key", Password, Required: true),
             ],
             ["account_id", "license_key"]),
     };

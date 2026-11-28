@@ -100,11 +100,7 @@
     <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
   </data>
   <data name="InvalidFilterValue" xml:space="preserve">
-    <value>Զտիչի անթույլատրելի արժեք՝ {0}։</value>
-    <comment>GetMigrationLogsValidator. {0} is the value submitted for the action or entity-type filter.</comment>
-  </data>
-  <data name="MigrationJobIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր միգրացիայի առաջադրանք։</value>
+    <value>{0} արժեքը զտիչի համար թույլատրելի չէ։ Ընտրեք զտիչի առաջարկած արժեքներից մեկը։</value>
   </data>
   <data name="MigrationSelectionRequired" xml:space="preserve">
     <value>Ընտրեք, թե որ տվյալները արտահանել։</value>
@@ -113,7 +109,7 @@
     <value>Մուտքագրեք սկզբնաղբյուր համակարգի հասցեն։</value>
   </data>
   <data name="MigrationSourceUrlInvalid" xml:space="preserve">
-    <value>Մուտքագրեք վավեր բացարձակ URL հասցե։</value>
+    <value>Սկզբնաղբյուր համակարգի հասցեն պետք է լինի ամբողջական URL՝ սխեմայով, օրինակ՝ https://old.example.com։</value>
   </data>
 <data name="CurrencyCodeInvalid" xml:space="preserve">
     <value>Արժույթի կոդը պետք է լինի ISO 4217 եռատառ կոդ։</value>
@@ -137,13 +133,13 @@
     <value>Նշեք թարմացվող առնվազն մեկ արժույթ։</value>
   </data>
 <data name="InvoiceIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր հաշիվ-ապրանքագիր։</value>
+    <value>Հաշիվը վավեր չէ, դրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։ Ընտրեք հաշիվը ցանկից և փորձեք կրկին։</value>
   </data>
 <data name="FulfilmentRecordIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր կատարման գրառում։</value>
+    <value>Կատարման գրառման նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող կատարման գրառում։</value>
   </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
-    <value>Նշեք հաշիվ-ապրանքագիր ստանալիք վավեր հաճախորդ։</value>
+    <value>Հաճախորդի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող հաճախորդ՝ հաշիվ-ապրանքագիր ստանալու համար։</value>
   </data>
 <data name="InvoiceDueDateInPast" xml:space="preserve">
     <value>Վճարման ժամկետը չի կարող լինել անցյալում։</value>
@@ -170,19 +166,19 @@
     <value>Վճարման եղանակը կարող է ունենալ առավելագույնը {0} նիշ։</value>
   </data>
 <data name="QuoteIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր նախահաշիվ։</value>
+    <value>Առաջարկը վավեր չէ, դրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։ Ընտրեք առաջարկը ցանկից և փորձեք կրկին։</value>
   </data>
 <data name="QuoteClientIdInvalid" xml:space="preserve">
-    <value>Նշեք նախահաշիվ ստանալիք վավեր հաճախորդ։</value>
+    <value>Հաճախորդի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող հաճախորդ նախահաշվի համար։</value>
   </data>
 <data name="QuoteSubjectInvalid" xml:space="preserve">
-    <value>Նախահաշվի թեման կարող է ունենալ առավելագույնը {0} նիշ։</value>
+    <value>Առաջարկի թեման կարող է ունենալ առավելագույնը {0} նիշ։</value>
   </data>
 <data name="QuoteStageInvalid" xml:space="preserve">
-    <value>Նշեք նախահաշվի վավեր փուլ։</value>
+    <value>Առաջարկի փուլը պետք է լինի Draft, Delivered, OnHold, Accepted, Lost, Expired կամ Dead։</value>
   </data>
 <data name="QuoteValidityInvalid" xml:space="preserve">
-    <value>Նշեք՝ նախահաշիվները վավեր են, թե ժամկետանց։</value>
+    <value>Վավերականության զտիչը պետք է լինի Valid կամ Expired։</value>
   </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Ավելացրեք առնվազն մեկ տող։</value>
@@ -200,10 +196,10 @@
     <value>Տողի զեղչը պետք է լինի 0-ից 100-ի միջակայքում։</value>
   </data>
 <data name="BillableItemIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր հաշվարկվող միավոր։</value>
+    <value>Հաշվարկվող միավորի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող հաշվարկվող միավոր։</value>
   </data>
 <data name="BillableItemClientIdInvalid" xml:space="preserve">
-    <value>Նշեք հաշվարկվող միավորին վավեր հաճախորդ։</value>
+    <value>Հաճախորդի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող հաճախորդ՝ հաշվարկի համար։</value>
   </data>
 <data name="BillableItemDescriptionInvalid" xml:space="preserve">
     <value>Հաշվարկվող միավորի նկարագրությունը կարող է ունենալ առավելագույնը {0} նիշ։</value>
@@ -236,10 +232,10 @@
     <value>Ժամային գրառման դրույքաչափը չի կարող լինել բացասական։</value>
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
-    <value>Նշեք գործարքի համար վավեր հաճախորդ։</value>
+    <value>Հաճախորդը վավեր չէ, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։ Ընտրեք հաճախորդին ցանկից և փորձեք կրկին։</value>
   </data>
 <data name="TransactionDirectionInvalid" xml:space="preserve">
-    <value>Նշեք՝ գործարքները մուտքեր են, թե ելքեր։</value>
+    <value>Ուղղության զտիչը պետք է լինի In (մուտք) կամ Out (ելք)։</value>
   </data>
 <data name="TransactionAmountInvalid" xml:space="preserve">
     <value>Փնտրվող գումարը պետք է մեծ լինի զրոյից։</value>
@@ -266,7 +262,7 @@
     <value>Մուտքագրված կամ ելքագրված գումարներից առնվազն մեկը պետք է լինի զրոյից մեծ։</value>
   </data>
 <data name="TransactionIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր գործարք։</value>
+    <value>Գործարքի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող գործարք և կրկին փորձեք։</value>
   </data>
 <data name="InvoicePaymentGatewayInvalid" xml:space="preserve">
     <value>Նշեք օգտագործված վճարային համակարգը, առավելագույնը {0} նիշ։</value>
@@ -308,7 +304,7 @@
     <value>Նշեք գործողության համար առնվազն մեկ հաշիվ-ապրանքագիր։</value>
   </data>
 <data name="BulkInvoiceActionIdInvalid" xml:space="preserve">
-    <value>Յուրաքանչյուր հաշիվ-ապրանքագրի ID-ն պետք է վավեր լինի։</value>
+    <value>Յուրաքանչյուր հաշիվ-ապրանքագրի ID-ն պետք է դրական թիվ լինի։ Հեռացրեք սխալ ID-ն ընտրությունից և կրկին փորձեք։</value>
   </data>
 <data name="BulkInvoiceActionNameInvalid" xml:space="preserve">
     <value>Գործողությունը պետք է լինի հետևյալներից մեկը՝ MarkPaid, MarkUnpaid, MarkCancelled, Duplicate, Delete։</value>
@@ -401,7 +397,7 @@
     <value>Էջի չափը պետք է լինի 1-ից 100-ի սահմաններում։</value>
   </data>
   <data name="TicketPeriodInvalid" xml:space="preserve">
-    <value>Ժամանակահատվածը վավեր հաշվետու ժամանակահատված չէ։</value>
+    <value>Ժամանակահատվածը պետք է լինի հետևյալներից մեկը՝ Today, Yesterday, Last7Days, Last30Days։</value>
   </data>
   <data name="GatewayLogResultInvalid" xml:space="preserve">
     <value>Արդյունքը պետք է լինի հետևյալներից մեկը՝ Payment, Refund, Credit, Pending։</value>
@@ -419,7 +415,7 @@
     <value>Վերնագիրը կարող է պարունակել առավելագույնը {0} նիշ։</value>
   </data>
   <data name="KbArticleSlugInvalid" xml:space="preserve">
-    <value>Հոդվածի հասցեն անվավեր է։</value>
+    <value>Հոդվածի հասցեն պետք է լինի 1-ից 150 նիշ՝ լատինական տառեր և թվեր, մասերի միջև՝ մեկական գծիկ (օրինակ՝ 'reset-password')։</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Կատեգորիան չպետք է գերազանցի {0} նիշը։</value>
@@ -569,7 +565,7 @@
     <value>Հեռախոսահամարը չպետք է գերազանցի 50 նիշը։</value>
   </data>
   <data name="ClientContactTypeInvalid" xml:space="preserve">
-    <value>Կոնտակտի անճանաչելի տեսակ։</value>
+    <value>Կոնտակտի տեսակը աջակցվող տեսակներից չէ։ Ընտրեք ցանկում առաջարկվող կոնտակտի տեսակներից մեկը։</value>
   </data>
   <data name="ClientContactStreetInvalid" xml:space="preserve">
     <value>Փողոցի հասցեն չպետք է գերազանցի 200 նիշը։</value>
@@ -596,7 +592,7 @@
     <value>Օգտատիրոջ ID-ն պարտադիր է։</value>
   </data>
   <data name="ClientPermissionsInvalid" xml:space="preserve">
-    <value>Իրավունքների արժեքը հայտնի դրոշակների վավեր համակցություն չէ։</value>
+    <value>Թույլտվությունների մեջ կա գոյություն չունեցող դրոշակ։ Ընտրեք թույլտվությունները ձևի առաջարկած ցանկից և նորից պահպանեք։</value>
   </data>
   <data name="ClientNewUserEmailInvalid" xml:space="preserve">
     <value>Անհրաժեշտ է վավեր էլփոստի հասցե։</value>
@@ -677,7 +673,7 @@
     <value>Ներբեռնման վերնագիրը պարտադիր է։</value>
   </data>
   <data name="DownloadCategoryIdInvalid" xml:space="preserve">
-    <value>Ընտրեք ներբեռնումների վավեր կատեգորիա։</value>
+    <value>Ներբեռնումների կատեգորիան ընտրված չէ։ Ընտրեք առկա կատեգորիա, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="DownloadCategoryNameRequired" xml:space="preserve">
     <value>Կատեգորիայի անվանումը պարտադիր է։</value>
@@ -695,7 +691,7 @@
     <value>Պատասխանի բովանդակությունը պարտադիր է։</value>
   </data>
   <data name="PredefinedReplyCategoryIdInvalid" xml:space="preserve">
-    <value>Ընտրեք պատրաստի պատասխանների վավեր կատեգորիա։</value>
+    <value>Պատրաստի պատասխանների կատեգորիան ընտրված չէ։ Ընտրեք առկա կատեգորիա, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="PredefinedReplyCategoryNameRequired" xml:space="preserve">
     <value>Կատեգորիայի անվանումը պարտադիր է։</value>
@@ -704,7 +700,7 @@
     <value>Որոնման բառը պարտադիր է։</value>
   </data>
   <data name="ServiceIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր ծառայություն։</value>
+    <value>Ծառայությունը ընտրված չէ։ Ընտրեք առկա ծառայություն, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Տեսակը պետք է լինի 'Immediate' կամ 'EndOfBillingPeriod'։</value>
@@ -713,16 +709,16 @@
     <value>Կարգավիճակը պետք է լինի 'Open' կամ 'Closed'։</value>
   </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
-    <value>Նշեք չեղարկման վավեր հայտ։</value>
+    <value>Չեղարկման հայտը ընտրված չէ։ Ընտրեք առկա հայտ, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="OrderServiceClientIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր հաճախորդ։</value>
+    <value>Հաճախորդը ընտրված չէ։ Ընտրեք առկա հաճախորդ, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="StartTrialProductIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր ապրանք։</value>
+    <value>Ապրանքը ընտրված չէ։ Ընտրեք առկա ապրանք, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="OrderServiceProductIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր ապրանք։</value>
+    <value>Ապրանքը ընտրված չէ։ Ընտրեք առկա ապրանք, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="OrderServiceBillingCycleInvalid" xml:space="preserve">
     <value>Վճարման ցիկլը պետք է լինի 'monthly', 'annual' կամ 'annually'։</value>
@@ -758,7 +754,7 @@
     <value>Էջի չափը պետք է լինի 1-ից 100 միջակայքում։</value>
   </data>
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
-    <value>Զտման համար նշեք վավեր հաճախորդ։</value>
+    <value>Հաճախորդով զտումը սխալ է։ Զտման համար ընտրեք առկա հաճախորդ, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="ServiceListStatusInvalid" xml:space="preserve">
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Pending, Active, Suspended, Terminated։</value>
@@ -812,10 +808,10 @@
     <value>Քանակը պետք է լինի առնվազն 1։</value>
   </data>
   <data name="ServiceProductIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր ապրանք։</value>
+    <value>Ապրանքը ընտրված չէ։ Ընտրեք առկա ապրանք, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="HostingAccountServerIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր սերվեր։</value>
+    <value>Սերվերը ընտրված չէ։ Ընտրեք առկա սերվեր, նրա նույնացուցիչը պետք է լինի դրական ամբողջ թիվ։</value>
   </data>
   <data name="ServiceSuspendUntilWithoutOverride" xml:space="preserve">
     <value>Հետաձգման ամսաթիվը նշեք միայն այն դեպքում, երբ կասեցման հետաձգումը միացված է։</value>
@@ -977,7 +973,7 @@
     <value>Անունը չպետք է գերազանցի {0} նիշը։</value>
   </data>
   <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
-    <value>Ընտրեք ընտրանիների խմբի վավեր տեսակ։</value>
+    <value>Ընտրեք, թե ինչպես է հաճախորդը պատասխանում ընտրանիների այս խմբին՝ բացվող ցանկ, ռադիո կոճակ, նշման վանդակ կամ քանակ։</value>
   </data>
   <data name="ProductOptionNameRequired" xml:space="preserve">
     <value>Ընտրանին պահանջում է անուն։</value>
@@ -989,13 +985,13 @@
     <value>Ցուցադրման հերթականությունը չի կարող բացասական լինել։</value>
   </data>
   <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
-    <value>Ընտրեք գնի վավեր տեսակ։</value>
+    <value>Ընտրեք, թե ինչպես է հաշվարկվում ընտրանիի գինը՝ ֆիքսված (գումար) կամ տոկոսային (ապրանքի գնի մաս)։</value>
   </data>
   <data name="ProductOptionPriceInvalid" xml:space="preserve">
     <value>Գինը չի կարող բացասական լինել։</value>
   </data>
   <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
-    <value>Նշեք ընտրանիների խմբերի ID-ները նոր հերթականությամբ։</value>
+    <value>Ընտրանիների խմբերի ID-ների ցանկը դատարկ է։ Թվարկեք ապրանքի ընտրանիների բոլոր խմբերը այն հերթականությամբ, որով ցանկանում եք ցուցադրել։</value>
   </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Նշեք սլայդի վավեր ID։</value>
@@ -1019,7 +1015,7 @@
     <value>Դասավորության հերթականությունը չի կարող բացասական լինել։</value>
   </data>
   <data name="SlideTargetAudienceInvalid" xml:space="preserve">
-    <value>Ընտրեք հայտնի թիրախային լսարան։</value>
+    <value>Ընտրեք, ում է ցուցադրվում սլայդը՝ բոլորին, միայն հյուրերին կամ միայն մուտք գործած հաճախորդներին։</value>
   </data>
   <data name="SlideTranslationLocaleRequired" xml:space="preserve">
     <value>Յուրաքանչյուր թարգմանություն պահանջում է լոկալ։</value>
@@ -1043,7 +1039,7 @@
     <value>Նշեք հոսթի անուն կամ IP հասցե՝ առանց սխեմայի, ուղու, պորտի և բացատների։</value>
   </data>
   <data name="ServerApiHostRefused" xml:space="preserve">
-    <value>Այս հասցեին երբեք չի միացվում․ loopback, link-local և ամպային մետատվյալների հասցեները մերժվում են։</value>
+    <value>Այս հասցեն հնարավոր չէ օգտագործել որպես սերվերի API հոսթ, քանի որ loopback, link-local և ամպային մետատվյալների հասցեները արգելափակված են։ Փոխարենը նշեք սերվերի հասցեն հանրային կամ մասնավոր ցանցում։</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Օգտանունը պարտադիր է։</value>
@@ -1079,10 +1075,10 @@
     <value>Հավելագրիչի նույնացուցիչը կարող է պարունակել միայն փոքրատառ լատինական տառեր, թվեր և միայնակ գծիկներ՝ առավելագույնը 64 նիշ։</value>
   </data>
   <data name="PluginSlotIdInvalid" xml:space="preserve">
-    <value>Էջի հատվածի նույնացուցիչը սխալ է։</value>
+    <value>Հատվածի նույնացուցիչը չպետք է դատարկ լինի և պետք է պարունակի առավելագույնը 100 նիշ։ Օգտագործեք այն նույնացուցիչը, որը պլագինը հայտարարում է էջի հատվածի համար։</value>
   </data>
   <data name="PluginWidgetIdInvalid" xml:space="preserve">
-    <value>Վիջեթի նույնացուցիչը սխալ է։</value>
+    <value>Վիջեթի նույնացուցիչը չպետք է դատարկ լինի և պետք է պարունակի առավելագույնը 100 նիշ։ Օգտագործեք այն նույնացուցիչը, որը պլագինը հայտարարում է վիջեթի համար։</value>
   </data>
   <data name="PluginProductIdsInvalid" xml:space="preserve">
     <value>Ընտրեք առավելագույնը {0} ապրանք։</value>
@@ -1091,7 +1087,7 @@
     <value>Ինտեգրման սլագը պարտադիր է։</value>
   </data>
   <data name="IntegrationConfigRequired" xml:space="preserve">
-    <value>Կարգավորումների դաշտերը պարտադիր են։</value>
+    <value>Կարգավորումները բացակայում են։ Ուղարկեք ինտեգրացիայի կարգավորումները որպես օբյեկտ, նույնիսկ եթե բոլոր դաշտերը դատարկ են։</value>
   </data>
   <data name="UserIdRequired" xml:space="preserve">
     <value>Օգտատիրոջ ID-ն պարտադիր է։</value>
@@ -1112,7 +1108,7 @@
     <value>Գաղտնաբառը պետք է պարունակի առնվազն 8 նիշ։</value>
   </data>
   <data name="SettingIdInvalid" xml:space="preserve">
-    <value>Նշեք կարգավորման վավեր ID։</value>
+    <value>Կարգավորման ID-ն պետք է լինի 0-ից մեծ ամբողջ թիվ։ Ընտրեք կարգավորումը կարգավորումների ցանկից և կրկին փորձեք։</value>
   </data>
   <data name="SettingKeysRequired" xml:space="preserve">
     <value>Նշեք կարգավորման առնվազն մեկ բանալի։</value>
@@ -1124,7 +1120,7 @@
     <value>Անհրաժեշտ է պատկերի ֆայլ։</value>
   </data>
   <data name="ActivityLogClientIdInvalid" xml:space="preserve">
-    <value>Նշեք հաճախորդի վավեր ID։</value>
+    <value>Հաճախորդի ID-ն պետք է լինի 0-ից մեծ ամբողջ թիվ։ Բացեք գործողությունների մատյանը հաճախորդի էջից։</value>
   </data>
   <data name="DateRangeInvalid" xml:space="preserve">
     <value>Ավարտի ամսաթիվը չի կարող լինել սկզբի ամսաթվից առաջ։</value>
@@ -1133,7 +1129,7 @@
     <value>Ամիսը պետք է լինի 1-ից 12-ի սահմաններում։</value>
   </data>
   <data name="ReportClientIdInvalid" xml:space="preserve">
-    <value>Նշեք հաճախորդի վավեր ID։</value>
+    <value>Հաճախորդի ID-ն պետք է լինի 0-ից մեծ ամբողջ թիվ։ Ընտրեք հաճախորդին հաճախորդների ցանկից։</value>
   </data>
   <data name="ReportPageRequired" xml:space="preserve">
     <value>Էջի համարը պետք է լինի 1 կամ ավելի։</value>
@@ -1151,7 +1147,7 @@
     <value>Քանակը պետք է լինի 1-ից 100-ի սահմաններում։</value>
   </data>
   <data name="BackchannelLogoutEmailInvalid" xml:space="preserve">
-    <value>Պահանջվում է վավեր էլ. փոստի հասցե։</value>
+    <value>Մուտքագրեք էլ. փոստի հասցե name@example.com ձևաչափով՝ առավելագույնը 256 նիշ։</value>
   </data>
   <data name="SignInEmailRequired" xml:space="preserve">
     <value>Էլ. փոստի հասցեն պարտադիր է։</value>
@@ -1199,7 +1195,7 @@
     <value>Յուրաքանչյուր կետը չպետք է գերազանցի {0} նիշը։</value>
   </data>
   <data name="ContentIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր նույնացուցիչ։</value>
+    <value>Նույնացուցիչը պետք է լինի 0-ից մեծ ամբողջ թիվ։ Ընտրեք տարրը իր ցանկից և կրկին փորձեք։</value>
   </data>
   <data name="ContentSortOrderInvalid" xml:space="preserve">
     <value>Ցուցադրման կարգը չի կարող բացասական լինել։</value>
@@ -1295,7 +1291,7 @@
     <value>Նկարագրությունը կարող է պարունակել առավելագույնը {0} նիշ։</value>
   </data>
   <data name="FaqCategoryInvalid" xml:space="preserve">
-    <value>Ընտրեք վավեր կատեգորիա։</value>
+    <value>Կատեգորիան չի ճանաչվել։ Ընտրեք «Ընդհանուր» կամ «Ապրանքներ»։</value>
   </data>
   <data name="FaqQuestionRequired" xml:space="preserve">
     <value>Մուտքագրեք հարցը։</value>
@@ -1343,10 +1339,10 @@
     <value>Ավելացրեք պատվերում առնվազն մեկ ապրանք։</value>
   </data>
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
-    <value>Յուրաքանչյուր ապրանք պետք է ունենա ճիշտ արտադրանք։</value>
+    <value>Պատվերի մի դիրքի համար ճիշտ ապրանք ընտրված չէ։ Ընտրեք ապրանք յուրաքանչյուր դիրքի համար կամ հեռացրեք դատարկ դիրքը և նորից ուղարկեք պատվերը։</value>
   </data>
   <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
-    <value>Փաթեթը նշված է սխալ։</value>
+    <value>Փաթեթի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք փաթեթ ցանկից կամ հեռացրեք փաթեթը պատվերից և նորից ուղարկեք այն։</value>
   </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Հաշվարկային ժամանակաշրջանը պետք է լինի «monthly», «annual» կամ «annually»։</value>
@@ -1379,7 +1375,7 @@
     <value>Վերադարձի հղումը պետք է լինի բացարձակ http կամ https հասցե։</value>
   </data>
   <data name="SshKeyIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր SSH բանալի։</value>
+    <value>SSH բանալու ID-ն բացակայում է կամ դատարկ է։ Ընտրեք բանալին ծառայության SSH բանալիների ցանկից։</value>
   </data>
   <data name="SshLabelRequired" xml:space="preserve">
     <value>Մուտքագրեք բանալու անվանումը։</value>
@@ -1391,28 +1387,28 @@
     <value>Տեղադրեք հանրային բանալին։</value>
   </data>
   <data name="SshPublicKeyTooLong" xml:space="preserve">
-    <value>Հանրային բանալին չափազանց երկար է։</value>
+    <value>Հանրային բանալին կարող է պարունակել առավելագույնը 1024 նիշ։ Համոզվեք, որ տեղադրել եք միայն հանրային բանալին։</value>
   </data>
   <data name="SshHostnameInvalid" xml:space="preserve">
-    <value>Մուտքագրեք վավեր հոսթի անուն։</value>
+    <value>Մուտքագրեք հոսթի անուն՝ առավելագույնը 255 նիշ, միայն տառեր, թվանշաններ, կետեր և գծիկներ։ Գործակալի հոսթում թույլատրվում են նաև երկու կետեր։</value>
   </data>
   <data name="SshPortInvalid" xml:space="preserve">
     <value>Պորտը պետք է լինի 1-ից 65535։</value>
   </data>
   <data name="SshAgentUsernameInvalid" xml:space="preserve">
-    <value>Մուտքագրեք ծառայողական օգտատիրոջ վավեր անուն։</value>
+    <value>Մուտքագրեք ծառայողական օգտատիրոջ անուն՝ առավելագույնը 32 նիշ։ Այն պետք է սկսվի փոքրատառով կամ ընդգծման նշանով, այնուհետև թույլատրվում են փոքրատառեր, թվանշաններ, ընդգծման նշաններ և գծիկներ։</value>
   </data>
   <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
     <value>Հոսթի բանալու fingerprint-ը պետք է լինի SHA256: և 43 նիշ։</value>
   </data>
   <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
-    <value>Գաղտնի բանալին չափազանց երկար է։</value>
+    <value>Գաղտնի բանալին կարող է պարունակել առավելագույնը 8000 նիշ։ Համոզվեք, որ տեղադրել եք միայն գաղտնի բանալին։</value>
   </data>
   <data name="SshTimeoutInvalid" xml:space="preserve">
-    <value>Ժամկետները թույլատրելի միջակայքից դուրս են։</value>
+    <value>Միացման ժամկետը պետք է լինի 1-ից 120 վայրկյան, իսկ գործողության ժամկետը՝ 1-ից 300 վայրկյան։</value>
   </data>
   <data name="InvoiceStatusInvalid" xml:space="preserve">
-    <value>Կարգավիճակը պետք է լինի հաշիվ-ապրանքագրի հայտնի կարգավիճակներից մեկը։</value>
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending, PartiallyRefunded։</value>
   </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Մուտքագրեք վավեր նոր էլ. հասցե։</value>
@@ -1439,7 +1435,7 @@
     <value>Որոնման տեքստը չի կարող լինել {0} նիշից երկար։</value>
   </data>
   <data name="ListClientIdInvalid" xml:space="preserve">
-    <value>Նշեք առկա հաճախորդ։</value>
+    <value>Հաճախորդի ֆիլտրը պետք է լինի առկա հաճախորդի նույնացուցիչը՝ զրոյից մեծ թիվ։ Ընտրեք հաճախորդին ցանկից։</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>Էլ. փոստի ֆիլտրը չի կարող լինել {0} նիշից երկար։</value>
@@ -1457,7 +1453,7 @@
     <value>Կարգավորման արժեքը չպետք է գերազանցի {0} նիշը։</value>
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
-    <value>Ծանուցման տեսակը վավեր չէ։</value>
+    <value>Ծանուցման տեսակը պետք է լինի հետևյալներից մեկը՝ General, Invoice, Support, Product, Domain, Affiliate։</value>
   </data>
   <data name="ClientExternalAccountPairRequired" xml:space="preserve">
     <value>Նշեք և արտաքին համակարգը, և հաշվի ID-ն, կամ ոչ մեկը՝ կապը հեռացնելու համար։</value>
@@ -1472,7 +1468,7 @@
     <value>Սպասվում է՝ {0}։</value>
   </data>
   <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Այս դաշտը ինտեգրացիայի կողմից հայտարարված չէ։</value>
+    <value>Այս ինտեգրացիան նման բանալիով կարգավորում չունի, ուստի այն չի պահպանվել։ Հեռացրեք դաշտը և նորից պահպանեք։</value>
   </data>
   <data name="IntegrationFieldExpectSecret" xml:space="preserve">
     <value>ոչ դատարկ արժեք, իսկ պահված գաղտնիքը պահպանելու համար դաշտը մի ուղարկեք</value>
@@ -1505,16 +1501,16 @@
     <value>Հաստատեք, որ պահպանված վճարման եղանակից կարելի է գանձել ձեր հաշիվ-ապրանքագրերի համար։</value>
   </data>
   <data name="StoredChargeSessionIdRequired" xml:space="preserve">
-    <value>Նշեք պահպանման սեսիան։</value>
+    <value>Պահպանման սեսիայի նույնացուցիչը նշված չէ։ Փոխանցեք սեսիայի այն նույնացուցիչը, որը վճարային դարպասը վերադարձրել է քարտը պահպանելիս։</value>
   </data>
   <data name="CardConsentIdInvalid" xml:space="preserve">
-    <value>Նշեք համաձայնությունը։</value>
+    <value>Համաձայնության նույնացուցիչը պետք է լինի զրոյից մեծ թիվ։ Նշեք քարտից գանձման առկա համաձայնության նույնացուցիչը։</value>
   </data>
   <data name="StoredChargeInvalid" xml:space="preserve">
-    <value>Նշեք գանձումը և ինչով է այն ավարտվել։</value>
+    <value>Գանձման նույնացուցիչը պետք է լինի զրոյից մեծ թիվ, իսկ արդյունքը՝ հետևյալներից մեկը՝ Succeeded, Declined, ActionRequired, Pending։</value>
   </data>
   <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
-    <value>Կարգավիճակը պետք է լինի վճարման հայտի հայտնի կարգավիճակներից մեկը։</value>
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Open, ActionRequired, Pending, Settled, Declined, Abandoned, Held։</value>
   </data>
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Հավելագրիչի տարբերակը պարտադիր է։</value>
@@ -1523,7 +1519,7 @@
     <value>Արտոնագրի բանալին պարտադիր է։</value>
   </data>
   <data name="PluginLicenceKeyTooLong" xml:space="preserve">
-    <value>Արտոնագրի բանալին չափազանց երկար է։</value>
+    <value>Արտոնագրի բանալին կարող է պարունակել առավելագույնը 256 նիշ։ Համոզվեք, որ տեղադրել եք միայն բանալին։</value>
   </data>
   <data name="PluginLicenceKeyInvalid" xml:space="preserve">
     <value>Լիցենզիայի բանալին կարող է պարունակել միայն տպվող ASCII նիշեր՝ առանց բացատների։</value>
@@ -1535,10 +1531,10 @@
     <value>Որոնման տեքստը կարող է պարունակել առավելագույնը 100 նիշ։</value>
   </data>
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
-    <value>Ընտրեք թույլատրելի կատեգորիա։</value>
+    <value>Կատեգորիան պետք է լինի հետևյալներից մեկը՝ Payment, Provisioning, Registrar, App, Other։</value>
   </data>
   <data name="InvoiceItemIdInvalid" xml:space="preserve">
-    <value>Նշեք վավեր հաշիվ-ապրանքագրի տող։</value>
+    <value>Հաշիվ-ապրանքագրի տողի նույնացուցիչը պետք է լինի զրոյից մեծ թիվ։ Նշեք հաշիվ-ապրանքագրի առկա տողի նույնացուցիչը։</value>
   </data>
   <data name="RenewalWindowInvalid" xml:space="preserve">
     <value>Ընտրեք երկարացման ժամանակահատվածը՝ 30, 60 կամ 90 օր։</value>
@@ -1559,13 +1555,13 @@
     <value>Գումարը պետք է լինի զրոյից մեծ։</value>
   </data>
   <data name="CreditNoteIdInvalid" xml:space="preserve">
-    <value>Նշեք առկա կրեդիտ-նոտա։</value>
+    <value>Կրեդիտ-նոտայի նույնացուցիչը պետք է լինի զրոյից մեծ թիվ։ Նշեք կրեդիտ-նոտայի առկա նույնացուցիչը։</value>
   </data>
   <data name="CreditNoteMethodInvalid" xml:space="preserve">
     <value>Ընտրեք՝ կրեդիտ-նոտան գնում է հաճախորդի մնացորդին, թե վերադարձվում է վճարային դարպասի միջոցով։</value>
   </data>
   <data name="CreditNoteStatusInvalid" xml:space="preserve">
-    <value>Ընտրեք կրեդիտ-նոտայի թույլատրելի կարգավիճակ։</value>
+    <value>Կրեդիտ-նոտայի կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Draft, Issued, Applied, Voided։</value>
   </data>
   <data name="CreditNoteReasonRequired" xml:space="preserve">
     <value>Նշեք կրեդիտ-նոտայի պատճառը։</value>
@@ -1613,7 +1609,7 @@
     <value>Հաղորդագրությունը չի կարող {0} նիշից երկար լինել։</value>
   </data>
   <data name="StatusStateInvalid" xml:space="preserve">
-    <value>Ընտրեք թույլատրելի վիճակ։</value>
+    <value>Բաղադրիչի վիճակը վավեր չէ։ Ընտրեք աշխատում է, տեխնիկական սպասարկում, վատացած աշխատանք կամ խափանում, կամ հանեք վերագրումը և նորից պահպանեք։</value>
   </data>
   <data name="StatusCheckUrlRequired" xml:space="preserve">
     <value>Մուտքագրեք ստուգման հասցեն։</value>
@@ -1649,16 +1645,16 @@
     <value>Գույնը պետք է գրվի #RRGGBB ձևաչափով։</value>
   </data>
   <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
-    <value>Նշեք պլանի փոփոխության վավեր հայտ։</value>
+    <value>Պլանի փոփոխության հայտի նույնացուցիչը պետք է լինի զրոյից մեծ թիվ։ Բացեք հայտը պլանի փոփոխությունների ցանկից և կրկնեք գործողությունը։</value>
   </data>
   <data name="ServiceChangeNoteTooLong" xml:space="preserve">
     <value>Նշումը չպետք է գերազանցի {0} նիշը։</value>
   </data>
   <data name="ServiceChangeStatusInvalid" xml:space="preserve">
-    <value>Ընտրեք պլանի փոփոխության հայտի վավեր կարգավիճակ։</value>
+    <value>Պլանի փոփոխության կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Pending, Approved, Completed, Rejected։ Ցանկը զտելու համար ընտրեք դրանցից մեկը։</value>
   </data>
   <data name="CampaignIdInvalid" xml:space="preserve">
-    <value>Նշեք ճիշտ քարոզարշավ։</value>
+    <value>Քարոզարշավի նույնացուցիչը պետք է լինի զրոյից մեծ թիվ։ Բացեք քարոզարշավը քարոզարշավների ցանկից և կրկնեք գործողությունը։</value>
   </data>
   <data name="CampaignSubjectRequired" xml:space="preserve">
     <value>Մուտքագրեք նամակի թեման։</value>
@@ -1679,7 +1675,7 @@
     <value>Քարոզարշավը կարող է ունենալ առավելագույնը {0} սեգմենտ։</value>
   </data>
   <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
-    <value>Ընտրեք հայտնի զտիչ յուրաքանչյուր սեգմենտի համար։</value>
+    <value>Սեգմենտում նշված է գոյություն չունեցող զտիչ։ Ընտրեք սեգմենտի ցանկի զտիչներից մեկը՝ արտադրանք, երկիր, ժամկետի ավարտ, հաճախորդների խումբ, վերջին մուտք կամ բոլոր ակտիվ հաճախորդները։</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
     <value>Արժեքը չի համապատասխանում զտիչին։ Արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, հաճախորդների խմբի համար՝ խմբի id, մուտքի զտիչի համար՝ օրերի քանակ 1-ից 3650, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
@@ -1691,13 +1687,13 @@
     <value>Ապաբաժանորդագրվելու հղումը տոկեն չի պարունակում։</value>
   </data>
   <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
-    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ, հնարավոր է՝ այն կրճատվել է պատճենելիս։ Օգտագործեք սկզբնական նամակի հղումը։</value>
   </data>
   <data name="CampaignMailLinkInvalid" xml:space="preserve">
-    <value>Այս հղումը վավեր չէ։</value>
+    <value>Այս հղումը վավեր չէ, հնարավոր է՝ այն կրճատվել է պատճենելիս։ Օգտագործեք սկզբնական նամակի հղումը։</value>
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
-    <value>Նամակի բանալին պարտադիր է։</value>
+    <value>Նամակի բանալին պարտադիր է։ Բացեք նամակը ուղարկված նամակների ցանկից, որպեսզի բանալին լրացվի։</value>
   </data>
   <data name="ClientTaxIdInvalid" xml:space="preserve">
     <value>Հարկ վճարողի համարը չպետք է գերազանցի 50 նիշը։</value>
@@ -1736,16 +1732,16 @@
     <value>Նշեք սկզբի ամսաթիվ 1993-ից 2100 թվականի սահմաններում։</value>
   </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
-    <value>Արգելված ցուցակի տեսակը վավեր չէ։</value>
+    <value>Արգելված ցուցակի տեսակը պետք է լինի հետևյալներից մեկը՝ Ip, Cidr, EmailDomain, Country։ Ընտրեք դրանցից մեկը։</value>
   </data>
   <data name="FraudBlockListValueInvalid" xml:space="preserve">
-    <value>Արժեքը չի համապատասխանում արգելված ցուցակի ընտրված տեսակին։</value>
+    <value>Արժեքը չի համապատասխանում արգելված ցուցակի ընտրված տեսակին կամ 255 նիշից երկար է։ Ip-ի համար նշեք IP հասցե, Cidr-ի համար՝ 203.0.113.0/24 տեսքի տիրույթ, EmailDomain-ի համար՝ example.com տեսքի դոմեն, Country-ի համար՝ երկտառ կոդ։</value>
   </data>
   <data name="FraudBlockListNoteTooLong" xml:space="preserve">
     <value>Նշումը չպետք է գերազանցի 500 նիշը։</value>
   </data>
   <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
-    <value>Արգելված ցուցակի գրառման նույնացուցիչը պետք է մեծ լինի զրոյից։</value>
+    <value>Արգելված ցուցակի գրառման նույնացուցիչը պետք է լինի զրոյից մեծ թիվ։ Բացեք գրառումը արգելված ցուցակից և կրկնեք գործողությունը։</value>
   </data>
   <data name="FraudScoreOutOfRange" xml:space="preserve">
     <value>Ռիսկի գնահատականը պետք է լինի 0-ից 100 ամբողջ թիվ։</value>
@@ -1760,13 +1756,13 @@
     <value>Սահմանաչափը պետք է լինի 1-ից 100 ամբողջ թիվ։</value>
   </data>
   <data name="FraudCheckKindInvalid" xml:space="preserve">
-    <value>Խարդախության ստուգման տեսակը վավեր չէ։</value>
+    <value>Խարդախության ստուգման տեսակը պետք է լինի Registration կամ Order։ Ընտրեք դրանցից մեկը։</value>
   </data>
   <data name="FraudDecisionInvalid" xml:space="preserve">
-    <value>Խարդախության վերաբերյալ որոշումը վավեր չէ։</value>
+    <value>Խարդախության վերաբերյալ որոշումը պետք է լինի հետևյալներից մեկը՝ Approved, Review, Rejected, ManualApproved։ Ընտրեք դրանցից մեկը։</value>
   </data>
   <data name="FraudReasonInvalid" xml:space="preserve">
-    <value>Խարդախության պատճառը վավեր չէ։</value>
+    <value>Խարդախության պատճառը պետք է լինի հետևյալներից մեկը՝ BlockedIp, BlockedEmailDomain, BlockedCountry, DisposableEmail։ Մատյանը զտելու համար ընտրեք դրանցից մեկը։</value>
   </data>
   <data name="OrderReviewReasonRequired" xml:space="preserve">
     <value>Նշեք պատճառը, որը կտեսնի հաճախորդը։</value>
@@ -1793,13 +1789,13 @@
     <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Active, Inactive։</value>
   </data>
   <data name="PaymentReturnParametersTooMany" xml:space="preserve">
-    <value>Վերադարձի պարամետրերը չափազանց շատ են։</value>
+    <value>Վճարողը վճարային դարպասից վերադարձել է 32-ից ավելի տարբեր պարամետրերով։ Վերադարձի հասցեում նշեք առավելագույնը 32 պարամետր։</value>
   </data>
   <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
     <value>Վերադարձի պարամետրի անունը սահմանափակված է 64 նիշով։</value>
   </data>
   <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
-    <value>Վերադարձի պարամետրի արժեքը չափազանց երկար է։</value>
+    <value>Վերադարձի պարամետրի արժեքը 2048 նիշից երկար է։ Կրճատեք այն վճարային դարպասի վերադարձի հասցեում։</value>
   </data>
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Ակտիվ ծառայությունների առավելագույն թիվը պետք է լինի 0 կամ դատարկ (անսահմանափակ), կամ դրական թիվ։</value>
@@ -1808,10 +1804,10 @@
     <value>Դարպասի պատվերի նույնացուցիչը 1-ից 255 նիշ է՝ առանց եզրային բացատների և կառավարող նիշերի։</value>
   </data>
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
-    <value>Գրանցողի էջի կուրսորը չափազանց երկար է։</value>
+    <value>Էջի կուրսորը 1000 նիշից երկար է։ Օգտագործեք կուրսորն այնպես, ինչպես այն վերադարձրել է նախորդ էջը, կամ սկսեք առաջին էջից։</value>
   </data>
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
-    <value>Սա ծանուցման վավեր նույնացուցիչ չէ։</value>
+    <value>Ծանուցման նույնացուցիչը դատարկ է կամ 100 նիշից երկար է։ Թարմացրեք ծանուցումների ցանկը և նորից նշեք գրառումը որպես կարդացված։</value>
   </data>
   <data name="DomainFieldsOperationInvalid" xml:space="preserve">
     <value>Գործողությունը պետք է լինի register, transfer կամ contactChange։</value>
@@ -1821,5 +1817,23 @@
   </data>
   <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
     <value>Գրանցամատյանի տվյալները ընդունվում են միայն դոմենի գրանցման կամ տեղափոխման տողում։</value>
+  </data>
+  <data name="StatusIncidentStateInvalid" xml:space="preserve">
+    <value>Միջադեպի վիճակը վավեր չէ։ Ընտրեք ուսումնասիրվում է, պարզվել է, հսկվում է կամ լուծված է, և կրկին հրապարակեք թարմացումը։</value>
+  </data>
+  <data name="ClientPermissionModeInvalid" xml:space="preserve">
+    <value>Թույլտվությունների ռեժիմը վավեր չէ։ Ընտրեք, թե հրավերը տալիս է բոլոր թույլտվությունները, թե միայն ձեր ընտրածները, և նորից ուղարկեք այն։</value>
+  </data>
+  <data name="ClientPermissionListInvalid" xml:space="preserve">
+    <value>Թույլտվությունները պետք է լինեն ցանկ, որի յուրաքանչյուր գրառման մեջ մեկ հայտնի թույլտվություն է։ Ընտրեք թույլտվությունները ձևից առանց դրանք միավորելու և նորից ուղարկեք հրավերը։</value>
+  </data>
+  <data name="ClientPermissionListMustBeEmpty" xml:space="preserve">
+    <value>Բոլոր թույլտվությունները տվող հրավերը չպետք է թվարկի առանձին թույլտվություններ։ Մաքրեք ընտրված թույլտվությունները կամ անցեք թույլտվությունների ընտրությանը և նորից ուղարկեք հրավերը։</value>
+  </data>
+  <data name="ClientPermissionListRequired" xml:space="preserve">
+    <value>Ոչ մի թույլտվություն չի ընտրվել։ Ընտրեք առնվազն մեկ թույլտվություն կամ հրավերը դարձրեք բոլոր թույլտվություններով և նորից ուղարկեք։</value>
+  </data>
+  <data name="MigrationJobIdInvalid" xml:space="preserve">
+    <value>Միգրացիայի առաջադրանքի նույնացուցիչը պետք է լինի դրական թիվ։ Ընտրեք գոյություն ունեցող միգրացիայի առաջադրանք։</value>
   </data>
 </root>

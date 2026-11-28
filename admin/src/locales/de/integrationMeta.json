@@ -1,22 +1,30 @@
 {
   "bankTransfer": {
+    "name": "Banküberweisung",
     "shortDescription": "Ermöglichen Sie Kunden die Zahlung per Banküberweisung mit Ihren Bankdaten.",
     "fieldAccountName": "Kontoinhaber",
-    "fieldInstructions": "Zahlungshinweise"
+    "fieldIban": "IBAN",
+    "fieldSwift": "SWIFT / BIC",
+    "fieldInstructions": "Zahlungshinweise",
+    "fieldExpiryDays": "Tage, bis eine unbestätigte Überweisung verfällt"
   },
   "cpanel": {
+    "name": "cPanel WHM",
     "shortDescription": "Hosting-Konten über die cPanel-WHM-Server-API bereitstellen und verwalten.",
     "fieldHost": "WHM-Host",
     "fieldPort": "Port",
     "fieldApiToken": "API-Token"
   },
   "smtp": {
+    "name": "SMTP-Server",
     "shortDescription": "Den E-Mail-Versand über Ihren SMTP-Mailserver konfigurieren.",
     "fieldHost": "SMTP-Host",
     "fieldFromAddress": "Absenderadresse",
-    "fieldEncryption": "Verschlüsselung"
+    "fieldEncryption": "Verschlüsselung",
+    "encryptionNone": "Keine"
   },
   "maxmind": {
+    "name": "MaxMind",
     "shortDescription": "Betrügerische Bestellungen mit dem GeoIP-Risiko-Scoring von MaxMind erkennen.",
     "fieldLicenseKey": "Lizenzschlüssel",
     "fieldAccountId": "Konto-ID"

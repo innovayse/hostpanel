@@ -7,9 +7,10 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListTransactions;
 /// <param name="Page">1-based page number.</param>
 /// <param name="PageSize">Items per page (1 to 100); a size outside that range is refused, not clamped.</param>
 /// <param name="Search">
-/// Optional text; only transactions whose description, reference or payment method contain it (case-insensitive), or whose
-/// id it is when it is a whole number, are listed. Blank lists all. The client's name is not searched, which only the
-/// Clients module can read: filter by <paramref name="ClientId"/> instead.
+/// Optional text; only transactions whose description, reference or payment method contain it, or (on the list of every
+/// client) that belong to a client whose first name, last name, company, sign-in address or account name contains it
+/// (case-insensitive, a <c>%</c> or <c>_</c> matches itself), or whose id it is when it is a whole number, are listed.
+/// Blank lists all.
 /// </param>
 /// <param name="ClientId">The client's primary key, or <see langword="null"/> for all clients; the controller overlays it from the route on a client's list.</param>
 /// <param name="Direction">Optional direction, bound by name from the query string; <see langword="null"/> for money in and out.</param>

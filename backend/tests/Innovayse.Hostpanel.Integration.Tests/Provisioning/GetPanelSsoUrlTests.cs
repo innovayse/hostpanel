@@ -141,11 +141,11 @@ public sealed class GetPanelSsoUrlTests(IntegrationTestFactory factory) : IClass
 
     /// <summary>
     /// A terminated service keeps its reference but no longer has an account, so a sign-in link is
-    /// refused with 400 <c>SERVICE_NOT_ACTIVE</c> instead of asking the panel.
+    /// refused with 400 <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> instead of asking the panel.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task GetPanelSsoUrl_TerminatedService_Returns400WithServiceNotActiveAsync()
+    public async Task GetPanelSsoUrl_TerminatedService_Returns400WithServiceHostingAccountRemovedAsync()
     {
         var http = factory.CreateClient();
         var adminToken = await factory.GetAdminTokenAsync();
@@ -156,7 +156,7 @@ public sealed class GetPanelSsoUrlTests(IntegrationTestFactory factory) : IClass
         var response = await http.GetAsync($"/api/provisioning/{serviceId}/panel-sso");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_HOSTING_ACCOUNT_REMOVED);
     }
 
     /// <summary>Requesting a control-panel sign-in link without authentication is refused.</summary>

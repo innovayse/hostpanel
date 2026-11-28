@@ -123,7 +123,7 @@ describe('PredefinedRepliesView', () => {
     await flushPromises()
 
     const urls = mock.mock.calls.map((_, index) => callOf(mock, index).url)
-    expect(urls).toContain('/api/predefined-replies/search?q=welc')
+    expect(urls).toContain('/api/predefined-replies/search?search=welc')
     expect(wrapper.get('[data-testid="predefined-replies-result-4"]').text()).toContain('Hello and welcome.')
   })
 

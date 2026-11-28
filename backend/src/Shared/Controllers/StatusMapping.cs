@@ -99,6 +99,9 @@ public static class StatusMapping
             // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host
             // assembly refusal; the CONFLICT in the name must not reach the generic arm below that answers 409.
             "PLUGIN_ASSEMBLY_CONFLICT" => new(400, "Bad Request"),
+            // Exact row: a terminated service cannot change status, a refusal of the request itself (400) like the other
+            // two status reasons; the _LOCKED ending must not reach the generic arm below that answers 423.
+            "SERVICE_TERMINATED_STATUS_LOCKED" => new(400, "Bad Request"),
             // An upload older than the installed version, and a purge of data whose plugin is still installed: the target's state refuses it.
             "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
             // Exact row: the package is well formed, but the running host version is outside the range it declares.
@@ -204,7 +207,8 @@ public static class StatusMapping
             "TRANSACTION_CREDIT_LOCKED" => new(409, "Conflict"),
             // Exact rows: the credit note is in a state that refuses the action, a conflict with what is stored and not a malformed
             // request; neither name carries a CONFLICT token.
-            "CREDIT_NOTE_INVALID_STATE" or "CREDIT_NOTE_REFUND_NOT_VOIDABLE" => new(409, "Conflict"),
+            "CREDIT_NOTE_INVALID_STATE" or "CREDIT_NOTE_NOT_ISSUED" or "CREDIT_NOTE_REFUND_REFERENCE_REQUIRED" or "CREDIT_NOTE_DRAFT_NOT_VOIDABLE"
+                or "INVOICE_CREDIT_NOTED_EXCEEDED" or "CREDIT_NOTE_REFUND_NOT_VOIDABLE" => new(409, "Conflict"),
 
             // SSH key management: the service is the caller's, but its state or the key's binding
             // does not allow the change, or the hosting server did not confirm it.

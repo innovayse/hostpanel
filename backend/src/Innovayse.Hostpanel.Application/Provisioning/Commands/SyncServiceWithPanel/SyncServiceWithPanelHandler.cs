@@ -25,9 +25,6 @@ namespace Innovayse.Hostpanel.Application.Provisioning.Commands.SyncServiceWithP
 /// </summary>
 public sealed class SyncServiceWithPanelHandler
 {
-    /// <summary>Why a suspension that only brings the panel in step with the platform is sent to the panel.</summary>
-    private const string SuspensionReason = "Panel synchronised with the platform";
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -68,7 +65,7 @@ public sealed class SyncServiceWithPanelHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// What was done about each field, or <c>SERVICE_NOT_FOUND</c> when the id names no service, <c>SERVICE_NOT_PROVISIONED</c> when the
-    /// service has never been provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated, <c>SERVICE_NO_SERVER_ASSIGNED</c> when it
+    /// service has never been provisioned, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when it is terminated, <c>SERVICE_NO_SERVER_ASSIGNED</c> when it
     /// has no usable server, the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses to be read, or
     /// <c>SERVICE_PANEL_SYNC_UPSTREAM_FAILED</c> when the panel cannot be read. A change that fails to apply is reported in its
     /// field, not as a failure of the sync.
@@ -125,7 +122,7 @@ public sealed class SyncServiceWithPanelHandler
         {
             case PanelSyncField.Status:
                 var status = service.Status is ServiceStatus.Suspended
-                    ? await _hostedAccounts.SuspendAsync(new HostedAccountSuspension(HostedAccountTarget.Of(service), SuspensionReason), ct)
+                    ? await _hostedAccounts.SuspendAsync(new HostedAccountSuspension(HostedAccountTarget.Of(service), string.Empty), ct)
                     : await _hostedAccounts.UnsuspendAsync(new HostedAccountUnsuspension(HostedAccountTarget.Of(service)), ct);
                 return status is HostedAccountOutcome.Updated ? PanelSyncOutcome.Applied : PanelSyncOutcome.Failed;
             case PanelSyncField.Package:

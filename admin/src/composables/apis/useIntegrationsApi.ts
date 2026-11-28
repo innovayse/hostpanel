@@ -8,8 +8,8 @@
 import { useApi } from '@/composables/useApi'
 import type {
   IntegrationConfigPayload,
-  IntegrationDetailDto,
-  IntegrationDto,
+  IntegrationDetailWireDto,
+  IntegrationWireDto,
   IntegrationTestResult,
 } from '@/types/integration'
 import { ApiPath } from '@/lib/apiPaths'
@@ -26,10 +26,10 @@ export const useIntegrationsApi = () => {
   /**
    * Lists the integrations.
    *
-   * @returns The summary rows, with the backend's category strings untouched.
+   * @returns The summary rows, with the backend's category strings and the null name of a built-in integration untouched.
    */
-  const listIntegrations = (): Promise<IntegrationDto[]> =>
-    request<IntegrationDto[]>(ApiPath.AdminIntegrations)
+  const listIntegrations = (): Promise<IntegrationWireDto[]> =>
+    request<IntegrationWireDto[]>(ApiPath.AdminIntegrations)
 
   /**
    * Reads one integration's config.
@@ -37,8 +37,8 @@ export const useIntegrationsApi = () => {
    * @param slug - Integration slug.
    * @returns The detail with its field definitions and values.
    */
-  const getIntegration = (slug: string): Promise<IntegrationDetailDto> =>
-    request<IntegrationDetailDto>(`${ApiPath.AdminIntegrations}/${slug}`)
+  const getIntegration = (slug: string): Promise<IntegrationDetailWireDto> =>
+    request<IntegrationDetailWireDto>(`${ApiPath.AdminIntegrations}/${slug}`)
 
   /**
    * Saves an integration's config.

@@ -2,6 +2,7 @@ using System.Net;
 using System.Reflection;
 using Innovayse.Hostpanel.API.Controllers;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +29,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
     {
         using var scenario = new FulfilmentScenario(factory);
         var invoiceId = await scenario.SeedInvoiceAsync();
-        var recordId = await scenario.SeedFailedRecordAsync(invoiceId, FulfilmentKind.Paid, "plugin said no");
+        var recordId = await scenario.SeedFailedRecordAsync(invoiceId, FulfilmentKind.Paid, BillingErrors.FulfilmentPluginFailed);
         var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
         HttpResponseMessage? response = null;
         Func<IMessageContext, Task> retry = async _ =>
@@ -46,7 +47,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
         var record = await scenario.ReadAsync(invoiceId, FulfilmentKind.Paid);
         record.Status.Should().Be(FulfilmentStatus.Done);
         record.Attempts.Should().Be(1);
-        record.LastError.Should().BeNull();
+        record.LastErrorCode.Should().BeNull();
     }
 
     /// <summary>A record that has not failed is refused with 409 and left as it was.</summary>
@@ -91,7 +92,7 @@ public sealed class RetryFulfilmentRecordTests(IntegrationTestFactory factory) :
         using var scenario = new FulfilmentScenario(factory);
         var invoiceId = await scenario.SeedInvoiceAsync();
         var otherInvoiceId = await scenario.SeedInvoiceAsync();
-        var recordId = await scenario.SeedFailedRecordAsync(otherInvoiceId, FulfilmentKind.Paid, "plugin said no");
+        var recordId = await scenario.SeedFailedRecordAsync(otherInvoiceId, FulfilmentKind.Paid, BillingErrors.FulfilmentPluginFailed);
         var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.PostAsync($"/api/billing/{invoiceId}/fulfilment/{recordId}/retry", content: null);

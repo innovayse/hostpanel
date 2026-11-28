@@ -63,7 +63,7 @@ public sealed class SelectMyBankTransferHandler
     /// <returns>
     /// The bank details and the reference, or <c>INVOICE_NOT_FOUND</c> (404) when the invoice is not the caller's;
     /// <c>BANK_TRANSFER_NOT_AVAILABLE</c> when the admin has it switched off; <c>INVOICE_NOT_PAYABLE</c> when the invoice
-    /// is not open for payment; <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c> while a stored
+    /// is not open for payment; <c>INVOICE_NOTHING_DUE</c> when it owes nothing; <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c> while a stored
     /// card charge blocks it; <c>GATEWAY_SESSION_ALREADY_STARTED</c> while a hosted payment is still open; and the
     /// refusal of an account that is suspended or closed.
     /// </returns>

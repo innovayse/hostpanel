@@ -111,7 +111,7 @@ public sealed class ChargeInvoiceStoredMethodRaceTests(IntegrationTestFactory fa
     /// <summary>
     /// A part payment lands between the read and the claim save, so the claim carries an amount the invoice no longer
     /// owes. The recheck compares the due amount with the claimed one, ends the claim as never charged, answers
-    /// <c>INVOICE_NOT_PAYABLE</c> and the gateway is not charged at all (the client is not charged the stale amount).
+    /// <c>INVOICE_AMOUNT_CHANGED</c> and the gateway is not charged at all (the client is not charged the stale amount).
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -129,7 +129,7 @@ public sealed class ChargeInvoiceStoredMethodRaceTests(IntegrationTestFactory fa
         var result = await host.InvokeAsync<Result<InvoiceChargeDto>>(new ChargeInvoiceStoredMethodCommand(invoiceId));
 
         taken.Fired.Should().BeTrue();
-        result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_AMOUNT_CHANGED);
         host.State.ChargeCount.Should().Be(0);
         var claim = (await host.ClaimsOfAsync(invoiceId)).Should().ContainSingle().Subject;
         claim.Status.Should().Be(InvoicePaymentClaimStatus.Abandoned);

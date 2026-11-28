@@ -206,7 +206,7 @@ public sealed class ServicesController : BaseApiController
     /// <param name="command">The status asked for.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 when moved; 400 when the status is unknown, or with <c>SERVICE_STATUS_CHANGE_NOT_ALLOWED</c>
+    /// 204 when moved; 400 when the status is unknown, or with the reason code (<c>SERVICE_TERMINATED_STATUS_LOCKED</c>, <c>SERVICE_STATUS_PENDING_UNREACHABLE</c> or <c>SERVICE_PENDING_NOT_ACTIVATED</c>)
     /// when the service cannot be moved to it; 404 when the id names no service; 502 with the
     /// transition's <c>*_UPSTREAM_FAILED</c> code when the panel refuses; 401 when the caller is not
     /// signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.

@@ -29,7 +29,7 @@ public sealed class FulfilmentRecordConfiguration : IEntityTypeConfiguration<Ful
         builder.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(EnumNameLength);
         builder.Property(x => x.Attempts).IsRequired();
         builder.Property(x => x.NextAttemptAt).IsRequired();
-        builder.Property(x => x.LastError).HasMaxLength(FulfilmentRecord.MaxErrorLength);
+        builder.Property(x => x.LastErrorCode).HasMaxLength(FulfilmentRecord.ErrorCodeMaxLength);
         builder.Property(x => x.CompletedAt);
         builder.Property(x => x.CreatedAt).IsRequired();
 

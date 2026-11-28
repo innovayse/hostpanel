@@ -14,6 +14,7 @@ export const activeServiceDetail: ServiceDetail = {
   productName: hostingProductName,
   domain: 'engines.example.test',
   status: ServiceStatus.Active,
+  allowedStatuses: [ServiceStatus.Active, ServiceStatus.Suspended, ServiceStatus.Terminated],
   createdAt: '2026-10-01T00:00:00Z',
   terminatedAt: null,
   adminNotes: 'Moved from the old server.',
@@ -38,5 +39,6 @@ export const activeServiceDetail: ServiceDetail = {
 export const terminatedServiceDetail: ServiceDetail = {
   ...activeServiceDetail,
   status: ServiceStatus.Terminated,
+  allowedStatuses: [ServiceStatus.Terminated],
   terminatedAt: '2026-10-20T00:00:00Z',
 }

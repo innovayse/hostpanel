@@ -6,7 +6,6 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Summary row returned by the list-integrations endpoint.
 /// </summary>
 /// <param name="Slug">URL-safe identifier for the integration (e.g. "card").</param>
-/// <param name="Name">Human-readable display name (e.g. "Card gateway").</param>
 /// <param name="Category">Grouping label (e.g. "Payment Gateways").</param>
 /// <param name="IsEnabled">Whether the integration is currently active.</param>
 /// <param name="IsConfigured">Whether all required credential fields are non-empty.</param>
@@ -28,9 +27,9 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// The plugin's short description in the request language (a manifest locale key resolved, else the plain text);
 /// <see langword="null"/> for a built-in integration, whose card text the admin owns, and for a plugin whose manifest is not loaded.
 /// </param>
+/// <param name="Name">Display name: the manifest name for a plugin; left out for a built-in integration, whose name the admin owns and resolves from <paramref name="Slug"/>.</param>
 public sealed record IntegrationListItemDto(
     string Slug,
-    string Name,
     string Category,
     bool IsEnabled,
     bool IsConfigured,
@@ -38,4 +37,5 @@ public sealed record IntegrationListItemDto(
     PluginType? PluginType = null,
     IntegrationConnectionDto? Connection = null,
     string? IconUrl = null,
-    string? Description = null);
+    string? Description = null,
+    string? Name = null);

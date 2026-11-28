@@ -47,8 +47,8 @@ public sealed class StartMyTrialHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The new service id, <c>CLIENT_PROFILE_NOT_FOUND</c>, <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the account
-    /// may not order, <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active or has no priced
-    /// billing cycle in the client's currency, <c>PRODUCT_TRIAL_NOT_AVAILABLE</c> when it offers no trial, or the order's
+    /// may not order, <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active,
+    /// <c>PRODUCT_PRICE_UNAVAILABLE</c> when it has no priced billing cycle in the client's currency, <c>PRODUCT_TRIAL_NOT_AVAILABLE</c> when it offers no trial, or the order's
     /// own refusal such as <c>ORDER_TRIAL_ALREADY_USED</c>. A failed activation of a digital trial is not a failure: the
     /// service and the trial record already exist, so the service id is returned and the service stays Pending.
     /// </returns>
@@ -96,7 +96,7 @@ public sealed class StartMyTrialHandler
             .FirstOrDefault();
         if (cheapest is null)
         {
-            return Result<int>.FailureCode(HostpanelErrorCodes.PRODUCT_NOT_AVAILABLE);
+            return Result<int>.FailureCode(HostpanelErrorCodes.PRODUCT_PRICE_UNAVAILABLE);
         }
 
         // Never with an order line: a trial is started by the client, not fulfilled from an order.

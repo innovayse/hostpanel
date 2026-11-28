@@ -10,7 +10,7 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListTickets;
 
 /// <summary>
-/// Returns a paged list of support tickets, narrowed by the search text on the subject and by status, priority,
+/// Returns a paged list of support tickets, narrowed by the search text on the subject and the ticket id and by status, priority,
 /// department and flag, all in SQL ahead of paging, mapped to <see cref="TicketListItemDto"/>.
 /// </summary>
 public sealed class ListTicketsHandler

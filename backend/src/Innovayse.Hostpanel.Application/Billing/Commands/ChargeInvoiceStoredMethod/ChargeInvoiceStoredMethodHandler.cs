@@ -101,7 +101,7 @@ public sealed class ChargeInvoiceStoredMethodHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Where the charge stands once the plugin answered (settled, declined, awaiting the payer or pending);
-    /// <c>INVOICE_NOT_FOUND</c>; <c>INVOICE_NOT_PAYABLE</c> when nothing is due or the invoice is not open;
+    /// <c>INVOICE_NOT_FOUND</c>; <c>INVOICE_NOT_PAYABLE</c> when the invoice is not open, <c>INVOICE_NOTHING_DUE</c> when nothing is due, <c>INVOICE_AMOUNT_CHANGED</c> when a payment changed what is due after the claim was taken;
     /// <c>CLIENT_SUSPENDED</c> / <c>CLIENT_CLOSED</c> / <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the account may not be
     /// charged; <c>STORED_CHARGE_ALREADY_IN_PROGRESS</c> when the invoice already has an unresolved or held claim;
     /// <c>CARD_CONSENT_REQUIRED</c> when the client holds no active consent, or revoked it while the claim was written; <c>STORED_CREDENTIALS_NOT_SUPPORTED</c>
@@ -123,9 +123,14 @@ public sealed class ChargeInvoiceStoredMethodHandler
             return Result<InvoiceChargeDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_FOUND);
         }
 
-        if (!invoice.IsPayable || invoice.AmountDue <= 0m)
+        if (!invoice.IsPayable)
         {
             return Result<InvoiceChargeDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        }
+
+        if (invoice.AmountDue <= 0m)
+        {
+            return Result<InvoiceChargeDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOTHING_DUE);
         }
 
         var mayTransact = await _bus.EnsureClientMayTransactAsync(invoice.ClientId, ct);
@@ -218,14 +223,12 @@ public sealed class ChargeInvoiceStoredMethodHandler
             .AsNoTracking()
             .Include(i => i.Transactions)
             .FirstOrDefaultAsync(i => i.Id == invoice.Id, ct);
-        if (current is null
-            || !current.IsPayable
-            || current.AmountDue <= 0m
-            || CurrencyCode.ToMinorUnits(current.AmountDue, current.Currency) != claim.AmountMinor)
+        var staleCode = StaleInvoiceCode(current, claim.AmountMinor);
+        if (staleCode is not null)
         {
             claim.MarkAbandoned(_clock.UtcNow);
             await _context.SaveChangesAsync(ct);
-            return Result<InvoiceChargeDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+            return Result<InvoiceChargeDto>.FailureCode(staleCode);
         }
 
         StoredChargeResult charged;
@@ -287,6 +290,28 @@ public sealed class ChargeInvoiceStoredMethodHandler
         }
 
         return new StoredChargeTarget(null, null, null, seen);
+    }
+
+    /// <summary>Says why the invoice, read again once the claim holds it, can no longer be charged the claimed amount.</summary>
+    /// <param name="current">The invoice read again with its payments, or <see langword="null"/> when it is gone.</param>
+    /// <param name="claimedMinor">The amount the claim carries, in minor units of the invoice's currency.</param>
+    /// <returns>
+    /// <c>INVOICE_NOT_PAYABLE</c> when the invoice is gone or no longer open, <c>INVOICE_NOTHING_DUE</c> when it owes nothing,
+    /// <c>INVOICE_AMOUNT_CHANGED</c> when what is due is no longer the claimed amount, or <see langword="null"/> when the charge may go on.
+    /// </returns>
+    private static string? StaleInvoiceCode(Invoice? current, long claimedMinor)
+    {
+        if (current is null || !current.IsPayable)
+        {
+            return HostpanelErrorCodes.INVOICE_NOT_PAYABLE;
+        }
+
+        if (current.AmountDue <= 0m)
+        {
+            return HostpanelErrorCodes.INVOICE_NOTHING_DUE;
+        }
+
+        return CurrencyCode.ToMinorUnits(current.AmountDue, current.Currency) != claimedMinor ? HostpanelErrorCodes.INVOICE_AMOUNT_CHANGED : null;
     }
 
     /// <summary>Makes the idempotency key of a new attempt: opaque ASCII, well inside the 64 characters the capability allows.</summary>

@@ -13,7 +13,7 @@ public sealed class SearchPredefinedRepliesValidator : LocalizedValidator<Search
     public SearchPredefinedRepliesValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.SearchTerm)
+        RuleFor(x => x.Search)
             .NotEmpty()
             .WithMessage(L["SearchTermRequired"]);
     }

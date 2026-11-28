@@ -176,7 +176,7 @@
   "supportTickets": {
     "supportTickets": "Support-Tickets",
     "manageAllClientSupportRequests": "Alle Support-Anfragen der Kunden verwalten",
-    "searchTicketsBySubject": "Tickets nach Betreff suchen",
+    "searchTicketsBySubject": "Nach Betreff oder Ticket-ID suchen",
     "flag": "Markieren",
     "unflag": "Markierung entfernen",
     "requestor": "Anfragender",

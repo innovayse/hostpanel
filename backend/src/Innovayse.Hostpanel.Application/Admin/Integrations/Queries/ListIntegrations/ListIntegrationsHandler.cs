@@ -62,7 +62,7 @@ public sealed class ListIntegrationsHandler
 
             var isConfigured = entry.RequiredFields.All(field => settings.HasValue(slug, field));
 
-            result.Add(new IntegrationListItemDto(slug, entry.Name, entry.Category, isEnabled, isConfigured));
+            result.Add(new IntegrationListItemDto(slug, entry.Category, isEnabled, isConfigured));
         }
 
         foreach (var plugin in _pluginRegistry.GetAll())
@@ -84,7 +84,6 @@ public sealed class ListIntegrationsHandler
 
             result.Add(new IntegrationListItemDto(
                 Slug: plugin.Slug,
-                Name: plugin.Name,
                 Category: plugin.Category,
                 IsEnabled: isEnabled,
                 IsConfigured: isConfigured,
@@ -92,7 +91,8 @@ public sealed class ListIntegrationsHandler
                 PluginType: plugin.Type,
                 Connection: connection,
                 IconUrl: plugin.IconUrl,
-                Description: manifest is null ? null : PluginText.Resolve(manifest, manifest.Description)));
+                Description: manifest is null ? null : PluginText.Resolve(manifest, manifest.Description),
+                Name: plugin.Name));
         }
 
         return Result<IReadOnlyList<IntegrationListItemDto>>.Success(result);

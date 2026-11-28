@@ -46,6 +46,9 @@ PluginSigning__OperatorKeys__0__PublicKey=<base64 of the 32-byte public key>
 A key id is 1 to 64 characters of `a-z`, `0-9`, `.`, `-` and `_`. Only public keys go here. The server refuses to
 start when a key is not usable.
 
+These lists decide for packages you upload. A package installed from a [plugin registry](../operators/plugin-registry) may also be signed with a key
+the registry publishes for the plugin's publisher, so you do not add that key yourself.
+
 ### Signing a package
 
 The format is described in the repository's `rules/project.md`. To sign, use the signing tool from a checkout of the

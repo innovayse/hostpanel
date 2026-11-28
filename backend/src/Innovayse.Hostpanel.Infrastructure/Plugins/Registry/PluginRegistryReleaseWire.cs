@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="SdkPackageVersion">The Hostpanel.Sdk package version the version targets.</param>
 /// <param name="RequiresLicence">Whether the package needs a licence key; a JSON null reads as false.</param>
 /// <param name="Changelog">The release notes of this version, Markdown; absent from an older registry.</param>
+/// <param name="KeyId">The id of the key the package is signed with; absent from an older registry.</param>
 internal sealed record PluginRegistryReleaseWire(
     string? PluginId,
     string? Version,
@@ -20,4 +21,5 @@ internal sealed record PluginRegistryReleaseWire(
     bool? Verified,
     string? SdkPackageVersion = null,
     bool? RequiresLicence = null,
-    string? Changelog = null);
+    string? Changelog = null,
+    string? KeyId = null);

@@ -63,6 +63,15 @@ public interface IPluginRegistryClient
     /// </returns>
     public Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct);
 
+    /// <summary>Reads the signing keys a publisher has published, including the revoked ones with their status.</summary>
+    /// <param name="publisherHandle">The publisher's handle, as the plugin page names it.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The keys (an entry with a bad id or no public key is left out), <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>
+    /// when the registry does not know the publisher, or another <c>PLUGIN_REGISTRY_*</c> failure.
+    /// </returns>
+    public Task<Result<IReadOnlyList<RegistrySigningKey>>> GetPublisherKeysAsync(string publisherHandle, CancellationToken ct);
+
     /// <summary>
     /// Lists every version of a plugin the registry shows. For a host only plugin the call is signed with this installation's
     /// registry identity and carries no licence key.

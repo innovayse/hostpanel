@@ -44,9 +44,10 @@ public sealed class InstalledPluginRecorder
     /// <param name="accepted">The store's result for an installed or staged package.</param>
     /// <param name="source">Where the package came from: an upload by hand or the registry.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="registryKey">The key the registry published for the signer, when the package was trusted through it; <see langword="null"/> when the host's configured keys vouched for it.</param>
     /// <returns>A task that completes when the record is staged; nothing is saved.</returns>
     /// <exception cref="ArgumentException">The result names no plugin or digest.</exception>
-    public async Task RecordAsync(PluginPackageResult accepted, PluginSource source, CancellationToken ct)
+    public async Task RecordAsync(PluginPackageResult accepted, PluginSource source, CancellationToken ct, PluginSignerKey? registryKey = null)
     {
         ArgumentNullException.ThrowIfNull(accepted);
         if (accepted.PluginId is not { } pluginId || accepted.Sha256 is not { } sha256)
@@ -54,7 +55,13 @@ public sealed class InstalledPluginRecorder
             throw new ArgumentException("Only an installed or staged package, which names its plugin and digest, is recorded.", nameof(accepted));
         }
 
-        var package = new PluginPackageFacts(source, SignerOf(accepted.SignerKeyId), accepted.SignerKeyId, accepted.SizeBytes, sha256);
+
+        // Kept only when the store verified the signature with that very key, so a package that a configured key vouched for
+        // (or an upload) leaves no registry key on the record and is checked against the configuration alone from then on.
+        var pinned = registryKey is not null && string.Equals(registryKey.KeyId, accepted.SignerKeyId, StringComparison.Ordinal)
+            ? registryKey.PublicKey
+            : null;
+        var package = new PluginPackageFacts(source, SignerOf(accepted.SignerKeyId), accepted.SignerKeyId, accepted.SizeBytes, sha256, pinned);
         var record = await _context.InstalledPlugins.FirstOrDefaultAsync(p => p.PluginId == pluginId, ct);
         var now = _clock.UtcNow;
 

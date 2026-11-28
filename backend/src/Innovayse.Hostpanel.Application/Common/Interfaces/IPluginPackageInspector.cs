@@ -29,4 +29,9 @@ public interface IPluginPackageInspector
     /// <param name="keyId">The key id from a package signature.</param>
     /// <returns><see langword="true"/> for an operator key; the maintainers' shipped keys do not count.</returns>
     public bool IsOperatorKey(string keyId);
+
+    /// <summary>Tells whether a key id is one the host trusts from its own configuration, the maintainers' or the operator's.</summary>
+    /// <param name="keyId">The key id from a package signature.</param>
+    /// <returns><see langword="true"/> for a key in <c>PluginSigning</c>; a key only the registry publishes is not one.</returns>
+    public bool IsConfiguredKey(string keyId);
 }

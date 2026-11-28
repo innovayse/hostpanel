@@ -24,6 +24,9 @@ public sealed class InstalledPlugin : BaseEntity, IAggregateRoot
     /// <summary>The column length of a signing key id.</summary>
     public const int SignerKeyIdLength = 64;
 
+    /// <summary>The column length of a signing public key: the base64 of a 32-byte Ed25519 key.</summary>
+    public const int SignerPublicKeyLength = 44;
+
     /// <summary>The length of a lower-case hex SHA-256.</summary>
     public const int Sha256Length = 64;
 
@@ -38,6 +41,13 @@ public sealed class InstalledPlugin : BaseEntity, IAggregateRoot
 
     /// <summary>Gets the id of the key that signed the latest accepted package; <see langword="null"/> when it is unsigned.</summary>
     public string? SignerKeyId { get; private set; }
+
+    /// <summary>
+    /// Gets the public key the registry published for <see cref="SignerKeyId"/> when the package was installed from the
+    /// registry and the host did not already trust that key itself (base64 of 32 bytes); <see langword="null"/> otherwise.
+    /// The loader trusts the package's signature through it, so the plugin still loads after a restart.
+    /// </summary>
+    public string? SignerPublicKey { get; private set; }
 
     /// <summary>Gets the size in bytes of the latest accepted archive.</summary>
     public long PackageSizeBytes { get; private set; }
@@ -106,6 +116,7 @@ public sealed class InstalledPlugin : BaseEntity, IAggregateRoot
         Source = package.Source;
         Signer = package.Signer;
         SignerKeyId = package.SignerKeyId;
+        SignerPublicKey = package.SignerPublicKey;
         PackageSizeBytes = package.SizeBytes;
         PackageSha256 = package.Sha256;
     }
@@ -113,7 +124,7 @@ public sealed class InstalledPlugin : BaseEntity, IAggregateRoot
     /// <summary>Refuses package facts a record cannot hold.</summary>
     /// <param name="package">The facts to check.</param>
     /// <exception cref="ArgumentNullException">The facts are missing.</exception>
-    /// <exception cref="ArgumentException">The source is the built-in one, a signed package names no key or an unsigned one names a key, the key id is longer than <see cref="SignerKeyIdLength"/>, or the digest is not a lower-case hex SHA-256.</exception>
+    /// <exception cref="ArgumentException">The source is the built-in one, a signed package names no key or an unsigned one names a key, the key id is longer than <see cref="SignerKeyIdLength"/>, a pinned public key is on an unsigned package or too long, or the digest is not a lower-case hex SHA-256.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The size is not positive.</exception>
     private static void EnsureConsistent(PluginPackageFacts package)
     {
@@ -133,6 +144,12 @@ public sealed class InstalledPlugin : BaseEntity, IAggregateRoot
         if (package.SignerKeyId is { } keyId && keyId.Length > SignerKeyIdLength)
         {
             throw new ArgumentException($"The signing key id is longer than {SignerKeyIdLength} characters.", nameof(package));
+        }
+
+        if (package.SignerPublicKey is { } publicKey && (!named || publicKey.Length > SignerPublicKeyLength))
+        {
+            throw new ArgumentException(
+                $"A pinned public key belongs to a signed package and is at most {SignerPublicKeyLength} characters.", nameof(package));
         }
 
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(package.SizeBytes);

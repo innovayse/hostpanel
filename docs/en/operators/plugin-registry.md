@@ -99,9 +99,11 @@ The trust level is only the first check. Every registry install also has to pass
 
 1. **The checksum.** The package must hash to the SHA-256 the registry published for that release. Anything else is refused with `PLUGIN_REGISTRY_CHECKSUM_MISMATCH`.
 2. **The identity.** The `plugin.json` inside the package must name the plugin id and the version you asked for. A package of another plugin or another version is refused with `PLUGIN_REGISTRY_PACKAGE_REFUSED`.
-3. **The signature.** `plugin.sig` must be valid for a key Hostpanel trusts: the key that ships with it or one of your `PluginSigning__OperatorKeys`.
+3. **The signature.** `plugin.sig` must be valid for a key Hostpanel trusts: the key that ships with it, one of your `PluginSigning__OperatorKeys`, or, with `VerifiedOnly` and `AnyRegistryPublisher`, the key the registry publishes for the plugin's publisher. The last one counts only when the release names that key, it is the key in `plugin.sig`, and the publisher has not revoked it (a revoked key is refused with `PLUGIN_REGISTRY_NOT_TRUSTED`). So you do not add a publisher's new signing key to your configuration to install or update its plugins from the registry.
 
-A registry is a catalogue, not a root of trust. A compromised registry can offer a package, but it cannot make Hostpanel install one that a trusted key did not sign.
+With `OwnKeysOnly` the registry is never asked about keys. With the other two levels, the registry you chose to install from also decides which signing keys of a publisher are valid, because it publishes them. A package you upload by hand is still checked against your own configuration only.
+
+Hostpanel keeps the key it trusted on the plugin's install record, so the plugin loads again after a restart without asking the registry. A revocation is seen at the next install or update of that plugin; to stop an installed version at once, remove the plugin.
 
 ### Unsigned packages are never installed from a registry
 

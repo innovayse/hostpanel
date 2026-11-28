@@ -42,6 +42,9 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     /// <summary>The version lists by plugin id; an id that is not here has no versions.</summary>
     public Dictionary<string, IReadOnlyList<RegistryPluginVersion>> Versions { get; } = [];
 
+    /// <summary>The signing keys each publisher has published, by handle; a handle that is not here reads as not known.</summary>
+    public Dictionary<string, IReadOnlyList<RegistrySigningKey>> PublisherKeys { get; } = [];
+
     /// <summary>How many packages were downloaded.</summary>
     public int DownloadCount { get; private set; }
 
@@ -173,6 +176,16 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
         return Task.FromResult(failure is not null
             ? Result<IReadOnlyList<RegistryPluginVersion>>.FailureCode(failure)
             : Result<IReadOnlyList<RegistryPluginVersion>>.Success(VisibleVersions(pluginId, licenceKey)));
+    }
+
+    /// <inheritdoc/>
+    public Task<Result<IReadOnlyList<RegistrySigningKey>>> GetPublisherKeysAsync(string publisherHandle, CancellationToken ct)
+    {
+        return Task.FromResult(FailureCode is not null
+            ? Result<IReadOnlyList<RegistrySigningKey>>.FailureCode(FailureCode)
+            : PublisherKeys.TryGetValue(publisherHandle, out var keys)
+                ? Result<IReadOnlyList<RegistrySigningKey>>.Success(keys)
+                : Result<IReadOnlyList<RegistrySigningKey>>.FailureCode("PLUGIN_REGISTRY_PLUGIN_NOT_FOUND"));
     }
 
     /// <summary>The versions a caller sees: the public ones, and the licensed only ones when it sends a licence key.</summary>

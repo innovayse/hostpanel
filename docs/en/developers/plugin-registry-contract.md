@@ -149,8 +149,9 @@ GET {BaseUrl}plugins/{id}/versions/{version}
 | `downloadUrl` | Required. Absolute, or relative to `BaseUrl` (a path starting with `/` is relative to the host root). It must resolve to the registry's own scheme, host and port. |
 | `sha256` | Required. The SHA-256 of the ZIP file, 64 hexadecimal characters, either case. |
 | `verified` | Optional, `false` when absent. This is the value the `VerifiedOnly` trust level reads. |
+| `keyId` | Optional. The id of the key the package is signed with, the same id as in its `plugin.sig`. Hostpanel needs it to trust a package signed with a key that is not in the server's own configuration; see [Publisher signing keys](#publisher-signing-keys). |
 
-Answer 404 when the registry does not have that version. Other members (key id, size, status, changelog and so on) are ignored here.
+Answer 404 when the registry does not have that version. Other members (size, status, changelog and so on) are ignored here.
 
 ### One plugin page
 
@@ -216,6 +217,35 @@ If the same `version` is listed twice with different statuses, Hostpanel keeps t
 
 Answer 404 when the plugin is not listed.
 
+### Publisher signing keys
+
+```
+GET {BaseUrl}publishers/{handle}/keys
+```
+
+`handle` is the `publisherHandle` of the plugin page's `summary` (an URL escaped path segment). The call is anonymous and follows the same origin rules as every other read; no licence key is sent. Reply: a JSON array of the keys the publisher registered, the revoked ones included.
+
+```json
+[
+  {
+    "keyId": "acme-2026",
+    "publicKey": "<base64 of the 32-byte Ed25519 public key>",
+    "revoked": false,
+    "revokedAt": null,
+    "revocationReason": null,
+    "compromised": false
+  }
+]
+```
+
+| Member | Rule |
+|---|---|
+| `keyId` | Required. 1 to 64 characters of `a-z`, `0-9`, `.`, `-` and `_`, starting with a letter or digit. An entry with another id is left out. |
+| `publicKey` | Required. The base64 of the 32 raw bytes of the Ed25519 public key. |
+| `revoked`, `compromised` | Optional, `false` when absent. A key that is revoked or compromised is never trusted. |
+
+Hostpanel reads this list only for a package whose signing key is not in the server's own `PluginSigning` configuration. The key is trusted for that package when all of these hold: the release names it in `keyId`, `plugin.sig` names the same id, the publisher of the plugin lists it here and it is neither revoked nor compromised. Answer 404 for a handle you do not know. The public key is then kept with the plugin's install record, so the plugin still loads after a restart. A later revocation is seen at the next install or update, when Hostpanel asks again.
+
 ## Listing entries
 
 Hostpanel checks every entry, and one entry that is not a plugin (bad id, no name, unknown pricing) fails the whole reply as `PLUGIN_REGISTRY_RESPONSE_INVALID`. An entry with no usable `latestVersion` is only skipped.
@@ -234,6 +264,7 @@ Hostpanel checks every entry, and one entry that is not a plugin (bad id, no nam
 | `sdkPackageVersion` | Optional, kept to 32 characters. The `Hostpanel.Sdk` package version the plugin version was built against, the same value as `sdkPackageVersion` in its `plugin.json`. The host refuses to install a version whose value is newer than the SDK it ships (`PLUGIN_SDK_NEWER_THAN_HOST`) and does not offer it as an update, so a registry may serve it in the listing, the release and every version row. A version without it, or with a value that is not a strict `major.minor.patch`, is not checked. |
 | `iconUrl` | Optional. Absolute or relative to `BaseUrl`. It is kept only when it is on the registry's own origin; any other icon address is dropped. |
 | `verified` | Optional, `false` when absent. Shown as a badge. The trust decision at install time reads `verified` from the release, so serve it in both places. |
+| `publisherHandle` | Optional. The handle of the publisher. Hostpanel reads it from the plugin page to find the publisher's signing keys (see [Publisher signing keys](#publisher-signing-keys)). |
 
 The registry's text is shown in the admin panel as plain text. Markup in it is not interpreted.
 
@@ -246,7 +277,7 @@ Hostpanel then checks, in this order, before the package is stored:
 1. The trust level against `verified` of the release, and for `OwnKeysOnly` against the key id in `plugin.sig`.
 2. The SHA-256 of the downloaded file against `sha256` of the release, case-insensitively.
 3. The `id` and `version` in the package's `plugin.json` against the ones asked for.
-4. The ordinary package rules and the signature against the keys the host trusts. A package from a registry must be signed; the unsigned allowance for hand uploads never applies.
+4. The ordinary package rules and the signature, against the keys in the server's own configuration and, for a key that is not there, the key the registry publishes for the plugin's publisher (see [Publisher signing keys](#publisher-signing-keys)). A package from a registry must be signed; the unsigned allowance for hand uploads never applies.
 
 Publish the `sha256` of exactly the file you serve. Replacing the file without updating the release makes every install fail with `PLUGIN_REGISTRY_CHECKSUM_MISMATCH`, and a version is best treated as immutable once listed.
 

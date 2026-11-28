@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="DocumentationUrl">The documentation address, when stated.</param>
 /// <param name="SupportUrl">The support address, when stated.</param>
 /// <param name="Latest">The newest published version, or <see langword="null"/> when there is none.</param>
+/// <param name="PublisherHandle">The handle the registry knows the publisher by, which names where its signing keys are published; <see langword="null"/> when the registry does not say.</param>
 public sealed record RegistryPluginDetails(
     RegistryPluginDto Summary,
     string? Licence,
@@ -20,4 +21,5 @@ public sealed record RegistryPluginDetails(
     string? ContactUrl,
     string? DocumentationUrl,
     string? SupportUrl,
-    RegistryPluginVersion? Latest);
+    RegistryPluginVersion? Latest,
+    string? PublisherHandle = null);

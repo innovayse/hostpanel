@@ -12,7 +12,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 
 /// <summary>
 /// Reads the plugin id, the version and the signing key id an archive declares, from the two root files, and answers
-/// whether a key id is one the operator added. The files are parsed by the code the package store and the loader use
+/// whether a key id is one the operator added or one the host's configuration holds. The files are parsed by the code the package store and the loader use
 /// (<see cref="PluginManifestReader"/> and <see cref="PluginSignatureFile"/>), never by a parser of its own, so the
 /// values here are the ones the store sees. A file is read from a bounded stream, whatever length the archive claims.
 /// The package store still verifies the signature, so a lie here is caught there.
@@ -25,7 +25,7 @@ public sealed class PluginPackageInspector : IPluginPackageInspector
     /// <summary>The most bytes read from the manifest.</summary>
     internal const int MaxManifestBytes = 262_144;
 
-    /// <summary>The trusted keys; only the operator's list is asked.</summary>
+    /// <summary>The trusted keys: the operator's list for <see cref="IsOperatorKey"/>, both lists for <see cref="IsConfiguredKey"/>.</summary>
     private readonly PluginSigningOptions _signing;
 
     /// <summary>Initializes the inspector.</summary>
@@ -86,6 +86,12 @@ public sealed class PluginPackageInspector : IPluginPackageInspector
     public bool IsOperatorKey(string keyId)
     {
         return _signing.OperatorKeys.Any(key => string.Equals(key.KeyId, keyId, StringComparison.Ordinal));
+    }
+
+    /// <inheritdoc/>
+    public bool IsConfiguredKey(string keyId)
+    {
+        return _signing.TrustedKeys.Any(key => string.Equals(key.KeyId, keyId, StringComparison.Ordinal));
     }
 
     /// <summary>The header of an archive that says nothing usable.</summary>

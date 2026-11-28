@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Hostpanel.Sdk.Packaging.Naming;
+using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common;
@@ -192,7 +193,13 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
             }
 
             return new RegistryPluginRelease(
-                wire.PluginId ?? pluginId, wire.Version ?? version, download, wire.Sha256.ToLowerInvariant(), wire.Verified ?? false, target.Distribution);
+                wire.PluginId ?? pluginId,
+                wire.Version ?? version,
+                download,
+                wire.Sha256.ToLowerInvariant(),
+                wire.Verified ?? false,
+                target.Distribution,
+                TrustedKeyId.IsValid(wire.KeyId) ? wire.KeyId : null);
         }, ct);
     }
 
@@ -267,7 +274,23 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 ToWebLink(wire.ContactUrl),
                 ToWebLink(wire.DocumentationUrl),
                 ToWebLink(wire.SupportUrl),
-                latest);
+                latest,
+                CleanOrNull(wire.Summary?.PublisherHandle, MaxShortTextLength));
+        }, ct);
+    }
+
+    /// <inheritdoc/>
+    public Task<Result<IReadOnlyList<RegistrySigningKey>>> GetPublisherKeysAsync(string publisherHandle, CancellationToken ct)
+    {
+        return RunAsync<IReadOnlyList<RegistrySigningKey>>(async (baseUri, token) =>
+        {
+            // The keys are public: no licence key and no signature go with the call, and a 404 means the publisher is not known.
+            var url = new Uri(baseUri, $"publishers/{Uri.EscapeDataString(publisherHandle)}/keys");
+            var wire = await GetJsonAsync<List<PluginRegistryKeyWire?>>(url, baseUri, HostpanelErrorCodes.PLUGIN_REGISTRY_PLUGIN_NOT_FOUND, token);
+            return wire
+                .Where(key => key is not null && TrustedKeyId.IsValid(key.KeyId) && !string.IsNullOrWhiteSpace(key.PublicKey))
+                .Select(key => new RegistrySigningKey(key!.KeyId!, key.PublicKey!.Trim(), key.Revoked ?? false, key.Compromised ?? false))
+                .ToList();
         }, ct);
     }
 

@@ -14,4 +14,9 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// Whether the package must carry a valid signature by a trusted key even on a host that does not enforce signatures
 /// (Development, Testing). A package fetched from the plugin registry always sets it; an upload by hand does not.
 /// </param>
-public sealed record PluginPackageUpload(Stream Content, bool AllowUnsigned, bool ForceDowngrade = false, bool RequireSignature = false);
+/// <param name="RegistryKey">
+/// The key the registry published for the package's signer, trusted for this one package besides the host's configured keys;
+/// <see langword="null"/> for an upload by hand, which only the configured keys can vouch for.
+/// </param>
+public sealed record PluginPackageUpload(
+    Stream Content, bool AllowUnsigned, bool ForceDowngrade = false, bool RequireSignature = false, PluginSignerKey? RegistryKey = null);

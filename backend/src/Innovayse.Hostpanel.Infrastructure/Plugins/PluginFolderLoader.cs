@@ -43,6 +43,9 @@ internal sealed class PluginFolderLoader
     /// <summary>Where the outcome of a change to a plugin is recorded.</summary>
     private readonly PluginChangeStore _changes;
 
+    /// <summary>Reads the key the registry published for the signer of an installed plugin, by plugin id.</summary>
+    private readonly Func<string, PluginSignerKey?> _registryKeyOf;
+
     /// <summary>The upload folder, where the rollback copy of a replaced version waits.</summary>
     private readonly string _installRoot;
 
@@ -57,6 +60,7 @@ internal sealed class PluginFolderLoader
     /// <param name="integrations">The registry a plugin that shows in the admin integrations is recorded in.</param>
     /// <param name="verifier">Checks the signature of an uploaded plugin and applies the host's policy.</param>
     /// <param name="changes">Where the outcome of a change to a plugin is recorded.</param>
+    /// <param name="registryKeyOf">Reads the key the registry published for the signer of an installed plugin; asked only when the configured keys do not know the signing key.</param>
     /// <param name="installRoot">The upload folder, where the rollback copy of a replaced version waits.</param>
     /// <param name="maxViewBytes">The largest view document a plugin may ship, in bytes.</param>
     /// <param name="loggerFactory">Creates the loggers of the loader and of the manifest reader.</param>
@@ -65,6 +69,7 @@ internal sealed class PluginFolderLoader
         PluginIntegrationRegistry integrations,
         PluginSignatureVerifier verifier,
         PluginChangeStore changes,
+        Func<string, PluginSignerKey?> registryKeyOf,
         string installRoot,
         long maxViewBytes,
         ILoggerFactory loggerFactory)
@@ -73,6 +78,7 @@ internal sealed class PluginFolderLoader
         _integrations = integrations;
         _verifier = verifier;
         _changes = changes;
+        _registryKeyOf = registryKeyOf;
         _installRoot = installRoot;
         _maxViewBytes = maxViewBytes;
         _logger = loggerFactory.CreateLogger(nameof(PluginLoader));
@@ -192,7 +198,7 @@ internal sealed class PluginFolderLoader
             return null;
         }
 
-        var refusal = _verifier.Check(pluginDir, manifest.Id, origin, allowUnsigned, _logger).Refusal;
+        var refusal = _verifier.Check(pluginDir, manifest.Id, origin, allowUnsigned, _logger, registryKey: () => _registryKeyOf(manifest.Id)).Refusal;
         if (refusal is not null)
         {
             _logger.LogWarning(

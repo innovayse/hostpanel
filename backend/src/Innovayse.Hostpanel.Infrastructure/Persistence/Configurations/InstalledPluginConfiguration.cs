@@ -20,6 +20,7 @@ public sealed class InstalledPluginConfiguration : IEntityTypeConfiguration<Inst
         builder.Property(x => x.Source).IsRequired().HasConversion<string>().HasMaxLength(EnumNameLength);
         builder.Property(x => x.Signer).IsRequired().HasConversion<string>().HasMaxLength(EnumNameLength);
         builder.Property(x => x.SignerKeyId).HasMaxLength(InstalledPlugin.SignerKeyIdLength);
+        builder.Property(x => x.SignerPublicKey).HasMaxLength(InstalledPlugin.SignerPublicKeyLength);
         builder.Property(x => x.PackageSizeBytes).IsRequired();
         builder.Property(x => x.PackageSha256).IsRequired().HasMaxLength(InstalledPlugin.Sha256Length);
         builder.Property(x => x.InstalledAt).IsRequired();

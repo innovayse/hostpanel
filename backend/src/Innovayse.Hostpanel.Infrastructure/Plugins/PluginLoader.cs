@@ -38,20 +38,25 @@ public static class PluginLoader
     /// The largest view document a plugin may ship, in bytes (<c>Plugins:MaxViewBytes</c>); a larger one skips the plugin.
     /// </param>
     /// <param name="loggerFactory">Logger factory used during startup loading.</param>
+    /// <param name="registryKeyOf">
+    /// Reads the key the registry published for the signer of an installed plugin, by plugin id; asked only when the configured
+    /// keys do not know the signing key. <see langword="null"/> when no plugin is installed through a registry.
+    /// </param>
     public static void DiscoverAndRegister(
         IServiceCollection services,
         IReadOnlyList<PluginRoot> pluginRoots,
         PluginSignatureVerifier verifier,
         bool allowUnsigned,
         long maxViewBytes,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        Func<string, PluginSignerKey?>? registryKeyOf = null)
     {
         var logger = loggerFactory.CreateLogger(nameof(PluginLoader));
         var registry = new PluginRegistry();
         var integrationRegistry = new PluginIntegrationRegistry();
         var installRoot = pluginRoots.Where(r => r.Origin == PluginOrigin.Uploaded).Select(r => r.Path).FirstOrDefault() ?? string.Empty;
         var changes = new PluginChangeStore(installRoot, loggerFactory.CreateLogger<PluginChangeStore>());
-        var folderLoader = new PluginFolderLoader(registry, integrationRegistry, verifier, changes, installRoot, maxViewBytes, loggerFactory);
+        var folderLoader = new PluginFolderLoader(registry, integrationRegistry, verifier, changes, registryKeyOf ?? (_ => null), installRoot, maxViewBytes, loggerFactory);
 
         var claimedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pluginDirs = new List<(string Dir, PluginOrigin Origin)>();

@@ -9,4 +9,12 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Sha256">The lower-case hex SHA-256 the registry published for the package.</param>
 /// <param name="Verified">Whether the registry vouches for the publisher of this plugin.</param>
 /// <param name="Distribution">Where the plugin is distributed from; a host only package is fetched with a download ticket and signed requests.</param>
-public sealed record RegistryPluginRelease(string PluginId, string Version, Uri DownloadUrl, string Sha256, bool Verified, PluginRegistryDistribution Distribution = PluginRegistryDistribution.Download);
+/// <param name="KeyId">The id of the key the registry says signed the package; <see langword="null"/> when the registry does not say.</param>
+public sealed record RegistryPluginRelease(
+    string PluginId,
+    string Version,
+    Uri DownloadUrl,
+    string Sha256,
+    bool Verified,
+    PluginRegistryDistribution Distribution = PluginRegistryDistribution.Download,
+    string? KeyId = null);

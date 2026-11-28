@@ -13,9 +13,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </summary>
 public static class AllowUnsignedSettingReader
 {
-    /// <summary>How long the connection and the query may take: a database that is not up yet must not hold the start for long.</summary>
-    private const int TimeoutSeconds = 5;
-
     /// <summary>Reads the setting.</summary>
     /// <param name="connectionString">The product database's connection string.</param>
     /// <param name="logger">Records why the setting could not be read.</param>
@@ -37,14 +34,7 @@ public static class AllowUnsignedSettingReader
 
         try
         {
-            var builder = new NpgsqlConnectionStringBuilder(connectionString)
-            {
-                Timeout = TimeoutSeconds,
-                CommandTimeout = TimeoutSeconds,
-                Pooling = false,
-            };
-            using var connection = new NpgsqlConnection(builder.ConnectionString);
-            connection.Open();
+            using var connection = StartupDatabase.Open(connectionString);
             using var command = new NpgsqlCommand("SELECT \"Value\" FROM \"Settings\" WHERE \"Key\" = @key", connection);
             command.Parameters.AddWithValue("key", PluginSettingKeys.AllowUnsigned);
             return PluginSettingKeys.IsOn(command.ExecuteScalar() as string);

@@ -813,6 +813,11 @@ public static class DependencyInjection
         var allowUnsignedReader = () => signatureVerifier.Enforced
             && AllowUnsignedSettingReader.Read(configuration.GetConnectionString("DefaultConnection"), loggerFactory.CreateLogger(nameof(PluginLoader)));
         var allowUnsigned = allowUnsignedReader();
+
+        // A plugin installed from the registry under a key only the registry publishes is checked against the key kept on its
+        // install record, which is read the same way, and only when the configured keys do not know the signing key.
+        var registryKeyOf = (string pluginId) =>
+            PinnedSignerKeyReader.Read(configuration.GetConnectionString("DefaultConnection"), pluginId, loggerFactory.CreateLogger(nameof(PluginLoader)));
         // A staged upgrade is swapped in before any plugin folder is scanned, so no assembly of the old version is loaded.
         PluginUpgradeApplier.Apply(pluginOptions.InstallRoot, loggerFactory.CreateLogger(nameof(PluginUpgradeApplier)));
         PluginLoader.DiscoverAndRegister(
@@ -821,7 +826,8 @@ public static class DependencyInjection
             signatureVerifier,
             allowUnsigned,
             pluginOptions.MaxViewBytes,
-            loggerFactory);
+            loggerFactory,
+            registryKeyOf);
 
         // A plugin version is loaded in a collectible context of its own, so a staged upgrade or a removal is applied inside the
         // running process: the reloader drains the calls of the old version, unloads it and loads the new one. A change it cannot

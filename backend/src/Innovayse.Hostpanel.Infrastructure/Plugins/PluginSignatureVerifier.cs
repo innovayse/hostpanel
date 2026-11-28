@@ -1,4 +1,6 @@
+using Hostpanel.Sdk.Packaging.Enums;
 using Hostpanel.Sdk.Packaging.Signing;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -78,9 +80,14 @@ public sealed class PluginSignatureVerifier
     /// Whether the signature is checked even on a host that does not enforce signatures (Development, Testing). Set for a
     /// package fetched from the plugin registry; "allow unsigned" does not override it.
     /// </param>
+    /// <param name="registryKey">
+    /// Asked for only when the signature names a key the host's configuration does not hold: the key the plugin registry
+    /// published for the package's signer, which then counts as trusted for this package. <see langword="null"/> (the
+    /// default) for an upload by hand and for a package no registry vouched for.
+    /// </param>
     /// <returns>The refusal, or none when the plugin is admitted, with the key id of a verified signature.</returns>
     public PluginSignatureCheck Check(
-        string pluginDir, string pluginId, PluginOrigin origin, bool allowUnsigned, ILogger logger, bool require = false)
+        string pluginDir, string pluginId, PluginOrigin origin, bool allowUnsigned, ILogger logger, bool require = false, Func<PluginSignerKey?>? registryKey = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -91,7 +98,7 @@ public sealed class PluginSignatureVerifier
         }
 
         // One read of the signature answers both the policy and the key the install record names.
-        var verified = Verify(pluginDir);
+        var verified = Verify(pluginDir, registryKey);
         var violation = verified.Refusal;
         var keyId = verified.VerifiedKeyId;
         if (!Enforced && !require)
@@ -115,7 +122,24 @@ public sealed class PluginSignatureVerifier
     /// <returns>The check the package fails, or <see langword="null"/> when it is signed by a trusted key and unchanged since.</returns>
     public PluginSignatureViolation? Inspect(string pluginDir)
     {
-        return Verify(pluginDir).Refusal;
+        return Verify(pluginDir, null).Refusal;
+    }
+
+    /// <summary>The configured keys plus a key the registry published, which never replaces a configured key of the same id.</summary>
+    /// <param name="published">The key the registry published.</param>
+    /// <param name="trusted">The keys to verify against.</param>
+    /// <returns><see langword="true"/> when the key has a valid id and a well formed public key.</returns>
+    private bool TryTrust(PluginSignerKey published, out Dictionary<string, byte[]> trusted)
+    {
+        trusted = new Dictionary<string, byte[]>(_keys, StringComparer.Ordinal);
+        var key = new TrustedPluginKey { KeyId = published.KeyId, PublicKey = published.PublicKey };
+        if (!TrustedKeyId.IsValid(key.KeyId) || !key.TryDecode(out var publicKey))
+        {
+            return false;
+        }
+
+        trusted.TryAdd(key.KeyId, publicKey);
+        return true;
     }
 
     /// <summary>
@@ -123,10 +147,16 @@ public sealed class PluginSignatureVerifier
     /// verified, so an unsigned or tampered package, or a claim naming an unknown key, has none.
     /// </summary>
     /// <param name="pluginDir">The plugin folder: the package root.</param>
+    /// <param name="registryKey">Asked for when the configured keys do not know the signing key; see <see cref="Check"/>.</param>
     /// <returns>The check the package fails, or none, with the key id of a verified signature.</returns>
-    private PluginSignatureCheck Verify(string pluginDir)
+    private PluginSignatureCheck Verify(string pluginDir, Func<PluginSignerKey?>? registryKey)
     {
         var violation = PluginSignatureValidator.Verify(pluginDir, _keys);
+        if (violation?.Rule == PluginSignatureRule.UnknownKey && registryKey?.Invoke() is { } published && TryTrust(published, out var trusted))
+        {
+            violation = PluginSignatureValidator.Verify(pluginDir, trusted);
+        }
+
         if (violation is not null)
         {
             return new PluginSignatureCheck(violation, null);

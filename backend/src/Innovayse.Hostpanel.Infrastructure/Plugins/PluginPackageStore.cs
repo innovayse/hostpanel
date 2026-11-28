@@ -459,7 +459,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
         }
 
         // The signature covers the unpacked files, so it is checked here, after the archive is unpacked and before the move into place.
-        var check = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger, upload.RequireSignature);
+        var check = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger, upload.RequireSignature, () => upload.RegistryKey);
         var signature = check.Refusal;
         if (signature is not null)
         {

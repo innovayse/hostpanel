@@ -52,6 +52,9 @@ public sealed class InstallRegistryPluginHandler
     /// <summary>Stages the install record of the accepted package.</summary>
     private readonly InstalledPluginRecorder _recorder;
 
+    /// <summary>Finds the key the registry vouches for the package's signer with.</summary>
+    private readonly RegistrySignerTrust _signerTrust;
+
     /// <summary>Applies the accepted package in the running process when it can, and words the answer.</summary>
     private readonly PluginChangeApplier _applier;
 
@@ -65,6 +68,7 @@ public sealed class InstallRegistryPluginHandler
     /// <param name="hostSdkVersion">The <c>Hostpanel.Sdk</c> package version this host ships.</param>
     /// <param name="reader">Reads what this host is shown of the plugin: its page, its licence key and its versions.</param>
     /// <param name="recorder">Stages the install record of the accepted package.</param>
+    /// <param name="signerTrust">Finds the key the registry vouches for the package's signer with.</param>
     /// <param name="applier">Applies the accepted package in the running process when it can, and words the answer.</param>
     public InstallRegistryPluginHandler(
         IPluginRegistryClient registry,
@@ -76,6 +80,7 @@ public sealed class InstallRegistryPluginHandler
         IHostSdkVersionProvider hostSdkVersion,
         RegistryPluginReader reader,
         InstalledPluginRecorder recorder,
+        RegistrySignerTrust signerTrust,
         PluginChangeApplier applier)
     {
         _registry = registry;
@@ -87,6 +92,7 @@ public sealed class InstallRegistryPluginHandler
         _hostSdkVersion = hostSdkVersion;
         _reader = reader;
         _recorder = recorder;
+        _signerTrust = signerTrust;
         _applier = applier;
     }
 
@@ -104,7 +110,7 @@ public sealed class InstallRegistryPluginHandler
     /// registry rejected as unsafe, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c> when it does not run on this Hostpanel
     /// version and
     /// <c>PLUGIN_SDK_NEWER_THAN_HOST</c> when the registry states it was built on a newer SDK than this host ships;
-    /// <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines the plugin or its signing key;
+    /// <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines the plugin or its signing key, or the publisher revoked the key;
     /// <c>PLUGIN_REGISTRY_PACKAGE_REFUSED</c> when the package cannot be fetched safely or is another plugin or version;
     /// <c>PLUGIN_REGISTRY_CHECKSUM_MISMATCH</c> when it does not hash to the published checksum; or any refusal of
     /// <see cref="InstallPlugin.InstallPluginHandler"/> (manifest, signature, size, built-in, downgrade).
@@ -216,10 +222,23 @@ public sealed class InstallRegistryPluginHandler
             return await RefuseAsync(command, "signing key is not an operator key", HostpanelErrorCodes.PLUGIN_REGISTRY_NOT_TRUSTED, sha256, ct);
         }
 
+        // The key of a package this host's own configuration does not know is trusted only when the registry publishes it for the
+        // publisher: with "own keys only" the operator's list alone decides, so the registry is not asked.
+        var registryKey = Result<PluginSignerKey?>.Success(null);
+        if (trust != PluginRegistryTrust.OwnKeysOnly)
+        {
+            registryKey = await _signerTrust.ResolveAsync(release, details.PublisherHandle, header.KeyId, ct);
+            if (registryKey.IsFailure)
+            {
+                return await RefuseAsync(command, "signing key is revoked or the registry could not be asked", registryKey.ErrorCode!, sha256, ct);
+            }
+        }
+
         // A valid signature is required here whatever the environment: the "allow unsigned" setting and a Development
         // host are for packages an operator uploads by hand, never for anything fetched from a remote catalogue.
         package.Seek(0, SeekOrigin.Begin);
-        var outcome = await _store.InstallAsync(new PluginPackageUpload(package, AllowUnsigned: false, ForceDowngrade: command.AllowDowngrade, RequireSignature: true), ct);
+        var outcome = await _store.InstallAsync(
+            new PluginPackageUpload(package, AllowUnsigned: false, ForceDowngrade: command.AllowDowngrade, RequireSignature: true, RegistryKey: registryKey.Value), ct);
         if (outcome.Outcome == PluginPackageOutcome.DowngradeRefused)
         {
             return await RefuseAsync(
@@ -238,7 +257,7 @@ public sealed class InstallRegistryPluginHandler
                 null,
                 $"{Describe(outcome, staged)} - Plugin ID: {Clean(outcome.PluginId)} - Version: {Clean(outcome.Version)} - SHA-256: {outcome.Sha256}"),
             ct);
-        await _recorder.RecordAsync(outcome, PluginSource.Registry, ct);
+        await _recorder.RecordAsync(outcome, PluginSource.Registry, ct, registryKey.Value);
         await _db.SaveChangesAsync(ct);
 
         return await _applier.AcceptedAsync(outcome, staged, ct);

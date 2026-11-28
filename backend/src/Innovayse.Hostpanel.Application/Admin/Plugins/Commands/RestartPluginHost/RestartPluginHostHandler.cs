@@ -21,14 +21,14 @@ public sealed class RestartPluginHostHandler
     private readonly IHostRestarter _restarter;
 
     /// <summary>Tells the caller that the host is restarting, so the panel waits for it to come back.</summary>
-    private readonly IPluginChangeReporter _reporter;
+    private readonly IPluginChangeProgress _reporter;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="activityLogger">Stages the audit line for the restart.</param>
     /// <param name="db">Saves the audit line before the host starts to stop.</param>
     /// <param name="restarter">Starts the graceful stop of the host.</param>
     /// <param name="reporter">Tells the caller that the host is restarting, so the panel waits for it to come back.</param>
-    public RestartPluginHostHandler(IActivityLogger activityLogger, IHostpanelDbContext db, IHostRestarter restarter, IPluginChangeReporter reporter)
+    public RestartPluginHostHandler(IActivityLogger activityLogger, IHostpanelDbContext db, IHostRestarter restarter, IPluginChangeProgress reporter)
     {
         _activityLogger = activityLogger;
         _db = db;

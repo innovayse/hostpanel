@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// change applier). A caller that asked for a stream receives each report as a <c>progress</c> event; for any other
 /// caller a report does nothing, so the change runs the same either way.
 /// </summary>
-public interface IPluginChangeReporter
+public interface IPluginChangeProgress
 {
     /// <summary>Reports that the change moved on to a stage.</summary>
     /// <param name="stage">The stage it is in now.</param>

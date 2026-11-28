@@ -418,7 +418,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
             services.GetRequiredService<IPluginAvailabilityInvalidator>(),
             services.GetRequiredService<IClock>(),
             services.GetRequiredService<PluginChangeApplier>(),
-            services.GetRequiredService<IPluginChangeReporter>());
+            services.GetRequiredService<IPluginChangeProgress>());
     }
 
     /// <summary>Stores the plugin's switch row with the given value.</summary>

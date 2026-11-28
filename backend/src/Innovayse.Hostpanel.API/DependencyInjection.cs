@@ -157,7 +157,7 @@ public static class DependencyInjection
 
         // The progress of a plugin install, update, removal or restart, streamed on the request's own response to a caller
         // that asked for server-sent events.
-        services.AddSingleton<IPluginChangeReporter, EventStreamPluginChangeReporter>();
+        services.AddSingleton<IPluginChangeProgress, EventStreamPluginChangeProgress>();
 
         // The caller's own bearer token, for an adapter that acts as the person against an outside service.
         services.AddScoped<ICallerAccessToken, HttpCallerAccessToken>();

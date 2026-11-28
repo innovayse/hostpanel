@@ -29,7 +29,7 @@ public sealed class PortPlacementTests
     {
         [typeof(Innovayse.Hostpanel.API.Identity.HttpCallerAccessToken)] = "the request's Authorization header, through IHttpContextAccessor",
         [typeof(Innovayse.Hostpanel.API.Identity.HttpCallerClientMemo)] = "the request's HttpContext.Items, through IHttpContextAccessor",
-        [typeof(Innovayse.Hostpanel.API.Plugins.EventStreamPluginChangeReporter)] = "the request's own response stream, through IHttpContextAccessor",
+        [typeof(Innovayse.Hostpanel.API.Plugins.EventStreamPluginChangeProgress)] = "the request's own response stream, through IHttpContextAccessor",
     };
 
     /// <summary>

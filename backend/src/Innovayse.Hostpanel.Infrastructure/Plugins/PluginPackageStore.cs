@@ -61,7 +61,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
     private readonly IInstalledVersionProvider _hostVersion;
 
     /// <summary>Tells the caller of an install when the checks have passed and the package is being put in place.</summary>
-    private readonly IPluginChangeReporter _reporter;
+    private readonly IPluginChangeProgress _reporter;
 
     /// <summary>The entry count and uncompressed size limits of an upload, in the form the archive guards of the packaging package take.</summary>
     private PluginArchiveLimits Limits => new(_options.MaxEntryCount, _options.MaxUncompressedBytes);
@@ -79,7 +79,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
         IPluginRegistry registry,
         IInstalledVersionProvider hostVersion,
         ILogger<PluginPackageStore> logger,
-        IPluginChangeReporter reporter)
+        IPluginChangeProgress reporter)
     {
         _options = options.Value;
         _signatures = signatures;

@@ -53,7 +53,7 @@ public interface IPluginRegistryClient
     /// for a 403), with nothing left on disk.
     /// </returns>
     public Task<Result<Stream>> DownloadAsync(
-        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeReporter? progress = null);
+        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeProgress? progress = null);
 
     /// <summary>Reads the registry's full page for one plugin.</summary>
     /// <param name="pluginId">The plugin id.</param>

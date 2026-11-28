@@ -198,7 +198,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
 
     /// <inheritdoc/>
     public Task<Result<Stream>> DownloadAsync(
-        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeReporter? progress = null)
+        RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null, IPluginChangeProgress? progress = null)
     {
         var restricted = release.Distribution == PluginRegistryDistribution.HostOnly;
         return RunAsync<Stream>(async (baseUri, token) =>
@@ -591,7 +591,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
     /// <param name="progress">Told the bytes copied so far and the declared length after every read; <see langword="null"/> when no one follows the copy.</param>
     /// <returns>A task that completes once the body is copied.</returns>
     private static async Task CopyLimitedAsync(
-        HttpContent content, Stream destination, long maxBytes, string overLimitCode, CancellationToken ct, IPluginChangeReporter? progress = null)
+        HttpContent content, Stream destination, long maxBytes, string overLimitCode, CancellationToken ct, IPluginChangeProgress? progress = null)
     {
         // The declared length refuses an oversized body before reading a byte; the counted write below is the real limit.
         if (content.Headers.ContentLength is { } declared && declared > maxBytes)

@@ -52,7 +52,7 @@ public sealed class RemovePluginHandler
     private readonly PluginChangeApplier _applier;
 
     /// <summary>Tells the caller how far the removal has come.</summary>
-    private readonly IPluginChangeReporter _reporter;
+    private readonly IPluginChangeProgress _reporter;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Deletes the uploaded plugin's folder, and refuses an invalid id or a built-in plugin.</param>
@@ -69,7 +69,7 @@ public sealed class RemovePluginHandler
         IPluginAvailabilityInvalidator availability,
         IClock clock,
         PluginChangeApplier applier,
-        IPluginChangeReporter reporter)
+        IPluginChangeProgress reporter)
     {
         _store = store;
         _activityLogger = activityLogger;

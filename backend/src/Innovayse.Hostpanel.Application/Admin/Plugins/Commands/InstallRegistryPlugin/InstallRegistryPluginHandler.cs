@@ -56,7 +56,7 @@ public sealed class InstallRegistryPluginHandler
     private readonly PluginChangeApplier _applier;
 
     /// <summary>Tells the caller how far the install has come, the bytes of the download included.</summary>
-    private readonly IPluginChangeReporter _reporter;
+    private readonly IPluginChangeProgress _reporter;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
@@ -81,7 +81,7 @@ public sealed class InstallRegistryPluginHandler
         RegistryPluginReader reader,
         InstalledPluginRecorder recorder,
         PluginChangeApplier applier,
-        IPluginChangeReporter reporter)
+        IPluginChangeProgress reporter)
     {
         _registry = registry;
         _inspector = inspector;

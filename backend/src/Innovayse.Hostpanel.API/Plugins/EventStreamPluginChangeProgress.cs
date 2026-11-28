@@ -16,7 +16,7 @@ namespace Innovayse.Hostpanel.API.Plugins;
 /// caller a report does nothing. Download reports are passed on only when the whole percentage moves (or every 256 KiB
 /// when the registry declared no size), so a fast download does not flood the stream.
 /// </summary>
-public sealed class EventStreamPluginChangeReporter : IPluginChangeReporter
+public sealed class EventStreamPluginChangeProgress : IPluginChangeProgress
 {
     /// <summary>The name of a progress event.</summary>
     public const string ProgressEvent = "progress";
@@ -36,19 +36,24 @@ public sealed class EventStreamPluginChangeReporter : IPluginChangeReporter
     /// <summary>The API's own JSON settings (camelCase, enums as names), so an event reads like any other answer.</summary>
     private readonly IOptions<JsonOptions> _json;
 
+    /// <summary>Records that a caller stopped reading the progress while its change went on.</summary>
+    private readonly ILogger<EventStreamPluginChangeProgress> _logger;
+
     /// <summary>Initializes the reporter.</summary>
     /// <param name="http">The request the change runs in.</param>
     /// <param name="json">The API's own JSON settings.</param>
-    public EventStreamPluginChangeReporter(IHttpContextAccessor http, IOptions<JsonOptions> json)
+    /// <param name="logger">Records that a caller stopped reading the progress while its change went on.</param>
+    public EventStreamPluginChangeProgress(IHttpContextAccessor http, IOptions<JsonOptions> json, ILogger<EventStreamPluginChangeProgress> logger)
     {
         _http = http;
         _json = json;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
     public Task EnterAsync(PluginChangeStage stage, CancellationToken ct)
     {
-        return WriteAsync(new PluginChangeProgressDto(stage), ct);
+        return WriteAsync(new PluginChangeProgressDto(stage));
     }
 
     /// <inheritdoc/>
@@ -67,14 +72,13 @@ public sealed class EventStreamPluginChangeReporter : IPluginChangeReporter
         }
 
         context.Items[LastStepKey] = step;
-        return WriteAsync(new PluginChangeProgressDto(PluginChangeStage.Download, bytesDone, bytesTotal), ct);
+        return WriteAsync(new PluginChangeProgressDto(PluginChangeStage.Download, bytesDone, bytesTotal));
     }
 
     /// <summary>Opens the stream when the caller asked for one, and writes one progress event to it.</summary>
     /// <param name="progress">The progress to pass on.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the event has been flushed, or at once when the caller reads no stream.</returns>
-    private async Task WriteAsync(PluginChangeProgressDto progress, CancellationToken ct)
+    private async Task WriteAsync(PluginChangeProgressDto progress)
     {
         var context = _http.HttpContext;
         if (context is null || !EventStreamWriter.IsWanted(context.Request))
@@ -82,8 +86,17 @@ public sealed class EventStreamPluginChangeReporter : IPluginChangeReporter
             return;
         }
 
-        await EventStreamWriter.OpenAsync(context.Response, ct);
         var data = JsonSerializer.Serialize(progress, _json.Value.JsonSerializerOptions);
-        await EventStreamWriter.WriteAsync(context.Response, new StreamedEvent(data, ProgressEvent), ct);
+        try
+        {
+            // Written with the request's own abort token, never the change's: a caller that goes away ends the report, not the change.
+            await EventStreamWriter.OpenAsync(context.Response, context.RequestAborted);
+            await EventStreamWriter.WriteAsync(context.Response, new StreamedEvent(data, ProgressEvent), context.RequestAborted);
+        }
+        catch (Exception ex) when (ex is IOException or OperationCanceledException && context.RequestAborted.IsCancellationRequested)
+        {
+            // The caller left: nobody reads the progress any more, and the change must still finish (files, record, restart).
+            _logger.LogInformation("A plugin change kept running after its caller stopped reading its progress.");
+        }
     }
 }

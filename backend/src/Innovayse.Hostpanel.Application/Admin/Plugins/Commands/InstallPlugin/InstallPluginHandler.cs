@@ -37,7 +37,7 @@ public sealed class InstallPluginHandler
     private readonly PluginChangeApplier _applier;
 
     /// <summary>Tells the caller how far the install has come.</summary>
-    private readonly IPluginChangeReporter _reporter;
+    private readonly IPluginChangeProgress _reporter;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Checks and unpacks the uploaded archive.</param>
@@ -52,7 +52,7 @@ public sealed class InstallPluginHandler
         IHostpanelDbContext db,
         InstalledPluginRecorder recorder,
         PluginChangeApplier applier,
-        IPluginChangeReporter reporter)
+        IPluginChangeProgress reporter)
     {
         _store = store;
         _activityLogger = activityLogger;

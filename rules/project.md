@@ -273,9 +273,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   in the list as refused with its load error. Tests that install plugins run with `RecordingHostRestarter`, because a real restart would
   stop the shared test host.
 - **A plugin change streams its progress to a caller that asks for it.** An upload install, a registry install or update, a removal
-  and Restart now report each step through one port, `IPluginChangeReporter` (Application): the handlers, the registry download
+  and Restart now report each step through one port, `IPluginChangeProgress` (Application): the handlers, the registry download
   (bytes read and the declared size), `PluginPackageStore` (checks passed, the package is put in place) and `PluginChangeApplier`
-  (apply, or restart). Its one adapter, `API/Plugins/EventStreamPluginChangeReporter`, writes each report as a `progress` event
+  (apply, or restart). Its one adapter, `API/Plugins/EventStreamPluginChangeProgress`, writes each report as a `progress` event
   (`PluginChangeProgressDto`: `stage` `Download`, `Verify`, `Stage`, `Apply` or `Restart`, `bytesDone`, `bytesTotal`) on the
   request's own response when the caller sent `Accept: text/event-stream`, and does nothing otherwise, so a JSON caller and the tests
   see the same answers as before. The controller ends the stream with `BaseApiController.HandleReported` (or `AcceptedOrReported` for

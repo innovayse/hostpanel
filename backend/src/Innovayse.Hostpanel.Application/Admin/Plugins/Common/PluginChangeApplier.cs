@@ -31,7 +31,7 @@ public sealed class PluginChangeApplier
     private readonly IHostpanelDbContext _db;
 
     /// <summary>Tells the caller when the change is being applied, and when the host restarts for it.</summary>
-    private readonly IPluginChangeReporter _reporter;
+    private readonly IPluginChangeProgress _reporter;
 
     /// <summary>Initializes the applier.</summary>
     /// <param name="reloader">Loads the staged version in place of the running one, or unloads a removed plugin.</param>
@@ -40,7 +40,7 @@ public sealed class PluginChangeApplier
     /// <param name="db">Saves the audit line.</param>
     /// <param name="reporter">Tells the caller when the change is being applied, and when the host restarts for it.</param>
     public PluginChangeApplier(
-        IPluginHotReloader reloader, IHostRestarter restarter, IActivityLogger activityLogger, IHostpanelDbContext db, IPluginChangeReporter reporter)
+        IPluginHotReloader reloader, IHostRestarter restarter, IActivityLogger activityLogger, IHostpanelDbContext db, IPluginChangeProgress reporter)
     {
         _reloader = reloader;
         _restarter = restarter;

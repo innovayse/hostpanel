@@ -70,7 +70,8 @@ describe('invoice list page', () => {
     await waitUntil(() => expect(rowIds(wrapper)).toEqual(['1', '2']))
 
     expect(wrapper.text()).toContain('$25.00')
-    expect(wrapper.find('[data-testid="invoice-view-1"]').attributes('href')).toBe(clientInvoicePath(1))
+    await wrapper.get('[data-testid="invoice-actions-1"]').trigger('click')
+    expect(wrapper.find('[data-testid="invoice-actions-1-view"]').attributes('href')).toBe(clientInvoicePath(1))
   })
 
   it('counts both owing statuses under the unpaid tab', async () => {

@@ -31,7 +31,7 @@
         </UiTableHead>
       </template>
       <UiTableBody>
-        <UiTableRow v-for="email in paged" :key="email.id" :data-testid="`account-email-${email.id}`">
+        <UiTableRow v-for="email in paged" :key="email.id" :to="localePath(clientEmailPath(email.id))" :data-testid="`account-email-${email.id}`">
           <UiTableTd class="text-gray-500 dark:text-gray-400 whitespace-nowrap text-sm">{{ formatDateTime(email.sentAt) }}</UiTableTd>
           <UiTableTd class="text-gray-900 dark:text-white font-medium">{{ email.subject }}</UiTableTd>
           <UiTableTd align="right">
@@ -66,6 +66,9 @@ import { storeToRefs } from 'pinia'
 import { clientEmailPath } from '~/constants/clientRoutes'
 import { useAccountStore } from '~/stores/account'
 import { formatDateTime } from '~/utils/formatDate'
+
+/** Prefixes a path with the active locale. */
+const localePath = useLocalePath()
 
 /** The mail sent to the account and whether it is being read. */
 const { emails, emailsLoading } = storeToRefs(useAccountStore())

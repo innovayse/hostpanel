@@ -1,7 +1,8 @@
 /**
  * Unit tests for EmailsTab: loading, empty, search, paging and the view link.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import EmailsTab from '~/components/account/EmailsTab.vue'
 import { useAccountStore } from '~/stores/account'
@@ -31,6 +32,10 @@ const emails = (count: number): ClientEmailSummary[] =>
   }))
 
 describe('EmailsTab', () => {
+  beforeEach(() => {
+    stubLocalePath()
+  })
+
   it('shows placeholder rows while loading', async () => {
     const wrapper = mountAccount(EmailsTab)
     useAccountStore().emailsLoading = true

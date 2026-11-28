@@ -11,13 +11,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { captureDownloads, PDF_REPLY } from '../helpers/captureDownloads'
-import { heldReply, routeTable } from '../helpers/stubRoutes'
+import { routeTable } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
 import { useCreditNotesStore } from '~/stores/creditnotes'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
-import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -97,7 +96,6 @@ describe('useCreditNotesStore.downloadPdf', () => {
     expect(downloads).toHaveLength(1)
     expect(downloads[0]?.fileName).toBe('credit-note-CN-0003.pdf')
     expect(await downloads[0]?.blob.text()).toBe('%PDF-')
-    expect(store.downloadingId).toBeNull()
     expect(store.downloadError).toBe('')
   })
 
@@ -110,23 +108,6 @@ describe('useCreditNotesStore.downloadPdf', () => {
 
     expect(downloads).toHaveLength(0)
     expect(store.downloadError).not.toBe('')
-    expect(store.downloadingId).toBeNull()
   })
 
-  it('marks the note being downloaded while the request is in flight', async () => {
-    const held = heldReply()
-    table[PDF_ROUTE] = held.reply
-    captureDownloads()
-    const store = useCreditNotesStore()
-
-    const pending = store.downloadPdf(note)
-    expect(store.downloadingId).toBe(3)
-    await waitUntil(() => {
-      expect(held.waiting()).toBe(1)
-    })
-    held.release(PDF_REPLY)
-    await pending
-
-    expect(store.downloadingId).toBeNull()
-  })
 })

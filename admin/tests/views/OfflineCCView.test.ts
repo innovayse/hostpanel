@@ -8,7 +8,7 @@ import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { useToastStore } from '@/stores/toast'
-import { PaymentGateway } from '@/types/gateway'
+import { PaymentMethod } from '@/types/transaction'
 import OfflineCCView from '@/views/OfflineCCView.vue'
 import { invalid, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -87,7 +87,7 @@ describe('OfflineCCView', () => {
     expect(posts).toHaveLength(1)
     expect(JSON.parse(String((posts[0]?.[1] as RequestInit | undefined)?.body))).toEqual({
       date: new Date('2026-10-20').toISOString(),
-      gateway: PaymentGateway.BankTransfer,
+      gateway: PaymentMethod.BankTransfer,
       transactionId: 'ref-1',
       amount: 25,
       fees: 0,

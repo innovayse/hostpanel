@@ -65,6 +65,8 @@ const BACKEND_PUBLIC_KEYS: readonly string[] = [
   'portal.features.malware',
   'portal.features.storage',
   'portal.hero.badge',
+  'portal.legal.company_name',
+  'portal.legal.registration_number',
   'portal.legal.tax_id',
   'portal.logo',
   'portal.logo.dark',

@@ -112,3 +112,13 @@ export const isInvoiceOverdue = (
   // is what the comparison already does; saying so stops it looking like an oversight.
   return Number.isFinite(due.getTime()) && due < now
 }
+
+/**
+ * Whether the customer can take the invoice's PDF, to download or to print.
+ *
+ * A draft is not issued yet, so it is not the customer's document to download.
+ *
+ * @param invoice - The invoice to judge.
+ * @returns True when the invoice is published.
+ */
+export const isInvoiceDownloadable = (invoice: Pick<ClientInvoice, 'status'>): boolean => invoice.status !== InvoiceStatus.Draft

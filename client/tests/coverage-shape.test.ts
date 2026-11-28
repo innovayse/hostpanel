@@ -35,6 +35,7 @@ const MIRRORED_AREAS = [
  * lands; the stale-entry check fails otherwise.
  */
 const KNOWN_GAPS: Readonly<Record<string, string>> = {
+  'components/ui/UiRowActions.vue': 'Added after the owner decision of 2026-11-27 that no new tests are written.',
 }
 
 /**

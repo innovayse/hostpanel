@@ -135,7 +135,7 @@ CDN, серверное кеширование, межсетевой экран,
 `portal.contact.phone`, `portal.contact.address`, `portal.contact.map_url` (только https),
 `portal.stats.clients`, `portal.stats.uptime`, `portal.stats.regions`, `portal.hero.badge`,
 `portal.chat.provider`, `portal.newsletter.action_url`,
-`portal.legal.tax_id`, `portal.social.{facebook,instagram,twitter,linkedin,youtube}`, а также
+`portal.legal.tax_id`, `portal.legal.company_name`, `portal.legal.registration_number`, `portal.social.{facebook,instagram,twitter,linkedin,youtube}`, а также
 часы работы поддержки `portal.contact.hours` и их часовой пояс `portal.contact.timezone`.
 
 Электронная почта, телефон, адрес, карта, часы и часовой пояс редактируются в **Admin → Settings → Storefront**;

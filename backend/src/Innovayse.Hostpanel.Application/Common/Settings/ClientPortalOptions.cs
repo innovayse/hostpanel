@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Innovayse.Hostpanel.Application.Common.Settings;
 
 /// <summary>
@@ -20,4 +22,10 @@ public sealed class ClientPortalOptions
     /// mails point at localhost.
     /// </summary>
     public string BaseUrl { get; set; } = "http://localhost:3000";
+
+    /// <summary>The address of one invoice's page in the client portal, the link a mail or a PDF sends the client to.</summary>
+    /// <param name="invoiceId">The invoice's id.</param>
+    /// <returns>An absolute address: <see cref="BaseUrl"/> without a trailing slash, then <c>/client/invoices/{id}</c>.</returns>
+    public string InvoiceUrl(int invoiceId) =>
+        string.Create(CultureInfo.InvariantCulture, $"{BaseUrl.TrimEnd('/')}/client/invoices/{invoiceId}");
 }

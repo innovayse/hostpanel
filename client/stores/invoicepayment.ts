@@ -13,6 +13,7 @@
 import { defineStore } from 'pinia'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { apiErrorMessage } from '~/lib/errorHandler'
+import { printBlob } from '~/utils/printBlob'
 import { saveBlob } from '~/utils/saveBlob'
 import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientInvoice } from '~/types/clientinvoice'
@@ -256,16 +257,17 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   const pdfError = ref('')
 
   /**
-   * Downloads an invoice as a PDF and hands it to the browser as `invoice-{id}.pdf`.
+   * Fetches an invoice's PDF and hands it to `deliver`, the one flow behind downloading and printing it.
    *
    * @param id - Invoice id.
+   * @param deliver - What to do with the PDF once it is read.
    * @returns Nothing; a refusal leaves its sentence in {@link pdfError}.
    */
-  const downloadInvoicePdf = async (id: string): Promise<void> => {
+  const deliverInvoicePdf = async (id: string, deliver: (pdf: Blob) => void): Promise<void> => {
     pdfDownloading.value = true
     pdfError.value = ''
     try {
-      saveBlob(await billing.fetchInvoicePdf(id), `invoice-${id}.pdf`)
+      deliver(await billing.fetchInvoicePdf(id))
     } catch (e: unknown) {
       pdfError.value = apiErrorMessage(e)
     } finally {
@@ -273,12 +275,29 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     }
   }
 
+  /**
+   * Downloads an invoice as a PDF and hands it to the browser as `invoice-{id}.pdf`.
+   *
+   * @param id - Invoice id.
+   * @returns Nothing; a refusal leaves its sentence in {@link pdfError}.
+   */
+  const downloadInvoicePdf = (id: string): Promise<void> => deliverInvoicePdf(id, (pdf) => saveBlob(pdf, `invoice-${id}.pdf`))
+
+  /**
+   * Opens an invoice's PDF in the browser's print flow.
+   *
+   * @param id - Invoice id.
+   * @returns Nothing; a refusal leaves its sentence in {@link pdfError}.
+   */
+  const printInvoicePdf = (id: string): Promise<void> => deliverInvoicePdf(id, printBlob)
+
   return {
     invoice,
     invoiceLoading,
     pdfDownloading,
     pdfError,
     downloadInvoicePdf,
+    printInvoicePdf,
     invoiceError,
     gatewayMethods,
     optionsError,

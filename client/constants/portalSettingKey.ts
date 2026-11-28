@@ -78,6 +78,10 @@ export enum PortalSettingKey {
   HeroBadge = 'portal.hero.badge',
   /** Tax id. */
   LegalTaxId = 'portal.legal.tax_id',
+  /** Registered company name printed as the seller on invoices. */
+  LegalCompanyName = 'portal.legal.company_name',
+  /** Company registration number printed on invoices. */
+  LegalRegistrationNumber = 'portal.legal.registration_number',
   /** Apps switch: all. */
   AppsEnabled = 'portal.apps.enabled',
   /** Apps switch: account. */

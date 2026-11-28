@@ -40,12 +40,12 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
         response.Content.Headers.ContentDisposition.FileName.Should().Be($"credit-note-{number}.pdf");
         response.Headers.CacheControl!.NoStore.Should().BeTrue();
         var text = await PdfText.CompactAsync(response);
-        text.Should().Contain($"Creditnote{number}").And.Contain("Creditforhosting").And.Contain("AdaLovelace");
+        text.Should().Contain($"Creditnotenumber{number}").And.Contain("Creditforhosting").And.Contain("AdaLovelace");
         text.Should().Contain(CreditNoteTestSeeds.Reason.Replace(" ", string.Empty)).And.Contain($"#{invoiceId}");
         text.Should().Contain("60.00");
     }
 
-    /// <summary>A voided note downloads too, stamped as voided, so the record stays complete.</summary>
+    /// <summary>A voided note downloads too, marked as voided, so the record stays complete.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_OfAVoidedNote_IsStamped()
@@ -60,7 +60,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
         var response = await admin.GetAsync($"/api/billing/credit-notes/{noteId}/pdf");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await PdfText.CompactAsync(response)).Should().Contain("VOIDED");
+        (await PdfText.CompactAsync(response)).Should().Contain("Voided");
     }
 
     /// <summary>A note with more lines than <c>InvoicePdf:MaxLines</c> is refused before anything is rendered.</summary>

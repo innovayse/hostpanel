@@ -70,6 +70,18 @@
       "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
       "invalid": "Ingresa una dirección que comience con https://."
     },
+    "legalCompanyName": {
+      "label": "Razón social",
+      "hint": "Ejemplo S.L."
+    },
+    "legalTaxId": {
+      "label": "NIF",
+      "hint": "B12345678"
+    },
+    "legalRegistrationNumber": {
+      "label": "Número de registro mercantil",
+      "hint": "123456789"
+    },
     "contactHours": {
       "label": "Horario de trabajo",
       "hint": "Lun-Vie 09:00-18:00"
@@ -78,7 +90,8 @@
       "figures": "Cifras",
       "contacts": "Contactos",
       "messengers": "Mensajería",
-      "address": "Dirección y horario"
+      "address": "Dirección y horario",
+      "company": "Empresa"
     },
     "contactTimezone": {
       "label": "Zona horaria",

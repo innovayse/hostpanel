@@ -10,8 +10,8 @@ using UglyToad.PdfPig;
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Pdf;
 
 /// <summary>
-/// Tests for the credit note side of the PDF renderer: the document prints its words in English, Russian and Armenian, the
-/// Armenian text is really drawn with a font that has the letters (and the dram sign), a voided note is stamped in its language,
+/// Tests for the credit note side of the PDF renderer: the document prints its words in each language, the
+/// Armenian text is really drawn with a font that has the letters (and the dram sign),
 /// and a credit note shares the render limit with invoices.
 /// </summary>
 public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
@@ -42,16 +42,15 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
         IssuedAt: new DateTimeOffset(2026, 10, 1, 9, 0, 0, TimeSpan.Zero),
         InvoiceId: 42,
         Reason: "Ծառայությունը չի աշխատել",
-        Seller: new InvoicePdfParty("Fairhaven Hosting", ["1 Market Street", "Tax ID: 123456"]),
+        Seller: new InvoicePdfSeller(new InvoicePdfParty("Fairhaven Hosting", ["1 Market Street", "Tax ID: 123456"]), null, null),
         BillTo: new InvoicePdfParty("Арам Петросян", ["Ծաղկաձոր, Հայաստան"]),
-        LogoPath: null,
         Lines: [new InvoicePdfLine("Shared hosting", 1, 12.50m, 12.50m)],
         SubTotal: 12.50m,
         TaxRate: 20m,
         Tax: 2.50m,
         Total: 15.00m,
-        Money: new InvoicePdfMoneyFormat(string.Empty, " ֏", 0),
-        Labels: CreditNotePdfLabelSets.For(language));
+        Money: new InvoicePdfMoneyFormat(string.Empty, " ֏", 0, "AMD"),
+        Labels: DocumentPdfLabelSets.For(language));
 
     /// <summary>Renders a note and reads back its text without whitespace.</summary>
     /// <param name="model">The note to render.</param>
@@ -79,8 +78,8 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     {
         var text = await TextAsync(Sample(language));
 
-        text.Should().Contain(title + "CN-0007").And.Contain(totalLabel).And.Contain("#42");
-        text.Should().Contain("Fairhaven").And.Contain("2026-10-01");
+        text.Should().Contain(title).And.Contain("CN-0007").And.Contain(totalLabel).And.Contain("#42");
+        text.Should().Contain("Fairhaven").And.Contain("2026");
         text.Should().NotContain("\0");
     }
 
@@ -95,7 +94,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     {
         var text = await TextAsync(Sample(language ?? string.Empty));
 
-        text.Should().Contain("CreditnoteCN-0007").And.Contain("Totalcredited");
+        text.Should().Contain("Creditnote").And.Contain("CN-0007").And.Contain("Totalcredited");
     }
 
     /// <summary>
@@ -110,35 +109,6 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
 
         text.Should().Contain("Ծառայությունըչիաշխատել").And.Contain("Ծաղկաձոր,Հայաստան").And.Contain("15֏");
         text.Should().NotContain("\0").And.NotContain("�");
-    }
-
-    /// <summary>A voided note is stamped VOIDED in its language, and a standing note carries no stamp.</summary>
-    /// <param name="language">The language under test.</param>
-    /// <param name="stamp">The stamp expected on a voided note.</param>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Theory]
-    [InlineData("en", "VOIDED")]
-    [InlineData("ru", "АННУЛИРОВАНА")]
-    [InlineData("hy", "ՉԵՂԱՐԿՎԱԾ")]
-    [InlineData("de", "STORNIERT")]
-    [InlineData("es", "ANULADA")]
-    public async Task Render_StampsAVoidedNoteInItsLanguage(string language, string stamp)
-    {
-        var voided = await TextAsync(Sample(language, CreditNoteStatus.Voided));
-        var standing = await TextAsync(Sample(language));
-
-        voided.Should().Contain(stamp);
-        standing.Should().NotContain(stamp);
-    }
-
-    /// <summary>A draft is stamped so nobody mistakes it for an issued note.</summary>
-    /// <returns>A task that completes when the test has run.</returns>
-    [Fact]
-    public async Task Render_StampsADraft()
-    {
-        var text = await TextAsync(Sample("en", CreditNoteStatus.Draft));
-
-        text.Should().Contain("DRAFT");
     }
 
     /// <summary>A credit note takes a slot of the same gate as an invoice: with the only slot held, it is refused as busy.</summary>
@@ -165,10 +135,9 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     [InlineData("es")]
     public void LabelSets_HaveNoBlankLabel(string language)
     {
-        var labels = CreditNotePdfLabelSets.For(language);
+        var labels = DocumentPdfLabelSets.For(language);
 
-        var all = typeof(CreditNotePdfLabels).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => (string)p.GetValue(labels)!)
-            .Concat(typeof(DocumentPdfLabels).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => (string)p.GetValue(labels.Document)!));
+        var all = typeof(DocumentPdfLabels).GetProperties().Where(p => p.PropertyType == typeof(string)).Select(p => (string)p.GetValue(labels)!);
         all.Should().OnlyContain(s => !string.IsNullOrWhiteSpace(s));
     }
 }

@@ -70,6 +70,18 @@
       "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
       "invalid": "Geben Sie eine Adresse ein, die mit https:// beginnt."
     },
+    "legalCompanyName": {
+      "label": "Rechtlicher Firmenname",
+      "hint": "Beispiel GmbH"
+    },
+    "legalTaxId": {
+      "label": "Steuernummer",
+      "hint": "12/345/67890"
+    },
+    "legalRegistrationNumber": {
+      "label": "Handelsregisternummer",
+      "hint": "123456789"
+    },
     "contactHours": {
       "label": "Öffnungszeiten",
       "hint": "Mo–Fr 09:00–18:00"
@@ -82,7 +94,8 @@
       "figures": "Kennzahlen",
       "contacts": "Kontakte",
       "messengers": "Messenger",
-      "address": "Adresse und Öffnungszeiten"
+      "address": "Adresse und Öffnungszeiten",
+      "company": "Unternehmen"
     },
     "localeFallbackHint": "Für eine leer gelassene Sprache wird der englische Text angezeigt."
   },

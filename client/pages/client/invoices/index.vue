@@ -4,6 +4,8 @@
 
     <UiTabs v-model="activeTab" :tabs="tabs" />
 
+    <UiAlert v-if="paymentStore.pdfError" variant="error" data-testid="invoices-pdf-error">{{ paymentStore.pdfError }}</UiAlert>
+
     <!-- Not a customer account. Checked before the failure branch: this is a state the
          API reported, not a fault, and it carries its own explanation and a way out. -->
     <ClientNoProfileNotice v-if="!store.invoicesLoading && store.clientProfileMissing" />
@@ -36,7 +38,7 @@
         </UiTableHead>
       </template>
       <UiTableBody>
-        <UiTableRow v-for="invoice in filteredInvoices" :key="invoice.id" :data-testid="`invoice-row-${invoice.id}`">
+        <UiTableRow v-for="invoice in filteredInvoices" :key="invoice.id" :to="invoicePath(invoice.id)" :data-testid="`invoice-row-${invoice.id}`">
           <UiTableTd>
             <UiText :as="UiTextTag.Span" size="sm" weight="medium">#{{ invoice.id }}</UiText>
           </UiTableTd>
@@ -55,9 +57,7 @@
             <ClientStatusBadge :status="invoice.status" />
           </UiTableTd>
           <UiTableTd align="right">
-            <UiButton :to="clientInvoicePath(invoice.id)" variant="subtle" size="sm" :data-testid="`invoice-view-${invoice.id}`">
-              {{ $t('common.view') }}
-            </UiButton>
+            <UiRowActions :actions="rowActions(invoice)" :testid="`invoice-actions-${invoice.id}`" />
           </UiTableTd>
         </UiTableRow>
       </UiTableBody>
@@ -68,16 +68,19 @@
 <script setup lang="ts">
 /**
  * Invoice list: filter tabs (all / unpaid / paid) over the client's invoices with amount, dates
- * and status, each row linking to the invoice. Loading, missing-profile and failure states come
+ * and status, each row opening the invoice and offering view, PDF, print and pay in its menu. Loading, missing-profile and failure states come
  * from the client store.
  */
-import { clientInvoicePath } from '~/constants/clientRoutes'
-import { FileText } from 'lucide-vue-next'
+import { clientInvoicePath, clientInvoicePayPath } from '~/constants/clientRoutes'
+import { CreditCard, Download, Eye, FileText, Printer } from 'lucide-vue-next'
 import { useClientStore } from '~/stores/client'
+import { useInvoicePaymentStore } from '~/stores/invoicepayment'
+import type { ClientInvoice } from '~/types/clientinvoice'
+import type { UiRowAction } from '~/types/uirowaction'
 import { ListFilter } from '~/types/listfilter'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
-import { isInvoiceOutstanding, isInvoiceOverdue as isOverdue, isInvoicePaid } from '~/utils/invoice'
+import { isInvoiceDownloadable, isInvoiceOutstanding, isInvoiceOverdue as isOverdue, isInvoicePaid } from '~/utils/invoice'
 import { UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -85,8 +88,14 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 /** Translates a key into the active locale. */
 const { t } = useI18n()
 
+/** Prefixes a path with the active locale. */
+const localePath = useLocalePath()
+
 /** The client store that owns the invoice list and its loading and failure state. */
 const store = useClientStore()
+
+/** The invoice payment store that downloads and prints an invoice's PDF. */
+const paymentStore = useInvoicePaymentStore()
 
 await useAsyncData('client-invoices', () => store.fetchInvoices(true))
 
@@ -117,4 +126,33 @@ const filteredInvoices = computed(() => {
   }
   return store.invoices
 })
+
+/**
+ * The page of one invoice, with the active locale's prefix.
+ *
+ * @param id - Invoice id.
+ * @returns The path the row and its View action open.
+ */
+const invoicePath = (id: number): string => localePath(clientInvoicePath(id))
+
+/**
+ * The actions of one invoice row: view, the PDF to download or print once issued, and pay while money is owed.
+ *
+ * @param invoice - The invoice the row shows.
+ * @returns The actions of the row's menu, in menu order.
+ */
+const rowActions = (invoice: ClientInvoice): UiRowAction[] => {
+  const id = String(invoice.id)
+  const actions: UiRowAction[] = [{ key: 'view', label: t('common.view'), icon: Eye, to: invoicePath(invoice.id) }]
+  if (isInvoiceDownloadable(invoice)) {
+    actions.push(
+      { key: 'download', label: t('client.invoices.downloadPdf'), icon: Download, onSelect: () => paymentStore.downloadInvoicePdf(id) },
+      { key: 'print', label: t('common.print'), icon: Printer, onSelect: () => paymentStore.printInvoicePdf(id) },
+    )
+  }
+  if (isInvoiceOutstanding(invoice)) {
+    actions.push({ key: 'pay', label: t('client.invoices.pay'), icon: CreditCard, to: localePath(clientInvoicePayPath(id)) })
+  }
+  return actions
+}
 </script>

@@ -4,7 +4,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Full configuration for one integration. A secret field never carries its value.
 /// </summary>
 /// <param name="Slug">URL-safe identifier for the integration.</param>
-/// <param name="Name">Display name: an admin locale key for a built-in integration, the manifest name for a plugin.</param>
+/// <param name="Name">Display name: the manifest name for a plugin, <see langword="null"/> for a built-in integration, whose name the admin owns and resolves from <paramref name="Slug"/>.</param>
 /// <param name="IsEnabled">Whether the integration is currently active.</param>
 /// <param name="Config">
 /// Field key (e.g. "secret_key") to its stored state. A secret field, as classified by
@@ -28,7 +28,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// </param>
 public sealed record IntegrationDetailDto(
     string Slug,
-    string Name,
+    string? Name,
     bool IsEnabled,
     IReadOnlyDictionary<string, IntegrationFieldValueDto> Config,
     IReadOnlyList<FieldDefinitionDto> FieldDefinitions,

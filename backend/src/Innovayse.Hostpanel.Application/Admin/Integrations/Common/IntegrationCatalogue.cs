@@ -7,9 +7,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <summary>
 /// The one catalogue of built-in integrations: display name, category, form fields and the fields
 /// that make an integration "configured". The list, detail and connection-test use cases all read
-/// it, so an integration is added or changed here and nowhere else. Every text the admin shows (name,
-/// field label, option label) is an admin locale key, never a sentence: the admin owns the wording of the
-/// built-in integrations and translates the key in the operator's language. The category is the stable
+/// it, so an integration is added or changed here and nowhere else. The catalogue carries no wording: the admin owns the
+/// name, field labels and option labels of the built-in integrations and resolves them from the slug and the field key. The category is the stable
 /// name the admin groups by, not display text.
 /// </summary>
 public static class IntegrationCatalogue
@@ -19,15 +18,6 @@ public static class IntegrationCatalogue
 
     /// <summary>Category label of the hosting and provisioning panels.</summary>
     private const string HostingProvisioning = "Hosting / Provisioning";
-
-    /// <summary>Locale key of the label of a port field, shared by the integrations that have one.</summary>
-    private const string PortLabel = "integrationMeta.cpanel.fieldPort";
-
-    /// <summary>Locale key of the label of a user name field, shared by the integrations that have one.</summary>
-    private const string UsernameLabel = "shared.username";
-
-    /// <summary>Locale key of the label of a password field.</summary>
-    private const string PasswordLabel = "shared.password";
 
     /// <summary>Input kind of a plain text field.</summary>
     private const IntegrationFieldType Text = IntegrationFieldType.Text;
@@ -47,39 +37,38 @@ public static class IntegrationCatalogue
     /// </summary>
     private static readonly Dictionary<string, IntegrationCatalogueEntry> BuiltIn = new()
     {
-        [IntegrationSlugs.BankTransfer] = new("integrationMeta.bankTransfer.name", PaymentGateways,
+        [IntegrationSlugs.BankTransfer] = new(PaymentGateways,
             [
-                new(BankTransferFields.AccountName, "integrationMeta.bankTransfer.fieldAccountName", Text, Required: false),
-                new(BankTransferFields.Iban, "integrationMeta.bankTransfer.fieldIban", Text, Required: false),
-                new(BankTransferFields.Swift, "integrationMeta.bankTransfer.fieldSwift", Text, Required: false),
-                new(BankTransferFields.BankName, "reports.directDebit.bankName", Text, Required: false),
-                new(BankTransferFields.Instructions, "integrationMeta.bankTransfer.fieldInstructions", TextArea, Required: false),
-                new(BankTransferFields.ExpiryDays, "integrationMeta.bankTransfer.fieldExpiryDays", Text, Required: false),
+                new(BankTransferFields.AccountName, Text, Required: false),
+                new(BankTransferFields.Iban, Text, Required: false),
+                new(BankTransferFields.Swift, Text, Required: false),
+                new(BankTransferFields.BankName, Text, Required: false),
+                new(BankTransferFields.Instructions, TextArea, Required: false),
+                new(BankTransferFields.ExpiryDays, Text, Required: false),
             ],
             []),
-        [IntegrationSlugs.Cpanel] = new("integrationMeta.cpanel.name", HostingProvisioning,
+        [IntegrationSlugs.Cpanel] = new(HostingProvisioning,
             [
-                new("host", "integrationMeta.cpanel.fieldHost", Text, Required: true),
-                new("port", PortLabel, Text, Required: false),
-                new("username", UsernameLabel, Text, Required: true),
-                new("api_token", "integrationMeta.cpanel.fieldApiToken", Password, Required: true),
+                new("host", Text, Required: true),
+                new("port", Text, Required: false),
+                new("username", Text, Required: true),
+                new("api_token", Password, Required: true),
             ],
             ["host", "username", "api_token"]),
-        [IntegrationSlugs.Smtp] = new("integrationMeta.smtp.name", "Email / SMTP",
+        [IntegrationSlugs.Smtp] = new("Email / SMTP",
             [
-                new("host", "integrationMeta.smtp.fieldHost", Text, Required: true),
-                new("port", PortLabel, Text, Required: false),
-                new("username", UsernameLabel, Text, Required: false),
-                new("password", PasswordLabel, Password, Required: false),
-                new("from_address", "integrationMeta.smtp.fieldFromAddress", Text, Required: true),
-                new("encryption", "integrationMeta.smtp.fieldEncryption", Select, Required: false, Options: ["TLS", "SSL", "None"],
-                    OptionLabels: new Dictionary<string, string> { ["None"] = "integrationMeta.smtp.encryptionNone" }),
+                new("host", Text, Required: true),
+                new("port", Text, Required: false),
+                new("username", Text, Required: false),
+                new("password", Password, Required: false),
+                new("from_address", Text, Required: true),
+                new("encryption", Select, Required: false, Options: ["TLS", "SSL", "None"]),
             ],
             ["host", "username", "password", "from_address"]),
-        [IntegrationSlugs.MaxMind] = new("integrationMeta.maxmind.name", "Fraud Protection",
+        [IntegrationSlugs.MaxMind] = new("Fraud Protection",
             [
-                new("account_id", "integrationMeta.maxmind.fieldAccountId", Text, Required: true),
-                new("license_key", "integrationMeta.maxmind.fieldLicenseKey", Password, Required: true),
+                new("account_id", Text, Required: true),
+                new("license_key", Password, Required: true),
             ],
             ["account_id", "license_key"]),
     };

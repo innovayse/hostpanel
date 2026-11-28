@@ -14,7 +14,7 @@ public sealed partial class ApiEndpointHostTests
     private static readonly string[] DialingProjects = ["Innovayse.Hostpanel.Application", "Innovayse.Hostpanel.Infrastructure"];
 
     /// <summary>The solution directory.</summary>
-    private static string BackendRoot => UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+    private static string BackendRoot => BackendLayout.FindRoot(AppContext.BaseDirectory);
 
     /// <summary>
     /// The lines of a source that build a panel API address or connection from a server's plain host name. A line that names the

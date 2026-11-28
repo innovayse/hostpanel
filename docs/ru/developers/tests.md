@@ -25,7 +25,7 @@ description: Все проверки, которые запускает CI, и �
 
 **`Innovayse.Hostpanel.Domain.Tests`**: модульные тесты доменной логики.
 
-**`Innovayse.Hostpanel.Integration.Tests`**: один файл на сценарий использования по пути `Integration.Tests/<Feature>/<UseCase>Tests.cs`. `UseCaseShapeTests` падает, если у обработчика сценария нет соответствующего файла с тестами. Этот набор сам запускает свой контейнер с базой данных, поэтому внешняя база не нужна. CI делит его на шарды по параллельным раннерам; если вы добавляете новую папку функции верхнего уровня, добавьте её в один из шардов в `scripts/check-integration-shards.sh`.
+**`Innovayse.Hostpanel.Integration.Tests`**: один файл на сценарий использования по пути `Integration.Tests/<Feature>/<UseCase>Tests.cs`. Этот набор сам запускает свой контейнер с базой данных, поэтому внешняя база не нужна. CI делит его на шарды по параллельным раннерам; если вы добавляете новую папку функции верхнего уровня, добавьте её в один из шардов в `scripts/check-integration-shards.sh`.
 
 **`Innovayse.Hostpanel.Architecture.Tests`**: проверяет структурные правила:
 
@@ -33,7 +33,6 @@ description: Все проверки, которые запускает CI, и �
 |------------|---------------|
 | `PortPlacementTests` | Все интерфейсы `I<Port>` лежат в `Application/Common/Interfaces/` |
 | `DatabaseIdentifierNamingTests` | Все имена таблиц, столбцов и ключей записаны в PascalCase |
-| `UseCaseShapeTests` | У каждого обработчика есть соответствующий файл интеграционных тестов |
 | `ResourceCoverageTests` | У каждого кода ошибки есть предложение в `ErrorMessages.resx` |
 
 `ModelDiffBaselineTests` лежит в `Integration.Tests/Persistence` и проверяет, что модель EF совпадает с последней миграцией.

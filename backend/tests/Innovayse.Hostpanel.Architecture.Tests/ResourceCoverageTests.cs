@@ -227,7 +227,7 @@ public sealed partial class ResourceCoverageTests
     [Fact]
     public void EveryResourceFile_DeclaresEachKeyOnce()
     {
-        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var backendRoot = BackendLayout.FindRoot(AppContext.BaseDirectory);
 
         var duplicates = Directory.EnumerateFiles(Path.Combine(backendRoot, "src"), "*.resx", SearchOption.AllDirectories)
             .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
@@ -268,7 +268,7 @@ public sealed partial class ResourceCoverageTests
             .Where(field => field.IsLiteral && field.FieldType == typeof(string))
             .Select(field => (string)field.GetRawConstantValue()!);
 
-        var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+        var backendRoot = BackendLayout.FindRoot(AppContext.BaseDirectory);
         var applicationRoot = Path.Combine(backendRoot, "src", "Innovayse.Hostpanel.Application");
 
         return Directory

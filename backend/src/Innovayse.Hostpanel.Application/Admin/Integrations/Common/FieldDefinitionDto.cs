@@ -7,7 +7,6 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Returned by the detail endpoint so the admin panel can render the form dynamically.
 /// </summary>
 /// <param name="Key">Storage key used in the Settings table (e.g. "secret_key").</param>
-/// <param name="Label">Human-readable label shown above the field (e.g. "Secret Key"), in the request's language for a plugin setting; for a built-in integration an admin locale key the admin translates.</param>
 /// <param name="Type">Input kind of the field; a secret kind is rendered as a write-only box.</param>
 /// <param name="Required">Whether the field must be non-empty before the integration can be enabled.</param>
 /// <param name="Options">Allowed values for "select" type fields; null for all other types.</param>
@@ -16,12 +15,11 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// <param name="Description">Help text shown under the field, in the request's language; null for none.</param>
 /// <param name="Placeholder">Hint shown in the empty input, in the request's language; null for none.</param>
 /// <param name="OptionLabels">
-/// The text shown for each value of <paramref name="Options"/>, keyed by the value, in the request's language for a plugin (an admin locale key for a built-in integration);
-/// null when every option is shown as its value. The stored value is always the option's value.
+/// The text shown for each value of <paramref name="Options"/>, keyed by the value, in the request's language, for a plugin; null for a built-in integration, whose option wording the admin owns, and when every option is shown as its value. The stored value is always the option's value.
 /// </param>
+/// <param name="Label">Human-readable label shown above the field (e.g. "Secret Key"), in the request's language; set for a plugin setting and left out for a built-in integration, whose wording the admin owns and resolves from the integration slug and <paramref name="Key"/>.</param>
 public sealed record FieldDefinitionDto(
     string Key,
-    string Label,
     IntegrationFieldType Type,
     bool Required,
     IReadOnlyList<string>? Options = null,
@@ -29,4 +27,5 @@ public sealed record FieldDefinitionDto(
     decimal? Max = null,
     string? Description = null,
     string? Placeholder = null,
-    IReadOnlyDictionary<string, string>? OptionLabels = null);
+    IReadOnlyDictionary<string, string>? OptionLabels = null,
+    string? Label = null);

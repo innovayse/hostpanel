@@ -11,7 +11,7 @@ public sealed class NoEmojiTests
     private static readonly string[] TextExtensions = [".cs", ".resx", ".html", ".htm", ".json", ".txt", ".liquid", ".hbs", ".sql"];
 
     /// <summary>The solution directory.</summary>
-    private static string BackendRoot => UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+    private static string BackendRoot => BackendLayout.FindRoot(AppContext.BaseDirectory);
 
     /// <summary>Every authored text file under <c>backend/src</c> as a path relative to it and its text; build output is not authored.</summary>
     /// <returns>The texts.</returns>

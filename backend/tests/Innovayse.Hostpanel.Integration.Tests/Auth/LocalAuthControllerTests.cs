@@ -183,7 +183,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        body.RootElement.GetProperty("detail").GetString().Should().Be("Invalid email or password.");
+        body.RootElement.GetProperty("detail").GetString().Should().Be("The email or password is not correct. Check both and try again, or reset your password.");
     }
 
     /// <summary>The field names a validation response lists, lower-cased so the key policy does not matter.</summary>

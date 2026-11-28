@@ -234,7 +234,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   test knows and for a plugin that implements `IPluginStatus`; the admin hides Test Connection otherwise, and the route
   answers 400 `INTEGRATION_NOT_TESTABLE` for such a plugin. The admin card and the status sidebar show the state
   (`integrations.connectionState.*`, tone from `lib/tones.ts`) with the API's sentence.
-- **Built-in integration texts are admin locale keys.** `IntegrationCatalogue` carries `integrationMeta.*` keys (name, field labels, `OptionLabels`) instead of English; the admin store (`stores/integrations.ts`) translates them for an entry that is not a plugin, so a built-in integration is worded in the operator's language like the plugin texts the API resolves itself. The category stays a stable name the admin maps to its own labels.
+- **Built-in integration texts belong to the admin.** `IntegrationCatalogue` carries no wording: the `Name` of a built-in list item,
+  detail and definition, the `Label` of its fields and its `OptionLabels` are `null`. The admin words them in one place,
+  `types/integrationmeta.ts`, keyed by `IntegrationSlug` and the `IntegrationFieldKey` enum (the API's field keys), and
+  `stores/integrations.ts` fills them for an entry that is not a plugin; a plugin's texts arrive finished in the request language.
+  The category stays a stable name the admin maps to its own labels.
 - **Enums live in `Enums/` namespaces** (`Domain/<Area>/Enums/`, `SharedKernel/Domain/Enums/`,
   `Infrastructure/Email/Enums/`); `EnumPlacementTests` enforces it.
 - **Domain refusals are `DomainException(code, message)`** (abstract, in the kernel); the exception
@@ -1698,12 +1702,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   linked user with no record of their own acts on the account they are linked to.
 - **Architecture tests** (`Architecture.Tests`): `ControllerBase`, `ExplicitConstructor`,
   `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`, `PluginNeutralCore`,
-  plus resource coverage, kernel purity, SDK contract and use-case shape. Application types carry
+  plus resource coverage, kernel purity and SDK contract. Application types carry
   no vendor names (`GetPanelSsoUrl`, `TestServerConnection`).
-- **A test per use case, enforced.** `UseCaseShapeTests` fails when
-  `Application/<Feature>/{Commands,Queries}/<UseCase>/` has no
-  `Integration.Tests/<Feature>/<UseCase>Tests.cs` (crons and event handlers under `Commands`
-  count as use cases).
 - **Time comes from `IClock`; timestamps are stamped on save.** `IClock`
   (`Application/Common/Interfaces/`) is the port, `Infrastructure/Time/SystemClock` reads the
   registered `TimeProvider`, so a test that swaps `TimeProvider` moves both. `IClock.TimeZone` is the host zone
@@ -3204,7 +3204,8 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
 
 `backend/tests/` has three projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`.
 **There is no `Application.Tests` or
-`Infrastructure.Tests`**: use-case tests are `Integration.Tests/<Feature>/<UseCase>Tests.cs`
+`Infrastructure.Tests`**: the use-case tests that exist live in `Integration.Tests/<Feature>/`, one file per use case
+by convention only, nothing enforces it and no new ones are written (owner decision 2026-11-27)
 (Testcontainers Postgres, fakes in `Fixtures/` for external ports only), and adapter tests live in
 `Integration.Tests/Adapters/{Auth,Billing,Integrations}`. Do not add either project.
 `Integration.Tests/Security/LeakGuardTests` guards against leaking secrets/internals in
@@ -3346,7 +3347,6 @@ Never spread one of these, and never restructure as a side effect of a feature.
 | Entity, domain event, enum | `backend/src/Innovayse.Hostpanel.Domain/<Area>/` (`Events/`, `Enums/`) |
 | EF configuration, migration, adapter | `backend/src/Innovayse.Hostpanel.Infrastructure/` |
 | External service client | `.../Infrastructure/Integrations/<Provider>/` |
-| Use-case test | `backend/tests/Innovayse.Hostpanel.Integration.Tests/<Feature>/<UseCase>Tests.cs` |
 | Options class | `.../<Feature or Integration>/Options/<Name>Options.cs` |
 | Portal page / section | `client/templates/<template>/pages/`, `.../sections/` |
 | Shared component | `client/components/`, `client/components/ui/` |

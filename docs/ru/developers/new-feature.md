@@ -49,7 +49,7 @@ description: Файл для каждого вида изменений и пр�
 
 **3. Интеграционный тест**
 
-Создайте `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs`. Тест наполняет базу данными, вызывает конечную точку и проверяет форму ответа. Пока этого файла нет, `UseCaseShapeTests` будет падать.
+Создайте `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs`. Тест наполняет базу данными, вызывает конечную точку и проверяет форму ответа.
 
 **4. Хранилище и API-композабл панели администратора**
 

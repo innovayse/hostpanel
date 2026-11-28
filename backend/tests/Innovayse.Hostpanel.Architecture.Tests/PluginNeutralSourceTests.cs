@@ -16,7 +16,7 @@ public sealed class PluginNeutralSourceTests
     ];
 
     /// <summary>The solution directory.</summary>
-    private static string BackendRoot => UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+    private static string BackendRoot => BackendLayout.FindRoot(AppContext.BaseDirectory);
 
     /// <summary>Every core C# source file as a path relative to <c>backend/src</c> and its text; build output and migrations are not authored code.</summary>
     /// <returns>The sources.</returns>

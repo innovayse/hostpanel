@@ -23,4 +23,5 @@ public static class PagingLimits
     /// clause, so a search that matches more rows than this would build a query the database has to be talked into
     /// accepting; the answer is then the lowest ids and the person narrows the text.
     /// </summary>
+    public const int MaxSearchMatches = 500;
 }

@@ -4,7 +4,18 @@
  */
 
 import { IntegrationCategory, IntegrationEncryption, IntegrationFieldKey, IntegrationLabelKind } from '@/types/integration'
-import type { IntegrationFieldMeta, IntegrationLabel, IntegrationMeta, IntegrationSlug } from '@/types/integration'
+import type {
+  FieldDefinitionDto,
+  FieldDefinitionWire,
+  IntegrationDetailDto,
+  IntegrationDetailWireDto,
+  IntegrationDto,
+  IntegrationFieldMeta,
+  IntegrationLabel,
+  IntegrationMeta,
+  IntegrationSlug,
+  IntegrationWireDto,
+} from '@/types/integration'
 import { PluginCategory } from '@/types/plugin'
 import { Icon } from '@/lib/icons'
 import { translate } from '@/lib/translate'
@@ -202,6 +213,43 @@ export const optionLabels = (
  */
 export const integrationLabelText = (label: IntegrationLabel): string =>
   label.kind === IntegrationLabelKind.Key ? translate(label.key) : label.text
+
+/**
+ * Labels a field definition: a plugin's label and option labels arrive finished, in the request language; the API sends
+ * none for a built-in integration, so they become the catalogue's locale keys, worded when a screen draws them.
+ *
+ * @param slug - Slug of the integration the field belongs to.
+ * @param field - The field definition as the API sent it.
+ * @returns The definition with its label and option labels as typed labels.
+ */
+const labelField = (slug: string, field: FieldDefinitionWire): FieldDefinitionDto => ({
+  ...field,
+  label: fieldLabel(slug, field.key, field.label),
+  optionLabels: optionLabels(slug, field.key, field.optionLabels),
+})
+
+/**
+ * Labels an integration summary: a plugin's name arrives finished; the API sends none for a built-in integration.
+ *
+ * @param integration - The summary as returned by the backend.
+ * @returns The summary with its name as a typed label.
+ */
+export const labelSummary = (integration: IntegrationWireDto): IntegrationDto => ({
+  ...integration,
+  name: integrationNameLabel(integration.slug, integration.name),
+})
+
+/**
+ * Labels an integration detail: the name and field texts the API leaves out for a built-in integration.
+ *
+ * @param detail - The detail as returned by the backend.
+ * @returns The detail with its texts as typed labels.
+ */
+export const labelDetail = (detail: IntegrationDetailWireDto): IntegrationDetailDto => ({
+  ...detail,
+  name: integrationNameLabel(detail.slug, detail.name),
+  fieldDefinitions: detail.fieldDefinitions.map(field => labelField(detail.slug, field)),
+})
 
 /**
  * Ordered category definitions: the order of the inner menu and of the layout skeleton.

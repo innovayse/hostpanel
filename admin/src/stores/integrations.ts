@@ -10,15 +10,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useIntegrationsApi } from '@/composables/apis/useIntegrationsApi'
 import { runAction } from '@/lib/runAction'
-import { fieldLabel, integrationNameLabel, optionLabels } from '@/types/integrationmeta'
+import { labelDetail, labelSummary } from '@/types/integrationmeta'
 import { IntegrationCategory, IntegrationCategoryName } from '@/types/integration'
 import { PluginType } from '@/types/plugin'
 import type {
-  FieldDefinitionDto,
-  FieldDefinitionWire,
   IntegrationConfigPayload,
   IntegrationDetailDto,
-  IntegrationDetailWireDto,
   IntegrationDto,
   IntegrationTestResult,
   IntegrationWireDto,
@@ -58,43 +55,6 @@ const normaliseCategory = (integration: IntegrationWireDto): IntegrationCategory
   const byType = integration.pluginType === null ? undefined : PLUGIN_TYPE_CATEGORY[integration.pluginType]
   return byType ?? CATEGORY_MAP[integration.category] ?? integration.category
 }
-
-/**
- * Labels a field definition: a plugin's label and option labels arrive finished, in the request language; the API sends
- * none for a built-in integration, so they become the catalogue's locale keys, worded when a screen draws them.
- *
- * @param slug - Slug of the integration the field belongs to.
- * @param field - The field definition as the API sent it.
- * @returns The definition with its label and option labels as typed labels.
- */
-const labelField = (slug: string, field: FieldDefinitionWire): FieldDefinitionDto => ({
-  ...field,
-  label: fieldLabel(slug, field.key, field.label),
-  optionLabels: optionLabels(slug, field.key, field.optionLabels),
-})
-
-/**
- * Labels an integration summary: a plugin's name arrives finished; the API sends none for a built-in integration.
- *
- * @param integration - The summary as returned by the backend.
- * @returns The summary with its name as a typed label.
- */
-const labelSummary = (integration: IntegrationWireDto): IntegrationDto => ({
-  ...integration,
-  name: integrationNameLabel(integration.slug, integration.name),
-})
-
-/**
- * Labels an integration detail: the name and field texts the API leaves out for a built-in integration.
- *
- * @param detail - The detail as returned by the backend.
- * @returns The detail with its texts as typed labels.
- */
-const labelDetail = (detail: IntegrationDetailWireDto): IntegrationDetailDto => ({
-  ...detail,
-  name: integrationNameLabel(detail.slug, detail.name),
-  fieldDefinitions: detail.fieldDefinitions.map(field => labelField(detail.slug, field)),
-})
 
 /** Manages the integrations summary list and the config of the integration being edited. */
 export const useIntegrationsStore = defineStore('integrations', () => {

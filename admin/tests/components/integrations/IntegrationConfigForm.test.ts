@@ -7,7 +7,17 @@ import { describe, expect, it } from 'vitest'
 import IntegrationConfigForm from '@/components/integrations/IntegrationConfigForm.vue'
 import { mountWithApp } from '../../helpers/mount'
 import { IntegrationFieldType } from '@/types/integration'
+import { labelDetail } from '@/types/integrationmeta'
+import type { IntegrationDetailWireDto } from '@/types/integration'
 import { integrationDetail } from '../../helpers/integrationFixtures'
+
+/**
+ * Builds the detail the form takes: the API's detail after the store has labelled it.
+ *
+ * @param overrides - Fields to change on the default detail.
+ * @returns The labelled detail.
+ */
+const formDetail = (overrides: Partial<IntegrationDetailWireDto> = {}) => labelDetail(integrationDetail(overrides))
 
 /**
  * Mounts the form for the default detail.
@@ -16,7 +26,7 @@ import { integrationDetail } from '../../helpers/integrationFixtures'
  * @returns The wrapper.
  */
 const mountForm = (props: Record<string, unknown> = {}) =>
-  mountWithApp(IntegrationConfigForm, { props: { integration: integrationDetail(), loading: false, testing: false, ...props } })
+  mountWithApp(IntegrationConfigForm, { props: { integration: formDetail(), loading: false, testing: false, ...props } })
 
 describe('IntegrationConfigForm', () => {
   it('heads the form with the name from the API and the short description the admin keeps for the slug', () => {
@@ -46,7 +56,7 @@ describe('IntegrationConfigForm', () => {
 
   it('renders a plugin secret field (type Secret, isSecret true) as the write only box', () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: { apiToken: { value: null, isSecret: true, hasValue: true } },
         fieldDefinitions: [{ key: 'apiToken', label: 'API token', type: IntegrationFieldType.Secret, required: true }],
       }),
@@ -60,7 +70,7 @@ describe('IntegrationConfigForm', () => {
 
   it('draws a text field the API marks secret as the write only box, never a plain input', () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: { token: { value: null, isSecret: true, hasValue: true } },
         fieldDefinitions: [{ key: 'token', label: 'Token', type: IntegrationFieldType.Text, required: false }],
       }),
@@ -150,7 +160,7 @@ describe('IntegrationConfigForm', () => {
 
   it('renders a Url field as a url input and a Number field as a bounded number input', () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: { webhookUrl: { value: 'https://hooks.example.com', isSecret: false, hasValue: true }, retries: { value: '3', isSecret: false, hasValue: true } },
         fieldDefinitions: [
           { key: 'webhookUrl', label: 'Webhook URL', type: IntegrationFieldType.Url, required: false },
@@ -166,7 +176,7 @@ describe('IntegrationConfigForm', () => {
 
   it('sends a number field as its string value', async () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: { retries: { value: '3', isSecret: false, hasValue: true } },
         fieldDefinitions: [{ key: 'retries', label: 'Retries', type: IntegrationFieldType.Number, required: false, min: 1, max: 5 }],
       }),
@@ -180,7 +190,7 @@ describe('IntegrationConfigForm', () => {
 
   it('does not send an untouched empty number field as 0', async () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: {},
         fieldDefinitions: [{ key: 'retries', label: 'Retries', type: IntegrationFieldType.Number, required: false, min: 0 }],
       }),
@@ -195,7 +205,7 @@ describe('IntegrationConfigForm', () => {
 
   it('stores an empty string when the admin clears a number field', async () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: { retries: { value: '3', isSecret: false, hasValue: true } },
         fieldDefinitions: [{ key: 'retries', label: 'Retries', type: IntegrationFieldType.Number, required: false }],
       }),
@@ -210,7 +220,7 @@ describe('IntegrationConfigForm', () => {
 
   it('shows a stored value that is not a number as an empty field', () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: { retries: { value: 'abc', isSecret: false, hasValue: true } },
         fieldDefinitions: [{ key: 'retries', label: 'Retries', type: IntegrationFieldType.Number, required: false }],
       }),
@@ -220,7 +230,7 @@ describe('IntegrationConfigForm', () => {
   })
 
   it('shows the plugin icon in the header of a plugin integration only', () => {
-    const plugin = mountForm({ integration: integrationDetail({ isPlugin: true, iconUrl: '/icon.png' }) })
+    const plugin = mountForm({ integration: formDetail({ isPlugin: true, iconUrl: '/icon.png' }) })
     const builtIn = mountForm()
 
     expect(plugin.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
@@ -229,7 +239,7 @@ describe('IntegrationConfigForm', () => {
 
   it('shows the label, help text, placeholder and option labels the API translated', () => {
     const wrapper = mountForm({
-      integration: integrationDetail({
+      integration: formDetail({
         config: {
           host: { value: '', isSecret: false, hasValue: false },
           region: { value: 'eu', isSecret: false, hasValue: true },
@@ -264,7 +274,7 @@ describe('IntegrationConfigForm', () => {
 
   it('hides the test button when the API says the integration cannot be tested', () => {
     const testable = mountForm()
-    const untestable = mountForm({ integration: integrationDetail({ canTestConnection: false }) })
+    const untestable = mountForm({ integration: formDetail({ canTestConnection: false }) })
 
     expect(testable.find('[data-testid="integration-test"]').exists()).toBe(true)
     expect(untestable.find('[data-testid="integration-test"]').exists()).toBe(false)

@@ -41,7 +41,7 @@ describe('InvoiceFulfilmentTab', () => {
             id: 32,
             status: FulfilmentStatus.Done,
             attempts: 1,
-            lastError: null,
+            lastErrorMessage: null,
             completedAt: '2026-10-19T09:00:00Z',
             canRetry: false,
           }),

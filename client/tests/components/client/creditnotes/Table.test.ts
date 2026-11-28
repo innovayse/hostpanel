@@ -1,11 +1,12 @@
 /**
- * Unit tests for CreditNotesTable: one row per note with its number, invoice link, where the value went, total and state, a download
- * button per row that asks the parent for the PDF, and the busy state of the row being downloaded.
+ * Unit tests for CreditNotesTable: one row per note with its number, invoice link, where the value went, total and state, a row menu
+ * that asks the parent for the PDF of the note.
  *
  * @module tests/components/client/creditnotes/Table.test
  */
 
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { mountClient } from '~/tests/helpers/mountClient'
 import CreditNotesTable from '~/components/client/creditnotes/Table.vue'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
@@ -35,8 +36,12 @@ const note = (overrides: Partial<ClientCreditNote> = {}): ClientCreditNote => ({
 })
 
 describe('CreditNotesTable', () => {
+  beforeEach(() => {
+    stubLocalePath()
+  })
+
   it('lists one row per note in the order the backend sent them', () => {
-    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ id: 4, number: 'CN-0004' }), note()], downloadingId: null, loading: false } })
+    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ id: 4, number: 'CN-0004' }), note()], loading: false } })
 
     const html = wrapper.html()
     expect(html.indexOf('credit-note-row-4')).toBeLessThan(html.indexOf('credit-note-row-3'))
@@ -44,7 +49,7 @@ describe('CreditNotesTable', () => {
   })
 
   it('links the invoice the note credits and names where the value went and the state', () => {
-    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ method: 'GatewayRefund', status: 'Voided' })], downloadingId: null, loading: false } })
+    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ method: 'GatewayRefund', status: 'Voided' })], loading: false } })
 
     expect(wrapper.get('[data-testid="credit-note-invoice-3"]').attributes('href')).toBe(clientInvoicePath(12))
     expect(wrapper.get('[data-testid="credit-note-method-3"]').text()).toBe('client.creditNotes.method.GatewayRefund')
@@ -52,34 +57,26 @@ describe('CreditNotesTable', () => {
   })
 
   it('shows the total in the currency of the note', () => {
-    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ currency: 'USD', total: 60 })], downloadingId: null, loading: false } })
+    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ currency: 'USD', total: 60 })], loading: false } })
 
     expect(wrapper.get('[data-testid="credit-note-total-3"]').text()).toContain('60.00')
   })
 
-  it('asks for the PDF of the row whose button is pressed', async () => {
-    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ id: 4, number: 'CN-0004' }), note()], downloadingId: null, loading: false } })
+  it('asks for the PDF of the row whose menu item is pressed', async () => {
+    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ id: 4, number: 'CN-0004' }), note()], loading: false } })
 
-    await wrapper.get('[data-testid="credit-note-download-4"]').trigger('click')
+    await wrapper.get('[data-testid="credit-note-actions-4"]').trigger('click')
+    await wrapper.get('[data-testid="credit-note-actions-4-download"]').trigger('click')
 
     expect(wrapper.emitted('download')?.[0]).toEqual([expect.objectContaining({ id: 4, number: 'CN-0004' })])
   })
 
   it('draws its own empty and loading states', () => {
-    const empty = mountClient(CreditNotesTable, { props: { notes: [], downloadingId: null, loading: false } })
-    const loading = mountClient(CreditNotesTable, { props: { notes: [], downloadingId: null, loading: true } })
+    const empty = mountClient(CreditNotesTable, { props: { notes: [], loading: false } })
+    const loading = mountClient(CreditNotesTable, { props: { notes: [], loading: true } })
 
     expect(empty.get('[data-testid="ui-table-empty"]').text()).toContain('client.creditNotes.empty')
     expect(loading.find('[data-testid="ui-table-loading"]').exists()).toBe(true)
     expect(loading.find('[data-testid="ui-table-empty"]').exists()).toBe(false)
-  })
-
-  it('marks only the row being downloaded as busy', () => {
-    const wrapper = mountClient(CreditNotesTable, { props: { notes: [note({ id: 4, number: 'CN-0004' }), note()], downloadingId: 4, loading: false }, })
-
-    expect(wrapper.get('[data-testid="credit-note-download-4"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.get('[data-testid="credit-note-download-3"]').attributes('disabled')).toBeUndefined()
-    expect(wrapper.get('[data-testid="credit-note-download-3"]').text()).toBe('common.pdf')
-    expect(wrapper.get('[data-testid="credit-note-download-3"]').attributes('aria-label')).toBe('client.invoices.downloadPdf')
   })
 })

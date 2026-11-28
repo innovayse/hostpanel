@@ -45,7 +45,7 @@
           <UiButton variant="primary" :to="SITE_DOMAINS_PATH" data-testid="domains-search-domains">{{ $t('client.domains.searchDomains') }}</UiButton>
         </template>
         <UiTableBody>
-          <UiTableRow v-for="domain in paged" :key="domain.id" group :data-testid="`domain-row-${domain.id}`">
+          <UiTableRow v-for="domain in paged" :key="domain.id" group :to="localePath(clientDomainPath(domain.id))" :data-testid="`domain-row-${domain.id}`">
             <UiTableTd>
               <UiStack direction="row" align="center" gap="sm">
                 <Globe :size="16" :stroke-width="2" class="text-primary-400 flex-shrink-0" />
@@ -100,6 +100,9 @@ definePageMeta({ layout: 'client', middleware: 'client-auth' })
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
+
+/** Prefixes a path with the active locale. */
+const localePath = useLocalePath()
 
 /** The client store that owns the domain list and its loading and failure state. */
 const store = useClientStore()

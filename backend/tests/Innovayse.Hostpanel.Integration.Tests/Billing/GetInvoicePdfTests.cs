@@ -18,7 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
 /// <c>GET /api/billing/{id}/pdf</c> against Postgres: staff download any invoice as a PDF attachment,
-/// drafts included and stamped, and the internal notes never appear on it.
+/// drafts included and marked as such, and the internal notes never appear on it.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -41,7 +41,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
         var bytes = await response.Content.ReadAsByteArrayAsync();
         System.Text.Encoding.ASCII.GetString(bytes, 0, 5).Should().Be("%PDF-");
         var text = await PdfText.CompactAsync(response);
-        text.Should().Contain($"Invoice#{invoiceId}");
+        text.Should().Contain($"Invoicenumber#{invoiceId}");
         text.Should().Contain("Hosting");
         text.Should().Contain("AdaLovelace");
     }
@@ -184,7 +184,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    /// <summary>Staff can download a draft, and it is stamped so nobody mistakes it for an issued invoice.</summary>
+    /// <summary>Staff can download a draft, and its status reads Draft so nobody mistakes it for an issued invoice.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_DraftForAdmin_IsStamped()
@@ -196,7 +196,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
         var response = await admin.GetAsync($"/api/billing/{invoiceId}/pdf");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await PdfText.CompactAsync(response)).Should().Contain("DRAFT");
+        (await PdfText.CompactAsync(response)).Should().Contain("Draft");
     }
 
     /// <summary>The admins' internal notes stay off the PDF, which gets forwarded to customers.</summary>

@@ -62,7 +62,7 @@ public sealed class BankTransferRejectedHandler
                 invoice.AmountDue,
                 invoice.Currency,
                 evt.Reference,
-                $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}"),
+                _clientPortal.Value.InvoiceUrl(invoice.Id)),
             evt.Note);
 
         await _bus.InvokeAsync(

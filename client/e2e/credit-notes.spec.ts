@@ -31,7 +31,8 @@ test('a note downloads as a PDF named after its number', async ({ page, request 
   await waitForHydration(page)
 
   const download = page.waitForEvent('download')
-  await page.getByTestId('credit-note-download-41').click()
+  await page.getByTestId('credit-note-actions-41').click()
+  await page.getByTestId('credit-note-actions-41-download').click()
 
   expect((await download).suggestedFilename()).toBe('credit-note-CN-0041.pdf')
   const asked = (await stubRequests(request)).filter(r => r.method === 'GET' && r.path === '/api/me/credit-notes/41/pdf')

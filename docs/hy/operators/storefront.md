@@ -134,7 +134,7 @@ aurora-ի դոմենի որոնումը և checkout-ը. checkout-ը պատվիր
 `portal.contact.phone`, `portal.contact.address`, `portal.contact.map_url` (միայն https),
 `portal.stats.clients`, `portal.stats.uptime`, `portal.stats.regions`, `portal.hero.badge`,
 `portal.chat.provider`, `portal.newsletter.action_url`,
-`portal.legal.tax_id`, `portal.social.{facebook,instagram,twitter,linkedin,youtube}`, և
+`portal.legal.tax_id`, `portal.legal.company_name`, `portal.legal.registration_number`, `portal.social.{facebook,instagram,twitter,linkedin,youtube}`, և
 աջակցության աշխատանքային ժամերը՝ `portal.contact.hours`՝ իրենց գոտով `portal.contact.timezone`։
 
 Էլ. փոստը, հեռախոսը, հասցեն, քարտեզը, ժամերը և գոտին բոլորը խմբագրվում են **Ադմին → Կարգավորումներ → Հանրային կայք** բաժնում.

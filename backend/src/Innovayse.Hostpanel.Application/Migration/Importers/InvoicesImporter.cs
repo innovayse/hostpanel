@@ -105,7 +105,7 @@ public sealed class InvoicesImporter : IMigrationEntityImporter
             invoice.AddItem(item.Description, item.Amount, item.Quantity);
         }
 
-        invoice.UpdateOptions(issuedAt, dueDate, rec.PaymentMethod, rec.TaxRate);
+        invoice.UpdateOptions(issuedAt, dueDate, MigrationPaymentMethods.ToPaymentMethodName(rec.PaymentMethod), rec.TaxRate);
         invoice.ImportTotals(rec.Tax, rec.Credit);
         if (invoice.Total != rec.Total)
         {

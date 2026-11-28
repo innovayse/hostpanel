@@ -41,7 +41,7 @@ test('the invoice list opens an invoice', async ({ page, context, request, baseU
   await waitForHydration(page)
   await expect(page.getByTestId('invoices-table')).toBeVisible()
 
-  await page.getByTestId('invoice-view-501').click()
+  await page.getByTestId('invoice-row-501').click()
   await expect(page).toHaveURL(/\/client\/invoices\/501$/)
   await expect(page.getByTestId('invoice-heading')).toBeVisible()
 })

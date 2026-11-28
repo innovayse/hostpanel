@@ -46,7 +46,7 @@ import { anchorOf } from '@/lib/anchor'
 import { formatDate, EMPTY_VALUE } from '@/lib/format'
 import { bucketAmountText, summarizeInvoices } from '@/lib/invoices'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
-import { invoiceStatusTone, statusLabel } from '@/lib/tones'
+import { invoiceStatusTone, paymentMethodLabel, statusLabel } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceBulkAction } from '@/types/invoice'
@@ -344,7 +344,7 @@ onMounted(loadClients)
           <UiTableCell muted hide-below="md">{{ formatDate(invoice.createdAt) }}</UiTableCell>
           <UiTableCell muted hide-below="2xl">{{ formatDate(invoice.dueDate) }}</UiTableCell>
           <UiTableCell numeric hide-below="sm">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
-          <UiTableCell muted hide-below="2xl">{{ invoice.paymentMethod || EMPTY_VALUE }}</UiTableCell>
+          <UiTableCell muted hide-below="2xl">{{ invoice.paymentMethod ? paymentMethodLabel(invoice.paymentMethod) : EMPTY_VALUE }}</UiTableCell>
           <UiTableCell>
             <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}</UiBadge>
           </UiTableCell>

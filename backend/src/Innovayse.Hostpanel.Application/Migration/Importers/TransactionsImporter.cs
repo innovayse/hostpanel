@@ -112,7 +112,7 @@ public sealed class TransactionsImporter : IMigrationEntityImporter
             rec.Description,
             rec.TransactionId,
             invoiceId,
-            rec.PaymentMethod,
+            MigrationPaymentMethods.ToPaymentMethodName(rec.PaymentMethod),
             rec.AmountIn,
             rec.AmountOut,
             rec.Fees,

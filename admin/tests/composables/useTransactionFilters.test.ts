@@ -68,7 +68,7 @@ describe('useTransactionFilters', () => {
   })
 
   it('describes each applied filter for its chip, naming a known payment method and showing another as written', async () => {
-    const known = await setup('/transactions?direction=In&paymentMethod=Credit%2FDebit%20Card&from=2026-03-01&to=2026-03-31&amount=40')
+    const known = await setup('/transactions?direction=In&paymentMethod=Card&from=2026-03-01&to=2026-03-31&amount=40')
     const other = await setup('/transactions?paymentMethod=Bank%20Transfer')
 
     expect(known().chipSources().map((source) => [source.key, source.label])).toEqual([

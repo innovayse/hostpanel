@@ -65,7 +65,7 @@ public sealed class BankTransferRequestedHandler
                 invoice.AmountDue,
                 invoice.Currency,
                 evt.Reference,
-                $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}"),
+                _clientPortal.Value.InvoiceUrl(invoice.Id)),
             new BankTransferBankTemplateData(
                 settings.AccountName ?? string.Empty,
                 settings.Iban ?? string.Empty,

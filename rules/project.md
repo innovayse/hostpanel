@@ -1787,8 +1787,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   GatewayRefund note dispatches `RefundInvoicePaymentCommand` first (one refund, listed once) and records the note under its reference,
   and cannot be voided. A credit top-up and an unpaid invoice take no note. A note is never deleted. `IncomeExtensions` reads payments
   and refunds only, so a note adds no income of its own (`CreditNoteIncomeTests`). Its PDF goes through the same renderer and render
-  limit as an invoice (`IInvoicePdfRenderer.RenderCreditNoteAsync`, labels in `CreditNotePdfLabelSets` for en/ru/hy, Armenian
-  fonts as for invoices). The renewal read models belong to their owners and Billing
+  limit as an invoice (`IInvoicePdfRenderer.RenderCreditNoteAsync`, labels in `DocumentPdfLabelSets` for en/ru/hy/de/es, the one language picker and word source of both PDFs, Armenian
+  fonts as for invoices). An invoice and a credit note are both reduced (`PdfDocumentContents`) to one `PdfDocumentContent` and laid out by one `PdfDocumentLayout` (A4, logo, title with a status pill, meta, seller and client side by side, headline, items, totals, bank details, footer on every page); both print in the client's language, the seller is `portal.legal.company_name` (else the site name), with the address of that language, `portal.legal.tax_id`, `portal.legal.registration_number`, `portal.contact.email` and `portal.contact.phone`, and the accent is `portal.brand.primary`. The invoice's "Pay online" link and the mail links come from `ClientPortalOptions.InvoiceUrl`. The renewal read models belong to their owners and Billing
   reaches them over the bus: Services owns `GetRenewableServices`, `GetServiceBillingStates`,
   `ListOverdueSuspendedServices`, `ListUndatedRenewingServices` and `ExtendServiceRenewal`; Domains owns
   `GetRenewableDomains`, `GetDomainRenewalStates` and `GetTldRenewPrice`. The setup token kept

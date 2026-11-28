@@ -13,7 +13,7 @@ import { toDateInputValue } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import type { Invoice } from '@/types/invoice'
 import type { UiSelectOption } from '@/utils/ui/select'
-import { PaymentGateway } from '@/types/gateway'
+import { PaymentMethod } from '@/types/transaction'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
@@ -91,7 +91,7 @@ const invoiceOptions = computed<UiSelectOption<number | null>[]>(() => [
 ])
 
 /** Selected payment method. */
-const paymentMethod = ref<string>(PaymentGateway.None)
+const paymentMethod = ref<string>(PaymentMethod.None)
 
 /** Amount received. */
 const amountIn = ref(0)

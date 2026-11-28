@@ -51,6 +51,12 @@ export const SettingKey = {
   LegalAcceptableUse: 'portal.legal.acceptable_use',
   /** The operator's own cookie policy, default language. */
   LegalCookies: 'portal.legal.cookies',
+  /** Legal company name printed as the seller on invoices. */
+  LegalCompanyName: 'portal.legal.company_name',
+  /** Company tax identifier printed in the storefront footer and on invoices. */
+  LegalTaxId: 'portal.legal.tax_id',
+  /** Company registration number printed on invoices. */
+  LegalRegistrationNumber: 'portal.legal.registration_number',
   /** The storefront template. */
   Template: 'portal.template',
   /** Default colour mode of the storefront. */
@@ -194,6 +200,9 @@ export const SettingEnv: Record<SettingKey, string> = {
   [SettingKey.LegalRefund]: `${SETTING_ENV_PREFIX}LEGAL_REFUND`,
   [SettingKey.LegalAcceptableUse]: `${SETTING_ENV_PREFIX}LEGAL_ACCEPTABLE_USE`,
   [SettingKey.LegalCookies]: `${SETTING_ENV_PREFIX}LEGAL_COOKIES`,
+  [SettingKey.LegalCompanyName]: `${SETTING_ENV_PREFIX}LEGAL_COMPANY_NAME`,
+  [SettingKey.LegalTaxId]: `${SETTING_ENV_PREFIX}LEGAL_TAX_ID`,
+  [SettingKey.LegalRegistrationNumber]: `${SETTING_ENV_PREFIX}LEGAL_REGISTRATION_NUMBER`,
   [SettingKey.Template]: `${SETTING_ENV_PREFIX}TEMPLATE`,
   [SettingKey.ThemeDefault]: `${SETTING_ENV_PREFIX}THEME_DEFAULT`,
   [SettingKey.ThemeUserToggle]: `${SETTING_ENV_PREFIX}THEME_USER_TOGGLE`,

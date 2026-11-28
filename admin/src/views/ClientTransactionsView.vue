@@ -17,6 +17,7 @@ import { useOutcomeToast } from '@/composables/useOutcomeToast'
 import { TransactionFilterKey, useTransactionFilters } from '@/composables/useTransactionFilters'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
+import { paymentMethodLabel } from '@/lib/tones'
 import AddTransactionModal from '@/components/clients/AddTransactionModal.vue'
 import TransactionFilterFields from '@/components/billing/TransactionFilterFields.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -256,7 +257,7 @@ const transactionActions = (tx: Transaction): UiMenuAction[] => [
         <UiTableBody>
           <UiTableRow v-for="tx in store.transactions" :key="tx.id" hoverable>
             <UiTableCell muted>{{ formatDate(tx.date) }}</UiTableCell>
-            <UiTableCell muted>{{ tx.paymentMethod }}</UiTableCell>
+            <UiTableCell muted>{{ paymentMethodLabel(tx.paymentMethod) }}</UiTableCell>
             <UiTableCell muted>{{ tx.description }}</UiTableCell>
             <UiTableCell numeric>
               <UiText :tone="tx.amountIn > 0 ? UiTextTone.Success : UiTextTone.Muted">{{ formatPlainAmount(tx.amountIn, tx.currency) }}</UiText>

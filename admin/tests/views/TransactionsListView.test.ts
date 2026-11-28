@@ -202,10 +202,10 @@ describe('TransactionsListView', () => {
     const { wrapper, router } = await mountLedgerAt()
 
     await applyFilter(wrapper, 'billing-transactions-filter-direction', 'Out')
-    await applyFilter(wrapper, 'billing-transactions-filter-method', 'Credit/Debit Card')
+    await applyFilter(wrapper, 'billing-transactions-filter-method', 'Card')
 
-    expect(router.currentRoute.value.query).toEqual({ direction: 'Out', paymentMethod: 'Credit/Debit Card' })
-    expect(listUrls(mock).at(-1)).toBe('/api/transactions?page=1&pageSize=25&direction=Out&paymentMethod=Credit%2FDebit+Card')
+    expect(router.currentRoute.value.query).toEqual({ direction: 'Out', paymentMethod: 'Card' })
+    expect(listUrls(mock).at(-1)).toBe('/api/transactions?page=1&pageSize=25&direction=Out&paymentMethod=Card')
     expect(wrapper.get('[data-testid="filter-chip-direction"]').text()).toContain('Payments Sent')
     expect(wrapper.get('[data-testid="filter-chip-paymentMethod"]').text()).toContain('Credit/Debit Card')
   })

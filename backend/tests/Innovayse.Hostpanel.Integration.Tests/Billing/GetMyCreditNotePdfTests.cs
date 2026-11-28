@@ -31,7 +31,7 @@ public sealed class GetMyCreditNotePdfTests(IntegrationTestFactory factory) : IC
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
         response.Content.Headers.ContentDisposition!.FileName.Should().Be($"credit-note-{number}.pdf");
-        (await PdfText.CompactAsync(response)).Should().Contain($"Creditnote{number}");
+        (await PdfText.CompactAsync(response)).Should().Contain($"Creditnotenumber{number}");
     }
 
     /// <summary>Another client's note, a draft and an unknown id all answer 404 with the same code.</summary>

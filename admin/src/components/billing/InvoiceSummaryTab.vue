@@ -21,7 +21,7 @@ import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { INVOICE_STATUS_OPTIONS } from '@/lib/constants'
-import { invoiceStatusTone, statusLabel } from '@/lib/tones'
+import { invoiceStatusTone, paymentMethodLabel, statusLabel } from '@/lib/tones'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import { InvoiceBulkAction, InvoiceStatus } from '@/types/invoice'
@@ -186,7 +186,7 @@ const markPaid = (): Promise<void> =>
               {{ statusLabel(INVOICE_STATUS_OPTIONS, invoice.status) }}
             </UiBadge>
             <UiText :tone="UiTextTone.Muted" :size="UiTextSize.Sm">
-              {{ t('billing.invoiceSummaryTab.paymentMethod') }} {{ invoice.payment.method || t('shared.none') }}
+              {{ t('billing.invoiceSummaryTab.paymentMethod') }} {{ invoice.payment.method ? paymentMethodLabel(invoice.payment.method) : t('shared.none') }}
             </UiText>
           </UiStack>
         </UiStack>

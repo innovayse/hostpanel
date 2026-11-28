@@ -8,4 +8,5 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="Prefix">Text before the amount, e.g. <c>$</c>; may be empty.</param>
 /// <param name="Suffix">Text after the amount, e.g. <c> ֏</c>; may be empty.</param>
 /// <param name="Decimals">Decimal places shown.</param>
-public sealed record InvoicePdfMoneyFormat(string Prefix, string Suffix, int Decimals);
+/// <param name="Code">ISO 4217 code of the currency, printed beside the amounts the document stresses.</param>
+public sealed record InvoicePdfMoneyFormat(string Prefix, string Suffix, int Decimals, string Code);

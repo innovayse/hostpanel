@@ -24,7 +24,7 @@ test('a 401 on a client-side step sends the customer to sign in, and signing in 
 
   // The session dies now: the next read of one invoice is refused.
   await scriptStub(request, { method: HttpMethod.Get, path: `/api/me/invoices/${INVOICE.id}`, status: 401, code: 'UNAUTHORIZED', detail: 'E2E: the session has expired.' })
-  await page.getByTestId(`invoice-view-${INVOICE.id}`).click()
+  await page.getByTestId(`invoice-row-${INVOICE.id}`).click()
 
   // The sign-in page remembers the page the refusal interrupted: the invoice being opened.
   await expect(page).toHaveURL(new RegExp(`/client/login\\?redirect=%2Fclient%2Finvoices%2F${INVOICE.id}$`))
@@ -50,7 +50,7 @@ test('after the session expired the gate keeps the client area closed until sign
   await page.goto('/client/invoices')
   await waitForHydration(page)
   await scriptStub(request, { method: HttpMethod.Get, path: `/api/me/invoices/${INVOICE.id}`, status: 401, code: 'UNAUTHORIZED', detail: 'E2E: the session has expired.' })
-  await page.getByTestId(`invoice-view-${INVOICE.id}`).click()
+  await page.getByTestId(`invoice-row-${INVOICE.id}`).click()
   await expect(page).toHaveURL(/\/client\/login/)
 
   // The expired session is gone: the gate no longer lets the client area open without signing in.

@@ -38,7 +38,7 @@
         </UiTableHead>
       </template>
       <UiTableBody>
-        <UiTableRow v-for="invoice in relatedInvoices" :key="invoice.id" :data-testid="`service-invoice-${invoice.id}`">
+        <UiTableRow v-for="invoice in relatedInvoices" :key="invoice.id" :to="localePath(clientInvoicePath(invoice.id))" :data-testid="`service-invoice-${invoice.id}`">
           <UiTableTd>
             <UiLink tone="primary" data-testid="service-invoice-link" :to="clientInvoicePath(invoice.id)" :underline="false" class="font-medium">#{{ invoice.id }}</UiLink>
           </UiTableTd>
@@ -88,6 +88,9 @@ import { useServiceManagementStore } from '~/stores/servicemanagement'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
 import { UiTextTag } from '~/utils/ui/enums'
+
+/** Prefixes a path with the active locale. */
+const localePath = useLocalePath()
 
 /** The service management store that owns the list, its loading flag and its failure sentence. */
 const { relatedInvoices, unattributedInvoices, invoicesLoading, invoicesError } = storeToRefs(useServiceManagementStore())

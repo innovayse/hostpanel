@@ -61,7 +61,7 @@ public sealed class BankTransferConfirmedHandler
             invoice.Total,
             invoice.Currency,
             evt.Reference,
-            $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}"));
+            _clientPortal.Value.InvoiceUrl(invoice.Id)));
 
         await _bus.InvokeAsync(
             new SendEmailCommand(

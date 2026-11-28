@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { DEFAULT_PAYMENT_GATEWAY, useInvoicePaymentForm } from '@/composables/useInvoicePaymentForm'
 import type { InvoicePaymentForm, InvoicePaymentFormOptions } from '@/composables/useInvoicePaymentForm'
-import { PaymentGateway } from '@/types/gateway'
+import { PaymentMethod } from '@/types/transaction'
 import { UiTone } from '@/utils/ui/tone'
 import { createTestI18n } from '../helpers/i18n'
 import { toastsOnScreen } from '../helpers/toasts'
@@ -64,9 +64,9 @@ describe('useInvoicePaymentForm', () => {
     const form = mountForm(optionsFor(true).options)
 
     expect(form.gateway.value).toBe(DEFAULT_PAYMENT_GATEWAY)
-    expect(form.gateway.value).toBe(PaymentGateway.BankTransfer)
+    expect(form.gateway.value).toBe(PaymentMethod.BankTransfer)
     expect(form.gatewayOptions.value.map((option) => option.value)).toEqual([
-      PaymentGateway.BankTransfer,
+      PaymentMethod.BankTransfer,
     ])
   })
 
@@ -125,13 +125,13 @@ describe('useInvoicePaymentForm', () => {
 
     expect(record).toHaveBeenCalledWith(7, {
       date: new Date('2026-10-20').toISOString(),
-      gateway: PaymentGateway.BankTransfer,
+      gateway: PaymentMethod.BankTransfer,
       transactionId: 'ref-1',
       amount: 25,
       fees: 1.5,
     })
     expect(form.paymentDate.value).toBeNull()
-    expect(form.gateway.value).toBe(PaymentGateway.BankTransfer)
+    expect(form.gateway.value).toBe(PaymentMethod.BankTransfer)
     expect(form.transactionId.value).toBe('')
     expect(form.amount.value).toBe(0)
     expect(form.fees.value).toBe(0)

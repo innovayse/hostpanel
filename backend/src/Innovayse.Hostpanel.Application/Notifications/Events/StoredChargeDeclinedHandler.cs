@@ -62,7 +62,7 @@ public sealed class StoredChargeDeclinedHandler
             invoice.Id,
             invoice.Total,
             invoice.Currency,
-            $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}"));
+            _clientPortal.Value.InvoiceUrl(invoice.Id)));
 
         // Keyed by the claim, so a replay of the event mails once and a later attempt (its own claim) mails again.
         await _bus.InvokeAsync(

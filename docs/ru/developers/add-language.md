@@ -141,7 +141,7 @@ public static readonly IReadOnlyList<string> All = [Default, "ru", "hy", "fr"];
 
 **Дополнения бэкенда:**
 
-- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/CreditNotePdfLabelSets.cs`: добавьте набор подписей для языка и ветку с его кодом в `switch` метода `For`, чтобы PDF кредит-ноты печатался на этом языке.
+- `backend/src/Innovayse.Hostpanel.Application/Billing/Common/DocumentPdfLabelSets.cs`: добавьте набор подписей для языка (слова, культуру и формат даты) и ветку с его кодом в `switch` метода `For`, чтобы PDF счёта и кредит-ноты печатались на этом языке.
 - Сидеры шаблонов писем в `backend/src/Innovayse.Hostpanel.Application/Notifications/Seeding/`: каждый сидер добавляет версию своего шаблона на новом языке, а `SeededEmailLayout.RightsReserved` получает фразу для подвала.
 - Переводы демо-данных в `backend/src/Innovayse.Hostpanel.Infrastructure/Demo/DemoContentSeeder.cs` и `DemoStorefrontSeeder.cs`.
 - Языковые theory-тесты `ResourceCoverageTests` (`backend/tests/Innovayse.Hostpanel.Architecture.Tests/`) и другие тесты, перечисляющие языки: для нового кода нужна строка.

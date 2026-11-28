@@ -58,7 +58,7 @@ public sealed class StoredChargeActionRequiredHandler
 
         await CardChargeTemplatesSeeder.EnsureSeededAsync(_context, ct);
 
-        var invoiceUrl = $"{_clientPortal.Value.BaseUrl.TrimEnd('/')}/client/invoices/{invoice.Id}";
+        var invoiceUrl = _clientPortal.Value.InvoiceUrl(invoice.Id);
         var data = new CardChargeActionRequiredTemplateModel(
             new ChargedInvoiceTemplateData(invoice.Id, invoice.Total, invoice.Currency, invoiceUrl),
             // A plugin that gave no address still leaves the client a place to finish: the invoice page.

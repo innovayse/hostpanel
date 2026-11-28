@@ -81,13 +81,13 @@ public sealed class GetCreditNotePdfHandler
         var money = await _context.Currencies
             .AsNoTracking()
             .Where(c => c.Code == note.Currency)
-            .Select(c => new InvoicePdfMoneyFormat(c.Prefix, c.Suffix, c.Decimals))
+            .Select(c => new InvoicePdfMoneyFormat(c.Prefix, c.Suffix, c.Decimals, c.Code))
             .FirstOrDefaultAsync(ct);
 
         // The language is a property of the owner account, resolved together with the email address.
         var client = await _bus.GetRequiredClientBriefAsync(note.ClientId, withEmail: true, ct);
-        var labels = CreditNotePdfLabelSets.For(client.Language);
-        var seller = await _bus.ReadPdfSellerAsync(labels.Document.TaxId, ct);
+        var labels = DocumentPdfLabelSets.For(client.Language);
+        var seller = await _bus.ReadPdfSellerAsync(labels, ct);
 
         // A draft has no number yet; it prints its id so the document is still identifiable.
         var number = note.Number ?? $"#{note.Id}";
@@ -97,15 +97,14 @@ public sealed class GetCreditNotePdfHandler
             IssuedAt: note.IssuedAt ?? note.CreatedAt,
             InvoiceId: note.InvoiceId,
             Reason: note.Reason,
-            Seller: seller.Party,
-            BillTo: client.ToPdfParty(),
-            LogoPath: seller.LogoPath,
+            Seller: seller,
+            BillTo: client.ToPdfParty(labels),
             Lines: note.Items.OrderBy(i => i.Id).Select(i => new InvoicePdfLine(i.Description, i.Quantity, i.UnitPrice, i.Amount)).ToList(),
             SubTotal: note.SubTotal,
             TaxRate: note.TaxRate,
             Tax: note.Tax,
             Total: note.Total,
-            Money: money ?? new InvoicePdfMoneyFormat(string.Empty, " " + note.Currency, FallbackDecimals),
+            Money: money ?? new InvoicePdfMoneyFormat(string.Empty, " " + note.Currency, FallbackDecimals, note.Currency),
             Labels: labels);
 
         var rendered = await _renderer.RenderCreditNoteAsync(model, ct);

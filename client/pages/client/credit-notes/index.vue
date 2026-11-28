@@ -8,14 +8,14 @@
 
     <template v-else>
       <UiAlert v-if="store.downloadError" variant="error" data-testid="credit-notes-download-error">{{ store.downloadError }}</UiAlert>
-      <ClientCreditnotesTable :notes="store.notes" :downloading-id="store.downloadingId" :loading="store.loading" @download="store.downloadPdf" />
+      <ClientCreditnotesTable :notes="store.notes" :loading="store.loading" @download="store.downloadPdf" @print="store.printPdf" />
     </template>
   </UiStack>
 </template>
 
 <script setup lang="ts">
 /**
- * Credit notes: the documents issued to the client that reverse part of an invoice they already paid, each downloadable as a PDF.
+ * Credit notes: the documents issued to the client that reverse part of an invoice they already paid, each downloadable or printable as a PDF.
  *
  * A credit note is not invoice credit (the balance the client spends on an invoice, on the Credit page). Only the caller's own notes
  * are listed: the backend takes the client from the session. Loading, empty and failure states come from the credit notes store.

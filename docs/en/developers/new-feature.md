@@ -49,7 +49,7 @@ Add a `GET /api/admin/labels` action to `Innovayse.Hostpanel.API/Controllers/Lab
 
 **3. Integration test**
 
-Create `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs`. The test seeds the database, calls the endpoint and asserts the response shape. `UseCaseShapeTests` will fail until this file exists.
+Create `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs`. The test seeds the database, calls the endpoint and asserts the response shape.
 
 **4. Admin store and API composable**
 

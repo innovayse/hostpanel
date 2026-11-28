@@ -80,6 +80,7 @@ public sealed class GetServiceHandler
             product.Name,
             svc.Domain,
             svc.Status,
+            svc.AllowedStatuses,
             svc.CreatedAt,
             svc.TerminatedAt,
             svc.AdminNotes,

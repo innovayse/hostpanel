@@ -65,9 +65,9 @@ public sealed class ErrorMessageResolverTests
         var ru = InCulture("ru", () => resolver.Resolve(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED));
         var hy = InCulture("hy", () => resolver.Resolve(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED));
 
-        Assert.Equal("An unexpected error occurred.", en);
-        Assert.Equal("Произошла непредвиденная ошибка.", ru);
-        Assert.Equal("Տեղի ունեցավ անսպասելի սխալ։", hy);
+        Assert.Equal("Something went wrong on the server and the request was not completed. Please try again. If it keeps happening, check the server log or contact the site administrator.", en);
+        Assert.Equal("На сервере произошла ошибка, запрос не выполнен. Повторите попытку. Если ошибка повторяется, проверьте журнал сервера или обратитесь к администратору сайта.", ru);
+        Assert.Equal("Սերվերում սխալ տեղի ունեցավ, հարցումը չկատարվեց։ Փորձեք կրկին։ Եթե սխալը կրկնվում է, ստուգեք սերվերի մատյանը կամ դիմեք կայքի ադմինիստրատորին։", hy);
     }
 
     /// <summary>A code with no entry answers the generic sentence in the request language, never the code.</summary>
@@ -78,6 +78,6 @@ public sealed class ErrorMessageResolverTests
 
         var ru = InCulture("ru", () => resolver.Resolve(UnknownCode));
 
-        Assert.Equal("Произошла непредвиденная ошибка.", ru);
+        Assert.Equal("На сервере произошла ошибка, запрос не выполнен. Повторите попытку. Если ошибка повторяется, проверьте журнал сервера или обратитесь к администратору сайта.", ru);
     }
 }

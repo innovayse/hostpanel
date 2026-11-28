@@ -69,7 +69,7 @@ export const usePredefinedRepliesApi = () => {
    * @returns The matching replies.
    */
   const searchReplies = (query: string): Promise<PredefinedReply[]> =>
-    request<PredefinedReply[]>(`${ApiPath.PredefinedReplies}/search${buildQuery({ q: query })}`)
+    request<PredefinedReply[]>(`${ApiPath.PredefinedReplies}/search${buildQuery({ search: query })}`)
 
   /**
    * Creates a reply.

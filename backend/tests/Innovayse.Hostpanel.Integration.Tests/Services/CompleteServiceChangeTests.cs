@@ -196,7 +196,7 @@ public sealed class CompleteServiceChangeTests(IntegrationTestFactory factory) :
     /// <summary>A service that was suspended meanwhile keeps its plan until it is active again.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task ASuspendedService_IsRefusedWithServiceNotActive()
+    public async Task ASuspendedService_IsRefusedWithServicePlanChangeNotActive()
     {
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, null, 20m, 10m);
         var requestId = await ServiceChangeTestSeeds.SeedRequestAsync(factory, seeded, ServiceChangeStatus.Approved);
@@ -209,7 +209,7 @@ public sealed class CompleteServiceChangeTests(IntegrationTestFactory factory) :
 
         var outcome = await CompleteOnAsync(new FakeProvisioningProvider(), requestId);
 
-        outcome.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        outcome.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_PLAN_CHANGE_NOT_ACTIVE);
     }
 
     /// <summary>A provisioned service cannot move to a plan that names no hosting package.</summary>

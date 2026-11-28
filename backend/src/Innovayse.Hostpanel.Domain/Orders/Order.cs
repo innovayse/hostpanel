@@ -485,7 +485,7 @@ public sealed class Order : BaseEntity, IAggregateRoot
         if (Status is not OrderStatus.Pending)
         {
             throw new DomainRuleException(
-                OrdersErrors.OrderNotPending,
+                OrdersErrors.OrderCancelNotPending,
                 $"Cannot cancel an order with status {Status}. Only Pending orders can be cancelled.");
         }
 
@@ -506,7 +506,7 @@ public sealed class Order : BaseEntity, IAggregateRoot
         if (Status is not OrderStatus.Pending)
         {
             throw new DomainRuleException(
-                OrdersErrors.OrderNotPending,
+                OrdersErrors.OrderFraudNotPending,
                 $"Cannot mark an order as fraud with status {Status}. Only Pending orders can be flagged.");
         }
 
@@ -530,7 +530,7 @@ public sealed class Order : BaseEntity, IAggregateRoot
         if (Status is not OrderStatus.Pending)
         {
             throw new DomainRuleException(
-                OrdersErrors.OrderNotPending,
+                OrdersErrors.OrderHoldNotPending,
                 $"Cannot hold an order with status {Status} for review. Only Pending orders can be held.");
         }
 

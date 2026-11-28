@@ -13,10 +13,24 @@ namespace Innovayse.Hostpanel.Domain.Orders;
 public static class OrdersErrors
 {
     /// <summary>
-    /// The order is not Pending (400): <see cref="Order.Accept"/>, <see cref="Order.Cancel"/> and
-    /// <see cref="Order.MarkFraud"/> all require it.
+    /// The order is not Pending, so it cannot be accepted (400): <see cref="Order.Accept"/>.
     /// </summary>
     public const string OrderNotPending = "ORDER_NOT_PENDING";
+
+    /// <summary>
+    /// The order is not Pending, so it cannot be cancelled (400): <see cref="Order.Cancel"/>.
+    /// </summary>
+    public const string OrderCancelNotPending = "ORDER_CANCEL_NOT_PENDING";
+
+    /// <summary>
+    /// The order is not Pending, so it cannot be marked as fraud (400): <see cref="Order.MarkFraud"/>.
+    /// </summary>
+    public const string OrderFraudNotPending = "ORDER_FRAUD_NOT_PENDING";
+
+    /// <summary>
+    /// The order is not Pending, so it cannot be held for review (400): <see cref="Order.HoldForReview"/>.
+    /// </summary>
+    public const string OrderHoldNotPending = "ORDER_HOLD_NOT_PENDING";
 
     /// <summary>
     /// The order is not held for review (409): <see cref="Order.ApproveReview"/> and <see cref="Order.RejectFromReview"/>

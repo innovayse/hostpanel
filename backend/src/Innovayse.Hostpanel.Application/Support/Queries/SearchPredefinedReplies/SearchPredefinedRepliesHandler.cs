@@ -1,4 +1,4 @@
-using System.Globalization;
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Shared.Models;
@@ -24,7 +24,7 @@ public sealed class SearchPredefinedRepliesHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The search term.</param>
+    /// <param name="query">The text to look for in the name and content.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Every reply whose name or content matches, by name. Never refuses.</returns>
     public async Task<Result<IReadOnlyList<PredefinedReplyDto>>> HandleAsync(
@@ -32,16 +32,11 @@ public sealed class SearchPredefinedRepliesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        // EF.Functions.Like rather than the Npgsql-only ILike: Application does not reference the
-        // Npgsql provider package, and lower-casing both sides gives the same case-insensitive
-        // match ListTicketsHandler already relies on.
-        var term = $"%{query.SearchTerm.ToLower(CultureInfo.InvariantCulture)}%";
-
         // Ordered before the join is projected into the DTO: EF cannot translate an ORDER BY
         // applied to a property read off a constructed record, only to a column.
         var replies = await _context.PredefinedReplies
             .AsNoTracking()
-            .Where(r => EF.Functions.Like(r.Name.ToLower(), term) || EF.Functions.Like(r.Content.ToLower(), term))
+            .Search(query.Search, r => r.Name, r => r.Content)
             .OrderBy(r => r.Name)
             .Join(
                 _context.PredefinedReplyCategories.AsNoTracking(),

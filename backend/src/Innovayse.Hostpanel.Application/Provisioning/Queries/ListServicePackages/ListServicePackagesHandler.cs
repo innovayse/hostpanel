@@ -49,7 +49,7 @@ public sealed class ListServicePackagesHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The package names, or <c>SERVICE_NOT_FOUND</c> when the id names no service, <c>SERVICE_NOT_PROVISIONED</c> when the service has
-    /// never been provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated, <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable
+    /// never been provisioned, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when it is terminated, <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable
     /// server, the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses, including
     /// <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the provider cannot list its packages, or <c>SERVICE_PACKAGES_UPSTREAM_FAILED</c> when
     /// the provider fails.

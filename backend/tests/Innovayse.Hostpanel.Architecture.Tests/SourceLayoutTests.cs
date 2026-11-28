@@ -98,7 +98,7 @@ public sealed partial class SourceLayoutTests
     /// <returns>The files.</returns>
     private static IReadOnlyList<SourceFile> SourceFiles()
     {
-        var sourceRoot = Path.Combine(UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src");
+        var sourceRoot = Path.Combine(BackendLayout.FindRoot(AppContext.BaseDirectory), "src");
 
         var projects = Directory.EnumerateFiles(sourceRoot, "*.csproj", SearchOption.AllDirectories)
             .Where(project => !IsSkipped(sourceRoot, project))

@@ -31,6 +31,7 @@ const detail: ServiceDetail = {
   productName: 'Starter',
   domain: 'site.example',
   status: ServiceStatus.Terminated,
+  allowedStatuses: [ServiceStatus.Active, ServiceStatus.Pending, ServiceStatus.Suspended, ServiceStatus.Terminated],
   createdAt: '2030-01-01T00:00:00Z',
   terminatedAt: '2030-06-01T00:00:00Z',
   adminNotes: 'Old note',

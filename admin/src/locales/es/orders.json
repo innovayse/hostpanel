@@ -30,7 +30,7 @@
   },
   "ordersList": {
     "manageCustomerOrders": "Gestionar pedidos de clientes",
-    "searchOrders": "Buscar pedidos por número o ID",
+    "searchOrders": "Buscar por número de pedido, ID o cliente",
     "order": "Orden #",
     "items": "Elementos",
     "noOrdersFound": "No se encontraron pedidos",

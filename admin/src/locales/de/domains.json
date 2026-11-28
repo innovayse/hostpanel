@@ -1,7 +1,7 @@
 {
   "domainsList": {
     "manageAllRegisteredDomainNames": "Alle registrierten Domainnamen über alle Kunden hinweg verwalten",
-    "searchDomains": "Domains suchen",
+    "searchDomains": "Nach Domain, Kunde oder ID suchen",
     "expiresAt": "Läuft ab am",
     "renewalPrice": "Verlängerungspreis",
     "regPeriod": "Registrierungszeitraum",

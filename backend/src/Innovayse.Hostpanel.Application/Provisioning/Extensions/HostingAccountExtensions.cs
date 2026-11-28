@@ -16,7 +16,7 @@ public static class HostingAccountExtensions
     /// <param name="service">The service about to be sent to the panel.</param>
     /// <returns>
     /// The reference to ask the panel about, <c>SERVICE_NOT_PROVISIONED</c> when the service has
-    /// never been provisioned, or <c>SERVICE_NOT_ACTIVE</c> when it is terminated and its account
+    /// never been provisioned, or <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when it is terminated and its account
     /// removed. A suspended service still holds its account and is accepted.
     /// </returns>
     public static Result<string> RequireHostingAccount(this ClientService service)
@@ -30,7 +30,7 @@ public static class HostingAccountExtensions
 
         if (!service.HoldsHostingAccount)
         {
-            return Result<string>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+            return Result<string>.FailureCode(HostpanelErrorCodes.SERVICE_HOSTING_ACCOUNT_REMOVED);
         }
 
         return Result<string>.Success(service.ProvisioningRef);

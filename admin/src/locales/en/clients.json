@@ -125,7 +125,7 @@
     "cancellationRequests": "Cancellation Requests",
     "reviewAndProcessServiceCancellation": "Review and process service cancellation requests",
     "noCancellationRequestsFound": "No cancellation requests found",
-    "searchRequests": "Search by reason or id",
+    "searchRequests": "Search by reason, service, client or id",
     "noRequestsMatchYourFilters": "No cancellation requests match your filters",
     "deleteCancellationRequest": "Delete Cancellation Request",
     "areYouSureYouWant": "Are you sure you want to delete this cancellation request?",
@@ -228,7 +228,7 @@
       "senderRejected": "Sender address rejected",
       "messageRejected": "Message rejected"
     },
-    "searchEmails": "Search emails"
+    "searchEmails": "Search by subject or recipient"
   },
   "clientInvoices": {
     "createInvoice": "Create invoice",
@@ -249,7 +249,7 @@
     "activityLog": "Activity Log",
     "logEntry": "Log Entry",
     "user": "User",
-    "searchLog": "Search the activity log"
+    "searchLog": "Search by admin, description or IP address"
   },
   "clientOpenTicket": {
     "ticketSubject": "Ticket subject",
@@ -307,6 +307,7 @@
     "dedicatedIp": "Assigned IP",
     "moduleCommands": "Module Commands",
     "serviceTerminated": "Service Terminated",
+    "statusLocked": "A terminated service cannot be moved to another status, so there is nothing to change here. To provide this service again, order a new one for the client.",
     "terminate": "Terminate",
     "suspend": "Suspend",
     "changePackage": "Change package",

@@ -41,7 +41,7 @@ public sealed class ClientServicePlanChangeTests
 
         var act = () => service.ChangePlan(2, 5m);
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(ServicesErrors.ServiceNotActive);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(ServicesErrors.ServicePlanChangeNotActive);
         service.ProductId.Should().Be(1);
     }
 

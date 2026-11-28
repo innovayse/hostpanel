@@ -169,6 +169,24 @@ public static class HostpanelErrorCodes
     public const string FULFILMENT_RECORD_NOT_RETRYABLE = Domain.Billing.BillingErrors.FulfilmentRecordNotRetryable;
 
     /// <summary>
+    /// A fulfilment attempt never reported an outcome before its claim ran out. Stored on the record
+    /// (<see cref="Domain.Billing.FulfilmentRecord.LastErrorCode"/>) and read as a sentence, never answered.
+    /// </summary>
+    public const string FULFILMENT_ATTEMPT_ABANDONED = Domain.Billing.BillingErrors.FulfilmentAttemptAbandoned;
+
+    /// <summary>
+    /// A fulfilment plugin did not answer within the call timeout. Stored on the record
+    /// (<see cref="Domain.Billing.FulfilmentRecord.LastErrorCode"/>) and read as a sentence, never answered.
+    /// </summary>
+    public const string FULFILMENT_PLUGIN_TIMED_OUT = Domain.Billing.BillingErrors.FulfilmentPluginTimedOut;
+
+    /// <summary>
+    /// A fulfilment plugin failed the delivery. Stored on the record
+    /// (<see cref="Domain.Billing.FulfilmentRecord.LastErrorCode"/>) and read as a sentence, never answered.
+    /// </summary>
+    public const string FULFILMENT_PLUGIN_FAILED = Domain.Billing.BillingErrors.FulfilmentPluginFailed;
+
+    /// <summary>
     /// The line is not a domain renewal left claimed, so there is no claim to release (409, an exact
     /// <c>StatusMapping</c> row): <see cref="Domain.Billing.Invoice.ReleaseRenewalClaim"/>.
     /// </summary>
@@ -182,8 +200,17 @@ public static class HostpanelErrorCodes
 
     // Billing: gateway payments and saved payment methods
 
-    /// <summary>The invoice is not in a status a payment may be started or charged for (400).</summary>
-    public const string INVOICE_NOT_PAYABLE = "INVOICE_NOT_PAYABLE";
+    /// <summary>The invoice is not open for payment, because it is not Unpaid or Overdue (400).</summary>
+    public const string INVOICE_NOT_PAYABLE = Domain.Billing.BillingErrors.InvoiceNotPayable;
+
+    /// <summary>The invoice is open but owes nothing, so there is nothing to transfer or charge (400).</summary>
+    public const string INVOICE_NOTHING_DUE = Domain.Billing.BillingErrors.InvoiceNothingDue;
+
+    /// <summary>The invoice cannot be settled as free, because an amount is still due on it (400).</summary>
+    public const string INVOICE_NOT_FREE = "INVOICE_NOT_FREE";
+
+    /// <summary>The amount due on the invoice changed while a stored card charge was being prepared, so nothing was charged (400).</summary>
+    public const string INVOICE_AMOUNT_CHANGED = "INVOICE_AMOUNT_CHANGED";
 
     /// <summary>The invoice already has a gateway session inside the bank's live window (409).</summary>
     public const string GATEWAY_SESSION_ALREADY_STARTED = "GATEWAY_SESSION_ALREADY_STARTED";
@@ -719,10 +746,14 @@ public static class HostpanelErrorCodes
     public const string PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND";
 
     /// <summary>
-    /// The product is not active, or an amount was left for the handler to price and the product
-    /// has no price for that cycle in the ordering client's currency (400).
+    /// The product is not active, so it cannot be ordered (400).
     /// </summary>
     public const string PRODUCT_NOT_AVAILABLE = "PRODUCT_NOT_AVAILABLE";
+
+    /// <summary>
+    /// The product has no price for the billing cycle in the ordering client's currency (400).
+    /// </summary>
+    public const string PRODUCT_PRICE_UNAVAILABLE = "PRODUCT_PRICE_UNAVAILABLE";
 
     /// <summary>
     /// The product's cap on live services is reached, counting orders not yet fulfilled, so it takes no new order (409).
@@ -1335,6 +1366,18 @@ public static class HostpanelErrorCodes
     /// <summary>Not a refusal: the plugin's status check failed or gave no valid answer; the cause is in the server log.</summary>
     public const string PLUGIN_STATUS_FAILED = "PLUGIN_STATUS_FAILED";
 
+    /// <summary>Not a refusal: the sentence of a connection test that found every required field stored.</summary>
+    public const string INTEGRATION_TEST_CONFIGURED = "INTEGRATION_TEST_CONFIGURED";
+
+    /// <summary>Not a refusal: the sentence of a connection test that found required fields empty; the field names follow it.</summary>
+    public const string INTEGRATION_TEST_FIELDS_MISSING = "INTEGRATION_TEST_FIELDS_MISSING";
+
+    /// <summary>Not a refusal: the sentence of a gateway probe that the gateway answered and accepted.</summary>
+    public const string INTEGRATION_TEST_GATEWAY_OK = "INTEGRATION_TEST_GATEWAY_OK";
+
+    /// <summary>Not a refusal: the sentence of a gateway probe that failed; the gateway's own text stays in the log.</summary>
+    public const string INTEGRATION_TEST_GATEWAY_FAILED = "INTEGRATION_TEST_GATEWAY_FAILED";
+
     // Products
 
     /// <summary>The id names no product group (404).</summary>
@@ -1629,8 +1672,20 @@ public static class HostpanelErrorCodes
     /// <summary>A credit note needs at least one valid line and a reason (400).</summary>
     public const string CREDIT_NOTE_ITEMS_REQUIRED = Domain.Billing.BillingErrors.CreditNoteItemsRequired;
 
-    /// <summary>The credit note is not in the state the action needs (409).</summary>
+    /// <summary>Only a draft credit note can be issued, and this one already has a number (409).</summary>
     public const string CREDIT_NOTE_INVALID_STATE = Domain.Billing.BillingErrors.CreditNoteInvalidState;
+
+    /// <summary>A credit note is applied only once it is issued, and this one is a draft, already applied or voided (409).</summary>
+    public const string CREDIT_NOTE_NOT_ISSUED = Domain.Billing.BillingErrors.CreditNoteNotIssued;
+
+    /// <summary>A gateway refund credit note is applied with the gateway's reference of the refund it paid out, and none was given (409).</summary>
+    public const string CREDIT_NOTE_REFUND_REFERENCE_REQUIRED = Domain.Billing.BillingErrors.CreditNoteRefundReferenceRequired;
+
+    /// <summary>A draft credit note was never issued, so there is nothing to void (409).</summary>
+    public const string CREDIT_NOTE_DRAFT_NOT_VOIDABLE = Domain.Billing.BillingErrors.CreditNoteDraftNotVoidable;
+
+    /// <summary>More credit note value is released from the invoice than its credit notes ever noted on it (409).</summary>
+    public const string INVOICE_CREDIT_NOTED_EXCEEDED = Domain.Billing.BillingErrors.InvoiceCreditNotedExceeded;
 
     /// <summary>The credit note was already voided (409).</summary>
     public const string CREDIT_NOTE_ALREADY_VOIDED = Domain.Billing.BillingErrors.CreditNoteAlreadyVoided;
@@ -1829,10 +1884,24 @@ public static class HostpanelErrorCodes
     public const string DOMAIN_FIELD_UNKNOWN = "DOMAIN_FIELD_UNKNOWN";
 
     /// <summary>
-    /// The order is not Pending (400): <see cref="Domain.Orders.Order.Accept"/>,
-    /// <see cref="Domain.Orders.Order.Cancel"/> and <see cref="Domain.Orders.Order.MarkFraud"/>.
+    /// The order is not Pending, so it cannot be accepted (400): <see cref="Domain.Orders.Order.Accept"/>.
     /// </summary>
     public const string ORDER_NOT_PENDING = Domain.Orders.OrdersErrors.OrderNotPending;
+
+    /// <summary>
+    /// The order is not Pending, so it cannot be cancelled (400): <see cref="Domain.Orders.Order.Cancel"/>.
+    /// </summary>
+    public const string ORDER_CANCEL_NOT_PENDING = Domain.Orders.OrdersErrors.OrderCancelNotPending;
+
+    /// <summary>
+    /// The order is not Pending, so it cannot be marked as fraud (400): <see cref="Domain.Orders.Order.MarkFraud"/>.
+    /// </summary>
+    public const string ORDER_FRAUD_NOT_PENDING = Domain.Orders.OrdersErrors.OrderFraudNotPending;
+
+    /// <summary>
+    /// The order is not Pending, so it cannot be held for review (400): <see cref="Domain.Orders.Order.HoldForReview"/>.
+    /// </summary>
+    public const string ORDER_HOLD_NOT_PENDING = Domain.Orders.OrdersErrors.OrderHoldNotPending;
 
     /// <summary>
     /// The order was not accepted (400): only an Active or Incomplete order has lines to fulfil.
@@ -1977,8 +2046,17 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PRODUCT_OPTION_GROUP_ORDER_MISMATCH = "PRODUCT_OPTION_GROUP_ORDER_MISMATCH";
 
-    /// <summary>The service is not Active (400): <see cref="Domain.Services.ClientService.Suspend"/>.</summary>
+    /// <summary>The service is not Active, so it cannot be suspended (400): <see cref="Domain.Services.ClientService.Suspend"/>.</summary>
     public const string SERVICE_NOT_ACTIVE = Domain.Services.ServicesErrors.ServiceNotActive;
+
+    /// <summary>The service is not Active, so it cannot change plan (400): <see cref="Domain.Services.ClientService.ChangePlan"/>.</summary>
+    public const string SERVICE_PLAN_CHANGE_NOT_ACTIVE = Domain.Services.ServicesErrors.ServicePlanChangeNotActive;
+
+    /// <summary>The service is not Active, so its suspended SSH keys are not restored (400).</summary>
+    public const string SERVICE_SSH_KEYS_RESTORE_NOT_ACTIVE = "SERVICE_SSH_KEYS_RESTORE_NOT_ACTIVE";
+
+    /// <summary>The service is terminated and its hosting account removed, so the panel has nothing to act on (400).</summary>
+    public const string SERVICE_HOSTING_ACCOUNT_REMOVED = "SERVICE_HOSTING_ACCOUNT_REMOVED";
 
     /// <summary>The service is already terminated (400): <see cref="Domain.Services.ClientService.Terminate"/>.</summary>
     public const string SERVICE_TERMINATE_NOT_ALLOWED = Domain.Services.ServicesErrors.ServiceTerminateNotAllowed;
@@ -1986,8 +2064,14 @@ public static class HostpanelErrorCodes
     /// <summary>The service is not Suspended (400): <see cref="Domain.Services.ClientService.Unsuspend"/>.</summary>
     public const string SERVICE_NOT_SUSPENDED = Domain.Services.ServicesErrors.ServiceNotSuspended;
 
-    /// <summary>Staff asked for a status the service cannot be moved to (400), when <see cref="Domain.Services.ClientService.CanChangeStatusTo"/> refuses it.</summary>
-    public const string SERVICE_STATUS_CHANGE_NOT_ALLOWED = Domain.Services.ServicesErrors.ServiceStatusChangeNotAllowed;
+    /// <summary>A terminated service was asked to change status (400): <see cref="Domain.Services.ClientService.StatusChangeRefusal"/>.</summary>
+    public const string SERVICE_TERMINATED_STATUS_LOCKED = Domain.Services.ServicesErrors.ServiceTerminatedStatusLocked;
+
+    /// <summary>A service was asked to go back to Pending (400): <see cref="Domain.Services.ClientService.StatusChangeRefusal"/>.</summary>
+    public const string SERVICE_STATUS_PENDING_UNREACHABLE = Domain.Services.ServicesErrors.ServiceStatusPendingUnreachable;
+
+    /// <summary>A pending service was asked to become Active or Suspended before its activation (400): <see cref="Domain.Services.ClientService.StatusChangeRefusal"/>.</summary>
+    public const string SERVICE_PENDING_NOT_ACTIVATED = Domain.Services.ServicesErrors.ServicePendingNotActivated;
 
     /// <summary>A hold date without the hold, or a termination reason without the end-of-cycle termination (400), from <see cref="Domain.Services.ClientService.ConfigureAutomation"/>.</summary>
     public const string SERVICE_AUTOMATION_INCONSISTENT = Domain.Services.ServicesErrors.ServiceAutomationInconsistent;

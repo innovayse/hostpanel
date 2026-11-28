@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Common;
+using Innovayse.Hostpanel.Application.Clients.Queries.FindClientIds;
 using Innovayse.Hostpanel.Application.Clients.Queries.GetClientBriefs;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
@@ -6,8 +7,8 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Clients.Extensions;
 
 /// <summary>
-/// The shapes other modules ask <see cref="GetClientBriefsQuery"/> in, so each caller dispatches
-/// the query the same way instead of reading the Clients tables.
+/// The shapes other modules ask <see cref="GetClientBriefsQuery"/> and <see cref="FindClientIdsQuery"/> in, so each caller
+/// dispatches the query the same way instead of reading the Clients tables.
 /// </summary>
 public static class ClientBriefBusExtensions
 {
@@ -126,6 +127,29 @@ public static class ClientBriefBusExtensions
         var briefs = await SendAsync(bus, new GetClientBriefsQuery(UserSubjects: userSubjects), ct);
 
         return briefs.ToDictionary(b => b.UserSubject, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// The ids of the clients a list's search text names (by first name, last name, full name, company, sign-in address or
+    /// account name), for a list that shows a client per row and keeps the rows of these clients next to its own text matches.
+    /// </summary>
+    /// <param name="bus">The Wolverine bus to dispatch the query through.</param>
+    /// <param name="term">What the person typed; blank means no search and matches no client.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The matching client ids, at most one search's worth, or none when the term is blank.</returns>
+    public static async Task<IReadOnlyList<int>> FindClientIdsMatchingAsync(
+        this IMessageBus bus, string? term, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+
+        if (string.IsNullOrWhiteSpace(term))
+        {
+            return [];
+        }
+
+        var result = await bus.InvokeAsync<Result<IReadOnlyList<int>>>(new FindClientIdsQuery(term.Trim()), ct);
+
+        return result.Value ?? [];
     }
 
     /// <summary>The failure for a client id that a restricting foreign key should have kept alive.</summary>

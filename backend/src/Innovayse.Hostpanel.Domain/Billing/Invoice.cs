@@ -1059,7 +1059,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <see langword="true"/> when the invoice began waiting now and the caller should announce it;
     /// <see langword="false"/> when it was already waiting.
     /// </returns>
-    /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAYABLE</c> when the invoice is neither Unpaid nor Overdue, or owes nothing.</exception>
+    /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAYABLE</c> when the invoice is neither Unpaid nor Overdue, <c>INVOICE_NOTHING_DUE</c> when it owes nothing.</exception>
     public bool RequestBankTransfer(DateTimeOffset at)
     {
         if (IsBankTransferPending)
@@ -1070,7 +1070,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         EnsurePayable();
         if (AmountDue <= 0m)
         {
-            throw new DomainRuleException(BillingErrors.InvoiceNotPayable, "Invoice owes nothing, so there is nothing to transfer.");
+            throw new DomainRuleException(BillingErrors.InvoiceNothingDue, "Invoice owes nothing, so there is nothing to transfer.");
         }
 
         Status = InvoiceStatus.PaymentPending;
@@ -1614,7 +1614,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <summary>Takes a voided credit note's amount back out of <see cref="CreditNotedAmount"/>, so the invoice can be credited or refunded again.</summary>
     /// <param name="total">The voided credit note's total; greater than 0.</param>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="total"/> is not positive.</exception>
-    /// <exception cref="DomainRuleException"><c>CREDIT_NOTE_INVALID_STATE</c> when more is released than was noted.</exception>
+    /// <exception cref="DomainRuleException"><c>INVOICE_CREDIT_NOTED_EXCEEDED</c> when more is released than was noted.</exception>
     public void RemoveCreditNoted(decimal total)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(total);
@@ -1622,7 +1622,7 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         if (total > CreditNotedAmount)
         {
             throw new DomainRuleException(
-                BillingErrors.CreditNoteInvalidState, $"Cannot release {total} of credit notes: only {CreditNotedAmount} is noted.");
+                BillingErrors.InvoiceCreditNotedExceeded, $"Cannot release {total} of credit notes: only {CreditNotedAmount} is noted.");
         }
 
         CreditNotedAmount -= total;

@@ -53,7 +53,7 @@ public sealed class GetServiceCredentialsHandler
     /// <returns>
     /// The service's current credentials, or <c>SERVICE_NOT_FOUND</c> when the id names no
     /// service, <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
-    /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server, or
     /// the panel's own refusal code (<see cref="PanelErrorCodes"/>) when a panel plugin refuses, including
     /// <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin has no login capability, or

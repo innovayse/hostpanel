@@ -234,6 +234,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   test knows and for a plugin that implements `IPluginStatus`; the admin hides Test Connection otherwise, and the route
   answers 400 `INTEGRATION_NOT_TESTABLE` for such a plugin. The admin card and the status sidebar show the state
   (`integrations.connectionState.*`, tone from `lib/tones.ts`) with the API's sentence.
+- **Built-in integration texts belong to the admin.** `IntegrationCatalogue` carries no wording: the `Name` of a built-in list item,
+  detail and definition, the `Label` of its fields and its `OptionLabels` are `null`. The admin words them in one place,
+  `types/integrationmeta.ts`, keyed by `IntegrationSlug` and the `IntegrationFieldKey` enum (the API's field keys), and
+  `stores/integrations.ts` fills them for an entry that is not a plugin; a plugin's texts arrive finished in the request language.
+  The category stays a stable name the admin maps to its own labels.
 - **Enums live in `Enums/` namespaces** (`Domain/<Area>/Enums/`, `SharedKernel/Domain/Enums/`,
   `Infrastructure/Email/Enums/`); `EnumPlacementTests` enforces it.
 - **Domain refusals are `DomainException(code, message)`** (abstract, in the kernel); the exception
@@ -1711,12 +1716,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   linked user with no record of their own acts on the account they are linked to.
 - **Architecture tests** (`Architecture.Tests`): `ControllerBase`, `ExplicitConstructor`,
   `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`, `PluginNeutralCore`,
-  plus resource coverage, kernel purity, SDK contract and use-case shape. Application types carry
+  plus resource coverage, kernel purity and SDK contract. Application types carry
   no vendor names (`GetPanelSsoUrl`, `TestServerConnection`).
-- **A test per use case, enforced.** `UseCaseShapeTests` fails when
-  `Application/<Feature>/{Commands,Queries}/<UseCase>/` has no
-  `Integration.Tests/<Feature>/<UseCase>Tests.cs` (crons and event handlers under `Commands`
-  count as use cases).
 - **Time comes from `IClock`; timestamps are stamped on save.** `IClock`
   (`Application/Common/Interfaces/`) is the port, `Infrastructure/Time/SystemClock` reads the
   registered `TimeProvider`, so a test that swaps `TimeProvider` moves both. `IClock.TimeZone` is the host zone
@@ -2260,8 +2261,9 @@ feature does not exist is not kept. The decisions:
   cached whole. The SSH keys of a service (`ListMySshKeys`) are the few keys of one of the caller's own services, shown whole on that service. The credit notes of a client
   (`ListMyCreditNotes`) are the caller's own account's only, a short list the portal's credit notes page shows whole; the list is scoped by the credential and not by a client id, so no screen can ask for more than its own.
   The billable item list (`ListBillableItemsQuery`, the admin Billable Items screen) is on it with `SearchIncludingId` on the description and id and
-  `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it does not search the client name,
-  which only the Clients module can read, so the screen filters by a client chosen from the client picker. The billable items tab of a client
+  `ClientId`, `Type` and `Invoiced` filters (type and invoiced together cover the screen's six status choices); it also finds the items of the clients
+  whose name, company or sign-in address matches the text: Billing asks the Clients module for those ids (`FindClientIdsQuery`, sent through
+  `ClientBriefBusExtensions.FindClientIdsMatchingAsync`, which looks in the client row and, through `IdentitySearchExtensions.FindSubjectsAsync`, in the identity provider) and passes them to `Matching(query, clientsMatchingSearch)`, which keeps them with `SearchIncludingIdOrMatching`. The same holds for the staff invoice, quote, transaction and credit note lists; a client's own tab does not pass the ids, since its rows are one client's. The billable items tab of a client
   (`ListClientBillableItemsQuery`: `ClientId`, `Page`, `PageSize`, `Search`, `Type`) shares the `IBillableItemListFilters` (`Type`) with it, validated once by
   `BillableItemListQueryValidator<T>` and applied once by `BillableItemFilterExtensions.Matching`, so the search and
   the type narrow the uninvoiced list and the invoiced list alike, while `Page` and `PageSize` cut the invoiced list only. The cancellation request list
@@ -2270,8 +2272,8 @@ feature does not exist is not kept. The decisions:
   The invoice lists (`ListInvoicesQuery`, the admin Invoices screen, and `ListClientInvoicesQuery`, the invoices tab of a client) are on it
   with `SearchIncludingId` over the invoice id and its payment method and the shared `IInvoiceListFilters` (`Status`, `From`, `To`),
   validated once by `InvoiceListQueryValidator<T>` and applied once by `InvoiceFilterExtensions.Matching`; the staff list adds `ClientId`, and
-  the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list does not search the client name, which only the Clients
-  module can read, so it offers the client as a picker (`ClientId`, `useClientOptions`) and Billing never joins the client tables. The credit
+  the screens share `useInvoiceFilters` and `InvoiceFilterFields`. The staff list also searches the client (name, company, sign-in address) through the ids the Clients module answers, and offers the client as a picker
+  (`ClientId`, `useClientOptions`); Billing never joins the client tables. The credit
   note list (`ListCreditNotesQuery`) is on it with `SearchIncludingId` over the number, the reason and the refund reference and `InvoiceId`,
   `ClientId`, `Status` and `Method` filters. The two billing lists that offer a period, the invoice lists and the transaction lists, take it through `IPeriodListFilter` (see the paragraph on the
   logs above): `From` and `To` are bare days (`DateOnly`, bound from `yyyy-MM-dd`; a timestamp is a 400), applied by `DateRangeExtensions.InPeriod` in `Common/Extensions`,
@@ -3216,7 +3218,8 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
 
 `backend/tests/` has three projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`.
 **There is no `Application.Tests` or
-`Infrastructure.Tests`**: use-case tests are `Integration.Tests/<Feature>/<UseCase>Tests.cs`
+`Infrastructure.Tests`**: the use-case tests that exist live in `Integration.Tests/<Feature>/`, one file per use case
+by convention only, nothing enforces it and no new ones are written (owner decision 2026-11-27)
 (Testcontainers Postgres, fakes in `Fixtures/` for external ports only), and adapter tests live in
 `Integration.Tests/Adapters/{Auth,Billing,Integrations}`. Do not add either project.
 `Integration.Tests/Security/LeakGuardTests` guards against leaking secrets/internals in
@@ -3358,7 +3361,6 @@ Never spread one of these, and never restructure as a side effect of a feature.
 | Entity, domain event, enum | `backend/src/Innovayse.Hostpanel.Domain/<Area>/` (`Events/`, `Enums/`) |
 | EF configuration, migration, adapter | `backend/src/Innovayse.Hostpanel.Infrastructure/` |
 | External service client | `.../Infrastructure/Integrations/<Provider>/` |
-| Use-case test | `backend/tests/Innovayse.Hostpanel.Integration.Tests/<Feature>/<UseCase>Tests.cs` |
 | Options class | `.../<Feature or Integration>/Options/<Name>Options.cs` |
 | Portal page / section | `client/templates/<template>/pages/`, `.../sections/` |
 | Shared component | `client/components/`, `client/components/ui/` |

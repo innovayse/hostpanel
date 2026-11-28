@@ -28,7 +28,7 @@ public sealed class ListInvoiceFulfilmentTests(IntegrationTestFactory factory) :
         using var scenario = new FulfilmentScenario(factory);
         var invoiceId = await scenario.SeedInvoiceAsync();
         await scenario.SeedRecordsAsync(invoiceId, FulfilmentKind.Paid);
-        var failedId = await scenario.SeedFailedRecordAsync(invoiceId, FulfilmentKind.Refunded, "plugin said no");
+        var failedId = await scenario.SeedFailedRecordAsync(invoiceId, FulfilmentKind.Refunded, BillingErrors.FulfilmentPluginFailed);
         var admin = await AuthTestSeeds.AdminClientAsync(factory, scenario.Host);
 
         var response = await admin.GetAsync($"/api/billing/{invoiceId}/fulfilment");
@@ -43,7 +43,7 @@ public sealed class ListInvoiceFulfilmentTests(IntegrationTestFactory factory) :
         var failed = rows.Single(r => r.GetProperty("id").GetInt32() == failedId);
         failed.GetProperty("status").GetString().Should().Be(nameof(FulfilmentStatus.Failed));
         failed.GetProperty("attempts").GetInt32().Should().Be(FulfilmentRecord.MaxAttempts);
-        failed.GetProperty("lastError").GetString().Should().Be("plugin said no");
+        failed.GetProperty("lastError").GetString().Should().NotBeNullOrWhiteSpace().And.NotBe(BillingErrors.FulfilmentPluginFailed);
         failed.GetProperty("canRetry").GetBoolean().Should().BeTrue();
     }
 

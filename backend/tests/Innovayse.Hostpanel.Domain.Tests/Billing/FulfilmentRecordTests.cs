@@ -33,7 +33,7 @@ public sealed class FulfilmentRecordTests
         {
             at = record.NextAttemptAt;
             record.Claim(at, Lease).Should().BeTrue();
-            record.MarkFailed("plugin said no", at);
+            record.MarkFailed(BillingErrors.FulfilmentPluginFailed, at);
         }
 
         return at;
@@ -51,7 +51,7 @@ public sealed class FulfilmentRecordTests
         record.Status.Should().Be(FulfilmentStatus.Pending);
         record.Attempts.Should().Be(0);
         record.NextAttemptAt.Should().Be(Now);
-        record.LastError.Should().BeNull();
+        record.LastErrorCode.Should().BeNull();
         record.CompletedAt.Should().BeNull();
         record.IsDue(Now).Should().BeTrue();
         record.CanRetry.Should().BeFalse();
@@ -105,7 +105,7 @@ public sealed class FulfilmentRecordTests
 
         record.Status.Should().Be(FulfilmentStatus.Done);
         record.CompletedAt.Should().Be(retryAt.AddSeconds(2));
-        record.LastError.Should().BeNull();
+        record.LastErrorCode.Should().BeNull();
         record.IsDue(failedAt.AddDays(1)).Should().BeFalse();
         record.CanRetry.Should().BeFalse();
     }
@@ -127,10 +127,10 @@ public sealed class FulfilmentRecordTests
         var record = NewRecord();
         record.Claim(Now, Lease);
 
-        record.MarkFailed("plugin said no", Now.AddSeconds(3));
+        record.MarkFailed(BillingErrors.FulfilmentPluginFailed, Now.AddSeconds(3));
 
         record.Status.Should().Be(FulfilmentStatus.Pending);
-        record.LastError.Should().Be("plugin said no");
+        record.LastErrorCode.Should().Be(BillingErrors.FulfilmentPluginFailed);
         record.NextAttemptAt.Should().Be(Now.AddSeconds(3) + TimeSpan.FromSeconds(30));
         record.CanRetry.Should().BeFalse();
     }
@@ -174,18 +174,6 @@ public sealed class FulfilmentRecordTests
         record.CanRetry.Should().BeTrue();
     }
 
-    /// <summary>An error longer than the column holds is cut to its start.</summary>
-    [Fact]
-    public void MarkFailed_LongError_IsTruncated()
-    {
-        var record = NewRecord();
-        record.Claim(Now, Lease);
-
-        record.MarkFailed(new string('e', FulfilmentRecord.MaxErrorLength + 500), Now);
-
-        record.LastError.Should().HaveLength(FulfilmentRecord.MaxErrorLength);
-    }
-
     /// <summary>
     /// A claim that expired without an answer is due again, and the next claim records it as a failed attempt
     /// and schedules its back-off instead of calling the plugin at once.
@@ -202,7 +190,7 @@ public sealed class FulfilmentRecordTests
 
         record.Status.Should().Be(FulfilmentStatus.Pending);
         record.Attempts.Should().Be(1);
-        record.LastError.Should().Be(FulfilmentRecord.AbandonedAttemptError);
+        record.LastErrorCode.Should().Be(BillingErrors.FulfilmentAttemptAbandoned);
         record.NextAttemptAt.Should().Be(expired + FulfilmentRecord.BackoffAfter(1));
     }
 
@@ -218,7 +206,7 @@ public sealed class FulfilmentRecordTests
         record.Claim(lastStart + Lease, Lease).Should().BeFalse();
 
         record.Status.Should().Be(FulfilmentStatus.Failed);
-        record.LastError.Should().Be(FulfilmentRecord.AbandonedAttemptError);
+        record.LastErrorCode.Should().Be(BillingErrors.FulfilmentAttemptAbandoned);
     }
 
     /// <summary>A staff retry of a failed record makes it pending and due at once, with a fresh attempt allowance and the last error kept.</summary>
@@ -234,7 +222,7 @@ public sealed class FulfilmentRecordTests
         record.Status.Should().Be(FulfilmentStatus.Pending);
         record.Attempts.Should().Be(0);
         record.NextAttemptAt.Should().Be(retryAt);
-        record.LastError.Should().Be("plugin said no");
+        record.LastErrorCode.Should().Be(BillingErrors.FulfilmentPluginFailed);
         record.IsDue(retryAt).Should().BeTrue();
     }
 

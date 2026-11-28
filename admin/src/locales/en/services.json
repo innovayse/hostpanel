@@ -3,7 +3,7 @@
     "services": "Services",
     "viewAndManageAllClient": "View and manage all client hosted services",
     "noServicesFound": "No services found",
-    "searchServices": "Search by domain, product or ID",
+    "searchServices": "Search by domain, product, client or ID",
     "noServicesMatchYourFilters": "No services match your filters"
   }
 }

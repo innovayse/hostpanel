@@ -76,7 +76,8 @@ public sealed class LocalIdentityProvider : IIdentityProvider
             accounts = accounts.Where(u =>
                 (u.NormalizedEmail != null && u.NormalizedEmail.Contains(term)) ||
                 u.FirstName.ToUpper().Contains(term) ||
-                u.LastName.ToUpper().Contains(term));
+                u.LastName.ToUpper().Contains(term) ||
+                (u.FirstName + " " + u.LastName).ToUpper().Contains(term));
         }
 
         // Counted before paging, so the caller can say "page 2 of 9" rather than only

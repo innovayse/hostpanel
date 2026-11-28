@@ -25,7 +25,7 @@ Three test projects:
 
 **`Innovayse.Hostpanel.Domain.Tests`**: unit tests for domain logic.
 
-**`Innovayse.Hostpanel.Integration.Tests`**: one file per use case at `Integration.Tests/<Feature>/<UseCase>Tests.cs`. `UseCaseShapeTests` fails if a use case handler has no matching test file. This suite starts its own database container, so no external database is needed. CI shards it across parallel runners; if you add a new top-level feature folder, add it to a shard in `scripts/check-integration-shards.sh`.
+**`Innovayse.Hostpanel.Integration.Tests`**: one file per use case at `Integration.Tests/<Feature>/<UseCase>Tests.cs`. This suite starts its own database container, so no external database is needed. CI shards it across parallel runners; if you add a new top-level feature folder, add it to a shard in `scripts/check-integration-shards.sh`.
 
 **`Innovayse.Hostpanel.Architecture.Tests`**: enforces structural rules:
 
@@ -33,7 +33,6 @@ Three test projects:
 |------------|---------------|
 | `PortPlacementTests` | All `I<Port>` interfaces are in `Application/Common/Interfaces/` |
 | `DatabaseIdentifierNamingTests` | All table, column and key names are PascalCase |
-| `UseCaseShapeTests` | Every handler has a matching integration test file |
 | `ResourceCoverageTests` | Every error code has a sentence in `ErrorMessages.resx` |
 
 `ModelDiffBaselineTests` lives in `Integration.Tests/Persistence` and checks that the EF model matches the latest migration.

@@ -30,7 +30,7 @@ public static class TextSearchExtensions
     public static IQueryable<T> Search<T>(
         this IQueryable<T> source, string? term, params Expression<Func<T, string?>>[] columns)
     {
-        return source.SearchCore(term, idColumn: null, columns);
+        return source.SearchCore(term, idColumn: null, alsoMatches: null, columns);
     }
 
     /// <summary>
@@ -48,7 +48,33 @@ public static class TextSearchExtensions
     {
         ArgumentNullException.ThrowIfNull(idColumn);
 
-        return source.SearchCore(term, idColumn, columns);
+        return source.SearchCore(term, idColumn, alsoMatches: null, columns);
+    }
+
+    /// <summary>
+    /// Keeps the rows where any of the columns contains the search text, in any letter case, or whose id is the
+    /// term when the term is a whole number, or that <paramref name="alsoMatches"/> accepts: the way to search a value
+    /// the row does not hold itself (a sign-in email kept by the identity provider), where the caller has already
+    /// asked for the rows that value matches.
+    /// </summary>
+    /// <typeparam name="T">The row type.</typeparam>
+    /// <param name="source">The query to narrow.</param>
+    /// <param name="term">What the person typed; blank means no search.</param>
+    /// <param name="idColumn">Selects the row's id.</param>
+    /// <param name="alsoMatches">A further condition that makes a row match, prepared by the caller for this term.</param>
+    /// <param name="columns">The text to look in, one selector each.</param>
+    /// <returns>The query narrowed by the search, or <paramref name="source"/> when the term is blank.</returns>
+    public static IQueryable<T> SearchIncludingIdOrMatching<T>(
+        this IQueryable<T> source,
+        string? term,
+        Expression<Func<T, int>> idColumn,
+        Expression<Func<T, bool>> alsoMatches,
+        params Expression<Func<T, string?>>[] columns)
+    {
+        ArgumentNullException.ThrowIfNull(idColumn);
+        ArgumentNullException.ThrowIfNull(alsoMatches);
+
+        return source.SearchCore(term, idColumn, alsoMatches, columns);
     }
 
     /// <summary>
@@ -98,10 +124,13 @@ public static class TextSearchExtensions
     /// <param name="source">The query to narrow.</param>
     /// <param name="term">What the person typed; blank means no search.</param>
     /// <param name="idColumn">Selects the row's id, or <see langword="null"/> when the search does not look at ids.</param>
+    /// <param name="alsoMatches">A further condition that makes a row match, or <see langword="null"/> for none.</param>
     /// <param name="columns">The text to look in, one selector each.</param>
     /// <returns>The query narrowed by the search, or <paramref name="source"/> when the term is blank.</returns>
     private static IQueryable<T> SearchCore<T>(
-        this IQueryable<T> source, string? term, Expression<Func<T, int>>? idColumn, Expression<Func<T, string?>>[] columns)
+        this IQueryable<T> source, string? term, Expression<Func<T, int>>? idColumn,
+        Expression<Func<T, bool>>? alsoMatches,
+        Expression<Func<T, string?>>[] columns)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(columns);
@@ -124,6 +153,12 @@ public static class TextSearchExtensions
             var rowId = new ParameterReplacer(idColumn.Parameters[0], row).Visit(idColumn.Body);
             var sameId = Expression.Equal(Expression.Convert(rowId, typeof(int?)), Expression.Property(holder, nameof(TextSearchTerm.Id)));
             predicate = predicate is null ? sameId : Expression.OrElse(sameId, predicate);
+        }
+
+        if (alsoMatches is not null)
+        {
+            var alsoMatchesRow = new ParameterReplacer(alsoMatches.Parameters[0], row).Visit(alsoMatches.Body);
+            predicate = predicate is null ? alsoMatchesRow : Expression.OrElse(predicate, alsoMatchesRow);
         }
 
         // No column and no id column: there is nothing to look in, so the search cannot match anything.

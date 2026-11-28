@@ -176,7 +176,7 @@
   "supportTickets": {
     "supportTickets": "Support Tickets",
     "manageAllClientSupportRequests": "Manage all client support requests",
-    "searchTicketsBySubject": "Search tickets by subject",
+    "searchTicketsBySubject": "Search by subject or ticket ID",
     "flag": "Flag",
     "unflag": "Unflag",
     "noRepliesYet": "No replies yet",

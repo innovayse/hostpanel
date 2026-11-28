@@ -49,8 +49,8 @@ public static class PluginSettingMappingExtensions
 
         if (setting.IsSecret())
         {
-            return new FieldDefinitionDto(setting.Key, label, IntegrationFieldType.Secret, setting.Required,
-                Description: description, Placeholder: placeholder);
+            return new FieldDefinitionDto(setting.Key, IntegrationFieldType.Secret, setting.Required,
+                Description: description, Placeholder: placeholder, Label: label);
         }
 
         var type = setting.Type switch
@@ -79,12 +79,13 @@ public static class PluginSettingMappingExtensions
             optionLabels = labels;
         }
 
-        return new FieldDefinitionDto(setting.Key, label, type, setting.Required,
+        return new FieldDefinitionDto(setting.Key, type, setting.Required,
             options,
             setting.Type == PluginSettingType.Number ? setting.Min : null,
             setting.Type == PluginSettingType.Number ? setting.Max : null,
             description,
             placeholder,
-            optionLabels);
+            optionLabels,
+            label);
     }
 }

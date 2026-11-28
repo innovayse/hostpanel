@@ -27,7 +27,7 @@ public sealed class GetPanelLoginDetailsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The details without a password, or the refusal of the shared read: <c>SERVICE_NOT_FOUND</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin has no login
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin has no login
     /// capability, the panel's own refusal code, or <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c>.
     /// </returns>
     public async Task<Result<PanelLoginDetailsDto>> HandleAsync(GetPanelLoginDetailsQuery query, CancellationToken ct)

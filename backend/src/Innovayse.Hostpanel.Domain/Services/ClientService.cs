@@ -182,26 +182,44 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     public bool CanTerminate => Status is not ServiceStatus.Terminated;
 
     /// <summary>
-    /// Whether staff may move the service to <paramref name="target"/>. Asking for the current status
+    /// Gets the statuses staff may pick for the service: the current one (a no-op) and every status
+    /// <see cref="StatusChangeRefusal"/> accepts. The one source of the status table, so a screen offers
+    /// exactly the moves the domain allows.
+    /// </summary>
+    public IReadOnlyList<ServiceStatus> AllowedStatuses =>
+        Enum.GetValues<ServiceStatus>().Where(target => StatusChangeRefusal(target) is null).ToList();
+
+    /// <summary>
+    /// Says why staff may not move the service to <paramref name="target"/>. Asking for the current status
     /// is a no-op and always allowed; otherwise Active and Suspended swap through
     /// <see cref="Suspend"/> and <see cref="Unsuspend"/>, and Pending, Active or Suspended end through
-    /// <see cref="Terminate"/>. Nothing reaches Pending, and nothing leaves Terminated.
+    /// <see cref="Terminate"/>. Nothing reaches Pending, a Pending service leaves it only by being
+    /// activated or terminated, and nothing leaves Terminated.
     /// </summary>
     /// <param name="target">The status asked for.</param>
-    /// <returns><see langword="true"/> when the matching transition accepts the service.</returns>
-    public bool CanChangeStatusTo(ServiceStatus target)
+    /// <returns>
+    /// <see langword="null"/> when the move is allowed, otherwise the code of the reason:
+    /// <see cref="ServicesErrors.ServiceTerminatedStatusLocked"/>, <see cref="ServicesErrors.ServiceStatusPendingUnreachable"/>
+    /// or <see cref="ServicesErrors.ServicePendingNotActivated"/>.
+    /// </returns>
+    public string? StatusChangeRefusal(ServiceStatus target)
     {
         if (target == Status)
         {
-            return true;
+            return null;
+        }
+
+        if (Status is ServiceStatus.Terminated)
+        {
+            return ServicesErrors.ServiceTerminatedStatusLocked;
         }
 
         return target switch
         {
-            ServiceStatus.Active => CanUnsuspend,
-            ServiceStatus.Suspended => CanSuspend,
-            ServiceStatus.Terminated => CanTerminate,
-            _ => false,
+            ServiceStatus.Active => CanUnsuspend ? null : ServicesErrors.ServicePendingNotActivated,
+            ServiceStatus.Suspended => CanSuspend ? null : ServicesErrors.ServicePendingNotActivated,
+            ServiceStatus.Terminated => null,
+            _ => ServicesErrors.ServiceStatusPendingUnreachable,
         };
     }
 
@@ -619,7 +637,7 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         if (Status is not ServiceStatus.Active)
         {
             throw new DomainRuleException(
-                ServicesErrors.ServiceNotActive, $"Cannot change the plan of a service with status {Status}.");
+                ServicesErrors.ServicePlanChangeNotActive, $"Cannot change the plan of a service with status {Status}.");
         }
 
         ProductId = productId;

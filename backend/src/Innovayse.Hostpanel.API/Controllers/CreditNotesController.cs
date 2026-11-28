@@ -135,7 +135,8 @@ public sealed class CreditNotesController : BaseApiController
     /// 204 when voided; 400 when the reason is refused, or with <c>CLIENT_CREDIT_INSUFFICIENT</c> when the client has already
     /// spent the credit the note gave; 401 without a session; 403 for a caller who is not an admin; 404 with
     /// <c>CREDIT_NOTE_NOT_FOUND</c> when the id names no note; 409 with <c>CREDIT_NOTE_ALREADY_VOIDED</c>,
-    /// <c>CREDIT_NOTE_REFUND_NOT_VOIDABLE</c> for a note paid out as a gateway refund, or the concurrency conflict;
+    /// <c>CREDIT_NOTE_DRAFT_NOT_VOIDABLE</c> for a draft, <c>CREDIT_NOTE_REFUND_NOT_VOIDABLE</c> for a note paid out as a gateway
+    /// refund, <c>INVOICE_CREDIT_NOTED_EXCEEDED</c> when the invoice holds less credit note value than the note, or the concurrency conflict;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/void")]

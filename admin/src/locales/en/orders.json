@@ -30,7 +30,7 @@
   },
   "ordersList": {
     "manageCustomerOrders": "Manage customer orders",
-    "searchOrders": "Search orders by number or id",
+    "searchOrders": "Search by order number, id or client",
     "order": "Order #",
     "items": "Items",
     "noOrdersFound": "No orders found",

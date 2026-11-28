@@ -1,7 +1,7 @@
 {
   "domainsList": {
     "manageAllRegisteredDomainNames": "Հաճախորդների բոլոր գրանցված դոմեյնային անվանումների կառավարում",
-    "searchDomains": "Դոմեյնների որոնում",
+    "searchDomains": "Որոնում ըստ դոմենի, հաճախորդի կամ ID-ի",
     "expiresAt": "Ավարտվում է",
     "renewalPrice": "Երկարաձգման գին",
     "regPeriod": "Գրանցման ժամկետ",

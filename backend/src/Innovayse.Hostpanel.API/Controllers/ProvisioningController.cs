@@ -145,7 +145,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the credentials; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>
-    /// when the service has never been provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated or
+    /// when the service has never been provisioned, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when it is terminated or
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service;
     /// 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
     /// 502 with <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c> when the provider cannot return them;
@@ -171,7 +171,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the package names; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c> when the service has never been
-    /// provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated or <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server;
+    /// provisioned, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> when it is terminated or <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server;
     /// 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service;
     /// 409 with a panel code (<c>PANEL_OPERATION_NOT_SUPPORTED</c> when the panel plugin cannot list its packages, or
     /// <c>PANEL_PLUGIN_CONFLICT</c>); 502 with <c>PANEL_ACCESS_DENIED</c>, <c>PANEL_REFUSED</c> or <c>SERVICE_PACKAGES_UPSTREAM_FAILED</c>;
@@ -198,7 +198,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
     /// 502 with <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -223,7 +223,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
     /// 502 with <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c> when the provider rejects the change;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -251,7 +251,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with what was done about each field; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 for a caller who
     /// is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>,
     /// <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server cannot read the
     /// account; 502 with <c>PANEL_ACCESS_DENIED</c>, <c>PANEL_REFUSED</c> or <c>SERVICE_PANEL_SYNC_UPSTREAM_FAILED</c> when the panel cannot be
@@ -278,7 +278,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the control-panel sign-in link; 400 with <c>VALIDATION_ERROR</c>,
-    /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id
+    /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c>; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id
     /// names no service; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
     /// 502 with <c>SERVICE_PANEL_SSO_UPSTREAM_FAILED</c> when the provider cannot
     /// issue one, or <c>SERVICE_PANEL_SSO_URL_UPSTREAM_FAILED</c> when the panel answered an address that is not on its own server;
@@ -307,7 +307,7 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the login details; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or,
-    /// for a terminated service, <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 for a caller who is not staff; 404 with
+    /// for a terminated service, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c>; 401 without a session; 403 for a caller who is not staff; 404 with
     /// <c>SERVICE_NOT_FOUND</c> when the id names no service; 409 with a panel code (<c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin
     /// has no login capability, or another panel refusal code) when the panel plugin that serves the server refuses the request; 502 with
     /// <c>PANEL_ACCESS_DENIED</c>, <c>PANEL_REFUSED</c> or <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c>; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c>

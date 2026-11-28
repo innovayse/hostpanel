@@ -105,7 +105,7 @@ public sealed class RestoreServiceSshKeysTests(IntegrationTestFactory factory) :
 
         var outcome = await InvokeAsync(new RestoreServiceSshKeysCommand(serviceId));
 
-        outcome.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        outcome.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_SSH_KEYS_RESTORE_NOT_ACTIVE);
         SshTestSeeds.Agents(factory).AgentFor(serverId).KeysOf("web").Should().BeEmpty();
     }
 

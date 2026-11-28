@@ -49,7 +49,7 @@ description: Փոփոխության յուրաքանչյուր տեսակի ֆա
 
 **3. Ինտեգրացիոն թեստ**
 
-Ստեղծեք `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs` ֆայլը։ Թեստը լցնում է տվյալների բազան, կանչում է endpoint-ը և ստուգում պատասխանի ձևը։ Մինչև այս ֆայլի առաջանալը `UseCaseShapeTests`-ը կխափանվի։
+Ստեղծեք `Innovayse.Hostpanel.Integration.Tests/Labels/GetLabelsTests.cs` ֆայլը։ Թեստը լցնում է տվյալների բազան, կանչում է endpoint-ը և ստուգում պատասխանի ձևը։
 
 **4. Ադմինի store և API կոմպոզաբլ**
 

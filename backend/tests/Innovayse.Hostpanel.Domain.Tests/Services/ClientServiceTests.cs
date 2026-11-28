@@ -234,7 +234,7 @@ public class ClientServiceTests
     }
 
     /// <summary>
-    /// The full status table of <see cref="ClientService.CanChangeStatusTo"/>: from each status (rows)
+    /// The full status table of <see cref="ClientService.StatusChangeRefusal"/>: from each status (rows)
     /// to each target, whether the move is allowed.
     /// </summary>
     /// <param name="from">The status the service is in.</param>
@@ -257,11 +257,11 @@ public class ClientServiceTests
     [InlineData(ServiceStatus.Terminated, ServiceStatus.Active, false)]
     [InlineData(ServiceStatus.Terminated, ServiceStatus.Suspended, false)]
     [InlineData(ServiceStatus.Terminated, ServiceStatus.Terminated, true)]
-    public void CanChangeStatusTo_FollowsTheStatusTable(ServiceStatus from, ServiceStatus target, bool allowed)
+    public void StatusChangeRefusal_FollowsTheStatusTable(ServiceStatus from, ServiceStatus target, bool allowed)
     {
         var svc = InStatus(from);
 
-        Assert.Equal(allowed, svc.CanChangeStatusTo(target));
+        Assert.Equal(allowed, svc.StatusChangeRefusal(target) is null);
     }
 
     /// <summary>

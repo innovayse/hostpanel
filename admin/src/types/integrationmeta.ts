@@ -1,10 +1,10 @@
 /**
- * Display metadata of the integrations screen: the category sections and the catalogue of integrations
- * (label, logo and settings fields) the admin renders.
+ * Display metadata of the integrations screen: the category sections and the catalogue of built-in integrations
+ * (name, logo, description and the wording of their settings fields) the admin renders.
  */
 
-import { IntegrationCategory, IntegrationEncryption, IntegrationFieldType } from '@/types/integration'
-import type { IntegrationMeta, IntegrationSlug } from '@/types/integration'
+import { IntegrationCategory, IntegrationEncryption, IntegrationFieldKey } from '@/types/integration'
+import type { IntegrationFieldMeta, IntegrationMeta, IntegrationSlug } from '@/types/integration'
 import { PluginCategory } from '@/types/plugin'
 import { Icon } from '@/lib/icons'
 import { translate } from '@/lib/translate'
@@ -38,61 +38,126 @@ const logoUrl = (file: string): string =>
 
 /**
  * Static metadata for all supported integrations.
- * Keyed by slug for O(1) lookup.
+ * Keyed by slug for O(1) lookup. This is the one place that words a built-in integration: the API sends
+ * no name, field label or option label for it, and the store resolves them here from the slug and the field key.
  */
 export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
   'bank-transfer': {
     slug: 'bank-transfer',
+    labelKey: 'integrationMeta.bankTransfer.name',
     color: 'bg-green-600',
     logo: logoUrl('bank-transfer.svg'),
     get shortDescription() { return translate('integrationMeta.bankTransfer.shortDescription') },
     category: 'payments',
     fields: [
-      { key: 'accountName', get label() { return translate('integrationMeta.bankTransfer.fieldAccountName') }, type: IntegrationFieldType.Text },
-      { key: 'iban', label: 'IBAN', type: IntegrationFieldType.Text },
-      { key: 'bankName', get label() { return translate('reports.directDebit.bankName') }, type: IntegrationFieldType.Text },
-      { key: 'instructions', get label() { return translate('integrationMeta.bankTransfer.fieldInstructions') }, type: IntegrationFieldType.Textarea },
+      { key: IntegrationFieldKey.AccountName, labelKey: 'integrationMeta.bankTransfer.fieldAccountName' },
+      { key: IntegrationFieldKey.Iban, labelKey: 'integrationMeta.bankTransfer.fieldIban' },
+      { key: IntegrationFieldKey.Swift, labelKey: 'integrationMeta.bankTransfer.fieldSwift' },
+      { key: IntegrationFieldKey.BankName, labelKey: 'reports.directDebit.bankName' },
+      { key: IntegrationFieldKey.Instructions, labelKey: 'integrationMeta.bankTransfer.fieldInstructions' },
+      { key: IntegrationFieldKey.ExpiryDays, labelKey: 'integrationMeta.bankTransfer.fieldExpiryDays' },
     ],
   },
   cpanel: {
     slug: 'cpanel',
+    labelKey: 'integrationMeta.cpanel.name',
     color: 'bg-orange-600',
     logo: logoUrl('cpanel.svg'),
     get shortDescription() { return translate('integrationMeta.cpanel.shortDescription') },
     category: 'provisioning',
     fields: [
-      { key: 'host', get label() { return translate('integrationMeta.cpanel.fieldHost') }, type: IntegrationFieldType.Text },
-      { key: 'port', get label() { return translate('integrationMeta.cpanel.fieldPort') }, type: IntegrationFieldType.Text },
-      { key: 'username', get label() { return translate('shared.username') }, type: IntegrationFieldType.Text },
-      { key: 'apiToken', get label() { return translate('integrationMeta.cpanel.fieldApiToken') }, type: IntegrationFieldType.Password },
+      { key: IntegrationFieldKey.Host, labelKey: 'integrationMeta.cpanel.fieldHost' },
+      { key: IntegrationFieldKey.Port, labelKey: 'integrationMeta.cpanel.fieldPort' },
+      { key: IntegrationFieldKey.Username, labelKey: 'shared.username' },
+      { key: IntegrationFieldKey.ApiToken, labelKey: 'integrationMeta.cpanel.fieldApiToken' },
     ],
   },
   smtp: {
     slug: 'smtp',
+    labelKey: 'integrationMeta.smtp.name',
     color: 'bg-teal-700',
     logo: logoUrl('smtp.svg'),
     get shortDescription() { return translate('integrationMeta.smtp.shortDescription') },
     category: 'email',
     fields: [
-      { key: 'host', get label() { return translate('integrationMeta.smtp.fieldHost') }, type: IntegrationFieldType.Text },
-      { key: 'port', get label() { return translate('integrationMeta.cpanel.fieldPort') }, type: IntegrationFieldType.Text },
-      { key: 'username', get label() { return translate('shared.username') }, type: IntegrationFieldType.Text },
-      { key: 'password', get label() { return translate('shared.password') }, type: IntegrationFieldType.Password },
-      { key: 'fromAddress', get label() { return translate('integrationMeta.smtp.fieldFromAddress') }, type: IntegrationFieldType.Text },
-      { key: 'encryption', get label() { return translate('integrationMeta.smtp.fieldEncryption') }, type: IntegrationFieldType.Select, options: [IntegrationEncryption.Tls, IntegrationEncryption.Ssl, IntegrationEncryption.None] },
+      { key: IntegrationFieldKey.Host, labelKey: 'integrationMeta.smtp.fieldHost' },
+      { key: IntegrationFieldKey.Port, labelKey: 'integrationMeta.cpanel.fieldPort' },
+      { key: IntegrationFieldKey.Username, labelKey: 'shared.username' },
+      { key: IntegrationFieldKey.Password, labelKey: 'shared.password' },
+      { key: IntegrationFieldKey.FromAddress, labelKey: 'integrationMeta.smtp.fieldFromAddress' },
+      {
+        key: IntegrationFieldKey.Encryption,
+        labelKey: 'integrationMeta.smtp.fieldEncryption',
+        options: [{ value: IntegrationEncryption.None, labelKey: 'integrationMeta.smtp.encryptionNone' }],
+      },
     ],
   },
   maxmind: {
     slug: 'maxmind',
+    labelKey: 'integrationMeta.maxmind.name',
     color: 'bg-red-800',
     logo: logoUrl('maxmind.svg'),
     get shortDescription() { return translate('integrationMeta.maxmind.shortDescription') },
     category: 'fraud',
     fields: [
-      { key: 'accountId', get label() { return translate('integrationMeta.maxmind.fieldAccountId') }, type: IntegrationFieldType.Text },
-      { key: 'licenseKey', get label() { return translate('integrationMeta.maxmind.fieldLicenseKey') }, type: IntegrationFieldType.Password },
+      { key: IntegrationFieldKey.AccountId, labelKey: 'integrationMeta.maxmind.fieldAccountId' },
+      { key: IntegrationFieldKey.LicenseKey, labelKey: 'integrationMeta.maxmind.fieldLicenseKey' },
     ],
   },
+}
+
+/**
+ * Finds the catalogue entry of a built-in integration.
+ *
+ * @param slug - Slug of any integration; a plugin's slug is not in the catalogue.
+ * @returns The entry, or undefined when the slug is not a built-in integration.
+ */
+const builtInMetaOf = (slug: string): IntegrationMeta | undefined =>
+  (INTEGRATION_META as Record<string, IntegrationMeta | undefined>)[slug]
+
+/**
+ * Finds the wording of one field of a built-in integration.
+ *
+ * @param slug - Slug of the integration.
+ * @param key - The field's key, as the API sends it.
+ * @returns The field's wording, or undefined when the integration is not built in or declares no wording for that key.
+ */
+const fieldMetaOf = (slug: string, key: string): IntegrationFieldMeta | undefined =>
+  builtInMetaOf(slug)?.fields.find(field => field.key === key)
+
+/**
+ * Words the name of a built-in integration in the operator's language.
+ *
+ * @param slug - Slug of the integration.
+ * @returns The translated name; the slug itself when the integration is not built in.
+ */
+export const builtInIntegrationName = (slug: string): string => {
+  const meta = builtInMetaOf(slug)
+  return meta ? translate(meta.labelKey) : slug
+}
+
+/**
+ * Words the label of a field of a built-in integration in the operator's language.
+ *
+ * @param slug - Slug of the integration.
+ * @param key - The field's key, as the API sends it.
+ * @returns The translated label; the key itself when the integration declares no label for it.
+ */
+export const builtInFieldLabel = (slug: string, key: string): string => {
+  const meta = fieldMetaOf(slug, key)
+  return meta ? translate(meta.labelKey) : key
+}
+
+/**
+ * Words the options of a field of a built-in integration in the operator's language.
+ *
+ * @param slug - Slug of the integration.
+ * @param key - The field's key, as the API sends it.
+ * @returns Option value to translated text for the options that have their own wording; null when none has.
+ */
+export const builtInOptionLabels = (slug: string, key: string): Record<string, string> | null => {
+  const options = fieldMetaOf(slug, key)?.options
+  return options ? Object.fromEntries(options.map(option => [option.value, translate(option.labelKey)])) : null
 }
 
 /**

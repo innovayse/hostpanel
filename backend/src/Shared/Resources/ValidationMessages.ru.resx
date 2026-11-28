@@ -62,31 +62,31 @@
     <value>Ошибка валидации</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>Произошла одна или несколько ошибок валидации.</value>
+    <value>Некоторые введённые значения недопустимы, поэтому ничего не сохранено. Проверьте сообщения рядом с каждым полем, исправьте их и отправьте форму снова.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
     <value>Не авторизован</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>У вас нет прав на выполнение этого действия.</value>
+    <value>Вы не вошли в систему или ваш сеанс истёк, поэтому действие не выполнено. Войдите снова и повторите его.</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
     <value>Ресурс не найден</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>Запрошенный ресурс не найден.</value>
+    <value>Запрошенный элемент не существует или был удалён. Обновите страницу и откройте его заново из списка.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
     <value>Внутренняя ошибка сервера</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>Произошла непредвиденная ошибка. Повторите попытку позже.</value>
+    <value>На сервере произошла ошибка, и действие могло не завершиться. Подождите минуту и повторите его, а если проблема повторяется, обратитесь к администратору и укажите время ошибки.</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
     <value>Нарушение бизнес-правила</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>Запрос нарушает бизнес-правило.</value>
+    <value>Действие невозможно в текущем состоянии этого элемента, поэтому ничего не изменено. Обновите страницу, чтобы увидеть его актуальное состояние, и проверьте, что ваши данные ему соответствуют.</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
     <value>Конфликт параллельного изменения</value>
@@ -98,10 +98,10 @@
     <value>Некорректное тело запроса</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>Не удалось прочитать тело запроса. Проверьте его формат.</value>
+    <value>Сервер не смог прочитать данные запроса, например, из-за неверного формата, значения неподходящего типа или слишком большого размера. Обновите страницу и отправьте запрос снова, а при прямом обращении к API проверьте отправляемый JSON.</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>Значение «{0}» не является допустимым числом.</value>
+    <value>Значение «{0}» не является допустимым числом. Введите только цифры, а в качестве десятичного разделителя используйте точку, например 12.50.</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
     <value>Доступ запрещён</value>
@@ -110,9 +110,9 @@
     <value>Этот запрос должен отправляться из самой панели. Обновите страницу и повторите попытку.</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>У вас нет прав на выполнение этого действия.</value>
+    <value>У вашей учётной записи нет разрешения, которое нужно для этого действия, поэтому оно не выполнено. Попросите администратора выдать разрешение или войдите под учётной записью, у которой оно есть.</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>Это значение недействительно.</value>
+    <value>Это значение не удалось прочитать в ожидаемом формате. Проверьте введённые данные и исправьте их.</value>
   </data>
 </root>

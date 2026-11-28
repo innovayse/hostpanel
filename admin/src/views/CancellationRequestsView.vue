@@ -3,7 +3,7 @@
  * Cancellation requests: a search box, the type and status filters and a paged table of the service cancellation
  * requests.
  *
- * The search text (matched against the reason and the request id), the filters and the page live in the address
+ * The search text (matched against the reason, the request id and its service, product and client), the filters and the page live in the address
  * (`useListQuery`): the filter button opens the type and status fields, an applied filter shows as a removable chip,
  * and a reload or a shared link restores the same list, which the API narrows before it pages. Shows date,
  * product/service, client, reason, type, status and a delete action that asks first. Reads and writes

@@ -44,7 +44,9 @@ public sealed class VoidCreditNoteHandler
     /// <param name="cmd">The void.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success, or <c>CREDIT_NOTE_NOT_FOUND</c>; <c>CREDIT_NOTE_ALREADY_VOIDED</c>; <c>CREDIT_NOTE_REFUND_NOT_VOIDABLE</c> for a
+    /// Success, or <c>CREDIT_NOTE_NOT_FOUND</c>; <c>CREDIT_NOTE_ALREADY_VOIDED</c>; <c>CREDIT_NOTE_DRAFT_NOT_VOIDABLE</c> for a draft;
+    /// <c>INVOICE_CREDIT_NOTED_EXCEEDED</c> when the invoice holds less credit note value than the note;
+    /// <c>CREDIT_NOTE_REFUND_NOT_VOIDABLE</c> for a
     /// note paid out as a gateway refund; <c>CLIENT_CREDIT_INSUFFICIENT</c> when the client has already spent the credit the
     /// note gave. Nothing is saved on a refusal.
     /// </returns>

@@ -447,7 +447,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
     /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("productId", "ProductId", "Provide a valid product id.")]
-    [InlineData("clientId", "ClientId", "Provide a valid client to filter by.")]
+    [InlineData("clientId", "ClientId", "The client filter is not valid. Choose an existing client to filter by, its id must be a positive whole number.")]
     public async Task GetServicesAsync_NonPositiveId_Returns400WithTheIdMessageAsync(string key, string field, string message)
     {
         var admin = await ServicesTestSeeds.AdminClientAsync(factory);

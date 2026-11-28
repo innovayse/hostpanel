@@ -44,7 +44,8 @@ public sealed class ListQuotesHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var quotes = _context.Quotes.AsNoTracking().Matching(query, _clock.UtcNow);
+        var clientsMatchingSearch = await _bus.FindClientIdsMatchingAsync(query.Search, ct);
+        var quotes = _context.Quotes.AsNoTracking().Matching(query, _clock.UtcNow, clientsMatchingSearch);
         if (query.ClientId is { } clientId)
         {
             quotes = quotes.Where(q => q.ClientId == clientId);

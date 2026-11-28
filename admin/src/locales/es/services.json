@@ -3,7 +3,7 @@
     "services": "Servicios",
     "viewAndManageAllClient": "Ver y gestionar todos los servicios alojados de los clientes",
     "noServicesFound": "No se encontraron servicios",
-    "searchServices": "Buscar por dominio, producto o ID",
+    "searchServices": "Buscar por dominio, producto, cliente o ID",
     "noServicesMatchYourFilters": "Ningún servicio coincide con tus filtros"
   }
 }

@@ -98,7 +98,7 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the new service id; 400 with <c>VALIDATION_ERROR</c> for a malformed body or
-    /// <c>PRODUCT_NOT_AVAILABLE</c> when the product or billing cycle cannot be ordered; 401 without a session; 403 with
+    /// <c>PRODUCT_NOT_AVAILABLE</c> when the product is not on sale or <c>PRODUCT_PRICE_UNAVAILABLE</c> when it has no price for the billing cycle; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>PlaceNewOrders</c>, or with <c>CLIENT_SUSPENDED</c> or
     /// <c>CLIENT_CLOSED</c> when the account may not order; 404 with
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> or <c>PRODUCT_NOT_FOUND</c>;
@@ -126,7 +126,7 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the new service id; 400 with <c>VALIDATION_ERROR</c> for a malformed body or <c>PRODUCT_NOT_AVAILABLE</c> when
-    /// the product is not on sale or has no price; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the
+    /// the product is not on sale, <c>PRODUCT_PRICE_UNAVAILABLE</c> when it has no price; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the
     /// user lacks <c>PlaceNewOrders</c>, or with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c>; 404 with
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> or <c>PRODUCT_NOT_FOUND</c>; 409 with <c>PRODUCT_TRIAL_NOT_AVAILABLE</c> when the product
     /// offers no trial, <c>ORDER_TRIAL_ALREADY_USED</c> when the client already had it, or <c>ORDER_PRODUCT_SOLD_OUT</c> or
@@ -155,7 +155,7 @@ public sealed class MyServicesController : BaseApiController
     /// <returns>
     /// 200 with the control-panel sign-in link; 400 with <c>VALIDATION_ERROR</c> for a non-positive id,
     /// <c>SERVICE_NOT_PROVISIONED</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service,
-    /// <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 with
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c>; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>AllowSingleSignOn</c>, or <c>CLIENT_SSO_DISABLED</c> when the
     /// account does not allow single sign-on; 404 with
     /// <c>SERVICE_NOT_FOUND</c> when the service is not the caller's; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
@@ -189,7 +189,7 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the login details; 400 with <c>VALIDATION_ERROR</c> for a non-positive id, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_NOT_ACTIVE</c>; 401 without a session; 403 with
+    /// <c>SERVICE_NO_SERVER_ASSIGNED</c> or, for a terminated service, <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c>; 401 without a session; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>AllowSingleSignOn</c>, or <c>CLIENT_SSO_DISABLED</c> when the account does
     /// not allow single sign on; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the caller's; 409 with a panel code
     /// (<c>PANEL_OPERATION_NOT_SUPPORTED</c> when the plugin has no login capability, or another panel refusal code); 502 with
@@ -371,7 +371,7 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
+    /// <c>SERVICE_HOSTING_ACCOUNT_REMOVED</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewModifyPasswords</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the
     /// caller's; 409 with a panel code (<c>PANEL_ACCOUNT_NOT_FOUND</c>, <c>PANEL_PACKAGE_UNKNOWN</c>, <c>PANEL_PASSWORD_REJECTED</c>, <c>PANEL_LIMIT_REACHED</c>, <c>PANEL_OPERATION_NOT_SUPPORTED</c> or <c>PANEL_PLUGIN_CONFLICT</c>) when the panel plugin that serves the server refuses the request; 502 with <c>PANEL_ACCESS_DENIED</c> or <c>PANEL_REFUSED</c> when the panel refuses it outright; 503 with <c>PANEL_PLUGIN_UNAVAILABLE</c> when that plugin is switched off or not configured; 
     /// 502 with <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
@@ -518,7 +518,7 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the plans (an empty list when there is nowhere to move); 400 with <c>VALIDATION_ERROR</c> for a
-    /// non-positive id, or with <c>SERVICE_NOT_ACTIVE</c> / <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> for a service whose plan
+    /// non-positive id, or with <c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c> / <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> for a service whose plan
     /// cannot change; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks
     /// <c>ViewProductsServices</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the caller's;
     /// 429 when the rate limit is hit.
@@ -548,7 +548,7 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with where the request stands; 400 with <c>VALIDATION_ERROR</c> for a malformed body, or with
-    /// <c>SERVICE_NOT_ACTIVE</c>, <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c>, <c>SERVICE_CHANGE_SAME_PRODUCT</c>,
+    /// <c>SERVICE_PLAN_CHANGE_NOT_ACTIVE</c>, <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c>, <c>SERVICE_CHANGE_SAME_PRODUCT</c>,
     /// <c>SERVICE_CHANGE_SAME_PRICE</c>, <c>SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE</c> or <c>SERVICE_CHANGE_PRICE_UNAVAILABLE</c>
     /// when the move is refused; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks
     /// <c>PlaceNewOrders</c>, or <c>CLIENT_SUSPENDED</c> / <c>CLIENT_CLOSED</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the

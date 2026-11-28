@@ -29,17 +29,8 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     /// <summary>How many attempts a record gets before it fails for good and waits for staff.</summary>
     public const int MaxAttempts = 8;
 
-    /// <summary>
-    /// The longest an error text kept in <see cref="LastError"/> may be, in characters. A plugin's exception
-    /// text can be any size; the column holds the start of it, enough for staff to see what went wrong.
-    /// </summary>
-    public const int MaxErrorLength = 2000;
-
-    /// <summary>
-    /// The error recorded for an attempt whose dispatcher never answered before its lease ran out: the
-    /// process stopped or lost the database between claiming the record and saving the outcome.
-    /// </summary>
-    public const string AbandonedAttemptError = "The attempt was abandoned before it reported an outcome.";
+    /// <summary>The longest error code <see cref="LastErrorCode"/> may hold, in characters.</summary>
+    public const int ErrorCodeMaxLength = 100;
 
     /// <summary>The wait after the first failed attempt; each further failure doubles it.</summary>
     public static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(30);
@@ -69,10 +60,11 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     public DateTimeOffset NextAttemptAt { get; private set; }
 
     /// <summary>
-    /// Gets the error of the latest failed attempt, at most <see cref="MaxErrorLength"/> characters, or
-    /// <see langword="null"/> when none failed or the delivery succeeded. Staff only: never shown to a client.
+    /// Gets the code of the latest failed attempt (one of the <c>FULFILMENT_*</c> codes of <see cref="BillingErrors"/>),
+    /// or <see langword="null"/> when none failed or the delivery succeeded. Staff read its sentence in their
+    /// own language; a plugin's own error text is only logged. Never shown to a client.
     /// </summary>
-    public string? LastError { get; private set; }
+    public string? LastErrorCode { get; private set; }
 
     /// <summary>Gets when the plugin accepted the delivery (UTC), or <see langword="null"/> until it has.</summary>
     public DateTimeOffset? CompletedAt { get; private set; }
@@ -154,7 +146,7 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     /// <summary>
     /// Claims a due record for one attempt: it turns Processing until <paramref name="now"/> plus
     /// <paramref name="lease"/>, and the attempt is counted. A record whose previous claim expired without an
-    /// answer is not claimed: that silent attempt is recorded as failed first (<see cref="AbandonedAttemptError"/>),
+    /// answer is not claimed: that silent attempt is recorded as failed first (<see cref="BillingErrors.FulfilmentAttemptAbandoned"/>),
     /// which schedules its back-off or, after the last attempt, fails it for good.
     /// </summary>
     /// <param name="now">The current moment (UTC).</param>
@@ -176,7 +168,7 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
 
         if (Status == FulfilmentStatus.Processing)
         {
-            RecordFailure(AbandonedAttemptError, now);
+            RecordFailure(BillingErrors.FulfilmentAttemptAbandoned, now);
             return false;
         }
 
@@ -195,7 +187,7 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
 
         Status = FulfilmentStatus.Done;
         CompletedAt = now;
-        LastError = null;
+        LastErrorCode = null;
     }
 
     /// <summary>
@@ -203,18 +195,18 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     /// due again after <see cref="BackoffAfter"/>; after the <see cref="MaxAttempts"/>-th it is Failed and waits
     /// for staff to <see cref="Retry"/> it.
     /// </summary>
-    /// <param name="error">What went wrong, for staff; cut to <see cref="MaxErrorLength"/> characters.</param>
+    /// <param name="errorCode">What went wrong, as a <c>FULFILMENT_*</c> code of <see cref="BillingErrors"/>.</param>
     /// <param name="now">When the attempt failed (UTC).</param>
     /// <exception cref="InvalidOperationException">The record is not claimed (Processing).</exception>
-    public void MarkFailed(string error, DateTimeOffset now)
+    public void MarkFailed(string errorCode, DateTimeOffset now)
     {
         EnsureProcessing();
-        RecordFailure(error, now);
+        RecordFailure(errorCode, now);
     }
 
     /// <summary>
     /// Sends a failed record again on a staff request: it is pending and due at once, with a fresh allowance
-    /// of <see cref="MaxAttempts"/> attempts. <see cref="LastError"/> stays until the next attempt answers, so
+    /// of <see cref="MaxAttempts"/> attempts. <see cref="LastErrorCode"/> stays until the next attempt answers, so
     /// staff still see why it failed.
     /// </summary>
     /// <param name="now">The current moment (UTC); the record is due from it.</param>
@@ -236,14 +228,17 @@ public sealed class FulfilmentRecord : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Records a failed attempt: the error, then either the back-off before the next attempt or, when this was
+    /// Records a failed attempt: the error code, then either the back-off before the next attempt or, when this was
     /// the last allowed one, the final failure. Status and due time change together here only.
     /// </summary>
-    /// <param name="error">What went wrong; cut to <see cref="MaxErrorLength"/> characters.</param>
+    /// <param name="errorCode">What went wrong, as a <c>FULFILMENT_*</c> code of <see cref="BillingErrors"/>.</param>
     /// <param name="now">When the attempt failed (UTC).</param>
-    private void RecordFailure(string error, DateTimeOffset now)
+    private void RecordFailure(string errorCode, DateTimeOffset now)
     {
-        LastError = error.Length > MaxErrorLength ? error[..MaxErrorLength] : error;
+        ArgumentException.ThrowIfNullOrWhiteSpace(errorCode);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(errorCode.Length, ErrorCodeMaxLength);
+
+        LastErrorCode = errorCode;
         if (Attempts >= MaxAttempts)
         {
             Status = FulfilmentStatus.Failed;

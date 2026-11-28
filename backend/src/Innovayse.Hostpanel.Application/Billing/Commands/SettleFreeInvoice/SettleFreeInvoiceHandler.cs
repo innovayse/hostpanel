@@ -29,7 +29,7 @@ public sealed class SettleFreeInvoiceHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, or <c>INVOICE_NOT_FOUND</c> when the id names no invoice, or
-    /// <c>INVOICE_NOT_PAYABLE</c> when it is not open or still owes money.
+    /// <c>INVOICE_NOT_PAYABLE</c> when it is not open, or <c>INVOICE_NOT_FREE</c> when it still has an amount due.
     /// </returns>
     public async Task<Result> HandleAsync(SettleFreeInvoiceCommand cmd, CancellationToken ct)
     {
@@ -44,9 +44,14 @@ public sealed class SettleFreeInvoiceHandler
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_FOUND);
         }
 
-        if (!invoice.IsPayable || invoice.AmountDue != 0)
+        if (!invoice.IsPayable)
         {
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        }
+
+        if (invoice.AmountDue != 0)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_FREE);
         }
 
         invoice.MarkPaid(PaymentMethodNames.NoCharge, _clock.UtcNow);

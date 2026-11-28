@@ -125,7 +125,7 @@
     "cancellationRequests": "Solicitudes de cancelación",
     "reviewAndProcessServiceCancellation": "Revisar y procesar solicitudes de cancelación de servicios",
     "noCancellationRequestsFound": "No se encontraron solicitudes de cancelación",
-    "searchRequests": "Buscar por motivo o ID",
+    "searchRequests": "Buscar por motivo, servicio, cliente o ID",
     "noRequestsMatchYourFilters": "Ninguna solicitud de cancelación coincide con tus filtros",
     "deleteCancellationRequest": "Eliminar solicitud de cancelación",
     "areYouSureYouWant": "¿Estás seguro de que quieres eliminar esta solicitud de cancelación?",
@@ -228,7 +228,7 @@
       "senderRejected": "Dirección de remitente rechazada",
       "messageRejected": "Mensaje rechazado"
     },
-    "searchEmails": "Buscar correos"
+    "searchEmails": "Buscar por asunto o destinatario"
   },
   "clientInvoices": {
     "createInvoice": "Crear factura",
@@ -249,7 +249,7 @@
     "activityLog": "Registro de actividad",
     "logEntry": "Entrada de registro",
     "user": "Usuario",
-    "searchLog": "Buscar en el registro de actividad"
+    "searchLog": "Buscar por administrador, descripción o dirección IP"
   },
   "clientOpenTicket": {
     "ticketSubject": "Asunto del ticket",
@@ -307,6 +307,7 @@
     "dedicatedIp": "IP asignada",
     "moduleCommands": "Comandos del módulo",
     "serviceTerminated": "Servicio terminado",
+    "statusLocked": "Un servicio terminado no se puede pasar a otro estado, así que aquí no hay nada que cambiar. Para ofrecer este servicio de nuevo, haga un pedido nuevo para el cliente.",
     "terminate": "Terminar",
     "suspend": "Suspender",
     "changePackage": "Cambiar paquete",

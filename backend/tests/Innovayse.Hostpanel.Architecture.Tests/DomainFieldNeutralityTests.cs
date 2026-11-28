@@ -11,7 +11,7 @@ public sealed class DomainFieldNeutralityTests
     private static readonly string[] FeatureNameMarks = ["DomainField", "ExtendedAttributes"];
 
     /// <summary>The solution directory.</summary>
-    private static string BackendRoot => UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
+    private static string BackendRoot => BackendLayout.FindRoot(AppContext.BaseDirectory);
 
     /// <summary>Whether a path is a file this rule reads: authored C# of the feature, never build output, a migration or the rule itself.</summary>
     /// <param name="path">The file's path.</param>

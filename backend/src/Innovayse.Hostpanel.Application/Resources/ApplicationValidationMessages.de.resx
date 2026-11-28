@@ -100,11 +100,7 @@
     <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
   </data>
   <data name="InvalidFilterValue" xml:space="preserve">
-    <value>Ungültiger Filterwert: {0}.</value>
-    <comment>GetMigrationLogsValidator. {0} is the value submitted for the action or entity-type filter.</comment>
-  </data>
-  <data name="MigrationJobIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Migrationsauftrag an.</value>
+    <value>{0} ist kein zulässiger Filterwert. Wählen Sie einen der Werte, die der Filter anbietet.</value>
   </data>
   <data name="MigrationSelectionRequired" xml:space="preserve">
     <value>Wählen Sie aus, welche Daten exportiert werden sollen.</value>
@@ -113,7 +109,7 @@
     <value>Geben Sie die Adresse des Quellsystems ein.</value>
   </data>
   <data name="MigrationSourceUrlInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige absolute URL ein.</value>
+    <value>Die Adresse des Quellsystems muss eine vollständige URL mit Schema sein, zum Beispiel https://old.example.com.</value>
   </data>
 <data name="CurrencyCodeInvalid" xml:space="preserve">
     <value>Der Währungscode muss ein dreibuchstabiger ISO-4217-Code sein.</value>
@@ -137,13 +133,13 @@
     <value>Geben Sie mindestens eine zu aktualisierende Währung an.</value>
   </data>
 <data name="InvoiceIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Rechnung an.</value>
+    <value>Die Rechnung ist ungültig, ihre Kennung muss eine positive ganze Zahl sein. Wählen Sie die Rechnung aus der Liste und versuchen Sie es erneut.</value>
   </data>
 <data name="FulfilmentRecordIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Erfüllungsdatensatz an.</value>
+    <value>Die ID des Erfüllungsdatensatzes muss eine positive Zahl sein. Wählen Sie einen vorhandenen Datensatz aus.</value>
   </data>
 <data name="InvoiceClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden für die Rechnung an.</value>
+    <value>Die Kunden-ID muss eine positive Zahl sein. Wählen Sie einen vorhandenen Kunden für die Rechnung aus.</value>
   </data>
 <data name="InvoiceDueDateInPast" xml:space="preserve">
     <value>'Fälligkeitsdatum' darf nicht in der Vergangenheit liegen.</value>
@@ -170,19 +166,19 @@
     <value>Die Zahlungsart darf höchstens {0} Zeichen lang sein.</value>
   </data>
 <data name="QuoteIdInvalid" xml:space="preserve">
-    <value>Geben Sie ein gültiges Angebot an.</value>
+    <value>Das Angebot ist ungültig, seine Kennung muss eine positive ganze Zahl sein. Wählen Sie das Angebot aus der Liste und versuchen Sie es erneut.</value>
   </data>
 <data name="QuoteClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden für das Angebot an.</value>
+    <value>Die Kunden-ID muss eine positive Zahl sein. Wählen Sie einen vorhandenen Kunden für das Angebot aus.</value>
   </data>
 <data name="QuoteSubjectInvalid" xml:space="preserve">
     <value>Ein Angebot benötigt einen Betreff mit höchstens {0} Zeichen.</value>
   </data>
 <data name="QuoteStageInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Angebotsphase an.</value>
+    <value>Die Angebotsphase muss Draft, Delivered, OnHold, Accepted, Lost, Expired oder Dead sein.</value>
   </data>
 <data name="QuoteValidityInvalid" xml:space="preserve">
-    <value>Geben Sie an, ob die Angebote gültig oder abgelaufen sind.</value>
+    <value>Der Gültigkeitsfilter muss Valid oder Expired sein.</value>
   </data>
 <data name="QuoteItemsRequired" xml:space="preserve">
     <value>Fügen Sie mindestens eine Position hinzu.</value>
@@ -200,10 +196,10 @@
     <value>Der Rabatt einer Position muss zwischen 0 und 100 liegen.</value>
   </data>
 <data name="BillableItemIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen abrechenbaren Posten an.</value>
+    <value>Die ID des abrechenbaren Postens muss eine positive Zahl sein. Wählen Sie einen vorhandenen abrechenbaren Posten aus.</value>
   </data>
 <data name="BillableItemClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden für die Abrechnung an.</value>
+    <value>Die Kunden-ID muss eine positive Zahl sein. Wählen Sie einen vorhandenen Kunden für die Abrechnung aus.</value>
   </data>
 <data name="BillableItemDescriptionInvalid" xml:space="preserve">
     <value>Ein abrechenbarer Posten benötigt eine Beschreibung mit höchstens {0} Zeichen.</value>
@@ -236,10 +232,10 @@
     <value>Der Satz eines Zeiteintrags darf nicht negativ sein.</value>
   </data>
 <data name="TransactionClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden für die Transaktion an.</value>
+    <value>Der Kunde ist ungültig, seine Kennung muss eine positive ganze Zahl sein. Wählen Sie den Kunden aus der Liste und versuchen Sie es erneut.</value>
   </data>
 <data name="TransactionDirectionInvalid" xml:space="preserve">
-    <value>Geben Sie an, ob es sich bei den Transaktionen um Einnahmen oder Ausgaben handelt.</value>
+    <value>Der Richtungsfilter muss In (Einnahme) oder Out (Ausgabe) sein.</value>
   </data>
 <data name="TransactionAmountInvalid" xml:space="preserve">
     <value>Der gesuchte Betrag muss größer als null sein.</value>
@@ -266,7 +262,7 @@
     <value>Mindestens einer der Beträge (gutgeschrieben oder belastet) muss größer als null sein.</value>
   </data>
 <data name="TransactionIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Transaktion an.</value>
+    <value>Die Transaktions-ID muss eine positive Zahl sein. Wählen Sie eine vorhandene Transaktion aus und versuchen Sie es erneut.</value>
   </data>
 <data name="InvoicePaymentGatewayInvalid" xml:space="preserve">
     <value>Geben Sie das verwendete Zahlungsgateway an (höchstens {0} Zeichen).</value>
@@ -308,7 +304,7 @@
     <value>Geben Sie mindestens eine Rechnung für die Aktion an.</value>
   </data>
 <data name="BulkInvoiceActionIdInvalid" xml:space="preserve">
-    <value>Jede Rechnungs-ID muss gültig sein.</value>
+    <value>Jede Rechnungs-ID muss eine positive Zahl sein. Entfernen Sie die falsche ID aus der Auswahl und versuchen Sie es erneut.</value>
   </data>
 <data name="BulkInvoiceActionNameInvalid" xml:space="preserve">
     <value>Die Aktion muss eine der folgenden sein: MarkPaid, MarkUnpaid, MarkCancelled, Duplicate, Delete.</value>
@@ -395,7 +391,7 @@
     <value>Die Seitengröße muss zwischen 1 und 100 liegen.</value>
   </data>
   <data name="TicketPeriodInvalid" xml:space="preserve">
-    <value>Der Zeitraum ist kein bekannter Berichtszeitraum.</value>
+    <value>Der Zeitraum muss einer der folgenden sein: Today, Yesterday, Last7Days, Last30Days.</value>
   </data>
   <data name="GatewayLogResultInvalid" xml:space="preserve">
     <value>Das Ergebnis muss eines der folgenden sein: Payment, Refund, Credit, Pending.</value>
@@ -413,7 +409,7 @@
     <value>Der Titel darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="KbArticleSlugInvalid" xml:space="preserve">
-    <value>Die Artikeladresse ist ungültig.</value>
+    <value>Die Artikeladresse muss aus 1 bis 150 Zeichen bestehen: lateinische Buchstaben und Ziffern, Teile durch je einen Bindestrich getrennt (z. B. 'reset-password').</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Die Kategorie darf höchstens {0} Zeichen lang sein.</value>
@@ -566,10 +562,10 @@
     <value>Fügen Sie der Bestellung mindestens einen Artikel hinzu.</value>
   </data>
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
-    <value>Jeder Artikel benötigt ein gültiges Produkt.</value>
+    <value>Eine Position der Bestellung hat kein gültiges Produkt. Wählen Sie für jede Position ein Produkt aus oder entfernen Sie die leere Position und senden Sie die Bestellung erneut ab.</value>
   </data>
   <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
-    <value>Das Paket ist ungültig.</value>
+    <value>Die Paket-ID muss eine positive Zahl sein. Wählen Sie ein Paket aus der Liste oder entfernen Sie das Paket aus der Bestellung und senden Sie die Bestellung erneut ab.</value>
   </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Der Abrechnungszyklus muss 'monthly', 'annual' oder 'annually' sein.</value>
@@ -626,7 +622,7 @@
     <value>Das Telefon darf 50 Zeichen nicht überschreiten.</value>
   </data>
   <data name="ClientContactTypeInvalid" xml:space="preserve">
-    <value>Das ist kein bekannter Kontakttyp.</value>
+    <value>Der Kontakttyp gehört nicht zu den unterstützten Typen. Wählen Sie einen der in der Liste angebotenen Kontakttypen.</value>
   </data>
   <data name="ClientContactStreetInvalid" xml:space="preserve">
     <value>Die Straße darf 200 Zeichen nicht überschreiten.</value>
@@ -653,7 +649,7 @@
     <value>Eine Benutzer-ID ist erforderlich.</value>
   </data>
   <data name="ClientPermissionsInvalid" xml:space="preserve">
-    <value>Die Berechtigungen sind keine gültige Kombination der bekannten Berechtigungs-Flags.</value>
+    <value>Die Berechtigungen enthalten ein Kennzeichen, das nicht existiert. Wählen Sie die Berechtigungen aus der Liste des Formulars und speichern Sie erneut.</value>
   </data>
   <data name="ClientNewUserEmailInvalid" xml:space="preserve">
     <value>Eine gültige E-Mail-Adresse ist erforderlich.</value>
@@ -734,7 +730,7 @@
     <value>Ein Download-Titel ist erforderlich.</value>
   </data>
   <data name="DownloadCategoryIdInvalid" xml:space="preserve">
-    <value>Wählen Sie eine gültige Download-Kategorie aus.</value>
+    <value>Es wurde keine Download-Kategorie ausgewählt. Wählen Sie eine vorhandene Kategorie aus, ihre ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="DownloadCategoryNameRequired" xml:space="preserve">
     <value>Ein Kategoriename ist erforderlich.</value>
@@ -752,7 +748,7 @@
     <value>Der Antwortinhalt ist erforderlich.</value>
   </data>
   <data name="PredefinedReplyCategoryIdInvalid" xml:space="preserve">
-    <value>Wählen Sie eine gültige Kategorie für vordefinierte Antworten aus.</value>
+    <value>Es wurde keine Kategorie für vordefinierte Antworten ausgewählt. Wählen Sie eine vorhandene Kategorie aus, ihre ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="PredefinedReplyCategoryNameRequired" xml:space="preserve">
     <value>Ein Kategoriename ist erforderlich.</value>
@@ -761,7 +757,7 @@
     <value>Ein Suchbegriff ist erforderlich.</value>
   </data>
   <data name="ServiceIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Service an.</value>
+    <value>Es wurde kein Service ausgewählt. Wählen Sie einen vorhandenen Service aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="CancellationTypeInvalid" xml:space="preserve">
     <value>Der Typ muss 'Immediate' oder 'EndOfBillingPeriod' sein.</value>
@@ -770,16 +766,16 @@
     <value>Der Status muss 'Open' oder 'Closed' sein.</value>
   </data>
   <data name="CancellationRequestIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Kündigungsanfrage an.</value>
+    <value>Es wurde keine Kündigungsanfrage ausgewählt. Wählen Sie eine vorhandene Anfrage aus, ihre ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="OrderServiceClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden an.</value>
+    <value>Es wurde kein Kunde ausgewählt. Wählen Sie einen vorhandenen Kunden aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="StartTrialProductIdInvalid" xml:space="preserve">
-    <value>Geben Sie ein gültiges Produkt an.</value>
+    <value>Es wurde kein Produkt ausgewählt. Wählen Sie ein vorhandenes Produkt aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="OrderServiceProductIdInvalid" xml:space="preserve">
-    <value>Geben Sie ein gültiges Produkt an.</value>
+    <value>Es wurde kein Produkt ausgewählt. Wählen Sie ein vorhandenes Produkt aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="OrderServiceBillingCycleInvalid" xml:space="preserve">
     <value>Der Abrechnungszyklus muss 'monthly', 'annual' oder 'annually' sein.</value>
@@ -815,7 +811,7 @@
     <value>Die Seitengröße muss zwischen 1 und 100 liegen.</value>
   </data>
   <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden zum Filtern an.</value>
+    <value>Der Kundenfilter ist ungültig. Wählen Sie einen vorhandenen Kunden zum Filtern aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="ServiceListStatusInvalid" xml:space="preserve">
     <value>Der Status muss einer der folgenden sein: Pending, Active, Suspended, Terminated.</value>
@@ -869,10 +865,10 @@
     <value>Die Menge muss mindestens 1 betragen.</value>
   </data>
   <data name="ServiceProductIdInvalid" xml:space="preserve">
-    <value>Geben Sie ein gültiges Produkt an.</value>
+    <value>Es wurde kein Produkt ausgewählt. Wählen Sie ein vorhandenes Produkt aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="HostingAccountServerIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Server an.</value>
+    <value>Es wurde kein Server ausgewählt. Wählen Sie einen vorhandenen Server aus, seine ID muss eine positive ganze Zahl sein.</value>
   </data>
   <data name="ServiceSuspendUntilWithoutOverride" xml:space="preserve">
     <value>Legen Sie ein Haltedatum nur fest, wenn die Sperrhaltung aktiv ist.</value>
@@ -1034,7 +1030,7 @@
     <value>Der Name darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
-    <value>Wählen Sie einen gültigen Typ der Optionsgruppe aus.</value>
+    <value>Wählen Sie aus, wie der Kunde diese Optionsgruppe beantwortet: Dropdown, Radiobutton, Kontrollkästchen oder Menge.</value>
   </data>
   <data name="ProductOptionNameRequired" xml:space="preserve">
     <value>Eine Option benötigt einen Namen.</value>
@@ -1046,13 +1042,13 @@
     <value>Die Anzeigereihenfolge darf nicht negativ sein.</value>
   </data>
   <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
-    <value>Wählen Sie eine gültige Preisart aus.</value>
+    <value>Wählen Sie, wie der Preis der Option berechnet wird: fest (ein Betrag) oder prozentual (ein Anteil am Produktpreis).</value>
   </data>
   <data name="ProductOptionPriceInvalid" xml:space="preserve">
     <value>Ein Preis darf nicht negativ sein.</value>
   </data>
   <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
-    <value>Geben Sie die IDs der Optionsgruppen in der neuen Reihenfolge an.</value>
+    <value>Die Liste der Optionsgruppen-IDs ist leer. Geben Sie alle Optionsgruppen des Produkts in der gewünschten Anzeigereihenfolge an.</value>
   </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Geben Sie eine gültige Slide-ID an.</value>
@@ -1076,7 +1072,7 @@
     <value>Die Sortierreihenfolge darf nicht negativ sein.</value>
   </data>
   <data name="SlideTargetAudienceInvalid" xml:space="preserve">
-    <value>Wählen Sie eine bekannte Zielgruppe aus.</value>
+    <value>Wählen Sie, wer die Folie sieht: alle, nur Gäste oder nur angemeldete Kunden.</value>
   </data>
   <data name="SlideTranslationLocaleRequired" xml:space="preserve">
     <value>Jede Übersetzung benötigt eine Sprache.</value>
@@ -1100,7 +1096,7 @@
     <value>Geben Sie einen Hostnamen oder eine IP-Adresse ein, ohne Schema, Pfad, Port oder Leerzeichen.</value>
   </data>
   <data name="ServerApiHostRefused" xml:space="preserve">
-    <value>Diese Adresse wird nie angesprochen: Loopback-, Link-Local- und Cloud-Metadaten-Adressen werden abgelehnt.</value>
+    <value>Diese Adresse kann nicht als API-Host des Servers verwendet werden, weil Loopback-, Link-Local- und Cloud-Metadaten-Adressen gesperrt sind. Geben Sie stattdessen die Adresse des Servers im öffentlichen oder privaten Netzwerk ein.</value>
   </data>
   <data name="ServerUsernameRequired" xml:space="preserve">
     <value>Ein Benutzername ist erforderlich.</value>
@@ -1136,10 +1132,10 @@
     <value>Eine Plugin-ID darf nur Kleinbuchstaben, Ziffern und einzelne Bindestriche enthalten, höchstens 64 Zeichen.</value>
   </data>
   <data name="PluginSlotIdInvalid" xml:space="preserve">
-    <value>Die Slot-ID ist ungültig.</value>
+    <value>Die Slot-ID darf nicht leer sein und darf höchstens 100 Zeichen lang sein. Verwenden Sie die ID, die das Plugin für den Seitenbereich deklariert.</value>
   </data>
   <data name="PluginWidgetIdInvalid" xml:space="preserve">
-    <value>Die Widget-ID ist ungültig.</value>
+    <value>Die Widget-ID darf nicht leer sein und darf höchstens 100 Zeichen lang sein. Verwenden Sie die ID, die das Plugin für das Widget deklariert.</value>
   </data>
   <data name="PluginProductIdsInvalid" xml:space="preserve">
     <value>Wählen Sie höchstens {0} Produkte aus.</value>
@@ -1148,7 +1144,7 @@
     <value>Ein Integrations-Slug ist erforderlich.</value>
   </data>
   <data name="IntegrationConfigRequired" xml:space="preserve">
-    <value>Konfigurationsfelder sind erforderlich.</value>
+    <value>Die Konfiguration fehlt. Senden Sie die Integrationseinstellungen als Objekt, auch wenn alle Felder leer sind.</value>
   </data>
   <data name="UserIdRequired" xml:space="preserve">
     <value>Die Benutzer-ID ist erforderlich.</value>
@@ -1169,7 +1165,7 @@
     <value>Das Passwort muss mindestens 8 Zeichen lang sein.</value>
   </data>
   <data name="SettingIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Einstellungs-ID an.</value>
+    <value>Die Einstellungs-ID muss eine ganze Zahl größer als 0 sein. Wählen Sie die Einstellung in der Einstellungsliste aus und versuchen Sie es erneut.</value>
   </data>
   <data name="SettingKeysRequired" xml:space="preserve">
     <value>Geben Sie mindestens einen Einstellungsschlüssel an.</value>
@@ -1181,7 +1177,7 @@
     <value>Eine Bilddatei ist erforderlich.</value>
   </data>
   <data name="ActivityLogClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Kunden-ID an.</value>
+    <value>Die Kunden-ID muss eine ganze Zahl größer als 0 sein. Öffnen Sie das Aktivitätsprotokoll auf der Seite eines Kunden.</value>
   </data>
   <data name="DateRangeInvalid" xml:space="preserve">
     <value>Das Enddatum darf nicht vor dem Startdatum liegen.</value>
@@ -1190,7 +1186,7 @@
     <value>Der Monat muss zwischen 1 und 12 liegen.</value>
   </data>
   <data name="ReportClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Kunden-ID an.</value>
+    <value>Die Kunden-ID muss eine ganze Zahl größer als 0 sein. Wählen Sie den Kunden in der Kundenliste aus.</value>
   </data>
   <data name="ReportPageRequired" xml:space="preserve">
     <value>Die Seite muss 1 oder größer sein.</value>
@@ -1208,7 +1204,7 @@
     <value>Der Wert für Take muss zwischen 1 und 100 liegen.</value>
   </data>
   <data name="BackchannelLogoutEmailInvalid" xml:space="preserve">
-    <value>Eine gültige E-Mail-Adresse ist erforderlich.</value>
+    <value>Geben Sie eine E-Mail-Adresse in der Form name@beispiel.de mit höchstens 256 Zeichen ein.</value>
   </data>
   <data name="SignInEmailRequired" xml:space="preserve">
     <value>Eine E-Mail-Adresse ist erforderlich.</value>
@@ -1256,7 +1252,7 @@
     <value>Jeder Aufzählungspunkt darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="ContentIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige ID an.</value>
+    <value>Die ID muss eine ganze Zahl größer als 0 sein. Wählen Sie das Element in seiner Liste aus und versuchen Sie es erneut.</value>
   </data>
   <data name="ContentSortOrderInvalid" xml:space="preserve">
     <value>Die Anzeigereihenfolge darf nicht negativ sein.</value>
@@ -1352,7 +1348,7 @@
     <value>Die Beschreibung darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="FaqCategoryInvalid" xml:space="preserve">
-    <value>Wählen Sie eine gültige Kategorie aus.</value>
+    <value>Die Kategorie wird nicht erkannt. Wählen Sie Allgemein oder Produkte.</value>
   </data>
   <data name="FaqQuestionRequired" xml:space="preserve">
     <value>Geben Sie die Frage ein.</value>
@@ -1373,7 +1369,7 @@
     <value>Eine Neuordnung darf höchstens {0} Einträge enthalten.</value>
   </data>
   <data name="SshKeyIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen SSH-Schlüssel an.</value>
+    <value>Die ID des SSH-Schlüssels fehlt oder ist leer. Wählen Sie den Schlüssel in der SSH-Schlüsselliste des Dienstes aus.</value>
   </data>
   <data name="SshLabelRequired" xml:space="preserve">
     <value>Geben Sie eine Bezeichnung für den Schlüssel ein.</value>
@@ -1385,28 +1381,28 @@
     <value>Fügen Sie den öffentlichen Schlüssel ein.</value>
   </data>
   <data name="SshPublicKeyTooLong" xml:space="preserve">
-    <value>Der öffentliche Schlüssel ist zu lang.</value>
+    <value>Der öffentliche Schlüssel darf höchstens 1024 Zeichen lang sein. Prüfen Sie, ob Sie nur den öffentlichen Schlüssel eingefügt haben.</value>
   </data>
   <data name="SshHostnameInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Hostnamen ein.</value>
+    <value>Geben Sie einen Hostnamen mit höchstens 255 Zeichen ein, der nur Buchstaben, Ziffern, Punkte und Bindestriche enthält. Der Agent-Host darf zusätzlich Doppelpunkte enthalten.</value>
   </data>
   <data name="SshPortInvalid" xml:space="preserve">
     <value>Der Port muss zwischen 1 und 65535 liegen.</value>
   </data>
   <data name="SshAgentUsernameInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Verwaltungsbenutzernamen ein.</value>
+    <value>Geben Sie einen Verwaltungsbenutzernamen mit höchstens 32 Zeichen ein. Er muss mit einem Kleinbuchstaben oder einem Unterstrich beginnen und darf danach Kleinbuchstaben, Ziffern, Unterstriche und Bindestriche enthalten.</value>
   </data>
   <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
     <value>Der Fingerabdruck des Host-Schlüssels muss mit SHA256: beginnen und von 43 Zeichen gefolgt sein.</value>
   </data>
   <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
-    <value>Der private Schlüssel ist zu lang.</value>
+    <value>Der private Schlüssel darf höchstens 8000 Zeichen lang sein. Prüfen Sie, ob Sie nur den privaten Schlüssel eingefügt haben.</value>
   </data>
   <data name="SshTimeoutInvalid" xml:space="preserve">
-    <value>Die Zeitlimits liegen außerhalb des zulässigen Bereichs.</value>
+    <value>Das Verbindungszeitlimit muss zwischen 1 und 120 Sekunden liegen und das Operationszeitlimit zwischen 1 und 300 Sekunden.</value>
   </data>
   <data name="InvoiceStatusInvalid" xml:space="preserve">
-    <value>Der Status muss ein bekannter Rechnungsstatus sein.</value>
+    <value>Der Status muss einer der folgenden sein: Draft, Unpaid, Paid, Overdue, Cancelled, Refunded, Collections, PaymentPending, PartiallyRefunded.</value>
   </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Geben Sie eine gültige neue E-Mail-Adresse ein.</value>
@@ -1433,7 +1429,7 @@
     <value>Der Suchtext darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="ListClientIdInvalid" xml:space="preserve">
-    <value>Geben Sie einen gültigen Kunden an.</value>
+    <value>Der Kundenfilter muss die ID eines vorhandenen Kunden sein, eine Zahl größer als null. Wählen Sie den Kunden aus der Liste.</value>
   </data>
   <data name="ClientListEmailTooLong" xml:space="preserve">
     <value>Der E-Mail-Filter darf höchstens {0} Zeichen lang sein.</value>
@@ -1451,7 +1447,7 @@
     <value>Der Einstellungswert darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="ContactNotificationTopicInvalid" xml:space="preserve">
-    <value>Die Benachrichtigungsart ist ungültig.</value>
+    <value>Die Benachrichtigungsart muss eine der folgenden sein: General, Invoice, Support, Product, Domain, Affiliate.</value>
   </data>
   <data name="ClientExternalAccountPairRequired" xml:space="preserve">
     <value>Das externe System und die Konto-ID sind beide erforderlich; zum Aufheben der Verknüpfung lassen Sie beide leer.</value>
@@ -1466,7 +1462,7 @@
     <value>Erwartet: {0}.</value>
   </data>
   <data name="IntegrationFieldUnknown" xml:space="preserve">
-    <value>Dieses Feld wird von der Integration nicht deklariert.</value>
+    <value>Diese Integration hat keine Einstellung mit diesem Schlüssel, daher wurde sie nicht gespeichert. Entfernen Sie das Feld und speichern Sie erneut.</value>
   </data>
   <data name="IntegrationFieldExpectSecret" xml:space="preserve">
     <value>ein nicht leerer Wert; lassen Sie das Feld weg, um das gespeicherte Geheimnis beizubehalten</value>
@@ -1499,16 +1495,16 @@
     <value>Bestätigen Sie, dass die gespeicherte Zahlungsmethode für Ihre Rechnungen belastet werden darf.</value>
   </data>
   <data name="StoredChargeSessionIdRequired" xml:space="preserve">
-    <value>Geben Sie die Speichersitzung an.</value>
+    <value>Die ID der Speichersitzung fehlt. Senden Sie die Sitzungs-ID, die das Zahlungsgateway beim Speichern der Karte zurückgegeben hat.</value>
   </data>
   <data name="CardConsentIdInvalid" xml:space="preserve">
-    <value>Geben Sie die Einwilligung an.</value>
+    <value>Die ID der Einwilligung muss eine Zahl größer als null sein. Verwenden Sie die ID einer vorhandenen Karteneinwilligung.</value>
   </data>
   <data name="StoredChargeInvalid" xml:space="preserve">
-    <value>Geben Sie die Belastung und ihr Ergebnis an.</value>
+    <value>Die ID der Belastung muss eine Zahl größer als null sein und das Ergebnis muss eines der folgenden sein: Succeeded, Declined, ActionRequired, Pending.</value>
   </data>
   <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
-    <value>Der Status muss einer der bekannten Status von Zahlungsmeldungen sein.</value>
+    <value>Der Status muss einer der folgenden sein: Open, ActionRequired, Pending, Settled, Declined, Abandoned, Held.</value>
   </data>
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Die Plugin-Version ist erforderlich.</value>
@@ -1517,7 +1513,7 @@
     <value>Ein Lizenzschlüssel ist erforderlich.</value>
   </data>
   <data name="PluginLicenceKeyTooLong" xml:space="preserve">
-    <value>Der Lizenzschlüssel ist zu lang.</value>
+    <value>Der Lizenzschlüssel darf höchstens 256 Zeichen lang sein. Prüfen Sie, ob Sie nur den Schlüssel eingefügt haben.</value>
   </data>
   <data name="PluginLicenceKeyInvalid" xml:space="preserve">
     <value>Der Lizenzschlüssel darf nur druckbare Zeichen ohne Leerzeichen enthalten.</value>
@@ -1529,10 +1525,10 @@
     <value>Der Suchtext darf höchstens 100 Zeichen lang sein.</value>
   </data>
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
-    <value>Wählen Sie eine gültige Kategorie aus.</value>
+    <value>Die Kategorie muss eine der folgenden sein: Payment, Provisioning, Registrar, App, Other.</value>
   </data>
   <data name="InvoiceItemIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Rechnungsposition an.</value>
+    <value>Die ID der Rechnungsposition muss eine Zahl größer als null sein. Verwenden Sie die ID einer vorhandenen Rechnungsposition.</value>
   </data>
   <data name="RenewalWindowInvalid" xml:space="preserve">
     <value>Wählen Sie ein Verlängerungsfenster von 30, 60 oder 90 Tagen.</value>
@@ -1553,13 +1549,13 @@
     <value>Der Betrag muss größer als null sein.</value>
   </data>
   <data name="CreditNoteIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Gutschrift an.</value>
+    <value>Die ID der Gutschrift muss eine Zahl größer als null sein. Verwenden Sie die ID einer vorhandenen Gutschrift.</value>
   </data>
   <data name="CreditNoteMethodInvalid" xml:space="preserve">
     <value>Wählen Sie, ob die Gutschrift auf das Kontoguthaben oder über das Gateway zurückgebucht wird.</value>
   </data>
   <data name="CreditNoteStatusInvalid" xml:space="preserve">
-    <value>Wählen Sie einen gültigen Gutschriftsstatus aus.</value>
+    <value>Der Gutschriftsstatus muss einer der folgenden sein: Draft, Issued, Applied, Voided.</value>
   </data>
   <data name="CreditNoteReasonRequired" xml:space="preserve">
     <value>Geben Sie einen Grund für die Gutschrift an.</value>
@@ -1607,7 +1603,7 @@
     <value>Die Nachricht darf nicht länger als {0} Zeichen sein.</value>
   </data>
   <data name="StatusStateInvalid" xml:space="preserve">
-    <value>Wählen Sie einen gültigen Zustand aus.</value>
+    <value>Der Status der Komponente ist ungültig. Wählen Sie in Betrieb, Wartung, eingeschränkt oder Ausfall oder heben Sie die Überschreibung auf und speichern Sie erneut.</value>
   </data>
   <data name="StatusCheckUrlRequired" xml:space="preserve">
     <value>Geben Sie die zu prüfende Adresse ein.</value>
@@ -1643,16 +1639,16 @@
     <value>Eine Farbe muss im Format #RRGGBB angegeben werden.</value>
   </data>
   <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Tarifwechsel-Anfrage an.</value>
+    <value>Die ID der Tarifwechsel-Anfrage muss eine Zahl größer als null sein. Öffnen Sie die Anfrage aus der Liste der Tarifwechsel und versuchen Sie es erneut.</value>
   </data>
   <data name="ServiceChangeNoteTooLong" xml:space="preserve">
     <value>Die Notiz darf höchstens {0} Zeichen lang sein.</value>
   </data>
   <data name="ServiceChangeStatusInvalid" xml:space="preserve">
-    <value>Wählen Sie einen gültigen Status für den Tarifwechsel aus.</value>
+    <value>Der Status des Tarifwechsels muss einer der folgenden sein: Pending, Approved, Completed, Rejected. Wählen Sie einen davon, um die Liste zu filtern.</value>
   </data>
   <data name="CampaignIdInvalid" xml:space="preserve">
-    <value>Geben Sie eine gültige Kampagne an.</value>
+    <value>Die ID der Kampagne muss eine Zahl größer als null sein. Öffnen Sie die Kampagne aus der Kampagnenliste und versuchen Sie es erneut.</value>
   </data>
   <data name="CampaignSubjectRequired" xml:space="preserve">
     <value>Geben Sie einen Betreff für die E-Mail ein.</value>
@@ -1673,7 +1669,7 @@
     <value>Eine Kampagne darf höchstens {0} Segmente haben.</value>
   </data>
   <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
-    <value>Wählen Sie für jedes Segment einen bekannten Filter aus.</value>
+    <value>Ein Segment verwendet einen Filter, den es nicht gibt. Wählen Sie einen der Filter aus der Segmentliste: Produkt, Land, Ablauf, Kundengruppe, letzte Anmeldung oder alle aktiven Kunden.</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
     <value>Der Wert passt nicht zum Filter: Ein Produkt benötigt eine Produkt-ID, ein Land einen zweibuchstabigen Code, ein Ablauf eine Anzahl von Tagen von 1 bis 365, eine Kundengruppe eine Gruppen-ID, ein Anmeldefilter eine Anzahl von Tagen von 1 bis 3650, und „Alle aktiven Kunden“ erwartet keinen Wert.</value>
@@ -1685,13 +1681,13 @@
     <value>Der Abmeldelink enthält kein Token.</value>
   </data>
   <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
-    <value>Dieser Abmeldelink ist ungültig.</value>
+    <value>Dieser Abmeldelink ist ungültig, möglicherweise wurde er beim Kopieren abgeschnitten. Verwenden Sie den Link aus der ursprünglichen E-Mail.</value>
   </data>
   <data name="CampaignMailLinkInvalid" xml:space="preserve">
-    <value>Dieser Link ist ungültig.</value>
+    <value>Dieser Link ist ungültig, möglicherweise wurde er beim Kopieren abgeschnitten. Verwenden Sie den Link aus der ursprünglichen E-Mail.</value>
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
-    <value>Der Schlüssel der E-Mail ist erforderlich.</value>
+    <value>Der Schlüssel der E-Mail ist erforderlich. Öffnen Sie die E-Mail aus der Liste der gesendeten E-Mails, damit ihr Schlüssel eingetragen wird.</value>
   </data>
   <data name="ClientTaxIdInvalid" xml:space="preserve">
     <value>Die Steuer-ID darf 50 Zeichen nicht überschreiten.</value>
@@ -1730,16 +1726,16 @@
     <value>Geben Sie ein Startdatum zwischen 1993 und 2100 an.</value>
   </data>
   <data name="FraudBlockListTypeInvalid" xml:space="preserve">
-    <value>Der Typ der Sperrliste ist ungültig.</value>
+    <value>Der Typ der Sperrliste muss einer der folgenden sein: Ip, Cidr, EmailDomain, Country. Wählen Sie einen davon.</value>
   </data>
   <data name="FraudBlockListValueInvalid" xml:space="preserve">
-    <value>Der Wert passt nicht zum gewählten Typ der Sperrliste.</value>
+    <value>Der Wert passt nicht zum gewählten Typ der Sperrliste oder ist länger als 255 Zeichen. Verwenden Sie für Ip eine IP-Adresse, für Cidr einen Bereich wie 203.0.113.0/24, für EmailDomain eine Domain wie example.com und für Country einen zweibuchstabigen Code.</value>
   </data>
   <data name="FraudBlockListNoteTooLong" xml:space="preserve">
     <value>Die Notiz darf nicht länger als 500 Zeichen sein.</value>
   </data>
   <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
-    <value>Die ID des Sperrlisteneintrags muss größer als null sein.</value>
+    <value>Die ID des Sperrlisteneintrags muss eine Zahl größer als null sein. Öffnen Sie den Eintrag aus der Sperrliste und versuchen Sie es erneut.</value>
   </data>
   <data name="FraudScoreOutOfRange" xml:space="preserve">
     <value>Ein Risikowert muss eine ganze Zahl von 0 bis 100 sein.</value>
@@ -1754,13 +1750,13 @@
     <value>Das Limit muss eine ganze Zahl von 1 bis 100 sein.</value>
   </data>
   <data name="FraudCheckKindInvalid" xml:space="preserve">
-    <value>Die Art der Betrugsprüfung ist ungültig.</value>
+    <value>Die Art der Betrugsprüfung muss Registration oder Order sein. Wählen Sie eine davon.</value>
   </data>
   <data name="FraudDecisionInvalid" xml:space="preserve">
-    <value>Die Betrugsentscheidung ist ungültig.</value>
+    <value>Die Betrugsentscheidung muss eine der folgenden sein: Approved, Review, Rejected, ManualApproved. Wählen Sie eine davon.</value>
   </data>
   <data name="FraudReasonInvalid" xml:space="preserve">
-    <value>Der Betrugsgrund ist ungültig.</value>
+    <value>Der Betrugsgrund muss einer der folgenden sein: BlockedIp, BlockedEmailDomain, BlockedCountry, DisposableEmail. Wählen Sie einen davon, um das Protokoll zu filtern.</value>
   </data>
   <data name="OrderReviewReasonRequired" xml:space="preserve">
     <value>Geben Sie den Grund an, der dem Kunden mitgeteilt wird.</value>
@@ -1787,13 +1783,13 @@
     <value>Der Status muss einer der folgenden sein: Active, Inactive.</value>
   </data>
   <data name="PaymentReturnParametersTooMany" xml:space="preserve">
-    <value>Es gibt zu viele Rückgabeparameter.</value>
+    <value>Der Zahler kam mit mehr als 32 verschiedenen Parametern vom Gateway zurück. Übergeben Sie in der Rücksprungadresse höchstens 32 Parameter.</value>
   </data>
   <data name="PaymentReturnParameterNameTooLong" xml:space="preserve">
     <value>Der Name eines Rückgabeparameters ist auf 64 Zeichen begrenzt.</value>
   </data>
   <data name="PaymentReturnParameterValueTooLong" xml:space="preserve">
-    <value>Der Wert eines Rückgabeparameters ist zu lang.</value>
+    <value>Der Wert eines Rückgabeparameters ist länger als 2048 Zeichen. Kürzen Sie ihn in der Rücksprungadresse des Gateways.</value>
   </data>
   <data name="ProductMaxActiveServicesInvalid" xml:space="preserve">
     <value>Die maximale Anzahl aktiver Services muss 0 oder leer für unbegrenzt oder eine positive Zahl sein.</value>
@@ -1808,10 +1804,10 @@
     <value>Eine Gateway-Bestellkennung hat 1 bis 255 Zeichen, ohne Leerzeichen am Rand und ohne Steuerzeichen.</value>
   </data>
   <data name="RegistrarDomainCursorInvalid" xml:space="preserve">
-    <value>Der Seitencursor der Registrierungsstelle ist zu lang.</value>
+    <value>Der Seitencursor ist länger als 1000 Zeichen. Verwenden Sie den Cursor genau so, wie ihn die vorherige Seite zurückgegeben hat, oder beginnen Sie erneut bei der ersten Seite.</value>
   </data>
   <data name="ActivityEventKeyInvalid" xml:space="preserve">
-    <value>Das ist keine gültige Benachrichtigungs-ID.</value>
+    <value>Die Benachrichtigungs-ID ist leer oder länger als 100 Zeichen. Laden Sie die Benachrichtigungen neu und markieren Sie den Eintrag erneut als gelesen.</value>
   </data>
   <data name="DomainFieldsOperationInvalid" xml:space="preserve">
     <value>Der Vorgang muss register, transfer oder contactChange sein.</value>
@@ -1822,4 +1818,10 @@
   <data name="PlaceOrderItemExtendedAttributesNotAllowed" xml:space="preserve">
     <value>Registerangaben sind nur bei einer Domainregistrierung oder einem Domaintransfer zulässig.</value>
   </data>
+  <data name="StatusIncidentStateInvalid" xml:space="preserve"><value>Der Status des Vorfalls ist ungültig. Wählen Sie in Untersuchung, identifiziert, in Beobachtung oder gelöst und veröffentlichen Sie die Aktualisierung erneut.</value></data>
+  <data name="ClientPermissionModeInvalid" xml:space="preserve"><value>Der Berechtigungsmodus ist ungültig. Wählen Sie, ob die Einladung alle Berechtigungen oder nur die von Ihnen gewählten gewährt, und senden Sie sie erneut.</value></data>
+  <data name="ClientPermissionListInvalid" xml:space="preserve"><value>Die Berechtigungen müssen eine Liste mit je einer bekannten Berechtigung pro Eintrag sein. Wählen Sie die Berechtigungen im Formular aus, statt sie zu kombinieren, und senden Sie die Einladung erneut.</value></data>
+  <data name="ClientPermissionListMustBeEmpty" xml:space="preserve"><value>Eine Einladung, die alle Berechtigungen gewährt, darf keine einzeln auflisten. Entfernen Sie die gewählten Berechtigungen oder wechseln Sie zur Auswahl von Berechtigungen und senden Sie die Einladung erneut.</value></data>
+  <data name="ClientPermissionListRequired" xml:space="preserve"><value>Es wurde keine Berechtigung gewählt. Wählen Sie mindestens eine Berechtigung oder stellen Sie die Einladung auf alle Berechtigungen um und senden Sie sie erneut.</value></data>
+  <data name="MigrationJobIdInvalid" xml:space="preserve"><value>Die ID des Migrationsauftrags muss eine positive Zahl sein. Wählen Sie einen vorhandenen Migrationsauftrag aus.</value></data>
 </root>

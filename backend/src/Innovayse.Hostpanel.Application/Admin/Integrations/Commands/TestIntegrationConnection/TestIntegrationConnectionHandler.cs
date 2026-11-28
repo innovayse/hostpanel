@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.Logging;
 
@@ -35,6 +36,9 @@ public sealed class TestIntegrationConnectionHandler
     /// <summary>Asks a plugin that implements <c>IPluginStatus</c> and caches its answer for the Integrations page.</summary>
     private readonly PluginConnectionReader _connections;
 
+    /// <summary>Turns a test outcome's code into the sentence the admin reads, in the request's language.</summary>
+    private readonly IErrorMessageResolver _messages;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Payment plugin resolver, used for live gateway probes.</param>
@@ -42,14 +46,17 @@ public sealed class TestIntegrationConnectionHandler
     /// <param name="clock">The source of the current moment.</param>
     /// <param name="plugins">The loaded plugins, for a slug that names no built-in integration.</param>
     /// <param name="connections">Asks a plugin that implements <c>IPluginStatus</c> and caches its answer for the Integrations page.</param>
+    /// <param name="messages">Turns a test outcome's code into the sentence the admin reads, in the request's language.</param>
     public TestIntegrationConnectionHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
         ILogger<TestIntegrationConnectionHandler> logger,
         IClock clock,
         IPluginRegistry plugins,
-        PluginConnectionReader connections)
+        PluginConnectionReader connections,
+        IErrorMessageResolver messages)
     {
+        _messages = messages;
         _plugins = plugins;
         _connections = connections;
         _context = context;
@@ -146,7 +153,7 @@ public sealed class TestIntegrationConnectionHandler
         {
             return new IntegrationTestResultDto(
                 Success: true,
-                Message: "Connection validated -- all required fields are configured.",
+                Message: _messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_CONFIGURED),
                 TestedAt: testedAt);
         }
 
@@ -161,13 +168,13 @@ public sealed class TestIntegrationConnectionHandler
             var missingList = string.Join(", ", missing);
             return new IntegrationTestResultDto(
                 Success: false,
-                Message: $"Missing required fields: {missingList}.",
+                Message: $"{_messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_FIELDS_MISSING)} {missingList}.",
                 TestedAt: testedAt);
         }
 
         return new IntegrationTestResultDto(
             Success: true,
-            Message: "Connection validated -- all required fields are configured.",
+            Message: _messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_CONFIGURED),
             TestedAt: testedAt);
     }
 
@@ -187,7 +194,7 @@ public sealed class TestIntegrationConnectionHandler
             await plugin.GetStatusAsync("connection-test-probe", ct);
             return new IntegrationTestResultDto(
                 Success: true,
-                Message: "Gateway reachable and credentials accepted.",
+                Message: _messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_GATEWAY_OK),
                 TestedAt: testedAt);
         }
         catch (OperationCanceledException)
@@ -203,7 +210,7 @@ public sealed class TestIntegrationConnectionHandler
             _logger.LogWarning(ex, "Payment plugin connection test probe failed.");
             return new IntegrationTestResultDto(
                 Success: false,
-                Message: "Gateway test failed. See the server log for detail.",
+                Message: _messages.Resolve(HostpanelErrorCodes.INTEGRATION_TEST_GATEWAY_FAILED),
                 TestedAt: testedAt);
         }
     }

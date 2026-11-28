@@ -125,7 +125,7 @@
     "cancellationRequests": "Запросы на отмену",
     "reviewAndProcessServiceCancellation": "Просмотр и обработка запросов на отмену услуг",
     "noCancellationRequestsFound": "Запросы на отмену не найдены",
-    "searchRequests": "Поиск по причине или номеру",
+    "searchRequests": "Поиск по причине, услуге, клиенту или номеру",
     "noRequestsMatchYourFilters": "Нет запросов на отмену, подходящих под фильтры",
     "deleteCancellationRequest": "Удалить запрос на отмену",
     "areYouSureYouWant": "Вы уверены, что хотите удалить этот запрос на отмену?",
@@ -228,7 +228,7 @@
       "senderRejected": "Адрес отправителя отклонён",
       "messageRejected": "Письмо отклонено"
     },
-    "searchEmails": "Поиск по письмам"
+    "searchEmails": "Поиск по теме или получателю"
   },
   "clientInvoices": {
     "createInvoice": "Создать счёт",
@@ -249,7 +249,7 @@
     "activityLog": "Журнал активности",
     "logEntry": "Запись журнала",
     "user": "Пользователь",
-    "searchLog": "Поиск по журналу активности"
+    "searchLog": "Поиск по администратору, описанию или IP-адресу"
   },
   "clientOpenTicket": {
     "ticketSubject": "Тема тикета",
@@ -307,6 +307,7 @@
     "dedicatedIp": "Назначенный IP",
     "moduleCommands": "Команды модуля",
     "serviceTerminated": "Услуга завершена",
+    "statusLocked": "Завершённую услугу нельзя перевести в другой статус, поэтому менять здесь нечего. Чтобы предоставить эту услугу снова, оформите для клиента новый заказ.",
     "terminate": "Завершить",
     "suspend": "Приостановить",
     "changePackage": "Сменить тариф",

@@ -50,14 +50,14 @@ public sealed class OrderFraudReviewTests
 
     /// <summary>Only a pending order can be held.</summary>
     [Fact]
-    public void HoldForReview_WhenNotPending_ThrowsWithOrderNotPending()
+    public void HoldForReview_WhenNotPending_ThrowsWithOrderHoldNotPending()
     {
         var order = PendingOrder();
         order.Accept(Now);
 
         var act = () => order.HoldForReview(60, []);
 
-        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderNotPending);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderHoldNotPending);
     }
 
     /// <summary>A score outside 0 to 100 is refused.</summary>
@@ -79,9 +79,15 @@ public sealed class OrderFraudReviewTests
         var order = PendingOrder();
         order.HoldForReview(60, [FraudReasonCode.DisposableEmail]);
 
-        foreach (var act in new Action[] { () => order.Accept(Now), order.Cancel, order.MarkFraud })
+        var refusals = new (Action Act, string Code)[]
         {
-            act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderNotPending);
+            (() => order.Accept(Now), OrdersErrors.OrderNotPending),
+            (order.Cancel, OrdersErrors.OrderCancelNotPending),
+            (order.MarkFraud, OrdersErrors.OrderFraudNotPending),
+        };
+        foreach (var (act, code) in refusals)
+        {
+            act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(code);
         }
 
         order.IsAccepted.Should().BeFalse();

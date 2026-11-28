@@ -62,31 +62,31 @@
     <value>Վավերացումը ձախողվեց</value>
   </data>
   <data name="ValidationErrorsOccurred" xml:space="preserve">
-    <value>Առաջացել է վավերացման մեկ կամ մի քանի սխալ։</value>
+    <value>Մուտքագրված որոշ արժեքներ վավեր չեն, ուստի ոչինչ չի պահպանվել։ Ստուգեք յուրաքանչյուր դաշտի կողքի հաղորդագրությունները, ուղղեք դրանք և կրկին ուղարկեք ձևաթուղթը։</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
     <value>Մուտքը թույլատրված չէ</value>
   </data>
   <data name="UnauthorizedDetail" xml:space="preserve">
-    <value>Դուք իրավունք չունեք կատարելու այս գործողությունը։</value>
+    <value>Դուք մուտք չեք գործել կամ ձեր սեանսը ժամկետանց է, ուստի գործողությունը չի կատարվել։ Մուտք գործեք կրկին և կրկնեք այն։</value>
   </data>
   <data name="ResourceNotFound" xml:space="preserve">
     <value>Ռեսուրսը չի գտնվել</value>
   </data>
   <data name="ResourceNotFoundDetail" xml:space="preserve">
-    <value>Պահանջված ռեսուրսը չի գտնվել։</value>
+    <value>Պահանջված տարրը գոյություն չունի կամ ջնջվել է։ Թարմացրեք էջը և կրկին բացեք այն ցանկից։</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
     <value>Սերվերի ներքին սխալ</value>
   </data>
   <data name="UnexpectedErrorOccurred" xml:space="preserve">
-    <value>Տեղի է ունեցել անսպասելի սխալ։ Խնդրում ենք փորձել ավելի ուշ։</value>
+    <value>Սերվերում խափանում է տեղի ունեցել, և գործողությունը կարող էր չավարտվել։ Սպասեք մեկ րոպե և կրկնեք այն, իսկ եթե խնդիրը կրկնվում է, դիմեք ադմինիստրատորին և նշեք սխալի ժամը։</value>
   </data>
   <data name="BusinessRuleViolation" xml:space="preserve">
     <value>Բիզնես կանոնի խախտում</value>
   </data>
   <data name="BusinessRuleViolationDetail" xml:space="preserve">
-    <value>Հարցումը խախտում է բիզնես կանոնը։</value>
+    <value>Գործողությունը հնարավոր չէ այս տարրի ընթացիկ վիճակում, ուստի ոչինչ չի փոխվել։ Թարմացրեք էջը՝ նրա ընթացիկ վիճակը տեսնելու համար, և ստուգեք, որ ձեր տվյալները համապատասխանում են դրան։</value>
   </data>
   <data name="ConcurrencyConflict" xml:space="preserve">
     <value>Զուգահեռ փոփոխության հակասություն</value>
@@ -98,10 +98,10 @@
     <value>Հարցման անվավեր մարմին</value>
   </data>
   <data name="InvalidRequestBodyDetail" xml:space="preserve">
-    <value>Հարցման մարմինը հնարավոր չէ կարդալ։ Ստուգեք դրա ձևաչափը։</value>
+    <value>Սերվերը չկարողացավ կարդալ հարցման հետ ուղարկված տվյալները, օրինակ՝ սխալ ձևաչափի, անհամապատասխան տիպի արժեքի կամ չափազանց մեծ ծավալի պատճառով։ Թարմացրեք էջը և կրկին ուղարկեք, իսկ եթե API-ին դիմում եք անմիջապես, ստուգեք ուղարկվող JSON-ը։</value>
   </data>
   <data name="InvalidDecimalValue" xml:space="preserve">
-    <value>«{0}» արժեքը վավեր թիվ չէ։</value>
+    <value>«{0}» արժեքը վավեր թիվ չէ։ Մուտքագրեք միայն թվանշաններ, իսկ տասնորդական բաժանարար օգտագործեք կետը, օրինակ՝ 12.50։</value>
   </data>
   <data name="Forbidden" xml:space="preserve">
     <value>Մուտքը արգելված է</value>
@@ -110,9 +110,9 @@
     <value>Այս հարցումը պետք է ուղարկվի հենց վահանակից։ Թարմացրեք էջը և կրկին փորձեք։</value>
   </data>
   <data name="ForbiddenDetail" xml:space="preserve">
-    <value>Դուք իրավունք չունեք կատարելու այս գործողությունը։</value>
+    <value>Ձեր հաշիվը չունի այս գործողության համար անհրաժեշտ թույլտվությունը, ուստի այն չի կատարվել։ Խնդրեք ադմինիստրատորին տրամադրել թույլտվությունը կամ մուտք գործեք այն ունեցող հաշվով։</value>
   </data>
   <data name="InvalidFieldValue" xml:space="preserve">
-    <value>Այս արժեքը վավեր չէ։</value>
+    <value>Այս արժեքը հնարավոր չեղավ կարդալ սպասվող ձևաչափով։ Ստուգեք մուտքագրածը և ուղղեք այն։</value>
   </data>
 </root>

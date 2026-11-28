@@ -541,7 +541,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     /// <summary>A service that is not active cannot change plan.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task APendingService_Returns400WithServiceNotActive()
+    public async Task APendingService_Returns400WithServicePlanChangeNotActive()
     {
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-pending-service");
         var serviceId = await ServicesTestSeeds.SeedPendingServiceAsync(factory, clientId);
@@ -549,7 +549,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var response = await owner.PostAsJsonAsync(RouteOf(serviceId), new { toProductId = 1 });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+        (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_PLAN_CHANGE_NOT_ACTIVE);
     }
 
     /// <summary>A service with no renewal date has no cycle to prorate.</summary>

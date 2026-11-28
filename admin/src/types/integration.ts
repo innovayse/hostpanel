@@ -50,7 +50,7 @@ export type IntegrationSlug = (typeof IntegrationSlug)[keyof typeof IntegrationS
 export interface IntegrationDto {
   /** URL-safe slug used in routes and API calls. */
   slug: string
-  /** Human-readable name, as the integration list shows it. */
+  /** Display name: the manifest name for a plugin; for a built-in integration the store words it from the slug. */
   name: string
   /** Category this integration belongs to. */
   category: IntegrationCategory
@@ -102,7 +102,7 @@ export interface IntegrationConnection {
 export interface FieldDefinitionDto {
   /** Storage key used in the Settings table (e.g. "secret_key"). */
   key: string
-  /** Human-readable label shown above the input. */
+  /** Label shown above the input: finished text for a plugin; for a built-in integration the store words it from the slug and the key. */
   label: string
   /** Input kind of the field. */
   type: IntegrationFieldType
@@ -118,9 +118,12 @@ export interface FieldDefinitionDto {
   description?: string | null
   /** Hint shown in the empty input, already in the request language; absent or null for none. */
   placeholder?: string | null
-  /** The text shown for each option value, keyed by the value; absent or null when an option shows its value. */
+  /** The text shown for each option value, keyed by the value (finished text for a plugin, worded by the store for a built-in integration); absent or null when an option shows its value. */
   optionLabels?: Record<string, string> | null
 }
+
+/** A field definition as the API sends it: a built-in integration's label is null, the admin words it. */
+export type FieldDefinitionWire = Omit<FieldDefinitionDto, 'label'> & { label?: string | null }
 
 /** The stored state of one integration field. */
 export interface IntegrationFieldValue {
@@ -136,7 +139,7 @@ export interface IntegrationFieldValue {
 export interface IntegrationDetailDto {
   /** URL-safe slug used in routes and API calls. */
   slug: string
-  /** Human-readable name from the built-in catalogue or the plugin manifest. */
+  /** Display name: the manifest name for a plugin; for a built-in integration the store words it from the slug. */
   name: string
   /** Whether this integration is currently enabled. */
   isEnabled: boolean
@@ -155,6 +158,15 @@ export interface IntegrationDetailDto {
   canTestConnection: boolean
   /** Last known connection state of a plugin that implements the status capability; null otherwise. */
   connection: IntegrationConnection | null
+}
+
+/** An integration summary as the API sends it: a built-in integration's name is null, the admin words it. */
+export type IntegrationWireDto = Omit<IntegrationDto, 'name'> & { name: string | null }
+
+/** An integration detail as the API sends it: a built-in integration's name and field labels are null, the admin words them. */
+export type IntegrationDetailWireDto = Omit<IntegrationDetailDto, 'name' | 'fieldDefinitions'> & {
+  name: string | null
+  fieldDefinitions: FieldDefinitionWire[]
 }
 
 /** Payload sent to PUT /api/admin/integrations/:slug. */
@@ -187,12 +199,14 @@ export interface IntegrationTestResult {
 }
 
 /**
- * Static metadata for rendering each integration card.
+ * Static metadata of a built-in integration: its card and the wording of its form.
  * Not fetched from the API: defined client-side.
  */
 export interface IntegrationMeta {
   /** Matches IntegrationDto.slug. */
   slug: string
+  /** Locale key of the integration's display name. */
+  labelKey: string
   /** Tailwind background color class for the logo block (e.g. "bg-[#635bff]"). */
   color: string
   /** Path to the SVG logo in /public/integrations/ (e.g. "/integrations/<slug>.svg"). */
@@ -201,23 +215,51 @@ export interface IntegrationMeta {
   shortDescription: string
   /** Category this integration belongs to. */
   category: IntegrationCategory
-  /** Ordered list of config field keys and their labels. */
-  fields: IntegrationField[]
+  /** The wording of the integration's form fields, in form order. */
+  fields: IntegrationFieldMeta[]
   /** Optional hint shown in the status sidebar (e.g. webhook URL instructions). */
   hint?: string
 }
 
-/** A single configurable field for an integration. */
-export interface IntegrationField {
-  /** Field key matching the config Record key. */
-  key: string
-  /** Human-readable label. */
-  label: string
-  /** Input type: "text" for most, "password" for secrets, "select" for enums, "toggle" for booleans. */
-  type: IntegrationFieldType
-  /** Options for "select" type fields. */
-  options?: string[]
+/** The wording of one form field of a built-in integration. */
+export interface IntegrationFieldMeta {
+  /** The field's key, as the API sends it. */
+  key: IntegrationFieldKey
+  /** Locale key of the field's label. */
+  labelKey: string
+  /** Wording of the options that show text other than their value; absent when every option shows its value. */
+  options?: IntegrationOptionMeta[]
 }
+
+/** The wording of one option of a select field. */
+export interface IntegrationOptionMeta {
+  /** The option's stored value. */
+  value: string
+  /** Locale key of the text shown for the option. */
+  labelKey: string
+}
+
+/** Closed set of the field keys the API sends for the built-in integrations; the strings are the stored setting names. */
+export const IntegrationFieldKey = {
+  AccountName: 'account_name',
+  Iban: 'iban',
+  Swift: 'swift',
+  BankName: 'bank_name',
+  Instructions: 'instructions',
+  ExpiryDays: 'expiry_days',
+  Host: 'host',
+  Port: 'port',
+  Username: 'username',
+  Password: 'password',
+  ApiToken: 'api_token',
+  FromAddress: 'from_address',
+  Encryption: 'encryption',
+  AccountId: 'account_id',
+  LicenseKey: 'license_key',
+} as const
+
+/** One of the {@link IntegrationFieldKey} values. */
+export type IntegrationFieldKey = (typeof IntegrationFieldKey)[keyof typeof IntegrationFieldKey]
 
 /** Closed set of input kinds an integration configuration field can use; the strings are the API's enum names. */
 export enum IntegrationFieldType {

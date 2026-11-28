@@ -30,7 +30,7 @@
   },
   "ordersList": {
     "manageCustomerOrders": "Kundenbestellungen verwalten",
-    "searchOrders": "Bestellungen nach Nummer oder ID suchen",
+    "searchOrders": "Nach Bestellnummer, ID oder Kunde suchen",
     "order": "Bestellung Nr.",
     "items": "Positionen",
     "noOrdersFound": "Keine Bestellungen gefunden",

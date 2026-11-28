@@ -8,6 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useIntegrationsStore } from '@/stores/integrations'
 import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { IntegrationLabelKind } from '@/types/integration'
+
+/** The name a plugin sends for itself, labelled as finished text by the store. */
+const bankTransferName = { kind: IntegrationLabelKind.Text, text: 'Bank Transfer' }
 
 /** The sentence shown when nothing answered. */
 const NO_ANSWER = 'Could not reach the server. Check your connection and try again.'
@@ -63,7 +67,7 @@ describe('integrationsStore.fetchOne', () => {
     const store = useIntegrationsStore()
 
     await store.fetchOne('bank-transfer')
-    expect(store.current).toEqual({ slug: 'bank-transfer', name: 'Bank Transfer', fieldDefinitions: [] })
+    expect(store.current).toEqual({ slug: 'bank-transfer', name: bankTransferName, fieldDefinitions: [] })
   })
 
   it('empties current and keeps the no-answer sentence offline', async () => {
@@ -84,7 +88,7 @@ describe('integrationsStore.saveConfig', () => {
 
     expect(await store.saveConfig('bank-transfer', { enabled: true, config: {} } as never)).toBe(true)
     expect(mock).toHaveBeenCalledTimes(2)
-    expect(store.current).toEqual({ slug: 'bank-transfer', name: 'Bank Transfer', fieldDefinitions: [], enabled: true })
+    expect(store.current).toEqual({ slug: 'bank-transfer', name: bankTransferName, fieldDefinitions: [], enabled: true })
   })
 
   it('keeps the API sentence and does not re-read on refusal', async () => {

@@ -34,6 +34,16 @@
               <Download :size="16" :stroke-width="2" class="mr-2" />
               {{ $t('common.pdf') }}
             </UiButton>
+            <UiButton
+              v-if="canDownload"
+              variant="secondary"
+              :loading="paymentStore.pdfDownloading"
+              data-testid="invoice-print"
+              @click="paymentStore.printInvoicePdf(String(route.params.id))"
+            >
+              <Printer :size="16" :stroke-width="2" class="mr-2" />
+              {{ $t('common.print') }}
+            </UiButton>
             <UiButton v-if="isOutstanding" variant="primary" :to="payPath" data-testid="invoice-pay-now">
               <CreditCard :size="16" :stroke-width="2" class="mr-2" />
               {{ $t('client.invoices.pay') }}
@@ -127,16 +137,15 @@
 
 <script setup lang="ts">
 /**
- * One invoice: header with status and a pay button while money is owed, the line items with
+ * One invoice: header with status, the PDF download and print buttons and a pay button while money is owed, the line items with
  * totals, and a reminder banner. The invoice is read through the invoice payment store.
  */
 import { CLIENT_INVOICES_PATH, clientInvoicePayPath } from '~/constants/clientRoutes'
-import { AlertCircle, CreditCard, Download } from 'lucide-vue-next'
+import { AlertCircle, CreditCard, Download, Printer } from 'lucide-vue-next'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
-import { InvoiceStatus } from '~/types/invoicestatus'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { EMPTY_DATE, formatDate, formatDateTime } from '~/utils/formatDate'
-import { balanceDue, isInvoiceOutstanding, isInvoiceOverdue } from '~/utils/invoice'
+import { balanceDue, isInvoiceDownloadable, isInvoiceOutstanding, isInvoiceOverdue } from '~/utils/invoice'
 import { UiGridTag, UiTextTag } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -178,7 +187,7 @@ const error = computed(() => paymentStore.invoiceError)
 const payPath = computed(() => localePath(clientInvoicePayPath(String(route.params.id))))
 
 /** True once the invoice has loaded and is published; a draft is not the client's to download yet. */
-const canDownload = computed(() => invoice.value !== null && invoice.value.status !== InvoiceStatus.Draft)
+const canDownload = computed(() => invoice.value !== null && isInvoiceDownloadable(invoice.value))
 
 /**
  * Formats one amount on this invoice in the invoice's own billing currency.

@@ -70,6 +70,18 @@
       "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
       "invalid": "Մուտքագրեք https://-ով սկսվող հասցե։"
     },
+    "legalCompanyName": {
+      "label": "Ընկերության իրավական անվանումը",
+      "hint": "«Օրինակ» ՍՊԸ"
+    },
+    "legalTaxId": {
+      "label": "ՀՎՀՀ",
+      "hint": "Ցուցադրվում է կայքի ստորին մասում և հաշիվներում"
+    },
+    "legalRegistrationNumber": {
+      "label": "Ընկերության գրանցման համարը",
+      "hint": "123456789"
+    },
     "contactHours": {
       "label": "Աշխատանքային ժամեր",
       "hint": "Երկ-Ուրբ 09:00-18:00"
@@ -78,7 +90,8 @@
       "figures": "Թվեր",
       "contacts": "Կոնտակտներ",
       "messengers": "Մեսենջերներ",
-      "address": "Հասցե և աշխատանքային ժամեր"
+      "address": "Հասցե և աշխատանքային ժամեր",
+      "company": "Ընկերություն"
     },
     "contactTimezone": {
       "label": "Ժամային գոտի",

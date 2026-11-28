@@ -24,7 +24,7 @@
         </UiTableHead>
       </template>
       <UiTableBody>
-        <UiTableRow v-for="entry in entries" :key="entry.id" :data-testid="`credit-entry-${entry.id}`">
+        <UiTableRow v-for="entry in entries" :key="entry.id" :to="entryPath(entry)" :data-testid="`credit-entry-${entry.id}`">
           <UiTableTd>
             <UiText :as="UiTextTag.Span" size="sm" :tone="UiTextTone.Subtle">{{ formatDateTime(entry.date) }}</UiText>
           </UiTableTd>
@@ -81,6 +81,18 @@ interface Props {
 
 /** The props of the component. */
 const props = defineProps<Props>()
+
+/** Prefixes a path with the active locale. */
+const localePath = useLocalePath()
+
+/**
+ * The page a history line opens: the invoice it belongs to.
+ *
+ * @param entry - The history line.
+ * @returns The invoice's path, or undefined for a line no invoice caused, which is then not a link.
+ */
+const entryPath = (entry: ClientCreditEntry): string | undefined =>
+  entry.invoiceId === null ? undefined : localePath(clientInvoicePath(entry.invoiceId))
 
 /**
  * Formats an amount in the credit's currency.

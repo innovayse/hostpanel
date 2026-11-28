@@ -30,6 +30,8 @@ import { useBillingStore } from '@/stores/billing'
 import { InvoiceOpenAction, InvoiceTab, InvoiceStatus } from '@/types/invoice'
 import type { InvoiceDetail } from '@/types/invoice'
 import { saveBlob } from '@/utils/saveBlob'
+import { printBlob } from '@/lib/printBlob'
+import type { DownloadedFile } from '@/types/download'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
 import { schemaHeader } from '@/lib/schemaHeader'
@@ -63,7 +65,7 @@ const activeTab = ref<string>(InvoiceTab.Summary)
 /** True when the operator can change the invoice (the `/edit` route, or toggled on). */
 const manageMode = ref(route.params.action === EDIT_ACTION)
 
-/** Toasts the outcome of the PDF download. */
+/** Toasts the outcome of the PDF download and print. */
 const feedback = useOutcomeToast()
 
 /** Id of the invoice from the route. */
@@ -110,19 +112,33 @@ const toggleMode = (): void => {
   }
 }
 
-/** Opens the browser print dialog for the page. */
-const print = (): void => {
-  window.print()
-}
-
-/** Downloads the invoice's PDF and saves it; a refusal is toasted with the API's own sentence. */
-const downloadPdf = async (): Promise<void> => {
+/**
+ * Fetches the invoice's PDF; a refusal is toasted with the API's own sentence.
+ *
+ * @returns The PDF and its name, or null when refused.
+ */
+const fetchPdf = async (): Promise<DownloadedFile | null> => {
   const file = await store.downloadPdf(invoiceId.value)
   if (file === null) {
     feedback.show(store.error ?? t('errors.noAnswer'), true)
-    return
   }
-  saveBlob(file.blob, file.fileName ?? `invoice-${invoiceId.value}.pdf`)
+  return file
+}
+
+/** Prints the invoice's PDF, the same file the PDF action downloads. */
+const print = async (): Promise<void> => {
+  const file = await fetchPdf()
+  if (file !== null) {
+    printBlob(file.blob)
+  }
+}
+
+/** Downloads the invoice's PDF and saves it. */
+const downloadPdf = async (): Promise<void> => {
+  const file = await fetchPdf()
+  if (file !== null) {
+    saveBlob(file.blob, file.fileName ?? `invoice-${invoiceId.value}.pdf`)
+  }
 }
 
 onMounted(load)

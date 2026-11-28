@@ -70,6 +70,18 @@
       "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
       "invalid": "Укажите адрес, который начинается с https://."
     },
+    "legalCompanyName": {
+      "label": "Юридическое название компании",
+      "hint": "ООО «Пример»"
+    },
+    "legalTaxId": {
+      "label": "ИНН",
+      "hint": "Показывается в подвале сайта и в счетах"
+    },
+    "legalRegistrationNumber": {
+      "label": "Регистрационный номер компании",
+      "hint": "123456789"
+    },
     "contactHours": {
       "label": "Часы работы",
       "hint": "Пн-Пт 09:00-18:00"
@@ -78,7 +90,8 @@
       "figures": "Цифры",
       "contacts": "Контакты",
       "messengers": "Мессенджеры",
-      "address": "Адрес и часы работы"
+      "address": "Адрес и часы работы",
+      "company": "Компания"
     },
     "contactTimezone": {
       "label": "Часовой пояс",

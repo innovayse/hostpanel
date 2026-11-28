@@ -2,8 +2,8 @@
 /**
  * Public site card: the home-page figures, the hero badge and the contact details the portal shows.
  *
- * The fields are grouped under four headings: Figures (the numbers and the line in the hero), Contacts, Messengers, and
- * Address and hours (the footer and the contact page). Every field fills its column and is a draft the page's save bar
+ * The fields are grouped under five headings: Figures (the numbers and the line in the hero), Contacts, Messengers,
+ * Address and hours (the footer and the contact page), and Company (the seller details printed on invoices). Every field fills its column and is a draft the page's save bar
  * saves; a value that breaks its rule is flagged under the field. The site name and tagline sit in the identity
  * card above.
  */
@@ -51,6 +51,8 @@ enum StorefrontGroup {
   Messengers = 'messengers',
   /** The office address, its map, the working hours and their time zone. */
   Address = 'address',
+  /** The legal company name, tax identifier and registration number printed on invoices. */
+  Company = 'company',
 }
 
 /** One editable field of the card. */
@@ -162,6 +164,33 @@ const FIELDS: StorefrontField[] = [
     rule: SettingFieldRule.HttpsUrl,
     invalidKey: 'settings.storefrontContent.contactMapUrl.invalid',
   },
+  {
+    group: StorefrontGroup.Company,
+    key: SettingKey.LegalCompanyName,
+    env: SettingEnv[SettingKey.LegalCompanyName],
+    testid: 'legal-company-name',
+    labelKey: 'settings.storefrontContent.legalCompanyName.label',
+    hintKey: 'settings.storefrontContent.legalCompanyName.hint',
+    draft: useSettingDraft(settings, SettingKey.LegalCompanyName),
+  },
+  {
+    group: StorefrontGroup.Company,
+    key: SettingKey.LegalTaxId,
+    env: SettingEnv[SettingKey.LegalTaxId],
+    testid: 'legal-tax-id',
+    labelKey: 'settings.storefrontContent.legalTaxId.label',
+    hintKey: 'settings.storefrontContent.legalTaxId.hint',
+    draft: useSettingDraft(settings, SettingKey.LegalTaxId),
+  },
+  {
+    group: StorefrontGroup.Company,
+    key: SettingKey.LegalRegistrationNumber,
+    env: SettingEnv[SettingKey.LegalRegistrationNumber],
+    testid: 'legal-registration-number',
+    labelKey: 'settings.storefrontContent.legalRegistrationNumber.label',
+    hintKey: 'settings.storefrontContent.legalRegistrationNumber.hint',
+    draft: useSettingDraft(settings, SettingKey.LegalRegistrationNumber),
+  },
 ]
 
 /** The time zone the working hours are stated in: a list pick, not text, so it has its own field. */
@@ -227,7 +256,7 @@ const invalidMessageOf = (field: StorefrontField): string | undefined =>
     : undefined
 
 /** The groups in the order they are drawn, each with its heading key. */
-const GROUPS: readonly StorefrontGroup[] = [StorefrontGroup.Figures, StorefrontGroup.Contacts, StorefrontGroup.Messengers, StorefrontGroup.Address]
+const GROUPS: readonly StorefrontGroup[] = [StorefrontGroup.Figures, StorefrontGroup.Contacts, StorefrontGroup.Messengers, StorefrontGroup.Address, StorefrontGroup.Company]
 
 /**
  * The plain text fields of a group.

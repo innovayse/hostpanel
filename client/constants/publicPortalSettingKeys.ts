@@ -58,6 +58,8 @@ export const PUBLIC_PORTAL_SETTING_KEYS: readonly string[] = [
   PortalSettingKey.StatsRegions,
   PortalSettingKey.HeroBadge,
   PortalSettingKey.LegalTaxId,
+  PortalSettingKey.LegalCompanyName,
+  PortalSettingKey.LegalRegistrationNumber,
   PortalSettingKey.AppsEnabled,
   PortalSettingKey.AppsAccount,
   PortalSettingKey.AppsTasks,

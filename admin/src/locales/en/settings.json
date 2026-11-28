@@ -70,6 +70,18 @@
       "hint": "https://www.openstreetmap.org/export/embed.html?bbox=0,0,1,1",
       "invalid": "Enter an address that starts with https://."
     },
+    "legalCompanyName": {
+      "label": "Legal company name",
+      "hint": "Example Ltd"
+    },
+    "legalTaxId": {
+      "label": "Tax ID",
+      "hint": "Printed in the storefront footer and on invoices"
+    },
+    "legalRegistrationNumber": {
+      "label": "Company registration number",
+      "hint": "123456789"
+    },
     "contactHours": {
       "label": "Working hours",
       "hint": "Mon-Fri 09:00-18:00"
@@ -78,7 +90,8 @@
       "figures": "Figures",
       "contacts": "Contacts",
       "messengers": "Messengers",
-      "address": "Address and hours"
+      "address": "Address and hours",
+      "company": "Company"
     },
     "contactTimezone": {
       "label": "Time zone",

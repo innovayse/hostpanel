@@ -24,7 +24,7 @@
       </UiTableHead>
     </template>
     <UiTableBody>
-      <UiTableRow v-for="note in notes" :key="note.id" :data-testid="`credit-note-row-${note.id}`">
+      <UiTableRow v-for="note in notes" :key="note.id" :to="invoicePath(note)" :data-testid="`credit-note-row-${note.id}`">
         <UiTableTd>
           <UiText :as="UiTextTag.Span" size="sm" weight="medium" :data-testid="`credit-note-number-${note.id}`">{{ note.number }}</UiText>
         </UiTableTd>
@@ -48,16 +48,7 @@
           </UiBadge>
         </UiTableTd>
         <UiTableTd align="right">
-          <UiButton
-            variant="subtle"
-            size="sm"
-            :loading="downloadingId === note.id"
-            :hint="$t('client.invoices.downloadPdf')"
-            :data-testid="`credit-note-download-${note.id}`"
-            @click="emit('download', note)"
-          >
-            {{ $t('common.pdf') }}
-          </UiButton>
+          <UiRowActions :actions="rowActions(note)" :testid="`credit-note-actions-${note.id}`" />
         </UiTableTd>
       </UiTableRow>
     </UiTableBody>
@@ -67,15 +58,16 @@
 <script setup lang="ts">
 /**
  * Table. The credit notes issued to the client: number, date, the invoice credited, where the value went, the total and the
- * state, with a button that downloads each one as a PDF. Its loading and empty states are the table's own.
+ * state, with a menu that views the credited invoice and downloads or prints each note as a PDF. Its loading and empty states are the table's own.
  *
  * A credit note is not invoice credit, so nothing here is labelled "credit" alone. The table only formats what the backend sent and
- * asks its parent to download; it holds no state of its own.
+ * asks its parent to download or print; it holds no state of its own.
  */
-import { FileMinus } from 'lucide-vue-next'
+import { Download, Eye, FileMinus, Printer } from 'lucide-vue-next'
 import { clientInvoicePath } from '~/constants/clientRoutes'
 import { ClientCreditNoteStatus } from '~/types/clientcreditnote'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
+import type { UiRowAction } from '~/types/uirowaction'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { formatDate } from '~/utils/formatDate'
 import { UiTextTag, UiTone } from '~/utils/ui/enums'
@@ -84,8 +76,6 @@ import { UiTextTag, UiTone } from '~/utils/ui/enums'
 interface Props {
   /** The notes to list, newest first as the backend sent them. */
   notes: ClientCreditNote[]
-  /** The id of the note whose PDF is being downloaded; null when none is. */
-  downloadingId: number | null
   /** Whether the notes are still being read. */
   loading: boolean
 }
@@ -93,11 +83,39 @@ interface Props {
 /** The props of the component. */
 defineProps<Props>()
 
+/** Translates a key into the active locale. */
+const { t } = useI18n()
+
+/** Prefixes a path with the active locale. */
+const localePath = useLocalePath()
+
 /** The events of the component. */
 const emit = defineEmits<{
   /** The client asked for the PDF of a note. */
   download: [note: ClientCreditNote]
+  /** The client asked to print the PDF of a note. */
+  print: [note: ClientCreditNote]
 }>()
+
+/**
+ * The page a note opens: the invoice it credits, since a credit note has no page of its own.
+ *
+ * @param note - The note the row shows.
+ * @returns The path of the credited invoice, with the active locale's prefix.
+ */
+const invoicePath = (note: ClientCreditNote): string => localePath(clientInvoicePath(note.invoiceId))
+
+/**
+ * The actions of one note row: view the credited invoice, download the PDF or print it.
+ *
+ * @param note - The note the row shows.
+ * @returns The actions of the row's menu, in menu order.
+ */
+const rowActions = (note: ClientCreditNote): UiRowAction[] => [
+  { key: 'view', label: t('common.view'), icon: Eye, to: invoicePath(note) },
+  { key: 'download', label: t('client.invoices.downloadPdf'), icon: Download, onSelect: () => emit('download', note) },
+  { key: 'print', label: t('common.print'), icon: Printer, onSelect: () => emit('print', note) },
+]
 
 /** The tone of the badge of each state: issued is informational, applied is a success, voided is a warning. */
 const STATUS_TONES: Record<ClientCreditNoteStatus, UiTone> = {

@@ -104,7 +104,8 @@ describe('credit notes page', () => {
     const downloads = captureDownloads()
     const wrapper = await mountRenderedClientPage(CreditNotesPage, PAGE_ROOT)
 
-    await wrapper.get('[data-testid="credit-note-download-3"]').trigger('click')
+    await wrapper.get('[data-testid="credit-note-actions-3"]').trigger('click')
+    await wrapper.get('[data-testid="credit-note-actions-3-download"]').trigger('click')
     await waitUntil(() => expect(downloads).toHaveLength(1))
 
     expect(requestsTo(stub.requests, PATHS.pdf)).toHaveLength(1)
@@ -118,7 +119,8 @@ describe('credit notes page', () => {
     const downloads = captureDownloads()
     const wrapper = await mountRenderedClientPage(CreditNotesPage, PAGE_ROOT)
 
-    await wrapper.get('[data-testid="credit-note-download-3"]').trigger('click')
+    await wrapper.get('[data-testid="credit-note-actions-3"]').trigger('click')
+    await wrapper.get('[data-testid="credit-note-actions-3-download"]').trigger('click')
     await waitUntil(() => expect(wrapper.find('[data-testid="credit-notes-download-error"]').exists()).toBe(true))
 
     expect(wrapper.get('[data-testid="credit-notes-download-error"]').text()).toBe('The credit note was not found.')

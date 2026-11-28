@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { usePluginsApi } from '@/composables/apis/usePluginsApi'
-import { json, problem, stubFetch, callOf } from '../../helpers/fetch'
+import { changeStream, json, problem, stubFetch, callOf } from '../../helpers/fetch'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -31,21 +31,21 @@ describe('usePluginsApi', () => {
   })
 
   it('installPlugin posts the file as multipart form data', async () => {
-    const mock = stubFetch(json({ requiresRestart: true }))
+    const mock = stubFetch(changeStream({ requiresRestart: true }))
     const zip = new File(['z'], 'plugin.zip', { type: 'application/zip' })
 
-    expect(await usePluginsApi().installPlugin(zip)).toEqual({ requiresRestart: true })
+    expect(await usePluginsApi().installPlugin(zip, false, () => undefined)).toEqual({ requiresRestart: true })
     const call = callOf(mock)
     expect(call).toMatchObject({ url: '/api/admin/plugins/install', method: 'POST' })
     expect((call.init.body as FormData).get('file')).toBeInstanceOf(File)
   })
 
   it('removePlugin DELETEs by id and restartServer POSTs to restart', async () => {
-    const mock = stubFetch(json({ requiresRestart: true }))
+    const mock = stubFetch(changeStream({ requiresRestart: true }), changeStream({}))
     const api = usePluginsApi()
 
-    expect(await api.removePlugin('p')).toEqual({ requiresRestart: true })
-    await api.restartServer()
+    expect(await api.removePlugin('p', () => undefined)).toEqual({ requiresRestart: true })
+    await api.restartServer(() => undefined)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/plugins/p', method: 'DELETE' })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/plugins/restart', method: 'POST' })
   })
@@ -53,7 +53,7 @@ describe('usePluginsApi', () => {
   it('rejects when the API refuses', async () => {
     stubFetch(problem('Not a plugin archive.', 400))
 
-    await expect(usePluginsApi().installPlugin(new File(['x'], 'a.zip'))).rejects.toBeTruthy()
+    await expect(usePluginsApi().installPlugin(new File(['x'], 'a.zip'), false, () => undefined)).rejects.toBeTruthy()
   })
 
   it('getRegistryDetails reads the registry entry by id', async () => {
@@ -75,20 +75,25 @@ describe('usePluginsApi', () => {
   })
 
   it('installFromRegistry posts the version and the downgrade flag', async () => {
-    const mock = stubFetch(json({ requiresRestart: false }))
+    const mock = stubFetch(changeStream({ requiresRestart: false }))
 
-    await usePluginsApi().installFromRegistry('p', { version: '1.0.0', allowDowngrade: true })
+    await usePluginsApi().installFromRegistry('p', { version: '1.0.0', allowDowngrade: true }, () => undefined)
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins/registry/p/install', method: 'POST' })
     expect(JSON.parse(String(callOf(mock).init.body))).toEqual({ version: '1.0.0', allowDowngrade: true })
   })
 
   it('encodes every id placed in a path', async () => {
-    const mock = stubFetch(json({ requiresRestart: false }))
+    const mock = stubFetch(
+      changeStream({ requiresRestart: false }),
+      json({}),
+      changeStream({ requiresRestart: false }),
+      json({}),
+    )
     const api = usePluginsApi()
 
-    await api.removePlugin('a/b c')
+    await api.removePlugin('a/b c', () => undefined)
     await api.getRegistryDetails('x?y')
-    await api.installFromRegistry('a#b', { version: '1.0.0', allowDowngrade: false })
+    await api.installFromRegistry('a#b', { version: '1.0.0', allowDowngrade: false }, () => undefined)
     await api.saveLicenceKey('a b', { key: 'k' })
     await api.listSlotWidgets('p/q')
     await api.listPluginServers('p/q')

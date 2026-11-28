@@ -278,15 +278,17 @@ export const useApi = () => {
   }
 
   /**
-   * Posts a JSON body to a streaming endpoint and hands each server-sent event over as it arrives.
+   * Sends a request to a streaming endpoint and hands each server-sent event over as it arrives.
    *
    * Read with `fetch` and the response's reader, never `EventSource`, which cannot send the CSRF and
    * language headers. A 2xx answer that is not `text/event-stream` is refused like a broken upstream.
+   * The body is sent as JSON, a `FormData` as multipart (an uploaded file), and nothing is sent when it is undefined.
    *
    * @param endpoint - API path (e.g. '/admin/plugins/sites/ext/chat').
-   * @param body - The JSON body.
+   * @param body - The JSON body, a `FormData`, or undefined for none.
    * @param onEvent - Called with each event, in order.
    * @param signal - Aborting it closes the stream; the promise then resolves.
+   * @param method - The HTTP method; a POST unless the endpoint takes another.
    * @returns Resolves when the stream ended or was aborted.
    * @throws {ApiError} When the API refuses the call, answers something other than a stream, or one
    *   event grows past {@link MAX_STREAM_EVENT_CHARS}; whatever reading throws when the connection breaks.
@@ -296,14 +298,22 @@ export const useApi = () => {
     body: unknown,
     onEvent: (event: ServerSentEvent) => void,
     signal: AbortSignal,
+    method: HttpMethod = HttpMethod.Post,
   ): Promise<void> => {
+    const form = body instanceof FormData
     let response: Response
     try {
       response = await fetch(`${API_BASE}${endpoint}`, {
-        method: HttpMethod.Post,
-        body: JSON.stringify(body),
+        method,
+        body: form ? body : body === undefined ? undefined : JSON.stringify(body),
         signal,
-        headers: { 'Content-Type': MimeType.Json, Accept: MimeType.EventStream, ...CSRF_HEADER, ...languageHeader() },
+        headers: {
+          // A FormData sets its own multipart type with the boundary.
+          ...(form || body === undefined ? {} : { 'Content-Type': MimeType.Json }),
+          Accept: MimeType.EventStream,
+          ...CSRF_HEADER,
+          ...languageHeader(),
+        },
       })
     } catch (cause) {
       if (signal.aborted) {
@@ -324,7 +334,7 @@ export const useApi = () => {
 }
 
 /** The status a stream that cannot be read is refused with, the one a broken upstream answer gets everywhere else. */
-const BROKEN_STREAM_STATUS = 502
+export const BROKEN_STREAM_STATUS = 502
 
 /** The event name of a server-sent event that names none. */
 const DEFAULT_EVENT = 'message'

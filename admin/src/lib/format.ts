@@ -288,6 +288,21 @@ export const formatElapsed = (iso: string | null | undefined, now: number = Date
   return parts.join(' ')
 }
 
+/**
+ * Formats a running time as a stopwatch: `m:ss`, with hours in front once it passes one (`h:mm:ss`).
+ *
+ * @param ms - The time in milliseconds; a negative value counts as zero.
+ * @returns The time, for example `1:05`.
+ */
+export const formatStopwatch = (ms: number): string => {
+  let remaining = Math.max(0, Math.floor(ms / 1000))
+  const hours = Math.floor(remaining / HOUR_SECONDS)
+  remaining %= HOUR_SECONDS
+  const minutes = Math.floor(remaining / MINUTE_SECONDS)
+  const seconds = String(remaining % MINUTE_SECONDS).padStart(2, '0')
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${seconds}` : `${minutes}:${seconds}`
+}
+
 /** One step of the relative wording: the unit's `Intl` name, the message that words it without `Intl`, and its count. */
 interface RelativeSpan {
   /** The unit `Intl.RelativeTimeFormat` counts in. */

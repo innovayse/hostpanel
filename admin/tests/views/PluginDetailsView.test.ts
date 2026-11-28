@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginDetailsView from '@/views/PluginDetailsView.vue'
 import { PluginCapability, PluginErrorCode, PluginPricing, PluginStatus } from '@/types/plugin'
-import { callOf, json, problem } from '../helpers/fetch'
+import { changeStream, callOf, json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { integrationDetail, integrationDto } from '../helpers/integrationFixtures'
 import { makeDetails, makeInstalled, makeVersion } from '../helpers/pluginDetails'
@@ -352,7 +352,7 @@ describe('PluginDetailsView', () => {
   it('installs a newer version only after the confirmation, without allowing a downgrade', async () => {
     const mock = stubRoutes({
       [DETAILS_URL]: () => json(makeDetails()),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true }),
     })
     const wrapper = await mountPage('versions')
 
@@ -427,7 +427,7 @@ describe('PluginDetailsView', () => {
   it('updates to the newest version from the header, behind the confirmation', async () => {
     const mock = stubRoutes({
       [DETAILS_URL]: () => json(makeDetails()),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '3.0.0' }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true, stagedVersion: '3.0.0' }),
     })
     const wrapper = await mountPage()
 
@@ -446,7 +446,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails({
         versions: [makeVersion({ version: '3.0.0' }), makeVersion({ version: '2.0.0' }), makeVersion({ version: '1.0.0' })],
       })),
-      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '1.0.0' }),
+      'POST /api/admin/plugins/registry/example-pay/install': () => changeStream({ requiresRestart: true, stagedVersion: '1.0.0' }),
     })
     const wrapper = await mountPage('versions')
 
@@ -497,7 +497,7 @@ describe('PluginDetailsView', () => {
       [DETAILS_URL]: () => json(makeDetails()),
       'DELETE /api/admin/plugins/example-pay': () => {
         removed = true
-        return json({ requiresRestart: true })
+        return changeStream({ requiresRestart: true })
       },
     })
     const { wrapper, router } = await mountScreenAt()

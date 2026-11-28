@@ -11,6 +11,8 @@ export enum PollKind {
   ServerRestart = 'ServerRestart',
   /** The condition a plugin action or form follows up on. */
   PluginFollowUp = 'PluginFollowUp',
+  /** The clock the plugin processing dialog counts its elapsed time on. */
+  ProcessingClock = 'ProcessingClock',
   /** The clock the demo banner counts down on. */
   DemoCountdown = 'DemoCountdown',
 }

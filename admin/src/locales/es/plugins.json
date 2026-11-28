@@ -68,8 +68,6 @@
   },
   "restart": {
     "title": "Reiniciando el servidor",
-    "restarting": "Reiniciando",
-    "hint": "El panel volverá en un momento. Mantén esta ventana abierta.",
     "running": "Cargado y en funcionamiento",
     "timedOut": "El servidor no volvió a tiempo. Comprueba que se esté iniciando e inténtalo de nuevo.",
     "pluginVersion": "{name}, versión {version}",
@@ -117,9 +115,32 @@
     "removing": "Quitando {name}",
     "uploading": "Subiendo {name}",
     "done": "Hecho.",
-    "reloaded": "{name} se actualizó y funciona sin reiniciar.",
     "restartNeeded": "Reinicia el servidor para aplicar el cambio.",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "restarting": "Reiniciando el servidor",
+    "progress": "Progreso",
+    "elapsed": "Transcurrido {time}",
+    "targetVersion": "Versión {version}",
+    "loadedVersion": "Cargado y en ejecución, versión {version}",
+    "removedDone": "{name} se ha eliminado.",
+    "steps": {
+      "upload": "Subir",
+      "download": "Descargar",
+      "verify": "Verificar la firma",
+      "stage": "Preparar",
+      "remove": "Eliminar archivos",
+      "apply": "Aplicar",
+      "reload": "Aplicar (recarga en caliente)",
+      "restart": "Reiniciar",
+      "loaded": "Cargado y en ejecución",
+      "removed": "Eliminado"
+    },
+    "state": {
+      "pending": "En espera",
+      "running": "En curso",
+      "done": "Hecho",
+      "failed": "Error"
+    }
   },
   "pluginSlotWidgets": {
     "title": "Widgets de ranura: {plugin}",

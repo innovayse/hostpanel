@@ -12,7 +12,7 @@ import { usePluginsStore } from '@/stores/plugins'
 import { PluginChangeResult, PluginRestartState } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
 import { PollKind } from '@/types/poller'
-import { json, problem, stubFetch } from '../helpers/fetch'
+import { changeStream, json, problem, stubFetch } from '../helpers/fetch'
 
 /** How often the restart wait asks the server, in milliseconds. */
 const RESTART_POLL_MS = POLL_INTERVALS_MS[PollKind.ServerRestart]
@@ -114,7 +114,7 @@ describe('pluginsStore.followRestart', () => {
   it('waits for a restart the host started, without posting a restart, treating a draining 503 as still waiting', async () => {
     const mock = stubServer({
       health: [problem('Draining.', 503), problem('Draining.', 503), down(), health('B')],
-      restart: new Response(null, { status: 202 }),
+      restart: changeStream({}),
       list: [listed({ version: '2.0.0' })],
     })
     const store = usePluginsStore()
@@ -138,7 +138,7 @@ describe('pluginsStore.followRestart', () => {
       version: '1.0.0',
       lastChange: { pluginId: 'broken', fromVersion: '1.0.0', toVersion: '2.0.0', result: PluginChangeResult.Failed, error: 'Missing dependency.', restoredVersion: '1.0.0', at: 't' },
     })
-    stubServer({ health: [health('A'), health('B')], restart: new Response(null, { status: 202 }), list: [listed({ version: '2.0.0' }), failed] })
+    stubServer({ health: [health('A'), health('B')], restart: changeStream({}), list: [listed({ version: '2.0.0' }), failed] })
     const store = usePluginsStore()
     store.plugins = [listed({ isLoaded: false, stagedVersion: '2.0.0' }), listed({ id: 'broken', name: 'Broken', isLoaded: false, stagedVersion: '2.0.0' })]
 
@@ -151,14 +151,14 @@ describe('pluginsStore.followRestart', () => {
   })
 
   it('does not raise the banner for an answer the host restarts for, and raises it otherwise', async () => {
-    stubFetch(json({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: true }), json([]))
+    stubFetch(changeStream({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: true }), json([]))
     const store = usePluginsStore()
 
     await store.install(new File(['z'], 'plugin.zip'))
     expect(store.restarting).toBe(true)
     expect(store.requiresRestart).toBe(false)
 
-    stubFetch(json({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: false }), json([]))
+    stubFetch(changeStream({ requiresRestart: true, stagedVersion: null, reloaded: false, restarting: false }), json([]))
     await store.install(new File(['z'], 'plugin.zip'))
     expect(store.restarting).toBe(false)
     expect(store.requiresRestart).toBe(true)
@@ -169,7 +169,7 @@ describe('pluginsStore.restart', () => {
   it('waits through the old process and a down server, then reads the list and ends Running', async () => {
     stubServer({
       health: [health('A'), health('A'), down(), health('B')],
-      restart: new Response(null, { status: 202 }),
+      restart: changeStream({}),
       list: [listed({ version: '2.0.0' })],
     })
     const store = usePluginsStore()
@@ -219,7 +219,7 @@ describe('pluginsStore.restart', () => {
   })
 
   it('times out when the server never answers as a new process, and a retry waits again without restarting again', async () => {
-    const server: ScriptedServer = { health: [health('A')], restart: new Response(null, { status: 202 }), list: [listed({})] }
+    const server: ScriptedServer = { health: [health('A')], restart: changeStream({}), list: [listed({})] }
     const mock = stubServer(server)
     const store = usePluginsStore()
 
@@ -239,7 +239,7 @@ describe('pluginsStore.restart', () => {
   })
 
   it('stops polling and returns to Idle when the flow is reset', async () => {
-    const mock = stubServer({ health: [health('A')], restart: new Response(null, { status: 202 }), list: [] })
+    const mock = stubServer({ health: [health('A')], restart: changeStream({}), list: [] })
     const store = usePluginsStore()
 
     const done = store.restart()
@@ -254,7 +254,7 @@ describe('pluginsStore.restart', () => {
   })
 
   it('ends a wait on wall clock time although the tab is hidden and its poll is paused', async () => {
-    const mock = stubServer({ health: [health('A')], restart: new Response(null, { status: 202 }), list: [] })
+    const mock = stubServer({ health: [health('A')], restart: changeStream({}), list: [] })
     const store = usePluginsStore()
 
     const done = store.restart()
@@ -269,7 +269,7 @@ describe('pluginsStore.restart', () => {
   })
 
   it('cancels the old wait at once when the flow is reset, without waiting for its next probe', async () => {
-    stubServer({ health: [health('A')], restart: new Response(null, { status: 202 }), list: [] })
+    stubServer({ health: [health('A')], restart: changeStream({}), list: [] })
     const store = usePluginsStore()
     let settled = false
 
@@ -287,7 +287,7 @@ describe('pluginsStore.restart', () => {
   })
 
   it('cancels the old wait at once when a newer restart starts, and leaves its state to the newer one', async () => {
-    const mock = stubServer({ health: [health('A')], restart: new Response(null, { status: 202 }), list: [] })
+    const mock = stubServer({ health: [health('A')], restart: changeStream({}), list: [] })
     const store = usePluginsStore()
     let firstSettled = false
 

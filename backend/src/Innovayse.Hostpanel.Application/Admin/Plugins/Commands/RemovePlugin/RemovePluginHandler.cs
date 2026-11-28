@@ -51,6 +51,9 @@ public sealed class RemovePluginHandler
     /// <summary>Unloads the removed plugin from the running process when it can be, and words the answer.</summary>
     private readonly PluginChangeApplier _applier;
 
+    /// <summary>Tells the caller how far the removal has come.</summary>
+    private readonly IPluginChangeProgress _reporter;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="store">Deletes the uploaded plugin's folder, and refuses an invalid id or a built-in plugin.</param>
     /// <param name="activityLogger">Stages the audit line for the removal on the same context as the switch.</param>
@@ -58,13 +61,15 @@ public sealed class RemovePluginHandler
     /// <param name="availability">Drops the panels' remembered plugin availability once the switch-off has committed.</param>
     /// <param name="clock">The clock the moment of the removal is read from, for the removal event.</param>
     /// <param name="applier">Unloads the removed plugin from the running process when it can be, and words the answer.</param>
+    /// <param name="reporter">Tells the caller how far the removal has come.</param>
     public RemovePluginHandler(
         IPluginPackageStore store,
         IActivityLogger activityLogger,
         IHostpanelDbContext context,
         IPluginAvailabilityInvalidator availability,
         IClock clock,
-        PluginChangeApplier applier)
+        PluginChangeApplier applier,
+        IPluginChangeProgress reporter)
     {
         _store = store;
         _activityLogger = activityLogger;
@@ -72,6 +77,7 @@ public sealed class RemovePluginHandler
         _availability = availability;
         _clock = clock;
         _applier = applier;
+        _reporter = reporter;
     }
 
     /// <summary>
@@ -91,6 +97,7 @@ public sealed class RemovePluginHandler
     /// </returns>
     public async Task<Result<PluginActionResultDto>> HandleAsync(RemovePluginCommand command, CancellationToken ct)
     {
+        await _reporter.EnterAsync(PluginChangeStage.Stage, ct);
         var outcome = await _store.RemoveAsync(new PluginPackageRemoval(command.Id), ct);
         if (outcome.Outcome is not (PluginPackageOutcome.Removed or PluginPackageOutcome.NotFound))
         {

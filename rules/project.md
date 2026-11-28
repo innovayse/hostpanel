@@ -272,6 +272,20 @@ docker/                              compose set (shared·dev·prod·platform), 
   request (`Plugin Change Applied In Place`, `Applying By Restart`, `Failed And Restored`). A fresh install that does not load stays
   in the list as refused with its load error. Tests that install plugins run with `RecordingHostRestarter`, because a real restart would
   stop the shared test host.
+- **A plugin change streams its progress to a caller that asks for it.** An upload install, a registry install or update, a removal
+  and Restart now report each step through one port, `IPluginChangeProgress` (Application): the handlers, the registry download
+  (bytes read and the declared size), `PluginPackageStore` (checks passed, the package is put in place) and `PluginChangeApplier`
+  (apply, or restart). Its one adapter, `API/Plugins/EventStreamPluginChangeProgress`, writes each report as a `progress` event
+  (`PluginChangeProgressDto`: `stage` `Download`, `Verify`, `Stage`, `Apply` or `Restart`, `bytesDone`, `bytesTotal`) on the
+  request's own response when the caller sent `Accept: text/event-stream`, and does nothing otherwise, so a JSON caller and the tests
+  see the same answers as before. The controller ends the stream with `BaseApiController.HandleReported` (or `AcceptedOrReported` for
+  the restart): a `done` event with the usual body, or a `failed` event with the standard error body; a refusal before the first step
+  keeps its own status and `ErrorResponse`. The stream headers and framing are `Shared/Infrastructure/EventStreamWriter`, shared with
+  `EventStreamResult`. The admin reads it with `useApi().stream` (`usePluginsApi.streamChange`, the one place the events are
+  parsed), keeps the last step in `plugins.changeProgress`, and shows it in the one processing dialog (`PluginProcessingDialog`,
+  `usePluginProcessing`, `lib/pluginProgress`): logo, version, the step list (`UiStepList`), a bar whose percentage weighs each step
+  and moves with the download's bytes, the elapsed time, and the restart wait after a `Restart` step, a restart from the banner
+  included.
 - **Plugin assembly names.** `PluginAssemblyNames` (the plugin packaging package, "Plugin package checks"; the host's names go in as a `PluginAssemblyOptions`, written once in `Infrastructure/Plugins/PluginHostAssemblies.Options` and used by every caller) reserves `Innovayse.Hostpanel.`, `System.`, `Microsoft.`, the SDK (`Hostpanel.Sdk`) and every
   trusted platform assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`), with one carve-out: `Innovayse.Hostpanel.Plugins.<Name>` is the
   plugin namespace and official plugins are named that way (`Innovayse.Hostpanel.Plugins.Stripe.dll`). The trailing dot is the

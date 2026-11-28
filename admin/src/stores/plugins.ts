@@ -24,6 +24,8 @@ import { PluginErrorCode, PluginRestartState, PluginStatus } from '@/types/plugi
 import type {
   PluginActionOutcome,
   PluginActionResultDto,
+  PluginChangeListener,
+  PluginChangeProgressDto,
   PluginListItemDto,
   PluginPackagePreviewDto,
   PluginRegistryItemDto,
@@ -132,6 +134,18 @@ export const usePluginsStore = defineStore('plugins', () => {
 
   /** Whether the last install made the host start its own restart, so the panel only has to wait for it. */
   const restarting = ref(false)
+
+  /** The last step the server streamed for the install, update, removal or restart in flight; null before its first step. */
+  const changeProgress = ref<PluginChangeProgressDto | null>(null)
+
+  /**
+   * Keeps each step a change streams, for the processing dialog.
+   *
+   * @param progress - The step that arrived.
+   */
+  const trackChange: PluginChangeListener = (progress) => {
+    changeProgress.value = progress
+  }
 
   /** Where the restart stands: no restart, waiting for the server to come back, back and running, or not back in time. */
   const restartState = ref<PluginRestartState>(PluginRestartState.Idle)
@@ -270,7 +284,7 @@ export const usePluginsStore = defineStore('plugins', () => {
    */
   const uploadArchive = async (file: File, force: boolean) => {
     try {
-      return await api.installPlugin(file, force)
+      return await api.installPlugin(file, force, trackChange)
     } catch (cause) {
       if (errorCode(cause) === PluginErrorCode.DowngradeRefused) {
         downgradeFile.value = file
@@ -304,6 +318,7 @@ export const usePluginsStore = defineStore('plugins', () => {
    */
   const install = async (file: File, force = false): Promise<boolean> => {
     loading.value = true
+    changeProgress.value = null
     downgradeFile.value = null
     stagedVersion.value = null
     reloaded.value = false
@@ -387,7 +402,8 @@ export const usePluginsStore = defineStore('plugins', () => {
    */
   const remove = async (id: string): Promise<PluginActionOutcome> => {
     setBusy(id, true)
-    const result = await runOwn(actionError, () => api.removePlugin(id))
+    changeProgress.value = null
+    const result = await runOwn(actionError, () => api.removePlugin(id, trackChange))
     if (result.ok) {
       raiseRestart(result.value)
       // Removal keeps the plugin's data, so the reloaded list answers with a Removed row the operator can purge.
@@ -555,10 +571,11 @@ export const usePluginsStore = defineStore('plugins', () => {
    * @returns Resolves when the server is back (Running), did not come back in time (TimedOut) or refused (Idle).
    */
   const restart = async (): Promise<void> => {
+    changeProgress.value = null
     const run = enterRestart()
     restartBaseline = await readProcessStartedAt()
     try {
-      await api.restartServer()
+      await api.restartServer(trackChange)
     } catch (cause) {
       // An answer with a status is a refusal; no answer at all is the server already going down.
       if (errorStatus(cause) !== null) {
@@ -858,8 +875,9 @@ export const usePluginsStore = defineStore('plugins', () => {
    */
   const installFromRegistry = async (id: string, version: string, allowDowngrade = false): Promise<PluginActionOutcome> => {
     setBusy(id, true)
+    changeProgress.value = null
     stagedVersion.value = null
-    const result = await runOwn(registryInstallError, () => api.installFromRegistry(id, { version, allowDowngrade }))
+    const result = await runOwn(registryInstallError, () => api.installFromRegistry(id, { version, allowDowngrade }, trackChange))
     let staged: string | null = null
     if (result.ok) {
       raiseRestart(result.value)
@@ -878,7 +896,7 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   return {
-    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, reloaded, restartState, restartError, restartedPlugins, restartFailures, restarting, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, pluginServers, pluginServersError, pluginServersLoading, bindingError,
+    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, reloaded, changeProgress, restartState, restartError, restartedPlugins, restartFailures, restarting, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, slotWidgetsLoading, pluginServers, pluginServersError, pluginServersLoading, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError, registryUpdatesChecking,
     registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
     registryInstance, registryInstanceBusy, registryInstanceError,

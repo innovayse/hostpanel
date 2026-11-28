@@ -1,6 +1,6 @@
 /**
  * Unit tests for PluginRestart: the banner shows only while a restart is pending, the button opens a confirmation
- * that restarts nothing until it is confirmed, and a confirmed restart posts the command and opens the waiting dialog.
+ * that restarts nothing until it is confirmed, and a confirmed restart posts the command and enters the restart wait.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -8,7 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import PluginRestart from '@/components/plugins/PluginRestart.vue'
 import { usePluginsStore } from '@/stores/plugins'
 import { PluginRestartState } from '@/types/plugin'
-import { json, problem } from '../../helpers/fetch'
+import { changeStream, json, problem } from '../../helpers/fetch'
 import { createTestI18n } from '../../helpers/i18n'
 
 /**
@@ -58,9 +58,9 @@ describe('PluginRestart', () => {
     expect(mock).not.toHaveBeenCalled()
   })
 
-  it('posts the restart after the confirmation and opens the waiting dialog', async () => {
+  it('posts the restart after the confirmation and enters the restart wait', async () => {
     vi.useFakeTimers()
-    const mock = vi.fn(async (url: string) => (url === '/health' ? probe() : new Response(null, { status: 202 })))
+    const mock = vi.fn(async (url: string) => (url === '/health' ? probe() : changeStream({})))
     vi.stubGlobal('fetch', mock)
     const { wrapper, store } = mountRestart(true)
 
@@ -70,7 +70,6 @@ describe('PluginRestart', () => {
 
     expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/restart')).toBe(true)
     expect(store.restartState).toBe(PluginRestartState.Restarting)
-    expect(wrapper.find('[data-testid="plugin-restart-waiting"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
@@ -83,6 +82,5 @@ describe('PluginRestart', () => {
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-restart-error"]').text()).toContain('Not allowed.')
-    expect(wrapper.find('[data-testid="plugin-restart-dialog"]').exists()).toBe(false)
   })
 })

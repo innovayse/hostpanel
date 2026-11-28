@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePluginsStore } from '@/stores/plugins'
-import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { changeStream, json, problem, stubFetch, stubOffline } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
 
 /** The sentence shown when nothing answered. */
@@ -56,7 +56,7 @@ describe('pluginsStore.fetchAll', () => {
 
 describe('pluginsStore.install', () => {
   it('flags the restart and reloads the list', async () => {
-    const mock = stubFetch(json({ requiresRestart: true }), json([{ id: 'a' }]))
+    const mock = stubFetch(changeStream({ requiresRestart: true }), json([{ id: 'a' }]))
     const store = usePluginsStore()
 
     await store.install(zip)
@@ -66,7 +66,7 @@ describe('pluginsStore.install', () => {
   })
 
   it('keeps the banner hidden and records the hot reload when the host applied the change', async () => {
-    stubFetch(json({ requiresRestart: false, stagedVersion: null, reloaded: true }), json([{ id: 'a' }]))
+    stubFetch(changeStream({ requiresRestart: false, stagedVersion: null, reloaded: true }), json([{ id: 'a' }]))
     const store = usePluginsStore()
 
     await store.install(zip)
@@ -75,7 +75,7 @@ describe('pluginsStore.install', () => {
   })
 
   it('does not hide a pending restart when a later install needs none', async () => {
-    stubFetch(json({ requiresRestart: false, stagedVersion: null, reloaded: true }), json([]))
+    stubFetch(changeStream({ requiresRestart: false, stagedVersion: null, reloaded: true }), json([]))
     const store = usePluginsStore()
     store.requiresRestart = true
 
@@ -134,7 +134,7 @@ describe('pluginsStore.inspect', () => {
   })
 
   it('installs the waiting archive on confirmation and clears the preview', async () => {
-    const mock = stubFetch(json(preview), json({ requiresRestart: true }), json([{ id: 'a' }]))
+    const mock = stubFetch(json(preview), changeStream({ requiresRestart: true }), json([{ id: 'a' }]))
     const store = usePluginsStore()
     await store.inspect(zip)
 
@@ -164,7 +164,7 @@ describe('pluginsStore.remove', () => {
     stubRoutes({
       'DELETE /api/admin/plugins/a': () => {
         seen = [store.isBusy('a'), store.isBusy('b')]
-        return json({ requiresRestart: false })
+        return changeStream({ requiresRestart: false })
       },
       'GET /api/admin/plugins': () => json([]),
     })
@@ -185,7 +185,7 @@ describe('pluginsStore.remove', () => {
   })
 
   it('reloads the list and flags the restart', async () => {
-    stubFetch(json({ requiresRestart: true }), json([{ id: 'b', status: 'Loaded' }]))
+    stubFetch(changeStream({ requiresRestart: true }), json([{ id: 'b', status: 'Loaded' }]))
     const store = usePluginsStore()
     store.plugins.push({ id: 'a' } as never, { id: 'b' } as never)
 
@@ -196,7 +196,7 @@ describe('pluginsStore.remove', () => {
 
   it('reloads the registry listing and the update badges after a removal once the registry was browsed', async () => {
     const mock = stubRoutes({
-      'DELETE /api/admin/plugins/a': () => json({ requiresRestart: true }),
+      'DELETE /api/admin/plugins/a': () => changeStream({ requiresRestart: true }),
       'GET /api/admin/plugins/registry/updates': () => json([]),
       'GET /api/admin/plugins/registry?': () => json({ items: [], total: 0, pageSize: 20 }),
       'GET /api/admin/plugins': () => json([]),
@@ -215,7 +215,7 @@ describe('pluginsStore.remove', () => {
 
   it('does not touch the registry after a removal when it was never browsed', async () => {
     const mock = stubRoutes({
-      'DELETE /api/admin/plugins/a': () => json({ requiresRestart: true }),
+      'DELETE /api/admin/plugins/a': () => changeStream({ requiresRestart: true }),
       'GET /api/admin/plugins': () => json([]),
     })
     const store = usePluginsStore()
@@ -226,7 +226,7 @@ describe('pluginsStore.remove', () => {
   })
 
   it('lists a removed plugin whose data is kept as a purge target, not as installed', async () => {
-    stubFetch(json({ requiresRestart: true }), json([{ id: 'a', status: 'Removed' }, { id: 'b', status: 'Loaded' }]))
+    stubFetch(changeStream({ requiresRestart: true }), json([{ id: 'a', status: 'Removed' }, { id: 'b', status: 'Loaded' }]))
     const store = usePluginsStore()
 
     await store.remove('a')
@@ -235,7 +235,7 @@ describe('pluginsStore.remove', () => {
   })
 
   it('keeps an earlier restart banner when a removal needs no restart', async () => {
-    stubFetch(json({ requiresRestart: false }), json([]))
+    stubFetch(changeStream({ requiresRestart: false }), json([]))
     const store = usePluginsStore()
     store.plugins.push({ id: 'a' } as never)
     store.requiresRestart = true
@@ -246,7 +246,7 @@ describe('pluginsStore.remove', () => {
   })
 
   it('does not raise the restart banner when a removal needs no restart', async () => {
-    stubFetch(json({ requiresRestart: false }), json([]))
+    stubFetch(changeStream({ requiresRestart: false }), json([]))
     const store = usePluginsStore()
     store.plugins.push({ id: 'a' } as never)
 
@@ -401,7 +401,7 @@ describe('pluginsStore upgrade and downgrade', () => {
     json({ type: 'PLUGIN_DOWNGRADE_REFUSED', title: 'Refused', status: 409, detail: 'Older than installed.' }, 409)
 
   it('keeps the staged version the server answered with', async () => {
-    stubFetch(json({ requiresRestart: true, stagedVersion: '1.3.0' }), json([]))
+    stubFetch(changeStream({ requiresRestart: true, stagedVersion: '1.3.0' }), json([]))
     const store = usePluginsStore()
 
     expect(await store.install(zip)).toBe(true)
@@ -410,7 +410,7 @@ describe('pluginsStore upgrade and downgrade', () => {
   })
 
   it('has no staged version for a plain install', async () => {
-    stubFetch(json({ requiresRestart: true }), json([]))
+    stubFetch(changeStream({ requiresRestart: true }), json([]))
     const store = usePluginsStore()
 
     await store.install(zip)
@@ -435,7 +435,7 @@ describe('pluginsStore upgrade and downgrade', () => {
   })
 
   it('sends the kept archive with force and clears it', async () => {
-    const mock = stubFetch(downgrade(), json({ requiresRestart: true }), json([]))
+    const mock = stubFetch(downgrade(), changeStream({ requiresRestart: true }), json([]))
     const store = usePluginsStore()
     await store.install(zip)
 
@@ -446,7 +446,7 @@ describe('pluginsStore upgrade and downgrade', () => {
   })
 
   it('does nothing when no refused archive waits', async () => {
-    const mock = stubFetch(json({ requiresRestart: true }))
+    const mock = stubFetch(changeStream({ requiresRestart: true }))
     const store = usePluginsStore()
 
     expect(await store.forceDowngrade()).toBe(false)

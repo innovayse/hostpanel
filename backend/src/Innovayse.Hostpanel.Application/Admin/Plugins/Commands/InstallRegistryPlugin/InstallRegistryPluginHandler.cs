@@ -55,6 +55,9 @@ public sealed class InstallRegistryPluginHandler
     /// <summary>Applies the accepted package in the running process when it can, and words the answer.</summary>
     private readonly PluginChangeApplier _applier;
 
+    /// <summary>Tells the caller how far the install has come, the bytes of the download included.</summary>
+    private readonly IPluginChangeProgress _reporter;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="inspector">Reads what an archive claims about itself and which keys the operator added.</param>
@@ -66,6 +69,7 @@ public sealed class InstallRegistryPluginHandler
     /// <param name="reader">Reads what this host is shown of the plugin: its page, its licence key and its versions.</param>
     /// <param name="recorder">Stages the install record of the accepted package.</param>
     /// <param name="applier">Applies the accepted package in the running process when it can, and words the answer.</param>
+    /// <param name="reporter">Tells the caller how far the install has come, the bytes of the download included.</param>
     public InstallRegistryPluginHandler(
         IPluginRegistryClient registry,
         IPluginPackageInspector inspector,
@@ -76,7 +80,8 @@ public sealed class InstallRegistryPluginHandler
         IHostSdkVersionProvider hostSdkVersion,
         RegistryPluginReader reader,
         InstalledPluginRecorder recorder,
-        PluginChangeApplier applier)
+        PluginChangeApplier applier,
+        IPluginChangeProgress reporter)
     {
         _registry = registry;
         _inspector = inspector;
@@ -88,6 +93,7 @@ public sealed class InstallRegistryPluginHandler
         _reader = reader;
         _recorder = recorder;
         _applier = applier;
+        _reporter = reporter;
     }
 
     /// <summary>Installs or stages the requested registry version and records it.</summary>
@@ -111,6 +117,8 @@ public sealed class InstallRegistryPluginHandler
     /// </returns>
     public async Task<Result<PluginActionResultDto>> HandleAsync(InstallRegistryPluginCommand command, CancellationToken ct)
     {
+        // The reads of the registry before the package arrives belong to the download the caller sees first.
+        await _reporter.EnterAsync(PluginChangeStage.Download, ct);
         var trust = PluginSettingKeys.ParseRegistryTrust(await _db.Settings
             .AsNoTracking()
             .Where(s => s.Key == PluginSettingKeys.RegistryTrust)
@@ -185,11 +193,13 @@ public sealed class InstallRegistryPluginHandler
             return await RefuseAsync(command, "not verified", HostpanelErrorCodes.PLUGIN_REGISTRY_NOT_TRUSTED, null, ct);
         }
 
-        var download = await _registry.DownloadAsync(release, ct, licence);
+        var download = await _registry.DownloadAsync(release, ct, licence, _reporter);
         if (download.IsFailure)
         {
             return Result<PluginActionResultDto>.FailureCode(download.ErrorCode!);
         }
+
+        await _reporter.EnterAsync(PluginChangeStage.Verify, ct);
 
         // Disposing the stream deletes the temporary file, on every path out of here.
         await using var package = download.Value!;
